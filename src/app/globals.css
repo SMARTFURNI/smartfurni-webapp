@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&display=swap');
+
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E2C97E;
+  --dark-bg: #0D0B00;
+  --dark-surface: #1A1600;
+  --dark-card: #221D00;
+  --dark-border: #2E2800;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0D0B00;
+  color: #F5EDD6;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Gold gradient text */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #E2C97E 0%, #C9A84C 50%, #9A7A2E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Cormorant font for brand name */
+.font-brand {
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.15em;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1A1600;
+}
+::-webkit-scrollbar-thumb {
+  background: #C9A84C40;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C9A84C80;
+}
+
+/* Gold border glow */
+.border-gold-glow {
+  border: 1px solid #C9A84C40;
+  box-shadow: 0 0 20px #C9A84C10;
+}
+
+/* Smooth section transitions */
+section {
+  transition: opacity 0.3s ease;
+}
