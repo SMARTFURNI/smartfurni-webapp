@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Product, ProductVariant } from "@/lib/product-store";
+import BNPLBadge from "@/components/landing/BNPLBadge";
 import type { SiteTheme } from "@/lib/theme-types";
 import { useCart } from "@/lib/cart-context";
 import Breadcrumb from "@/components/landing/Breadcrumb";
@@ -470,6 +471,18 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
                 📷 AR Thử tại nhà
               </Link>
             </div>
+          )}
+
+          {/* BNPL Badge */}
+          {product.category !== "accessory" && (
+            <BNPLBadge
+              price={product.price}
+              primary={colors.primary}
+              bg={colors.background}
+              text={colors.text}
+              border={colors.border}
+              surface={colors.surface}
+            />
           )}
 
           {/* Contact CTA */}

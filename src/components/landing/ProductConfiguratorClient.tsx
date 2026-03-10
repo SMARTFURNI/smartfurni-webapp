@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import type { Product } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
@@ -204,6 +204,46 @@ export default function ProductConfiguratorClient({ product, theme }: Props) {
   const [headAngle, setHeadAngle] = useState(0);
   const [footAngle, setFootAngle] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [shareToast, setShareToast] = useState<"saved" | "copied" | null>(null);
+  const [savedConfigs, setSavedConfigs] = useState<string[]>([]);
+
+  // Build shareable URL with config params
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams({
+      color: fabricColor.id,
+      frame: frameMaterial.id,
+      size: bedSize.id,
+      head: headboardStyle,
+      leg: legFinish.id,
+      ha: String(headAngle),
+      fa: String(footAngle),
+    });
+    return `${window.location.origin}/products/configure/${product.slug}?${params.toString()}`;
+  }, [fabricColor, frameMaterial, bedSize, headboardStyle, legFinish, headAngle, footAngle, product.slug]);
+
+  const handleSaveConfig = useCallback(() => {
+    const key = `smartfurni_config_${product.slug}`;
+    const currentPrice = product.price + frameMaterial.priceAdd + bedSize.priceAdd;
+    const config = { fabricColor: fabricColor.id, frameMaterial: frameMaterial.id, bedSize: bedSize.id, headboardStyle, legFinish: legFinish.id, headAngle, footAngle, savedAt: new Date().toISOString(), productName: product.name, price: currentPrice };
+    try {
+      const existing = JSON.parse(localStorage.getItem(key) ?? "[]") as object[];
+      const updated = [config, ...existing].slice(0, 5);
+      localStorage.setItem(key, JSON.stringify(updated));
+      setSavedConfigs(updated.map((_, i) => String(i)));
+    } catch {}
+    setShareToast("saved");
+    setTimeout(() => setShareToast(null), 2500);
+  }, [fabricColor, frameMaterial, bedSize, headboardStyle, legFinish, headAngle, footAngle, product]);
+
+  const handleCopyLink = useCallback(() => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        setShareToast("copied");
+        setTimeout(() => setShareToast(null), 2500);
+      });
+    }
+  }, [shareUrl]);
 
   const configPrice = useMemo(
     () => product.price + frameMaterial.priceAdd + bedSize.priceAdd,
@@ -511,6 +551,35 @@ export default function ProductConfiguratorClient({ product, theme }: Props) {
               <p className="text-xs text-[#F5EDD6]/30 text-center">
                 🔒 Thời gian sản xuất: 7–14 ngày · Bảo hành {product.specs["Bảo hành"] ?? "5 năm"}
               </p>
+
+              {/* Save & Share */}
+              <div style={{ borderTop: `1px solid ${colors.border}` }} className="pt-3">
+                <p className="text-xs text-[#F5EDD6]/40 mb-2">Lưu & Chia sẻ cấu hình</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveConfig}
+                    style={{ borderColor: colors.border, color: "#F5EDD6" }}
+                    className="flex-1 py-2 rounded-lg border text-xs font-medium hover:opacity-80 transition-opacity flex items-center justify-center gap-1.5"
+                  >
+                    💾 Lưu cấu hình
+                  </button>
+                  <button
+                    onClick={handleCopyLink}
+                    style={{ borderColor: colors.primary, color: colors.primary }}
+                    className="flex-1 py-2 rounded-lg border text-xs font-medium hover:opacity-80 transition-opacity flex items-center justify-center gap-1.5"
+                  >
+                    🔗 Sao chép link
+                  </button>
+                </div>
+                {shareToast && (
+                  <div
+                    style={{ background: colors.primary, color: colors.background }}
+                    className="mt-2 py-2 px-3 rounded-lg text-xs font-medium text-center"
+                  >
+                    {shareToast === "saved" ? "✓ Đã lưu cấu hình vào thiết bị!" : "✓ Đã sao chép link chia sẻ!"}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Back to product */}

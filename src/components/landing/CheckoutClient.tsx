@@ -41,6 +41,12 @@ const PAYMENT_METHODS = [
     desc: "Thanh toán qua cổng VNPay",
     icon: "💳",
   },
+  {
+    id: "installment",
+    label: "Trả góp 0% lãi suất",
+    desc: "MoMo Pay Later, Kredivo, VPBank BNPL — từ 3–24 tháng",
+    icon: "💸",
+  },
 ];
 
 const CITIES = [
@@ -447,6 +453,25 @@ export default function CheckoutClient({ theme }: Props) {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* BNPL installment info */}
+            {form.paymentMethod === "installment" && (
+              <div
+                style={{ backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}20` }}
+                className="mt-4 p-4 rounded-xl border"
+              >
+                <p style={{ color: colors.text }} className="text-sm font-semibold mb-3">Trả góp 0% lãi suất</p>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {[3, 6, 12].map((m) => (
+                    <div key={m} style={{ background: `${colors.primary}15`, borderColor: `${colors.primary}30` }} className="rounded-lg p-2 border text-center">
+                      <div style={{ color: colors.primary }} className="text-sm font-bold">{Math.ceil(total / m / 1000) * 1000 >= 1_000_000 ? `${((Math.ceil(total / m / 1000) * 1000) / 1_000_000).toFixed(1)}tr` : (Math.ceil(total / m / 1000) * 1000).toLocaleString()}đ</div>
+                      <div style={{ color: `${colors.text}60` }} className="text-xs">{m} tháng</div>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ color: `${colors.text}50` }} className="text-xs">Hỗ trợ: MoMo Pay Later, Kredivo, VPBank BNPL. Duyệt trong 5 phút.</p>
               </div>
             )}
 

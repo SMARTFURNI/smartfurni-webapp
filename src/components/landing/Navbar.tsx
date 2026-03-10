@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { label: "So sánh", href: "/products/compare" },
   { label: "Room Planner", href: "/room-planner" },
   { label: "AR Thử", href: "/ar-try" },
+  { label: "🤖 Sleep Advisor", href: "/sleep-advisor" },
   { label: "Blog", href: "/blog" },
   { label: "Liên hệ", href: "/contact" },
 ];
