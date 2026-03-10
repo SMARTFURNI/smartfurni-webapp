@@ -12,9 +12,10 @@ interface NavbarProps {
 
 const NAV_LINKS = [
   { label: "Tính năng", href: "/#features", isAnchor: true },
-  { label: "Demo", href: "/#demo", isAnchor: true },
-  { label: "Tải app", href: "/#download", isAnchor: true },
   { label: "Sản phẩm", href: "/products" },
+  { label: "So sánh", href: "/products/compare" },
+  { label: "Room Planner", href: "/room-planner" },
+  { label: "AR Thử", href: "/ar-try" },
   { label: "Blog", href: "/blog" },
   { label: "Liên hệ", href: "/contact" },
 ];

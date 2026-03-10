@@ -452,6 +452,26 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
             </button>
           )}
 
+          {/* Feature CTAs row */}
+          {product.category !== "accessory" && (
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href={`/products/configure/${product.slug}`}
+                style={{ backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}30`, color: colors.primary }}
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border hover:opacity-80 transition-opacity"
+              >
+                ⚙️ Cấu hình 3D
+              </Link>
+              <Link
+                href="/ar-try"
+                style={{ backgroundColor: `${colors.secondary}12`, borderColor: `${colors.secondary}30`, color: colors.secondary }}
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border hover:opacity-80 transition-opacity"
+              >
+                📷 AR Thử tại nhà
+              </Link>
+            </div>
+          )}
+
           {/* Contact CTA */}
           <Link
             href="/contact"
