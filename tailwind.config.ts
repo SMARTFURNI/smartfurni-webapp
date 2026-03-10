@@ -2,12 +2,23 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
+    screens: {
+      xs: "375px",
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+    },
     extend: {
       colors: {
         gold: { DEFAULT: "#C9A84C", light: "#E2C97E", dark: "#9A7A2E" },
         dark: { DEFAULT: "#0D0B00", surface: "#1A1600", card: "#221D00", border: "#2E2800" },
       },
-      fontFamily: { sans: ["Inter", "sans-serif"] },
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+        brand: ["Cormorant Garamond", "serif"],
+      },
       animation: {
         "float": "float 6s ease-in-out infinite",
         "glow": "glow 2s ease-in-out infinite alternate",

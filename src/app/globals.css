@@ -36,10 +36,10 @@ body {
   background-clip: text;
 }
 
-/* Cormorant font for brand name */
+/* Cormorant Garamond brand font */
 .font-brand {
   font-family: 'Cormorant Garamond', serif;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.12em;
 }
 
 /* Scrollbar styling */
@@ -66,4 +66,50 @@ body {
 /* Smooth section transitions */
 section {
   transition: opacity 0.3s ease;
+}
+
+/* Product detailed description styles */
+.prose-custom h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+.prose-custom h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-primary, #C9A84C);
+}
+.prose-custom p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+  opacity: 0.85;
+}
+.prose-custom ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+.prose-custom ul li {
+  padding: 0.5rem 0 0.5rem 1.5rem;
+  position: relative;
+  line-height: 1.7;
+  opacity: 0.85;
+}
+.prose-custom ul li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--color-primary, #C9A84C);
+  font-weight: 600;
+}
+.prose-custom strong {
+  font-weight: 600;
+  opacity: 1;
+}
+.prose-custom em {
+  font-style: italic;
+  color: var(--color-primary, #C9A84C);
 }

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import BedSVG from "@/components/ui/BedSVG";
+import type { SiteTheme } from "@/lib/theme-types";
 
 const DEMO_PRESETS = [
   { name: "Nằm phẳng", head: 0, foot: 0 },
@@ -11,11 +12,30 @@ const DEMO_PRESETS = [
   { name: "Chống ngáy", head: 12, foot: 0 },
 ];
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  theme?: SiteTheme;
+}
+
+export default function HeroSection({ theme }: HeroSectionProps) {
   const [presetIdx, setPresetIdx] = useState(0);
   const [headAngle, setHeadAngle] = useState(0);
   const [footAngle, setFootAngle] = useState(0);
   const [ledOn, setLedOn] = useState(false);
+
+  const primary = theme?.colors.primary ?? "#C9A84C";
+  const secondary = theme?.colors.secondary ?? "#9A7A2E";
+  const bgFrom = theme?.hero.bgGradientFrom ?? "#080600";
+  const bgTo = theme?.hero.bgGradientTo ?? "#1A1500";
+  const textColor = theme?.colors.text ?? "#F5EDD6";
+  const borderColor = theme?.colors.border ?? "#2D2500";
+  const surfaceColor = theme?.colors.surface ?? "#1A1500";
+  const maxWidth = theme?.layout.maxWidth ?? 1280;
+  const heroTitle = theme?.hero.title ?? "Giường Điều Khiển Thông Minh SmartFurni";
+  const heroSubtitle = theme?.hero.subtitle ?? "Trải nghiệm giấc ngủ hoàn hảo với công nghệ điều khiển thông minh.";
+  const ctaText = theme?.hero.ctaText ?? "Thử Dashboard ngay";
+  const ctaLink = theme?.hero.ctaLink ?? "/dashboard";
+  const ctaSecondaryText = theme?.hero.ctaSecondaryText ?? "Tải ứng dụng";
+  const ctaSecondaryLink = theme?.hero.ctaSecondaryLink ?? "#download";
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -47,57 +67,64 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-radial from-[#1A1200] via-[#0D0B00] to-[#0D0B00]" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#C9A84C]/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#C9A84C]/5 rounded-full blur-3xl" />
+    <section
+      style={{ background: `linear-gradient(135deg, ${bgFrom} 0%, ${bgTo} 100%)` }}
+      className="relative min-h-screen flex items-center overflow-hidden pt-16"
+    >
+      {/* Background glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div style={{ background: `radial-gradient(circle at 30% 30%, ${primary}08, transparent 60%)` }} className="absolute inset-0" />
+        <div style={{ background: `radial-gradient(circle at 70% 70%, ${primary}05, transparent 60%)` }} className="absolute inset-0" />
+      </div>
 
-      <div className="relative max-w-7xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-16 items-center">
+      <div style={{ maxWidth }} className="relative mx-auto px-6 py-20 grid lg:grid-cols-2 gap-16 items-center">
         {/* Left — Text */}
         <div className="space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/5">
-            <div className="w-2 h-2 rounded-full bg-[#C9A84C] animate-pulse" />
-            <span className="text-xs text-[#C9A84C] font-medium tracking-wider">CÔNG NGHỆ ĐIỀU KHIỂN THÔNG MINH</span>
+          <div
+            style={{ borderColor: `${primary}40`, backgroundColor: `${primary}0d` }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border"
+          >
+            <div style={{ backgroundColor: primary }} className="w-2 h-2 rounded-full animate-pulse" />
+            <span style={{ color: primary }} className="text-xs font-medium tracking-wider">CÔNG NGHỆ ĐIỀU KHIỂN THÔNG MINH</span>
           </div>
 
           <h1 className="text-5xl lg:text-6xl font-light leading-tight">
-            <span className="font-brand text-gold-gradient block text-6xl lg:text-7xl mb-2">SMARTFURNI</span>
-            <span className="text-[#F5EDD6]/90">Giấc ngủ hoàn hảo</span>
-            <br />
-            <span className="text-[#F5EDD6]/60 text-4xl lg:text-5xl">trong tầm tay bạn</span>
+            <span style={{ color: textColor }} className="block opacity-90">
+              {heroTitle}
+            </span>
           </h1>
 
-          <p className="text-[#F5EDD6]/60 text-lg leading-relaxed max-w-md">
-            Điều khiển góc đầu, góc chân, đèn LED và massage chỉ bằng một chạm.
-            Kết nối Bluetooth, preset thông minh, theo dõi giấc ngủ chuyên sâu.
+          <p style={{ color: `${textColor}99` }} className="text-lg leading-relaxed max-w-md">
+            {heroSubtitle}
           </p>
 
           <div className="flex flex-wrap gap-4">
             <Link
-              href="/dashboard"
-              className="px-6 py-3 rounded-full bg-gradient-to-r from-[#C9A84C] to-[#9A7A2E] text-[#0D0B00] font-semibold text-sm hover:opacity-90 transition-opacity"
+              href={ctaLink}
+              style={{ background: `linear-gradient(to right, ${primary}, ${secondary})`, color: bgFrom }}
+              className="px-6 py-3 rounded-full font-semibold text-sm hover:opacity-90 transition-opacity"
             >
-              Thử Dashboard ngay
+              {ctaText}
             </Link>
             <a
-              href="#download"
-              className="px-6 py-3 rounded-full border border-[#C9A84C]/40 text-[#C9A84C] text-sm font-medium hover:border-[#C9A84C] transition-colors"
+              href={ctaSecondaryLink}
+              style={{ borderColor: `${primary}60`, color: primary }}
+              className="px-6 py-3 rounded-full border text-sm font-medium hover:opacity-80 transition-opacity"
             >
-              Tải ứng dụng
+              {ctaSecondaryText}
             </a>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-6 pt-4 border-t border-[#2E2800]">
+          {/* Stats — benefit-oriented */}
+          <div style={{ borderTopColor: borderColor }} className="grid grid-cols-3 gap-6 pt-4 border-t">
             {[
-              { value: "6+", label: "Chế độ preset" },
-              { value: "BLE 5.0", label: "Kết nối" },
-              { value: "iOS & Android", label: "Nền tảng" },
+              { value: "10.000+", label: "Khách hàng hài lòng" },
+              { value: "30 ngày", label: "Dùng thử miễn phí" },
+              { value: "5 năm", label: "Bảo hành toàn diện" },
             ].map((stat) => (
               <div key={stat.label}>
-                <div className="text-xl font-semibold text-[#C9A84C]">{stat.value}</div>
-                <div className="text-xs text-[#F5EDD6]/50 mt-0.5">{stat.label}</div>
+                <div style={{ color: primary }} className="text-xl font-semibold">{stat.value}</div>
+                <div style={{ color: `${textColor}50` }} className="text-xs mt-0.5">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -106,14 +133,16 @@ export default function HeroSection() {
         {/* Right — Bed Demo */}
         <div className="flex flex-col items-center gap-6">
           <div className="relative w-full max-w-lg">
-            {/* Glow background */}
-            <div className="absolute inset-0 bg-gradient-radial from-[#C9A84C]/10 to-transparent rounded-3xl" />
-            <div className="relative bg-[#1A1600]/60 border border-[#2E2800] rounded-3xl p-8 backdrop-blur-sm">
+            <div style={{ background: `radial-gradient(circle, ${primary}15, transparent 70%)` }} className="absolute inset-0 rounded-3xl" />
+            <div
+              style={{ backgroundColor: `${surfaceColor}99`, borderColor: borderColor }}
+              className="relative border rounded-3xl p-8 backdrop-blur-sm"
+            >
               <BedSVG
                 headAngle={headAngle}
                 footAngle={footAngle}
                 ledOn={ledOn}
-                ledColor="#C9A84C"
+                ledColor={primary}
                 size={380}
                 className="w-full"
               />
@@ -126,18 +155,18 @@ export default function HeroSection() {
               <button
                 key={p.name}
                 onClick={() => setPresetIdx(i)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
-                  i === presetIdx
-                    ? "bg-[#C9A84C] text-[#0D0B00]"
-                    : "border border-[#2E2800] text-[#F5EDD6]/50 hover:border-[#C9A84C]/50"
-                }`}
+                style={i === presetIdx
+                  ? { backgroundColor: primary, color: bgFrom }
+                  : { borderColor: borderColor, color: `${textColor}60` }
+                }
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${i !== presetIdx ? "border" : ""}`}
               >
                 {p.name}
               </button>
             ))}
           </div>
 
-          <p className="text-xs text-[#F5EDD6]/30 text-center">
+          <p style={{ color: `${textColor}40` }} className="text-xs text-center">
             Demo tương tác — nhấn để thay đổi tư thế giường
           </p>
         </div>
