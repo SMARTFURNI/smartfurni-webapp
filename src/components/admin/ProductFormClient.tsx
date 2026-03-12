@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Product, ProductCategory, ProductStatus, ProductVariant } from "@/lib/product-store";
 
@@ -74,6 +74,200 @@ function Field({ label, required, children, hint }: { label: string; required?: 
 const inputClass = "w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors";
 const selectClass = "w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 transition-colors";
 
+// ─── Image Gallery Component ──────────────────────────────────────────────────
+function ProductImageGallery({
+  productId,
+  initialImages,
+  initialCover,
+  onImagesChange,
+}: {
+  productId?: string;
+  initialImages: string[];
+  initialCover: string;
+  onImagesChange: (images: string[], cover: string) => void;
+}) {
+  const [images, setImages] = useState<string[]>(initialImages);
+  const [cover, setCover] = useState<string>(initialCover);
+  const [uploading, setUploading] = useState(false);
+  const [deletingIdx, setDeletingIdx] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function uploadFile(file: File) {
+    if (!productId) {
+      // For new products, use the blog upload endpoint temporarily
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        const { url } = await res.json();
+        return url as string;
+      }
+      throw new Error("Upload failed");
+    }
+
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("productId", productId);
+    const res = await fetch("/api/admin/products-mgmt/images", { method: "POST", body: fd });
+    if (res.ok) {
+      const data = await res.json();
+      return data.url as string;
+    }
+    throw new Error("Upload failed");
+  }
+
+  async function handleFiles(files: FileList | File[]) {
+    const fileArray = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (!fileArray.length) return;
+    setUploading(true);
+    try {
+      const urls: string[] = [];
+      for (const file of fileArray) {
+        const url = await uploadFile(file);
+        urls.push(url);
+      }
+      const newImages = [...images, ...urls];
+      const newCover = cover || newImages[0] || "";
+      setImages(newImages);
+      setCover(newCover);
+      onImagesChange(newImages, newCover);
+    } catch {
+      // silent
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDeleteImage(idx: number) {
+    const imageUrl = images[idx];
+    setDeletingIdx(idx);
+    try {
+      if (productId && imageUrl.startsWith("/uploads/")) {
+        await fetch("/api/admin/products-mgmt/images", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, imageUrl }),
+        });
+      }
+      const newImages = images.filter((_, i) => i !== idx);
+      const newCover = cover === imageUrl ? (newImages[0] || "") : cover;
+      setImages(newImages);
+      setCover(newCover);
+      onImagesChange(newImages, newCover);
+    } finally {
+      setDeletingIdx(null);
+    }
+  }
+
+  async function handleSetCover(imageUrl: string) {
+    if (productId) {
+      await fetch("/api/admin/products-mgmt/images", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, imageUrl }),
+      });
+    }
+    setCover(imageUrl);
+    onImagesChange(images, imageUrl);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    handleFiles(e.dataTransfer.files);
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Upload zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => !uploading && fileInputRef.current?.click()}
+        className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+          dragOver
+            ? "border-[#C9A84C] bg-[#C9A84C]/5"
+            : "border-[#C9A84C]/20 hover:border-[#C9A84C]/40 bg-[#0D0B00]/40"
+        }`}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => e.target.files && handleFiles(e.target.files)}
+          className="hidden"
+          disabled={uploading}
+        />
+        {uploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-xl animate-spin">↻</span>
+            <span className="text-xs text-[#C9A84C] animate-pulse">Đang tải lên...</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1 pointer-events-none">
+            <span className="text-2xl">📸</span>
+            <span className="text-xs text-gray-400 font-medium">
+              {dragOver ? "Thả ảnh vào đây" : "Click hoặc kéo thả ảnh vào đây"}
+            </span>
+            <span className="text-xs text-gray-700">JPG, PNG, WebP, AVIF · Tối đa 10MB · Nhiều ảnh cùng lúc</span>
+          </div>
+        )}
+      </div>
+
+      {/* Image grid */}
+      {images.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {images.map((img, idx) => (
+            <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-[#0D0B00]/60 border border-[#C9A84C]/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img} alt={`Ảnh ${idx + 1}`} className="w-full h-full object-cover" />
+
+              {/* Cover badge */}
+              {img === cover && (
+                <div className="absolute top-1.5 left-1.5 bg-[#C9A84C] text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                  ✓ Bìa
+                </div>
+              )}
+
+              {/* Overlay actions */}
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+                {img !== cover && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleSetCover(img); }}
+                    className="text-[10px] bg-[#C9A84C] text-black font-semibold px-2 py-1 rounded-lg hover:bg-[#E2C97E] transition-colors"
+                  >
+                    Đặt làm bìa
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleDeleteImage(idx); }}
+                  disabled={deletingIdx === idx}
+                  className="text-[10px] bg-red-500/80 text-white font-semibold px-2 py-1 rounded-lg hover:bg-red-500 transition-colors disabled:opacity-50"
+                >
+                  {deletingIdx === idx ? "Đang xóa..." : "🗑 Xóa ảnh"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {images.length === 0 && (
+        <p className="text-xs text-gray-700 text-center">Chưa có ảnh nào. Tải lên ảnh đầu tiên để hiển thị trên trang sản phẩm.</p>
+      )}
+
+      <p className="text-xs text-gray-700">
+        {images.length} ảnh · Ảnh bìa hiển thị trên danh sách sản phẩm · Hover vào ảnh để xóa hoặc đặt làm bìa
+      </p>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ProductFormClient({ product }: { product?: Product }) {
   const router = useRouter();
@@ -98,10 +292,9 @@ export default function ProductFormClient({ product }: { product?: Product }) {
       : [{ id: uid(), name: "", sku: "", stock: 0 }],
   });
 
-  const [uploading, setUploading] = useState(false);
+  const [productImages, setProductImages] = useState<string[]>(product?.images || []);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [previewImage, setPreviewImage] = useState(product?.coverImage || "");
 
   // ── Field updaters ──────────────────────────────────────────────────────────
   const set = useCallback((key: keyof FormState, val: unknown) => {
@@ -145,23 +338,10 @@ export default function ProductFormClient({ product }: { product?: Product }) {
     set("variants", arr.length ? arr : [{ id: uid(), name: "", sku: "", stock: 0 }]);
   }
 
-  // ── Image upload ─────────────────────────────────────────────────────────────
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      if (res.ok) {
-        const { url } = await res.json();
-        set("coverImage", url);
-        setPreviewImage(url);
-      }
-    } finally {
-      setUploading(false);
-    }
+  // ── Image gallery callback ───────────────────────────────────────────────────
+  function handleImagesChange(images: string[], cover: string) {
+    setProductImages(images);
+    set("coverImage", cover);
   }
 
   // ── Validation ───────────────────────────────────────────────────────────────
@@ -192,6 +372,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
         originalPrice: parseNumber(form.originalPrice) || parseNumber(form.price),
         cost: parseNumber(form.cost),
         coverImage: form.coverImage || undefined,
+        images: productImages,
         isFeatured: form.isFeatured,
         features: form.features.filter((f) => f.trim()),
         specs: Object.fromEntries(form.specs.filter((s) => s.key.trim() && s.value.trim()).map((s) => [s.key.trim(), s.value.trim()])),
@@ -526,49 +707,14 @@ export default function ProductFormClient({ product }: { product?: Product }) {
             </div>
           </Section>
 
-          {/* Cover image */}
-          <Section title="Ảnh bìa">
-            <div className="space-y-3">
-              {previewImage && (
-                <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-[#0D0B00]/60">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => { set("coverImage", ""); setPreviewImage(""); }}
-                    className="absolute top-2 right-2 w-7 h-7 bg-black/70 rounded-full flex items-center justify-center text-white text-sm hover:bg-red-500/80 transition-colors"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-              <label className={`flex flex-col items-center justify-center w-full ${previewImage ? "h-16" : "h-32"} border-2 border-dashed border-[#C9A84C]/20 rounded-xl cursor-pointer hover:border-[#C9A84C]/40 transition-colors bg-[#0D0B00]/40`}>
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
-                {uploading ? (
-                  <span className="text-xs text-[#C9A84C] animate-pulse">Đang tải lên...</span>
-                ) : (
-                  <>
-                    <span className="text-2xl mb-1">📷</span>
-                    <span className="text-xs text-gray-600">{previewImage ? "Thay ảnh khác" : "Click để tải ảnh lên"}</span>
-                    <span className="text-xs text-gray-700">JPG, PNG, WebP · Tối đa 5MB</span>
-                  </>
-                )}
-              </label>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-px bg-gray-800" />
-                <span className="text-xs text-gray-700">hoặc</span>
-                <div className="flex-1 h-px bg-gray-800" />
-              </div>
-              <Field label="URL ảnh trực tiếp">
-                <input
-                  type="url"
-                  value={form.coverImage}
-                  onChange={(e) => { set("coverImage", e.target.value); setPreviewImage(e.target.value); }}
-                  placeholder="https://example.com/image.jpg"
-                  className={`${inputClass} text-xs`}
-                />
-              </Field>
-            </div>
+          {/* Product Images Gallery */}
+          <Section title="Ảnh sản phẩm">
+            <ProductImageGallery
+              productId={product?.id}
+              initialImages={productImages}
+              initialCover={form.coverImage}
+              onImagesChange={handleImagesChange}
+            />
           </Section>
 
           {/* Summary card */}
@@ -580,6 +726,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
               <div className="flex justify-between"><span className="text-gray-600">Giá bán:</span><span className="text-[#C9A84C] font-semibold">{priceNum > 0 ? priceNum.toLocaleString("vi-VN") + "đ" : "—"}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Biên LN:</span><span className={margin > 0 ? "text-green-400" : "text-gray-700"}>{margin > 0 ? `${margin}%` : "—"}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Tồn kho:</span><span className="text-white">{totalStock} units ({form.variants.length} loại)</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Ảnh:</span><span className="text-white">{productImages.length} ảnh</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Tính năng:</span><span className="text-white">{form.features.filter((f) => f.trim()).length}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Thông số:</span><span className="text-white">{form.specs.filter((s) => s.key.trim()).length}</span></div>
             </div>

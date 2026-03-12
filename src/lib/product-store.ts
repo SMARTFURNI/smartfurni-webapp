@@ -139,7 +139,8 @@ let products: Product[] = [
     updatedAt: "2026-03-01T00:00:00Z",
     isFeatured: false,
     viewCount: 3240,
-    images: [],
+    coverImage: "/uploads/products/smartfurni-bed-main.webp",
+    images: ["/uploads/products/smartfurni-bed-main.webp"],
   },
   {
     id: "p2",
@@ -198,7 +199,8 @@ let products: Product[] = [
     updatedAt: "2026-03-05T00:00:00Z",
     isFeatured: true,
     viewCount: 8750,
-    images: [],
+    coverImage: "/uploads/products/smartfurni-bed-main.webp",
+    images: ["/uploads/products/smartfurni-bed-main.webp"],
   },
   {
     id: "p3",
@@ -255,7 +257,8 @@ let products: Product[] = [
     updatedAt: "2026-03-07T00:00:00Z",
     isFeatured: true,
     viewCount: 5120,
-    images: [],
+    coverImage: "/uploads/products/smartfurni-bed-main.webp",
+    images: ["/uploads/products/smartfurni-bed-main.webp"],
   },
   {
     id: "p4",
@@ -284,7 +287,8 @@ let products: Product[] = [
     updatedAt: "2026-03-08T00:00:00Z",
     isFeatured: true,
     viewCount: 12400,
-    images: [],
+    coverImage: "/uploads/products/smartfurni-bed-main.webp",
+    images: ["/uploads/products/smartfurni-bed-main.webp"],
   },
   {
     id: "p5",
