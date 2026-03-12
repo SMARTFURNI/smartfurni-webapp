@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getProductById, updateProduct } from "@/lib/product-store";
 import { v2 as cloudinary } from "cloudinary";
+import { initDbOnce } from "@/lib/db-init";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -12,6 +13,7 @@ cloudinary.config({
 
 // POST /api/admin/products-mgmt/images — upload ảnh sản phẩm lên Cloudinary
 export async function POST(request: NextRequest) {
+  await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -84,6 +86,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/admin/products-mgmt/images — xóa ảnh sản phẩm khỏi Cloudinary
 export async function DELETE(request: NextRequest) {
+  await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -141,6 +144,7 @@ export async function DELETE(request: NextRequest) {
 
 // PATCH /api/admin/products-mgmt/images — set cover image
 export async function PATCH(request: NextRequest) {
+  await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

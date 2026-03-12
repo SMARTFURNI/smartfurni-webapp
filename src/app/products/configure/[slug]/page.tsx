@@ -4,6 +4,7 @@ import { getTheme } from "@/lib/theme-store";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import ProductConfiguratorClient from "@/components/landing/ProductConfiguratorClient";
+import { initDbOnce } from "@/lib/db-init";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ProductConfiguratorPage({ params }: Props) {
+  await initDbOnce();
   const { slug } = await params;
   const theme = getTheme();
   const product = getAllProducts().find((p) => p.slug === slug && p.category !== "accessory");

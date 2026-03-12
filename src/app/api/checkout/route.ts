@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder } from "@/lib/order-store";
 import type { PaymentMethod } from "@/lib/order-store";
+import { initDbOnce } from "@/lib/db-init";
 
 export async function POST(req: NextRequest) {
+  await initDbOnce();
   try {
     const body = await req.json();
     const {

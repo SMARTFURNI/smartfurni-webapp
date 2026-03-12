@@ -5,10 +5,12 @@ import { getSidebarStats } from "@/lib/sidebar-stats";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import OrderFormClient from "@/components/admin/OrderFormClient";
+import { initDbOnce } from "@/lib/db-init";
 
 export const metadata = { title: "Chỉnh sửa đơn hàng" };
 
 export default async function EditOrderPage({ params }: { params: Promise<{ id: string }> }) {
+  await initDbOnce();
   await requireAdmin();
   const { id } = await params;
   const order = getOrderById(id);

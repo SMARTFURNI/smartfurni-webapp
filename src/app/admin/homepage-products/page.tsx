@@ -7,10 +7,12 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import HomepageProductsClient from "@/components/admin/HomepageProductsClient";
 import { getHomepageProductConfig } from "@/lib/homepage-products-store";
 import { getAllProducts } from "@/lib/product-store";
+import { initDbOnce } from "@/lib/db-init";
 
 export const metadata = { title: "Sản phẩm trang chủ | SmartFurni Admin" };
 
 export default async function HomepageProductsPage() {
+  await initDbOnce();
   const cookieStore = await cookies();
   const token = cookieStore.get("sf_admin_session")?.value;
   if (!token || !verifySessionToken(token)) redirect("/admin/login");

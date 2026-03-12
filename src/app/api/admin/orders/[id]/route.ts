@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getOrderById, updateOrderStatus, updateOrder, deleteOrder } from "@/lib/order-store";
 import type { OrderStatus } from "@/lib/order-store";
+import { initDbOnce } from "@/lib/db-init";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
@@ -13,6 +15,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
@@ -30,6 +33,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;

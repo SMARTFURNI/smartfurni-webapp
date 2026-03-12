@@ -3,6 +3,7 @@ import { getTheme } from "@/lib/theme-store";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import ProductsListClient from "@/components/landing/ProductsListClient";
+import { initDbOnce } from "@/lib/db-init";
 
 export const dynamic = "force-dynamic";
 

@@ -1,34 +1,16 @@
 import { BLOG_POSTS, type BlogPost } from "./blog-data";
-import fs from "fs";
-import path from "path";
+import { dbLoadAll, dbSaveOne, dbDeleteOne, dbSaveAll } from "./db-store";
+import { registerDbLoader } from "./db-init";
 
-// ─── Persistence Layer ──────────────────────────────────────────────────────
-const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || "/data";
-const CONTACTS_FILE = path.join(DATA_DIR, "contacts.json");
-
-function saveContactsToDisk(data: ContactMessage[]): void {
-  try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(CONTACTS_FILE, JSON.stringify(data, null, 2), "utf-8");
-  } catch {
-    // Silently fail if volume not available (dev environment)
-  }
+// ─── Persistence Layer (PostgreSQL) ─────────────────────────────────────────
+function saveContact(contact: ContactMessage): void {
+  dbSaveOne("contacts", contact);
+}
+function deleteContactFromDb(id: string): void {
+  dbDeleteOne("contacts", id);
 }
 
-function loadContactsFromDisk(defaultData: ContactMessage[]): ContactMessage[] {
-  try {
-    if (fs.existsSync(CONTACTS_FILE)) {
-      const raw = fs.readFileSync(CONTACTS_FILE, "utf-8");
-      const parsed = JSON.parse(raw) as ContactMessage[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    // Fall back to default data
-  }
-  return defaultData;
-}
-
-// In-memory store (resets on server restart - use a database in production)
+// In-memory store
 let posts: BlogPost[] = [...BLOG_POSTS];
 const DEFAULT_CONTACTS: ContactMessage[] = [
   {
@@ -113,8 +95,20 @@ const DEFAULT_CONTACTS: ContactMessage[] = [
   },
 ];
 
-// Load contacts from disk (persist read/unread state across restarts)
-let contacts: ContactMessage[] = loadContactsFromDisk(DEFAULT_CONTACTS);
+// In-memory contacts — populated from PostgreSQL on first request
+let contacts: ContactMessage[] = [...DEFAULT_CONTACTS];
+
+// Register DB loader for contacts
+registerDbLoader(async () => {
+  const rows = await dbLoadAll<ContactMessage>("contacts");
+  if (rows && rows.length > 0) {
+    contacts = rows;
+    console.log(`[admin-store] Loaded ${contacts.length} contacts from database`);
+  } else if (rows !== null) {
+    console.log("[admin-store] Seeding database with default contacts...");
+    dbSaveAll("contacts", DEFAULT_CONTACTS);
+  }
+});
 
 // Activity log for dashboard
 export interface ActivityLog {
@@ -255,13 +249,13 @@ export function markContactRead(id: string): void {
   const contact = contacts.find((c) => c.id === id);
   if (contact) {
     contact.read = true;
-    saveContactsToDisk(contacts);
+    saveContact(contact);
   }
 }
 
 export function deleteContact(id: string): void {
   contacts = contacts.filter((c) => c.id !== id);
-  saveContactsToDisk(contacts);
+  deleteContactFromDb(id);
 }
 
 export function addContact(msg: Omit<ContactMessage, "id" | "createdAt" | "read">): ContactMessage {
@@ -272,7 +266,7 @@ export function addContact(msg: Omit<ContactMessage, "id" | "createdAt" | "read"
     read: false,
   };
   contacts = [newMsg, ...contacts];
-  saveContactsToDisk(contacts);
+  saveContact(newMsg);
   addActivityLog({ type: "contact_received", description: `Tin nhắn mới từ ${msg.name}`, meta: msg.subject });
   return newMsg;
 }

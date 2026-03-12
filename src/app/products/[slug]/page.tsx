@@ -3,6 +3,7 @@ import { getProductBySlug, getRelatedProducts } from "@/lib/product-store";
 import { getTheme } from "@/lib/theme-store";
 import Navbar from "@/components/landing/Navbar";
 import ProductDetailClient from "@/components/landing/ProductDetailClient";
+import { initDbOnce } from "@/lib/db-init";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ProductDetailPage({ params }: Props) {
+  await initDbOnce();
   const { slug } = await params;
   const product = getProductBySlug(slug);
   if (!product) notFound();

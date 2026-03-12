@@ -1,6 +1,6 @@
 // ─── Order Data Model ──────────────────────────────────────────────────────
-import fs from "fs";
-import path from "path";
+import { dbLoadAll, dbSaveOne, dbDeleteOne, dbSaveAll } from "./db-store";
+import { registerDbLoader } from "./db-init";
 
 export type OrderStatus = "pending" | "confirmed" | "processing" | "shipping" | "delivered" | "cancelled" | "refunded";
 export type PaymentMethod = "cod" | "bank_transfer" | "momo" | "vnpay" | "credit_card";
@@ -76,30 +76,12 @@ export interface OrderDashboardStats {
   orders: Order[];
 }
 
-// ─── Persistence Layer ──────────────────────────────────────────────────────
-const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || "/data";
-const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
-
-function saveOrdersToDisk(data: Order[]): void {
-  try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(ORDERS_FILE, JSON.stringify(data, null, 2), "utf-8");
-  } catch {
-    // Silently fail if volume not available (dev environment)
-  }
+// ─── Persistence Layer (PostgreSQL) ─────────────────────────────────────────
+function saveOrder(order: Order): void {
+  dbSaveOne("orders", order);
 }
-
-function loadOrdersFromDisk(defaultData: Order[]): Order[] {
-  try {
-    if (fs.existsSync(ORDERS_FILE)) {
-      const raw = fs.readFileSync(ORDERS_FILE, "utf-8");
-      const parsed = JSON.parse(raw) as Order[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    // Fall back to default data
-  }
-  return defaultData;
+function deleteOrderFromDb(id: string): void {
+  dbDeleteOne("orders", id);
 }
 
 // ─── Sample Data ──────────────────────────────────────────────────────
@@ -585,8 +567,20 @@ const DEFAULT_ORDERS: Order[] = [
   },
 ];
 
-// Load orders from disk (persist status changes across restarts)
-let orders: Order[] = loadOrdersFromDisk(DEFAULT_ORDERS);
+// In-memory orders — populated from PostgreSQL on first request
+let orders: Order[] = [...DEFAULT_ORDERS];
+
+// Register DB loader for orders
+registerDbLoader(async () => {
+  const rows = await dbLoadAll<Order>("orders");
+  if (rows && rows.length > 0) {
+    orders = rows;
+    console.log(`[order-store] Loaded ${orders.length} orders from database`);
+  } else if (rows !== null) {
+    console.log("[order-store] Seeding database with default orders...");
+    dbSaveAll("orders", DEFAULT_ORDERS);
+  }
+});
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
@@ -604,7 +598,7 @@ export function updateOrderStatus(id: string, status: OrderStatus, note?: string
   orders[idx].status = status;
   orders[idx].updatedAt = new Date().toISOString();
   orders[idx].timeline.push({ status, time: new Date().toISOString(), note });
-  saveOrdersToDisk(orders);
+  saveOrder(orders[idx]);
   return orders[idx];
 }
 
@@ -620,7 +614,7 @@ export function updateOrder(id: string, updates: Partial<Order>): Order | null {
     updates.total = subtotal + shippingFee - discount;
   }
   orders[idx] = { ...orders[idx], ...updates, updatedAt: new Date().toISOString() };
-  saveOrdersToDisk(orders);
+  saveOrder(orders[idx]);
   return orders[idx];
 }
 
@@ -678,7 +672,7 @@ export function createOrder(data: {
   };
 
   orders.unshift(newOrder);
-  saveOrdersToDisk(orders);
+  saveOrder(newOrder);
   return newOrder;
 }
 
@@ -686,7 +680,7 @@ export function deleteOrder(id: string): boolean {
   const idx = orders.findIndex((o) => o.id === id);
   if (idx === -1) return false;
   orders.splice(idx, 1);
-  saveOrdersToDisk(orders);
+  deleteOrderFromDb(id);
   return true;
 }
 
