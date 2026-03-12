@@ -17,7 +17,6 @@ interface NavItem {
   exact: boolean;
   subItems?: { href: string; label: string }[];
   badgeKey?: keyof SidebarStats;
-  badgeLabel?: string;
   badgeColor?: string;
 }
 
@@ -30,7 +29,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tổng quan",
     items: [
-      { href: "/admin", label: "Dashboard", icon: "📊", exact: true },
+      { href: "/admin", label: "Dashboard", icon: "▦", exact: true },
     ],
   },
   {
@@ -39,14 +38,13 @@ const NAV_GROUPS: NavGroup[] = [
       {
         href: "/admin/posts",
         label: "Bài viết",
-        icon: "📝",
+        icon: "✦",
         exact: false,
         subItems: [
           { href: "/admin/posts/new", label: "Viết bài mới" },
           { href: "/admin/posts", label: "Tất cả bài viết" },
         ],
-        badgeKey: "draftPosts" as keyof SidebarStats,
-        badgeLabel: "nháp",
+        badgeKey: "draftPosts",
         badgeColor: "bg-gray-600",
       },
     ],
@@ -57,27 +55,25 @@ const NAV_GROUPS: NavGroup[] = [
       {
         href: "/admin/products",
         label: "Sản phẩm",
-        icon: "🛏️",
+        icon: "⬡",
         exact: false,
         subItems: [
           { href: "/admin/products/new", label: "Thêm sản phẩm" },
           { href: "/admin/products", label: "Danh sách sản phẩm" },
         ],
-        badgeKey: "lowStockProducts" as keyof SidebarStats,
-        badgeLabel: "sắp hết",
+        badgeKey: "lowStockProducts",
         badgeColor: "bg-orange-500",
       },
       {
         href: "/admin/orders",
         label: "Đơn hàng",
-        icon: "📋",
+        icon: "◈",
         exact: false,
         subItems: [
           { href: "/admin/orders/new", label: "Tạo đơn hàng" },
           { href: "/admin/orders", label: "Tất cả đơn hàng" },
         ],
-        badgeKey: "pendingOrders" as keyof SidebarStats,
-        badgeLabel: "chờ",
+        badgeKey: "pendingOrders",
         badgeColor: "bg-yellow-500",
       },
     ],
@@ -88,16 +84,15 @@ const NAV_GROUPS: NavGroup[] = [
       {
         href: "/admin/contacts",
         label: "Liên hệ",
-        icon: "💬",
+        icon: "◉",
         exact: false,
-        badgeKey: "unreadContacts" as keyof SidebarStats,
-        badgeLabel: "mới",
+        badgeKey: "unreadContacts",
         badgeColor: "bg-red-500",
       },
       {
         href: "/admin/users",
         label: "Người dùng",
-        icon: "👥",
+        icon: "◎",
         exact: false,
         subItems: [
           { href: "/admin/users/new", label: "Thêm khách hàng" },
@@ -109,21 +104,20 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Hệ thống",
     items: [
-      { href: "/admin/homepage-products", label: "Sản phẩm trang chủ", icon: "🏠", exact: false },
-      { href: "/admin/appearance", label: "Giao diện", icon: "🎨", exact: false },
-      { href: "/admin/settings", label: "Cài đặt", icon: "⚙️", exact: false },
+      { href: "/admin/homepage-products", label: "Sản phẩm trang chủ", icon: "⌂", exact: false },
+      { href: "/admin/appearance", label: "Giao diện", icon: "◐", exact: false },
+      { href: "/admin/settings", label: "Cài đặt", icon: "◌", exact: false },
     ],
   },
 ];
 
-export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats; unreadCount?: number }) {
+export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-  // Auto-expand active group
   useEffect(() => {
     const active: string[] = [];
     NAV_GROUPS.forEach((g) =>
@@ -154,57 +148,62 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats; unr
     );
   }
 
-  const totalAlerts =
-    (stats.unreadContacts || 0) + (stats.pendingOrders || 0) + (stats.lowStockProducts || 0);
+  const totalAlerts = (stats.unreadContacts || 0) + (stats.pendingOrders || 0) + (stats.lowStockProducts || 0);
 
   return (
     <aside
-      className={`${collapsed ? "w-16" : "w-64"} min-h-screen bg-[#0D0B00] border-r border-[#C9A84C]/10 flex flex-col transition-all duration-200 flex-shrink-0`}
+      className={`${collapsed ? "w-[60px]" : "w-[220px]"} min-h-screen bg-[#0A0800] border-r border-[#C9A84C]/8 flex flex-col transition-all duration-200 flex-shrink-0`}
     >
-      {/* Logo + Collapse toggle */}
-      <div className="p-4 border-b border-[#C9A84C]/10 flex items-center justify-between">
+      {/* Logo */}
+      <div className={`h-14 border-b border-[#C9A84C]/8 flex items-center ${collapsed ? "justify-center px-2" : "px-4"} gap-3`}>
         {!collapsed && (
-          <Link href="/admin" className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] flex items-center justify-center shadow-md flex-shrink-0">
-              <span className="text-[#0D0B00] font-bold text-sm">SF</span>
+          <Link href="/admin" className="flex items-center gap-2.5 flex-1 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] flex items-center justify-center flex-shrink-0">
+              <span className="text-[#0D0B00] font-black text-[10px] tracking-tight">SF</span>
             </div>
             <div className="min-w-0">
-              <div className="text-[#E2C97E] font-bold text-xs tracking-widest truncate">SMARTFURNI</div>
-              <div className="text-gray-600 text-xs">Admin Panel</div>
+              <div className="text-[#E2C97E] font-bold text-[11px] tracking-widest truncate leading-tight">SMARTFURNI</div>
+              <div className="text-gray-700 text-[10px] leading-tight">Admin</div>
             </div>
           </Link>
         )}
         {collapsed && (
-          <Link href="/admin" className="mx-auto">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] flex items-center justify-center shadow-md relative">
-              <span className="text-[#0D0B00] font-bold text-sm">SF</span>
-              {totalAlerts > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                  {totalAlerts > 9 ? "9+" : totalAlerts}
-                </span>
-              )}
+          <Link href="/admin" className="relative">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] flex items-center justify-center">
+              <span className="text-[#0D0B00] font-black text-[10px]">SF</span>
             </div>
+            {totalAlerts > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold">
+                {totalAlerts > 9 ? "9+" : totalAlerts}
+              </span>
+            )}
           </Link>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="text-gray-600 hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-white/5 flex-shrink-0"
-          title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+          className="text-gray-700 hover:text-gray-400 transition-colors p-1 rounded flex-shrink-0"
+          title={collapsed ? "Mở rộng" : "Thu gọn"}
         >
-          <span className="text-xs">{collapsed ? "→" : "←"}</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            {collapsed
+              ? <path d="M5 2l5 5-5 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              : <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+            }
+          </svg>
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 overflow-y-auto space-y-4">
+      <nav className="flex-1 py-3 overflow-y-auto">
         {NAV_GROUPS.map((group) => (
-          <div key={group.label}>
+          <div key={group.label} className="mb-1">
             {!collapsed && (
-              <p className="text-xs text-gray-700 uppercase tracking-widest font-semibold px-3 mb-1.5">
+              <p className="text-[10px] text-gray-700 uppercase tracking-widest font-semibold px-4 py-1.5 mt-1">
                 {group.label}
               </p>
             )}
-            <div className="space-y-0.5">
+            {collapsed && <div className="h-px bg-[#C9A84C]/5 mx-3 my-2" />}
+            <div className="px-2 space-y-0.5">
               {group.items.map((item) => {
                 const active = isActive(item);
                 const badgeCount = item.badgeKey ? (stats[item.badgeKey] || 0) : 0;
@@ -213,29 +212,31 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats; unr
 
                 return (
                   <div key={item.href}>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5">
                       <Link
                         href={item.href}
-                        className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                        className={`flex-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all ${
                           active
-                            ? "bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/20"
-                            : "text-gray-400 hover:text-white hover:bg-white/5"
+                            ? "bg-[#C9A84C]/12 text-[#C9A84C]"
+                            : "text-gray-500 hover:text-gray-200 hover:bg-white/4"
                         }`}
                         title={collapsed ? item.label : undefined}
                       >
-                        <span className="text-base flex-shrink-0">{item.icon}</span>
+                        <span className={`text-sm flex-shrink-0 ${active ? "text-[#C9A84C]" : "text-gray-600"}`}>
+                          {item.icon}
+                        </span>
                         {!collapsed && (
                           <>
-                            <span className="flex-1 truncate">{item.label}</span>
+                            <span className="flex-1 truncate font-medium">{item.label}</span>
                             {badgeCount > 0 && (
-                              <span className={`${item.badgeColor || "bg-red-500"} text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center font-bold leading-none`}>
+                              <span className={`${item.badgeColor || "bg-red-500"} text-white text-[10px] rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center font-bold`}>
                                 {badgeCount > 99 ? "99+" : badgeCount}
                               </span>
                             )}
                           </>
                         )}
                         {collapsed && badgeCount > 0 && (
-                          <span className="absolute ml-4 -mt-4 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                          <span className="absolute ml-3 -mt-3 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold">
                             {badgeCount > 9 ? "9+" : badgeCount}
                           </span>
                         )}
@@ -243,24 +244,28 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats; unr
                       {!collapsed && hasSubItems && (
                         <button
                           onClick={() => toggleExpand(item.href)}
-                          className="text-gray-600 hover:text-gray-300 p-1.5 rounded-lg hover:bg-white/5 transition-colors flex-shrink-0"
+                          className="text-gray-700 hover:text-gray-400 p-1.5 rounded transition-colors flex-shrink-0"
                         >
-                          <span className={`text-xs transition-transform inline-block ${isExpanded ? "rotate-90" : ""}`}>▶</span>
+                          <svg
+                            width="10" height="10" viewBox="0 0 10 10" fill="currentColor"
+                            className={`transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}
+                          >
+                            <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                          </svg>
                         </button>
                       )}
                     </div>
 
-                    {/* Sub-items */}
                     {!collapsed && hasSubItems && isExpanded && (
-                      <div className="ml-4 mt-0.5 space-y-0.5 border-l border-[#C9A84C]/10 pl-3">
+                      <div className="ml-5 mt-0.5 space-y-0.5 border-l border-[#C9A84C]/8 pl-3">
                         {item.subItems!.map((sub) => (
                           <Link
                             key={sub.href}
                             href={sub.href}
-                            className={`block px-3 py-2 rounded-lg text-xs transition-colors ${
+                            className={`block px-2 py-1.5 rounded-md text-[12px] transition-colors ${
                               pathname === sub.href
-                                ? "text-[#C9A84C] bg-[#C9A84C]/8"
-                                : "text-gray-500 hover:text-gray-200 hover:bg-white/5"
+                                ? "text-[#C9A84C]"
+                                : "text-gray-600 hover:text-gray-300"
                             }`}
                           >
                             {sub.label}
@@ -276,25 +281,25 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats; unr
         ))}
       </nav>
 
-      {/* Bottom actions */}
-      <div className="p-3 border-t border-[#C9A84C]/10 space-y-1">
+      {/* Bottom */}
+      <div className="px-2 pb-3 border-t border-[#C9A84C]/8 pt-2 space-y-0.5">
         <Link
           href="/"
           target="_blank"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors"
+          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-gray-600 hover:text-gray-300 hover:bg-white/4 transition-colors"
           title={collapsed ? "Xem website" : undefined}
         >
-          <span className="flex-shrink-0">🌐</span>
-          {!collapsed && <span>Xem website</span>}
+          <span className="text-sm flex-shrink-0">↗</span>
+          {!collapsed && <span className="font-medium">Xem website</span>}
         </Link>
         <button
           onClick={handleLogout}
           disabled={loggingOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:text-red-400 hover:bg-red-500/5 transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-gray-600 hover:text-red-400 hover:bg-red-500/5 transition-colors"
           title={collapsed ? "Đăng xuất" : undefined}
         >
-          <span className="flex-shrink-0">🚪</span>
-          {!collapsed && <span>{loggingOut ? "Đang thoát..." : "Đăng xuất"}</span>}
+          <span className="text-sm flex-shrink-0">⏻</span>
+          {!collapsed && <span className="font-medium">{loggingOut ? "Đang thoát..." : "Đăng xuất"}</span>}
         </button>
       </div>
     </aside>

@@ -1,4 +1,6 @@
-// ─── Order Data Model ─────────────────────────────────────────────────────────
+// ─── Order Data Model ──────────────────────────────────────────────────────
+import fs from "fs";
+import path from "path";
 
 export type OrderStatus = "pending" | "confirmed" | "processing" | "shipping" | "delivered" | "cancelled" | "refunded";
 export type PaymentMethod = "cod" | "bank_transfer" | "momo" | "vnpay" | "credit_card";
@@ -74,11 +76,35 @@ export interface OrderDashboardStats {
   orders: Order[];
 }
 
-// ─── Sample Data ──────────────────────────────────────────────────────────────
+// ─── Persistence Layer ──────────────────────────────────────────────────────
+const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || "/data";
+const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 
+function saveOrdersToDisk(data: Order[]): void {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(ORDERS_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch {
+    // Silently fail if volume not available (dev environment)
+  }
+}
+
+function loadOrdersFromDisk(defaultData: Order[]): Order[] {
+  try {
+    if (fs.existsSync(ORDERS_FILE)) {
+      const raw = fs.readFileSync(ORDERS_FILE, "utf-8");
+      const parsed = JSON.parse(raw) as Order[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // Fall back to default data
+  }
+  return defaultData;
+}
+
+// ─── Sample Data ──────────────────────────────────────────────────────
 const makeTimeline = (statuses: { status: OrderStatus; time: string; note?: string }[]): OrderTimeline[] => statuses;
-
-let orders: Order[] = [
+const DEFAULT_ORDERS: Order[] = [
   {
     id: "ord1",
     orderNumber: "SF-2026-0001",
@@ -555,9 +581,12 @@ let orders: Order[] = [
     ]),
     createdAt: "2026-03-08T10:00:00Z",
     updatedAt: "2026-03-08T10:00:00Z",
-    notes: "Đơn mới hôm nay",
+     notes: "Đơn mới hôm nay",
   },
 ];
+
+// Load orders from disk (persist status changes across restarts)
+let orders: Order[] = loadOrdersFromDisk(DEFAULT_ORDERS);
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
@@ -575,6 +604,7 @@ export function updateOrderStatus(id: string, status: OrderStatus, note?: string
   orders[idx].status = status;
   orders[idx].updatedAt = new Date().toISOString();
   orders[idx].timeline.push({ status, time: new Date().toISOString(), note });
+  saveOrdersToDisk(orders);
   return orders[idx];
 }
 
@@ -590,6 +620,7 @@ export function updateOrder(id: string, updates: Partial<Order>): Order | null {
     updates.total = subtotal + shippingFee - discount;
   }
   orders[idx] = { ...orders[idx], ...updates, updatedAt: new Date().toISOString() };
+  saveOrdersToDisk(orders);
   return orders[idx];
 }
 
@@ -647,6 +678,7 @@ export function createOrder(data: {
   };
 
   orders.unshift(newOrder);
+  saveOrdersToDisk(orders);
   return newOrder;
 }
 
@@ -654,6 +686,7 @@ export function deleteOrder(id: string): boolean {
   const idx = orders.findIndex((o) => o.id === id);
   if (idx === -1) return false;
   orders.splice(idx, 1);
+  saveOrdersToDisk(orders);
   return true;
 }
 

@@ -1,8 +1,36 @@
 import { BLOG_POSTS, type BlogPost } from "./blog-data";
+import fs from "fs";
+import path from "path";
+
+// ─── Persistence Layer ──────────────────────────────────────────────────────
+const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || "/data";
+const CONTACTS_FILE = path.join(DATA_DIR, "contacts.json");
+
+function saveContactsToDisk(data: ContactMessage[]): void {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(CONTACTS_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch {
+    // Silently fail if volume not available (dev environment)
+  }
+}
+
+function loadContactsFromDisk(defaultData: ContactMessage[]): ContactMessage[] {
+  try {
+    if (fs.existsSync(CONTACTS_FILE)) {
+      const raw = fs.readFileSync(CONTACTS_FILE, "utf-8");
+      const parsed = JSON.parse(raw) as ContactMessage[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // Fall back to default data
+  }
+  return defaultData;
+}
 
 // In-memory store (resets on server restart - use a database in production)
 let posts: BlogPost[] = [...BLOG_POSTS];
-let contacts: ContactMessage[] = [
+const DEFAULT_CONTACTS: ContactMessage[] = [
   {
     id: "1",
     name: "Nguyễn Văn An",
@@ -84,6 +112,9 @@ let contacts: ContactMessage[] = [
     read: true,
   },
 ];
+
+// Load contacts from disk (persist read/unread state across restarts)
+let contacts: ContactMessage[] = loadContactsFromDisk(DEFAULT_CONTACTS);
 
 // Activity log for dashboard
 export interface ActivityLog {
@@ -222,11 +253,15 @@ export function getAllContacts(): ContactMessage[] {
 
 export function markContactRead(id: string): void {
   const contact = contacts.find((c) => c.id === id);
-  if (contact) contact.read = true;
+  if (contact) {
+    contact.read = true;
+    saveContactsToDisk(contacts);
+  }
 }
 
 export function deleteContact(id: string): void {
   contacts = contacts.filter((c) => c.id !== id);
+  saveContactsToDisk(contacts);
 }
 
 export function addContact(msg: Omit<ContactMessage, "id" | "createdAt" | "read">): ContactMessage {
@@ -237,6 +272,7 @@ export function addContact(msg: Omit<ContactMessage, "id" | "createdAt" | "read"
     read: false,
   };
   contacts = [newMsg, ...contacts];
+  saveContactsToDisk(contacts);
   addActivityLog({ type: "contact_received", description: `Tin nhắn mới từ ${msg.name}`, meta: msg.subject });
   return newMsg;
 }
