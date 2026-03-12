@@ -61,11 +61,27 @@ export interface OrderDashboardStats {
     totalShippingFee: number;
     totalDiscount: number;
     avgOrderValue: number;
-    conversionRate: number; // delivered / total
+    conversionRate: number;
     todayOrders: number;
     todayRevenue: number;
     weekOrders: number;
     weekRevenue: number;
+    // Period-over-period
+    prevWeekRevenue: number;
+    prevWeekOrders: number;
+    thisMonthRevenue: number;
+    prevMonthRevenue: number;
+    revenueGrowthWeek: number; // % vs prev week
+    revenueGrowthMonth: number; // % vs prev month
+    ordersGrowthWeek: number; // % vs prev week
+    // Repeat customers
+    repeatCustomerCount: number;
+    repeatCustomerRate: number;
+    // Avg fulfillment time (hours)
+    avgConfirmHours: number;
+    avgProcessHours: number;
+    avgShipHours: number;
+    avgDeliverHours: number;
   };
   ordersByStatus: { status: OrderStatus; label: string; count: number; color: string }[];
   ordersByPayment: { method: PaymentMethod; label: string; count: number; revenue: number; color: string }[];
@@ -74,6 +90,12 @@ export interface OrderDashboardStats {
   topProducts: { productName: string; quantity: number; revenue: number }[];
   recentOrders: Order[];
   orders: Order[];
+  // Group 2: Advanced analytics
+  revenueByHour: { hour: number; label: string; count: number; revenue: number }[];
+  revenueByDayOfWeek: { day: number; label: string; count: number; revenue: number }[];
+  funnelData: { stage: string; label: string; count: number; pct: number; color: string; avgHours: number }[];
+  // Group 3: Smart alerts
+  alerts: { id: string; type: 'warning' | 'error' | 'info'; title: string; message: string; href?: string }[];
 }
 
 // ─── Persistence Layer (PostgreSQL) ─────────────────────────────────────────
@@ -690,13 +712,122 @@ export function getOrderDashboardStats(): OrderDashboardStats {
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  // Month boundaries
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-  const totalRevenue = orders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0);
+  const paidOrders = orders.filter((o) => o.paymentStatus === "paid");
+  const totalRevenue = paidOrders.reduce((s, o) => s + o.total, 0);
   const deliveredOrders = orders.filter((o) => o.status === "delivered");
   const conversionRate = orders.length > 0 ? Math.round((deliveredOrders.length / orders.length) * 100) : 0;
 
   const todayOrders = orders.filter((o) => o.createdAt.startsWith(todayStr));
   const weekOrders = orders.filter((o) => new Date(o.createdAt) >= weekAgo);
+  const prevWeekOrders = orders.filter((o) => {
+    const d = new Date(o.createdAt);
+    return d >= twoWeeksAgo && d < weekAgo;
+  });
+
+  // Period-over-period
+  const weekRevenue = weekOrders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0);
+  const prevWeekRevenue = prevWeekOrders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0);
+  const thisMonthRevenue = orders.filter((o) => new Date(o.createdAt) >= thisMonthStart && o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0);
+  const prevMonthRevenue = orders.filter((o) => { const d = new Date(o.createdAt); return d >= prevMonthStart && d <= prevMonthEnd && o.paymentStatus === "paid"; }).reduce((s, o) => s + o.total, 0);
+  const revenueGrowthWeek = prevWeekRevenue > 0 ? Math.round(((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100) : 0;
+  const revenueGrowthMonth = prevMonthRevenue > 0 ? Math.round(((thisMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) : 0;
+  const ordersGrowthWeek = prevWeekOrders.length > 0 ? Math.round(((weekOrders.length - prevWeekOrders.length) / prevWeekOrders.length) * 100) : 0;
+
+  // Repeat customers
+  const emailCount: Record<string, number> = {};
+  orders.forEach((o) => { emailCount[o.customerEmail] = (emailCount[o.customerEmail] || 0) + 1; });
+  const repeatCustomerCount = Object.values(emailCount).filter((c) => c > 1).length;
+  const uniqueCustomers = Object.keys(emailCount).length;
+  const repeatCustomerRate = uniqueCustomers > 0 ? Math.round((repeatCustomerCount / uniqueCustomers) * 100) : 0;
+
+  // Avg fulfillment times (hours) from timeline
+  function avgHoursBetween(fromStatus: OrderStatus, toStatus: OrderStatus): number {
+    const diffs: number[] = [];
+    orders.forEach((o) => {
+      const from = o.timeline.find((t) => t.status === fromStatus);
+      const to = o.timeline.find((t) => t.status === toStatus);
+      if (from && to) {
+        const diff = (new Date(to.time).getTime() - new Date(from.time).getTime()) / 3600000;
+        if (diff >= 0) diffs.push(diff);
+      }
+    });
+    return diffs.length > 0 ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) : 0;
+  }
+  const avgConfirmHours = avgHoursBetween("pending", "confirmed");
+  const avgProcessHours = avgHoursBetween("confirmed", "processing");
+  const avgShipHours = avgHoursBetween("processing", "shipping");
+  const avgDeliverHours = avgHoursBetween("shipping", "delivered");
+
+  // Revenue by hour (0-23)
+  const hourMap: Record<number, { count: number; revenue: number }> = {};
+  for (let h = 0; h < 24; h++) hourMap[h] = { count: 0, revenue: 0 };
+  orders.forEach((o) => {
+    const h = new Date(o.createdAt).getHours();
+    hourMap[h].count++;
+    if (o.paymentStatus === "paid") hourMap[h].revenue += o.total;
+  });
+  const revenueByHour = Array.from({ length: 24 }, (_, h) => ({
+    hour: h,
+    label: `${h.toString().padStart(2, "0")}h`,
+    count: hourMap[h].count,
+    revenue: hourMap[h].revenue,
+  }));
+
+  // Revenue by day of week (0=Sun)
+  const dowLabels = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+  const dowMap: Record<number, { count: number; revenue: number }> = {};
+  for (let d = 0; d < 7; d++) dowMap[d] = { count: 0, revenue: 0 };
+  orders.forEach((o) => {
+    const d = new Date(o.createdAt).getDay();
+    dowMap[d].count++;
+    if (o.paymentStatus === "paid") dowMap[d].revenue += o.total;
+  });
+  const revenueByDayOfWeek = Array.from({ length: 7 }, (_, d) => ({
+    day: d,
+    label: dowLabels[d],
+    count: dowMap[d].count,
+    revenue: dowMap[d].revenue,
+  }));
+
+  // Funnel data
+  const funnelStages: { stage: OrderStatus; label: string; color: string; nextStage?: OrderStatus }[] = [
+    { stage: "pending", label: "Chờ xác nhận", color: "#F59E0B", nextStage: "confirmed" },
+    { stage: "confirmed", label: "Đã xác nhận", color: "#3B82F6", nextStage: "processing" },
+    { stage: "processing", label: "Đang xử lý", color: "#8B5CF6", nextStage: "shipping" },
+    { stage: "shipping", label: "Đang giao", color: "#06B6D4", nextStage: "delivered" },
+    { stage: "delivered", label: "Đã giao", color: "#22C55E" },
+  ];
+  const reachedStage = (o: Order, stage: OrderStatus) => o.timeline.some((t) => t.status === stage);
+  const funnelData = funnelStages.map((fs) => {
+    const count = orders.filter((o) => reachedStage(o, fs.stage)).length;
+    const pct = orders.length > 0 ? Math.round((count / orders.length) * 100) : 0;
+    const avgHours = fs.nextStage ? avgHoursBetween(fs.stage, fs.nextStage) : 0;
+    return { stage: fs.stage, label: fs.label, count, pct, color: fs.color, avgHours };
+  });
+
+  // Smart alerts
+  const alerts: OrderDashboardStats["alerts"] = [];
+  const longPendingOrders = orders.filter((o) => {
+    if (o.status !== "pending") return false;
+    const hours = (Date.now() - new Date(o.createdAt).getTime()) / 3600000;
+    return hours > 24;
+  });
+  if (longPendingOrders.length > 0) {
+    alerts.push({ id: "long_pending", type: "error", title: `${longPendingOrders.length} đơn chờ quá 24 giờ`, message: "Cần xác nhận ngay để tránh hủy đơn", href: "/admin/orders" });
+  }
+  const shippingOrders = orders.filter((o) => o.status === "shipping");
+  if (shippingOrders.length > 3) {
+    alerts.push({ id: "many_shipping", type: "info", title: `${shippingOrders.length} đơn đang giao hàng`, message: "Theo dõi trạng thái giao hàng", href: "/admin/orders" });
+  }
+  if (revenueGrowthWeek < -10) {
+    alerts.push({ id: "revenue_drop", type: "warning", title: `Doanh thu tuần giảm ${Math.abs(revenueGrowthWeek)}%`, message: "So với tuần trước cùng kỳ", href: "/admin/orders" });
+  }
 
   // By status
   const statusConfig: Record<OrderStatus, { label: string; color: string }> = {
@@ -809,7 +940,20 @@ export function getOrderDashboardStats(): OrderDashboardStats {
       todayOrders: todayOrders.length,
       todayRevenue: todayOrders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0),
       weekOrders: weekOrders.length,
-      weekRevenue: weekOrders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0),
+      weekRevenue,
+      prevWeekRevenue,
+      prevWeekOrders: prevWeekOrders.length,
+      thisMonthRevenue,
+      prevMonthRevenue,
+      revenueGrowthWeek,
+      revenueGrowthMonth,
+      ordersGrowthWeek,
+      repeatCustomerCount,
+      repeatCustomerRate,
+      avgConfirmHours,
+      avgProcessHours,
+      avgShipHours,
+      avgDeliverHours,
     },
     ordersByStatus,
     ordersByPayment,
@@ -818,5 +962,9 @@ export function getOrderDashboardStats(): OrderDashboardStats {
     topProducts,
     recentOrders,
     orders: getAllOrders(),
+    revenueByHour,
+    revenueByDayOfWeek,
+    funnelData,
+    alerts,
   };
 }
