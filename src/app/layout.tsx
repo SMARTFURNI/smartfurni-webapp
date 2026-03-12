@@ -4,6 +4,7 @@ import { getTheme, generateCSSVariables } from "@/lib/theme-store";
 import { CartProvider } from "@/lib/cart-context";
 import FloatingSupport from "@/components/landing/FloatingSupport";
 import ScrollToTop from "@/components/landing/ScrollToTop";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <FloatingSupport />
           <ScrollToTop />
+          <AnalyticsTracker />
         </CartProvider>
       </body>
     </html>

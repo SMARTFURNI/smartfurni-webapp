@@ -30,6 +30,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Tổng quan",
     items: [
       { href: "/admin", label: "Dashboard", icon: "▦", exact: true },
+      { href: "/admin/analytics", label: "Analytics", icon: "◈", exact: false },
     ],
   },
   {

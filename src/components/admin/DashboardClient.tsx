@@ -863,6 +863,7 @@ export default function DashboardClient({
             { href: "/admin/contacts", icon: "💬", label: "Xem liên hệ" },
             { href: "/admin/homepage-products", icon: "🏠", label: "Trang chủ" },
             { href: "/admin/settings", icon: "⚙️", label: "Cài đặt" },
+            { href: "/admin/analytics", icon: "📊", label: "Analytics" },
           ].map((action) => (
             <Link key={action.href} href={action.href} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/3 hover:bg-white/6 border border-transparent hover:border-white/10 transition-all group">
               <span className="text-xl">{action.icon}</span>
