@@ -148,7 +148,7 @@ function ProductImageGallery({
     const imageUrl = images[idx];
     setDeletingIdx(idx);
     try {
-      if (productId && imageUrl.startsWith("/uploads/")) {
+      if (productId) {
         await fetch("/api/admin/products-mgmt/images", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },

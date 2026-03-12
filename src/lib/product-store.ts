@@ -1,5 +1,8 @@
 // ─── Product Data Model ───────────────────────────────────────────────────────
 
+import fs from "fs";
+import path from "path";
+
 export type ProductStatus = "active" | "discontinued" | "out_of_stock" | "coming_soon";
 export type ProductCategory = "standard" | "premium" | "elite" | "accessory";
 
@@ -79,9 +82,36 @@ export interface ProductDashboardStats {
   products: Product[];
 }
 
+// ─── Persistence Layer ──────────────────────────────────────────────────────
+// Lưu data vào Railway Volume (/data) để persist qua các lần redeploy
+const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || "/data";
+const PRODUCTS_FILE = path.join(DATA_DIR, "products.json");
+
+function saveProductsToDisk(data: Product[]): void {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch {
+    // Silently fail if volume not available (dev environment)
+  }
+}
+
+function loadProductsFromDisk(defaultData: Product[]): Product[] {
+  try {
+    if (fs.existsSync(PRODUCTS_FILE)) {
+      const raw = fs.readFileSync(PRODUCTS_FILE, "utf-8");
+      const parsed = JSON.parse(raw) as Product[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // Fall back to default data
+  }
+  return defaultData;
+}
+
 // ─── Sample Data ──────────────────────────────────────────────────────────────
 
-let products: Product[] = [
+const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "p1",
     name: "SmartFurni Basic",
@@ -450,6 +480,9 @@ function generateSlug(name: string): string {
     .replace(/-+/g, "-");
 }
 
+// Load from disk (Railway Volume) or fall back to default data
+let products: Product[] = loadProductsFromDisk(DEFAULT_PRODUCTS);
+
 function generateId(): string {
   return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
@@ -498,6 +531,7 @@ export function createProduct(data: {
     viewCount: 0,
   };
   products.unshift(newProduct);
+  saveProductsToDisk(products);
   return newProduct;
 }
 
@@ -544,12 +578,14 @@ export function updateProduct(id: string, updates: Partial<Product>): Product | 
       .replace(/-+/g, "-");
   }
   products[idx] = merged;
+  saveProductsToDisk(products);
   return products[idx];
 }
 
 export function deleteProduct(id: string): boolean {
   const before = products.length;
   products = products.filter((p) => p.id !== id);
+  saveProductsToDisk(products);
   return products.length < before;
 }
 
