@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getProductById, updateProduct } from "@/lib/product-store";
-import { writeFile, mkdir, unlink } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 
-// POST /api/admin/products-mgmt/images — upload ảnh sản phẩm
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// POST /api/admin/products-mgmt/images — upload ảnh sản phẩm lên Cloudinary
 export async function POST(request: NextRequest) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,27 +36,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File size exceeds 10MB" }, { status: 400 });
     }
 
-    // Validate extension
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const allowedExts = ["jpg", "jpeg", "png", "webp", "gif", "avif"];
-    if (!allowedExts.includes(ext)) {
-      return NextResponse.json({ error: "Invalid file extension" }, { status: 400 });
-    }
-
-    // Generate unique filename
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).slice(2, 8);
-    const filename = `product-${productId}-${timestamp}-${random}.${ext}`;
-
-    // Save to public/uploads/products/
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
-    await mkdir(uploadDir, { recursive: true });
-
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(path.join(uploadDir, filename), buffer);
 
-    const url = `/uploads/products/${filename}`;
+    // Upload to Cloudinary
+    const uploadResult = await new Promise<{ secure_url: string; public_id: string }>(
+      (resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: `smartfurni/products/${productId}`,
+            resource_type: "image",
+            transformation: [{ quality: "auto", fetch_format: "auto" }],
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result as { secure_url: string; public_id: string });
+          }
+        );
+        uploadStream.end(buffer);
+      }
+    );
+
+    const url = uploadResult.secure_url;
 
     // Update product images array
     const currentImages = product.images || [];
@@ -63,14 +70,19 @@ export async function POST(request: NextRequest) {
       coverImage: newCoverImage,
     });
 
-    return NextResponse.json({ url, filename, images: newImages, coverImage: newCoverImage });
+    return NextResponse.json({
+      url,
+      publicId: uploadResult.public_id,
+      images: newImages,
+      coverImage: newCoverImage,
+    });
   } catch (error) {
     console.error("Product image upload error:", error);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }
 
-// DELETE /api/admin/products-mgmt/images — xóa ảnh sản phẩm
+// DELETE /api/admin/products-mgmt/images — xóa ảnh sản phẩm khỏi Cloudinary
 export async function DELETE(request: NextRequest) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -99,13 +111,24 @@ export async function DELETE(request: NextRequest) {
       coverImage: newCoverImage,
     });
 
-    // Try to delete file from disk (only for locally uploaded files)
-    if (imageUrl.startsWith("/uploads/")) {
-      const filePath = path.join(process.cwd(), "public", imageUrl);
-      if (existsSync(filePath)) {
-        await unlink(filePath).catch(() => {
-          // ignore if file already deleted
-        });
+    // Delete from Cloudinary if it's a Cloudinary URL
+    if (imageUrl.includes("cloudinary.com")) {
+      try {
+        // Extract public_id from Cloudinary URL
+        // URL format: https://res.cloudinary.com/{cloud}/image/upload/{transformations}/{public_id}.{ext}
+        const urlParts = imageUrl.split("/");
+        const uploadIndex = urlParts.indexOf("upload");
+        if (uploadIndex !== -1) {
+          // Get everything after "upload/" and before the extension
+          const publicIdWithExt = urlParts.slice(uploadIndex + 1).join("/");
+          const publicId = publicIdWithExt.replace(/\.[^/.]+$/, ""); // remove extension
+          // Remove version prefix (v1234567890/) if present
+          const cleanPublicId = publicId.replace(/^v\d+\//, "");
+          await cloudinary.uploader.destroy(cleanPublicId);
+        }
+      } catch (cloudinaryError) {
+        console.error("Cloudinary delete error:", cloudinaryError);
+        // Don't fail the request if Cloudinary delete fails
       }
     }
 
