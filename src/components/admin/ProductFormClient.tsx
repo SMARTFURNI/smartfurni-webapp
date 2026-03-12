@@ -91,7 +91,12 @@ function ProductImageGallery({
   const [uploading, setUploading] = useState(false);
   const [deletingIdx, setDeletingIdx] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleImageError(idx: number) {
+    setBrokenImages((prev) => new Set(prev).add(idx));
+  }
 
   async function uploadFile(file: File) {
     if (!productId) {
@@ -223,7 +228,19 @@ function ProductImageGallery({
           {images.map((img, idx) => (
             <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-[#0D0B00]/60 border border-[#C9A84C]/10">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img} alt={`Ảnh ${idx + 1}`} className="w-full h-full object-cover" />
+              {brokenImages.has(idx) ? (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-[#1a1500]/80 gap-1">
+                  <span className="text-2xl opacity-40">🖼️</span>
+                  <span className="text-[9px] text-gray-600 text-center px-1">Ảnh không tồn tại</span>
+                </div>
+              ) : (
+                <img
+                  src={img}
+                  alt={`Ảnh ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={() => handleImageError(idx)}
+                />
+              )}
 
               {/* Cover badge */}
               {img === cover && (
