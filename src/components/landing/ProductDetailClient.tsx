@@ -65,6 +65,24 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
 
+  // Image gallery state
+  const allImages = product.images && product.images.length > 0
+    ? product.images
+    : product.coverImage ? [product.coverImage] : [];
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState(0);
+
+  const activeImage = allImages[activeImageIdx] || null;
+
+  function openLightbox(idx: number) {
+    setLightboxIdx(idx);
+    setLightboxOpen(true);
+  }
+  function closeLightbox() { setLightboxOpen(false); }
+  function lightboxPrev() { setLightboxIdx((i) => (i - 1 + allImages.length) % allImages.length); }
+  function lightboxNext() { setLightboxIdx((i) => (i + 1) % allImages.length); }
+
   const discount =
     product.originalPrice > product.price
       ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -175,59 +193,171 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
 
       {/* Main product section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 mb-12 sm:mb-16">
-        {/* Left: Image */}
+        {/* Left: Image Gallery */}
         <div>
+          {/* Main image */}
           <div
-            className="rounded-2xl overflow-hidden flex items-center justify-center w-full"
+            className="rounded-2xl overflow-hidden flex items-center justify-center w-full cursor-zoom-in relative"
             style={{
               background: `linear-gradient(135deg, ${colors.background}, ${colors.surface})`,
               border: `1px solid ${colors.border}`,
               aspectRatio: '4/3',
             }}
+            onClick={() => activeImage && openLightbox(activeImageIdx)}
           >
-            {product.coverImage ? (
+            {activeImage ? (
               <img
-                src={product.coverImage}
-                alt={product.name}
-                className="w-full h-full object-cover"
+                src={activeImage}
+                alt={`${product.name} - ảnh ${activeImageIdx + 1}`}
+                className="w-full h-full object-cover transition-opacity duration-300"
               />
             ) : (
               <svg viewBox="0 0 300 200" width="260" height="173" fill="none">
-                {/* Bed frame */}
                 <rect x="30" y="100" width="240" height="75" rx="8"
                   fill={`${colors.primary}12`} stroke={`${colors.primary}35`} strokeWidth="2" />
-                {/* Mattress */}
                 <rect x="38" y="80" width="224" height="82" rx="10"
                   fill={`${colors.primary}18`} stroke={`${colors.primary}45`} strokeWidth="2" />
-                {/* Pillow 1 */}
                 <rect x="45" y="65" width="70" height="35" rx="14"
                   fill={`${colors.primary}28`} stroke={`${colors.primary}55`} strokeWidth="1.5" />
-                {/* Pillow 2 */}
                 <rect x="125" y="65" width="70" height="35" rx="14"
                   fill={`${colors.primary}28`} stroke={`${colors.primary}55`} strokeWidth="1.5" />
-                {/* Headboard */}
                 <rect x="22" y="40" width="28" height="90" rx="6"
                   fill={`${colors.primary}22`} stroke={`${colors.primary}45`} strokeWidth="2" />
-                {/* LED strip */}
                 <rect x="22" y="128" width="256" height="5" rx="2.5"
                   fill={colors.primary} opacity="0.7" />
-                {/* Legs */}
                 <rect x="38" y="172" width="14" height="22" rx="4"
                   fill={`${colors.primary}28`} stroke={`${colors.primary}40`} strokeWidth="1.5" />
                 <rect x="248" y="172" width="14" height="22" rx="4"
                   fill={`${colors.primary}28`} stroke={`${colors.primary}40`} strokeWidth="1.5" />
-                {/* Smart icon circle */}
                 <circle cx="232" cy="95" r="14"
                   fill={`${colors.primary}18`} stroke={`${colors.primary}45`} strokeWidth="1.5" />
                 <path d="M227 95 L231 99 L237 90"
                   stroke={colors.primary} strokeWidth="2"
                   strokeLinecap="round" strokeLinejoin="round" />
-                {/* Glow */}
                 <ellipse cx="150" cy="195" rx="100" ry="8"
                   fill={colors.primary} opacity="0.08" />
               </svg>
             )}
+            {/* Zoom hint */}
+            {activeImage && (
+              <div className="absolute bottom-3 right-3 bg-black/50 rounded-lg px-2 py-1 text-white text-xs pointer-events-none">
+                🔍 Click để phóng to
+              </div>
+            )}
+            {/* Image counter */}
+            {allImages.length > 1 && (
+              <div className="absolute top-3 right-3 bg-black/50 rounded-full px-2.5 py-1 text-white text-xs pointer-events-none">
+                {activeImageIdx + 1}/{allImages.length}
+              </div>
+            )}
           </div>
+
+          {/* Thumbnail strip */}
+          {allImages.length > 1 && (
+            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+              {allImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveImageIdx(idx)}
+                  className="flex-shrink-0 rounded-xl overflow-hidden transition-all duration-200"
+                  style={{
+                    width: 72,
+                    height: 54,
+                    border: idx === activeImageIdx
+                      ? `2px solid ${colors.primary}`
+                      : `2px solid ${colors.border}`,
+                    opacity: idx === activeImageIdx ? 1 : 0.6,
+                  }}
+                >
+                  <img
+                    src={img}
+                    alt={`Thumbnail ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Lightbox */}
+          {lightboxOpen && allImages.length > 0 && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center"
+              style={{ backgroundColor: "rgba(0,0,0,0.92)" }}
+              onClick={closeLightbox}
+            >
+              {/* Close button */}
+              <button
+                type="button"
+                onClick={closeLightbox}
+                className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl font-light w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+              >
+                ×
+              </button>
+
+              {/* Prev button */}
+              {allImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); lightboxPrev(); }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10 text-xl"
+                >
+                  ‹
+                </button>
+              )}
+
+              {/* Main lightbox image */}
+              <div
+                className="max-w-5xl max-h-[90vh] mx-16 flex items-center justify-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  src={allImages[lightboxIdx]}
+                  alt={`${product.name} - ảnh ${lightboxIdx + 1}`}
+                  className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+                />
+              </div>
+
+              {/* Next button */}
+              {allImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); lightboxNext(); }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10 text-xl"
+                >
+                  ›
+                </button>
+              )}
+
+              {/* Thumbnail strip in lightbox */}
+              {allImages.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {allImages.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setLightboxIdx(idx); }}
+                      className="rounded-lg overflow-hidden transition-all"
+                      style={{
+                        width: 56,
+                        height: 42,
+                        border: idx === lightboxIdx ? `2px solid ${colors.primary}` : "2px solid rgba(255,255,255,0.2)",
+                        opacity: idx === lightboxIdx ? 1 : 0.5,
+                      }}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Counter */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/60 text-sm">
+                {lightboxIdx + 1} / {allImages.length}
+              </div>
+            </div>
+          )}
 
           {/* Badges row */}
           <div className="flex flex-wrap gap-2 mt-4">
