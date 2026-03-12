@@ -56,6 +56,193 @@ function Sparkline({ data, color = "#C9A84C", height = 36 }: { data: number[]; c
   );
 }
 
+// ─── City Revenue Interactive Chart ─────────────────────────────────────────
+type CityData = { city: string; count: number; revenue: number; percentage: number };
+
+function CityRevenueChart({ data }: { data: CityData[] }) {
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<"bar" | "donut">("bar");
+
+  if (data.length === 0) {
+    return <p className="text-gray-600 text-xs text-center py-8">Chưa có dữ liệu</p>;
+  }
+
+  const maxRev = Math.max(...data.map((d) => d.revenue), 1);
+  const totalRev = data.reduce((s, d) => s + d.revenue, 0);
+  const COLORS = ["#C9A84C", "#3B82F6", "#22C55E", "#F472B6", "#8B5CF6", "#F59E0B"];
+
+  // ── Donut ──
+  const DonutView = () => {
+    const size = 160;
+    const r = 58;
+    const cx = size / 2;
+    const cy = size / 2;
+    let cumAngle = -Math.PI / 2;
+    const arcs = data.map((d, i) => {
+      const angle = (d.revenue / totalRev) * 2 * Math.PI;
+      const x1 = cx + r * Math.cos(cumAngle);
+      const y1 = cy + r * Math.sin(cumAngle);
+      cumAngle += angle;
+      const x2 = cx + r * Math.cos(cumAngle);
+      const y2 = cy + r * Math.sin(cumAngle);
+      const large = angle > Math.PI ? 1 : 0;
+      return { ...d, x1, y1, x2, y2, large, angle, color: COLORS[i % COLORS.length] };
+    });
+    const active = activeIdx !== null ? arcs[activeIdx] : null;
+    return (
+      <div className="flex items-center gap-4">
+        <svg
+          width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+          className="flex-shrink-0"
+        >
+          {arcs.map((arc, i) =>
+            arc.angle > 0.01 ? (
+              <path
+                key={i}
+                d={`M ${cx} ${cy} L ${arc.x1} ${arc.y1} A ${r} ${r} 0 ${arc.large} 1 ${arc.x2} ${arc.y2} Z`}
+                fill={arc.color}
+                opacity={activeIdx === null || activeIdx === i ? 0.9 : 0.25}
+                className="cursor-pointer transition-opacity duration-150"
+                onMouseEnter={() => setActiveIdx(i)}
+                onMouseLeave={() => setActiveIdx(null)}
+                style={{ transform: activeIdx === i ? `scale(1.04)` : "scale(1)", transformOrigin: `${cx}px ${cy}px`, transition: "transform 0.15s, opacity 0.15s" }}
+              />
+            ) : null
+          )}
+          <circle cx={cx} cy={cy} r={r * 0.52} fill="#0A0800" />
+          {active ? (
+            <>
+              <text x={cx} y={cy - 8} textAnchor="middle" fill="white" fontSize="11" fontWeight="bold">
+                {active.city.length > 10 ? active.city.slice(0, 10) + "..." : active.city}
+              </text>
+              <text x={cx} y={cy + 6} textAnchor="middle" fill={active.color} fontSize="10" fontWeight="600">
+                {Math.round((active.revenue / totalRev) * 100)}%
+              </text>
+              <text x={cx} y={cy + 20} textAnchor="middle" fill="#6B7280" fontSize="8">
+                {fmtVND(active.revenue)}
+              </text>
+            </>
+          ) : (
+            <>
+              <text x={cx} y={cy - 4} textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">
+                {fmtVND(totalRev)}
+              </text>
+              <text x={cx} y={cy + 12} textAnchor="middle" fill="#6B7280" fontSize="8">tổng</text>
+            </>
+          )}
+        </svg>
+        <div className="flex-1 space-y-2">
+          {arcs.map((arc, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2 cursor-pointer group"
+              onMouseEnter={() => setActiveIdx(i)}
+              onMouseLeave={() => setActiveIdx(null)}
+            >
+              <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0 transition-transform group-hover:scale-125" style={{ backgroundColor: arc.color }} />
+              <span className={`text-xs flex-1 truncate transition-colors ${activeIdx === i ? "text-white" : "text-gray-500"}`}>{arc.city}</span>
+              <span className="text-xs font-semibold flex-shrink-0" style={{ color: activeIdx === i ? arc.color : "#6B7280" }}>
+                {Math.round((arc.revenue / totalRev) * 100)}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // ── Horizontal Bar ──
+  const BarView = () => (
+    <div className="space-y-2.5">
+      {data.map((d, i) => {
+        const color = COLORS[i % COLORS.length];
+        const pct = (d.revenue / maxRev) * 100;
+        const isActive = activeIdx === i;
+        return (
+          <div
+            key={d.city}
+            className="cursor-pointer"
+            onMouseEnter={() => setActiveIdx(i)}
+            onMouseLeave={() => setActiveIdx(null)}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-700 w-3">{i + 1}</span>
+                <span className={`text-xs font-medium transition-colors ${isActive ? "text-white" : "text-gray-400"}`}>{d.city}</span>
+                <span className="text-[10px] text-gray-700">{d.count} đơn</span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-xs font-bold transition-colors" style={{ color: isActive ? color : "#9CA3AF" }}>
+                  {fmtVND(d.revenue)}
+                </span>
+                <span className="text-[10px] text-gray-700 w-8 text-right">
+                  {Math.round((d.revenue / totalRev) * 100)}%
+                </span>
+              </div>
+            </div>
+            <div className="h-5 bg-white/4 rounded-md overflow-hidden relative">
+              <div
+                className="h-full rounded-md transition-all duration-500 relative overflow-hidden"
+                style={{ width: `${pct}%`, backgroundColor: color, opacity: isActive ? 1 : 0.55 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/10" />
+              </div>
+              {isActive && (
+                <div className="absolute inset-0 flex items-center px-2">
+                  <span className="text-[10px] font-semibold text-white/90">
+                    {Math.round((d.revenue / totalRev) * 100)}% tổng doanh thu
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Toggle */}
+      <div className="flex items-center gap-1 mb-4 bg-white/4 rounded-lg p-0.5 w-fit">
+        <button
+          onClick={() => setViewMode("bar")}
+          className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+            viewMode === "bar" ? "bg-[#C9A84C] text-[#0A0800]" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          Thanh ngang
+        </button>
+        <button
+          onClick={() => setViewMode("donut")}
+          className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+            viewMode === "donut" ? "bg-[#C9A84C] text-[#0A0800]" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          Tròn
+        </button>
+      </div>
+
+      {/* Chart */}
+      {viewMode === "bar" ? <BarView /> : <DonutView />}
+
+      {/* Summary footer */}
+      <div className="mt-4 pt-3 border-t border-white/5 grid grid-cols-2 gap-3">
+        <div>
+          <div className="text-[10px] text-gray-700 mb-0.5">Khu vực dẫn đầu</div>
+          <div className="text-xs font-semibold text-white">{data[0]?.city || "—"}</div>
+          <div className="text-[10px] text-[#C9A84C]">{data[0] ? fmtVND(data[0].revenue) : ""}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-gray-700 mb-0.5">Tổng khu vực</div>
+          <div className="text-xs font-semibold text-white">{data.length} thành phố</div>
+          <div className="text-[10px] text-gray-500">{fmtVND(totalRev)}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Revenue Bar Chart ────────────────────────────────────────────────────────
 function RevenueBarChart({ data }: { data: { label: string; revenue: number; units: number }[] }) {
   const max = Math.max(...data.map((d) => d.revenue), 1);
@@ -434,34 +621,15 @@ export default function DashboardClient({
 
       {/* ── Row 5: Revenue by city + Payment methods + Blog ── */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Revenue by city */}
+        {/* Revenue by city — Interactive Chart */}
         <div className="bg-[#0D0B00] border border-white/5 rounded-2xl p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Doanh thu theo khu vực</h3>
-          <div className="space-y-3">
-            {orderData.revenueByCity.slice(0, 5).map((city, i) => (
-              <div key={city.city}>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600">{i + 1}.</span>
-                    <span className="text-xs text-gray-300 truncate">{city.city}</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs font-semibold text-[#C9A84C]">{fmtVND(city.revenue)}</span>
-                    <span className="text-[10px] text-gray-600">{city.percentage}%</span>
-                  </div>
-                </div>
-                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#C9A84C]/60 to-[#E2C97E] rounded-full"
-                    style={{ width: `${city.percentage}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-            {orderData.revenueByCity.length === 0 && (
-              <p className="text-gray-600 text-xs text-center py-4">Chưa có dữ liệu</p>
-            )}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Doanh thu theo khu vực</h3>
+              <p className="text-xs text-gray-600 mt-0.5">Di chuột để xem chi tiết</p>
+            </div>
           </div>
+          <CityRevenueChart data={orderData.revenueByCity} />
         </div>
 
         {/* Payment methods */}
