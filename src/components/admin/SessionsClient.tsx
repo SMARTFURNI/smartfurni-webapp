@@ -33,12 +33,6 @@ interface VisitorSession extends SessionListItem {
   events: SessionEvent[];
 }
 
-interface SessionsResult {
-  sessions: SessionListItem[];
-  total: number;
-  activeNow: number;
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDuration(seconds: number): string {
@@ -54,23 +48,11 @@ function formatDuration(seconds: number): string {
 
 function timeAgo(isoStr: string): string {
   const diff = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000);
+  if (diff < 10) return "vừa xong";
   if (diff < 60) return `${diff}s trước`;
   if (diff < 3600) return `${Math.floor(diff / 60)}p trước`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}g trước`;
   return `${Math.floor(diff / 86400)} ngày trước`;
-}
-
-function formatTime(isoStr: string): string {
-  const d = new Date(isoStr);
-  return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-}
-
-function formatDateTime(isoStr: string): string {
-  const d = new Date(isoStr);
-  return d.toLocaleString("vi-VN", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
 }
 
 function deviceIcon(device: string): string {
@@ -79,25 +61,30 @@ function deviceIcon(device: string): string {
   return "🖥️";
 }
 
-function referrerColor(ref: string): string {
-  if (ref === "Google") return "text-blue-400";
-  if (ref === "Facebook") return "text-blue-500";
-  if (ref === "Instagram") return "text-pink-400";
-  if (ref === "TikTok") return "text-purple-400";
-  if (ref === "Direct") return "text-gray-400";
-  return "text-yellow-400";
+function sourceLabel(ref: string): { label: string; color: string; bg: string } {
+  const map: Record<string, { label: string; color: string; bg: string }> = {
+    Google: { label: "Google", color: "#4285F4", bg: "#4285F420" },
+    Facebook: { label: "Facebook", color: "#1877F2", bg: "#1877F220" },
+    Instagram: { label: "Instagram", color: "#E1306C", bg: "#E1306C20" },
+    TikTok: { label: "TikTok", color: "#a855f7", bg: "#a855f720" },
+    YouTube: { label: "YouTube", color: "#FF0000", bg: "#FF000020" },
+    Zalo: { label: "Zalo", color: "#0068FF", bg: "#0068FF20" },
+    Direct: { label: "Trực tiếp", color: "#9CA3AF", bg: "#9CA3AF20" },
+  };
+  return map[ref] || { label: ref, color: "#C9A84C", bg: "#C9A84C20" };
 }
 
 function pathLabel(path: string): string {
   if (path === "/") return "Trang chủ";
-  if (path.startsWith("/products/")) return "Chi tiết: " + path.replace("/products/", "");
   if (path === "/products") return "Sản phẩm";
+  if (path.startsWith("/products/")) return path.replace("/products/", "");
   if (path === "/contact") return "Liên hệ";
   if (path === "/about") return "Giới thiệu";
   if (path === "/blog") return "Blog";
-  if (path.startsWith("/blog/")) return "Bài viết: " + path.replace("/blog/", "");
+  if (path.startsWith("/blog/")) return path.replace("/blog/", "");
   if (path === "/cart") return "Giỏ hàng";
   if (path === "/checkout") return "Thanh toán";
+  if (path === "/configurator") return "Cấu hình 3D";
   return path;
 }
 
@@ -109,26 +96,23 @@ export function SessionsClient() {
   const [total, setTotal] = useState(0);
   const [activeNow, setActiveNow] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [selectedSession, setSelectedSession] = useState<VisitorSession | null>(null);
+  const [selected, setSelected] = useState<VisitorSession | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [isLive, setIsLive] = useState(true);
+  const [tick, setTick] = useState(0); // force re-render for timeAgo
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchSessions = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/sessions?filter=${filter}&limit=100`);
       if (!res.ok) return;
-      const data: SessionsResult = await res.json();
-      setSessions(data.sessions);
-      setTotal(data.total);
-      setActiveNow(data.activeNow);
-      setLastRefresh(new Date());
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
+      const data = await res.json();
+      setSessions(data.sessions || []);
+      setTotal(data.total || 0);
+      setActiveNow(data.activeNow || 0);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   }, [filter]);
 
   const fetchDetail = useCallback(async (sessionId: string) => {
@@ -137,12 +121,9 @@ export function SessionsClient() {
       const res = await fetch(`/api/admin/sessions?sessionId=${encodeURIComponent(sessionId)}`);
       if (!res.ok) return;
       const data: VisitorSession = await res.json();
-      setSelectedSession(data);
-    } catch {
-      // ignore
-    } finally {
-      setDetailLoading(false);
-    }
+      setSelected(data);
+    } catch { /* silent */ }
+    finally { setDetailLoading(false); }
   }, []);
 
   // Initial load + filter change
@@ -151,322 +132,357 @@ export function SessionsClient() {
     fetchSessions();
   }, [fetchSessions]);
 
-  // Auto-refresh every 15s
+  // Auto-refresh every 5s (matching heartbeat interval)
   useEffect(() => {
-    if (autoRefresh) {
-      intervalRef.current = setInterval(() => {
-        fetchSessions();
-        if (selectedSession) fetchDetail(selectedSession.sessionId);
-      }, 15000);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [autoRefresh, fetchSessions, fetchDetail, selectedSession]);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (!isLive) return;
+    intervalRef.current = setInterval(() => {
+      fetchSessions();
+      if (selected) fetchDetail(selected.sessionId);
+    }, 5000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [isLive, fetchSessions, fetchDetail, selected]);
 
-  const filterLabels = {
-    active: "Đang online",
-    today: "Hôm nay",
-    week: "7 ngày",
-    all: "Tất cả",
-  };
+  // Tick every second to update timeAgo displays
+  useEffect(() => {
+    tickRef.current = setInterval(() => setTick(t => t + 1), 1000);
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+  }, []);
+
+  // Suppress unused variable warning
+  void tick;
+
+  const maxDuration = selected
+    ? Math.max(...selected.events.map(e => e.duration || 1), 1)
+    : 1;
 
   return (
-    <div className="min-h-screen bg-[#080600] text-white">
-      {/* Header */}
-      <div className="border-b border-[#C9A84C]/10 px-6 py-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-white">Hành trình khách hàng</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Theo dõi trực tiếp từng phiên truy cập và hành trình trang</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Active now badge */}
-            <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-3 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-xs text-green-400 font-medium">{activeNow} đang online</span>
-            </div>
-            {/* Auto refresh toggle */}
-            <button
-              onClick={() => setAutoRefresh((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-all ${
-                autoRefresh
-                  ? "bg-[#C9A84C]/10 border-[#C9A84C]/30 text-[#C9A84C]"
-                  : "bg-white/3 border-white/10 text-gray-500"
-              }`}
-            >
-              <span className={autoRefresh ? "animate-spin" : ""} style={{ display: "inline-block", animationDuration: "3s" }}>↻</span>
-              {autoRefresh ? "Live" : "Tắt live"}
-            </button>
-            {/* Manual refresh */}
-            <button
-              onClick={fetchSessions}
-              className="px-3 py-1.5 rounded-full text-xs bg-white/3 border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition-all"
-            >
-              Làm mới
-            </button>
-          </div>
-        </div>
-        {/* Last refresh */}
-        <p className="text-[10px] text-gray-700 mt-2">
-          Cập nhật lần cuối: {lastRefresh.toLocaleTimeString("vi-VN")} · Tổng {total} phiên
-        </p>
-      </div>
+    <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden font-sans">
 
-      <div className="flex h-[calc(100vh-120px)]">
-        {/* Left panel: Session list */}
-        <div className="w-full lg:w-[420px] flex-shrink-0 border-r border-[#C9A84C]/8 flex flex-col">
+      {/* ── LEFT PANEL ─────────────────────────────────────────────────── */}
+      <div className="w-[360px] flex-shrink-0 flex flex-col border-r border-white/5">
+
+        {/* Header */}
+        <div className="px-4 pt-4 pb-3 border-b border-white/5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold">Khách truy cập</span>
+              {activeNow > 0 && (
+                <span className="flex items-center gap-1 bg-green-500/10 text-green-400 text-xs px-2 py-0.5 rounded-full border border-green-500/20">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                  {activeNow} online
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setIsLive(v => !v)}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
+                  isLive
+                    ? "bg-green-500/10 border-green-500/20 text-green-400"
+                    : "bg-white/3 border-white/10 text-gray-500"
+                }`}
+              >
+                {isLive ? "● Live" : "○ Tắt"}
+              </button>
+              <button
+                onClick={fetchSessions}
+                className="text-xs px-2.5 py-1 rounded-full border border-white/10 bg-white/3 text-gray-400 hover:text-white transition-colors"
+              >
+                ↻
+              </button>
+            </div>
+          </div>
+
           {/* Filter tabs */}
-          <div className="flex border-b border-[#C9A84C]/8 px-3 pt-3 gap-1">
+          <div className="flex gap-0.5 bg-white/3 rounded-lg p-0.5">
             {(["active", "today", "week", "all"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-t-lg text-xs font-medium transition-all ${
+                className={`flex-1 text-xs py-1.5 rounded-md transition-all font-medium ${
                   filter === f
-                    ? "bg-[#C9A84C]/12 text-[#C9A84C] border-b-2 border-[#C9A84C]"
+                    ? "bg-white/10 text-white"
                     : "text-gray-500 hover:text-gray-300"
                 }`}
               >
-                {filterLabels[f]}
+                {f === "active" ? "Online" : f === "today" ? "Hôm nay" : f === "week" ? "7 ngày" : "Tất cả"}
                 {f === "active" && activeNow > 0 && (
-                  <span className="ml-1.5 bg-green-500 text-white text-[9px] rounded-full px-1.5 py-0.5">{activeNow}</span>
+                  <span className="ml-1 bg-green-500 text-white text-[9px] rounded-full px-1">{activeNow}</span>
                 )}
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Session list */}
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="flex items-center justify-center h-40">
-                <div className="text-gray-600 text-sm">Đang tải...</div>
-              </div>
-            ) : sessions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 gap-2">
-                <span className="text-3xl">👁️</span>
-                <p className="text-gray-600 text-sm">Chưa có phiên truy cập nào</p>
-                <p className="text-gray-700 text-xs">Dữ liệu sẽ xuất hiện khi khách truy cập website</p>
+        {/* Session list */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center h-32 text-gray-600 text-sm">Đang tải...</div>
+          ) : sessions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-2 text-gray-600">
+              <span className="text-3xl">👁️</span>
+              <p className="text-sm">Chưa có phiên truy cập</p>
+            </div>
+          ) : (
+            sessions.map((s) => {
+              const src = sourceLabel(s.referrer);
+              const isSelected = selected?.sessionId === s.sessionId;
+              return (
+                <button
+                  key={s.sessionId}
+                  onClick={() => fetchDetail(s.sessionId)}
+                  className={`w-full text-left px-4 py-3 border-b border-white/3 hover:bg-white/3 transition-all ${
+                    isSelected ? "bg-[#C9A84C]/5 border-l-2 border-l-[#C9A84C]" : ""
+                  }`}
+                >
+                  {/* Row 1: status + id + time */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      {s.isActive ? (
+                        <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0" />
+                      ) : (
+                        <span className="w-2 h-2 bg-gray-700 rounded-full flex-shrink-0" />
+                      )}
+                      <span className="text-xs font-mono text-gray-500">{s.sessionId.slice(0, 10)}…</span>
+                      <span className="text-xs">{deviceIcon(s.device)}</span>
+                    </div>
+                    <span className="text-[11px] text-gray-600">{timeAgo(s.lastSeenAt)}</span>
+                  </div>
+
+                  {/* Row 2: Current URL — Talkto style */}
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className={`text-[11px] font-mono px-2 py-0.5 rounded-md truncate max-w-[260px] ${
+                      s.isActive
+                        ? "bg-green-500/10 text-green-300"
+                        : "bg-white/5 text-gray-400"
+                    }`}>
+                      {s.isActive ? "● " : ""}{s.exitPage}
+                    </span>
+                  </div>
+
+                  {/* Row 3: meta */}
+                  <div className="flex items-center gap-2 text-[11px] text-gray-600">
+                    <span>{s.pageCount} trang</span>
+                    <span>·</span>
+                    <span>{formatDuration(s.totalDuration)}</span>
+                    <span>·</span>
+                    <span
+                      className="px-1.5 py-0.5 rounded text-[10px]"
+                      style={{ backgroundColor: src.bg, color: src.color }}
+                    >
+                      {src.label}
+                    </span>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-2 border-t border-white/5 flex justify-between text-[11px] text-gray-700">
+          <span>{total} phiên</span>
+          <span>Cập nhật mỗi 5s</span>
+        </div>
+      </div>
+
+      {/* ── RIGHT PANEL ────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {!selected ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-600">
+            {detailLoading ? (
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-[#C9A84C] border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm">Đang tải hành trình...</span>
               </div>
             ) : (
-              <div className="divide-y divide-white/3">
-                {sessions.map((session) => (
-                  <button
-                    key={session.sessionId}
-                    onClick={() => fetchDetail(session.sessionId)}
-                    className={`w-full text-left px-4 py-3 hover:bg-white/3 transition-all ${
-                      selectedSession?.sessionId === session.sessionId ? "bg-[#C9A84C]/6 border-l-2 border-[#C9A84C]" : ""
-                    }`}
+              <>
+                <span className="text-5xl mb-4">🔍</span>
+                <span className="text-sm font-medium text-gray-500">Chọn một phiên để xem hành trình</span>
+                <span className="text-xs text-gray-700 mt-1">Theo dõi từng URL khách đã truy cập</span>
+              </>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Detail header */}
+            <div className="px-6 py-4 border-b border-white/5 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                  {selected.isActive ? (
+                    <span className="flex items-center gap-1.5 text-green-400 text-sm font-semibold">
+                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                      Đang online
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-gray-500 text-sm">
+                      <span className="w-2 h-2 bg-gray-600 rounded-full" />
+                      Offline · {timeAgo(selected.lastSeenAt)}
+                    </span>
+                  )}
+                  <span className="text-xs font-mono text-gray-600">{selected.sessionId}</span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                  <span>{deviceIcon(selected.device)} {selected.device} · {selected.browser} · {selected.os}</span>
+                  <span
+                    className="px-2 py-0.5 rounded text-[11px]"
+                    style={{ backgroundColor: sourceLabel(selected.referrer).bg, color: sourceLabel(selected.referrer).color }}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {/* Active indicator */}
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1 ${session.isActive ? "bg-green-400 animate-pulse" : "bg-gray-700"}`} />
-                        <div className="min-w-0">
-                          {/* Session ID (short) */}
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-mono text-gray-400">{session.sessionId.slice(0, 8)}…</span>
-                            <span className="text-[10px]">{deviceIcon(session.device)}</span>
-                            <span className="text-[10px] text-gray-600">{session.browser}</span>
+                    {sourceLabel(selected.referrer).label}
+                  </span>
+                  <span>🕐 {new Date(selected.startedAt).toLocaleString("vi-VN")}</span>
+                </div>
+              </div>
+
+              {/* KPI */}
+              <div className="flex gap-5 flex-shrink-0">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{selected.pageCount}</div>
+                  <div className="text-xs text-gray-600">trang</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{formatDuration(selected.totalDuration)}</div>
+                  <div className="text-xs text-gray-600">tổng TG</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Journey — Talkto URL feed style */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              <div className="text-xs text-gray-600 uppercase tracking-widest mb-5 font-medium">
+                Hành trình truy cập · {selected.events.length} trang
+              </div>
+
+              <div className="relative space-y-0">
+                {/* Vertical connector line */}
+                <div className="absolute left-[15px] top-4 bottom-4 w-px bg-white/5" />
+
+                {selected.events.map((ev, idx) => {
+                  const isFirst = idx === 0;
+                  const isLast = idx === selected.events.length - 1;
+                  const isHere = ev.isActive && selected.isActive;
+                  const barWidth = ev.duration > 0
+                    ? Math.max(4, Math.round((ev.duration / maxDuration) * 100))
+                    : 0;
+
+                  return (
+                    <div key={ev.id} className="relative flex gap-4 pb-3">
+                      {/* Node */}
+                      <div className="relative z-10 flex-shrink-0 mt-2.5">
+                        {isHere ? (
+                          <div className="w-[30px] h-[30px] rounded-full bg-green-500/15 border-2 border-green-400 flex items-center justify-center">
+                            <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse" />
                           </div>
-                          {/* Entry page */}
-                          <div className="text-xs text-white/70 truncate mt-0.5">{pathLabel(session.entryPage)}</div>
-                          {/* Meta */}
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-[10px] ${referrerColor(session.referrer)}`}>{session.referrer}</span>
-                            <span className="text-[10px] text-gray-600">·</span>
-                            <span className="text-[10px] text-gray-600">{session.pageCount} trang</span>
-                            <span className="text-[10px] text-gray-600">·</span>
-                            <span className="text-[10px] text-gray-600">{formatDuration(session.totalDuration)}</span>
+                        ) : (
+                          <div className={`w-[30px] h-[30px] rounded-full border-2 flex items-center justify-center text-xs font-bold ${
+                            isFirst
+                              ? "border-[#C9A84C] bg-[#C9A84C]/10 text-[#C9A84C]"
+                              : "border-white/10 bg-[#0a0a0a] text-gray-600"
+                          }`}>
+                            {idx + 1}
                           </div>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-[10px] text-gray-600">{timeAgo(session.lastSeenAt)}</div>
-                        {session.isActive && (
-                          <div className="text-[9px] text-green-400 mt-0.5">● Online</div>
                         )}
                       </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Right panel: Session detail */}
-        <div className="flex-1 overflow-y-auto">
-          {!selectedSession && !detailLoading ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-8">
-              <span className="text-5xl opacity-20">🗺️</span>
-              <h3 className="text-gray-500 font-medium">Chọn một phiên để xem hành trình</h3>
-              <p className="text-gray-700 text-sm max-w-xs">
-                Click vào bất kỳ phiên nào ở bên trái để xem chi tiết hành trình, thời gian ở từng trang và thông tin thiết bị.
-              </p>
-            </div>
-          ) : detailLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-gray-600 text-sm">Đang tải hành trình...</div>
-            </div>
-          ) : selectedSession ? (
-            <SessionDetail session={selectedSession} onRefresh={() => fetchDetail(selectedSession.sessionId)} />
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Session Detail Component ─────────────────────────────────────────────────
-
-function SessionDetail({ session, onRefresh }: { session: VisitorSession; onRefresh: () => void }) {
-  const totalPages = session.events.length;
-  const maxDuration = Math.max(...session.events.map((e) => e.duration), 1);
-
-  return (
-    <div className="p-6 max-w-3xl mx-auto">
-      {/* Session header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            {session.isActive && (
-              <span className="flex items-center gap-1 text-[10px] text-green-400 bg-green-400/10 border border-green-400/20 rounded-full px-2 py-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                Đang online
-              </span>
-            )}
-            <span className="text-xs font-mono text-gray-500">{session.sessionId}</span>
-          </div>
-          <h2 className="text-lg font-bold text-white">
-            {deviceIcon(session.device)} {session.device} · {session.browser} · {session.os}
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Bắt đầu: {formatDateTime(session.startedAt)} · Lần cuối: {timeAgo(session.lastSeenAt)}
-          </p>
-        </div>
-        <button
-          onClick={onRefresh}
-          className="text-xs text-gray-600 hover:text-gray-300 px-3 py-1.5 rounded-lg bg-white/3 border border-white/8 transition-colors"
-        >
-          ↻ Làm mới
-        </button>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {[
-          { label: "Tổng trang", value: totalPages.toString(), icon: "📄" },
-          { label: "Thời gian", value: formatDuration(session.totalDuration), icon: "⏱️" },
-          { label: "Nguồn", value: session.referrer, icon: "🔗" },
-          { label: "Quốc gia", value: session.country || "Việt Nam", icon: "🌏" },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-3">
-            <div className="text-lg mb-1">{stat.icon}</div>
-            <div className="text-sm font-semibold text-white truncate">{stat.value}</div>
-            <div className="text-[10px] text-gray-600">{stat.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Journey timeline */}
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold text-[#C9A84C] mb-4 flex items-center gap-2">
-          <span>🗺️</span> Hành trình ({totalPages} trang)
-        </h3>
-
-        {session.events.length === 0 ? (
-          <div className="text-center py-8 text-gray-600 text-sm">Chưa có dữ liệu hành trình</div>
-        ) : (
-          <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-4 top-4 bottom-4 w-px bg-[#C9A84C]/10" />
-
-            <div className="space-y-0">
-              {session.events.map((event, idx) => {
-                const isFirst = idx === 0;
-                const isLast = idx === session.events.length - 1;
-                const durationPct = maxDuration > 0 ? (event.duration / maxDuration) * 100 : 0;
-
-                return (
-                  <div key={event.id} className="relative flex gap-4 pl-10 pb-4">
-                    {/* Timeline dot */}
-                    <div
-                      className={`absolute left-[11px] top-3 w-2.5 h-2.5 rounded-full border-2 flex-shrink-0 z-10 ${
-                        event.isActive
-                          ? "bg-green-400 border-green-400 animate-pulse"
+                      {/* Card */}
+                      <div className={`flex-1 rounded-xl border px-4 py-3 transition-all ${
+                        isHere
+                          ? "bg-green-500/5 border-green-500/20"
                           : isFirst
-                          ? "bg-[#C9A84C] border-[#C9A84C]"
-                          : isLast
-                          ? "bg-orange-400 border-orange-400"
-                          : "bg-gray-700 border-gray-600"
-                      }`}
-                    />
-
-                    {/* Content card */}
-                    <div className="flex-1 bg-[#0E0C00] border border-white/5 rounded-xl p-3 hover:border-[#C9A84C]/20 transition-colors">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          {/* Step badge */}
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[9px] bg-[#C9A84C]/10 text-[#C9A84C] rounded px-1.5 py-0.5 font-mono">
-                              #{idx + 1}
+                          ? "bg-[#C9A84C]/5 border-[#C9A84C]/15"
+                          : "bg-white/2 border-white/5"
+                      }`}>
+                        {/* Top row: badges + time */}
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {isHere && (
+                              <span className="text-[11px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium animate-pulse">
+                                ● Đang ở đây
+                              </span>
+                            )}
+                            {isFirst && (
+                              <span className="text-[11px] bg-[#C9A84C]/20 text-[#C9A84C] px-2 py-0.5 rounded-full">
+                                Trang vào
+                              </span>
+                            )}
+                            {isLast && !isFirst && !isHere && (
+                              <span className="text-[11px] bg-orange-500/15 text-orange-400 px-2 py-0.5 rounded-full">
+                                Trang thoát
+                              </span>
+                            )}
+                            <span className="text-sm font-semibold text-white">
+                              {pathLabel(ev.path)}
                             </span>
-                            {isFirst && <span className="text-[9px] text-green-400 bg-green-400/10 rounded px-1.5 py-0.5">Vào</span>}
-                            {isLast && !event.isActive && <span className="text-[9px] text-orange-400 bg-orange-400/10 rounded px-1.5 py-0.5">Thoát</span>}
-                            {event.isActive && <span className="text-[9px] text-green-400 bg-green-400/10 rounded px-1.5 py-0.5 animate-pulse">● Đang ở đây</span>}
                           </div>
-
-                          {/* Path */}
-                          <div className="text-sm font-medium text-white truncate">{pathLabel(event.path)}</div>
-                          <div className="text-[10px] text-gray-600 font-mono truncate mt-0.5">{event.path}</div>
-
-                          {/* Duration bar */}
-                          {event.duration > 0 && (
-                            <div className="mt-2">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-[10px] text-gray-600">Thời gian ở trang</span>
-                                <span className="text-[10px] text-[#C9A84C] font-medium">{formatDuration(event.duration)}</span>
-                              </div>
-                              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-to-r from-[#C9A84C]/60 to-[#C9A84C] rounded-full transition-all"
-                                  style={{ width: `${Math.max(durationPct, 3)}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                          {event.duration === 0 && event.isActive && (
-                            <div className="mt-2 text-[10px] text-green-400">⏱ Đang đếm thời gian...</div>
-                          )}
+                          <span className="text-[11px] text-gray-600 flex-shrink-0 ml-2">
+                            {new Date(ev.enteredAt).toLocaleTimeString("vi-VN", {
+                              hour: "2-digit", minute: "2-digit", second: "2-digit"
+                            })}
+                          </span>
                         </div>
 
-                        {/* Time */}
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-[10px] text-gray-600">{formatTime(event.enteredAt)}</div>
+                        {/* URL — Talkto style: full path visible */}
+                        <div className="flex items-center gap-1.5 mb-2.5">
+                          <span className="text-[11px] text-gray-600 font-mono">
+                            smartfurni-webapp-production.up.railway.app
+                          </span>
+                          <span className={`text-[11px] font-mono font-medium ${
+                            isHere ? "text-green-300" : "text-gray-300"
+                          }`}>
+                            {ev.path}
+                          </span>
+                        </div>
+
+                        {/* Duration bar */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            {isHere ? (
+                              <div className="h-full bg-green-400 rounded-full w-full animate-pulse" />
+                            ) : barWidth > 0 ? (
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${barWidth}%`,
+                                  backgroundColor: isFirst ? "#C9A84C" : "#4B5563",
+                                }}
+                              />
+                            ) : null}
+                          </div>
+                          <span className="text-[11px] text-gray-500 w-14 text-right flex-shrink-0">
+                            {isHere ? "live" : formatDuration(ev.duration)}
+                          </span>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+                  );
+                })}
+              </div>
 
-      {/* Entry/Exit summary */}
-      <div className="grid grid-cols-2 gap-3 mt-4">
-        <div className="bg-[#0E0C00] border border-green-500/10 rounded-xl p-3">
-          <div className="text-[10px] text-green-400 mb-1">🚪 Trang vào</div>
-          <div className="text-sm text-white font-medium truncate">{pathLabel(session.entryPage)}</div>
-          <div className="text-[10px] text-gray-600 font-mono truncate">{session.entryPage}</div>
-        </div>
-        <div className="bg-[#0E0C00] border border-orange-500/10 rounded-xl p-3">
-          <div className="text-[10px] text-orange-400 mb-1">🚪 Trang thoát</div>
-          <div className="text-sm text-white font-medium truncate">{pathLabel(session.exitPage)}</div>
-          <div className="text-[10px] text-gray-600 font-mono truncate">{session.exitPage}</div>
-        </div>
+              {/* Entry / Exit summary */}
+              <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-3">
+                <div className="bg-[#C9A84C]/5 rounded-xl p-3 border border-[#C9A84C]/10">
+                  <div className="text-[11px] text-gray-600 mb-1">Trang vào</div>
+                  <div className="text-xs font-mono text-[#C9A84C] truncate">{selected.entryPage}</div>
+                </div>
+                <div className={`rounded-xl p-3 border ${
+                  selected.isActive
+                    ? "bg-green-500/5 border-green-500/15"
+                    : "bg-orange-500/5 border-orange-500/10"
+                }`}>
+                  <div className="text-[11px] text-gray-600 mb-1">
+                    {selected.isActive ? "Đang ở" : "Trang thoát"}
+                  </div>
+                  <div className={`text-xs font-mono truncate ${
+                    selected.isActive ? "text-green-400" : "text-orange-400"
+                  }`}>
+                    {selected.exitPage}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

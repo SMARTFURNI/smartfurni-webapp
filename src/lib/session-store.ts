@@ -3,6 +3,8 @@
  * Tracks visitor sessions and their page journey with time-on-page data.
  * Uses PostgreSQL for persistence.
  *
+ * isActive threshold: 15 seconds (heartbeat every 5s, so 3 missed = offline)
+ *
  * Tables:
  *   visitor_sessions  - one row per browser session
  *   session_events    - one row per page visit within a session
@@ -40,7 +42,7 @@ export interface VisitorSession {
   referrer: string;
   entryPage: string;
   exitPage: string;
-  isActive: boolean;   // last seen < 30 min ago
+  isActive: boolean;   // last seen < 15s ago (heartbeat-based)
   events: SessionEvent[];
 }
 
@@ -69,18 +71,15 @@ export interface SessionsResult {
 
 function parseUA(ua: string): { device: string; browser: string; os: string } {
   const uaLower = ua.toLowerCase();
-  // Device
   let device = "Desktop";
   if (/mobile|android|iphone|ipod/.test(uaLower)) device = "Mobile";
   else if (/tablet|ipad/.test(uaLower)) device = "Tablet";
-  // Browser
   let browser = "Other";
   if (uaLower.includes("chrome") && !uaLower.includes("edg")) browser = "Chrome";
   else if (uaLower.includes("firefox")) browser = "Firefox";
   else if (uaLower.includes("safari") && !uaLower.includes("chrome")) browser = "Safari";
   else if (uaLower.includes("edg")) browser = "Edge";
   else if (uaLower.includes("opera") || uaLower.includes("opr")) browser = "Opera";
-  // OS
   let os = "Other";
   if (uaLower.includes("windows")) os = "Windows";
   else if (uaLower.includes("mac os") || uaLower.includes("macos")) os = "macOS";
@@ -106,6 +105,9 @@ function cleanReferrer(ref: string): string {
     return "Direct";
   }
 }
+
+// isActive: 15 seconds threshold (3 missed heartbeats at 5s interval)
+const ACTIVE_THRESHOLD_MS = 15 * 1000;
 
 // ─── DB Setup ────────────────────────────────────────────────────────────────
 
@@ -146,10 +148,6 @@ export async function ensureSessionTables(): Promise<void> {
 
 // ─── Write Operations ─────────────────────────────────────────────────────────
 
-/**
- * Called when a visitor enters a new page.
- * Creates or updates the session, and inserts a new session_event.
- */
 export async function trackSessionPage(params: {
   sessionId: string;
   path: string;
@@ -157,15 +155,13 @@ export async function trackSessionPage(params: {
   referrer: string;
   ua: string;
   prevPath?: string;
-  prevDuration?: number; // seconds spent on previous page
+  prevDuration?: number;
 }): Promise<void> {
   const pool = getPool();
   if (!pool) return;
   const { sessionId, path, title, referrer, ua, prevPath, prevDuration } = params;
-  const { device, browser, os } = parseUA(ua);
   const cleanRef = cleanReferrer(referrer);
   try {
-    // Upsert session
     await pool.query(
       `INSERT INTO visitor_sessions (session_id, started_at, last_seen_at, ua, referrer, entry_page, exit_page, page_count, total_duration)
        VALUES ($1, NOW(), NOW(), $2, $3, $4, $4, 1, 0)
@@ -176,29 +172,27 @@ export async function trackSessionPage(params: {
       `,
       [sessionId, ua, cleanRef, path]
     );
-    // Update duration of previous page if provided
     if (prevPath && prevDuration && prevDuration > 0) {
       await pool.query(
         `UPDATE session_events
          SET duration = $1
-         WHERE session_id = $2 AND path = $3 AND duration = 0
-         ORDER BY entered_at DESC
-         LIMIT 1`,
+         WHERE id = (
+           SELECT id FROM session_events
+           WHERE session_id = $2 AND path = $3 AND duration = 0
+           ORDER BY entered_at DESC LIMIT 1
+         )`,
         [prevDuration, sessionId, prevPath]
       );
-      // Also update total_duration in session
       await pool.query(
         `UPDATE visitor_sessions SET total_duration = total_duration + $1 WHERE session_id = $2`,
         [prevDuration, sessionId]
       );
     }
-    // Get next seq number
     const seqRes = await pool.query(
       `SELECT COALESCE(MAX(seq), 0) + 1 as next_seq FROM session_events WHERE session_id = $1`,
       [sessionId]
     );
     const seq = seqRes.rows[0]?.next_seq || 1;
-    // Insert new event
     const eventId = `${sessionId}_${seq}_${Date.now()}`;
     await pool.query(
       `INSERT INTO session_events (id, session_id, path, title, entered_at, duration, seq)
@@ -210,9 +204,6 @@ export async function trackSessionPage(params: {
   }
 }
 
-/**
- * Called when visitor leaves (beforeunload) to record final page duration.
- */
 export async function updatePageDuration(params: {
   sessionId: string;
   path: string;
@@ -223,19 +214,16 @@ export async function updatePageDuration(params: {
   const { sessionId, path, duration } = params;
   if (duration <= 0) return;
   try {
-    // Update the most recent event for this path in this session
     await pool.query(
       `UPDATE session_events
        SET duration = $1
        WHERE id = (
          SELECT id FROM session_events
          WHERE session_id = $2 AND path = $3 AND duration = 0
-         ORDER BY entered_at DESC
-         LIMIT 1
+         ORDER BY entered_at DESC LIMIT 1
        )`,
       [duration, sessionId, path]
     );
-    // Update total_duration
     await pool.query(
       `UPDATE visitor_sessions SET total_duration = total_duration + $1, last_seen_at = NOW()
        WHERE session_id = $2`,
@@ -261,7 +249,8 @@ export async function getSessions(params: {
 
   let whereClause = "";
   if (filter === "active") {
-    whereClause = "WHERE last_seen_at >= NOW() - INTERVAL '30 minutes'";
+    // 15s threshold — matches heartbeat interval (5s × 3 missed = offline)
+    whereClause = "WHERE last_seen_at >= NOW() - INTERVAL '15 seconds'";
   } else if (filter === "today") {
     whereClause = "WHERE last_seen_at >= NOW() - INTERVAL '1 day'";
   } else if (filter === "week") {
@@ -280,7 +269,7 @@ export async function getSessions(params: {
       ),
       pool.query(`SELECT COUNT(*) as total FROM visitor_sessions ${whereClause}`),
       pool.query(
-        `SELECT COUNT(*) as active FROM visitor_sessions WHERE last_seen_at >= NOW() - INTERVAL '30 minutes'`
+        `SELECT COUNT(*) as active FROM visitor_sessions WHERE last_seen_at >= NOW() - INTERVAL '15 seconds'`
       ),
     ]);
 
@@ -289,7 +278,7 @@ export async function getSessions(params: {
     const sessions: SessionListItem[] = sessionsRes.rows.map((r: any) => {
       const { device, browser, os } = parseUA(r.ua || "");
       const lastSeen = new Date(r.last_seen_at).getTime();
-      const isActive = now - lastSeen < 30 * 60 * 1000;
+      const isActive = now - lastSeen < ACTIVE_THRESHOLD_MS;
       return {
         sessionId: r.session_id,
         startedAt: new Date(r.started_at).toISOString(),
@@ -340,7 +329,7 @@ export async function getSessionDetail(sessionId: string): Promise<VisitorSessio
     const { device, browser, os } = parseUA(s.ua || "");
     const now = Date.now();
     const lastSeen = new Date(s.last_seen_at).getTime();
-    const isActive = now - lastSeen < 30 * 60 * 1000;
+    const isActive = now - lastSeen < ACTIVE_THRESHOLD_MS;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const events: SessionEvent[] = eventsRes.rows.map((e: any, idx: number) => ({
@@ -375,12 +364,75 @@ export async function getSessionDetail(sessionId: string): Promise<VisitorSessio
   }
 }
 
+/**
+ * Heartbeat: cập nhật last_seen_at và trang hiện tại (gọi mỗi 5 giây từ client)
+ */
+export async function updateSessionHeartbeat(
+  sessionId: string,
+  currentPath: string,
+  currentTitle: string
+): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
+  try {
+    await pool.query(
+      `UPDATE visitor_sessions
+       SET last_seen_at = NOW(), exit_page = $2
+       WHERE session_id = $1`,
+      [sessionId, currentPath]
+    );
+    // Cập nhật duration của event hiện tại (event cuối cùng có duration = 0)
+    await pool.query(
+      `UPDATE session_events
+       SET duration = EXTRACT(EPOCH FROM (NOW() - entered_at))::INT
+       WHERE id = (
+         SELECT id FROM session_events
+         WHERE session_id = $1 AND duration = 0
+         ORDER BY entered_at DESC LIMIT 1
+       )`,
+      [sessionId]
+    );
+    void currentTitle; // used for future title tracking
+  } catch (err) {
+    console.error("[session-store] updateSessionHeartbeat error:", (err as Error).message);
+  }
+}
+
+/**
+ * Đánh dấu session offline ngay lập tức (khi nhận beacon unload)
+ * Đặt last_seen_at về 2 giờ trước để isActive = false
+ */
+export async function markSessionOffline(sessionId: string): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
+  try {
+    await pool.query(
+      `UPDATE visitor_sessions
+       SET last_seen_at = NOW() - INTERVAL '2 hours'
+       WHERE session_id = $1`,
+      [sessionId]
+    );
+    await pool.query(
+      `UPDATE session_events
+       SET duration = GREATEST(1, EXTRACT(EPOCH FROM (NOW() - entered_at))::INT)
+       WHERE id = (
+         SELECT id FROM session_events
+         WHERE session_id = $1 AND duration = 0
+         ORDER BY entered_at DESC LIMIT 1
+       )`,
+      [sessionId]
+    );
+  } catch (err) {
+    console.error("[session-store] markSessionOffline error:", (err as Error).message);
+  }
+}
+
 export async function getActiveSessionCount(): Promise<number> {
   const pool = getPool();
   if (!pool) return 0;
   try {
     const res = await pool.query(
-      `SELECT COUNT(*) as active FROM visitor_sessions WHERE last_seen_at >= NOW() - INTERVAL '30 minutes'`
+      `SELECT COUNT(*) as active FROM visitor_sessions WHERE last_seen_at >= NOW() - INTERVAL '15 seconds'`
     );
     return parseInt(res.rows[0]?.active) || 0;
   } catch {
