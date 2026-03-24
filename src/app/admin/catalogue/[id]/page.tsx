@@ -6,19 +6,21 @@ import AdminCatalogueEditorClient from "@/components/admin/AdminCatalogueEditorC
 import { notFound } from "next/navigation";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props) {
-  const cat = await getCatalogueById(params.id);
+  const { id } = await params;
+  const cat = await getCatalogueById(id);
   return { title: `${cat?.title || "Catalogue"} — Chỉnh sửa | SmartFurni Admin` };
 }
 
 export default async function AdminCatalogueEditorPage({ params }: Props) {
   await requireAdmin();
-  const catalogue = await getCatalogueById(params.id);
+  const { id } = await params;
+  const catalogue = await getCatalogueById(id);
   if (!catalogue) notFound();
   const sidebarStats = getSidebarStats();
 

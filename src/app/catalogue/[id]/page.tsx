@@ -4,11 +4,12 @@ import { getCatalogueById } from "@/lib/catalogue-store";
 import CatalogueViewClient from "@/components/catalogue/CatalogueViewClient";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const catalogue = await getCatalogueById(params.id);
+  const { id } = await params;
+  const catalogue = await getCatalogueById(id);
   if (!catalogue || catalogue.status !== "published") {
     return { title: "Catalogue | SmartFurni" };
   }
@@ -21,7 +22,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const dynamic = "force-dynamic";
 
 export default async function CatalogueViewPage({ params }: Props) {
-  const catalogue = await getCatalogueById(params.id);
+  const { id } = await params;
+  const catalogue = await getCatalogueById(id);
   if (!catalogue || catalogue.status !== "published") {
     notFound();
   }
