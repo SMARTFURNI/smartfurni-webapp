@@ -38,6 +38,15 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Nội dung",
     items: [
       {
+        href: "/admin/catalogue",
+        label: "Catalogue B2B",
+        icon: "📋",
+        exact: false,
+        subItems: [
+          { href: "/admin/catalogue", label: "Danh sách catalogue" },
+        ],
+      },
+      {
         href: "/admin/posts",
         label: "Bài viết",
         icon: "✦",

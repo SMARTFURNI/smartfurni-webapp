@@ -8,14 +8,17 @@ import { getTheme } from "@/lib/theme-store";
 import ProductsSection from "@/components/landing/ProductsSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import { getHomepageProducts, getHomepageProductConfig } from "@/lib/homepage-products-store";
+import CatalogueSection from "@/components/landing/CatalogueSection";
+import { getCatalogues } from "@/lib/catalogue-store";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+export default async function HomePage() {
   const theme = getTheme();
   const products = getHomepageProducts();
   const homepageConfig = getHomepageProductConfig();
   const { banner } = theme;
+  const publishedCatalogues = await getCatalogues(true);
 
   return (
     <main style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
@@ -37,6 +40,7 @@ export default function HomePage() {
       <Navbar theme={theme} />
       <HeroSection theme={theme} />
       <ProductsSection products={products} theme={theme} config={homepageConfig} />
+      <CatalogueSection catalogues={publishedCatalogues} />
       <FeaturesSection />
       <TestimonialsSection theme={theme} />
       <DownloadSection />

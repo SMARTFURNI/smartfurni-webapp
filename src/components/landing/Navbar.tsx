@@ -46,6 +46,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Khám phá",
     children: [
+      { label: "Catalogue B2B", href: "/catalogue", icon: "📋", desc: "Bộ sưu tập sản phẩm dành cho đối tác" },
       { label: "Video Reviews", href: "/reviews", icon: "🎬", desc: "Đánh giá thực tế từ khách hàng" },
       { label: "Blog & Tin tức", href: "/blog", icon: "📖", desc: "Kiến thức giấc ngủ & sức khỏe" },
       { label: "Tính năng nổi bật", href: "/#features", isAnchor: true, icon: "✨", desc: "Công nghệ SmartFurni" },
