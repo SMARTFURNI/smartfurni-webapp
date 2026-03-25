@@ -7,12 +7,13 @@ import {
   Calendar, Edit3, Trash2, Plus, CheckSquare, FileText,
   Clock, MessageSquare, Users, Send, FileCheck, Loader2,
   ChevronDown, AlertCircle, Tag, DollarSign, Home, X,
+  ShoppingCart, ExternalLink, Star, TrendingUp, Hash,
 } from "lucide-react";
-import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType } from "@/lib/crm-store";
+import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
   ACTIVITY_LABELS, DISTRICTS, SOURCES, formatVND, isOverdue,
-} from "@/lib/crm-store";
+} from "@/lib/crm-types";
 
 interface Props {
   lead: Lead;
@@ -59,9 +60,22 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
   const [showAddTask, setShowAddTask] = useState(false);
   const [showEditLead, setShowEditLead] = useState(false);
   const [showStageMenu, setShowStageMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const overdue = isOverdue(lead);
   const TypeIcon = lead.type === "architect" ? User : lead.type === "investor" ? Building2 : Store;
+
+  async function deleteLead() {
+    setDeleting(true);
+    try {
+      await fetch(`/api/crm/leads/${lead.id}`, { method: "DELETE" });
+      window.location.href = "/crm/leads";
+    } catch {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  }
 
   async function changeStage(stage: LeadStage) {
     setShowStageMenu(false);
@@ -131,9 +145,23 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
               )}
             </div>
 
+            <Link href={`/admin/orders/new?customerId=${lead.id}&customerName=${encodeURIComponent(lead.name)}&customerPhone=${encodeURIComponent(lead.phone)}&customerEmail=${encodeURIComponent(lead.email || "")}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>
+              <ShoppingCart size={14} /> Tạo đơn hàng
+            </Link>
+            <Link href={`/crm/quotes/new?leadId=${lead.id}&leadName=${encodeURIComponent(lead.name)}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-900 transition-opacity hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}>
+              <FileText size={14} /> Tạo báo giá
+            </Link>
             <button onClick={() => setShowEditLead(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
               <Edit3 size={14} /> Sửa
+            </button>
+            <button onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
+              <Trash2 size={14} /> Xóa
             </button>
           </div>
         </div>
@@ -361,34 +389,168 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
         </div>
 
         {/* Right: Side panel */}
-        <div className="w-72 flex-shrink-0 p-4 overflow-y-auto hidden lg:block">
-          <div className="bg-white rounded-2xl p-4 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
-            <h3 className="font-semibold text-sm text-gray-900 mb-3">Liên hệ nhanh</h3>
-            <div className="space-y-2">
-              <a href={`tel:${lead.phone}`}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-green-50 transition-colors group">
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                  <Phone size={14} className="text-green-600" />
+        <div className="w-80 flex-shrink-0 p-4 overflow-y-auto hidden lg:block space-y-4">
+
+          {/* Customer Profile Card */}
+          <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+            <div className="p-4" style={{ background: "linear-gradient(135deg, #fffbf0, #fff)" }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black text-white flex-shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${TYPE_COLORS[lead.type]}, ${TYPE_COLORS[lead.type]}cc)` }}>
+                  {lead.name.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <div className="text-xs text-gray-500">Gọi điện</div>
-                  <div className="text-sm font-medium text-gray-900">{lead.phone}</div>
+                <div className="min-w-0">
+                  <div className="font-bold text-gray-900 truncate">{lead.name}</div>
+                  {lead.company && <div className="text-xs text-gray-500 truncate">{lead.company}</div>}
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: `${TYPE_COLORS[lead.type]}15`, color: TYPE_COLORS[lead.type] }}>
+                      {TYPE_LABELS[lead.type]}
+                    </span>
+                  </div>
                 </div>
-              </a>
-              {lead.email && (
-                <a href={`mailto:${lead.email}`}
-                  className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-blue-50 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <Mail size={14} className="text-blue-600" />
+              </div>
+              {/* Quick actions */}
+              <div className="grid grid-cols-3 gap-2">
+                <a href={`tel:${lead.phone}`}
+                  className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-green-50 transition-colors group" style={{ border: "1px solid #dcfce7" }}>
+                  <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center">
+                    <Phone size={13} className="text-green-600" />
                   </div>
-                  <div>
-                    <div className="text-xs text-gray-500">Email</div>
-                    <div className="text-sm font-medium text-gray-900 truncate max-w-[140px]">{lead.email}</div>
-                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">Gọi</span>
                 </a>
+                {lead.email ? (
+                  <a href={`mailto:${lead.email}`}
+                    className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-blue-50 transition-colors" style={{ border: "1px solid #dbeafe" }}>
+                    <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
+                      <Mail size={13} className="text-blue-600" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-gray-600">Email</span>
+                  </a>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 p-2 rounded-xl opacity-30" style={{ border: "1px solid #e5e7eb" }}>
+                    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Mail size={13} className="text-gray-400" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-gray-400">Email</span>
+                  </div>
+                )}
+                <Link href={`/crm/quotes/new?leadId=${lead.id}`}
+                  className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-amber-50 transition-colors" style={{ border: "1px solid #fde68a" }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "#fef3c7" }}>
+                    <FileText size={13} style={{ color: "#C9A84C" }} />
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">Báo giá</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Key Info */}
+          <div className="bg-white rounded-2xl p-4" style={{ border: "1px solid #e5e7eb" }}>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Thông tin chính</h3>
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#f0fdf4" }}>
+                  <Phone size={11} className="text-green-600" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] text-gray-400">Điện thoại</div>
+                  <div className="text-xs font-semibold text-gray-800">{lead.phone}</div>
+                </div>
+              </div>
+              {lead.email && (
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#eff6ff" }}>
+                    <Mail size={11} className="text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-gray-400">Email</div>
+                    <div className="text-xs font-semibold text-gray-800 truncate">{lead.email}</div>
+                  </div>
+                </div>
+              )}
+              {lead.district && (
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#f5f3ff" }}>
+                    <MapPin size={11} className="text-purple-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-gray-400">Khu vực</div>
+                    <div className="text-xs font-semibold text-gray-800">{lead.district}</div>
+                  </div>
+                </div>
+              )}
+              {lead.assignedTo && (
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#fffbeb" }}>
+                    <User size={11} style={{ color: "#C9A84C" }} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-gray-400">Sales phụ trách</div>
+                    <div className="text-xs font-semibold text-gray-800">{lead.assignedTo}</div>
+                  </div>
+                </div>
+              )}
+              {lead.source && (
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#fef2f2" }}>
+                    <TrendingUp size={11} className="text-red-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-gray-400">Nguồn</div>
+                    <div className="text-xs font-semibold text-gray-800">{lead.source}</div>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#f9fafb" }}>
+                  <Calendar size={11} className="text-gray-500" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] text-gray-400">Ngày tạo</div>
+                  <div className="text-xs font-semibold text-gray-800">{new Date(lead.createdAt).toLocaleDateString("vi-VN")}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Value Summary */}
+          <div className="bg-white rounded-2xl p-4" style={{ border: "1px solid #e5e7eb" }}>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Giá trị</h3>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-2.5 rounded-xl" style={{ background: "#fffbeb", border: "1px solid #fde68a" }}>
+                <div className="flex items-center gap-2">
+                  <DollarSign size={13} style={{ color: "#C9A84C" }} />
+                  <span className="text-xs text-gray-600">Giá trị dự kiến</span>
+                </div>
+                <span className="text-sm font-black" style={{ color: "#C9A84C" }}>
+                  {lead.expectedValue > 0 ? (lead.expectedValue >= 1e9 ? `${(lead.expectedValue/1e9).toFixed(1)}B` : lead.expectedValue >= 1e6 ? `${(lead.expectedValue/1e6).toFixed(0)}tr` : `${lead.expectedValue.toLocaleString()}đ`) : "—"}
+                </span>
+              </div>
+              {lead.unitCount > 0 && (
+                <div className="flex items-center justify-between p-2.5 rounded-xl" style={{ background: "#eff6ff", border: "1px solid #bfdbfe" }}>
+                  <div className="flex items-center gap-2">
+                    <Home size={13} className="text-blue-500" />
+                    <span className="text-xs text-gray-600">Số căn</span>
+                  </div>
+                  <span className="text-sm font-black text-blue-600">{lead.unitCount} căn</span>
+                </div>
               )}
             </div>
           </div>
+
+          {/* Create Order CTA */}
+          <Link href={`/admin/orders/new?customerId=${lead.id}&customerName=${encodeURIComponent(lead.name)}&customerPhone=${encodeURIComponent(lead.phone)}&customerEmail=${encodeURIComponent(lead.email || "")}`}
+            className="block w-full p-4 rounded-2xl text-center transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", border: "none" }}>
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <ShoppingCart size={16} className="text-white" />
+              <span className="text-sm font-bold text-white">Tạo đơn hàng</span>
+            </div>
+            <p className="text-[10px] text-indigo-200">Chuyển khách hàng thành đơn hàng</p>
+          </Link>
+
         </div>
       </div>
 
@@ -415,6 +577,52 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
             setShowAddTask(false);
           }}
         />
+      )}
+
+      {/* Edit Lead Modal */}
+      {showEditLead && (
+        <EditLeadModal
+          lead={lead}
+          onClose={() => setShowEditLead(false)}
+          onUpdated={updated => {
+            setLead(updated);
+            setShowEditLead(false);
+          }}
+        />
+      )}
+
+      {/* Delete Confirm Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowDeleteConfirm(false); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Trash2 size={18} className="text-red-500" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-gray-900">Xóa khách hàng?</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Thao tác này không thể hoàn tác</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-700 mb-5 p-3 bg-gray-50 rounded-lg">
+              Bạn có chắc muốn xóa <strong>{lead.name}</strong>? Tất cả hoạt động, báo giá và công việc liên quan cũng sẽ bị xóa.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
+                Hủy
+              </button>
+              <button onClick={deleteLead} disabled={deleting}
+                className="flex-1 py-2.5 text-sm font-semibold rounded-lg text-white flex items-center justify-center gap-2"
+                style={{ background: "#ef4444" }}>
+                {deleting && <Loader2 size={14} className="animate-spin" />}
+                Xóa khách hàng
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -641,6 +849,197 @@ function AddTaskModal({ leadId, leadName, onClose, onCreated }: { leadId: string
               style={{ background: "#C9A84C" }}>
               {loading && <Loader2 size={14} className="animate-spin" />}
               Lưu
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Lead Modal ──────────────────────────────────────────────────────────
+function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () => void; onUpdated: (l: Lead) => void }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({
+    name: lead.name,
+    company: lead.company || "",
+    phone: lead.phone,
+    email: lead.email || "",
+    type: lead.type,
+    district: lead.district || "",
+    expectedValue: lead.expectedValue > 0 ? String(lead.expectedValue) : "",
+    source: lead.source || "",
+    assignedTo: lead.assignedTo || "",
+    projectName: lead.projectName || "",
+    projectAddress: lead.projectAddress || "",
+    unitCount: lead.unitCount > 0 ? String(lead.unitCount) : "",
+    notes: lead.notes || "",
+  });
+
+  function set(key: string, value: string) {
+    setForm(prev => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim()) { setError("Vui lòng nhập tên khách hàng"); return; }
+    if (!form.phone.trim()) { setError("Vui lòng nhập số điện thoại"); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/crm/leads/${lead.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          expectedValue: parseFloat(form.expectedValue) || 0,
+          unitCount: parseInt(form.unitCount) || 0,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const updated = await res.json();
+      onUpdated(updated);
+    } catch {
+      setError("Có lỗi xảy ra, vui lòng thử lại");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.5)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 sticky top-0 bg-white z-10"
+          style={{ borderBottom: "1px solid #f3f4f6" }}>
+          <h2 className="text-lg font-bold text-gray-900">Chỉnh sửa khách hàng</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {error && (
+            <div className="p-3 rounded-lg text-sm text-red-600" style={{ background: "#fef2f2", border: "1px solid #fecaca" }}>
+              {error}
+            </div>
+          )}
+
+          {/* Basic Info */}
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Thông tin cơ bản</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Tên khách hàng *</label>
+                <input value={form.name} onChange={e => set("name", e.target.value)} required
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="Nguyễn Văn A" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Công ty / Dự án</label>
+                <input value={form.company} onChange={e => set("company", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="Tên công ty" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Loại khách *</label>
+                <select value={form.type} onChange={e => set("type", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
+                  <option value="architect">Kiến trúc sư</option>
+                  <option value="investor">Chủ đầu tư CHDV</option>
+                  <option value="dealer">Đại lý</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Số điện thoại *</label>
+                <input value={form.phone} onChange={e => set("phone", e.target.value)} required
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="0901234567" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Email</label>
+                <input type="email" value={form.email} onChange={e => set("email", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="email@example.com" />
+              </div>
+            </div>
+          </div>
+
+          {/* Sales Info */}
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Thông tin kinh doanh</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Giá trị dự kiến (VND)</label>
+                <input type="number" value={form.expectedValue} onChange={e => set("expectedValue", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="500000000" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Số căn / phòng</label>
+                <input type="number" value={form.unitCount} onChange={e => set("unitCount", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="10" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Khu vực</label>
+                <input value={form.district} onChange={e => set("district", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="Q1, TP.HCM" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Nguồn</label>
+                <input value={form.source} onChange={e => set("source", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="Facebook Ads" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Sales phụ trách</label>
+                <input value={form.assignedTo} onChange={e => set("assignedTo", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="Tên nhân viên" />
+              </div>
+            </div>
+          </div>
+
+          {/* Project Info */}
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Thông tin dự án</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Tên dự án</label>
+                <input value={form.projectName} onChange={e => set("projectName", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="Vinhomes Central Park" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Địa chỉ dự án</label>
+                <input value={form.projectAddress} onChange={e => set("projectAddress", e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  placeholder="720A Điện Biên Phủ, Q.Bình Thạnh" />
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Ghi chú</label>
+            <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
+              placeholder="Ghi chú thêm về khách hàng..." />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
+              Hủy
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-2.5 text-sm font-semibold rounded-lg text-gray-900 flex items-center justify-center gap-2"
+              style={{ background: "#C9A84C" }}>
+              {loading && <Loader2 size={14} className="animate-spin" />}
+              Lưu thay đổi
             </button>
           </div>
         </form>

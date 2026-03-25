@@ -6,11 +6,11 @@ import {
   Plus, Filter, Search, Phone, MapPin, Calendar,
   AlertCircle, Building2, User, Store, ChevronDown, X, RefreshCw,
 } from "lucide-react";
-import type { Lead, LeadStage, LeadType } from "@/lib/crm-store";
+import type { Lead, LeadStage, LeadType } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
   SOURCES, formatVND, isOverdue,
-} from "@/lib/crm-store";
+} from "@/lib/crm-types";
 import { VIETNAM_PROVINCES } from "@/lib/crm-locations";
 import AddLeadModal from "./AddLeadModal";
 

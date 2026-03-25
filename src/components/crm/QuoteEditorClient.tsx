@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ArrowLeft, Loader2, Package, ChevronDown } from "lucide-react";
-import type { CrmProduct, Lead, QuoteItem } from "@/lib/crm-store";
-import { formatVND, getDiscountForQty } from "@/lib/crm-store";
+import type { CrmProduct, Lead, QuoteItem } from "@/lib/crm-types";
+import { formatVND, getDiscountForQty } from "@/lib/crm-types";
 
 interface Props {
   products: CrmProduct[];

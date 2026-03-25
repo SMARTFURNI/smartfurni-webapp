@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send, Check, X, Printer } from "lucide-react";
-import type { Quote, Lead } from "@/lib/crm-store";
-import { formatVND } from "@/lib/crm-store";
+import type { Quote, Lead } from "@/lib/crm-types";
+import { formatVND } from "@/lib/crm-types";
 
 interface Props { quote: Quote; lead: Lead | null }
 

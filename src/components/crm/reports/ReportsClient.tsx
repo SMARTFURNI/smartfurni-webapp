@@ -6,7 +6,7 @@ import {
   Target, Award, ArrowUpRight, ArrowDownRight, Minus,
   ChevronDown, Calendar, Download, Filter,
 } from "lucide-react";
-import type { Lead, Quote, CrmStats } from "@/lib/crm-store";
+import type { Lead, Quote, CrmStats } from "@/lib/crm-types";
 
 interface Props {
   leads: Lead[];

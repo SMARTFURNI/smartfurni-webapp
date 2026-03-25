@@ -18,23 +18,29 @@ const nextConfig: NextConfig = {
       // These are used in server-side stores (product-store, order-store, admin-store)
       // but some client components import from those files — webpack needs to know
       // to skip these modules on the client side.
-        config.resolve.fallback = {
-          ...config.resolve.fallback,
-          fs: false,
-          path: false,
-          os: false,
-          dns: false,
-          net: false,
-          tls: false,
-          crypto: false,
-          stream: false,
-          http: false,
-          https: false,
-          zlib: false,
-        };
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        dns: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        stream: false,
+        http: false,
+        https: false,
+        zlib: false,
+        // mysql2 uses node: URI scheme
+        buffer: false,
+        events: false,
+        string_decoder: false,
+        timers: false,
+      };
     }
     return config;
   },
+  serverExternalPackages: ["mysql2", "pg"],
 };
 
 export default nextConfig;

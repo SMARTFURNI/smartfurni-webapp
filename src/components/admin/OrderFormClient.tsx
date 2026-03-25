@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Order, OrderStatus, PaymentMethod, PaymentStatus } from "@/lib/order-store";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -70,12 +70,19 @@ interface OrderItemForm {
 
 export default function OrderFormClient({ order }: { order?: Order }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isEdit = !!order;
 
+  // Pre-fill from CRM query params (when navigating from CRM lead detail)
+  const crmName = searchParams.get("customerName") || "";
+  const crmPhone = searchParams.get("customerPhone") || "";
+  const crmEmail = searchParams.get("customerEmail") || "";
+  const fromCrm = !!searchParams.get("customerId");
+
   // Customer info
-  const [customerName, setCustomerName] = useState(order?.customerName || "");
-  const [customerEmail, setCustomerEmail] = useState(order?.customerEmail || "");
-  const [customerPhone, setCustomerPhone] = useState(order?.customerPhone || "");
+  const [customerName, setCustomerName] = useState(order?.customerName || crmName);
+  const [customerEmail, setCustomerEmail] = useState(order?.customerEmail || crmEmail);
+  const [customerPhone, setCustomerPhone] = useState(order?.customerPhone || crmPhone);
   const [shippingAddress, setShippingAddress] = useState(order?.shippingAddress || "");
   const [city, setCity] = useState(order?.city || "TP. Hồ Chí Minh");
 
@@ -218,11 +225,18 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           >
             ← Quay lại
           </button>
-          <h1 className="text-2xl font-bold text-white">
-            {isEdit ? `Chỉnh sửa: ${order!.orderNumber}` : "Tạo đơn hàng mới"}
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {isEdit ? "Cập nhật thông tin đơn hàng" : "Điền đầy đủ thông tin để tạo đơn hàng mới"}
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold text-white">
+              {isEdit ? `Chỉnh sửa: ${order!.orderNumber}` : "Tạo đơn hàng mới"}
+            </h1>
+            {fromCrm && !isEdit && (
+              <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ background: "#6366f115", color: "#6366f1", border: "1px solid #6366f130" }}>
+                ✨ Từ CRM
+              </span>
+            )}
+          </div>
+          <p className="text-gray-500 text-sm">
+            {isEdit ? "Cập nhật thông tin đơn hàng" : fromCrm ? `Tạo đơn hàng cho khách hàng CRM: ${crmName}` : "Điền đầy đủ thông tin để tạo đơn hàng mới"}
           </p>
         </div>
         <div className="flex items-center gap-3">

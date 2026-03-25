@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { X, Loader2, User, Building2, Phone, Mail, MapPin, DollarSign, Tag, FileText, Users } from "lucide-react";
-import type { Lead, LeadType, LeadStage } from "@/lib/crm-store";
-import { SOURCES, TYPE_LABELS, STAGE_LABELS } from "@/lib/crm-store";
+import type { Lead, LeadType, LeadStage } from "@/lib/crm-types";
+import { SOURCES, TYPE_LABELS, STAGE_LABELS } from "@/lib/crm-types";
 import { VIETNAM_PROVINCES, getDistricts } from "@/lib/crm-locations";
 
 interface Props {

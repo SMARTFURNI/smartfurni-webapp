@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Plus, FileText } from "lucide-react";
-import type { Quote } from "@/lib/crm-store";
-import { formatVND } from "@/lib/crm-store";
+import type { Quote } from "@/lib/crm-types";
+import { formatVND } from "@/lib/crm-types";
 
 interface Props { initialQuotes: Quote[] }
 
