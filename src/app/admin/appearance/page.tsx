@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { verifySessionToken } from "@/lib/admin-auth";
-import { getTheme, PRESET_THEMES, FONT_OPTIONS, BORDER_RADIUS_OPTIONS } from "@/lib/theme-store";
+import { getThemeAsync, PRESET_THEMES, FONT_OPTIONS, BORDER_RADIUS_OPTIONS } from "@/lib/theme-store";
 import { getSidebarStats } from "@/lib/sidebar-stats";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import ThemeEditorClient from "@/components/admin/ThemeEditorClient";
+import { initDbOnce } from "@/lib/db-init";
 
 export const metadata = { title: "Chỉnh sửa giao diện | SmartFurni Admin" };
 
@@ -16,8 +17,9 @@ export default async function AppearancePage() {
     redirect("/admin/login");
   }
 
+  await initDbOnce();
   const [theme, sidebarStats] = await Promise.all([
-    getTheme(),
+    getThemeAsync(),
     getSidebarStats(),
   ]);
 

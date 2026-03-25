@@ -4,19 +4,20 @@ import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import DownloadSection from "@/components/landing/DownloadSection";
 import Footer from "@/components/landing/Footer";
-import { getTheme } from "@/lib/theme-store";
+import { getTheme, getThemeAsync } from "@/lib/theme-store";
 import ProductsSection from "@/components/landing/ProductsSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import { getHomepageProducts, getHomepageProductConfig } from "@/lib/homepage-products-store";
+import { getHomepageProducts, getHomepageProductConfigAsync, initHomepageProductConfig } from "@/lib/homepage-products-store";
 import CatalogueSection from "@/components/landing/CatalogueSection";
 import { getCatalogues } from "@/lib/catalogue-store";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const theme = getTheme();
+  await initHomepageProductConfig();
+  const theme = await getThemeAsync();
   const products = getHomepageProducts();
-  const homepageConfig = getHomepageProductConfig();
+  const homepageConfig = await getHomepageProductConfigAsync();
   const { banner } = theme;
   const publishedCatalogues = await getCatalogues(true);
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifySessionToken } from "@/lib/admin-auth";
 import {
-  getHomepageProductConfig,
+  getHomepageProductConfigAsync,
   saveHomepageProductConfig,
 } from "@/lib/homepage-products-store";
 import { getAllProducts } from "@/lib/product-store";
@@ -21,7 +21,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const config = getHomepageProductConfig();
+  const config = await getHomepageProductConfigAsync();
   const allProducts = getAllProducts().filter((p) => p.status !== "discontinued");
 
   return NextResponse.json({ config, allProducts });
@@ -35,7 +35,7 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const updated = saveHomepageProductConfig(body);
+    const updated = await saveHomepageProductConfig(body);
     return NextResponse.json({ success: true, config: updated });
   } catch (err) {
     return NextResponse.json(

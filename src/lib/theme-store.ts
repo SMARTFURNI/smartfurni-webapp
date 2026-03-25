@@ -1,11 +1,13 @@
 // Theme Store — lưu cài đặt giao diện website SmartFurni
-// Lưu trữ vào file JSON để persist qua các request
+// Lưu trữ vào PostgreSQL để persist qua các deploy
 // NOTE: Chỉ import file này từ Server Components. Client components dùng import type từ theme-types.ts
 
-import fs from "fs";
-import path from "path";
+import { dbGetSetting, dbSaveSetting } from "./db-store";
 
-const THEME_FILE = path.join(process.cwd(), "data", "theme.json");
+const THEME_SETTING_KEY = "site_theme";
+
+// In-memory cache
+let _themeCache: SiteTheme | null = null;
 
 // Re-export all types from theme-types.ts (no fs dependency)
 export type {
@@ -232,41 +234,39 @@ export const defaultTheme: SiteTheme = {
   updatedAt: new Date().toISOString(),
 };
 
-// ─── File helpers ─────────────────────────────────────────────────────────────
-function ensureDataDir(): void {
-  const dir = path.dirname(THEME_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+// ─── DB helpers ───────────────────────────────────────────────────────────────
+function mergeTheme(saved: SiteTheme): SiteTheme {
+  return {
+    ...defaultTheme,
+    ...saved,
+    colors: { ...defaultTheme.colors, ...saved.colors },
+    typography: { ...defaultTheme.typography, ...saved.typography },
+    logo: { ...defaultTheme.logo, ...saved.logo },
+    banner: { ...defaultTheme.banner, ...saved.banner },
+    hero: { ...defaultTheme.hero, ...saved.hero },
+    navbar: { ...defaultTheme.navbar, ...saved.navbar },
+    footer: { ...defaultTheme.footer, ...saved.footer },
+    layout: { ...defaultTheme.layout, ...saved.layout },
+    seo: { ...defaultTheme.seo, ...saved.seo },
+    pageProducts: { ...defaultTheme.pageProducts, ...(saved.pageProducts || {}) },
+    pageAbout: { ...defaultTheme.pageAbout, ...(saved.pageAbout || {}) },
+    pageContact: { ...defaultTheme.pageContact, ...(saved.pageContact || {}) },
+    pageBlog: { ...defaultTheme.pageBlog, ...(saved.pageBlog || {}) },
+    pageCart: { ...defaultTheme.pageCart, ...(saved.pageCart || {}) },
+    pageCheckout: { ...defaultTheme.pageCheckout, ...(saved.pageCheckout || {}) },
+    pageWarranty: { ...defaultTheme.pageWarranty, ...(saved.pageWarranty || {}) },
+    pageReturns: { ...defaultTheme.pageReturns, ...(saved.pageReturns || {}) },
+  };
 }
 
-export function getTheme(): SiteTheme {
+/** Async version — reads from DB, populates cache */
+export async function getThemeAsync(): Promise<SiteTheme> {
+  if (_themeCache) return _themeCache;
   try {
-    if (fs.existsSync(THEME_FILE)) {
-      const raw = fs.readFileSync(THEME_FILE, "utf-8");
-      const saved = JSON.parse(raw) as SiteTheme;
-      // Merge với defaultTheme để đảm bảo có đủ fields mới
-      return {
-        ...defaultTheme,
-        ...saved,
-        colors: { ...defaultTheme.colors, ...saved.colors },
-        typography: { ...defaultTheme.typography, ...saved.typography },
-        logo: { ...defaultTheme.logo, ...saved.logo },
-        banner: { ...defaultTheme.banner, ...saved.banner },
-        hero: { ...defaultTheme.hero, ...saved.hero },
-        navbar: { ...defaultTheme.navbar, ...saved.navbar },
-        footer: { ...defaultTheme.footer, ...saved.footer },
-        layout: { ...defaultTheme.layout, ...saved.layout },
-        seo: { ...defaultTheme.seo, ...saved.seo },
-        pageProducts: { ...defaultTheme.pageProducts, ...(saved.pageProducts || {}) },
-        pageAbout: { ...defaultTheme.pageAbout, ...(saved.pageAbout || {}) },
-        pageContact: { ...defaultTheme.pageContact, ...(saved.pageContact || {}) },
-        pageBlog: { ...defaultTheme.pageBlog, ...(saved.pageBlog || {}) },
-        pageCart: { ...defaultTheme.pageCart, ...(saved.pageCart || {}) },
-        pageCheckout: { ...defaultTheme.pageCheckout, ...(saved.pageCheckout || {}) },
-        pageWarranty: { ...defaultTheme.pageWarranty, ...(saved.pageWarranty || {}) },
-        pageReturns: { ...defaultTheme.pageReturns, ...(saved.pageReturns || {}) },
-      };
+    const saved = await dbGetSetting<SiteTheme>(THEME_SETTING_KEY);
+    if (saved) {
+      _themeCache = mergeTheme(saved);
+      return _themeCache;
     }
   } catch {
     // fallback to default
@@ -274,31 +274,37 @@ export function getTheme(): SiteTheme {
   return { ...defaultTheme };
 }
 
-function saveTheme(theme: SiteTheme): void {
-  try {
-    ensureDataDir();
-    fs.writeFileSync(THEME_FILE, JSON.stringify(theme, null, 2), "utf-8");
-  } catch (e) {
-    console.error("Failed to save theme:", e);
-  }
+/** Sync version — returns cache (populated by getThemeAsync or initTheme) */
+export function getTheme(): SiteTheme {
+  return _themeCache ?? { ...defaultTheme };
 }
 
-export function updateTheme(updates: Partial<SiteTheme>): SiteTheme {
-  const current = getTheme();
+/** Initialize theme cache from DB on startup */
+export async function initTheme(): Promise<void> {
+  _themeCache = await getThemeAsync();
+}
+
+async function saveTheme(theme: SiteTheme): Promise<void> {
+  _themeCache = theme;
+  await dbSaveSetting(THEME_SETTING_KEY, theme);
+}
+
+export async function updateTheme(updates: Partial<SiteTheme>): Promise<SiteTheme> {
+  const current = await getThemeAsync();
   const updated = {
     ...current,
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-  saveTheme(updated);
+  await saveTheme(updated);
   return updated;
 }
 
-export function updateThemeSection<K extends keyof SiteTheme>(
+export async function updateThemeSection<K extends keyof SiteTheme>(
   section: K,
   updates: Partial<SiteTheme[K]>
-): SiteTheme {
-  const current = getTheme();
+): Promise<SiteTheme> {
+  const current = await getThemeAsync();
   const updated = {
     ...current,
     [section]: {
@@ -307,26 +313,26 @@ export function updateThemeSection<K extends keyof SiteTheme>(
     },
     updatedAt: new Date().toISOString(),
   };
-  saveTheme(updated);
+  await saveTheme(updated);
   return updated;
 }
 
-export function applyPreset(presetId: string): SiteTheme {
+export async function applyPreset(presetId: string): Promise<SiteTheme> {
   const preset = PRESET_THEMES.find((p) => p.id === presetId);
-  if (!preset) return getTheme();
-  const current = getTheme();
+  if (!preset) return getThemeAsync();
+  const current = await getThemeAsync();
   const updated = {
     ...current,
     colors: { ...preset.colors },
     updatedAt: new Date().toISOString(),
   };
-  saveTheme(updated);
+  await saveTheme(updated);
   return updated;
 }
 
-export function resetTheme(): SiteTheme {
+export async function resetTheme(): Promise<SiteTheme> {
   const reset = { ...defaultTheme, updatedAt: new Date().toISOString() };
-  saveTheme(reset);
+  await saveTheme(reset);
   return reset;
 }
 
@@ -440,3 +446,11 @@ export function generateCSSVariables(theme: SiteTheme): string {
     --max-width: ${layout.maxWidth}px;
   `.trim();
 }
+
+// ─── Register DB loader ───────────────────────────────────────────────────────
+import { registerDbLoader } from "./db-init";
+
+registerDbLoader(async () => {
+  await initTheme();
+  console.log("[theme-store] Theme loaded from database");
+});

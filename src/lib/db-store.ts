@@ -118,6 +118,56 @@ export function dbSaveAll<T extends { id: string }>(table: string, items: T[]): 
 }
 
 /**
+ * Ensure the key-value settings table exists.
+ */
+async function ensureSettingsTable(): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+}
+
+/**
+ * Get a setting value by key. Returns null if not found or DB unavailable.
+ */
+export async function dbGetSetting<T>(key: string): Promise<T | null> {
+  const pool = getPool();
+  if (!pool) return null;
+  try {
+    await ensureSettingsTable();
+    const result = await pool.query(`SELECT value FROM app_settings WHERE key = $1`, [key]);
+    if (result.rows.length === 0) return null;
+    return result.rows[0].value as T;
+  } catch (err) {
+    console.error(`[db-store] dbGetSetting(${key}) error:`, (err as Error).message);
+    return null;
+  }
+}
+
+/**
+ * Save a setting value by key (upsert). Async — awaitable.
+ */
+export async function dbSaveSetting<T>(key: string, value: T): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
+  try {
+    await ensureSettingsTable();
+    await pool.query(
+      `INSERT INTO app_settings (key, value, updated_at) VALUES ($1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
+      [key, JSON.stringify(value)]
+    );
+  } catch (err) {
+    console.error(`[db-store] dbSaveSetting(${key}) error:`, (err as Error).message);
+  }
+}
+
+/**
  * Initialize all tables (called once at startup).
  */
 export async function initAllTables(): Promise<void> {
@@ -130,6 +180,7 @@ export async function initAllTables(): Promise<void> {
     ensureTable("products"),
     ensureTable("orders"),
     ensureTable("contacts"),
+    ensureSettingsTable(),
   ]);
   console.log("[db-store] All tables initialized");
 }

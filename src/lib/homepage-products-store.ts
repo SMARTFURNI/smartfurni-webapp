@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+import { dbGetSetting, dbSaveSetting } from "./db-store";
 import { getAllProducts, type Product } from "./product-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,42 +37,48 @@ const DEFAULT_CONFIG: HomepageProductConfig = {
   updatedAt: new Date().toISOString(),
 };
 
-// ─── File path ─────────────────────────────────────────────────────────────────
-const DATA_DIR = path.join(process.cwd(), "data");
-const CONFIG_FILE = path.join(DATA_DIR, "homepage-products.json");
+const SETTING_KEY = "homepage_products_config";
+
+// ─── In-memory cache ───────────────────────────────────────────────────────────
+let _cache: HomepageProductConfig | null = null;
 
 // ─── Read / Write ──────────────────────────────────────────────────────────────
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+export async function getHomepageProductConfigAsync(): Promise<HomepageProductConfig> {
+  if (_cache) return _cache;
+  try {
+    const saved = await dbGetSetting<HomepageProductConfig>(SETTING_KEY);
+    if (saved) {
+      _cache = { ...DEFAULT_CONFIG, ...saved };
+      return _cache;
+    }
+  } catch {
+    // fallback to default
   }
+  return { ...DEFAULT_CONFIG };
 }
 
 export function getHomepageProductConfig(): HomepageProductConfig {
-  try {
-    ensureDataDir();
-    if (!fs.existsSync(CONFIG_FILE)) {
-      return { ...DEFAULT_CONFIG };
-    }
-    const raw = fs.readFileSync(CONFIG_FILE, "utf-8");
-    return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
-  } catch {
-    return { ...DEFAULT_CONFIG };
-  }
+  // Synchronous read from cache (populated on first async call)
+  return _cache ?? { ...DEFAULT_CONFIG };
 }
 
-export function saveHomepageProductConfig(
+export async function saveHomepageProductConfig(
   updates: Partial<HomepageProductConfig>
-): HomepageProductConfig {
-  ensureDataDir();
-  const current = getHomepageProductConfig();
+): Promise<HomepageProductConfig> {
+  const current = await getHomepageProductConfigAsync();
   const next: HomepageProductConfig = {
     ...current,
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(next, null, 2), "utf-8");
+  _cache = next;
+  await dbSaveSetting(SETTING_KEY, next);
   return next;
+}
+
+// ─── Initialize cache from DB on startup ──────────────────────────────────────
+export async function initHomepageProductConfig(): Promise<void> {
+  _cache = await getHomepageProductConfigAsync();
 }
 
 // ─── Helper: lấy danh sách sản phẩm theo cấu hình ─────────────────────────────
@@ -101,3 +106,11 @@ export function getHomepageProducts(): Product[] {
 
   return config.maxDisplay > 0 ? ordered.slice(0, config.maxDisplay) : ordered;
 }
+
+// ─── Register DB loader ───────────────────────────────────────────────────────
+import { registerDbLoader } from "./db-init";
+
+registerDbLoader(async () => {
+  await initHomepageProductConfig();
+  console.log("[homepage-products-store] Config loaded from database");
+});

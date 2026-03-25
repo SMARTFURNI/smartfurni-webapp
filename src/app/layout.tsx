@@ -5,10 +5,12 @@ import { CartProvider } from "@/lib/cart-context";
 import FloatingSupport from "@/components/landing/FloatingSupport";
 import ScrollToTop from "@/components/landing/ScrollToTop";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
+import { initDbOnce } from "@/lib/db-init";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
+  await initDbOnce();
   const theme = getTheme();
   return {
     title: theme.seo.siteTitle || "SmartFurni — Giường Điều Khiển Thông Minh",
@@ -23,7 +25,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  await initDbOnce();
   const theme = getTheme();
   const cssVars = generateCSSVariables(theme);
 

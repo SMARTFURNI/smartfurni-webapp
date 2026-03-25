@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { verifySessionToken } from "@/lib/admin-auth";
 import {
-  getTheme,
+  getThemeAsync,
   updateTheme,
   updateThemeSection,
   applyPreset,
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const theme = getTheme();
+  const theme = await getThemeAsync();
   return NextResponse.json({
     theme,
     presets: PRESET_THEMES,
@@ -43,13 +43,13 @@ export async function PATCH(request: NextRequest) {
     let updatedTheme: SiteTheme;
 
     if (action === "apply_preset") {
-      updatedTheme = applyPreset(data.presetId);
+      updatedTheme = await applyPreset(data.presetId);
     } else if (action === "reset") {
-      updatedTheme = resetTheme();
+      updatedTheme = await resetTheme();
     } else if (action === "update_section" && section) {
-      updatedTheme = updateThemeSection(section as keyof SiteTheme, data);
+      updatedTheme = await updateThemeSection(section as keyof SiteTheme, data);
     } else {
-      updatedTheme = updateTheme(data);
+      updatedTheme = await updateTheme(data);
     }
 
     // Xóa cache của tất cả các trang frontend để chúng render lại với theme mới

@@ -5,7 +5,7 @@ import { getSidebarStats } from "@/lib/sidebar-stats";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import HomepageProductsClient from "@/components/admin/HomepageProductsClient";
-import { getHomepageProductConfig } from "@/lib/homepage-products-store";
+import { getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 import { getAllProducts } from "@/lib/product-store";
 import { initDbOnce } from "@/lib/db-init";
 
@@ -18,7 +18,7 @@ export default async function HomepageProductsPage() {
   if (!token || !verifySessionToken(token)) redirect("/admin/login");
 
   const sidebarStats = getSidebarStats();
-  const config = getHomepageProductConfig();
+  const config = await getHomepageProductConfigAsync();
   const allProducts = getAllProducts().filter((p) => p.status !== "discontinued");
 
   return (

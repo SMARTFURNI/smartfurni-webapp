@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifySessionToken } from "@/lib/admin-auth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(request: NextRequest) {
   // Auth check
@@ -37,20 +42,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid file extension" }, { status: 400 });
     }
 
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).slice(2, 8);
-    const filename = `blog-${timestamp}-${random}.${ext}`;
-
-    // Save to public/uploads/blog/
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "blog");
-    await mkdir(uploadDir, { recursive: true });
-
+    // Upload to Cloudinary
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(path.join(uploadDir, filename), buffer);
 
-    const url = `/uploads/blog/${filename}`;
-    return NextResponse.json({ url, filename });
+    const uploadResult = await new Promise<{ secure_url: string; public_id: string }>(
+      (resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "smartfurni/blog", resource_type: "image" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result as { secure_url: string; public_id: string });
+          }
+        );
+        uploadStream.end(buffer);
+      }
+    );
+
+    return NextResponse.json({ url: uploadResult.secure_url, filename: uploadResult.public_id });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
