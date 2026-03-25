@@ -79,10 +79,18 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: "Chăm sóc KH",
+    items: [
+      { label: "Hợp đồng điện tử", href: "/crm/contracts", icon: FileText },
+      { label: "Khảo sát NPS", href: "/crm/nps", icon: TrendingUp },
+      { label: "Nhắc nhở Zalo/SMS", href: "/crm/notifications", icon: Bell },
+      { label: "Zalo OA", href: "/crm/zalo", icon: MessageSquare },
+    ],
+  },
+  {
     label: "Dữ liệu",
     items: [
       { label: "Import / Export", href: "/crm/import-export", icon: Upload },
-      { label: "Zalo OA", href: "/crm/import-export", icon: MessageSquare },
     ],
   },
 ];
