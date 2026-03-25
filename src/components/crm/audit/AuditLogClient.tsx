@@ -150,7 +150,7 @@ export default function AuditLogClient() {
       {/* Advanced filters */}
       {showFilters && (
         <div className="p-4 rounded-xl grid grid-cols-2 md:grid-cols-4 gap-3"
-          style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+          style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
           <div>
             <label className="block text-xs mb-1.5" style={{  }}>Loại hành động</label>
             <select value={filterAction} onChange={e => { setFilterAction(e.target.value as AuditAction | ""); setPage(0); }}
@@ -193,7 +193,7 @@ export default function AuditLogClient() {
       )}
 
       {/* Log table */}
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
         <table className="w-full text-sm">
           <thead>
             <tr style={{ background: "#f9fafb" }}>
@@ -221,7 +221,7 @@ export default function AuditLogClient() {
               return (
                 <tr key={log.id} onClick={() => setSelectedLog(log)}
                   className="cursor-pointer transition-all hover:bg-white/3"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                  style={{ borderTop: "1px solid #f3f4f6" }}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -309,7 +309,7 @@ export default function AuditLogClient() {
                 ["Thời gian", new Date(selectedLog.createdAt).toLocaleString("vi-VN")],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-4 py-1.5"
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  style={{ borderBottom: "1px solid #e5e7eb" }}>
                   <span style={{  }}>{k}</span>
                   <span className="font-medium text-right" style={{ color: "#374151" }}>{v}</span>
                 </div>

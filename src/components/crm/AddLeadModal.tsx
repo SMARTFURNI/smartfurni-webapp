@@ -107,7 +107,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
         {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}
+          style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}
         >
           <div className="flex items-center gap-3">
             <div
@@ -118,7 +118,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
             </div>
             <div>
               <h2 className="text-base font-bold text-gray-900">Thêm khách hàng mới</h2>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>Điền thông tin khách hàng B2B</p>
+              <p className="text-[11px]" style={{ color: "#6b7280" }}>Điền thông tin khách hàng B2B</p>
             </div>
           </div>
           <button
@@ -142,9 +142,9 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
                 onClick={() => set("type", type)}
                 className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all"
                 style={{
-                  background: active ? cfg.bg : "rgba(255,255,255,0.04)",
-                  color: active ? cfg.color : "rgba(255,255,255,0.35)",
-                  border: `1px solid ${active ? cfg.color + "40" : "rgba(255,255,255,0.07)"}`,
+                  background: active ? cfg.bg : "#f3f4f6",
+                  color: active ? cfg.color : "#6b7280",
+                  border: `1px solid ${active ? cfg.color + "40" : "#e5e7eb"}`,
                 }}
               >
                 {cfg.label}
@@ -160,7 +160,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className="px-4 py-2 text-xs font-semibold transition-all relative"
-              style={{ color: activeTab === tab.id ? "#C9A84C" : "rgba(255,255,255,0.35)" }}
+              style={{ color: activeTab === tab.id ? "#C9A84C" : "#6b7280" }}
             >
               {tab.label}
               {activeTab === tab.id && (
@@ -275,7 +275,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
           {/* Footer */}
           <div
             className="px-6 py-4 flex gap-3"
-            style={{ borderTop: "1px solid #e5e7eb", background: "rgba(255,255,255,0.01)" }}
+            style={{ borderTop: "1px solid #e5e7eb", background: "#ffffff" }}
           >
             <button
               type="button"
@@ -306,7 +306,7 @@ function DarkField({ label, icon, children }: { label: string; icon?: React.Reac
   return (
     <div>
       <label className="flex items-center gap-1.5 text-[11px] font-semibold mb-1.5" style={{ color: "#6b7280" }}>
-        {icon && <span style={{ color: "rgba(255,255,255,0.25)" }}>{icon}</span>}
+        {icon && <span style={{ color: "#9ca3af" }}>{icon}</span>}
         {label}
       </label>
       {children}

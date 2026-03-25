@@ -326,7 +326,7 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                       <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                         style={{
                           background: i === 0 ? "rgba(201,168,76,0.2)" : i === 1 ? "rgba(148,163,184,0.15)" : "#f3f4f6",
-                          color: i === 0 ? "#C9A84C" : i === 1 ? "#94a3b8" : "rgba(255,255,255,0.4)",
+                          color: i === 0 ? "#C9A84C" : i === 1 ? "#94a3b8" : "#6b7280",
                         }}>
                         {i + 1}
                       </div>

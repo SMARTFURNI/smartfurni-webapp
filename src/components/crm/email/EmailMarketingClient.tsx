@@ -90,7 +90,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
   return (
     <div className="flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
-      <div className="flex-shrink-0 px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#ffffff" }}>
+      <div className="flex-shrink-0 px-6 py-4" style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -238,7 +238,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                     </div>
                     {/* Progress bar for sent campaigns */}
                     {campaign.status === "sent" && campaign.sentCount > 0 && (
-                      <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div className="mt-3 pt-3" style={{ borderTop: "1px solid #e5e7eb" }}>
                         <div className="flex justify-between text-[10px] mb-1" style={{ color: "#9ca3af" }}>
                           <span>Tỷ lệ mở</span>
                           <span>{openRate}%</span>
@@ -286,7 +286,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 const catColor = CATEGORY_COLORS[template.category];
                 return (
                   <div key={template.id} className="rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5 group"
-                    style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                     {/* Preview */}
                     <div className="h-32 overflow-hidden relative cursor-pointer" onClick={() => setPreviewTemplate(template)}
                       style={{ background: "#050505" }}>
@@ -296,7 +296,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         style={{ background: "rgba(0,0,0,0.6)" }}>
                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-900"
-                          style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)" }}>
+                          style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)" }}>
                           <Eye size={12} /> Xem trước
                         </div>
                       </div>
@@ -525,7 +525,7 @@ function TemplatePreviewModal({ template, onClose }: { template: EmailTemplate; 
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden"
         style={{ background: "#ffffff", border: "1px solid #d1d5db", maxHeight: "90vh" }}>
         <div className="flex items-center justify-between px-5 py-3"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          style={{ borderBottom: "1px solid #e5e7eb" }}>
           <div>
             <div className="text-sm font-bold text-gray-900">{template.name}</div>
             <div className="text-xs" style={{  }}>{template.subject}</div>
@@ -563,7 +563,7 @@ function DarkModal({ title, onClose, children }: { title: string; onClose: () =>
       <div className="w-full max-w-md rounded-2xl overflow-hidden"
         style={{ background: "#ffffff", border: "1px solid #d1d5db", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
         <div className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          style={{ borderBottom: "1px solid #e5e7eb" }}>
           <h2 className="text-sm font-bold text-gray-900">{title}</h2>
           <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100"
             style={{ color: "#6b7280" }}><X size={14} /></button>

@@ -54,7 +54,7 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
     <div className="space-y-6">
       {/* Import section */}
       <div className="p-5 rounded-2xl space-y-4"
-        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-gray-900">Nhập dữ liệu từ CSV</h3>
@@ -143,7 +143,7 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
 
       {/* Export section */}
       <div className="p-5 rounded-2xl space-y-4"
-        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         <div>
           <h3 className="text-sm font-bold text-gray-900">Xuất dữ liệu</h3>
           <p className="text-xs mt-0.5" style={{  }}>
@@ -158,7 +158,7 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
           ].map(item => (
             <button key={item.format} onClick={() => exportLeads(item.format)}
               className="p-4 rounded-xl text-left transition-all hover:bg-white/5 group"
-              style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
               <div className="flex items-center gap-2 mb-2">
                 <item.icon size={16} style={{ color: "#C9A84C" }} />
                 <span className="text-sm font-semibold text-gray-900">{item.label}</span>
@@ -246,7 +246,7 @@ function ZaloOATab() {
 
       {/* Enable toggle */}
       <div className="flex items-center justify-between p-4 rounded-xl"
-        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ background: config.enabled ? "rgba(0,147,255,0.1)" : "#f9fafb" }}>
@@ -269,7 +269,7 @@ function ZaloOATab() {
 
       {/* Credentials */}
       <div className="p-5 rounded-2xl space-y-4"
-        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#9ca3af" }}>
           Thông tin xác thực
         </h4>
@@ -323,7 +323,7 @@ function ZaloOATab() {
 
       {/* Auto features */}
       <div className="p-5 rounded-2xl space-y-4"
-        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#9ca3af" }}>
           Tính năng tự động
         </h4>
@@ -393,7 +393,7 @@ export default function ImportExportClient() {
         </p>
       </div>
 
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         {[
           { id: "import" as TabId, label: "Import / Export CSV", icon: Table },
           { id: "zalo" as TabId, label: "Zalo Official Account", icon: MessageSquare },

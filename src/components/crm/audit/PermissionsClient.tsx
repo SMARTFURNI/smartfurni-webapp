@@ -95,7 +95,7 @@ function PermissionMatrixTab() {
                   </tr>
                   {group.keys.map(perm => (
                     <tr key={perm} className="transition-all hover:bg-white/2"
-                      style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                      style={{ borderTop: "1px solid #f3f4f6" }}>
                       <td className="px-4 py-2.5">
                         <span className="text-xs" style={{  }}>
                           {PERMISSION_LABELS[perm]}
@@ -275,7 +275,7 @@ function ApiKeysTab() {
                   style={{
                     background: newKeyPerms.includes(p.key) ? "rgba(201,168,76,0.15)" : "#f9fafb",
                     color: newKeyPerms.includes(p.key) ? "#C9A84C" : "#6b7280",
-                    border: `1px solid ${newKeyPerms.includes(p.key) ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.07)"}`,
+                    border: `1px solid ${newKeyPerms.includes(p.key) ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
                   }}>
                   {p.label}
                 </button>
@@ -310,8 +310,8 @@ function ApiKeysTab() {
           {keys.map(k => (
             <div key={k.id} className="p-4 rounded-xl"
               style={{
-                background: k.enabled ? "#f9fafb" : "rgba(255,255,255,0.01)",
-                border: `1px solid ${k.enabled ? "rgba(255,255,255,0.07)" : "#f9fafb"}`,
+                background: k.enabled ? "#f9fafb" : "#f9fafb",
+                border: `1px solid ${k.enabled ? "#e5e7eb" : "#f9fafb"}`,
               }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -393,7 +393,7 @@ export default function PermissionsClient() {
         </p>
       </div>
 
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"

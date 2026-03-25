@@ -66,7 +66,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
           <AlertCircle className="mx-auto mb-4 text-red-400" size={48} />
-          <h1 className="text-xl font-semibold text-white mb-2">Khảo sát không tồn tại</h1>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Khảo sát không tồn tại</h1>
           <p className="text-gray-500 text-sm">Link khảo sát này đã hết hạn hoặc không hợp lệ.</p>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
           <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="text-emerald-400" size={40} />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-3">Cảm ơn bạn!</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Cảm ơn bạn!</h1>
           <p className="text-gray-500 text-sm leading-relaxed">
             {survey.thankYouMessage || "Phản hồi của bạn đã được ghi nhận. Chúng tôi sẽ không ngừng cải thiện để phục vụ bạn tốt hơn."}
           </p>
@@ -103,11 +103,11 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
             </div>
             <span className="text-[#C9A84C] font-semibold text-sm tracking-wide">SmartFurni</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             {survey.surveyTitle || "Đánh giá trải nghiệm của bạn"}
           </h1>
           <p className="text-gray-500 text-sm">
-            Xin chào <span className="text-white font-medium">{survey.leadName}</span>,{" "}
+            Xin chào <span className="text-gray-900 font-medium">{survey.leadName}</span>,{" "}
             {survey.surveyIntro || "chúng tôi rất muốn biết trải nghiệm của bạn với SmartFurni."}
           </p>
         </div>
@@ -115,7 +115,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-8">
           {/* NPS Score */}
           <div>
-            <p className="text-sm font-medium text-white mb-1">
+            <p className="text-sm font-medium text-gray-900 mb-1">
               Bạn có khả năng giới thiệu SmartFurni cho bạn bè/đối tác không?
             </p>
             <p className="text-xs text-gray-500 mb-4">0 = Chắc chắn không, 10 = Chắc chắn có</p>
@@ -149,7 +149,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
 
           {/* Would recommend */}
           <div>
-            <p className="text-sm font-medium text-white mb-3">
+            <p className="text-sm font-medium text-gray-900 mb-3">
               Bạn có sẵn sàng giới thiệu SmartFurni cho người khác không?
             </p>
             <div className="flex gap-3">
@@ -176,7 +176,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
 
           {/* Feedback */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Chia sẻ thêm về trải nghiệm của bạn <span className="text-gray-500 font-normal">(tùy chọn)</span>
             </label>
             <textarea
@@ -184,7 +184,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
               onChange={e => setFeedback(e.target.value)}
               placeholder="Điều gì bạn thích nhất? Điều gì có thể cải thiện hơn?"
               rows={4}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
             />
           </div>
 

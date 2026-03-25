@@ -39,7 +39,7 @@ const STAGES = [
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-2xl p-5 ${className}`}
-      style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+      style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
       {children}
     </div>
   );
@@ -247,7 +247,7 @@ function RuleCard({ rule, onChange, onDelete }: {
   return (
     <div className="rounded-2xl overflow-hidden transition-all"
       style={{
-        border: `1px solid ${rule.enabled ? "rgba(201,168,76,0.2)" : "rgba(255,255,255,0.07)"}`,
+        border: `1px solid ${rule.enabled ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
         background: rule.enabled ? "rgba(201,168,76,0.03)" : "#f9fafb",
       }}>
       {/* Header */}
@@ -405,7 +405,7 @@ function SlaTab({ config, onChange }: { config: SlaConfig; onChange: (c: SlaConf
           </thead>
           <tbody>
             {config.stages.map((stage, idx) => (
-              <tr key={stage.stageId} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              <tr key={stage.stageId} style={{ borderTop: "1px solid #e5e7eb" }}>
                 <td className="px-4 py-3">
                   <span className="text-sm font-medium" style={{ color: "#374151" }}>{stage.stageLabel}</span>
                 </td>
@@ -510,7 +510,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
       <div className="space-y-2">
         {config.rules.map((rule, idx) => (
           <div key={rule.id} className="p-4 rounded-xl"
-            style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs mb-1" style={{  }}>Tỉnh/Thành phố</label>
@@ -655,7 +655,7 @@ export default function AutomationSettingsClient() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"

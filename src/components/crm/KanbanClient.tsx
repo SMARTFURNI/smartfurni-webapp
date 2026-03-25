@@ -126,7 +126,7 @@ export default function KanbanClient({ initialLeads }: Props) {
                 placeholder="Tìm kiếm..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-white/25 focus:outline-none w-48 transition-all"
+                className="pl-9 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none w-48 transition-all"
                 style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}
               />
             </div>
