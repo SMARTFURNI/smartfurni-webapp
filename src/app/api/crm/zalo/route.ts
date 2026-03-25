@@ -4,10 +4,8 @@ import { getZaloConfig } from "@/lib/crm-notifications-store";
 
 // Zalo OA Webhook - receives messages from customers
 export async function GET(req: NextRequest) {
-  const session = await getCrmSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const session = await getCrmSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { searchParams } = new URL(req.url);
   const config = await getZaloConfig();
   // Verify webhook
@@ -18,10 +16,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getCrmSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const session = await getCrmSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = await req.json() as Record<string, unknown>;
     const eventName = body.event_name as string;

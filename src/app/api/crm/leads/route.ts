@@ -3,10 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getLeads, createLead } from "@/lib/crm-store";
 
 export async function GET(req: NextRequest) {
-  const session = await getCrmSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const session = await getCrmSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { searchParams } = new URL(req.url);
     const leads = await getLeads({
@@ -22,10 +20,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getCrmSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const session = await getCrmSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = await req.json();
     const lead = await createLead(body);
