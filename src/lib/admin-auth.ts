@@ -51,7 +51,7 @@ export async function requireAdmin(): Promise<void> {
 /**
  * Kiểm tra xem request có phải từ nhân viên CRM hoặc admin không.
  * Dùng cho các trang CRM mà nhân viên có thể truy cập.
- * Nếu không có session hợp lệ → redirect về /crm/login
+ * Nếu không có session hợp lệ → redirect về /crm-login
  */
 export async function requireCrmAccess(): Promise<{ isAdmin: boolean; staffId?: string }> {
   // Kiểm tra admin session trước
@@ -67,7 +67,7 @@ export async function requireCrmAccess(): Promise<{ isAdmin: boolean; staffId?: 
   }
 
   // Không có session hợp lệ → redirect về trang login nhân viên
-  redirect("/crm/login");
+  redirect("/crm-login");
 }
 
 export { SESSION_COOKIE };
