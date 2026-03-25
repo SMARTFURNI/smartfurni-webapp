@@ -1,11 +1,13 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { verifyStaffSession } from "./crm-staff-store";
 
 // Simple admin credentials - in production, use environment variables
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "smartfurni2026";
 const SESSION_SECRET = process.env.SESSION_SECRET || "smartfurni-secret-key-2026";
 const SESSION_COOKIE = "sf_admin_session";
+export const STAFF_SESSION_COOKIE = "sf_crm_staff_session";
 
 export function verifyCredentials(username: string, password: string): boolean {
   return username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
@@ -44,6 +46,28 @@ export async function requireAdmin(): Promise<void> {
   if (!isAuthenticated) {
     redirect("/admin/login");
   }
+}
+
+/**
+ * Kiểm tra xem request có phải từ nhân viên CRM hoặc admin không.
+ * Dùng cho các trang CRM mà nhân viên có thể truy cập.
+ * Nếu không có session hợp lệ → redirect về /crm/login
+ */
+export async function requireCrmAccess(): Promise<{ isAdmin: boolean; staffId?: string }> {
+  // Kiểm tra admin session trước
+  const isAdmin = await getAdminSession();
+  if (isAdmin) return { isAdmin: true };
+
+  // Kiểm tra staff session
+  const cookieStore = await cookies();
+  const staffToken = cookieStore.get(STAFF_SESSION_COOKIE)?.value;
+  if (staffToken) {
+    const staff = await verifyStaffSession(staffToken);
+    if (staff) return { isAdmin: false, staffId: staff.id };
+  }
+
+  // Không có session hợp lệ → redirect về trang login nhân viên
+  redirect("/crm/login");
 }
 
 export { SESSION_COOKIE };

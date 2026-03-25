@@ -1,8 +1,8 @@
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireCrmAccess } from "@/lib/admin-auth";
 import CrmSidebar from "@/components/crm/CrmSidebar";
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
-  await requireAdmin();
+  await requireCrmAccess();
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "#f8f9fb" }}>
