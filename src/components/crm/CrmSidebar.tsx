@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Menu,
   X,
+  UserCircle,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -245,6 +246,21 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
           <div className="px-2 py-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-500">
             Tài khoản
           </div>
+        )}
+        {!isAdmin && (
+          <Link
+            href="/crm/profile"
+            title={collapsed ? "Hồ sơ cá nhân" : undefined}
+            className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            <UserCircle size={16} className="text-gray-500 flex-shrink-0" />
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-gray-700 truncate">{staffName || "Hồ sơ"}</div>
+                <div className="text-[10px] text-gray-400 truncate">Chỉnh sửa thông tin</div>
+              </div>
+            )}
+          </Link>
         )}
         {isAdmin && (
           <Link

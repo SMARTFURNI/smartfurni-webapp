@@ -11,11 +11,20 @@ import {
 import type { Lead, CrmTask, Quote, CrmStats } from "@/lib/crm-store";
 import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS, formatVND, isOverdue } from "@/lib/crm-store";
 
+interface CurrentUser {
+  name: string;
+  username: string;
+  role: string;
+  isAdmin: boolean;
+  staffId?: string;
+}
+
 interface Props {
   leads: Lead[];
   todayTasks: CrmTask[];
   quotes: Quote[];
   stats: CrmStats;
+  currentUser?: CurrentUser;
 }
 
 const PRIORITY_CONFIG = {
@@ -33,7 +42,15 @@ const ACTIVITY_TYPE_ICONS: Record<string, React.ElementType> = {
   contract: FileText,
 };
 
-export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }: Props) {
+const ROLE_LABELS: Record<string, string> = {
+  super_admin: "Quản trị viên",
+  manager: "Trưởng nhóm",
+  senior_sales: "Kinh doanh cấp cao",
+  sales: "Kinh doanh",
+  support: "Hỗ trợ KH",
+};
+
+export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, currentUser }: Props) {
   const [tasks, setTasks] = useState(todayTasks);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -72,8 +89,12 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-xs text-gray-500 font-medium">{dateStr}</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{greeting} 👋</h1>
-          <p className="text-sm text-gray-500 mt-0.5">SmartFurni CRM — Tổng quan kinh doanh B2B</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {greeting}{currentUser?.name ? `, ${currentUser.name}` : ""} 👋
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            SmartFurni CRM — {currentUser?.isAdmin ? "Tổng quan kinh doanh B2B" : `Dữ liệu của bạn · ${ROLE_LABELS[currentUser?.role ?? ""] ?? currentUser?.role}`}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           {overdueLeads.length > 0 && (
@@ -82,6 +103,23 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
               <AlertCircle size={13} />
               {overdueLeads.length} KH quá hạn
             </div>
+          )}
+          {currentUser && (
+            <Link
+              href="/crm/profile"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}>
+                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+              </div>
+              {!currentUser.isAdmin && (
+                <div className="text-left">
+                  <div className="text-xs font-semibold text-gray-800 leading-tight">{currentUser.name}</div>
+                  <div className="text-[10px] text-gray-500 leading-tight">{currentUser.username}</div>
+                </div>
+              )}
+            </Link>
           )}
           <Link href="/crm/leads/new"
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-gray-900 transition-opacity hover:opacity-90"
