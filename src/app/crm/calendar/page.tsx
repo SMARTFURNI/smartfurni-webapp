@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireCrmAccess } from "@/lib/admin-auth";
 import { getAppointments, getUpcomingAppointments } from "@/lib/crm-calendar-store";
 import { getLeads } from "@/lib/crm-store";
 import CalendarClient from "@/components/crm/calendar/CalendarClient";
@@ -6,7 +6,7 @@ import CalendarClient from "@/components/crm/calendar/CalendarClient";
 export const dynamic = "force-dynamic";
 
 export default async function CalendarPage() {
-  await requireAdmin();
+  await requireCrmAccess();
 
   const now = new Date();
   const [appointments, upcoming, leads] = await Promise.all([

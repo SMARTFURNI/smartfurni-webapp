@@ -9,8 +9,6 @@ import {
   Package,
   FileText,
   CheckSquare,
-  ChevronRight,
-  Zap,
   LogOut,
   Settings,
   Bell,
@@ -30,7 +28,26 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-const NAV_GROUPS = [
+// Roles: "super_admin" | "manager" | "sales" | "support"
+// adminOnly: chỉ super_admin và manager mới thấy
+// superAdminOnly: chỉ super_admin (admin) mới thấy
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  exact?: boolean;
+  adminOnly?: boolean;      // manager + super_admin
+  superAdminOnly?: boolean; // chỉ super_admin (admin hệ thống)
+};
+
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+  adminOnly?: boolean;
+  superAdminOnly?: boolean;
+};
+
+const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tổng quan",
     items: [
@@ -50,8 +67,9 @@ const NAV_GROUPS = [
   {
     label: "Marketing",
     items: [
-      { label: "Email Marketing", href: "/crm/email", icon: Mail },
+      { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true },
     ],
+    adminOnly: true,
   },
   {
     label: "Sản phẩm",
@@ -62,42 +80,71 @@ const NAV_GROUPS = [
   {
     label: "Quản lý",
     items: [
-      { label: "Nhân viên", href: "/crm/staff", icon: UserCog },
-      { label: "Báo cáo & Phân tích", href: "/crm/reports", icon: BarChart3 },
-      { label: "Cài đặt CRM", href: "/crm/settings", icon: SlidersHorizontal },
+      { label: "Nhân viên", href: "/crm/staff", icon: UserCog, superAdminOnly: true },
+      { label: "Báo cáo & Phân tích", href: "/crm/reports", icon: BarChart3, adminOnly: true },
+      { label: "Cài đặt CRM", href: "/crm/settings", icon: SlidersHorizontal, superAdminOnly: true },
     ],
   },
   {
     label: "Tự động hóa",
     items: [
-      { label: "Automation Rules", href: "/crm/automation", icon: Bot },
+      { label: "Automation Rules", href: "/crm/automation", icon: Bot, superAdminOnly: true },
     ],
+    superAdminOnly: true,
   },
   {
     label: "Bảo mật",
     items: [
-      { label: "Nhật ký hoạt động", href: "/crm/audit", icon: Shield },
-      { label: "Phân quyền & API Keys", href: "/crm/permissions", icon: Key },
+      { label: "Nhật ký hoạt động", href: "/crm/audit", icon: Shield, superAdminOnly: true },
+      { label: "Phân quyền & API Keys", href: "/crm/permissions", icon: Key, superAdminOnly: true },
     ],
+    superAdminOnly: true,
   },
   {
     label: "Chăm sóc KH",
     items: [
       { label: "Hợp đồng điện tử", href: "/crm/contracts", icon: FileText },
-      { label: "Khảo sát NPS", href: "/crm/nps", icon: TrendingUp },
+      { label: "Khảo sát NPS", href: "/crm/nps", icon: TrendingUp, adminOnly: true },
       { label: "Nhắc nhở Zalo/SMS", href: "/crm/notifications", icon: Bell },
-      { label: "Zalo OA", href: "/crm/zalo", icon: MessageSquare },
+      { label: "Zalo OA", href: "/crm/zalo", icon: MessageSquare, superAdminOnly: true },
     ],
   },
   {
     label: "Dữ liệu",
     items: [
-      { label: "Import / Export", href: "/crm/import-export", icon: Upload },
+      { label: "Import / Export", href: "/crm/import-export", icon: Upload, superAdminOnly: true },
     ],
+    superAdminOnly: true,
   },
 ];
 
-export default function CrmSidebar() {
+function canSeeItem(
+  item: NavItem,
+  role: string,
+  isAdmin: boolean
+): boolean {
+  if (item.superAdminOnly) return isAdmin || role === "super_admin";
+  if (item.adminOnly) return isAdmin || role === "super_admin" || role === "manager";
+  return true;
+}
+
+function canSeeGroup(
+  group: NavGroup,
+  role: string,
+  isAdmin: boolean
+): boolean {
+  if (group.superAdminOnly) return isAdmin || role === "super_admin";
+  if (group.adminOnly) return isAdmin || role === "super_admin" || role === "manager";
+  return true;
+}
+
+interface CrmSidebarProps {
+  isAdmin?: boolean;
+  staffRole?: string;
+  staffName?: string;
+}
+
+export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staffName }: CrmSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -105,6 +152,8 @@ export default function CrmSidebar() {
     if (exact) return pathname === href;
     return pathname.startsWith(href);
   }
+
+  const logoutHref = isAdmin ? "/admin/logout" : "/api/crm/staff/logout-redirect";
 
   return (
     <aside
@@ -140,41 +189,54 @@ export default function CrmSidebar() {
         </button>
       </div>
 
+      {/* User info badge (chỉ hiện khi không collapsed và là staff) */}
+      {!collapsed && !isAdmin && staffName && (
+        <div className="mx-3 mt-3 px-3 py-2 rounded-lg" style={{ background: "#fefce8", border: "1px solid #fde68a" }}>
+          <div className="text-xs text-amber-700 font-medium truncate">{staffName}</div>
+          <div className="text-[10px] text-amber-600 capitalize">{staffRole === "manager" ? "Trưởng nhóm" : staffRole === "sales" ? "Kinh doanh" : staffRole === "support" ? "Hỗ trợ" : staffRole}</div>
+        </div>
+      )}
+
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {NAV_GROUPS.map(group => (
-          <div key={group.label} className="mb-1">
-            {!collapsed && (
-              <div className="px-2 py-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-500">
-                {group.label}
-              </div>
-            )}
-            {group.items.map(item => {
-              const active = isActive(item.href, item.exact);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  title={collapsed ? item.label : undefined}
-                  className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all mb-0.5 group ${
-                    active
-                      ? "bg-amber-50 text-amber-700 font-medium"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                  style={active ? { borderLeft: "3px solid #C9A84C", paddingLeft: "7px" } : {}}
-                >
-                  <item.icon
-                    size={16}
-                    className={`flex-shrink-0 ${active ? "text-amber-600" : "text-gray-500 group-hover:text-gray-600"}`}
-                  />
-                  {!collapsed && (
-                    <span className="truncate">{item.label}</span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+        {NAV_GROUPS.map(group => {
+          if (!canSeeGroup(group, staffRole, isAdmin)) return null;
+          const visibleItems = group.items.filter(item => canSeeItem(item, staffRole, isAdmin));
+          if (visibleItems.length === 0) return null;
+          return (
+            <div key={group.label} className="mb-1">
+              {!collapsed && (
+                <div className="px-2 py-1.5 text-[10px] font-semibold tracking-widest uppercase text-gray-500">
+                  {group.label}
+                </div>
+              )}
+              {visibleItems.map(item => {
+                const active = isActive(item.href, item.exact);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={collapsed ? item.label : undefined}
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all mb-0.5 group ${
+                      active
+                        ? "bg-amber-50 text-amber-700 font-medium"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                    style={active ? { borderLeft: "3px solid #C9A84C", paddingLeft: "7px" } : {}}
+                  >
+                    <item.icon
+                      size={16}
+                      className={`flex-shrink-0 ${active ? "text-amber-600" : "text-gray-500 group-hover:text-gray-600"}`}
+                    />
+                    {!collapsed && (
+                      <span className="truncate">{item.label}</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Footer */}
@@ -184,16 +246,18 @@ export default function CrmSidebar() {
             Tài khoản
           </div>
         )}
+        {isAdmin && (
+          <Link
+            href="/admin"
+            title={collapsed ? "Quản trị Admin" : undefined}
+            className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            <Settings size={16} className="text-gray-500 flex-shrink-0" />
+            {!collapsed && <span>Quản trị Admin</span>}
+          </Link>
+        )}
         <Link
-          href="/admin"
-          title={collapsed ? "Quản trị Admin" : undefined}
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-        >
-          <Settings size={16} className="text-gray-500 flex-shrink-0" />
-          {!collapsed && <span>Quản trị Admin</span>}
-        </Link>
-        <Link
-          href="/admin/logout"
+          href={logoutHref}
           title={collapsed ? "Đăng xuất" : undefined}
           className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 transition-colors"
         >

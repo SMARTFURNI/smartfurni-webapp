@@ -70,4 +70,15 @@ export async function requireCrmAccess(): Promise<{ isAdmin: boolean; staffId?: 
   redirect("/crm-login");
 }
 
+/**
+ * Chỉ cho phép admin hệ thống (super_admin) truy cập.
+ * Nhân viên CRM sẽ bị redirect về /crm-login.
+ */
+export async function requireSuperAdminCrm(): Promise<void> {
+  const isAdmin = await getAdminSession();
+  if (isAdmin) return;
+  // Nếu là staff → redirect về /crm-login (không phải /admin/login)
+  redirect("/crm-login");
+}
+
 export { SESSION_COOKIE };
