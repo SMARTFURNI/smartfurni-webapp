@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { deleteStaffSession } from "@/lib/crm-staff-store";
+import { NextResponse } from "next/server";
+import { STAFF_SESSION_COOKIE } from "@/lib/admin-auth";
 
-const STAFF_SESSION_COOKIE = "sf_crm_staff_session";
-
-export async function POST(req: NextRequest) {
-  const token = req.cookies.get(STAFF_SESSION_COOKIE)?.value;
-  if (token) {
-    await deleteStaffSession(token);
-  }
+export async function POST() {
   const response = NextResponse.json({ success: true });
-  response.cookies.delete(STAFF_SESSION_COOKIE);
+  response.cookies.set(STAFF_SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 0,
+    path: "/",
+  });
   return response;
 }

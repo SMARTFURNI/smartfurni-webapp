@@ -1,18 +1,17 @@
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { getStaffById } from "@/lib/crm-staff-store";
 import CrmSidebar from "@/components/crm/CrmSidebar";
-
 export const dynamic = "force-dynamic";
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
   const session = await requireCrmAccess();
-
-  let staffRole = "sales";
+  let staffRole = session.staffRole ?? "sales";
   let staffName = "";
 
+  // Lấy tên nhân viên từ DB (chỉ cần fullName, không ảnh hưởng auth)
   if (!session.isAdmin && session.staffId) {
     const staff = await getStaffById(session.staffId);
-    staffRole = staff?.role ?? "sales";
+    staffRole = staff?.role ?? staffRole;
     staffName = staff?.fullName ?? "";
   }
 

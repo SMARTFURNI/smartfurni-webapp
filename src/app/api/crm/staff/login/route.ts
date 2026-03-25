@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateStaff, createStaffSession } from "@/lib/crm-staff-store";
+import { authenticateStaff } from "@/lib/crm-staff-store";
+import { createStaffJwt, STAFF_SESSION_COOKIE } from "@/lib/admin-auth";
 
-const STAFF_SESSION_COOKIE = "sf_crm_staff_session";
-const ADMIN_SESSION_COOKIE = "sf_admin_session"; // Xóa cookie admin khi nhân viên đăng nhập
+const ADMIN_SESSION_COOKIE = "sf_admin_session";
 
 export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json();
-
     if (!username || !password) {
       return NextResponse.json(
         { error: "Vui lòng nhập tên đăng nhập và mật khẩu" },
@@ -16,7 +15,6 @@ export async function POST(req: NextRequest) {
     }
 
     const staff = await authenticateStaff(username, password);
-
     if (!staff) {
       return NextResponse.json(
         { error: "Tên đăng nhập hoặc mật khẩu không đúng, hoặc tài khoản đã bị khóa" },
@@ -24,7 +22,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const token = await createStaffSession(staff.id);
+    // Tạo JWT token (stateless — không cần DB)
+    const token = createStaffJwt(staff.id, staff.role);
+
     const response = NextResponse.json({
       success: true,
       staff: {
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Set JWT cookie
     response.cookies.set(STAFF_SESSION_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -43,13 +44,12 @@ export async function POST(req: NextRequest) {
       path: "/",
     });
 
-    // Xóa admin session cookie để tránh xung đột phân quyền
-    // Khi nhân viên đăng nhập, họ không nên có quyền admin
+    // Xóa admin session cookie để tránh xung đột
     response.cookies.set(ADMIN_SESSION_COOKIE, "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 0, // Xóa ngay lập tức
+      maxAge: 0,
       path: "/",
     });
 

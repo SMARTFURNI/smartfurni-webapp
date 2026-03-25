@@ -1,14 +1,55 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { verifyStaffSession } from "./crm-staff-store";
+import { createHmac } from "crypto";
 
-// Simple admin credentials - in production, use environment variables
+// ─── Admin Auth ───────────────────────────────────────────────────────────────
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "smartfurni2026";
 const SESSION_SECRET = process.env.SESSION_SECRET || "smartfurni-secret-key-2026";
 const SESSION_COOKIE = "sf_admin_session";
-export const STAFF_SESSION_COOKIE = "sf_crm_staff_session";
 
+// ─── Staff Auth (JWT stateless — no DB session needed) ───────────────────────
+export const STAFF_SESSION_COOKIE = "sf_crm_staff_session";
+const STAFF_JWT_SECRET = process.env.SESSION_SECRET || "smartfurni-secret-key-2026";
+
+export interface StaffJwtPayload {
+  staffId: string;
+  role: string;
+  exp: number;
+}
+
+/** Tạo JWT token cho staff (stateless, không cần DB) */
+export function createStaffJwt(staffId: string, role: string): string {
+  const payload: StaffJwtPayload = {
+    staffId,
+    role,
+    exp: Date.now() + 8 * 60 * 60 * 1000, // 8 giờ
+  };
+  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = createHmac("sha256", STAFF_JWT_SECRET).update(data).digest("hex");
+  return `${data}.${sig}`;
+}
+
+/** Verify JWT token cho staff — trả về payload hoặc null */
+export function verifyStaffJwt(token: string): StaffJwtPayload | null {
+  try {
+    const dotIdx = token.lastIndexOf(".");
+    if (dotIdx < 0) return null;
+    const data = token.slice(0, dotIdx);
+    const sig = token.slice(dotIdx + 1);
+    const expectedSig = createHmac("sha256", STAFF_JWT_SECRET).update(data).digest("hex");
+    if (sig !== expectedSig) return null;
+    const payload: StaffJwtPayload = JSON.parse(
+      Buffer.from(data, "base64url").toString("utf-8")
+    );
+    if (payload.exp < Date.now()) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Admin helpers ────────────────────────────────────────────────────────────
 export function verifyCredentials(username: string, password: string): boolean {
   return username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
 }
@@ -16,7 +57,7 @@ export function verifyCredentials(username: string, password: string): boolean {
 export function createSessionToken(): string {
   const payload = {
     user: ADMIN_USERNAME,
-    exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+    exp: Date.now() + 24 * 60 * 60 * 1000,
     secret: SESSION_SECRET,
   };
   return Buffer.from(JSON.stringify(payload)).toString("base64");
@@ -25,10 +66,7 @@ export function createSessionToken(): string {
 export function verifySessionToken(token: string): boolean {
   try {
     const payload = JSON.parse(Buffer.from(token, "base64").toString("utf-8"));
-    return (
-      payload.secret === SESSION_SECRET &&
-      payload.exp > Date.now()
-    );
+    return payload.secret === SESSION_SECRET && payload.exp > Date.now();
   } catch {
     return false;
   }
@@ -43,66 +81,50 @@ export async function getAdminSession(): Promise<boolean> {
 
 export async function requireAdmin(): Promise<void> {
   const isAuthenticated = await getAdminSession();
-  if (!isAuthenticated) {
-    redirect("/admin/login");
-  }
+  if (!isAuthenticated) redirect("/admin/login");
+}
+
+// ─── CRM Auth helpers ─────────────────────────────────────────────────────────
+
+/** Lấy staff payload từ cookie JWT (stateless — không query DB) */
+export async function getStaffSession(): Promise<StaffJwtPayload | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(STAFF_SESSION_COOKIE)?.value;
+  if (!token) return null;
+  return verifyStaffJwt(token);
 }
 
 /**
- * Kiểm tra xem request có phải từ nhân viên CRM hoặc admin không.
- * Dùng cho các trang CRM mà nhân viên có thể truy cập.
- * Nếu không có session hợp lệ → redirect về /crm-login
- *
- * Thứ tự ưu tiên: staff session TRƯỚC, admin session SAU.
- * Điều này đảm bảo khi nhân viên đăng nhập qua /crm-login,
- * họ thấy giao diện nhân viên dù trình duyệt còn cookie admin.
+ * Kiểm tra quyền truy cập CRM (staff hoặc admin).
+ * Redirect về /crm-login nếu không hợp lệ.
  */
-export async function requireCrmAccess(): Promise<{ isAdmin: boolean; staffId?: string }> {
-  // Kiểm tra staff session TRƯỚC (ưu tiên cao hơn)
-  const cookieStore = await cookies();
-  const staffToken = cookieStore.get(STAFF_SESSION_COOKIE)?.value;
-  if (staffToken) {
-    const staff = await verifyStaffSession(staffToken);
-    if (staff) return { isAdmin: false, staffId: staff.id };
+export async function requireCrmAccess(): Promise<{ isAdmin: boolean; staffId?: string; staffRole?: string }> {
+  const staffPayload = await getStaffSession();
+  if (staffPayload) {
+    return { isAdmin: false, staffId: staffPayload.staffId, staffRole: staffPayload.role };
   }
-
-  // Kiểm tra admin session sau
   const isAdmin = await getAdminSession();
   if (isAdmin) return { isAdmin: true };
-
-  // Không có session hợp lệ → redirect về trang login nhân viên
   redirect("/crm-login");
 }
 
 /**
- * Chỉ cho phép admin hệ thống (super_admin) truy cập.
- * Nhân viên CRM sẽ bị redirect về /crm-login.
+ * Chỉ cho phép super admin (admin hệ thống) truy cập.
  */
 export async function requireSuperAdminCrm(): Promise<void> {
   const isAdmin = await getAdminSession();
   if (isAdmin) return;
-  // Nếu là staff → redirect về /crm-login (không phải /admin/login)
   redirect("/crm-login");
 }
 
 /**
- * Kiểm tra cả admin session và staff session.
- * Dùng trong API routes để cho phép cả admin và nhân viên gọi API.
- * Trả về { isAdmin, staffId } nếu hợp lệ, null nếu không có session.
+ * Dùng trong API routes — trả về session hoặc null (không redirect).
  */
 export async function getCrmSession(): Promise<{ isAdmin: boolean; staffId?: string } | null> {
-  // Kiểm tra staff session TRƯỚC (ưu tiên cao hơn)
-  const cookieStore = await cookies();
-  const staffToken = cookieStore.get(STAFF_SESSION_COOKIE)?.value;
-  if (staffToken) {
-    const staff = await verifyStaffSession(staffToken);
-    if (staff) return { isAdmin: false, staffId: staff.id };
-  }
-
-  // Kiểm tra admin session sau
+  const staffPayload = await getStaffSession();
+  if (staffPayload) return { isAdmin: false, staffId: staffPayload.staffId };
   const isAdmin = await getAdminSession();
   if (isAdmin) return { isAdmin: true };
-
   return null;
 }
 
