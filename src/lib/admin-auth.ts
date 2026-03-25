@@ -4,7 +4,7 @@ import { createHmac } from "crypto";
 
 // ─── Admin Auth ───────────────────────────────────────────────────────────────
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "smartfurni2026";
+const ADMIN_PASSWORD_DEFAULT = process.env.ADMIN_PASSWORD || "smartfurni2026";
 const SESSION_SECRET = process.env.SESSION_SECRET || "smartfurni-secret-key-2026";
 const SESSION_COOKIE = "sf_admin_session";
 
@@ -50,8 +50,38 @@ export function verifyStaffJwt(token: string): StaffJwtPayload | null {
 }
 
 // ─── Admin helpers ────────────────────────────────────────────────────────────
-export function verifyCredentials(username: string, password: string): boolean {
-  return username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
+
+/** Lấy mật khẩu admin từ DB (nếu đã đổi) hoặc fallback về env var */
+async function getAdminPassword(): Promise<string> {
+  try {
+    const { query } = await import("./db");
+    const rows = await query<{ value: string }>(
+      "SELECT value FROM admin_profile WHERE key = 'password' LIMIT 1"
+    );
+    if (rows[0]?.value) return rows[0].value;
+  } catch {
+    // DB chưa sẵn sàng, dùng env var
+  }
+  return ADMIN_PASSWORD_DEFAULT;
+}
+
+/** Lấy tên hiển thị admin từ DB hoặc fallback */
+export async function getAdminDisplayName(): Promise<string> {
+  try {
+    const { query } = await import("./db");
+    const rows = await query<{ value: string }>(
+      "SELECT value FROM admin_profile WHERE key = 'display_name' LIMIT 1"
+    );
+    if (rows[0]?.value) return rows[0].value;
+  } catch {
+    // ignore
+  }
+  return process.env.ADMIN_DISPLAY_NAME || "Admin";
+}
+
+export async function verifyCredentials(username: string, password: string): Promise<boolean> {
+  const storedPassword = await getAdminPassword();
+  return username === ADMIN_USERNAME && password === storedPassword;
 }
 
 export function createSessionToken(): string {
@@ -85,7 +115,6 @@ export async function requireAdmin(): Promise<void> {
 }
 
 // ─── CRM Auth helpers ─────────────────────────────────────────────────────────
-
 /** Lấy staff payload từ cookie JWT (stateless — không query DB) */
 export async function getStaffSession(): Promise<StaffJwtPayload | null> {
   const cookieStore = await cookies();

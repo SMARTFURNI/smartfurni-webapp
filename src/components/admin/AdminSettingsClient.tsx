@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface SettingSection {
   id: string;
@@ -18,6 +18,16 @@ const SECTIONS: SettingSection[] = [
 export default function AdminSettingsClient() {
   const [activeSection, setActiveSection] = useState("account");
   const [saved, setSaved] = useState(false);
+  // Admin profile state
+  const [displayName, setDisplayName] = useState("Admin");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState("");
+  useEffect(() => {
+    fetch("/api/admin/change-password")
+      .then(r => r.json())
+      .then(d => { if (d.displayName) setDisplayName(d.displayName); })
+      .catch(() => {});
+  }, []);
 
   // Website settings state
   const [siteName, setSiteName] = useState("SmartFurni");
@@ -76,13 +86,41 @@ export default function AdminSettingsClient() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   function handleSave() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
 
-  function handleChangePassword() {
+  async function handleUpdateProfile() {
+    if (!displayName.trim()) {
+      setProfileMsg("Tên hiển thị không được để trống");
+      return;
+    }
+    setProfileSaving(true);
+    setProfileMsg("");
+    try {
+      const res = await fetch("/api/admin/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_profile", displayName }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProfileMsg("✓ " + (data.message || "Đã cập nhật"));
+      } else {
+        setProfileMsg("✗ " + (data.error || "Lỗi cập nhật"));
+      }
+    } catch {
+      setProfileMsg("✗ Lỗi kết nối");
+    } finally {
+      setProfileSaving(false);
+      setTimeout(() => setProfileMsg(""), 3000);
+    }
+  }
+
+  async function handleChangePassword() {
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordError("Vui lòng điền đầy đủ thông tin.");
       return;
@@ -95,12 +133,29 @@ export default function AdminSettingsClient() {
       setPasswordError("Mật khẩu mới phải có ít nhất 8 ký tự.");
       return;
     }
+    setPasswordSaving(true);
     setPasswordError("");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    try {
+      const res = await fetch("/api/admin/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "change_password", currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      } else {
+        setPasswordError(data.error || "Đổi mật khẩu thất bại");
+      }
+    } catch {
+      setPasswordError("Lỗi kết nối server");
+    } finally {
+      setPasswordSaving(false);
+    }
   }
 
   return (
@@ -146,12 +201,36 @@ export default function AdminSettingsClient() {
 
               <div className="flex items-center gap-4 p-4 bg-[#0D0B00] rounded-xl">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] flex items-center justify-center text-[#0D0B00] font-bold text-xl">
-                  A
+                  {displayName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-white font-medium">Admin</p>
+                  <p className="text-white font-medium">{displayName}</p>
                   <p className="text-gray-500 text-sm">Quản trị viên</p>
                 </div>
+              </div>
+
+              {/* Chỉnh sửa tên hiển thị */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-white">Tên Hiển Thị</h3>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Nhập tên hiển thị..."
+                    className="flex-1 bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                  />
+                  <button
+                    onClick={handleUpdateProfile}
+                    disabled={profileSaving}
+                    className="bg-[#C9A84C] text-[#0D0B00] px-5 py-2 rounded-xl font-semibold text-sm hover:bg-[#E2C97E] transition-colors disabled:opacity-50"
+                  >
+                    {profileSaving ? "Đang lưu..." : "Lưu"}
+                  </button>
+                </div>
+                {profileMsg && (
+                  <p className={`text-xs ${profileMsg.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>{profileMsg}</p>
+                )}
               </div>
 
               <div className="border-t border-[#C9A84C]/10 pt-6">
@@ -192,9 +271,10 @@ export default function AdminSettingsClient() {
                   )}
                   <button
                     onClick={handleChangePassword}
-                    className="bg-[#C9A84C] text-[#0D0B00] px-5 py-2 rounded-xl font-semibold text-sm hover:bg-[#E2C97E] transition-colors"
+                    disabled={passwordSaving}
+                    className="bg-[#C9A84C] text-[#0D0B00] px-5 py-2 rounded-xl font-semibold text-sm hover:bg-[#E2C97E] transition-colors disabled:opacity-50"
                   >
-                    Cập nhật mật khẩu
+                    {passwordSaving ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
                   </button>
                 </div>
               </div>
