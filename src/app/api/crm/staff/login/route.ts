@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateStaff, createStaffSession } from "@/lib/crm-staff-store";
 
-export const STAFF_SESSION_COOKIE = "sf_crm_staff_session";
+const STAFF_SESSION_COOKIE = "sf_crm_staff_session";
 
 export async function POST(req: NextRequest) {
   try {
