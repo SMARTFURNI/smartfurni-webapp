@@ -4,6 +4,14 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // Tắt Next.js Client Router Cache để tránh các trang auth bị cache
+  // Khi navigate bằng <Link>, Next.js sẽ luôn fetch lại từ server
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+      static: 0,
+    },
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Prevent bundling Node.js-only modules (fs, path) into the client bundle.
