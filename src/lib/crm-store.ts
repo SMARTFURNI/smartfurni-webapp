@@ -1,9 +1,9 @@
 /**
  * crm-store.ts — SmartFurni CRM B2B
- * Server-only database functions.
+ * Server-only database functions (PostgreSQL).
  * Types and helpers are in crm-types.ts (safe for client import).
  *
- * NOTE: This file uses mysql2/pg via db.ts which is Node.js-only.
+ * NOTE: This file uses pg via db.ts which is Node.js-only.
  * Do NOT import server functions from client components.
  * Client components should import from "@/lib/crm-types" instead.
  */
@@ -36,56 +36,56 @@ export async function initCrmSchema(): Promise<void> {
 
   await query(`
     CREATE TABLE IF NOT EXISTS crm_leads (
-      id VARCHAR(255) PRIMARY KEY,
-      data JSON NOT NULL,
-      stage VARCHAR(50) NOT NULL DEFAULT 'new',
-      last_contact_at DATETIME(3),
-      updated_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)
+      id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      stage TEXT NOT NULL DEFAULT 'new',
+      last_contact_at TIMESTAMPTZ,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
 
   await query(`
     CREATE TABLE IF NOT EXISTS crm_activities (
-      id VARCHAR(255) PRIMARY KEY,
-      lead_id VARCHAR(255) NOT NULL,
-      data JSON NOT NULL,
-      created_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)
+      id TEXT PRIMARY KEY,
+      lead_id TEXT NOT NULL,
+      data JSONB NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
 
   await query(`
     CREATE TABLE IF NOT EXISTS crm_products (
-      id VARCHAR(255) PRIMARY KEY,
-      data JSON NOT NULL,
-      updated_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)
+      id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
 
   await query(`
     CREATE TABLE IF NOT EXISTS crm_quotes (
-      id VARCHAR(255) PRIMARY KEY,
-      lead_id VARCHAR(255) NOT NULL,
-      data JSON NOT NULL,
-      updated_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)
+      id TEXT PRIMARY KEY,
+      lead_id TEXT NOT NULL,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
 
   await query(`
     CREATE TABLE IF NOT EXISTS crm_tasks (
-      id VARCHAR(255) PRIMARY KEY,
-      lead_id VARCHAR(255) NOT NULL,
-      data JSON NOT NULL,
+      id TEXT PRIMARY KEY,
+      lead_id TEXT NOT NULL,
+      data JSONB NOT NULL,
       due_date DATE,
-      done TINYINT(1) DEFAULT 0,
-      updated_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)
+      done BOOLEAN DEFAULT FALSE,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
 
-  try { await query(`CREATE INDEX idx_crm_activities_lead ON crm_activities(lead_id)`); } catch { /* already exists */ }
-  try { await query(`CREATE INDEX idx_crm_quotes_lead ON crm_quotes(lead_id)`); } catch { /* already exists */ }
-  try { await query(`CREATE INDEX idx_crm_tasks_lead ON crm_tasks(lead_id)`); } catch { /* already exists */ }
-  try { await query(`CREATE INDEX idx_crm_tasks_due ON crm_tasks(due_date)`); } catch { /* already exists */ }
-  try { await query(`CREATE INDEX idx_crm_leads_stage ON crm_leads(stage)`); } catch { /* already exists */ }
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_crm_activities_lead ON crm_activities(lead_id)`); } catch { /* already exists */ }
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_crm_quotes_lead ON crm_quotes(lead_id)`); } catch { /* already exists */ }
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_crm_tasks_lead ON crm_tasks(lead_id)`); } catch { /* already exists */ }
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_crm_tasks_due ON crm_tasks(due_date)`); } catch { /* already exists */ }
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_crm_leads_stage ON crm_leads(stage)`); } catch { /* already exists */ }
 
   schemaInitialized = true;
   console.log("[crm] Schema initialized");
@@ -105,26 +105,28 @@ export async function getLeads(filters?: {
   let sql = `SELECT data FROM crm_leads`;
   const conditions: string[] = [];
   const params: unknown[] = [];
+  let idx = 1;
 
   if (filters?.stage) {
-    conditions.push(`JSON_UNQUOTE(JSON_EXTRACT(data, '$.stage')) = ?`);
+    conditions.push(`data->>'stage' = $${idx++}`);
     params.push(filters.stage);
   }
   if (filters?.district) {
-    conditions.push(`JSON_UNQUOTE(JSON_EXTRACT(data, '$.district')) = ?`);
+    conditions.push(`data->>'district' = $${idx++}`);
     params.push(filters.district);
   }
   if (filters?.type) {
-    conditions.push(`JSON_UNQUOTE(JSON_EXTRACT(data, '$.type')) = ?`);
+    conditions.push(`data->>'type' = $${idx++}`);
     params.push(filters.type);
   }
   if (filters?.assignedTo) {
-    conditions.push(`JSON_UNQUOTE(JSON_EXTRACT(data, '$.assignedTo')) = ?`);
+    conditions.push(`data->>'assignedTo' = $${idx++}`);
     params.push(filters.assignedTo);
   }
   if (filters?.search) {
-    conditions.push(`(JSON_UNQUOTE(JSON_EXTRACT(data, '$.name')) LIKE ? OR JSON_UNQUOTE(JSON_EXTRACT(data, '$.company')) LIKE ? OR JSON_UNQUOTE(JSON_EXTRACT(data, '$.phone')) LIKE ?)`);
-    params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`);
+    conditions.push(`(data->>'name' ILIKE $${idx} OR data->>'company' ILIKE $${idx} OR data->>'phone' ILIKE $${idx})`);
+    params.push(`%${filters.search}%`);
+    idx++;
   }
 
   if (conditions.length > 0) {
@@ -139,7 +141,7 @@ export async function getLeads(filters?: {
 export async function getLead(id: string): Promise<Lead | null> {
   await initCrmSchema();
   const row = await queryOne<{ data: Lead | string }>(
-    `SELECT data FROM crm_leads WHERE id = ?`, [id]
+    `SELECT data FROM crm_leads WHERE id = $1`, [id]
   );
   if (!row) return null;
   return typeof row.data === "string" ? JSON.parse(row.data) : row.data;
@@ -156,7 +158,7 @@ export async function createLead(input: Omit<Lead, "id" | "createdAt" | "updated
     lastContactAt: input.lastContactAt || now,
   };
   await query(
-    `INSERT INTO crm_leads (id, data, stage, last_contact_at, updated_at) VALUES (?, ?, ?, ?, NOW())`,
+    `INSERT INTO crm_leads (id, data, stage, last_contact_at, updated_at) VALUES ($1, $2, $3, $4, NOW())`,
     [lead.id, JSON.stringify(lead), lead.stage, lead.lastContactAt]
   );
   return lead;
@@ -168,7 +170,7 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<Le
   if (!existing) return null;
   const updated: Lead = { ...existing, ...updates, id, updatedAt: new Date().toISOString() };
   await query(
-    `UPDATE crm_leads SET data = ?, stage = ?, last_contact_at = ?, updated_at = NOW() WHERE id = ?`,
+    `UPDATE crm_leads SET data = $1, stage = $2, last_contact_at = $3, updated_at = NOW() WHERE id = $4`,
     [JSON.stringify(updated), updated.stage, updated.lastContactAt, id]
   );
   return updated;
@@ -180,10 +182,10 @@ export async function updateLeadStage(id: string, stage: LeadStage, lostReason?:
 
 export async function deleteLead(id: string): Promise<void> {
   await initCrmSchema();
-  await query(`DELETE FROM crm_leads WHERE id = ?`, [id]);
-  await query(`DELETE FROM crm_activities WHERE lead_id = ?`, [id]);
-  await query(`DELETE FROM crm_quotes WHERE lead_id = ?`, [id]);
-  await query(`DELETE FROM crm_tasks WHERE lead_id = ?`, [id]);
+  await query(`DELETE FROM crm_leads WHERE id = $1`, [id]);
+  await query(`DELETE FROM crm_activities WHERE lead_id = $1`, [id]);
+  await query(`DELETE FROM crm_quotes WHERE lead_id = $1`, [id]);
+  await query(`DELETE FROM crm_tasks WHERE lead_id = $1`, [id]);
 }
 
 // ─── Activities CRUD ──────────────────────────────────────────────────────────
@@ -191,7 +193,7 @@ export async function deleteLead(id: string): Promise<void> {
 export async function getActivities(leadId: string): Promise<Activity[]> {
   await initCrmSchema();
   const rows = await query<{ data: Activity | string }>(
-    `SELECT data FROM crm_activities WHERE lead_id = ? ORDER BY created_at DESC`,
+    `SELECT data FROM crm_activities WHERE lead_id = $1 ORDER BY created_at DESC`,
     [leadId]
   );
   return rows.map(r => typeof r.data === "string" ? JSON.parse(r.data) : r.data);
@@ -205,7 +207,7 @@ export async function createActivity(input: Omit<Activity, "id" | "createdAt">):
     createdAt: new Date().toISOString(),
   };
   await query(
-    `INSERT INTO crm_activities (id, lead_id, data, created_at) VALUES (?, ?, ?, NOW())`,
+    `INSERT INTO crm_activities (id, lead_id, data, created_at) VALUES ($1, $2, $3, NOW())`,
     [activity.id, activity.leadId, JSON.stringify(activity)]
   );
   const existing = await getLead(activity.leadId);
@@ -217,7 +219,7 @@ export async function createActivity(input: Omit<Activity, "id" | "createdAt">):
 
 export async function deleteActivity(id: string): Promise<void> {
   await initCrmSchema();
-  await query(`DELETE FROM crm_activities WHERE id = ?`, [id]);
+  await query(`DELETE FROM crm_activities WHERE id = $1`, [id]);
 }
 
 // ─── CRM Products CRUD ────────────────────────────────────────────────────────
@@ -225,7 +227,7 @@ export async function deleteActivity(id: string): Promise<void> {
 export async function getCrmProducts(activeOnly = false): Promise<CrmProduct[]> {
   await initCrmSchema();
   let sql = `SELECT data FROM crm_products`;
-  if (activeOnly) sql += ` WHERE JSON_UNQUOTE(JSON_EXTRACT(data, '$.isActive')) = 'true'`;
+  if (activeOnly) sql += ` WHERE data->>'isActive' = 'true'`;
   sql += ` ORDER BY updated_at DESC`;
   const rows = await query<{ data: CrmProduct | string }>(sql);
   return rows.map(r => typeof r.data === "string" ? JSON.parse(r.data) : r.data);
@@ -234,7 +236,7 @@ export async function getCrmProducts(activeOnly = false): Promise<CrmProduct[]> 
 export async function getCrmProduct(id: string): Promise<CrmProduct | null> {
   await initCrmSchema();
   const row = await queryOne<{ data: CrmProduct | string }>(
-    `SELECT data FROM crm_products WHERE id = ?`, [id]
+    `SELECT data FROM crm_products WHERE id = $1`, [id]
   );
   if (!row) return null;
   return typeof row.data === "string" ? JSON.parse(row.data) : row.data;
@@ -244,9 +246,9 @@ export async function upsertCrmProduct(product: CrmProduct): Promise<CrmProduct>
   await initCrmSchema();
   const updated = { ...product, updatedAt: new Date().toISOString() };
   await query(
-    `INSERT INTO crm_products (id, data, updated_at) VALUES (?, ?, NOW())
-     ON DUPLICATE KEY UPDATE data = ?, updated_at = NOW()`,
-    [updated.id, JSON.stringify(updated), JSON.stringify(updated)]
+    `INSERT INTO crm_products (id, data, updated_at) VALUES ($1, $2, NOW())
+     ON CONFLICT (id) DO UPDATE SET data = $2, updated_at = NOW()`,
+    [updated.id, JSON.stringify(updated)]
   );
   return updated;
 }
@@ -257,7 +259,7 @@ export async function getQuotes(leadId?: string): Promise<Quote[]> {
   await initCrmSchema();
   let sql = `SELECT data FROM crm_quotes`;
   const params: unknown[] = [];
-  if (leadId) { sql += ` WHERE lead_id = ?`; params.push(leadId); }
+  if (leadId) { sql += ` WHERE lead_id = $1`; params.push(leadId); }
   sql += ` ORDER BY updated_at DESC`;
   const rows = await query<{ data: Quote | string }>(sql, params);
   return rows.map(r => typeof r.data === "string" ? JSON.parse(r.data) : r.data);
@@ -266,7 +268,7 @@ export async function getQuotes(leadId?: string): Promise<Quote[]> {
 export async function getQuote(id: string): Promise<Quote | null> {
   await initCrmSchema();
   const row = await queryOne<{ data: Quote | string }>(
-    `SELECT data FROM crm_quotes WHERE id = ?`, [id]
+    `SELECT data FROM crm_quotes WHERE id = $1`, [id]
   );
   if (!row) return null;
   return typeof row.data === "string" ? JSON.parse(row.data) : row.data;
@@ -286,7 +288,7 @@ export async function createQuote(input: Omit<Quote, "id" | "quoteNumber" | "cre
     updatedAt: now,
   };
   await query(
-    `INSERT INTO crm_quotes (id, lead_id, data, updated_at) VALUES (?, ?, ?, NOW())`,
+    `INSERT INTO crm_quotes (id, lead_id, data, updated_at) VALUES ($1, $2, $3, NOW())`,
     [quote.id, quote.leadId, JSON.stringify(quote)]
   );
   return quote;
@@ -298,7 +300,7 @@ export async function updateQuote(id: string, updates: Partial<Quote>): Promise<
   if (!existing) return null;
   const updated = { ...existing, ...updates, id, updatedAt: new Date().toISOString() };
   await query(
-    `UPDATE crm_quotes SET data = ?, updated_at = NOW() WHERE id = ?`,
+    `UPDATE crm_quotes SET data = $1, updated_at = NOW() WHERE id = $2`,
     [JSON.stringify(updated), id]
   );
   return updated;
@@ -306,7 +308,7 @@ export async function updateQuote(id: string, updates: Partial<Quote>): Promise<
 
 export async function deleteQuote(id: string): Promise<void> {
   await initCrmSchema();
-  await query(`DELETE FROM crm_quotes WHERE id = ?`, [id]);
+  await query(`DELETE FROM crm_quotes WHERE id = $1`, [id]);
 }
 
 // ─── Tasks CRUD ───────────────────────────────────────────────────────────────
@@ -316,11 +318,12 @@ export async function getTasks(filters?: { leadId?: string; done?: boolean; dueT
   let sql = `SELECT data FROM crm_tasks`;
   const conditions: string[] = [];
   const params: unknown[] = [];
+  let idx = 1;
 
-  if (filters?.leadId) { conditions.push(`lead_id = ?`); params.push(filters.leadId); }
-  if (filters?.done !== undefined) { conditions.push(`done = ?`); params.push(filters.done ? 1 : 0); }
+  if (filters?.leadId) { conditions.push(`lead_id = $${idx++}`); params.push(filters.leadId); }
+  if (filters?.done !== undefined) { conditions.push(`done = $${idx++}`); params.push(filters.done); }
   if (filters?.dueToday) {
-    conditions.push(`due_date <= CURDATE() AND done = 0`);
+    conditions.push(`due_date <= CURRENT_DATE AND done = FALSE`);
   }
 
   if (conditions.length > 0) sql += ` WHERE ${conditions.join(" AND ")}`;
@@ -334,32 +337,32 @@ export async function createTask(input: Omit<CrmTask, "id" | "createdAt">): Prom
   await initCrmSchema();
   const task: CrmTask = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
   await query(
-    `INSERT INTO crm_tasks (id, lead_id, data, due_date, done) VALUES (?, ?, ?, ?, ?)`,
-    [task.id, task.leadId, JSON.stringify(task), task.dueDate, task.done ? 1 : 0]
+    `INSERT INTO crm_tasks (id, lead_id, data, due_date, done) VALUES ($1, $2, $3, $4, $5)`,
+    [task.id, task.leadId, JSON.stringify(task), task.dueDate, task.done]
   );
   return task;
 }
 
 export async function updateTask(id: string, updates: Partial<CrmTask>): Promise<CrmTask | null> {
   await initCrmSchema();
-  const rows = await query<{ data: CrmTask | string }>(`SELECT data FROM crm_tasks WHERE id = ?`, [id]);
+  const rows = await query<{ data: CrmTask | string }>(`SELECT data FROM crm_tasks WHERE id = $1`, [id]);
   const raw = rows[0]?.data;
   const existing = raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
   if (!existing) return null;
   const updated = { ...existing, ...updates, id };
   await query(
-    `UPDATE crm_tasks SET data = ?, done = ?, due_date = ?, updated_at = NOW() WHERE id = ?`,
-    [JSON.stringify(updated), updated.done ? 1 : 0, updated.dueDate, id]
+    `UPDATE crm_tasks SET data = $1, done = $2, due_date = $3, updated_at = NOW() WHERE id = $4`,
+    [JSON.stringify(updated), updated.done, updated.dueDate, id]
   );
   return updated;
 }
 
 export async function deleteTask(id: string): Promise<void> {
   await initCrmSchema();
-  await query(`DELETE FROM crm_tasks WHERE id = ?`, [id]);
+  await query(`DELETE FROM crm_tasks WHERE id = $1`, [id]);
 }
 
-// ─── Dashboard Stats ──────────────────────────────────────────────────────────
+// ─── CRM Stats ────────────────────────────────────────────────────────────────
 
 export async function getCrmStats(): Promise<CrmStats> {
   await initCrmSchema();
