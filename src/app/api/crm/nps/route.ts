@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getCrmSession } from "@/lib/admin-auth";
 import { getNpsSurveys, createNpsSurvey, getNpsStats, getNpsConfig, saveNpsConfig } from "@/lib/crm-nps-store";
 
 export async function GET(req: NextRequest) {
-  const session = await getAdminSession();
+  const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { searchParams } = new URL(req.url);
   if (searchParams.get("stats") === "1") {
@@ -22,13 +22,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   if (searchParams.get("config") === "1") {
-    const session = await getAdminSession();
+    const session = await getCrmSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await req.json();
     await saveNpsConfig(body);
     return NextResponse.json({ ok: true });
   }
-  const session = await getAdminSession();
+  const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json();
   const survey = await createNpsSurvey(body);

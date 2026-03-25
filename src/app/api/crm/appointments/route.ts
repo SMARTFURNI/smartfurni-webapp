@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getCrmSession } from "@/lib/admin-auth";
 import {
   getAppointments, createAppointment, updateAppointment, deleteAppointment,
   getTodayAppointments, getUpcomingAppointments,
 } from "@/lib/crm-calendar-store";
 
 async function checkAuth() {
-  const ok = await getAdminSession();
-  return ok;
+  const session = await getCrmSession();
+  return session !== null;
 }
 
 export async function GET(req: NextRequest) {

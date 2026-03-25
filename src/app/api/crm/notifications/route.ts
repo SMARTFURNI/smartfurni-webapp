@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getCrmSession } from "@/lib/admin-auth";
 import {
   getNotificationRules, saveNotificationRule, deleteNotificationRule,
   getNotificationLogs, getZaloConfig, saveZaloConfig, getSmsConfig, saveSmsConfig,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/crm-notifications-store";
 
 export async function GET(req: NextRequest) {
-  const session = await getAdminSession();
+  const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getAdminSession();
+  const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");

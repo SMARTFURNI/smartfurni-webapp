@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getCrmSession } from "@/lib/admin-auth";
 import { getContracts, createContract, getContractTemplates } from "@/lib/crm-contracts-store";
 
 export async function GET(req: NextRequest) {
-  const session = await getAdminSession();
+  const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { searchParams } = new URL(req.url);
   if (searchParams.get("templates") === "1") {
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getAdminSession();
+  const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json();
   const contract = await createContract({ ...body, createdBy: "Admin" });

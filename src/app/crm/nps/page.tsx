@@ -1,8 +1,7 @@
-import { requireAdmin } from "@/lib/admin-auth";
-import { redirect } from "next/navigation";
+import { requireCrmAccess } from "@/lib/admin-auth";
 import NpsClient from "@/components/crm/nps/NpsClient";
-
+export const dynamic = "force-dynamic";
 export default async function NpsPage() {
-  await requireAdmin();
+  await requireCrmAccess();
   return <NpsClient />;
 }

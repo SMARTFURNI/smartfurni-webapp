@@ -1,8 +1,7 @@
-import { requireAdmin } from "@/lib/admin-auth";
-import { redirect } from "next/navigation";
+import { requireCrmAccess } from "@/lib/admin-auth";
 import ZaloOAClient from "@/components/crm/zalo/ZaloOAClient";
-
+export const dynamic = "force-dynamic";
 export default async function ZaloPage() {
-  await requireAdmin();
+  await requireCrmAccess();
   return <ZaloOAClient />;
 }

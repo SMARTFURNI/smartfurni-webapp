@@ -81,4 +81,25 @@ export async function requireSuperAdminCrm(): Promise<void> {
   redirect("/crm-login");
 }
 
+/**
+ * Kiểm tra cả admin session và staff session.
+ * Dùng trong API routes để cho phép cả admin và nhân viên gọi API.
+ * Trả về { isAdmin, staffId } nếu hợp lệ, null nếu không có session.
+ */
+export async function getCrmSession(): Promise<{ isAdmin: boolean; staffId?: string } | null> {
+  // Kiểm tra admin session
+  const isAdmin = await getAdminSession();
+  if (isAdmin) return { isAdmin: true };
+
+  // Kiểm tra staff session
+  const cookieStore = await cookies();
+  const staffToken = cookieStore.get(STAFF_SESSION_COOKIE)?.value;
+  if (staffToken) {
+    const staff = await verifyStaffSession(staffToken);
+    if (staff) return { isAdmin: false, staffId: staff.id };
+  }
+
+  return null;
+}
+
 export { SESSION_COOKIE };
