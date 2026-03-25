@@ -70,7 +70,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs text-gray-400 font-medium">{dateStr}</span>
+            <span className="text-xs text-gray-500 font-medium">{dateStr}</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{greeting} 👋</h1>
           <p className="text-sm text-gray-500 mt-0.5">SmartFurni CRM — Tổng quan kinh doanh B2B</p>
@@ -133,7 +133,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-gray-900">Pipeline Sales</h2>
-                    <p className="text-[10px] text-gray-400">Phân bổ theo giai đoạn</p>
+                    <p className="text-[10px] text-gray-500">Phân bổ theo giai đoạn</p>
                   </div>
                 </div>
                 <Link href="/crm/kanban" className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">
@@ -188,12 +188,12 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-gray-900">Nguồn khách hàng</h2>
-                    <p className="text-[10px] text-gray-400">Hiệu quả theo nguồn</p>
+                    <p className="text-[10px] text-gray-500">Hiệu quả theo nguồn</p>
                   </div>
                 </div>
                 <div className="p-4 space-y-3">
                   {stats.bySource.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-4">Chưa có dữ liệu</p>
+                    <p className="text-xs text-gray-500 text-center py-4">Chưa có dữ liệu</p>
                   ) : stats.bySource.slice(0, 5).map(({ source, count, wonCount }) => {
                     const winRate = count > 0 ? Math.round((wonCount / count) * 100) : 0;
                     const maxCount = Math.max(...stats.bySource.map(s => s.count), 1);
@@ -214,7 +214,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                             <span className="text-xs font-medium text-gray-700 truncate max-w-[100px]">{source}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-gray-400">{count} KH</span>
+                            <span className="text-[10px] text-gray-500">{count} KH</span>
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                               style={{ background: winRate >= 30 ? "#dcfce7" : "#f3f4f6", color: winRate >= 30 ? "#16a34a" : "#6b7280" }}>
                               {winRate}%
@@ -238,7 +238,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-gray-900">Phân loại khách</h2>
-                    <p className="text-[10px] text-gray-400">Theo nhóm đối tượng</p>
+                    <p className="text-[10px] text-gray-500">Theo nhóm đối tượng</p>
                   </div>
                 </div>
                 <div className="p-4 space-y-3">
@@ -257,7 +257,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                             </div>
                             <div>
                               <div className="text-xs font-bold text-gray-800">{TYPE_LABELS[type]}</div>
-                              <div className="text-[10px] text-gray-400">{pct}% · {wonCount} đã chốt</div>
+                              <div className="text-[10px] text-gray-500">{pct}% · {wonCount} đã chốt</div>
                             </div>
                           </div>
                           {typeValue > 0 && (
@@ -283,7 +283,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-gray-900">Hoạt động gần đây</h2>
-                      <p className="text-[10px] text-gray-400">10 hoạt động mới nhất</p>
+                      <p className="text-[10px] text-gray-500">10 hoạt động mới nhất</p>
                     </div>
                   </div>
                 </div>
@@ -317,7 +317,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                           <p className="text-xs font-semibold text-gray-800 truncate">{act.title}</p>
                           <p className="text-[10px] text-gray-500 truncate mt-0.5">{act.content}</p>
                         </div>
-                        <div className="flex-shrink-0 text-[10px] text-gray-400 mt-0.5">{timeAgo}</div>
+                        <div className="flex-shrink-0 text-[10px] text-gray-500 mt-0.5">{timeAgo}</div>
                       </div>
                     );
                   })}
@@ -338,7 +338,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-gray-900">Việc hôm nay</h2>
-                    <p className="text-[10px] text-gray-400">{doneTasks.length}/{tasks.length} hoàn thành</p>
+                    <p className="text-[10px] text-gray-500">{doneTasks.length}/{tasks.length} hoàn thành</p>
                   </div>
                 </div>
                 {pendingTasks.length > 0 && (
@@ -363,10 +363,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                 {tasks.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: "#f9fafb" }}>
-                      <CheckSquare size={18} className="text-gray-300" />
+                      <CheckSquare size={18} className="text-gray-600" />
                     </div>
-                    <p className="text-xs text-gray-400">Không có việc hôm nay</p>
-                    <p className="text-[10px] text-gray-300 mt-0.5">Tận hưởng ngày của bạn! 🎉</p>
+                    <p className="text-xs text-gray-500">Không có việc hôm nay</p>
+                    <p className="text-[10px] text-gray-600 mt-0.5">Tận hưởng ngày của bạn! 🎉</p>
                   </div>
                 ) : (
                   tasks.map(task => {
@@ -389,7 +389,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                           )}
                         </button>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold leading-snug ${task.done ? "line-through text-gray-400" : "text-gray-800"}`}>
+                          <p className={`text-xs font-semibold leading-snug ${task.done ? "line-through text-gray-500" : "text-gray-800"}`}>
                             {task.title}
                           </p>
                           <Link href={`/crm/leads/${task.leadId}`}
@@ -443,7 +443,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                             <Clock size={9} style={{ color: "#ef4444" }} />
                             <span className="text-[10px] font-black text-red-500">{daysAgo}n</span>
                           </div>
-                          <ChevronRight size={12} className="text-gray-300 group-hover:text-red-400 transition-colors" />
+                          <ChevronRight size={12} className="text-gray-600 group-hover:text-red-400 transition-colors" />
                         </div>
                       </Link>
                     );
@@ -461,7 +461,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-gray-900">Báo giá gần đây</h2>
-                    <p className="text-[10px] text-gray-400">{quotes.length} báo giá</p>
+                    <p className="text-[10px] text-gray-500">{quotes.length} báo giá</p>
                   </div>
                 </div>
                 <Link href="/crm/quotes" className="text-[10px] text-indigo-500 hover:underline font-medium flex items-center gap-0.5">
@@ -470,7 +470,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
               </div>
               <div className="divide-y divide-gray-50">
                 {quotes.length === 0 ? (
-                  <div className="text-center py-6 text-gray-400">
+                  <div className="text-center py-6 text-gray-500">
                     <FileText size={22} className="mx-auto mb-1.5 opacity-20" />
                     <p className="text-xs">Chưa có báo giá</p>
                   </div>
@@ -486,7 +486,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                       className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-bold text-gray-900">{q.quoteNumber}</div>
-                        <div className="text-[10px] text-gray-400 truncate">{q.leadName}</div>
+                        <div className="text-[10px] text-gray-500 truncate">{q.leadName}</div>
                       </div>
                       <div className="text-right flex-shrink-0 ml-3">
                         <div className="text-xs font-bold" style={{ color: "#C9A84C" }}>{formatVND(q.total)}</div>
@@ -546,7 +546,7 @@ function KpiCard({ icon: Icon, label, value, sub, color, urgent }: KpiCardProps)
       </div>
       <div className="text-2xl font-black text-gray-900 leading-none mb-1">{value}</div>
       <div className="text-xs font-semibold text-gray-600">{label}</div>
-      <div className="text-[10px] text-gray-400 mt-0.5 truncate">{sub}</div>
+      <div className="text-[10px] text-gray-500 mt-0.5 truncate">{sub}</div>
     </div>
   );
 }

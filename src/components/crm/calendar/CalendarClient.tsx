@@ -126,12 +126,12 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
   const isSelected = (d: Date) => selectedDate?.toDateString() === d.toDateString();
 
   return (
-    <div className="flex h-full" style={{ background: "#0a0c10" }}>
+    <div className="flex h-full" style={{ background: "#ffffff" }}>
       {/* Left: Calendar */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#0d0f14" }}>
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#ffffff" }}>
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-bold text-white flex items-center gap-2">
               <Calendar size={20} style={{ color: "#C9A84C" }} />
@@ -218,7 +218,7 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
 
       {/* Right: Sidebar */}
       <div className="w-72 flex-shrink-0 flex flex-col overflow-hidden"
-        style={{ borderLeft: "1px solid rgba(255,255,255,0.05)", background: "#0d0f14" }}>
+        style={{ borderLeft: "1px solid rgba(255,255,255,0.05)", background: "#ffffff" }}>
         {/* Selected day */}
         <div className="p-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="text-xs font-semibold mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>

@@ -106,11 +106,11 @@ export default function StaffManagementClient({ initialStaff }: Props) {
   const activeCount = staff.filter(s => s.status === "active").length;
 
   return (
-    <div className="flex flex-col h-full bg-[#0f1117] overflow-y-auto">
+    <div className="flex flex-col h-full bg-white overflow-y-auto">
 
       {/* Header */}
       <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "#0f1117" }}>
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "#ffffff" }}>
         <div>
           <h1 className="text-xl font-bold text-white">Quản lý nhân viên</h1>
           <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>

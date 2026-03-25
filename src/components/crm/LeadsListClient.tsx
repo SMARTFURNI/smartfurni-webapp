@@ -44,7 +44,7 @@ export default function LeadsListClient({ initialLeads }: Props) {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input type="text" placeholder="Tìm kiếm..." value={search} onChange={e => setSearch(e.target.value)}
                 className="pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-400/30 w-48" />
             </div>
@@ -106,7 +106,7 @@ export default function LeadsListClient({ initialLeads }: Props) {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-12 text-gray-400">Không có khách hàng nào</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-gray-500">Không có khách hàng nào</td></tr>
               )}
               {filtered.map(lead => {
                 const overdue = isOverdue(lead);
@@ -122,7 +122,7 @@ export default function LeadsListClient({ initialLeads }: Props) {
                           <div>
                             <div className="font-semibold text-gray-900">{lead.name}</div>
                             {lead.company && <div className="text-xs text-gray-500">{lead.company}</div>}
-                            <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                            <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
                               <Phone size={10} /> {lead.phone}
                             </div>
                           </div>

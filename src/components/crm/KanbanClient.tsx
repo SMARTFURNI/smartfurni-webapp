@@ -105,10 +105,10 @@ export default function KanbanClient({ initialLeads }: Props) {
   const activeFilters = [filterDistrict, filterType, filterSource].filter(Boolean).length;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "#0a0c10" }}>
+    <div className="flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
       <div className="flex-shrink-0 px-6 py-4"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#0d0f14" }}>
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl font-bold text-white">Bảng Kanban</h1>
@@ -120,7 +120,7 @@ export default function KanbanClient({ initialLeads }: Props) {
           <div className="flex items-center gap-2 flex-wrap">
             {/* Search */}
             <div className="relative">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
                 type="text"
                 placeholder="Tìm kiếm..."

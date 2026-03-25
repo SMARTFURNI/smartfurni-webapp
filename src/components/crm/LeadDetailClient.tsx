@@ -191,7 +191,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                   </div>
 
                   {activities.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
+                    <div className="text-center py-12 text-gray-500">
                       <Clock size={32} className="mx-auto mb-3 opacity-30" />
                       <p className="text-sm">Chưa có hoạt động nào</p>
                     </div>
@@ -220,10 +220,10 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                                     style={{ background: `${color}15`, color }}>
                                     {ACTIVITY_LABELS[act.type]}
                                   </span>
-                                  <span className="text-xs text-gray-400 ml-2">
+                                  <span className="text-xs text-gray-500 ml-2">
                                     {new Date(act.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                                   </span>
-                                  {act.createdBy && <span className="text-xs text-gray-400 ml-1">· {act.createdBy}</span>}
+                                  {act.createdBy && <span className="text-xs text-gray-500 ml-1">· {act.createdBy}</span>}
                                 </div>
                                 <button
                                   onClick={async () => {
@@ -231,7 +231,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                                     await fetch(`/api/crm/activities/${act.id}`, { method: "DELETE" });
                                     setActivities(prev => prev.filter(a => a.id !== act.id));
                                   }}
-                                  className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0">
+                                  className="text-gray-600 hover:text-red-400 transition-colors flex-shrink-0">
                                   <Trash2 size={13} />
                                 </button>
                               </div>
@@ -268,7 +268,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                     </Link>
                   </div>
                   {quotes.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
+                    <div className="text-center py-12 text-gray-500">
                       <FileText size={32} className="mx-auto mb-3 opacity-30" />
                       <p className="text-sm">Chưa có báo giá nào</p>
                     </div>
@@ -304,7 +304,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                     </button>
                   </div>
                   {tasks.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
+                    <div className="text-center py-12 text-gray-500">
                       <CheckSquare size={32} className="mx-auto mb-3 opacity-30" />
                       <p className="text-sm">Chưa có việc cần làm</p>
                     </div>
@@ -472,7 +472,7 @@ function TaskItem({ task, onToggle, onDelete }: { task: CrmTask; onToggle: () =>
         {task.done && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </button>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${task.done ? "line-through text-gray-400" : "text-gray-900"}`}>{task.title}</p>
+        <p className={`text-sm font-medium ${task.done ? "line-through text-gray-500" : "text-gray-900"}`}>{task.title}</p>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-[10px]" style={{ color: isOverdueTask ? "#ef4444" : "#9ca3af" }}>
             {new Date(task.dueDate).toLocaleDateString("vi-VN")}
@@ -480,7 +480,7 @@ function TaskItem({ task, onToggle, onDelete }: { task: CrmTask; onToggle: () =>
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: priorityColor }} />
         </div>
       </div>
-      <button onClick={onDelete} className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0">
+      <button onClick={onDelete} className="text-gray-600 hover:text-red-400 transition-colors flex-shrink-0">
         <Trash2 size={13} />
       </button>
     </div>

@@ -37,7 +37,7 @@ export default function QuotesListClient({ initialQuotes }: Props) {
       <div className="flex-1 overflow-auto p-6">
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
           {quotes.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
+            <div className="text-center py-16 text-gray-500">
               <FileText size={40} className="mx-auto mb-3 opacity-20" />
               <p>Chưa có báo giá nào</p>
             </div>

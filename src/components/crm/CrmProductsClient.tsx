@@ -39,7 +39,7 @@ export default function CrmProductsClient({ initialProducts }: Props) {
 
         <div className="flex-1 overflow-y-auto">
           {products.length === 0 && (
-            <div className="text-center py-12 text-gray-400">
+            <div className="text-center py-12 text-gray-500">
               <Package size={32} className="mx-auto mb-3 opacity-30" />
               <p className="text-sm">Chưa có sản phẩm</p>
             </div>
@@ -57,7 +57,7 @@ export default function CrmProductsClient({ initialProducts }: Props) {
                   <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Package size={20} className="text-gray-300" />
+                    <Package size={20} className="text-gray-600" />
                   </div>
                 )}
               </div>
@@ -71,7 +71,7 @@ export default function CrmProductsClient({ initialProducts }: Props) {
                   style={{ background: p.category === "sofa_bed" ? "#dbeafe" : "#f3e8ff", color: p.category === "sofa_bed" ? "#1d4ed8" : "#7c3aed" }}>
                   {p.category === "sofa_bed" ? "Sofa" : "Giường CT"}
                 </span>
-                {!p.isActive && <span className="text-[10px] text-gray-400">Ẩn</span>}
+                {!p.isActive && <span className="text-[10px] text-gray-500">Ẩn</span>}
               </div>
             </button>
           ))}
@@ -81,7 +81,7 @@ export default function CrmProductsClient({ initialProducts }: Props) {
       {/* Right: Product detail */}
       <div className="flex-1 overflow-y-auto p-6">
         {!selected ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <Package size={48} className="mb-4 opacity-20" />
             <p className="text-lg font-medium">Chọn sản phẩm để xem chi tiết</p>
             <p className="text-sm mt-1">hoặc thêm sản phẩm mới</p>
@@ -123,7 +123,7 @@ function ProductDetail({ product: p, onEdit, onCreateQuote }: { product: CrmProd
             <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Package size={48} className="text-gray-300" />
+              <Package size={48} className="text-gray-600" />
             </div>
           )}
           <div className="absolute top-3 right-3 flex gap-2">
@@ -141,7 +141,7 @@ function ProductDetail({ product: p, onEdit, onCreateQuote }: { product: CrmProd
             </div>
             <div className="text-right">
               <div className="text-2xl font-black" style={{ color: "#C9A84C" }}>{formatVND(p.basePrice)}</div>
-              <p className="text-xs text-gray-400">Giá gốc / bộ</p>
+              <p className="text-xs text-gray-500">Giá gốc / bộ</p>
             </div>
           </div>
           {p.description && <p className="text-sm text-gray-600 mt-3 leading-relaxed">{p.description}</p>}

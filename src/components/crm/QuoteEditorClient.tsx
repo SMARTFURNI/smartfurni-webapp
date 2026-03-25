@@ -134,7 +134,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
             </div>
 
             {items.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-8 text-gray-500">
                 <Package size={32} className="mx-auto mb-2 opacity-30" />
                 <p className="text-sm">Chưa có sản phẩm nào</p>
               </div>
@@ -168,13 +168,13 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
                     <div className="col-span-2 text-right">
                       {item.discountPct > 0 ? (
                         <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">-{item.discountPct}%</span>
-                      ) : <span className="text-xs text-gray-400">—</span>}
+                      ) : <span className="text-xs text-gray-500">—</span>}
                     </div>
                     <div className="col-span-1 text-right text-sm font-bold" style={{ color: "#C9A84C" }}>
                       {formatVND(item.finalPrice * item.qty)}
                     </div>
                     <div className="col-span-1 flex justify-end">
-                      <button onClick={() => removeItem(idx)} className="text-gray-300 hover:text-red-400 transition-colors">
+                      <button onClick={() => removeItem(idx)} className="text-gray-600 hover:text-red-400 transition-colors">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -267,7 +267,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
                   style={{ border: "1px solid #f3f4f6" }}>
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                     {p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" /> :
-                      <div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-gray-300" /></div>}
+                      <div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-gray-600" /></div>}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm text-gray-900 truncate">{p.name}</div>

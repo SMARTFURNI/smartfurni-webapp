@@ -532,7 +532,7 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
 
       <SectionCard title="Hướng dẫn tích hợp Make.com / n8n" icon={FileText}>
         <div className="space-y-3 text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>
-          <p>Gửi <strong className="text-white">POST</strong> request đến webhook URL với header:</p>
+          <p>Gửi <strong className="text-gray-900">POST</strong> request đến webhook URL với header:</p>
           <pre className="p-3 rounded-lg text-xs overflow-x-auto"
             style={{ background: "rgba(0,0,0,0.3)", color: "#C9A84C", border: "1px solid rgba(255,255,255,0.06)" }}>
 {`x-webhook-secret: ${data.secret}
@@ -808,7 +808,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
   const activeTabData = TABS.find(t => t.id === activeTab)!;
 
   return (
-    <div className="flex h-full" style={{ background: "#0a0c10", color: "#fff" }}>
+    <div className="flex h-full" style={{ background: "#ffffff", color: "#fff" }}>
       {/* Left sidebar */}
       <div className="w-64 flex-shrink-0 flex flex-col"
         style={{ background: "rgba(255,255,255,0.02)", borderRight: "1px solid rgba(255,255,255,0.06)" }}>

@@ -88,9 +88,9 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
   );
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "#0a0c10" }}>
+    <div className="flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
-      <div className="flex-shrink-0 px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#0d0f14" }}>
+      <div className="flex-shrink-0 px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-bold text-white flex items-center gap-2">

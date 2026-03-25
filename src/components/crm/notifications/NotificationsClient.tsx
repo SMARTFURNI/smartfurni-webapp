@@ -110,7 +110,7 @@ export default function NotificationsClient() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-6 border-b border-[#1a1f2e]">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#C9A84C]/10 border border-[#C9A84C]/20 flex items-center justify-center">
@@ -122,7 +122,7 @@ export default function NotificationsClient() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={load} className="p-2 rounded-lg bg-[#1a1f2e] text-gray-400 hover:text-white transition-colors">
+            <button onClick={load} className="p-2 rounded-lg bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors">
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
             </button>
             <button onClick={handleSaveRules} disabled={saving}
@@ -136,24 +136,24 @@ export default function NotificationsClient() {
         <div className="grid grid-cols-4 gap-3 mb-4">
           {[
             { label: "Quy tắc đang bật", value: stats.active, color: "text-emerald-400" },
-            { label: "Tổng quy tắc", value: stats.total, color: "text-white" },
+            { label: "Tổng quy tắc", value: stats.total, color: "text-gray-900" },
             { label: "Đã gửi hôm nay", value: stats.sent, color: "text-blue-400" },
             { label: "Thất bại", value: stats.failed, color: "text-red-400" },
           ].map(s => (
-            <div key={s.label} className="bg-[#1a1f2e] rounded-xl p-3 border border-[#252b3b] text-center">
+            <div key={s.label} className="bg-gray-50 rounded-xl p-3 border border-gray-200 text-center">
               <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
               <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
             </div>
           ))}
         </div>
 
-        <div className="flex gap-1 bg-[#1a1f2e] rounded-lg p-1 w-fit">
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
           {[
             { id: "rules", label: "Quy tắc", icon: <Zap size={13} /> },
             { id: "logs", label: "Lịch sử", icon: <Clock size={13} /> },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as typeof tab)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${tab === t.id ? "bg-[#C9A84C] text-black font-medium" : "text-gray-400 hover:text-white"}`}>
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${tab === t.id ? "bg-[#C9A84C] text-black font-medium" : "text-gray-500 hover:text-white"}`}>
               {t.icon} {t.label}
             </button>
           ))}
@@ -166,26 +166,26 @@ export default function NotificationsClient() {
           <div className="space-y-3">
             <div className="flex justify-end">
               <button onClick={() => setShowAddRule(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1a1f2e] text-gray-400 hover:text-white border border-[#252b3b] text-sm transition-colors">
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 text-gray-500 hover:text-white border border-gray-200 text-sm transition-colors">
                 <Plus size={14} /> Thêm quy tắc
               </button>
             </div>
             {rules.map(rule => {
               const ch = CHANNEL_LABELS[rule.channel];
               return (
-                <div key={rule.id} className={`bg-[#1a1f2e] rounded-xl p-4 border transition-colors ${rule.isActive ? "border-[#252b3b]" : "border-[#1a1f2e] opacity-60"}`}>
+                <div key={rule.id} className={`bg-gray-50 rounded-xl p-4 border transition-colors ${rule.isActive ? "border-gray-200" : "border-gray-200 opacity-60"}`}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
                       <button
                         onClick={() => setRules(rs => rs.map(r => r.id === rule.id ? { ...r, isActive: !r.isActive } : r))}
-                        className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 mt-0.5 ${rule.isActive ? "bg-[#C9A84C]" : "bg-[#252b3b]"}`}
+                        className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 mt-0.5 ${rule.isActive ? "bg-[#C9A84C]" : "bg-gray-100"}`}
                       >
                         <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${rule.isActive ? "translate-x-5" : "translate-x-0.5"}`} />
                       </button>
                       <div>
                         <div className="text-sm font-medium text-white mb-1">{rule.name}</div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-gray-500 bg-[#0f1117] px-2 py-0.5 rounded border border-[#252b3b]">
+                          <span className="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">
                             {TRIGGER_LABELS[rule.trigger]}
                           </span>
                           <span className={`text-xs px-2 py-0.5 rounded border ${ch.color}`}>{ch.label}</span>
@@ -220,17 +220,17 @@ export default function NotificationsClient() {
                 <p className="text-sm">Chưa có lịch sử gửi thông báo</p>
               </div>
             ) : logs.map(log => (
-              <div key={log.id} className="bg-[#1a1f2e] rounded-xl p-4 border border-[#252b3b]">
+              <div key={log.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-medium text-white">{log.leadName}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs border ${CHANNEL_LABELS[log.channel]?.color || "text-gray-400 bg-gray-500/10 border-gray-500/20"}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs border ${CHANNEL_LABELS[log.channel]?.color || "text-gray-500 bg-gray-500/10 border-gray-500/20"}`}>
                         {CHANNEL_LABELS[log.channel]?.label || log.channel}
                       </span>
                     </div>
                     <div className="text-xs text-gray-500 mb-2">{log.ruleName}</div>
-                    <p className="text-sm text-gray-400">{log.message}</p>
+                    <p className="text-sm text-gray-500">{log.message}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${
@@ -253,48 +253,48 @@ export default function NotificationsClient() {
       {/* Add Rule Modal */}
       {showAddRule && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f1117] border border-[#1a1f2e] rounded-2xl w-full max-w-md">
-            <div className="p-6 border-b border-[#1a1f2e] flex items-center justify-between">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-white">Thêm quy tắc nhắc nhở</h2>
               <button onClick={() => setShowAddRule(false)} className="text-gray-500 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Tên quy tắc *</label>
+                <label className="block text-xs text-gray-500 mb-1.5">Tên quy tắc *</label>
                 <input value={newRule.name || ""} onChange={e => setNewRule(p => ({ ...p, name: e.target.value }))}
                   placeholder="VD: Nhắc KH sau 5 ngày"
-                  className="w-full bg-[#1a1f2e] border border-[#252b3b] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C]/50"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Khi nào kích hoạt</label>
+                <label className="block text-xs text-gray-500 mb-1.5">Khi nào kích hoạt</label>
                 <select value={newRule.trigger} onChange={e => setNewRule(p => ({ ...p, trigger: e.target.value as NotificationRule["trigger"] }))}
-                  className="w-full bg-[#1a1f2e] border border-[#252b3b] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/50">
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70">
                   {Object.entries(TRIGGER_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Kênh gửi</label>
+                <label className="block text-xs text-gray-500 mb-1.5">Kênh gửi</label>
                 <div className="flex gap-2">
                   {(["zalo", "sms", "both"] as const).map(ch => (
                     <button key={ch} onClick={() => setNewRule(p => ({ ...p, channel: ch }))}
-                      className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${newRule.channel === ch ? "bg-[#C9A84C]/20 border-[#C9A84C]/50 text-[#C9A84C]" : "bg-[#1a1f2e] border-[#252b3b] text-gray-400"}`}>
+                      className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${newRule.channel === ch ? "bg-[#C9A84C]/20 border-[#C9A84C]/50 text-[#C9A84C]" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
                       {CHANNEL_LABELS[ch].label}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Độ trễ (giờ)</label>
+                <label className="block text-xs text-gray-500 mb-1.5">Độ trễ (giờ)</label>
                 <input type="number" min={0} max={720} value={newRule.delayHours}
                   onChange={e => setNewRule(p => ({ ...p, delayHours: Number(e.target.value) }))}
-                  className="w-full bg-[#1a1f2e] border border-[#252b3b] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/50"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
                 />
                 <p className="text-xs text-gray-600 mt-1">0 = gửi ngay lập tức</p>
               </div>
             </div>
-            <div className="p-6 border-t border-[#1a1f2e] flex justify-end gap-3">
-              <button onClick={() => setShowAddRule(false)} className="px-4 py-2 rounded-lg bg-[#1a1f2e] text-gray-400 text-sm hover:text-white transition-colors">Hủy</button>
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button onClick={() => setShowAddRule(false)} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm hover:text-gray-900 transition-colors">Hủy</button>
               <button onClick={handleAddRule} disabled={!newRule.name}
                 className="px-4 py-2 rounded-lg bg-[#C9A84C] text-black text-sm font-medium hover:bg-[#d4b55a] transition-colors disabled:opacity-50">
                 Thêm quy tắc

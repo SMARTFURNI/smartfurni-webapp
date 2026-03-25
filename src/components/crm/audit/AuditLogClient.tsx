@@ -292,7 +292,7 @@ export default function AuditLogClient() {
           style={{ background: "rgba(0,0,0,0.7)" }}
           onClick={() => setSelectedLog(null)}>
           <div className="w-full max-w-lg rounded-2xl p-6 space-y-4"
-            style={{ background: "#0f1117", border: "1px solid rgba(255,255,255,0.1)" }}
+            style={{ background: "#ffffff", border: "1px solid rgba(255,255,255,0.1)" }}
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white">Chi tiết nhật ký</h3>

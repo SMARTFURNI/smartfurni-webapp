@@ -55,7 +55,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080806] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#C9A84C] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -63,7 +63,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
 
   if (!survey || survey.status === "expired") {
     return (
-      <div className="min-h-screen bg-[#080806] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
           <AlertCircle className="mx-auto mb-4 text-red-400" size={48} />
           <h1 className="text-xl font-semibold text-white mb-2">Khảo sát không tồn tại</h1>
@@ -75,16 +75,16 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
 
   if (submitted || survey.status === "completed") {
     return (
-      <div className="min-h-screen bg-[#080806] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
           <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="text-emerald-400" size={40} />
           </div>
           <h1 className="text-2xl font-bold text-white mb-3">Cảm ơn bạn!</h1>
-          <p className="text-gray-400 text-sm leading-relaxed">
+          <p className="text-gray-500 text-sm leading-relaxed">
             {survey.thankYouMessage || "Phản hồi của bạn đã được ghi nhận. Chúng tôi sẽ không ngừng cải thiện để phục vụ bạn tốt hơn."}
           </p>
-          <div className="mt-8 pt-6 border-t border-[#1a1f2e]">
+          <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-600">SmartFurni — Nội thất thông minh</p>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#080806] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="max-w-lg w-full">
         {/* Header */}
         <div className="text-center mb-8">
@@ -106,13 +106,13 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
           <h1 className="text-2xl font-bold text-white mb-2">
             {survey.surveyTitle || "Đánh giá trải nghiệm của bạn"}
           </h1>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-500 text-sm">
             Xin chào <span className="text-white font-medium">{survey.leadName}</span>,{" "}
             {survey.surveyIntro || "chúng tôi rất muốn biết trải nghiệm của bạn với SmartFurni."}
           </p>
         </div>
 
-        <div className="bg-[#0f1117] border border-[#1a1f2e] rounded-2xl p-6 space-y-8">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-8">
           {/* NPS Score */}
           <div>
             <p className="text-sm font-medium text-white mb-1">
@@ -165,7 +165,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
                       ? opt.color === "emerald"
                         ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
                         : "bg-red-500/20 border-red-500/50 text-red-400"
-                      : "bg-[#1a1f2e] border-[#252b3b] text-gray-400 hover:border-gray-500"
+                      : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-500"
                   }`}
                 >
                   {opt.label}
@@ -184,7 +184,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
               onChange={e => setFeedback(e.target.value)}
               placeholder="Điều gì bạn thích nhất? Điều gì có thể cải thiện hơn?"
               rows={4}
-              className="w-full bg-[#1a1f2e] border border-[#252b3b] rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
             />
           </div>
 
