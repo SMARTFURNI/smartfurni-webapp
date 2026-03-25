@@ -19,6 +19,7 @@ import {
   BarChart3,
   Mail,
   CalendarDays,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -56,6 +57,7 @@ const NAV_GROUPS = [
     items: [
       { label: "Nhân viên", href: "/crm/staff", icon: UserCog },
       { label: "Báo cáo & Phân tích", href: "/crm/reports", icon: BarChart3 },
+      { label: "Cài đặt CRM", href: "/crm/settings", icon: SlidersHorizontal },
     ],
   },
 ];
