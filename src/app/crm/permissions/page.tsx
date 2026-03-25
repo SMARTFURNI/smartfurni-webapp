@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { requireSuperAdminCrm } from "@/lib/admin-auth";
 import PermissionsClient from "@/components/crm/audit/PermissionsClient";
 

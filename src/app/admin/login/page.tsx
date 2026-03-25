@@ -23,8 +23,8 @@ export default function AdminLoginPage() {
       if (!res.ok) {
         setError(data.error || "Đăng nhập thất bại");
       } else {
-        router.push("/admin");
-        router.refresh();
+        // Dùng window.location.href để full page reload, tránh Next.js router cache
+        window.location.href = "/admin";
       }
     } catch {
       setError("Lỗi kết nối. Vui lòng thử lại.");

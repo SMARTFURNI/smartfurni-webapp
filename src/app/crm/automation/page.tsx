@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { requireSuperAdminCrm } from "@/lib/admin-auth";
 import AutomationSettingsClient from "@/components/crm/automation/AutomationSettingsClient";
 

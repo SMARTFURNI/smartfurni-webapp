@@ -2,6 +2,8 @@ import { requireCrmAccess } from "@/lib/admin-auth";
 import { getStaffById } from "@/lib/crm-staff-store";
 import CrmSidebar from "@/components/crm/CrmSidebar";
 
+export const dynamic = "force-dynamic";
+
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
   const session = await requireCrmAccess();
 

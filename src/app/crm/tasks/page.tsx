@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { redirect } from "next/navigation";
 

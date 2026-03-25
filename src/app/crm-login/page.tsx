@@ -25,8 +25,9 @@ export default function CrmStaffLoginPage() {
       if (!res.ok) {
         setError(data.error || "Đăng nhập thất bại");
       } else {
-        router.push("/crm");
-        router.refresh();
+        // Dùng window.location.href thay vì router.push
+        // để đảm bảo full page reload, tránh Next.js router cache
+        window.location.href = "/crm";
       }
     } catch {
       setError("Lỗi kết nối. Vui lòng thử lại.");
