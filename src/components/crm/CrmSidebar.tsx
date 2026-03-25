@@ -20,6 +20,11 @@ import {
   Mail,
   CalendarDays,
   SlidersHorizontal,
+  Bot,
+  Shield,
+  Key,
+  Upload,
+  MessageSquare,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -58,6 +63,26 @@ const NAV_GROUPS = [
       { label: "Nhân viên", href: "/crm/staff", icon: UserCog },
       { label: "Báo cáo & Phân tích", href: "/crm/reports", icon: BarChart3 },
       { label: "Cài đặt CRM", href: "/crm/settings", icon: SlidersHorizontal },
+    ],
+  },
+  {
+    label: "Tự động hóa",
+    items: [
+      { label: "Automation Rules", href: "/crm/automation", icon: Bot },
+    ],
+  },
+  {
+    label: "Bảo mật",
+    items: [
+      { label: "Nhật ký hoạt động", href: "/crm/audit", icon: Shield },
+      { label: "Phân quyền & API Keys", href: "/crm/permissions", icon: Key },
+    ],
+  },
+  {
+    label: "Dữ liệu",
+    items: [
+      { label: "Import / Export", href: "/crm/import-export", icon: Upload },
+      { label: "Zalo OA", href: "/crm/import-export", icon: MessageSquare },
     ],
   },
 ];
