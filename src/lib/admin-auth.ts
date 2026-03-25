@@ -52,19 +52,23 @@ export async function requireAdmin(): Promise<void> {
  * Kiểm tra xem request có phải từ nhân viên CRM hoặc admin không.
  * Dùng cho các trang CRM mà nhân viên có thể truy cập.
  * Nếu không có session hợp lệ → redirect về /crm-login
+ *
+ * Thứ tự ưu tiên: staff session TRƯỚC, admin session SAU.
+ * Điều này đảm bảo khi nhân viên đăng nhập qua /crm-login,
+ * họ thấy giao diện nhân viên dù trình duyệt còn cookie admin.
  */
 export async function requireCrmAccess(): Promise<{ isAdmin: boolean; staffId?: string }> {
-  // Kiểm tra admin session trước
-  const isAdmin = await getAdminSession();
-  if (isAdmin) return { isAdmin: true };
-
-  // Kiểm tra staff session
+  // Kiểm tra staff session TRƯỚC (ưu tiên cao hơn)
   const cookieStore = await cookies();
   const staffToken = cookieStore.get(STAFF_SESSION_COOKIE)?.value;
   if (staffToken) {
     const staff = await verifyStaffSession(staffToken);
     if (staff) return { isAdmin: false, staffId: staff.id };
   }
+
+  // Kiểm tra admin session sau
+  const isAdmin = await getAdminSession();
+  if (isAdmin) return { isAdmin: true };
 
   // Không có session hợp lệ → redirect về trang login nhân viên
   redirect("/crm-login");
@@ -87,17 +91,17 @@ export async function requireSuperAdminCrm(): Promise<void> {
  * Trả về { isAdmin, staffId } nếu hợp lệ, null nếu không có session.
  */
 export async function getCrmSession(): Promise<{ isAdmin: boolean; staffId?: string } | null> {
-  // Kiểm tra admin session
-  const isAdmin = await getAdminSession();
-  if (isAdmin) return { isAdmin: true };
-
-  // Kiểm tra staff session
+  // Kiểm tra staff session TRƯỚC (ưu tiên cao hơn)
   const cookieStore = await cookies();
   const staffToken = cookieStore.get(STAFF_SESSION_COOKIE)?.value;
   if (staffToken) {
     const staff = await verifyStaffSession(staffToken);
     if (staff) return { isAdmin: false, staffId: staff.id };
   }
+
+  // Kiểm tra admin session sau
+  const isAdmin = await getAdminSession();
+  if (isAdmin) return { isAdmin: true };
 
   return null;
 }
