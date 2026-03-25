@@ -9,8 +9,9 @@ import {
 import type { Lead, LeadStage, LeadType } from "@/lib/crm-store";
 import {
   STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
-  DISTRICTS, SOURCES, formatVND, isOverdue,
+  SOURCES, formatVND, isOverdue,
 } from "@/lib/crm-store";
+import { VIETNAM_PROVINCES } from "@/lib/crm-locations";
 import AddLeadModal from "./AddLeadModal";
 
 const STAGES: LeadStage[] = ["new", "profile_sent", "surveyed", "quoted", "negotiating", "won", "lost"];
@@ -104,14 +105,14 @@ export default function KanbanClient({ initialLeads }: Props) {
   const activeFilters = [filterDistrict, filterType, filterSource].filter(Boolean).length;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "#f0f2f5" }}>
+    <div className="flex flex-col h-full" style={{ background: "#0a0c10" }}>
       {/* Header */}
-      <div className="flex-shrink-0 bg-white px-6 py-4"
-        style={{ borderBottom: "1px solid #e5e7eb" }}>
+      <div className="flex-shrink-0 px-6 py-4"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#0d0f14" }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Bảng Kanban</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="text-xl font-bold text-white">Bảng Kanban</h1>
+            <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
               {filtered.length} khách hàng · {leads.filter(isOverdue).length} quá hạn tương tác
             </p>
           </div>
@@ -125,18 +126,19 @@ export default function KanbanClient({ initialLeads }: Props) {
                 placeholder="Tìm kiếm..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 w-48"
+                className="pl-9 pr-3 py-2 text-sm rounded-xl text-white placeholder-white/25 focus:outline-none w-48 transition-all"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
               />
             </div>
 
             {/* Filter toggle */}
             <button
               onClick={() => setShowFilters(v => !v)}
-              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border transition-colors"
               style={{
-                background: showFilters || activeFilters > 0 ? "#fef3c7" : "#f9fafb",
-                borderColor: showFilters || activeFilters > 0 ? "#f59e0b" : "#e5e7eb",
-                color: showFilters || activeFilters > 0 ? "#92400e" : "#374151",
+                background: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.05)",
+                borderColor: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.08)",
+                color: showFilters || activeFilters > 0 ? "#C9A84C" : "rgba(255,255,255,0.5)",
               }}
             >
               <Filter size={15} />
@@ -149,7 +151,8 @@ export default function KanbanClient({ initialLeads }: Props) {
 
             {/* Refresh */}
             <button onClick={refresh}
-              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-gray-500"
+              className="p-2 rounded-xl transition-colors"
+              style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}
               title="Làm mới">
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             </button>
@@ -157,8 +160,8 @@ export default function KanbanClient({ initialLeads }: Props) {
             {/* Add lead */}
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-white transition-colors"
-              style={{ background: "#C9A84C" }}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl text-black transition-opacity hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}
             >
               <Plus size={15} />
               Thêm khách hàng
@@ -169,27 +172,30 @@ export default function KanbanClient({ initialLeads }: Props) {
         {/* Filter panel */}
         {showFilters && (
           <div className="mt-3 pt-3 flex items-center gap-3 flex-wrap"
-            style={{ borderTop: "1px solid #f3f4f6" }}>
+            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
             <select value={filterDistrict} onChange={e => setFilterDistrict(e.target.value)}
-              className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
-              <option value="">Tất cả Quận</option>
-              {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+              className="text-sm px-3 py-1.5 rounded-xl text-white focus:outline-none"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <option value="">Tất cả tỉnh/thành</option>
+              {VIETNAM_PROVINCES.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             <select value={filterType} onChange={e => setFilterType(e.target.value as LeadType | "")}
-              className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
+              className="text-sm px-3 py-1.5 rounded-xl text-white focus:outline-none"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <option value="">Tất cả loại</option>
               <option value="architect">Kiến trúc sư</option>
               <option value="investor">Chủ đầu tư CHDV</option>
               <option value="dealer">Đại lý</option>
             </select>
             <select value={filterSource} onChange={e => setFilterSource(e.target.value)}
-              className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
+              className="text-sm px-3 py-1.5 rounded-xl text-white focus:outline-none"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <option value="">Tất cả nguồn</option>
               {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             {activeFilters > 0 && (
               <button onClick={() => { setFilterDistrict(""); setFilterType(""); setFilterSource(""); }}
-                className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700">
+                className="flex items-center gap-1 text-sm" style={{ color: "#f87171" }}>
                 <X size={13} /> Xóa bộ lọc
               </button>
             )}
@@ -209,27 +215,28 @@ export default function KanbanClient({ initialLeads }: Props) {
             return (
               <div
                 key={stage}
-                className="flex flex-col rounded-xl transition-all duration-200"
+                className="flex flex-col rounded-2xl transition-all duration-200"
                 style={{
-                  width: "260px",
-                  minWidth: "260px",
-                  background: isDragTarget ? "#f0fdf4" : "#f8f9fa",
-                  border: `2px solid ${isDragTarget ? "#22c55e" : "transparent"}`,
+                  width: "250px",
+                  minWidth: "250px",
+                  background: isDragTarget ? `${STAGE_COLORS[stage]}10` : "rgba(255,255,255,0.02)",
+                  border: `1px solid ${isDragTarget ? STAGE_COLORS[stage] + "40" : "rgba(255,255,255,0.05)"}`,
+                  boxShadow: isDragTarget ? `0 0 0 2px ${STAGE_COLORS[stage]}20` : "none",
                 }}
                 onDragOver={e => onDragOver(e, stage)}
                 onDrop={e => onDrop(e, stage)}
                 onDragLeave={() => setDragOver(null)}
               >
                 {/* Column header */}
-                <div className="flex items-center justify-between px-3 py-2.5 flex-shrink-0 rounded-t-xl"
-                  style={{ background: `${STAGE_COLORS[stage]}15`, borderBottom: `2px solid ${STAGE_COLORS[stage]}30` }}>
+                <div className="flex items-center justify-between px-3 py-3 flex-shrink-0 rounded-t-2xl"
+                  style={{ background: `${STAGE_COLORS[stage]}08`, borderBottom: `1px solid ${STAGE_COLORS[stage]}20` }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ background: STAGE_COLORS[stage] }} />
-                    <span className="text-sm font-semibold text-gray-800">{STAGE_LABELS[stage]}</span>
+                    <span className="text-[12px] font-semibold" style={{ color: STAGE_COLORS[stage] }}>{STAGE_LABELS[stage]}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: STAGE_COLORS[stage], color: "#fff" }}>
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md"
+                      style={{ background: `${STAGE_COLORS[stage]}20`, color: STAGE_COLORS[stage] }}>
                       {stageLeads.length}
                     </span>
                     {!isLost && (
@@ -247,11 +254,12 @@ export default function KanbanClient({ initialLeads }: Props) {
                 {/* Cards container */}
                 <div className="flex-1 overflow-y-auto p-2 space-y-2">
                   {stageLeads.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                      <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center mb-2">
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <div className="w-8 h-8 rounded-xl border-2 border-dashed flex items-center justify-center mb-2"
+                        style={{ borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.2)" }}>
                         <Plus size={14} />
                       </div>
-                      <span className="text-xs">Kéo thả vào đây</span>
+                      <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>Kéo thả vào đây</span>
                     </div>
                   )}
                   {stageLeads.map(lead => (
@@ -267,10 +275,10 @@ export default function KanbanClient({ initialLeads }: Props) {
 
                 {/* Column footer - total value */}
                 {stageLeads.length > 0 && (
-                  <div className="px-3 py-2 flex-shrink-0 rounded-b-xl"
-                    style={{ borderTop: "1px solid rgba(0,0,0,0.06)", background: `${STAGE_COLORS[stage]}08` }}>
-                    <span className="text-xs font-medium text-gray-500">
-                      Tổng: {formatVND(stageLeads.reduce((s, l) => s + (l.expectedValue || 0), 0))}
+                  <div className="px-3 py-2 flex-shrink-0 rounded-b-2xl"
+                    style={{ borderTop: `1px solid ${STAGE_COLORS[stage]}15`, background: `${STAGE_COLORS[stage]}05` }}>
+                    <span className="text-xs font-medium" style={{ color: STAGE_COLORS[stage] + "99" }}>
+                      {formatVND(stageLeads.reduce((s, l) => s + (l.expectedValue || 0), 0))}
                     </span>
                   </div>
                 )}
@@ -317,16 +325,13 @@ function LeadCard({
       draggable
       onDragStart={e => onDragStart(e, lead.id)}
       onDragEnd={onDragEnd}
-      className="rounded-xl bg-white transition-all duration-200 cursor-grab active:cursor-grabbing select-none"
+      className="rounded-xl transition-all duration-200 cursor-grab active:cursor-grabbing select-none hover:-translate-y-0.5"
       style={{
-        border: overdue ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
-        boxShadow: isDragging
-          ? "0 8px 24px rgba(0,0,0,0.15)"
-          : overdue
-          ? "0 0 0 3px rgba(239,68,68,0.08)"
-          : "0 1px 3px rgba(0,0,0,0.06)",
-        opacity: isDragging ? 0.5 : 1,
-        transform: isDragging ? "rotate(2deg)" : "none",
+        background: overdue ? "rgba(248,113,113,0.06)" : "rgba(255,255,255,0.04)",
+        border: overdue ? "1px solid rgba(248,113,113,0.3)" : "1px solid rgba(255,255,255,0.07)",
+        boxShadow: isDragging ? "0 8px 24px rgba(0,0,0,0.4)" : overdue ? "0 0 0 1px rgba(248,113,113,0.15)" : "none",
+        opacity: isDragging ? 0.4 : 1,
+        transform: isDragging ? "rotate(1.5deg) scale(1.02)" : "none",
       }}
     >
       <Link href={`/crm/leads/${lead.id}`} onClick={e => e.stopPropagation()}>
@@ -334,9 +339,9 @@ function LeadCard({
           {/* Top row */}
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="min-w-0">
-              <div className="font-semibold text-sm text-gray-900 truncate">{lead.name}</div>
+              <div className="font-semibold text-sm text-white truncate">{lead.name}</div>
               {lead.company && (
-                <div className="text-xs text-gray-500 truncate">{lead.company}</div>
+                <div className="text-xs truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{lead.company}</div>
               )}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -362,13 +367,13 @@ function LeadCard({
           {/* Tags row */}
           <div className="flex items-center gap-2 flex-wrap">
             {lead.district && (
-              <div className="flex items-center gap-1 text-[11px] text-gray-500">
-                <MapPin size={11} />
-                <span>{lead.district}</span>
+              <div className="flex items-center gap-1 text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <MapPin size={10} />
+                <span className="truncate max-w-[80px]">{lead.district.split(",")[0]}</span>
               </div>
             )}
             {lead.unitCount > 0 && (
-              <div className="text-[11px] text-gray-500">
+              <div className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
                 {lead.unitCount} căn
               </div>
             )}
