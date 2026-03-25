@@ -17,6 +17,8 @@ import {
   UserCog,
   TrendingUp,
   BarChart3,
+  Mail,
+  CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -34,6 +36,13 @@ const NAV_GROUPS = [
       { label: "Danh sách KH", href: "/crm/leads", icon: Users },
       { label: "Báo giá", href: "/crm/quotes", icon: FileText },
       { label: "Việc cần làm", href: "/crm/tasks", icon: CheckSquare },
+      { label: "Lịch hẹn", href: "/crm/calendar", icon: CalendarDays },
+    ],
+  },
+  {
+    label: "Marketing",
+    items: [
+      { label: "Email Marketing", href: "/crm/email", icon: Mail },
     ],
   },
   {
@@ -46,7 +55,7 @@ const NAV_GROUPS = [
     label: "Quản lý",
     items: [
       { label: "Nhân viên", href: "/crm/staff", icon: UserCog },
-      { label: "Báo cáo", href: "/crm/reports", icon: BarChart3 },
+      { label: "Báo cáo & Phân tích", href: "/crm/reports", icon: BarChart3 },
     ],
   },
 ];
