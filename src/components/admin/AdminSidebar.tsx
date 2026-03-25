@@ -64,6 +64,19 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Kinh doanh",
     items: [
       {
+        href: "/crm",
+        label: "CRM B2B",
+        icon: "◈",
+        exact: false,
+        subItems: [
+          { href: "/crm", label: "Dashboard" },
+          { href: "/crm/kanban", label: "Kanban Board" },
+          { href: "/crm/leads", label: "Danh sách KH" },
+          { href: "/crm/quotes", label: "Báo giá" },
+          { href: "/crm/products", label: "Sản phẩm CRM" },
+        ],
+      },
+      {
         href: "/admin/products",
         label: "Sản phẩm",
         icon: "⬡",
