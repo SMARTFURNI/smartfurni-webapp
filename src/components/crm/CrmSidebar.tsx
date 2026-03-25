@@ -217,6 +217,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={false}
                     title={collapsed ? item.label : undefined}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all mb-0.5 group ${
                       active
@@ -250,6 +251,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         {!isAdmin && (
           <Link
             href="/crm/profile"
+            prefetch={false}
             title={collapsed ? "Hồ sơ cá nhân" : undefined}
             className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
@@ -265,6 +267,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         {isAdmin && (
           <Link
             href="/admin"
+            prefetch={false}
             title={collapsed ? "Quản trị Admin" : undefined}
             className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
@@ -274,6 +277,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         )}
         <Link
           href={logoutHref}
+          prefetch={false}
           title={collapsed ? "Đăng xuất" : undefined}
           className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 transition-colors"
         >
