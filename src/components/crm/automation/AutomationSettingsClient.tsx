@@ -39,7 +39,7 @@ const STAGES = [
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-2xl p-5 ${className}`}
-      style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
       {children}
     </div>
   );
@@ -53,8 +53,8 @@ function SectionTitle({ icon: Icon, title, subtitle }: { icon: React.ElementType
         <Icon size={16} style={{ color: "#C9A84C" }} />
       </div>
       <div>
-        <h2 className="text-sm font-bold text-white">{title}</h2>
-        {subtitle && <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{subtitle}</p>}
+        <h2 className="text-sm font-bold text-gray-900">{title}</h2>
+        {subtitle && <p className="text-xs mt-0.5" style={{  }}>{subtitle}</p>}
       </div>
     </div>
   );
@@ -66,10 +66,10 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>Điều kiện kích hoạt</label>
+        <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>Điều kiện kích hoạt</label>
         <select value={trigger.type} onChange={e => onChange({ type: e.target.value as TriggerType })}
           className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff" }}>
+          style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
           {(Object.entries(TRIGGER_LABELS) as [TriggerType, string][]).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
@@ -79,19 +79,19 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
       {trigger.type === "stage_changed" && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Từ giai đoạn</label>
+            <label className="block text-xs mb-1" style={{  }}>Từ giai đoạn</label>
             <select value={trigger.fromStage ?? ""} onChange={e => onChange({ ...trigger, fromStage: e.target.value || undefined })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
               <option value="">Bất kỳ</option>
               {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Sang giai đoạn</label>
+            <label className="block text-xs mb-1" style={{  }}>Sang giai đoạn</label>
             <select value={trigger.toStage ?? ""} onChange={e => onChange({ ...trigger, toStage: e.target.value || undefined })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
               <option value="">Bất kỳ</option>
               {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
@@ -101,49 +101,49 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
 
       {(trigger.type === "no_activity_days") && (
         <div>
-          <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Số ngày không tương tác</label>
+          <label className="block text-xs mb-1" style={{  }}>Số ngày không tương tác</label>
           <input type="number" min={1} max={30} value={trigger.days ?? 3}
             onChange={e => onChange({ ...trigger, days: parseInt(e.target.value) })}
             className="w-32 px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
         </div>
       )}
 
       {trigger.type === "stage_duration" && (
         <div>
-          <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Số giờ ở giai đoạn</label>
+          <label className="block text-xs mb-1" style={{  }}>Số giờ ở giai đoạn</label>
           <div className="flex items-center gap-3">
             <select value={trigger.fromStage ?? ""} onChange={e => onChange({ ...trigger, fromStage: e.target.value || undefined })}
               className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
               <option value="">Chọn giai đoạn</option>
               {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
             <input type="number" min={1} value={trigger.hours ?? 24}
               onChange={e => onChange({ ...trigger, hours: parseInt(e.target.value) })}
               className="w-24 px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
-            <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>giờ</span>
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+            <span className="text-xs" style={{ color: "#6b7280" }}>giờ</span>
           </div>
         </div>
       )}
 
       {trigger.type === "value_threshold" && (
         <div>
-          <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Giá trị tối thiểu (VND)</label>
+          <label className="block text-xs mb-1" style={{  }}>Giá trị tối thiểu (VND)</label>
           <input type="number" value={trigger.minValue ?? 500000000}
             onChange={e => onChange({ ...trigger, minValue: parseInt(e.target.value) })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
         </div>
       )}
 
       {trigger.type === "lead_type_match" && (
         <div>
-          <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Phân loại KH</label>
+          <label className="block text-xs mb-1" style={{  }}>Phân loại KH</label>
           <select value={trigger.leadType ?? ""} onChange={e => onChange({ ...trigger, leadType: e.target.value })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}>
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
             <option value="architect">Kiến trúc sư</option>
             <option value="investor">Chủ đầu tư CHDV</option>
             <option value="dealer">Đại lý</option>
@@ -161,17 +161,17 @@ function ActionEditor({ action, onChange, onRemove }: {
 }) {
   return (
     <div className="p-3 rounded-xl space-y-3"
-      style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${ACTION_COLORS[action.type]}30` }}>
+      style={{ background: "#f9fafb", border: `1px solid ${ACTION_COLORS[action.type]}30` }}>
       <div className="flex items-center justify-between">
         <select value={action.type} onChange={e => onChange({ type: e.target.value as ActionType })}
           className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none mr-2"
-          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: ACTION_COLORS[action.type] }}>
+          style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: ACTION_COLORS[action.type] }}>
           {(Object.entries(ACTION_LABELS) as [ActionType, string][]).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
         </select>
         <button onClick={onRemove} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-          style={{ color: "rgba(255,255,255,0.25)" }}>
+          style={{  }}>
           <Trash2 size={13} />
         </button>
       </div>
@@ -180,10 +180,10 @@ function ActionEditor({ action, onChange, onRemove }: {
         <div className="grid grid-cols-2 gap-2">
           <input placeholder="Tiêu đề task" value={action.taskTitle ?? ""} onChange={e => onChange({ ...action, taskTitle: e.target.value })}
             className="col-span-2 px-2 py-1.5 rounded text-xs outline-none"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }} />
+            style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
           <select value={action.taskPriority ?? "medium"} onChange={e => onChange({ ...action, taskPriority: e.target.value as "high" | "medium" | "low" })}
             className="px-2 py-1.5 rounded text-xs outline-none"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}>
+            style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }}>
             <option value="high">Ưu tiên Cao</option>
             <option value="medium">Ưu tiên TB</option>
             <option value="low">Ưu tiên Thấp</option>
@@ -192,8 +192,8 @@ function ActionEditor({ action, onChange, onRemove }: {
             <input type="number" min={0} max={30} value={action.taskDueDays ?? 1}
               onChange={e => onChange({ ...action, taskDueDays: parseInt(e.target.value) })}
               className="w-16 px-2 py-1.5 rounded text-xs outline-none"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }} />
-            <span className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>ngày sau</span>
+              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
+            <span className="text-xs" style={{  }}>ngày sau</span>
           </div>
         </div>
       )}
@@ -201,25 +201,25 @@ function ActionEditor({ action, onChange, onRemove }: {
       {action.type === "send_email" && (
         <input placeholder="Tiêu đề email" value={action.emailSubject ?? ""} onChange={e => onChange({ ...action, emailSubject: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }} />
+          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
       )}
 
       {action.type === "add_tag" && (
         <input placeholder="Nhãn (VD: VIP, Hot, Tiềm năng)" value={action.tag ?? ""} onChange={e => onChange({ ...action, tag: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }} />
+          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
       )}
 
       {action.type === "notify_manager" && (
         <input placeholder="Nội dung thông báo" value={action.notifyMessage ?? ""} onChange={e => onChange({ ...action, notifyMessage: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }} />
+          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
       )}
 
       {action.type === "move_stage" && (
         <select value={action.targetStage ?? ""} onChange={e => onChange({ ...action, targetStage: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}>
+          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }}>
           <option value="">Chọn giai đoạn đích</option>
           {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
         </select>
@@ -228,7 +228,7 @@ function ActionEditor({ action, onChange, onRemove }: {
       {action.type === "send_webhook" && (
         <input placeholder="Webhook URL" value={action.webhookUrl ?? ""} onChange={e => onChange({ ...action, webhookUrl: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none font-mono"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#C9A84C" }} />
+          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#C9A84C" }} />
       )}
     </div>
   );
@@ -248,17 +248,17 @@ function RuleCard({ rule, onChange, onDelete }: {
     <div className="rounded-2xl overflow-hidden transition-all"
       style={{
         border: `1px solid ${rule.enabled ? "rgba(201,168,76,0.2)" : "rgba(255,255,255,0.07)"}`,
-        background: rule.enabled ? "rgba(201,168,76,0.03)" : "rgba(255,255,255,0.02)",
+        background: rule.enabled ? "rgba(201,168,76,0.03)" : "#f9fafb",
       }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: rule.enabled ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.05)" }}>
-          <TriggerIcon size={15} style={{ color: rule.enabled ? "#C9A84C" : "rgba(255,255,255,0.3)" }} />
+          style={{ background: rule.enabled ? "rgba(201,168,76,0.12)" : "#f3f4f6" }}>
+          <TriggerIcon size={15} style={{ color: rule.enabled ? "#C9A84C" : "#9ca3af" }} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold truncate" style={{ color: rule.enabled ? "#fff" : "rgba(255,255,255,0.4)" }}>
+            <span className="text-sm font-semibold truncate" style={{ color: rule.enabled ? "#fff" : "#6b7280" }}>
               {rule.name}
             </span>
             {rule.runCount > 0 && (
@@ -268,26 +268,26 @@ function RuleCard({ rule, onChange, onDelete }: {
               </span>
             )}
           </div>
-          <p className="text-xs truncate mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{rule.description}</p>
+          <p className="text-xs truncate mt-0.5" style={{ color: "#9ca3af" }}>{rule.description}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => onChange({ ...rule, enabled: !rule.enabled })}
             className="p-1.5 rounded-lg transition-all"
             style={{
-              background: rule.enabled ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.05)",
-              color: rule.enabled ? "#22c55e" : "rgba(255,255,255,0.3)",
+              background: rule.enabled ? "rgba(34,197,94,0.12)" : "#f3f4f6",
+              color: rule.enabled ? "#22c55e" : "#9ca3af",
             }}
             title={rule.enabled ? "Đang bật — click để tắt" : "Đang tắt — click để bật"}
           >
             {rule.enabled ? <Play size={13} /> : <Pause size={13} />}
           </button>
           <button onClick={() => setExpanded(v => !v)} className="p-1.5 rounded-lg hover:bg-white/5 transition-all"
-            style={{ color: "rgba(255,255,255,0.3)" }}>
+            style={{ color: "#9ca3af" }}>
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
           <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-            style={{ color: "rgba(255,255,255,0.2)" }}>
+            style={{ color: "#9ca3af" }}>
             <Trash2 size={13} />
           </button>
         </div>
@@ -295,7 +295,7 @@ function RuleCard({ rule, onChange, onDelete }: {
 
       {/* Expanded editor */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="px-4 pb-4 space-y-4 border-t" style={{ borderColor: "#f3f4f6" }}>
           <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <input
@@ -303,14 +303,14 @@ function RuleCard({ rule, onChange, onDelete }: {
                 onChange={e => onChange({ ...rule, name: e.target.value })}
                 placeholder="Tên quy tắc"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none mb-2"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
+                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
               />
               <input
                 value={rule.description}
                 onChange={e => onChange({ ...rule, description: e.target.value })}
                 placeholder="Mô tả quy tắc"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
+                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#6b7280" }}
               />
             </div>
             <TriggerEditor trigger={rule.trigger} onChange={t => onChange({ ...rule, trigger: t })} />
@@ -318,7 +318,7 @@ function RuleCard({ rule, onChange, onDelete }: {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <span className="text-xs font-semibold" style={{ color: "#6b7280" }}>
                 Hành động thực hiện ({rule.actions.length})
               </span>
               <button
@@ -333,7 +333,7 @@ function RuleCard({ rule, onChange, onDelete }: {
                 <div key={idx} className="flex items-start gap-1.5 flex-1 min-w-[260px]">
                   {idx > 0 && (
                     <div className="flex items-center mt-3 flex-shrink-0">
-                      <ArrowRight size={12} style={{ color: "rgba(255,255,255,0.2)" }} />
+                      <ArrowRight size={12} style={{ color: "#9ca3af" }} />
                     </div>
                   )}
                   <div className="flex-1">
@@ -371,43 +371,43 @@ function SlaTab({ config, onChange }: { config: SlaConfig; onChange: (c: SlaConf
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-sm font-semibold text-white">Bật SLA</div>
-            <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <div className="text-sm font-semibold text-gray-900">Bật SLA</div>
+            <div className="text-xs mt-0.5" style={{  }}>
               Cảnh báo khi KH ở giai đoạn quá thời gian cho phép
             </div>
           </div>
           <button onClick={() => onChange({ ...config, enabled: !config.enabled })}
             className="relative w-11 h-6 rounded-full transition-all"
-            style={{ background: config.enabled ? "#C9A84C" : "rgba(255,255,255,0.1)" }}>
+            style={{ background: config.enabled ? "#C9A84C" : "#e5e7eb" }}>
             <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow-sm"
               style={{ left: config.enabled ? "calc(100% - 22px)" : "2px" }} />
           </button>
         </div>
         <div className="flex items-center gap-3">
-          <label className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Phản hồi lần đầu trong vòng</label>
+          <label className="text-xs" style={{ color: "#6b7280" }}>Phản hồi lần đầu trong vòng</label>
           <input type="number" min={1} max={72} value={config.firstResponseHours}
             onChange={e => onChange({ ...config, firstResponseHours: parseInt(e.target.value) })}
             className="w-20 px-2 py-1.5 rounded text-sm text-center outline-none"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#C9A84C" }} />
-          <label className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>giờ kể từ khi tạo lead</label>
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#C9A84C" }} />
+          <label className="text-xs" style={{ color: "#6b7280" }}>giờ kể từ khi tạo lead</label>
         </div>
       </Card>
 
-      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ background: "rgba(255,255,255,0.04)" }}>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Giai đoạn</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Tối đa (giờ)</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Cảnh báo (giờ)</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Báo quản lý</th>
+            <tr style={{ background: "#f9fafb" }}>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Giai đoạn</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Tối đa (giờ)</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Cảnh báo (giờ)</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Báo quản lý</th>
             </tr>
           </thead>
           <tbody>
             {config.stages.map((stage, idx) => (
               <tr key={stage.stageId} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                 <td className="px-4 py-3">
-                  <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>{stage.stageLabel}</span>
+                  <span className="text-sm font-medium" style={{ color: "#374151" }}>{stage.stageLabel}</span>
                 </td>
                 <td className="px-4 py-3">
                   <input type="number" min={1} value={stage.maxHours}
@@ -424,7 +424,7 @@ function SlaTab({ config, onChange }: { config: SlaConfig; onChange: (c: SlaConf
                 <td className="px-4 py-3">
                   <button onClick={() => updateStage(idx, "escalateToManager", !stage.escalateToManager)}
                     className="relative w-9 h-5 rounded-full transition-all"
-                    style={{ background: stage.escalateToManager ? "#C9A84C" : "rgba(255,255,255,0.1)" }}>
+                    style={{ background: stage.escalateToManager ? "#C9A84C" : "#e5e7eb" }}>
                     <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
                       style={{ left: stage.escalateToManager ? "calc(100% - 18px)" : "2px" }} />
                   </button>
@@ -446,20 +446,20 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-sm font-semibold text-white">Tự động phân công</div>
-            <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <div className="text-sm font-semibold text-gray-900">Tự động phân công</div>
+            <div className="text-xs mt-0.5" style={{  }}>
               Giao lead mới cho nhân viên dựa trên khu vực và loại KH
             </div>
           </div>
           <button onClick={() => onChange({ ...config, enabled: !config.enabled })}
             className="relative w-11 h-6 rounded-full transition-all"
-            style={{ background: config.enabled ? "#C9A84C" : "rgba(255,255,255,0.1)" }}>
+            style={{ background: config.enabled ? "#C9A84C" : "#e5e7eb" }}>
             <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow-sm"
               style={{ left: config.enabled ? "calc(100% - 22px)" : "2px" }} />
           </button>
         </div>
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>Phương thức mặc định</label>
+          <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>Phương thức mặc định</label>
           <div className="flex gap-2">
             {[
               { id: "round_robin", label: "Luân phiên" },
@@ -469,9 +469,9 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
               <button key={m.id} onClick={() => onChange({ ...config, defaultMode: m.id as AutoAssignConfig["defaultMode"] })}
                 className="px-4 py-2 rounded-lg text-xs font-medium transition-all"
                 style={{
-                  background: config.defaultMode === m.id ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.04)",
-                  color: config.defaultMode === m.id ? "#C9A84C" : "rgba(255,255,255,0.4)",
-                  border: `1px solid ${config.defaultMode === m.id ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.08)"}`,
+                  background: config.defaultMode === m.id ? "rgba(201,168,76,0.15)" : "#f9fafb",
+                  color: config.defaultMode === m.id ? "#C9A84C" : "#6b7280",
+                  border: `1px solid ${config.defaultMode === m.id ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
                 }}>
                 {m.label}
               </button>
@@ -481,7 +481,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
       </Card>
 
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
+        <p className="text-sm font-semibold" style={{ color: "#4b5563" }}>
           Quy tắc phân công theo khu vực ({config.rules.length})
         </p>
         <button
@@ -500,7 +500,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
       </div>
 
       {config.rules.length === 0 && (
-        <div className="text-center py-10" style={{ color: "rgba(255,255,255,0.25)" }}>
+        <div className="text-center py-10" style={{  }}>
           <Users size={32} className="mx-auto mb-3 opacity-30" />
           <p className="text-sm">Chưa có quy tắc phân công</p>
           <p className="text-xs mt-1">Thêm quy tắc để tự động giao lead theo khu vực</p>
@@ -510,34 +510,34 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
       <div className="space-y-2">
         {config.rules.map((rule, idx) => (
           <div key={rule.id} className="p-4 rounded-xl"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Tỉnh/Thành phố</label>
+                <label className="block text-xs mb-1" style={{  }}>Tỉnh/Thành phố</label>
                 <input value={rule.province} onChange={e => {
                   const updated = [...config.rules];
                   updated[idx] = { ...updated[idx], province: e.target.value };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }} />
+                  style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
               </div>
               <div>
-                <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Nhân viên phụ trách</label>
+                <label className="block text-xs mb-1" style={{  }}>Nhân viên phụ trách</label>
                 <input value={rule.staffName} onChange={e => {
                   const updated = [...config.rules];
                   updated[idx] = { ...updated[idx], staffName: e.target.value };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }} />
+                  style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
               </div>
               <div>
-                <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Loại KH</label>
+                <label className="block text-xs mb-1" style={{  }}>Loại KH</label>
                 <select value={rule.leadTypes[0] ?? ""} onChange={e => {
                   const updated = [...config.rules];
                   updated[idx] = { ...updated[idx], leadTypes: e.target.value ? [e.target.value] : [] };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}>
+                  style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }}>
                   <option value="">Tất cả</option>
                   <option value="architect">Kiến trúc sư</option>
                   <option value="investor">Chủ đầu tư</option>
@@ -623,7 +623,7 @@ export default function AutomationSettingsClient() {
   ];
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64" style={{ color: "rgba(255,255,255,0.3)" }}>
+    <div className="flex items-center justify-center h-64" style={{ color: "#9ca3af" }}>
       <RefreshCw size={20} className="animate-spin mr-2" /> Đang tải...
     </div>
   );
@@ -633,8 +633,8 @@ export default function AutomationSettingsClient() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-white">Tự động hóa CRM</h1>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <h1 className="text-lg font-bold text-gray-900">Tự động hóa CRM</h1>
+          <p className="text-xs mt-0.5" style={{  }}>
             Cấu hình quy tắc tự động, SLA và phân công nhân viên
           </p>
         </div>
@@ -655,13 +655,13 @@ export default function AutomationSettingsClient() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
             style={{
               background: activeTab === tab.id ? "rgba(201,168,76,0.12)" : "transparent",
-              color: activeTab === tab.id ? "#C9A84C" : "rgba(255,255,255,0.4)",
+              color: activeTab === tab.id ? "#C9A84C" : "#6b7280",
             }}>
             <tab.icon size={14} />
             {tab.label}
@@ -679,7 +679,7 @@ export default function AutomationSettingsClient() {
       {activeTab === "rules" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <p className="text-sm" style={{ color: "#6b7280" }}>
               {rules.filter(r => r.enabled).length}/{rules.length} quy tắc đang hoạt động
             </p>
             <button onClick={addRule}

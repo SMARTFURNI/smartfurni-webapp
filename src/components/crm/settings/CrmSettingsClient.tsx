@@ -70,7 +70,7 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+      <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
         {label}
       </label>
       <input
@@ -80,14 +80,14 @@ function InputField({
         placeholder={placeholder}
         className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
         style={{
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid rgba(255,255,255,0.1)",
+          background: "#f3f4f6",
+          border: "1px solid #d1d5db",
           color: "#fff",
         }}
         onFocus={e => { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(201,168,76,0.15)"; }}
-        onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+        onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.boxShadow = "none"; }}
       />
-      {hint && <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>{hint}</p>}
+      {hint && <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>{hint}</p>}
     </div>
   );
 }
@@ -99,7 +99,7 @@ function TextareaField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+      <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
         {label}
       </label>
       <textarea
@@ -109,12 +109,12 @@ function TextareaField({
         placeholder={placeholder}
         className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all resize-none"
         style={{
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid rgba(255,255,255,0.1)",
+          background: "#f3f4f6",
+          border: "1px solid #d1d5db",
           color: "#fff",
         }}
         onFocus={e => { e.currentTarget.style.borderColor = "#C9A84C"; }}
-        onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
+        onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }}
       />
     </div>
   );
@@ -128,13 +128,13 @@ function ToggleField({
   return (
     <div className="flex items-center justify-between py-2">
       <div>
-        <div className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>{label}</div>
-        {hint && <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{hint}</div>}
+        <div className="text-sm font-medium" style={{ color: "#1f2937" }}>{label}</div>
+        {hint && <div className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{hint}</div>}
       </div>
       <button
         onClick={() => onChange(!value)}
         className="relative w-11 h-6 rounded-full transition-all flex-shrink-0"
-        style={{ background: value ? "#C9A84C" : "rgba(255,255,255,0.1)" }}
+        style={{ background: value ? "#C9A84C" : "#e5e7eb" }}
       >
         <span
           className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow-sm"
@@ -203,7 +203,7 @@ function PipelineTab({ data, onChange }: { data: PipelineStage[]; onChange: (d: 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p className="text-sm" style={{ color: "#6b7280" }}>
           Các giai đoạn hiển thị trên Kanban Board. Thứ tự từ trái sang phải.
         </p>
         <button
@@ -220,32 +220,32 @@ function PipelineTab({ data, onChange }: { data: PipelineStage[]; onChange: (d: 
           <div
             key={stage.id}
             className="flex items-start gap-3 p-4 rounded-xl"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}
           >
             <div className="flex items-center gap-2 mt-1">
-              <GripVertical size={16} style={{ color: "rgba(255,255,255,0.2)" }} />
-              <span className="text-xs font-bold w-5 text-center" style={{ color: "rgba(255,255,255,0.3)" }}>{idx + 1}</span>
+              <GripVertical size={16} style={{ color: "#9ca3af" }} />
+              <span className="text-xs font-bold w-5 text-center" style={{ color: "#9ca3af" }}>{idx + 1}</span>
             </div>
 
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>Tên giai đoạn</label>
+                <label className="block text-xs mb-1" style={{ color: "#6b7280" }}>Tên giai đoạn</label>
                 <input
                   value={stage.label}
                   onChange={e => update(idx, "label", e.target.value)}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
+                  style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>Màu sắc</label>
+                <label className="block text-xs mb-1" style={{ color: "#6b7280" }}>Màu sắc</label>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg flex-shrink-0" style={{ background: stage.color }} />
                   <ColorPicker value={stage.color} onChange={v => update(idx, "color", v)} />
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="block text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Trạng thái đặc biệt</label>
+                <label className="block text-xs" style={{ color: "#6b7280" }}>Trạng thái đặc biệt</label>
                 <div className="flex gap-3">
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input type="checkbox" checked={stage.isWon} onChange={e => update(idx, "isWon", e.target.checked)}
@@ -264,7 +264,7 @@ function PipelineTab({ data, onChange }: { data: PipelineStage[]; onChange: (d: 
             <button
               onClick={() => remove(idx)}
               className="mt-1 p-1.5 rounded-lg transition-all hover:bg-red-500/20"
-              style={{ color: "rgba(255,255,255,0.2)" }}
+              style={{ color: "#9ca3af" }}
             >
               <Trash2 size={14} />
             </button>
@@ -287,7 +287,7 @@ function SourcesTab({ data, onChange }: { data: LeadSource[]; onChange: (d: Lead
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p className="text-sm" style={{ color: "#6b7280" }}>
           Kênh tiếp thị để phân loại nguồn khách hàng trong CRM và báo cáo.
         </p>
         <button onClick={add} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
@@ -298,17 +298,17 @@ function SourcesTab({ data, onChange }: { data: LeadSource[]; onChange: (d: Lead
       <div className="space-y-2">
         {data.map((src, idx) => (
           <div key={src.id} className="flex items-center gap-3 p-3 rounded-xl"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
             <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: src.color }} />
             <input
               value={src.label}
               onChange={e => update(idx, "label", e.target.value)}
               className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
             />
             <ColorPicker value={src.color} onChange={v => update(idx, "color", v)} />
             <button onClick={() => remove(idx)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-              style={{ color: "rgba(255,255,255,0.2)" }}>
+              style={{ color: "#9ca3af" }}>
               <Trash2 size={14} />
             </button>
           </div>
@@ -330,7 +330,7 @@ function LeadTypesTab({ data, onChange }: { data: LeadTypeConfig[]; onChange: (d
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p className="text-sm" style={{ color: "#6b7280" }}>
           Phân loại khách hàng B2B để lọc và báo cáo theo nhóm.
         </p>
         <button onClick={add} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
@@ -341,7 +341,7 @@ function LeadTypesTab({ data, onChange }: { data: LeadTypeConfig[]; onChange: (d
       <div className="space-y-2">
         {data.map((type, idx) => (
           <div key={type.id} className="flex items-center gap-3 p-3 rounded-xl"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
             <div className="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0"
               style={{ background: `${type.color}20`, color: type.color, border: `1px solid ${type.color}40` }}>
               {type.label}
@@ -350,11 +350,11 @@ function LeadTypesTab({ data, onChange }: { data: LeadTypeConfig[]; onChange: (d
               value={type.label}
               onChange={e => update(idx, "label", e.target.value)}
               className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
             />
             <ColorPicker value={type.color} onChange={v => update(idx, "color", v)} />
             <button onClick={() => remove(idx)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-              style={{ color: "rgba(255,255,255,0.2)" }}>
+              style={{ color: "#9ca3af" }}>
               <Trash2 size={14} />
             </button>
           </div>
@@ -376,7 +376,7 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p className="text-sm" style={{ color: "#6b7280" }}>
           Chiết khấu tự động áp dụng khi tạo báo giá dựa trên số lượng sản phẩm.
         </p>
         <button onClick={add} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
@@ -385,40 +385,40 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
         </button>
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ background: "rgba(255,255,255,0.04)" }}>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Nhãn</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Số lượng tối thiểu</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Chiết khấu (%)</th>
+            <tr style={{ background: "#f9fafb" }}>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Nhãn</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Số lượng tối thiểu</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Chiết khấu (%)</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {data.map((tier, idx) => (
-              <tr key={idx} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              <tr key={idx} style={{ borderTop: "1px solid #e5e7eb" }}>
                 <td className="px-4 py-3">
                   <input value={tier.label} onChange={e => update(idx, "label", e.target.value)}
                     className="w-full px-2 py-1 rounded text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                    style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
                 </td>
                 <td className="px-4 py-3">
                   <input type="number" value={tier.minQty} onChange={e => update(idx, "minQty", e.target.value)}
                     className="w-24 px-2 py-1 rounded text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                    style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <input type="number" value={tier.discountPct} onChange={e => update(idx, "discountPct", e.target.value)}
                       className="w-20 px-2 py-1 rounded text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#C9A84C" }} />
+                      style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#C9A84C" }} />
                     <span className="text-xs font-bold" style={{ color: "#C9A84C" }}>%</span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <button onClick={() => remove(idx)} className="p-1.5 rounded hover:bg-red-500/20 transition-all"
-                    style={{ color: "rgba(255,255,255,0.2)" }}>
+                    style={{ color: "#9ca3af" }}>
                     <Trash2 size={14} />
                   </button>
                 </td>
@@ -466,16 +466,16 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
       <SectionCard title="Endpoint & Xác thực" icon={Webhook}>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
               Webhook URL (chỉ nhận POST)
             </label>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 rounded-lg text-sm font-mono"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#C9A84C" }}>
+                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#C9A84C" }}>
                 {webhookUrl}
               </div>
               <button onClick={copyUrl} className="px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition-all hover:opacity-80"
-                style={{ background: copied ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.06)", color: copied ? "#22c55e" : "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                style={{ background: copied ? "rgba(34,197,94,0.15)" : "#f3f4f6", color: copied ? "#22c55e" : "#6b7280", border: "1px solid #e5e7eb" }}>
                 {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
                 {copied ? "Đã sao chép" : "Sao chép"}
               </button>
@@ -483,20 +483,20 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
           </div>
 
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
               Webhook Secret (Header: x-webhook-secret)
             </label>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 rounded-lg text-sm font-mono"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}>
+                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151" }}>
                 {showSecret ? data.secret : "•".repeat(Math.min(data.secret.length, 32))}
               </div>
-              <button onClick={() => setShowSecret(v => !v)} className="p-2 rounded-lg hover:bg-white/10 transition-all"
-                style={{ color: "rgba(255,255,255,0.4)" }}>
+              <button onClick={() => setShowSecret(v => !v)} className="p-2 rounded-lg hover:bg-gray-100 transition-all"
+                style={{ color: "#6b7280" }}>
                 {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
-              <button onClick={regenerateSecret} className="p-2 rounded-lg hover:bg-white/10 transition-all"
-                style={{ color: "rgba(255,255,255,0.4)" }} title="Tạo secret mới">
+              <button onClick={regenerateSecret} className="p-2 rounded-lg hover:bg-gray-100 transition-all"
+                style={{ color: "#6b7280" }} title="Tạo secret mới">
                 <RefreshCw size={16} />
               </button>
             </div>
@@ -531,10 +531,10 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
       </SectionCard>
 
       <SectionCard title="Hướng dẫn tích hợp Make.com / n8n" icon={FileText}>
-        <div className="space-y-3 text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>
+        <div className="space-y-3 text-sm" style={{ color: "#6b7280" }}>
           <p>Gửi <strong className="text-gray-900">POST</strong> request đến webhook URL với header:</p>
           <pre className="p-3 rounded-lg text-xs overflow-x-auto"
-            style={{ background: "rgba(0,0,0,0.3)", color: "#C9A84C", border: "1px solid rgba(255,255,255,0.06)" }}>
+            style={{ background: "rgba(0,0,0,0.3)", color: "#C9A84C", border: "1px solid #e5e7eb" }}>
 {`x-webhook-secret: ${data.secret}
 Content-Type: application/json
 
@@ -561,7 +561,7 @@ function NotificationsTab({ data, onChange }: { data: CrmSettings["notifications
       <SectionCard title="Cảnh báo quá hạn" icon={AlertCircle}>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
               Ngưỡng quá hạn (ngày không tương tác)
             </label>
             <div className="flex items-center gap-3">
@@ -575,7 +575,7 @@ function NotificationsTab({ data, onChange }: { data: CrmSettings["notifications
                 {data.overdueThresholdDays} ngày
               </div>
             </div>
-            <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+            <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>
               Thẻ KH sẽ hiện viền đỏ nếu không tương tác quá {data.overdueThresholdDays} ngày
             </p>
           </div>
@@ -585,7 +585,7 @@ function NotificationsTab({ data, onChange }: { data: CrmSettings["notifications
       <SectionCard title="Nhắc nhở lịch hẹn" icon={Bell}>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
               Nhắc trước lịch hẹn (phút)
             </label>
             <div className="flex gap-2">
@@ -595,9 +595,9 @@ function NotificationsTab({ data, onChange }: { data: CrmSettings["notifications
                   onClick={() => onChange({ ...data, reminderBeforeMeetingMinutes: min })}
                   className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
                   style={{
-                    background: data.reminderBeforeMeetingMinutes === min ? "rgba(201,168,76,0.2)" : "rgba(255,255,255,0.05)",
-                    color: data.reminderBeforeMeetingMinutes === min ? "#C9A84C" : "rgba(255,255,255,0.4)",
-                    border: `1px solid ${data.reminderBeforeMeetingMinutes === min ? "rgba(201,168,76,0.4)" : "rgba(255,255,255,0.08)"}`,
+                    background: data.reminderBeforeMeetingMinutes === min ? "rgba(201,168,76,0.2)" : "#f3f4f6",
+                    color: data.reminderBeforeMeetingMinutes === min ? "#C9A84C" : "#6b7280",
+                    border: `1px solid ${data.reminderBeforeMeetingMinutes === min ? "rgba(201,168,76,0.4)" : "#e5e7eb"}`,
                   }}
                 >
                   {min < 60 ? `${min} phút` : `${min / 60} giờ`}
@@ -649,12 +649,12 @@ function QuoteTab({ data, onChange }: { data: CrmSettings["quote"]; onChange: (d
             type="number"
           />
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>Đơn vị tiền tệ</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>Đơn vị tiền tệ</label>
             <select
               value={data.currency}
               onChange={e => onChange({ ...data, currency: e.target.value })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
             >
               <option value="VND">VND — Việt Nam Đồng</option>
               <option value="USD">USD — US Dollar</option>
@@ -708,7 +708,7 @@ function EmailTab({ data, onChange }: { data: CrmSettings["email"]; onChange: (d
           <InputField label="SMTP Port" value={data.smtpPort} onChange={v => onChange({ ...data, smtpPort: Number(v) })} type="number" placeholder="587" />
           <InputField label="SMTP Username" value={data.smtpUser} onChange={v => onChange({ ...data, smtpUser: v })} placeholder="user@gmail.com" />
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>SMTP Password</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>SMTP Password</label>
             <div className="flex items-center gap-2">
               <input
                 type={showPassword ? "text" : "password"}
@@ -716,10 +716,10 @@ function EmailTab({ data, onChange }: { data: CrmSettings["email"]; onChange: (d
                 onChange={e => onChange({ ...data, smtpPassword: e.target.value })}
                 placeholder="••••••••"
                 className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
+                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
               />
-              <button onClick={() => setShowPassword(v => !v)} className="p-2 rounded-lg hover:bg-white/10 transition-all"
-                style={{ color: "rgba(255,255,255,0.4)" }}>
+              <button onClick={() => setShowPassword(v => !v)} className="p-2 rounded-lg hover:bg-gray-100 transition-all"
+                style={{ color: "#6b7280" }}>
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
@@ -740,13 +740,13 @@ function EmailTab({ data, onChange }: { data: CrmSettings["email"]; onChange: (d
 
 function SectionCard({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl p-5 space-y-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+    <div className="rounded-2xl p-5 space-y-4" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
       <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center"
           style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.2)" }}>
           <Icon size={14} style={{ color: "#C9A84C" }} />
         </div>
-        <h3 className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.8)" }}>{title}</h3>
+        <h3 className="text-sm font-semibold" style={{ color: "#1f2937" }}>{title}</h3>
       </div>
       {children}
     </div>
@@ -811,17 +811,17 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
     <div className="flex h-full" style={{ background: "#ffffff", color: "#fff" }}>
       {/* Left sidebar */}
       <div className="w-64 flex-shrink-0 flex flex-col"
-        style={{ background: "rgba(255,255,255,0.02)", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+        style={{ background: "#f8f9fb", borderRight: "1px solid #e5e7eb" }}>
         {/* Header */}
-        <div className="px-5 py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="px-5 py-5" style={{ borderBottom: "1px solid #e5e7eb" }}>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center"
               style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
               <Settings size={16} className="text-black" />
             </div>
             <div>
-              <div className="text-sm font-bold text-white">Cài đặt CRM</div>
-              <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>Cấu hình hệ thống</div>
+              <div className="text-sm font-bold text-gray-900">Cài đặt CRM</div>
+              <div className="text-[10px]" style={{ color: "#9ca3af" }}>Cấu hình hệ thống</div>
             </div>
           </div>
         </div>
@@ -841,14 +841,14 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
                 }}
               >
                 <tab.icon size={16} className="mt-0.5 flex-shrink-0"
-                  style={{ color: active ? "#C9A84C" : "rgba(255,255,255,0.3)" }} />
+                  style={{ color: active ? "#C9A84C" : "#9ca3af" }} />
                 <div>
                   <div className="text-xs font-semibold"
-                    style={{ color: active ? "#E2C97E" : "rgba(255,255,255,0.55)" }}>
+                    style={{ color: active ? "#E2C97E" : "#374151" }}>
                     {tab.label}
                   </div>
                   <div className="text-[10px] mt-0.5"
-                    style={{ color: "rgba(255,255,255,0.2)" }}>
+                    style={{ color: "#9ca3af" }}>
                     {tab.desc}
                   </div>
                 </div>
@@ -858,7 +858,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
         </nav>
 
         {/* Save all */}
-        <div className="p-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="p-4" style={{ borderTop: "1px solid #e5e7eb" }}>
           <button
             onClick={saveAll}
             disabled={saving}
@@ -875,10 +875,10 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-4 flex-shrink-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)" }}>
+          style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
           <div>
-            <h1 className="text-lg font-bold text-white">{activeTabData.label}</h1>
-            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{activeTabData.desc}</p>
+            <h1 className="text-lg font-bold text-gray-900">{activeTabData.label}</h1>
+            <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{activeTabData.desc}</p>
           </div>
           <div className="flex items-center gap-3">
             {error && (

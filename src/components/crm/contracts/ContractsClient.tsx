@@ -98,7 +98,7 @@ export default function ContractsClient() {
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-xl font-semibold text-white">Hợp đồng điện tử</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Hợp đồng điện tử</h1>
               <p className="text-sm text-gray-500 mt-0.5">Tạo, ký và lưu trữ hợp đồng PDF</p>
             </div>
             <div className="flex gap-2">
@@ -142,7 +142,7 @@ export default function ContractsClient() {
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Tìm hợp đồng, khách hàng..."
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-[#C9A84C]/50"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#C9A84C]/50"
               />
             </div>
             <select
@@ -187,7 +187,7 @@ export default function ContractsClient() {
                         {st.icon} {st.label}
                       </span>
                     </div>
-                    <div className="text-sm font-medium text-white truncate">{c.title || c.leadName}</div>
+                    <div className="text-sm font-medium text-gray-900 truncate">{c.title || c.leadName}</div>
                     <div className="text-xs text-gray-500 mt-0.5 truncate">{c.buyerName || c.leadName}</div>
                     <div className="flex items-center gap-3 mt-2">
                       <span className="text-xs text-emerald-400 font-medium">{fmt(c.finalValue)}</span>
@@ -208,7 +208,7 @@ export default function ContractsClient() {
           <div className="p-6 border-b border-gray-200 flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold text-white">{selected.contractNumber}</span>
+                <span className="text-lg font-semibold text-gray-900">{selected.contractNumber}</span>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${STATUS_MAP[selected.status].color}`}>
                   {STATUS_MAP[selected.status].icon} {STATUS_MAP[selected.status].label}
                 </span>
@@ -234,7 +234,7 @@ export default function ContractsClient() {
               )}
               <button
                 onClick={() => { setEditingContract(selected); setShowEditor(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 border border-gray-200 text-sm hover:text-white transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 border border-gray-200 text-sm hover:text-gray-900 transition-colors"
               >
                 <Edit2 size={14} /> Chỉnh sửa
               </button>
@@ -253,10 +253,10 @@ export default function ContractsClient() {
               <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <Building2 size={16} className="text-[#C9A84C]" />
-                  <span className="text-sm font-medium text-white">Bên Bán (A)</span>
+                  <span className="text-sm font-medium text-gray-900">Bên Bán (A)</span>
                 </div>
                 <div className="space-y-1.5 text-sm">
-                  <div className="text-white font-medium">{selected.sellerName || "SmartFurni"}</div>
+                  <div className="text-gray-900 font-medium">{selected.sellerName || "SmartFurni"}</div>
                   <div className="text-gray-500">{selected.sellerAddress}</div>
                   <div className="text-gray-500">MST: {selected.sellerTaxId}</div>
                   <div className="text-gray-500">Đại diện: {selected.sellerRepresentative}</div>
@@ -265,10 +265,10 @@ export default function ContractsClient() {
               <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <User size={16} className="text-blue-400" />
-                  <span className="text-sm font-medium text-white">Bên Mua (B)</span>
+                  <span className="text-sm font-medium text-gray-900">Bên Mua (B)</span>
                 </div>
                 <div className="space-y-1.5 text-sm">
-                  <div className="text-white font-medium">{selected.buyerName}</div>
+                  <div className="text-gray-900 font-medium">{selected.buyerName}</div>
                   <div className="text-gray-500">{selected.buyerAddress}</div>
                   <div className="text-gray-500">MST: {selected.buyerTaxId}</div>
                   <div className="text-gray-500">Đại diện: {selected.buyerRepresentative}</div>
@@ -280,7 +280,7 @@ export default function ContractsClient() {
             {selected.items.length > 0 && (
               <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-200">
-                  <span className="text-sm font-medium text-white">Danh sách sản phẩm</span>
+                  <span className="text-sm font-medium text-gray-900">Danh sách sản phẩm</span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -295,7 +295,7 @@ export default function ContractsClient() {
                       {selected.items.map((item, i) => (
                         <tr key={i} className="border-b border-gray-200/50 hover:bg-gray-100/30">
                           <td className="px-4 py-2.5">
-                            <div className="text-white font-medium">{item.productName}</div>
+                            <div className="text-gray-900 font-medium">{item.productName}</div>
                             <div className="text-xs text-gray-500">{item.sku}</div>
                           </td>
                           <td className="px-4 py-2.5 text-gray-600">{item.quantity} {item.unit}</td>
@@ -345,7 +345,7 @@ export default function ContractsClient() {
             <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <PenTool size={16} className="text-[#C9A84C]" />
-                <span className="text-sm font-medium text-white">Chữ ký</span>
+                <span className="text-sm font-medium text-gray-900">Chữ ký</span>
               </div>
               {selected.signatures.length === 0 ? (
                 <p className="text-sm text-gray-500">Chưa có chữ ký</p>
@@ -354,7 +354,7 @@ export default function ContractsClient() {
                   {selected.signatures.map((sig, i) => (
                     <div key={i} className="border border-gray-200 rounded-lg p-3">
                       <div className="text-xs text-gray-500 mb-1">{sig.party === "seller" ? "Bên Bán" : "Bên Mua"}</div>
-                      <div className="text-sm text-white font-medium">{sig.name}</div>
+                      <div className="text-sm text-gray-900 font-medium">{sig.name}</div>
                       <div className="text-xs text-gray-500">{sig.title}</div>
                       <div className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
                         <CheckCircle size={10} /> Đã ký: {fmtDate(sig.signedAt)}
@@ -377,7 +377,7 @@ export default function ContractsClient() {
                     {d.icon}
                     <span className="text-xs">{d.label}</span>
                   </div>
-                  <div className="text-sm text-white">{fmtDate(d.value)}</div>
+                  <div className="text-sm text-gray-900">{fmtDate(d.value)}</div>
                 </div>
               ))}
             </div>
@@ -390,10 +390,10 @@ export default function ContractsClient() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-lg font-semibold text-gray-900">
                 {editingContract.id ? "Chỉnh sửa hợp đồng" : "Tạo hợp đồng mới"}
               </h2>
-              <button onClick={() => { setShowEditor(false); setEditingContract(null); }} className="text-gray-500 hover:text-white">✕</button>
+              <button onClick={() => { setShowEditor(false); setEditingContract(null); }} className="text-gray-500 hover:text-gray-900">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div>

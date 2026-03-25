@@ -27,7 +27,7 @@ export default function QuotesListClient({ initialQuotes }: Props) {
             <p className="text-sm text-gray-500 mt-0.5">{quotes.length} báo giá</p>
           </div>
           <Link href="/crm/quotes/new"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-white"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-gray-900"
             style={{ background: "#C9A84C" }}>
             <Plus size={15} /> Tạo báo giá
           </Link>

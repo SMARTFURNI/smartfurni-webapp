@@ -55,7 +55,7 @@ export default function LeadsListClient({ initialLeads }: Props) {
               Bộ lọc {activeFilters > 0 && `(${activeFilters})`}
             </button>
             <button onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-white"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-gray-900"
               style={{ background: "#C9A84C" }}>
               <Plus size={15} /> Thêm khách hàng
             </button>

@@ -113,7 +113,7 @@ export default function NpsClient() {
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-xl font-semibold text-white">Đánh giá NPS</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Đánh giá NPS</h1>
             <p className="text-sm text-gray-500 mt-0.5">Khảo sát độ hài lòng khách hàng sau khi chốt đơn</p>
           </div>
           <div className="flex gap-2">
@@ -139,7 +139,7 @@ export default function NpsClient() {
             <button
               key={t.id}
               onClick={() => setTab(t.id as typeof tab)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-all ${tab === t.id ? "bg-[#C9A84C] text-black font-medium" : "text-gray-500 hover:text-white"}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-all ${tab === t.id ? "bg-[#C9A84C] text-black font-medium" : "text-gray-500 hover:text-gray-900"}`}
             >
               {t.icon} {t.label}
             </button>
@@ -155,7 +155,7 @@ export default function NpsClient() {
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-medium text-white mb-1">Điểm NPS tổng thể</h2>
+                  <h2 className="text-base font-medium text-gray-900 mb-1">Điểm NPS tổng thể</h2>
                   <p className="text-sm text-gray-500">Net Promoter Score (-100 đến +100)</p>
                 </div>
                 <ScoreGauge score={stats.npsScore} />
@@ -184,7 +184,7 @@ export default function NpsClient() {
               ].map(c => (
                 <div key={c.key} className={`rounded-xl p-5 border ${c.bg}`}>
                   <div className="text-3xl font-bold mb-1" style={{ color: c.color }}>{c.count}</div>
-                  <div className="text-sm font-medium text-white">{c.label}</div>
+                  <div className="text-sm font-medium text-gray-900">{c.label}</div>
                   <div className="text-xs text-gray-500 mb-3">{c.desc}</div>
                   <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-700" style={{ width: `${c.pct}%`, backgroundColor: c.color }} />
@@ -197,7 +197,7 @@ export default function NpsClient() {
             {/* Trend */}
             {stats.trend.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-                <h3 className="text-sm font-medium text-white mb-4">Xu hướng điểm NPS theo tháng</h3>
+                <h3 className="text-sm font-medium text-gray-900 mb-4">Xu hướng điểm NPS theo tháng</h3>
                 <div className="flex items-end gap-3 h-32">
                   {stats.trend.map(t => {
                     const pct = ((t.score + 10) / 20) * 100;
@@ -247,7 +247,7 @@ export default function NpsClient() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-white">{s.leadName}</span>
+                            <span className="text-sm font-medium text-gray-900">{s.leadName}</span>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${st.color}`}>
                               {s.status === "completed" ? <CheckCircle size={10} /> : s.status === "sent" ? <Clock size={10} /> : <AlertCircle size={10} />}
                               {st.label}
@@ -308,11 +308,11 @@ export default function NpsClient() {
         {tab === "settings" && config && (
           <div className="max-w-2xl space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-base font-medium text-white mb-4">Cấu hình khảo sát NPS</h3>
+              <h3 className="text-base font-medium text-gray-900 mb-4">Cấu hình khảo sát NPS</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-white">Kích hoạt NPS tự động</div>
+                    <div className="text-sm text-gray-900">Kích hoạt NPS tự động</div>
                     <div className="text-xs text-gray-500">Tự động tạo khảo sát khi hợp đồng được ký</div>
                   </div>
                   <button
@@ -329,7 +329,7 @@ export default function NpsClient() {
                       type="number" min={1} max={30}
                       value={config.sendAfterDays}
                       onChange={e => setConfig(c => c ? { ...c, sendAfterDays: Number(e.target.value) } : c)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/50"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50"
                     />
                   </div>
                   <div>
@@ -338,7 +338,7 @@ export default function NpsClient() {
                       type="number" min={1} max={14}
                       value={config.reminderAfterDays}
                       onChange={e => setConfig(c => c ? { ...c, reminderAfterDays: Number(e.target.value) } : c)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/50"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50"
                     />
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function NpsClient() {
                   <input
                     value={config.surveyTitle}
                     onChange={e => setConfig(c => c ? { ...c, surveyTitle: e.target.value } : c)}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/50"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50"
                   />
                 </div>
                 <div>
@@ -356,7 +356,7 @@ export default function NpsClient() {
                     value={config.surveyIntro}
                     onChange={e => setConfig(c => c ? { ...c, surveyIntro: e.target.value } : c)}
                     rows={3}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/50 resize-none"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
                   />
                 </div>
                 <div>
@@ -365,7 +365,7 @@ export default function NpsClient() {
                     value={config.thankYouMessage}
                     onChange={e => setConfig(c => c ? { ...c, thankYouMessage: e.target.value } : c)}
                     rows={2}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/50 resize-none"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
                   />
                 </div>
                 <div>
@@ -400,7 +400,7 @@ export default function NpsClient() {
 
             {/* Survey link preview */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-sm font-medium text-white mb-3">Link khảo sát mẫu</h3>
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Link khảo sát mẫu</h3>
               <div className="bg-white rounded-lg p-3 font-mono text-xs text-[#C9A84C] break-all">
                 {typeof window !== "undefined" ? window.location.origin : "https://your-domain.com"}/nps/[survey-id]
               </div>
@@ -415,8 +415,8 @@ export default function NpsClient() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Tạo khảo sát NPS</h2>
-              <button onClick={() => setShowCreateModal(false)} className="text-gray-500 hover:text-white">✕</button>
+              <h2 className="text-lg font-semibold text-gray-900">Tạo khảo sát NPS</h2>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-500 hover:text-gray-900">✕</button>
             </div>
             <div className="p-6 space-y-4">
               {[

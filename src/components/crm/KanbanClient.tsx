@@ -108,11 +108,11 @@ export default function KanbanClient({ initialLeads }: Props) {
     <div className="flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
       <div className="flex-shrink-0 px-6 py-4"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#ffffff" }}>
+        style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-bold text-white">Bảng Kanban</h1>
-            <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <h1 className="text-xl font-bold text-gray-900">Bảng Kanban</h1>
+            <p className="text-sm mt-0.5" style={{ color: "#6b7280" }}>
               {filtered.length} khách hàng · {leads.filter(isOverdue).length} quá hạn tương tác
             </p>
           </div>
@@ -126,8 +126,8 @@ export default function KanbanClient({ initialLeads }: Props) {
                 placeholder="Tìm kiếm..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 pr-3 py-2 text-sm rounded-xl text-white placeholder-white/25 focus:outline-none w-48 transition-all"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+                className="pl-9 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-white/25 focus:outline-none w-48 transition-all"
+                style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}
               />
             </div>
 
@@ -136,9 +136,9 @@ export default function KanbanClient({ initialLeads }: Props) {
               onClick={() => setShowFilters(v => !v)}
               className="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border transition-colors"
               style={{
-                background: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.05)",
-                borderColor: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.08)",
-                color: showFilters || activeFilters > 0 ? "#C9A84C" : "rgba(255,255,255,0.5)",
+                background: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.12)" : "#f3f4f6",
+                borderColor: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.3)" : "#e5e7eb",
+                color: showFilters || activeFilters > 0 ? "#C9A84C" : "#6b7280",
               }}
             >
               <Filter size={15} />
@@ -152,7 +152,7 @@ export default function KanbanClient({ initialLeads }: Props) {
             {/* Refresh */}
             <button onClick={refresh}
               className="p-2 rounded-xl transition-colors"
-              style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}
+              style={{ border: "1px solid #e5e7eb", color: "#6b7280" }}
               title="Làm mới">
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             </button>
@@ -172,24 +172,24 @@ export default function KanbanClient({ initialLeads }: Props) {
         {/* Filter panel */}
         {showFilters && (
           <div className="mt-3 pt-3 flex items-center gap-3 flex-wrap"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            style={{ borderTop: "1px solid #e5e7eb" }}>
             <select value={filterDistrict} onChange={e => setFilterDistrict(e.target.value)}
-              className="text-sm px-3 py-1.5 rounded-xl text-white focus:outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
+              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
               <option value="">Tất cả tỉnh/thành</option>
               {VIETNAM_PROVINCES.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             <select value={filterType} onChange={e => setFilterType(e.target.value as LeadType | "")}
-              className="text-sm px-3 py-1.5 rounded-xl text-white focus:outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
+              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
               <option value="">Tất cả loại</option>
               <option value="architect">Kiến trúc sư</option>
               <option value="investor">Chủ đầu tư CHDV</option>
               <option value="dealer">Đại lý</option>
             </select>
             <select value={filterSource} onChange={e => setFilterSource(e.target.value)}
-              className="text-sm px-3 py-1.5 rounded-xl text-white focus:outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
+              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
               <option value="">Tất cả nguồn</option>
               {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -219,8 +219,9 @@ export default function KanbanClient({ initialLeads }: Props) {
                 style={{
                   width: "250px",
                   minWidth: "250px",
-                  background: isDragTarget ? `${STAGE_COLORS[stage]}10` : "rgba(255,255,255,0.02)",
-                  border: `1px solid ${isDragTarget ? STAGE_COLORS[stage] + "40" : "rgba(255,255,255,0.05)"}`,
+                  background: isDragTarget ? `${STAGE_COLORS[stage]}10` : "#f8f9fb",
+                  border: `1px solid ${isDragTarget ? STAGE_COLORS[stage] + "40" : "#e5e7eb"}`,
+                  minHeight: "200px",
                   boxShadow: isDragTarget ? `0 0 0 2px ${STAGE_COLORS[stage]}20` : "none",
                 }}
                 onDragOver={e => onDragOver(e, stage)}
@@ -256,10 +257,10 @@ export default function KanbanClient({ initialLeads }: Props) {
                   {stageLeads.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-8">
                       <div className="w-8 h-8 rounded-xl border-2 border-dashed flex items-center justify-center mb-2"
-                        style={{ borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.2)" }}>
+                        style={{ borderColor: "#d1d5db", color: "#9ca3af" }}>
                         <Plus size={14} />
                       </div>
-                      <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>Kéo thả vào đây</span>
+                      <span className="text-xs" style={{ color: "#9ca3af" }}>Kéo thả vào đây</span>
                     </div>
                   )}
                   {stageLeads.map(lead => (
@@ -327,9 +328,9 @@ function LeadCard({
       onDragEnd={onDragEnd}
       className="rounded-xl transition-all duration-200 cursor-grab active:cursor-grabbing select-none hover:-translate-y-0.5"
       style={{
-        background: overdue ? "rgba(248,113,113,0.06)" : "rgba(255,255,255,0.04)",
-        border: overdue ? "1px solid rgba(248,113,113,0.3)" : "1px solid rgba(255,255,255,0.07)",
-        boxShadow: isDragging ? "0 8px 24px rgba(0,0,0,0.4)" : overdue ? "0 0 0 1px rgba(248,113,113,0.15)" : "none",
+        background: overdue ? "rgba(248,113,113,0.06)" : "#ffffff",
+        border: overdue ? "1px solid rgba(248,113,113,0.4)" : "1px solid #e5e7eb",
+        boxShadow: isDragging ? "0 8px 24px rgba(0,0,0,0.15)" : overdue ? "0 0 0 1px rgba(248,113,113,0.15)" : "0 1px 3px rgba(0,0,0,0.06)",
         opacity: isDragging ? 0.4 : 1,
         transform: isDragging ? "rotate(1.5deg) scale(1.02)" : "none",
       }}
@@ -339,9 +340,9 @@ function LeadCard({
           {/* Top row */}
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="min-w-0">
-              <div className="font-semibold text-sm text-white truncate">{lead.name}</div>
+              <div className="font-semibold text-sm text-gray-900 truncate">{lead.name}</div>
               {lead.company && (
-                <div className="text-xs truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{lead.company}</div>
+                <div className="text-xs truncate" style={{ color: "#6b7280" }}>{lead.company}</div>
               )}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -367,13 +368,13 @@ function LeadCard({
           {/* Tags row */}
           <div className="flex items-center gap-2 flex-wrap">
             {lead.district && (
-              <div className="flex items-center gap-1 text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <div className="flex items-center gap-1 text-[11px]" style={{ color: "#9ca3af" }}>
                 <MapPin size={10} />
                 <span className="truncate max-w-[80px]">{lead.district.split(",")[0]}</span>
               </div>
             )}
             {lead.unitCount > 0 && (
-              <div className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <div className="text-[11px]" style={{ color: "#9ca3af" }}>
                 {lead.unitCount} căn
               </div>
             )}
@@ -388,7 +389,7 @@ function LeadCard({
               <span>{daysAgo === 0 ? "Hôm nay" : daysAgo === 1 ? "Hôm qua" : `${daysAgo} ngày trước`}</span>
             </div>
             {lead.assignedTo && (
-              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-gray-900 flex-shrink-0"
                 style={{ background: "#6366f1" }}>
                 {lead.assignedTo.charAt(0).toUpperCase()}
               </div>

@@ -136,7 +136,7 @@ export default function ZaloOAClient() {
               <MessageSquare size={20} className="text-blue-400" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-white">Zalo OA</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Zalo OA</h1>
               <p className="text-sm text-gray-500">Chăm sóc khách hàng qua Zalo Official Account</p>
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function ZaloOAClient() {
               <span className={`w-1.5 h-1.5 rounded-full ${config.isActive ? "bg-emerald-400 animate-pulse" : "bg-gray-400"}`} />
               {config.isActive ? "Đang hoạt động" : "Chưa kết nối"}
             </div>
-            <button onClick={() => setShowSendModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors">
+            <button onClick={() => setShowSendModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-gray-900 text-sm font-medium hover:bg-blue-600 transition-colors">
               <Send size={14} /> Gửi tin nhắn
             </button>
           </div>
@@ -158,7 +158,7 @@ export default function ZaloOAClient() {
             { id: "settings", label: "Cài đặt", icon: <Settings size={13} /> },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as typeof tab)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${tab === t.id ? "bg-blue-500 text-white font-medium" : "text-gray-500 hover:text-white"}`}>
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${tab === t.id ? "bg-blue-500 text-gray-900 font-medium" : "text-gray-500 hover:text-gray-900"}`}>
               {t.icon} {t.label}
             </button>
           ))}
@@ -185,7 +185,7 @@ export default function ZaloOAClient() {
 
             {/* Quick actions */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-sm font-medium text-white mb-4">Gửi nhanh theo sự kiện</h3>
+              <h3 className="text-sm font-medium text-gray-900 mb-4">Gửi nhanh theo sự kiện</h3>
               <div className="grid grid-cols-2 gap-3">
                 {DEFAULT_TEMPLATES.map(t => (
                   <button
@@ -197,7 +197,7 @@ export default function ZaloOAClient() {
                       <Send size={14} className="text-blue-400" />
                     </div>
                     <div>
-                      <div className="text-sm text-white font-medium">{t.name}</div>
+                      <div className="text-sm text-gray-900 font-medium">{t.name}</div>
                       <div className="text-xs text-gray-500">{TYPE_LABELS[t.type]}</div>
                     </div>
                   </button>
@@ -215,7 +215,7 @@ export default function ZaloOAClient() {
                   <li className="flex gap-2"><span className="text-blue-400 font-bold">3.</span> Điền thông tin vào tab Cài đặt bên dưới</li>
                   <li className="flex gap-2"><span className="text-blue-400 font-bold">4.</span> Cấu hình Webhook URL để nhận tin nhắn từ khách</li>
                 </ol>
-                <button onClick={() => setTab("settings")} className="mt-4 px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors">
+                <button onClick={() => setTab("settings")} className="mt-4 px-4 py-2 rounded-lg bg-blue-500 text-gray-900 text-sm font-medium hover:bg-blue-600 transition-colors">
                   Cài đặt ngay
                 </button>
               </div>
@@ -231,14 +231,14 @@ export default function ZaloOAClient() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-white">{t.name}</span>
+                      <span className="text-sm font-medium text-gray-900">{t.name}</span>
                       <span className="px-2 py-0.5 rounded-full text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">{TYPE_LABELS[t.type]}</span>
                       {!t.isActive && <span className="px-2 py-0.5 rounded-full text-xs bg-gray-500/10 text-gray-500 border border-gray-500/20">Tắt</span>}
                     </div>
                     <p className="text-sm text-gray-500 leading-relaxed">{t.content}</p>
                     <p className="text-xs text-gray-600 mt-2">Biến: {"{name}"}, {"{phone}"}, {"{quote_id}"}, {"{contract_id}"}, {"{nps_link}"}, {"{date}"}, {"{time}"}</p>
                   </div>
-                  <button onClick={() => setEditingTemplate(t)} className="p-2 rounded-lg bg-white text-gray-500 hover:text-white transition-colors flex-shrink-0">
+                  <button onClick={() => setEditingTemplate(t)} className="p-2 rounded-lg bg-white text-gray-500 hover:text-gray-900 transition-colors flex-shrink-0">
                     <Eye size={14} />
                   </button>
                 </div>
@@ -263,7 +263,7 @@ export default function ZaloOAClient() {
                       <Phone size={14} className="text-blue-400" />
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-white">{m.leadName}</div>
+                      <div className="text-sm font-medium text-gray-900">{m.leadName}</div>
                       <div className="text-xs text-gray-500">{m.phone}</div>
                     </div>
                   </div>
@@ -289,11 +289,11 @@ export default function ZaloOAClient() {
         {tab === "settings" && (
           <div className="max-w-2xl space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-base font-medium text-white mb-4">Cấu hình Zalo OA</h3>
+              <h3 className="text-base font-medium text-gray-900 mb-4">Cấu hình Zalo OA</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-white">Kích hoạt Zalo OA</div>
+                    <div className="text-sm text-gray-900">Kích hoạt Zalo OA</div>
                     <div className="text-xs text-gray-500">Bật để gửi tin nhắn tự động qua Zalo</div>
                   </div>
                   <button
@@ -316,13 +316,13 @@ export default function ZaloOAClient() {
                       value={(config as unknown as Record<string, string>)[f.key]}
                       onChange={e => setConfig(c => ({ ...c, [f.key]: e.target.value }))}
                       placeholder={f.placeholder}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500/50"
                     />
                   </div>
                 ))}
               </div>
               <button onClick={handleSaveConfig} disabled={saving}
-                className="mt-4 px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50">
+                className="mt-4 px-4 py-2 rounded-lg bg-blue-500 text-gray-900 text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50">
                 {saving ? "Đang lưu..." : "Lưu cấu hình"}
               </button>
             </div>
@@ -335,14 +335,14 @@ export default function ZaloOAClient() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Gửi tin nhắn Zalo</h2>
-              <button onClick={() => setShowSendModal(false)} className="text-gray-500 hover:text-white">✕</button>
+              <h2 className="text-lg font-semibold text-gray-900">Gửi tin nhắn Zalo</h2>
+              <button onClick={() => setShowSendModal(false)} className="text-gray-500 hover:text-gray-900">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1.5">Mẫu tin nhắn</label>
                 <select value={sendForm.templateId} onChange={e => setSendForm(p => ({ ...p, templateId: e.target.value }))}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50">
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500/50">
                   {config.templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
@@ -355,7 +355,7 @@ export default function ZaloOAClient() {
                   <input value={(sendForm as Record<string, string>)[f.key]}
                     onChange={e => setSendForm(p => ({ ...p, [f.key]: e.target.value }))}
                     placeholder={f.placeholder}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500/50"
                   />
                 </div>
               ))}
@@ -369,7 +369,7 @@ export default function ZaloOAClient() {
             <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
               <button onClick={() => setShowSendModal(false)} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm hover:text-gray-900 transition-colors">Hủy</button>
               <button onClick={handleSendMessage} disabled={saving || !sendForm.phone || !sendForm.leadName}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50">
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-gray-900 text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50">
                 <Send size={14} /> {saving ? "Đang gửi..." : "Gửi tin nhắn"}
               </button>
             </div>
@@ -382,15 +382,15 @@ export default function ZaloOAClient() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-lg">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Chỉnh sửa mẫu tin nhắn</h2>
-              <button onClick={() => setEditingTemplate(null)} className="text-gray-500 hover:text-white">✕</button>
+              <h2 className="text-lg font-semibold text-gray-900">Chỉnh sửa mẫu tin nhắn</h2>
+              <button onClick={() => setEditingTemplate(null)} className="text-gray-500 hover:text-gray-900">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1.5">Tên mẫu</label>
                 <input value={editingTemplate.name}
                   onChange={e => setEditingTemplate(t => t ? { ...t, name: e.target.value } : t)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500/50"
                 />
               </div>
               <div>
@@ -398,7 +398,7 @@ export default function ZaloOAClient() {
                 <textarea value={editingTemplate.content}
                   onChange={e => setEditingTemplate(t => t ? { ...t, content: e.target.value } : t)}
                   rows={5}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 resize-none"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500/50 resize-none"
                 />
               </div>
             </div>
@@ -407,7 +407,7 @@ export default function ZaloOAClient() {
               <button onClick={() => {
                 setConfig(c => ({ ...c, templates: c.templates.map(t => t.id === editingTemplate.id ? editingTemplate : t) }));
                 setEditingTemplate(null);
-              }} className="px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors">
+              }} className="px-4 py-2 rounded-lg bg-blue-500 text-gray-900 text-sm font-medium hover:bg-blue-600 transition-colors">
                 Lưu thay đổi
               </button>
             </div>

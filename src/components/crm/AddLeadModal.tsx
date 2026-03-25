@@ -99,8 +99,8 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
       <div
         className="w-full max-w-xl rounded-2xl overflow-hidden"
         style={{
-          background: "#161820",
-          border: "1px solid rgba(255,255,255,0.1)",
+          background: "#ffffff",
+          border: "1px solid #d1d5db",
           boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
         }}
       >
@@ -117,14 +117,14 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
               <Users size={18} style={{ color: "#C9A84C" }} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Thêm khách hàng mới</h2>
+              <h2 className="text-base font-bold text-gray-900">Thêm khách hàng mới</h2>
               <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>Điền thông tin khách hàng B2B</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
-            style={{ color: "rgba(255,255,255,0.4)" }}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-gray-100"
+            style={{ color: "#6b7280" }}
           >
             <X size={16} />
           </button>
@@ -154,7 +154,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
         </div>
 
         {/* Tabs */}
-        <div className="px-6 pt-4 flex gap-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="px-6 pt-4 flex gap-0" style={{ borderBottom: "1px solid #e5e7eb" }}>
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -262,10 +262,10 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
                   onChange={e => set("notes", e.target.value)}
                   rows={6}
                   placeholder="Ghi chú về khách hàng, yêu cầu đặc biệt, lịch hẹn..."
-                  className="w-full px-3 py-2.5 text-sm rounded-xl text-white placeholder-white/20 focus:outline-none resize-none transition-all"
+                  className="w-full px-3 py-2.5 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none resize-none transition-all"
                   style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "#f3f4f6",
+                    border: "1px solid #d1d5db",
                   }}
                 />
               </DarkField>
@@ -275,13 +275,13 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
           {/* Footer */}
           <div
             className="px-6 py-4 flex gap-3"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)" }}
+            style={{ borderTop: "1px solid #e5e7eb", background: "rgba(255,255,255,0.01)" }}
           >
             <button
               type="button"
               onClick={onClose}
               className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-colors hover:bg-white/5"
-              style={{ border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
+              style={{ border: "1px solid #d1d5db", color: "#6b7280" }}
             >
               Hủy
             </button>
@@ -305,7 +305,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
 function DarkField({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-[11px] font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+      <label className="flex items-center gap-1.5 text-[11px] font-semibold mb-1.5" style={{ color: "#6b7280" }}>
         {icon && <span style={{ color: "rgba(255,255,255,0.25)" }}>{icon}</span>}
         {label}
       </label>
@@ -323,8 +323,8 @@ function DarkInput({ value, onChange, placeholder, type = "text" }: {
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full px-3 py-2 text-sm rounded-xl text-white placeholder-white/20 focus:outline-none transition-all"
-      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
+      className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none transition-all"
+      style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}
     />
   );
 }
@@ -336,8 +336,8 @@ function DarkSelect({ value, onChange, children }: {
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="w-full px-3 py-2 text-sm rounded-xl text-white focus:outline-none transition-all"
-      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
+      className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none transition-all"
+      style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}
     >
       {children}
     </select>

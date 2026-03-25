@@ -184,7 +184,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-gray-900">Lịch sử tương tác</h3>
                     <button onClick={() => setShowAddActivity(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-gray-900"
                       style={{ background: "#C9A84C" }}>
                       <Plus size={14} /> Thêm hoạt động
                     </button>
@@ -262,7 +262,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-gray-900">Báo giá</h3>
                     <Link href={`/crm/quotes/new?leadId=${lead.id}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-gray-900"
                       style={{ background: "#C9A84C" }}>
                       <Plus size={14} /> Tạo báo giá
                     </Link>
@@ -298,7 +298,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-gray-900">Việc cần làm</h3>
                     <button onClick={() => setShowAddTask(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-gray-900"
                       style={{ background: "#C9A84C" }}>
                       <Plus size={14} /> Thêm việc
                     </button>
@@ -559,7 +559,7 @@ function AddActivityModal({ leadId, onClose, onCreated }: { leadId: string; onCl
             <button type="button" onClick={onClose}
               className="flex-1 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Hủy</button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-lg text-white flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 text-sm font-semibold rounded-lg text-gray-900 flex items-center justify-center gap-2"
               style={{ background: "#C9A84C" }}>
               {loading && <Loader2 size={14} className="animate-spin" />}
               Lưu
@@ -637,7 +637,7 @@ function AddTaskModal({ leadId, leadName, onClose, onCreated }: { leadId: string
             <button type="button" onClick={onClose}
               className="flex-1 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Hủy</button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-lg text-white flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 text-sm font-semibold rounded-lg text-gray-900 flex items-center justify-center gap-2"
               style={{ background: "#C9A84C" }}>
               {loading && <Loader2 size={14} className="animate-spin" />}
               Lưu

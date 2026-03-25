@@ -93,23 +93,23 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
       <div className="flex-shrink-0 px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-bold text-white flex items-center gap-2">
+            <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Mail size={20} style={{ color: "#C9A84C" }} />
               Email Marketing
             </h1>
-            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
               Gửi email hàng loạt theo phân khúc khách hàng B2B
             </p>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.25)" }} />
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{  }} />
               <input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm..."
-                className="pl-8 pr-3 py-2 text-sm rounded-xl text-white placeholder-white/20 focus:outline-none w-40"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+                className="pl-8 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none w-40"
+                style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}
               />
             </div>
             {tab === "campaigns" ? (
@@ -141,25 +141,25 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
             { label: "Tỷ lệ mở", value: `${avgOpenRate}%`, icon: BarChart3, color: "#a78bfa" },
           ].map((kpi, i) => (
             <div key={i} className="rounded-xl px-4 py-3 flex items-center gap-3"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ background: `${kpi.color}15` }}>
                 <kpi.icon size={16} style={{ color: kpi.color }} />
               </div>
               <div>
-                <div className="text-lg font-bold text-white leading-tight">{kpi.value}</div>
-                <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{kpi.label}</div>
+                <div className="text-lg font-bold text-gray-900 leading-tight">{kpi.value}</div>
+                <div className="text-[10px]" style={{  }}>{kpi.label}</div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 mt-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="flex gap-0 mt-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
           {([["campaigns", "Chiến dịch"], ["templates", "Templates"]] as [Tab, string][]).map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)}
               className="px-5 py-2 text-sm font-semibold relative transition-colors"
-              style={{ color: tab === id ? "#C9A84C" : "rgba(255,255,255,0.35)" }}>
+              style={{ color: tab === id ? "#C9A84C" : "#6b7280" }}>
               {label}
               {tab === id && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "#C9A84C" }} />}
             </button>
@@ -173,7 +173,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
           <div className="space-y-3">
             {filteredCampaigns.length === 0 ? (
               <EmptyState
-                icon={<Send size={32} style={{ color: "rgba(255,255,255,0.15)" }} />}
+                icon={<Send size={32} style={{  }} />}
                 title="Chưa có chiến dịch nào"
                 description="Tạo chiến dịch email đầu tiên để bắt đầu tiếp cận khách hàng B2B"
                 action={<button onClick={() => setShowNewCampaign(true)}
@@ -188,25 +188,25 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 const openRate = campaign.sentCount > 0 ? Math.round((campaign.openCount / campaign.sentCount) * 100) : 0;
                 return (
                   <div key={campaign.id} className="rounded-2xl p-4 transition-all hover:border-white/10"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-bold text-white truncate">{campaign.name}</span>
+                          <span className="text-sm font-bold text-gray-900 truncate">{campaign.name}</span>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
                             style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
                         </div>
-                        <div className="text-xs mb-2 truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        <div className="text-xs mb-2 truncate" style={{ color: "#6b7280" }}>
                           {campaign.subject}
                         </div>
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                          <div className="flex items-center gap-1 text-xs" style={{  }}>
                             <Users size={11} />
                             <span>{SEGMENT_LABELS[campaign.segment]}</span>
                           </div>
                           {campaign.status === "sent" && (
                             <>
-                              <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                              <div className="text-xs" style={{  }}>
                                 {campaign.sentCount} đã gửi
                               </div>
                               <div className="text-xs" style={{ color: "#22c55e" }}>
@@ -223,14 +223,14 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <button className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
-                          style={{ color: "rgba(255,255,255,0.3)" }}
+                        <button className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-100"
+                          style={{ color: "#9ca3af" }}
                           title="Xem trước">
                           <Eye size={14} />
                         </button>
                         <button onClick={() => deleteCampaign(campaign.id)}
                           className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10"
-                          style={{ color: "rgba(255,255,255,0.3)" }}
+                          style={{ color: "#9ca3af" }}
                           title="Xóa">
                           <Trash2 size={14} />
                         </button>
@@ -239,11 +239,11 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                     {/* Progress bar for sent campaigns */}
                     {campaign.status === "sent" && campaign.sentCount > 0 && (
                       <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                        <div className="flex justify-between text-[10px] mb-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+                        <div className="flex justify-between text-[10px] mb-1" style={{ color: "#9ca3af" }}>
                           <span>Tỷ lệ mở</span>
                           <span>{openRate}%</span>
                         </div>
-                        <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                        <div className="h-1 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
                           <div className="h-full rounded-full transition-all" style={{ width: `${openRate}%`, background: "#22c55e" }} />
                         </div>
                       </div>
@@ -260,14 +260,14 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
             {templates.length === 0 && (
               <div className="text-center py-8">
                 <EmptyState
-                  icon={<FileText size={32} style={{ color: "rgba(255,255,255,0.15)" }} />}
+                  icon={<FileText size={32} style={{  }} />}
                   title="Chưa có template nào"
                   description="Tạo template email hoặc tải template mẫu có sẵn"
                   action={
                     <div className="flex gap-2 justify-center mt-3">
                       <button onClick={seedTemplates} disabled={loading}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
-                        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}>
+                        style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}>
                         {loading ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />}
                         Tải template mẫu
                       </button>
@@ -286,7 +286,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 const catColor = CATEGORY_COLORS[template.category];
                 return (
                   <div key={template.id} className="rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5 group"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
                     {/* Preview */}
                     <div className="h-32 overflow-hidden relative cursor-pointer" onClick={() => setPreviewTemplate(template)}
                       style={{ background: "#050505" }}>
@@ -295,7 +295,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         style={{ background: "rgba(0,0,0,0.6)" }}>
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-900"
                           style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)" }}>
                           <Eye size={12} /> Xem trước
                         </div>
@@ -304,24 +304,24 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                     {/* Info */}
                     <div className="p-3">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <span className="text-sm font-semibold text-white truncate">{template.name}</span>
+                        <span className="text-sm font-semibold text-gray-900 truncate">{template.name}</span>
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0"
                           style={{ background: `${catColor}15`, color: catColor }}>
                           {TEMPLATE_CATEGORY_LABELS[template.category]}
                         </span>
                       </div>
-                      <div className="text-xs truncate mb-3" style={{ color: "rgba(255,255,255,0.35)" }}>
+                      <div className="text-xs truncate mb-3" style={{  }}>
                         {template.subject}
                       </div>
                       <div className="flex gap-1">
                         <button onClick={() => setPreviewTemplate(template)}
-                          className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-white/10"
-                          style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
+                          className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-100"
+                          style={{ border: "1px solid #e5e7eb", color: "#6b7280" }}>
                           Xem trước
                         </button>
                         <button onClick={() => deleteTemplate(template.id)}
                           className="w-8 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10"
-                          style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)" }}>
+                          style={{ border: "1px solid #e5e7eb", color: "#9ca3af" }}>
                           <Trash2 size={12} />
                         </button>
                       </div>
@@ -411,8 +411,8 @@ function NewCampaignModal({ templates, onClose, onCreated }: {
         </DarkField>
         <DarkField label="Phân khúc nhận email">
           <select value={form.segment} onChange={e => handleSegmentChange(e.target.value as EmailSegment)}
-            className="w-full px-3 py-2 text-sm rounded-xl text-white focus:outline-none"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
             {(Object.entries(SEGMENT_LABELS) as [EmailSegment, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
@@ -426,8 +426,8 @@ function NewCampaignModal({ templates, onClose, onCreated }: {
         {templates.length > 0 && (
           <DarkField label="Template email">
             <select value={form.templateId} onChange={e => setForm(p => ({ ...p, templateId: e.target.value }))}
-              className="w-full px-3 py-2 text-sm rounded-xl text-white focus:outline-none"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
               <option value="">Chọn template (tùy chọn)</option>
               {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
@@ -436,13 +436,13 @@ function NewCampaignModal({ templates, onClose, onCreated }: {
         <DarkField label="Lên lịch gửi (tùy chọn)">
           <input type="datetime-local" value={form.scheduledAt}
             onChange={e => setForm(p => ({ ...p, scheduledAt: e.target.value }))}
-            className="w-full px-3 py-2 text-sm rounded-xl text-white focus:outline-none"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }} />
+            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
         </DarkField>
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose}
             className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-colors hover:bg-white/5"
-            style={{ border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}>Hủy</button>
+            style={{ border: "1px solid #d1d5db", color: "#6b7280" }}>Hủy</button>
           <button type="submit" disabled={loading}
             className="flex-1 py-2.5 text-sm font-bold rounded-xl text-black flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
@@ -487,8 +487,8 @@ function NewTemplateModal({ onClose, onCreated }: {
         </DarkField>
         <DarkField label="Danh mục">
           <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as EmailTemplateCategory }))}
-            className="w-full px-3 py-2 text-sm rounded-xl text-white focus:outline-none"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
             {(Object.entries(TEMPLATE_CATEGORY_LABELS) as [EmailTemplateCategory, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
@@ -497,13 +497,13 @@ function NewTemplateModal({ onClose, onCreated }: {
         <DarkField label="Nội dung HTML">
           <textarea value={form.htmlContent} onChange={e => setForm(p => ({ ...p, htmlContent: e.target.value }))}
             rows={6} placeholder="<div>Nội dung email HTML...</div>"
-            className="w-full px-3 py-2 text-sm rounded-xl text-white placeholder-white/20 focus:outline-none resize-none font-mono"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }} />
+            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none resize-none font-mono"
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
         </DarkField>
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose}
             className="flex-1 py-2.5 text-sm font-medium rounded-xl hover:bg-white/5"
-            style={{ border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}>Hủy</button>
+            style={{ border: "1px solid #d1d5db", color: "#6b7280" }}>Hủy</button>
           <button type="submit" disabled={loading}
             className="flex-1 py-2.5 text-sm font-bold rounded-xl text-black flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
@@ -523,15 +523,15 @@ function TemplatePreviewModal({ template, onClose }: { template: EmailTemplate; 
       style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden"
-        style={{ background: "#161820", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "90vh" }}>
+        style={{ background: "#ffffff", border: "1px solid #d1d5db", maxHeight: "90vh" }}>
         <div className="flex items-center justify-between px-5 py-3"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <div>
-            <div className="text-sm font-bold text-white">{template.name}</div>
-            <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{template.subject}</div>
+            <div className="text-sm font-bold text-gray-900">{template.name}</div>
+            <div className="text-xs" style={{  }}>{template.subject}</div>
           </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/10"
-            style={{ color: "rgba(255,255,255,0.4)" }}><X size={14} /></button>
+          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100"
+            style={{ color: "#6b7280" }}><X size={14} /></button>
         </div>
         <div className="overflow-y-auto" style={{ maxHeight: "calc(90vh - 60px)" }}>
           <div dangerouslySetInnerHTML={{ __html: template.htmlContent }} />
@@ -548,8 +548,8 @@ function EmptyState({ icon, title, description, action }: {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="mb-4">{icon}</div>
-      <div className="text-base font-semibold text-white mb-1">{title}</div>
-      <div className="text-sm max-w-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{description}</div>
+      <div className="text-base font-semibold text-gray-900 mb-1">{title}</div>
+      <div className="text-sm max-w-xs" style={{  }}>{description}</div>
       {action}
     </div>
   );
@@ -561,12 +561,12 @@ function DarkModal({ title, onClose, children }: { title: string; onClose: () =>
       style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: "#161820", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
+        style={{ background: "#ffffff", border: "1px solid #d1d5db", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
         <div className="flex items-center justify-between px-5 py-4"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <h2 className="text-sm font-bold text-white">{title}</h2>
-          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/10"
-            style={{ color: "rgba(255,255,255,0.4)" }}><X size={14} /></button>
+          <h2 className="text-sm font-bold text-gray-900">{title}</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100"
+            style={{ color: "#6b7280" }}><X size={14} /></button>
         </div>
         <div className="p-5">{children}</div>
       </div>
@@ -577,7 +577,7 @@ function DarkModal({ title, onClose, children }: { title: string; onClose: () =>
 function DarkField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[11px] font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</label>
+      <label className="block text-[11px] font-semibold mb-1.5" style={{ color: "#6b7280" }}>{label}</label>
       {children}
     </div>
   );
@@ -588,7 +588,7 @@ function DarkInput({ value, onChange, placeholder, type = "text" }: {
 }) {
   return (
     <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      className="w-full px-3 py-2 text-sm rounded-xl text-white placeholder-white/20 focus:outline-none"
-      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }} />
+      className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none"
+      style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
   );
 }

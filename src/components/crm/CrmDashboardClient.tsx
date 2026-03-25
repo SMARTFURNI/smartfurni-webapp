@@ -84,7 +84,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
             </div>
           )}
           <Link href="/crm/leads/new"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-gray-900 transition-opacity hover:opacity-90"
             style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}>
             <Plus size={13} />
             Thêm khách hàng
@@ -149,7 +149,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                     const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
                     return (
                       <div key={stage} className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black text-white flex-shrink-0"
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black text-gray-900 flex-shrink-0"
                           style={{ background: STAGE_COLORS[stage] }}>
                           {i + 1}
                         </div>
@@ -253,7 +253,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats }:
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-lg flex items-center justify-center"
                               style={{ background: TYPE_COLORS[type], opacity: 0.9 }}>
-                              <span className="text-white text-[9px] font-black">{count}</span>
+                              <span className="text-gray-900 text-[9px] font-black">{count}</span>
                             </div>
                             <div>
                               <div className="text-xs font-bold text-gray-800">{TYPE_LABELS[type]}</div>

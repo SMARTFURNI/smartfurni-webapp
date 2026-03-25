@@ -104,20 +104,20 @@ export default function AuditLogClient() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-white">Nhật ký hoạt động</h1>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <h1 className="text-lg font-bold text-gray-900">Nhật ký hoạt động</h1>
+          <p className="text-xs mt-0.5" style={{  }}>
             Toàn bộ hành động trong hệ thống CRM — {total.toLocaleString()} bản ghi
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load} className="p-2 rounded-lg hover:bg-white/5 transition-all"
-            style={{ color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            style={{ color: "#6b7280", border: "1px solid #e5e7eb" }}>
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           </button>
           <button
             onClick={() => window.open("/api/crm/import?format=csv", "_blank")}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            style={{ background: "#f3f4f6", color: "#6b7280", border: "1px solid #e5e7eb" }}>
             <Download size={13} /> Xuất CSV
           </button>
         </div>
@@ -126,22 +126,22 @@ export default function AuditLogClient() {
       {/* Search & Filter bar */}
       <div className="flex items-center gap-3">
         <div className="flex-1 relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.25)" }} />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{  }} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Tìm theo tên, hành động..."
             className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}
+            style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#fff" }}
           />
         </div>
         <button
           onClick={() => setShowFilters(v => !v)}
           className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all"
           style={{
-            background: showFilters ? "rgba(201,168,76,0.1)" : "rgba(255,255,255,0.04)",
-            color: showFilters ? "#C9A84C" : "rgba(255,255,255,0.4)",
-            border: `1px solid ${showFilters ? "rgba(201,168,76,0.25)" : "rgba(255,255,255,0.08)"}`,
+            background: showFilters ? "rgba(201,168,76,0.1)" : "#f9fafb",
+            color: showFilters ? "#C9A84C" : "#6b7280",
+            border: `1px solid ${showFilters ? "rgba(201,168,76,0.25)" : "#e5e7eb"}`,
           }}>
           <Filter size={14} /> Bộ lọc
         </button>
@@ -150,12 +150,12 @@ export default function AuditLogClient() {
       {/* Advanced filters */}
       {showFilters && (
         <div className="p-4 rounded-xl grid grid-cols-2 md:grid-cols-4 gap-3"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div>
-            <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Loại hành động</label>
+            <label className="block text-xs mb-1.5" style={{  }}>Loại hành động</label>
             <select value={filterAction} onChange={e => { setFilterAction(e.target.value as AuditAction | ""); setPage(0); }}
               className="w-full px-2 py-1.5 rounded-lg text-xs outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
               <option value="">Tất cả</option>
               {ACTION_GROUPS.map(g => (
                 <optgroup key={g.label} label={g.label}>
@@ -165,10 +165,10 @@ export default function AuditLogClient() {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Đối tượng</label>
+            <label className="block text-xs mb-1.5" style={{  }}>Đối tượng</label>
             <select value={filterEntityType} onChange={e => { setFilterEntityType(e.target.value); setPage(0); }}
               className="w-full px-2 py-1.5 rounded-lg text-xs outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
               <option value="">Tất cả</option>
               <option value="lead">Khách hàng</option>
               <option value="quote">Báo giá</option>
@@ -178,16 +178,16 @@ export default function AuditLogClient() {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Từ ngày</label>
+            <label className="block text-xs mb-1.5" style={{  }}>Từ ngày</label>
             <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(0); }}
               className="w-full px-2 py-1.5 rounded-lg text-xs outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
           </div>
           <div>
-            <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Đến ngày</label>
+            <label className="block text-xs mb-1.5" style={{  }}>Đến ngày</label>
             <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(0); }}
               className="w-full px-2 py-1.5 rounded-lg text-xs outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
           </div>
         </div>
       )}
@@ -196,22 +196,22 @@ export default function AuditLogClient() {
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ background: "rgba(255,255,255,0.04)" }}>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>Hành động</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>Đối tượng</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>Người thực hiện</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>IP</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>Thời gian</th>
+            <tr style={{ background: "#f9fafb" }}>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{  }}>Hành động</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{  }}>Đối tượng</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{  }}>Người thực hiện</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{  }}>IP</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{  }}>Thời gian</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="text-center py-12" style={{ color: "rgba(255,255,255,0.25)" }}>
+              <tr><td colSpan={5} className="text-center py-12" style={{  }}>
                 <RefreshCw size={20} className="animate-spin mx-auto mb-2" />
                 <p className="text-xs">Đang tải...</p>
               </td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-12" style={{ color: "rgba(255,255,255,0.25)" }}>
+              <tr><td colSpan={5} className="text-center py-12" style={{  }}>
                 <Shield size={32} className="mx-auto mb-3 opacity-30" />
                 <p className="text-sm">Chưa có nhật ký nào</p>
               </td></tr>
@@ -232,7 +232,7 @@ export default function AuditLogClient() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    <span className="text-xs" style={{ color: "#4b5563" }}>
                       {log.entityName ?? log.entityType ?? "—"}
                     </span>
                   </td>
@@ -242,16 +242,16 @@ export default function AuditLogClient() {
                         style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C" }}>
                         {log.actorName.charAt(0).toUpperCase()}
                       </div>
-                      <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{log.actorName}</span>
+                      <span className="text-xs" style={{ color: "#4b5563" }}>{log.actorName}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs font-mono" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    <span className="text-xs font-mono" style={{ color: "#9ca3af" }}>
                       {log.ipAddress ?? "—"}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                    <span className="text-xs" style={{  }}>
                       {formatTime(log.createdAt)}
                     </span>
                   </td>
@@ -265,21 +265,21 @@ export default function AuditLogClient() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+          <p className="text-xs" style={{ color: "#9ca3af" }}>
             Hiển thị {page * LIMIT + 1}–{Math.min((page + 1) * LIMIT, total)} / {total} bản ghi
           </p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
               className="p-1.5 rounded-lg transition-all disabled:opacity-30"
-              style={{ color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              style={{ color: "#6b7280", border: "1px solid #e5e7eb" }}>
               <ChevronLeft size={14} />
             </button>
-            <span className="text-xs px-3" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <span className="text-xs px-3" style={{ color: "#6b7280" }}>
               {page + 1} / {totalPages}
             </span>
             <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
               className="p-1.5 rounded-lg transition-all disabled:opacity-30"
-              style={{ color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              style={{ color: "#6b7280", border: "1px solid #e5e7eb" }}>
               <ChevronRight size={14} />
             </button>
           </div>
@@ -292,12 +292,12 @@ export default function AuditLogClient() {
           style={{ background: "rgba(0,0,0,0.7)" }}
           onClick={() => setSelectedLog(null)}>
           <div className="w-full max-w-lg rounded-2xl p-6 space-y-4"
-            style={{ background: "#ffffff", border: "1px solid rgba(255,255,255,0.1)" }}
+            style={{ background: "#ffffff", border: "1px solid #d1d5db" }}
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white">Chi tiết nhật ký</h3>
+              <h3 className="text-sm font-bold text-gray-900">Chi tiết nhật ký</h3>
               <button onClick={() => setSelectedLog(null)} className="text-xs px-2 py-1 rounded"
-                style={{ color: "rgba(255,255,255,0.4)" }}>✕</button>
+                style={{ color: "#6b7280" }}>✕</button>
             </div>
             <div className="space-y-2 text-xs">
               {[
@@ -310,15 +310,15 @@ export default function AuditLogClient() {
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-4 py-1.5"
                   style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span style={{ color: "rgba(255,255,255,0.35)" }}>{k}</span>
-                  <span className="font-medium text-right" style={{ color: "rgba(255,255,255,0.7)" }}>{v}</span>
+                  <span style={{  }}>{k}</span>
+                  <span className="font-medium text-right" style={{ color: "#374151" }}>{v}</span>
                 </div>
               ))}
               {selectedLog.changes && (
                 <div className="mt-3">
-                  <p className="font-semibold mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>Thay đổi</p>
+                  <p className="font-semibold mb-2" style={{ color: "#6b7280" }}>Thay đổi</p>
                   <pre className="text-[10px] p-3 rounded-lg overflow-auto max-h-40"
-                    style={{ background: "rgba(255,255,255,0.04)", color: "#C9A84C" }}>
+                    style={{ background: "#f9fafb", color: "#C9A84C" }}>
                     {JSON.stringify(selectedLog.changes, null, 2)}
                   </pre>
                 </div>

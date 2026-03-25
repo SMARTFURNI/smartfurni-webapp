@@ -54,11 +54,11 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
     <div className="space-y-6">
       {/* Import section */}
       <div className="p-5 rounded-2xl space-y-4"
-        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-white">Nhập dữ liệu từ CSV</h3>
-            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <h3 className="text-sm font-bold text-gray-900">Nhập dữ liệu từ CSV</h3>
+            <p className="text-xs mt-0.5" style={{  }}>
               Nhập hàng loạt khách hàng từ file Excel/CSV
             </p>
           </div>
@@ -77,8 +77,8 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
           onClick={() => fileRef.current?.click()}
           className="cursor-pointer rounded-xl p-8 text-center transition-all"
           style={{
-            border: `2px dashed ${dragOver ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.1)"}`,
-            background: dragOver ? "rgba(201,168,76,0.05)" : "rgba(255,255,255,0.02)",
+            border: `2px dashed ${dragOver ? "rgba(201,168,76,0.5)" : "#e5e7eb"}`,
+            background: dragOver ? "rgba(201,168,76,0.05)" : "#f9fafb",
           }}>
           <input ref={fileRef} type="file" accept=".csv" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
@@ -89,19 +89,19 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
                 <FileText size={18} style={{ color: "#22c55e" }} />
               </div>
               <div className="text-left">
-                <p className="text-sm font-semibold text-white">{selectedFile.name}</p>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <p className="text-sm font-semibold text-gray-900">{selectedFile.name}</p>
+                <p className="text-xs" style={{  }}>
                   {(selectedFile.size / 1024).toFixed(1)} KB
                 </p>
               </div>
             </div>
           ) : (
             <>
-              <Upload size={28} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.2)" }} />
-              <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <Upload size={28} className="mx-auto mb-3" style={{ color: "#9ca3af" }} />
+              <p className="text-sm" style={{ color: "#6b7280" }}>
                 Kéo thả file CSV vào đây hoặc <span style={{ color: "#C9A84C" }}>click để chọn</span>
               </p>
-              <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+              <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>
                 Hỗ trợ: .csv (UTF-8 với BOM)
               </p>
             </>
@@ -133,7 +133,7 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
                   {importResult.errors.length} dòng có lỗi:
                 </p>
                 {importResult.errors.slice(0, 5).map((e, i) => (
-                  <p key={i} className="text-xs pl-3" style={{ color: "rgba(255,255,255,0.4)" }}>• {e}</p>
+                  <p key={i} className="text-xs pl-3" style={{ color: "#6b7280" }}>• {e}</p>
                 ))}
               </div>
             )}
@@ -143,10 +143,10 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
 
       {/* Export section */}
       <div className="p-5 rounded-2xl space-y-4"
-        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
         <div>
-          <h3 className="text-sm font-bold text-white">Xuất dữ liệu</h3>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <h3 className="text-sm font-bold text-gray-900">Xuất dữ liệu</h3>
+          <p className="text-xs mt-0.5" style={{  }}>
             Tải xuống toàn bộ dữ liệu CRM để backup hoặc phân tích
           </p>
         </div>
@@ -158,12 +158,12 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
           ].map(item => (
             <button key={item.format} onClick={() => exportLeads(item.format)}
               className="p-4 rounded-xl text-left transition-all hover:bg-white/5 group"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <item.icon size={16} style={{ color: "#C9A84C" }} />
-                <span className="text-sm font-semibold text-white">{item.label}</span>
+                <span className="text-sm font-semibold text-gray-900">{item.label}</span>
               </div>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{item.desc}</p>
+              <p className="text-xs" style={{  }}>{item.desc}</p>
               <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: "#C9A84C" }}>
                 <Download size={11} /> Tải xuống
               </div>
@@ -176,11 +176,11 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
       <div className="p-4 rounded-xl"
         style={{ background: "rgba(96,165,250,0.04)", border: "1px solid rgba(96,165,250,0.12)" }}>
         <h4 className="text-xs font-semibold mb-2" style={{ color: "#60a5fa" }}>Hướng dẫn định dạng CSV</h4>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-          <div><strong style={{ color: "rgba(255,255,255,0.6)" }}>Loại KH:</strong> Kiến trúc sư | Chủ đầu tư CHDV | Đại lý</div>
-          <div><strong style={{ color: "rgba(255,255,255,0.6)" }}>Giai đoạn:</strong> Khách hàng mới | Đã gửi Profile | Đã khảo sát | Đã báo giá | Thương thảo | Đã chốt | Thất bại</div>
-          <div><strong style={{ color: "rgba(255,255,255,0.6)" }}>Nguồn:</strong> Facebook Ads | Google Ads | KTS giới thiệu | Zalo | Triển lãm</div>
-          <div><strong style={{ color: "rgba(255,255,255,0.6)" }}>Giá trị:</strong> Số nguyên (VND), không có dấu phẩy</div>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs" style={{ color: "#6b7280" }}>
+          <div><strong style={{ color: "#4b5563" }}>Loại KH:</strong> Kiến trúc sư | Chủ đầu tư CHDV | Đại lý</div>
+          <div><strong style={{ color: "#4b5563" }}>Giai đoạn:</strong> Khách hàng mới | Đã gửi Profile | Đã khảo sát | Đã báo giá | Thương thảo | Đã chốt | Thất bại</div>
+          <div><strong style={{ color: "#4b5563" }}>Nguồn:</strong> Facebook Ads | Google Ads | KTS giới thiệu | Zalo | Triển lãm</div>
+          <div><strong style={{ color: "#4b5563" }}>Giá trị:</strong> Số nguyên (VND), không có dấu phẩy</div>
         </div>
       </div>
     </div>
@@ -223,8 +223,8 @@ function ZaloOATab() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-bold text-white">Tích hợp Zalo Official Account</h3>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <h3 className="text-sm font-bold text-gray-900">Tích hợp Zalo Official Account</h3>
+          <p className="text-xs mt-0.5" style={{  }}>
             Gửi tin nhắn chăm sóc KH qua Zalo OA
           </p>
         </div>
@@ -246,22 +246,22 @@ function ZaloOATab() {
 
       {/* Enable toggle */}
       <div className="flex items-center justify-between p-4 rounded-xl"
-        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: config.enabled ? "rgba(0,147,255,0.1)" : "rgba(255,255,255,0.04)" }}>
-            <MessageSquare size={18} style={{ color: config.enabled ? "#0093FF" : "rgba(255,255,255,0.2)" }} />
+            style={{ background: config.enabled ? "rgba(0,147,255,0.1)" : "#f9fafb" }}>
+            <MessageSquare size={18} style={{ color: config.enabled ? "#0093FF" : "#9ca3af" }} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">Kích hoạt Zalo OA</p>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <p className="text-sm font-semibold text-gray-900">Kích hoạt Zalo OA</p>
+            <p className="text-xs" style={{  }}>
               {config.enabled ? "Đang hoạt động" : "Chưa kích hoạt"}
             </p>
           </div>
         </div>
         <button onClick={() => setConfig(c => ({ ...c, enabled: !c.enabled }))}
           className="relative w-11 h-6 rounded-full transition-all"
-          style={{ background: config.enabled ? "#0093FF" : "rgba(255,255,255,0.1)" }}>
+          style={{ background: config.enabled ? "#0093FF" : "#e5e7eb" }}>
           <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all"
             style={{ left: config.enabled ? "calc(100% - 22px)" : "2px" }} />
         </button>
@@ -269,8 +269,8 @@ function ZaloOATab() {
 
       {/* Credentials */}
       <div className="p-5 rounded-2xl space-y-4"
-        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.3)" }}>
+        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#9ca3af" }}>
           Thông tin xác thực
         </h4>
         <div className="grid grid-cols-2 gap-4">
@@ -279,41 +279,41 @@ function ZaloOATab() {
             { key: "appId", label: "App ID", placeholder: "Từ Zalo Developers", icon: Key },
           ].map(f => (
             <div key={f.key}>
-              <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>{f.label}</label>
+              <label className="block text-xs mb-1.5" style={{  }}>{f.label}</label>
               <div className="relative">
-                <f.icon size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.2)" }} />
+                <f.icon size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#9ca3af" }} />
                 <input value={config[f.key as keyof typeof config] as string}
                   onChange={e => setConfig(c => ({ ...c, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   className="w-full pl-8 pr-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                  style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
               </div>
             </div>
           ))}
           <div>
-            <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>App Secret</label>
+            <label className="block text-xs mb-1.5" style={{  }}>App Secret</label>
             <div className="relative">
               <input value={config.appSecret} type={showSecret ? "text" : "password"}
                 onChange={e => setConfig(c => ({ ...c, appSecret: e.target.value }))}
                 placeholder="••••••••••••••••"
                 className="w-full pl-3 pr-9 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
               <button onClick={() => setShowSecret(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2"
-                style={{ color: "rgba(255,255,255,0.3)" }}>
+                style={{ color: "#9ca3af" }}>
                 {showSecret ? <EyeOff size={13} /> : <Eye size={13} />}
               </button>
             </div>
           </div>
           <div>
-            <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Access Token</label>
+            <label className="block text-xs mb-1.5" style={{  }}>Access Token</label>
             <div className="relative">
               <input value={config.accessToken} type={showToken ? "text" : "password"}
                 onChange={e => setConfig(c => ({ ...c, accessToken: e.target.value }))}
                 placeholder="••••••••••••••••"
                 className="w-full pl-3 pr-9 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
               <button onClick={() => setShowToken(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2"
-                style={{ color: "rgba(255,255,255,0.3)" }}>
+                style={{ color: "#9ca3af" }}>
                 {showToken ? <EyeOff size={13} /> : <Eye size={13} />}
               </button>
             </div>
@@ -323,8 +323,8 @@ function ZaloOATab() {
 
       {/* Auto features */}
       <div className="p-5 rounded-2xl space-y-4"
-        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.3)" }}>
+        style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#9ca3af" }}>
           Tính năng tự động
         </h4>
         {[
@@ -334,12 +334,12 @@ function ZaloOATab() {
         ].map(item => (
           <div key={item.key} className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white">{item.label}</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{item.desc}</p>
+              <p className="text-sm text-gray-900">{item.label}</p>
+              <p className="text-xs" style={{ color: "#9ca3af" }}>{item.desc}</p>
             </div>
             <button onClick={() => setConfig(c => ({ ...c, [item.key]: !c[item.key as keyof typeof c] }))}
               className="relative w-10 h-5 rounded-full transition-all flex-shrink-0"
-              style={{ background: config[item.key as keyof typeof config] ? "#C9A84C" : "rgba(255,255,255,0.1)" }}>
+              style={{ background: config[item.key as keyof typeof config] ? "#C9A84C" : "#e5e7eb" }}>
               <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all"
                 style={{ left: config[item.key as keyof typeof config] ? "calc(100% - 18px)" : "2px" }} />
             </button>
@@ -348,12 +348,12 @@ function ZaloOATab() {
 
         {config.autoReply && (
           <div>
-            <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Nội dung tin nhắn tự động</label>
+            <label className="block text-xs mb-1.5" style={{  }}>Nội dung tin nhắn tự động</label>
             <textarea value={config.autoReplyMessage}
               onChange={e => setConfig(c => ({ ...c, autoReplyMessage: e.target.value }))}
               rows={3}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
           </div>
         )}
       </div>
@@ -365,12 +365,12 @@ function ZaloOATab() {
           <Zap size={13} style={{ color: "#0093FF" }} />
           <span className="text-xs font-semibold" style={{ color: "#0093FF" }}>Hướng dẫn lấy credentials</span>
         </div>
-        <ol className="text-xs space-y-1 pl-4 list-decimal" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <ol className="text-xs space-y-1 pl-4 list-decimal" style={{ color: "#6b7280" }}>
           <li>Đăng ký tài khoản tại <strong style={{ color: "#0093FF" }}>developers.zalo.me</strong></li>
-          <li>Tạo ứng dụng mới → chọn loại <strong style={{ color: "rgba(255,255,255,0.6)" }}>Official Account</strong></li>
-          <li>Vào mục <strong style={{ color: "rgba(255,255,255,0.6)" }}>Cài đặt → Thông tin ứng dụng</strong> để lấy App ID và App Secret</li>
-          <li>Lấy Access Token tại <strong style={{ color: "rgba(255,255,255,0.6)" }}>Công cụ → Tạo Access Token</strong></li>
-          <li>Cấu hình Webhook URL: <code className="text-[10px] px-1 rounded" style={{ background: "rgba(255,255,255,0.08)", color: "#C9A84C" }}>/api/crm/webhook/zalo</code></li>
+          <li>Tạo ứng dụng mới → chọn loại <strong style={{ color: "#4b5563" }}>Official Account</strong></li>
+          <li>Vào mục <strong style={{ color: "#4b5563" }}>Cài đặt → Thông tin ứng dụng</strong> để lấy App ID và App Secret</li>
+          <li>Lấy Access Token tại <strong style={{ color: "#4b5563" }}>Công cụ → Tạo Access Token</strong></li>
+          <li>Cấu hình Webhook URL: <code className="text-[10px] px-1 rounded" style={{ background: "#f3f4f6", color: "#C9A84C" }}>/api/crm/webhook/zalo</code></li>
         </ol>
       </div>
     </div>
@@ -387,13 +387,13 @@ export default function ImportExportClient() {
   return (
     <div className="space-y-5" style={{ color: "#fff" }}>
       <div>
-        <h1 className="text-lg font-bold text-white">Dữ liệu & Tích hợp</h1>
-        <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <h1 className="text-lg font-bold text-gray-900">Dữ liệu & Tích hợp</h1>
+        <p className="text-xs mt-0.5" style={{  }}>
           Import/Export dữ liệu và kết nối kênh bên thứ 3
         </p>
       </div>
 
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
         {[
           { id: "import" as TabId, label: "Import / Export CSV", icon: Table },
           { id: "zalo" as TabId, label: "Zalo Official Account", icon: MessageSquare },
@@ -402,7 +402,7 @@ export default function ImportExportClient() {
             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
             style={{
               background: tab === t.id ? "rgba(201,168,76,0.12)" : "transparent",
-              color: tab === t.id ? "#C9A84C" : "rgba(255,255,255,0.4)",
+              color: tab === t.id ? "#C9A84C" : "#6b7280",
             }}>
             <t.icon size={14} /> {t.label}
           </button>

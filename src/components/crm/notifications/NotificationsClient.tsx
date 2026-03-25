@@ -117,7 +117,7 @@ export default function NotificationsClient() {
               <Bell size={20} className="text-[#C9A84C]" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-white">Nhắc nhở tự động</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Nhắc nhở tự động</h1>
               <p className="text-sm text-gray-500">Gửi Zalo/SMS tự động theo sự kiện CRM</p>
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function NotificationsClient() {
             { id: "logs", label: "Lịch sử", icon: <Clock size={13} /> },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as typeof tab)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${tab === t.id ? "bg-[#C9A84C] text-black font-medium" : "text-gray-500 hover:text-white"}`}>
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${tab === t.id ? "bg-[#C9A84C] text-black font-medium" : "text-gray-500 hover:text-gray-900"}`}>
               {t.icon} {t.label}
             </button>
           ))}
@@ -166,7 +166,7 @@ export default function NotificationsClient() {
           <div className="space-y-3">
             <div className="flex justify-end">
               <button onClick={() => setShowAddRule(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 text-gray-500 hover:text-white border border-gray-200 text-sm transition-colors">
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 text-gray-500 hover:text-gray-900 border border-gray-200 text-sm transition-colors">
                 <Plus size={14} /> Thêm quy tắc
               </button>
             </div>
@@ -183,7 +183,7 @@ export default function NotificationsClient() {
                         <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${rule.isActive ? "translate-x-5" : "translate-x-0.5"}`} />
                       </button>
                       <div>
-                        <div className="text-sm font-medium text-white mb-1">{rule.name}</div>
+                        <div className="text-sm font-medium text-gray-900 mb-1">{rule.name}</div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">
                             {TRIGGER_LABELS[rule.trigger]}
@@ -224,7 +224,7 @@ export default function NotificationsClient() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-white">{log.leadName}</span>
+                      <span className="text-sm font-medium text-gray-900">{log.leadName}</span>
                       <span className={`px-2 py-0.5 rounded-full text-xs border ${CHANNEL_LABELS[log.channel]?.color || "text-gray-500 bg-gray-500/10 border-gray-500/20"}`}>
                         {CHANNEL_LABELS[log.channel]?.label || log.channel}
                       </span>
@@ -255,8 +255,8 @@ export default function NotificationsClient() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Thêm quy tắc nhắc nhở</h2>
-              <button onClick={() => setShowAddRule(false)} className="text-gray-500 hover:text-white">✕</button>
+              <h2 className="text-lg font-semibold text-gray-900">Thêm quy tắc nhắc nhở</h2>
+              <button onClick={() => setShowAddRule(false)} className="text-gray-500 hover:text-gray-900">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div>

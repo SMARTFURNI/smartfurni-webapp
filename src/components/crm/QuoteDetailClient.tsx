@@ -48,7 +48,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead }: Props) 
           <div className="flex items-center gap-2">
             {quote.status === "draft" && (
               <button onClick={() => updateStatus("sent")} disabled={updating}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-gray-900"
                 style={{ background: "#3b82f6" }}>
                 <Send size={14} /> Đánh dấu đã gửi
               </button>
@@ -56,7 +56,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead }: Props) 
             {quote.status === "sent" && (
               <>
                 <button onClick={() => updateStatus("accepted")} disabled={updating}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-gray-900"
                   style={{ background: "#22c55e" }}>
                   <Check size={14} /> Chấp nhận
                 </button>

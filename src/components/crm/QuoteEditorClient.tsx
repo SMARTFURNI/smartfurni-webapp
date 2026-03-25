@@ -127,7 +127,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-900">Sản phẩm</h2>
               <button onClick={() => setShowProductPicker(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-gray-900"
                 style={{ background: "#C9A84C" }}>
                 <Plus size={14} /> Thêm sản phẩm
               </button>
@@ -239,7 +239,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
               Hủy
             </button>
             <button onClick={submit} disabled={loading || !selectedLead || items.length === 0}
-              className="flex-1 py-3 text-sm font-bold rounded-xl text-white flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-3 text-sm font-bold rounded-xl text-gray-900 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: "#C9A84C" }}>
               {loading && <Loader2 size={15} className="animate-spin" />}
               {loading ? "Đang tạo..." : "Tạo báo giá"}

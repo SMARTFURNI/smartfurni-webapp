@@ -39,7 +39,7 @@ function PermissionMatrixTab() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center h-40" style={{ color: "rgba(255,255,255,0.3)" }}>
+    <div className="flex items-center justify-center h-40" style={{ color: "#9ca3af" }}>
       <RefreshCw size={18} className="animate-spin mr-2" /> Đang tải...
     </div>
   );
@@ -47,7 +47,7 @@ function PermissionMatrixTab() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <p className="text-xs" style={{  }}>
           Cấu hình quyền hạn cho từng cấp bậc nhân viên
         </p>
         <div className="flex items-center gap-3">
@@ -66,12 +66,12 @@ function PermissionMatrixTab() {
         </div>
       </div>
 
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.04)" }}>
-                <th className="px-4 py-3 text-left text-xs font-semibold w-48" style={{ color: "rgba(255,255,255,0.35)" }}>Quyền hạn</th>
+              <tr style={{ background: "#f9fafb" }}>
+                <th className="px-4 py-3 text-left text-xs font-semibold w-48" style={{  }}>Quyền hạn</th>
                 {matrix.map(ps => (
                   <th key={ps.role} className="px-4 py-3 text-center text-xs font-semibold">
                     <div className="flex flex-col items-center gap-1">
@@ -87,17 +87,17 @@ function PermissionMatrixTab() {
             <tbody>
               {PERMISSION_GROUPS.map(group => (
                 <>
-                  <tr key={group.label} style={{ background: "rgba(255,255,255,0.02)" }}>
+                  <tr key={group.label} style={{ background: "#f9fafb" }}>
                     <td colSpan={matrix.length + 1} className="px-4 py-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider"
-                        style={{ color: "rgba(255,255,255,0.25)" }}>{group.label}</span>
+                        style={{  }}>{group.label}</span>
                     </td>
                   </tr>
                   {group.keys.map(perm => (
                     <tr key={perm} className="transition-all hover:bg-white/2"
                       style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                       <td className="px-4 py-2.5">
-                        <span className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+                        <span className="text-xs" style={{  }}>
                           {PERMISSION_LABELS[perm]}
                         </span>
                       </td>
@@ -108,14 +108,14 @@ function PermissionMatrixTab() {
                             disabled={ps.role === "admin"}
                             className="w-6 h-6 rounded-lg flex items-center justify-center mx-auto transition-all"
                             style={{
-                              background: ps.permissions[perm] ? `${ps.color}20` : "rgba(255,255,255,0.04)",
-                              border: `1px solid ${ps.permissions[perm] ? `${ps.color}40` : "rgba(255,255,255,0.08)"}`,
+                              background: ps.permissions[perm] ? `${ps.color}20` : "#f9fafb",
+                              border: `1px solid ${ps.permissions[perm] ? `${ps.color}40` : "#e5e7eb"}`,
                               cursor: ps.role === "admin" ? "default" : "pointer",
                             }}>
                             {ps.permissions[perm] ? (
                               <CheckCircle2 size={12} style={{ color: ps.color }} />
                             ) : (
-                              <div className="w-2 h-2 rounded-full" style={{ background: "rgba(255,255,255,0.1)" }} />
+                              <div className="w-2 h-2 rounded-full" style={{ background: "#e5e7eb" }} />
                             )}
                           </button>
                         </td>
@@ -132,7 +132,7 @@ function PermissionMatrixTab() {
       <div className="p-3 rounded-xl flex items-start gap-2"
         style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.15)" }}>
         <Lock size={13} className="mt-0.5 flex-shrink-0" style={{ color: "#C9A84C" }} />
-        <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p className="text-xs" style={{ color: "#6b7280" }}>
           Quyền của <strong style={{ color: "#C9A84C" }}>Quản trị viên</strong> không thể thay đổi — luôn có toàn quyền hệ thống.
           Các thay đổi phân quyền sẽ áp dụng cho nhân viên khi đăng nhập lần tiếp theo.
         </p>
@@ -216,7 +216,7 @@ function ApiKeysTab() {
             <span className="text-xs font-semibold" style={{ color: "#22c55e" }}>
               ✓ API Key đã tạo — Sao chép ngay, sẽ không hiển thị lại!
             </span>
-            <button onClick={() => setRevealedKey(null)} className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>✕</button>
+            <button onClick={() => setRevealedKey(null)} className="text-xs" style={{ color: "#9ca3af" }}>✕</button>
           </div>
           <div className="flex items-center gap-2">
             <code className="flex-1 text-xs px-3 py-2 rounded-lg font-mono break-all"
@@ -225,7 +225,7 @@ function ApiKeysTab() {
             </code>
             <button onClick={copyKey}
               className="p-2 rounded-lg transition-all flex-shrink-0"
-              style={{ background: copied ? "rgba(34,197,94,0.2)" : "rgba(255,255,255,0.08)", color: copied ? "#22c55e" : "rgba(255,255,255,0.4)" }}>
+              style={{ background: copied ? "rgba(34,197,94,0.2)" : "#e5e7eb", color: copied ? "#22c55e" : "#6b7280" }}>
               {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
             </button>
           </div>
@@ -233,7 +233,7 @@ function ApiKeysTab() {
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <p className="text-xs" style={{  }}>
           {keys.length} API key — dùng cho Make.com, n8n, tích hợp bên thứ 3
         </p>
         <button onClick={() => setShowCreate(v => !v)}
@@ -246,25 +246,25 @@ function ApiKeysTab() {
       {/* Create form */}
       {showCreate && (
         <div className="p-4 rounded-xl space-y-4"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.2)" }}>
-          <h3 className="text-sm font-semibold text-white">Tạo API Key mới</h3>
+          style={{ background: "#f9fafb", border: "1px solid rgba(201,168,76,0.2)" }}>
+          <h3 className="text-sm font-semibold text-gray-900">Tạo API Key mới</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Tên key</label>
+              <label className="block text-xs mb-1.5" style={{  }}>Tên key</label>
               <input value={newKeyName} onChange={e => setNewKeyName(e.target.value)}
                 placeholder="VD: Make.com Integration"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
             </div>
             <div>
-              <label className="block text-xs mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Hết hạn (để trống = không hết hạn)</label>
+              <label className="block text-xs mb-1.5" style={{  }}>Hết hạn (để trống = không hết hạn)</label>
               <input type="date" value={newKeyExpiry} onChange={e => setNewKeyExpiry(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
             </div>
           </div>
           <div>
-            <label className="block text-xs mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>Quyền truy cập</label>
+            <label className="block text-xs mb-2" style={{  }}>Quyền truy cập</label>
             <div className="flex flex-wrap gap-2">
               {ALL_PERMISSIONS.map(p => (
                 <button key={p.key}
@@ -273,8 +273,8 @@ function ApiKeysTab() {
                   )}
                   className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all"
                   style={{
-                    background: newKeyPerms.includes(p.key) ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.04)",
-                    color: newKeyPerms.includes(p.key) ? "#C9A84C" : "rgba(255,255,255,0.35)",
+                    background: newKeyPerms.includes(p.key) ? "rgba(201,168,76,0.15)" : "#f9fafb",
+                    color: newKeyPerms.includes(p.key) ? "#C9A84C" : "#6b7280",
                     border: `1px solid ${newKeyPerms.includes(p.key) ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.07)"}`,
                   }}>
                   {p.label}
@@ -284,7 +284,7 @@ function ApiKeysTab() {
           </div>
           <div className="flex justify-end gap-2">
             <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-lg text-sm"
-              style={{ color: "rgba(255,255,255,0.4)" }}>Hủy</button>
+              style={{ color: "#6b7280" }}>Hủy</button>
             <button onClick={create} disabled={creating || !newKeyName.trim()}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)", color: "#000" }}>
@@ -297,11 +297,11 @@ function ApiKeysTab() {
 
       {/* Keys list */}
       {loading ? (
-        <div className="text-center py-8" style={{ color: "rgba(255,255,255,0.3)" }}>
+        <div className="text-center py-8" style={{ color: "#9ca3af" }}>
           <RefreshCw size={18} className="animate-spin mx-auto" />
         </div>
       ) : keys.length === 0 ? (
-        <div className="text-center py-12" style={{ color: "rgba(255,255,255,0.25)" }}>
+        <div className="text-center py-12" style={{  }}>
           <Key size={32} className="mx-auto mb-3 opacity-30" />
           <p className="text-sm">Chưa có API Key nào</p>
         </div>
@@ -310,18 +310,18 @@ function ApiKeysTab() {
           {keys.map(k => (
             <div key={k.id} className="p-4 rounded-xl"
               style={{
-                background: k.enabled ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.01)",
-                border: `1px solid ${k.enabled ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)"}`,
+                background: k.enabled ? "#f9fafb" : "rgba(255,255,255,0.01)",
+                border: `1px solid ${k.enabled ? "rgba(255,255,255,0.07)" : "#f9fafb"}`,
               }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                    style={{ background: k.enabled ? "rgba(201,168,76,0.1)" : "rgba(255,255,255,0.04)" }}>
-                    <Key size={14} style={{ color: k.enabled ? "#C9A84C" : "rgba(255,255,255,0.2)" }} />
+                    style={{ background: k.enabled ? "rgba(201,168,76,0.1)" : "#f9fafb" }}>
+                    <Key size={14} style={{ color: k.enabled ? "#C9A84C" : "#9ca3af" }} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold" style={{ color: k.enabled ? "#fff" : "rgba(255,255,255,0.3)" }}>
+                      <span className="text-sm font-semibold" style={{ color: k.enabled ? "#fff" : "#9ca3af" }}>
                         {k.name}
                       </span>
                       {!k.enabled && (
@@ -330,11 +330,11 @@ function ApiKeysTab() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <code className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.3)" }}>
+                      <code className="text-[10px] font-mono" style={{ color: "#9ca3af" }}>
                         {k.keyPrefix}••••••••••••••••
                       </code>
                       {k.lastUsedAt && (
-                        <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>
+                        <span className="text-[10px]" style={{ color: "#9ca3af" }}>
                           Dùng lần cuối: {new Date(k.lastUsedAt).toLocaleDateString("vi-VN")}
                         </span>
                       )}
@@ -351,7 +351,7 @@ function ApiKeysTab() {
                   )}
                   <button onClick={() => deleteKey(k.id)}
                     className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-                    style={{ color: "rgba(255,255,255,0.2)" }}>
+                    style={{ color: "#9ca3af" }}>
                     <Trash2 size={13} />
                   </button>
                 </div>
@@ -387,19 +387,19 @@ export default function PermissionsClient() {
   return (
     <div className="space-y-5" style={{ color: "#fff" }}>
       <div>
-        <h1 className="text-lg font-bold text-white">Bảo mật & Truy cập</h1>
-        <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <h1 className="text-lg font-bold text-gray-900">Bảo mật & Truy cập</h1>
+        <p className="text-xs mt-0.5" style={{  }}>
           Phân quyền chi tiết và quản lý API Keys tích hợp
         </p>
       </div>
 
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid rgba(255,255,255,0.07)" }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
             style={{
               background: tab === t.id ? "rgba(201,168,76,0.12)" : "transparent",
-              color: tab === t.id ? "#C9A84C" : "rgba(255,255,255,0.4)",
+              color: tab === t.id ? "#C9A84C" : "#6b7280",
             }}>
             <t.icon size={14} /> {t.label}
           </button>

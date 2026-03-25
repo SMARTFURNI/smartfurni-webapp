@@ -24,7 +24,7 @@ export default function CrmProductsClient({ initialProducts }: Props) {
             <p className="text-xs text-gray-500">{products.length} sản phẩm</p>
           </div>
           <button onClick={() => setShowAddModal(true)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-900"
             style={{ background: "#C9A84C" }}>
             <Plus size={16} />
           </button>
@@ -151,7 +151,7 @@ function ProductDetail({ product: p, onEdit, onCreateQuote }: { product: CrmProd
               <Edit3 size={14} /> Sửa
             </button>
             <Link href={`/crm/quotes/new`}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg text-white transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg text-gray-900 transition-colors"
               style={{ background: "#C9A84C" }}>
               <Tag size={14} /> Tạo báo giá
             </Link>
@@ -319,7 +319,7 @@ function ProductModal({ product, onClose, onSaved }: { product: CrmProduct | nul
             <button type="button" onClick={onClose}
               className="flex-1 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Hủy</button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-lg text-white flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 text-sm font-semibold rounded-lg text-gray-900 flex items-center justify-center gap-2"
               style={{ background: "#C9A84C" }}>
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
               {loading ? "Đang lưu..." : "Lưu"}

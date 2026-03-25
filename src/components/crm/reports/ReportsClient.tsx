@@ -121,25 +121,25 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
     <div className="flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
       <div className="flex-shrink-0 px-6 py-4"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "#ffffff" }}>
+        style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-lg font-bold text-white flex items-center gap-2">
+            <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <BarChart3 size={20} style={{ color: "#C9A84C" }} />
               Báo cáo & Phân tích
             </h1>
-            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
               Tổng quan hiệu suất kinh doanh B2B SmartFurni
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
               {(["month","quarter","year"] as const).map(p => (
                 <button key={p} onClick={() => setPeriod(p)}
                   className="px-3 py-1.5 text-xs font-semibold transition-colors"
                   style={{
                     background: period === p ? "rgba(201,168,76,0.15)" : "transparent",
-                    color: period === p ? "#C9A84C" : "rgba(255,255,255,0.35)",
+                    color: period === p ? "#C9A84C" : "#6b7280",
                   }}>
                   {p === "month" ? "Tháng" : p === "quarter" ? "Quý" : "Năm"}
                 </button>
@@ -157,7 +157,7 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
             { label: "Tỷ lệ chốt", value: `${metrics.winRate}%`, sub: `Forecast: ${formatVND(metrics.forecastValue)}đ`, icon: Target, color: "#a78bfa", trend: metrics.winRate >= 30 ? "up" : "down" },
           ].map((kpi, i) => (
             <div key={i} className="rounded-2xl p-4"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
               <div className="flex items-start justify-between mb-2">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                   style={{ background: `${kpi.color}15` }}>
@@ -168,22 +168,22 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                   {kpi.trend === "up" ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                 </div>
               </div>
-              <div className="text-xl font-bold text-white leading-tight">{kpi.value}</div>
-              <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>{kpi.label}</div>
-              <div className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.25)" }}>{kpi.sub}</div>
+              <div className="text-xl font-bold text-gray-900 leading-tight">{kpi.value}</div>
+              <div className="text-[10px] mt-1 font-medium" style={{ color: "#374151" }}>{kpi.label}</div>
+              <div className="text-[10px] mt-0.5" style={{ color: "#9ca3af" }}>{kpi.sub}</div>
             </div>
           ))}
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 mt-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="flex gap-0 mt-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
           {([
             ["overview","Tổng quan"], ["pipeline","Pipeline"], ["sales","Hiệu suất Sales"],
             ["sources","Nguồn KH"], ["forecast","Dự báo"],
           ] as [ReportTab, string][]).map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)}
               className="px-4 py-2 text-sm font-semibold relative transition-colors"
-              style={{ color: tab === id ? "#C9A84C" : "rgba(255,255,255,0.35)" }}>
+              style={{ color: tab === id ? "#C9A84C" : "#6b7280" }}>
               {label}
               {tab === id && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "#C9A84C" }} />}
             </button>
@@ -207,18 +207,18 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                       <div className="w-full rounded-t-sm transition-all"
                         style={{ height: `${(metrics.monthlyWon[i] / maxMonthlyLeads) * 120}px`, background: "#22c55e", minHeight: metrics.monthlyWon[i] > 0 ? "2px" : "0" }} />
                     </div>
-                    <div className="text-[9px]" style={{ color: "rgba(255,255,255,0.3)" }}>{m}</div>
+                    <div className="text-[9px]" style={{ color: "#9ca3af" }}>{m}</div>
                   </div>
                 ))}
               </div>
               <div className="flex items-center gap-4 mt-3">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-2 rounded-sm" style={{ background: "rgba(96,165,250,0.3)" }} />
-                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Lead mới</span>
+                  <span className="text-[10px]" style={{ color: "#6b7280" }}>Lead mới</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-2 rounded-sm" style={{ background: "#22c55e" }} />
-                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Đã chốt</span>
+                  <span className="text-[10px]" style={{ color: "#6b7280" }}>Đã chốt</span>
                 </div>
               </div>
             </ChartCard>
@@ -233,16 +233,16 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                         height: `${(metrics.monthlyValue[i] / maxMonthlyValue) * 130}px`,
                         background: metrics.monthlyValue[i] > 0
                           ? "linear-gradient(to top, #C9A84C, #E2C97E)"
-                          : "rgba(255,255,255,0.05)",
+                          : "#f3f4f6",
                         minHeight: "2px",
                       }} />
-                    <div className="text-[9px]" style={{ color: "rgba(255,255,255,0.3)" }}>{m}</div>
+                    <div className="text-[9px]" style={{ color: "#9ca3af" }}>{m}</div>
                   </div>
                 ))}
               </div>
               {metrics.totalValue > 0 && (
-                <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Tổng doanh thu</span>
+                <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: "1px solid #e5e7eb" }}>
+                  <span className="text-xs" style={{ color: "#6b7280" }}>Tổng doanh thu</span>
                   <span className="text-sm font-bold" style={{ color: "#C9A84C" }}>{formatVND(metrics.totalValue)}đ</span>
                 </div>
               )}
@@ -265,17 +265,17 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-                          <span className="text-xs font-medium text-white">{label}</span>
+                          <span className="text-xs font-medium text-gray-900">{label}</span>
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
                             style={{ background: `${color}15`, color }}>
                             {count}
                           </span>
                         </div>
-                        <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        <div className="text-xs" style={{ color: "#6b7280" }}>
                           {formatVND(value)}đ · {pct}%
                         </div>
                       </div>
-                      <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      <div className="h-2 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
                         <div className="h-full rounded-full transition-all"
                           style={{ width: `${pct}%`, background: color }} />
                       </div>
@@ -296,7 +296,7 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                   const width = 100 - i * 10;
                   return (
                     <div key={stage} className="flex items-center gap-3">
-                      <div className="w-24 text-right text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      <div className="w-24 text-right text-[10px]" style={{ color: "#6b7280" }}>
                         {STAGE_LABELS[stage]}
                       </div>
                       <div className="flex-1 flex items-center gap-2">
@@ -304,7 +304,7 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                           style={{ background: `${color}20`, width: `${width}%`, maxWidth: "100%" }}>
                           <span className="text-xs font-bold" style={{ color }}>{count}</span>
                         </div>
-                        <span className="text-[10px] w-8 text-right" style={{ color: "rgba(255,255,255,0.3)" }}>{pct}%</span>
+                        <span className="text-[10px] w-8 text-right" style={{ color: "#9ca3af" }}>{pct}%</span>
                       </div>
                     </div>
                   );
@@ -321,21 +321,21 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
               <div className="space-y-3 mt-2">
                 {metrics.salesPerf.map((s, i) => (
                   <div key={s.name} className="rounded-xl p-3"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                     <div className="flex items-center gap-3">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                         style={{
-                          background: i === 0 ? "rgba(201,168,76,0.2)" : i === 1 ? "rgba(148,163,184,0.15)" : "rgba(255,255,255,0.05)",
+                          background: i === 0 ? "rgba(201,168,76,0.2)" : i === 1 ? "rgba(148,163,184,0.15)" : "#f3f4f6",
                           color: i === 0 ? "#C9A84C" : i === 1 ? "#94a3b8" : "rgba(255,255,255,0.4)",
                         }}>
                         {i + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-semibold text-white">{s.name}</span>
+                          <span className="text-sm font-semibold text-gray-900">{s.name}</span>
                           <span className="text-sm font-bold" style={{ color: "#C9A84C" }}>{formatVND(s.value)}đ</span>
                         </div>
-                        <div className="flex items-center gap-3 text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+                        <div className="flex items-center gap-3 text-[10px]" style={{ color: "#6b7280" }}>
                           <span>{s.leads} leads</span>
                           <span className="text-green-400">{s.won} chốt</span>
                           <span className="text-red-400">{s.lost} thất bại</span>
@@ -343,7 +343,7 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                             Win rate: {s.winRate}%
                           </span>
                         </div>
-                        <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                        <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
                           <div className="h-full rounded-full" style={{ width: `${s.winRate}%`, background: s.winRate >= 30 ? "#22c55e" : "#f97316" }} />
                         </div>
                       </div>
@@ -351,7 +351,7 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                   </div>
                 ))}
                 {metrics.salesPerf.length === 0 && (
-                  <div className="text-center py-8 text-sm" style={{ color: "rgba(255,255,255,0.25)" }}>
+                  <div className="text-center py-8 text-sm" style={{ color: "#9ca3af" }}>
                     Chưa có dữ liệu phân công sales
                   </div>
                 )}
@@ -366,9 +366,9 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                 { label: "Tổng thất bại", value: metrics.lost.toString(), color: "#f87171" },
               ].map((item, i) => (
                 <div key={i} className="rounded-2xl p-4 text-center"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                   <div className="text-xl font-bold mb-1" style={{ color: item.color }}>{item.value}</div>
-                  <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{item.label}</div>
+                  <div className="text-[10px]" style={{ color: "#6b7280" }}>{item.label}</div>
                 </div>
               ))}
             </div>
@@ -385,13 +385,13 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                   const maxCount = Math.max(...metrics.sources.map(s => s.count), 1);
                   return (
                     <div key={src.name} className="rounded-xl p-3"
-                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-                          <span className="text-sm font-semibold text-white">{src.name}</span>
+                          <span className="text-sm font-semibold text-gray-900">{src.name}</span>
                         </div>
-                        <div className="flex items-center gap-3 text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        <div className="flex items-center gap-3 text-[10px]" style={{ color: "#6b7280" }}>
                           <span>{src.count} leads</span>
                           <span className="font-semibold" style={{ color: src.winRate >= 30 ? "#22c55e" : "#f97316" }}>
                             {src.winRate}% win
@@ -399,7 +399,7 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                           <span style={{ color: "#C9A84C" }}>{formatVND(src.value)}đ</span>
                         </div>
                       </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
                         <div className="h-full rounded-full" style={{ width: `${(src.count / maxCount) * 100}%`, background: color }} />
                       </div>
                     </div>
@@ -416,14 +416,14 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                   const pct = metrics.total > 0 ? Math.round((src.count / metrics.total) * 100) : 0;
                   return (
                     <div key={src.name} className="flex items-center gap-2 p-2 rounded-lg"
-                      style={{ background: "rgba(255,255,255,0.02)" }}>
+                      style={{ background: "#f9fafb" }}>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
                         style={{ background: `${color}20`, color }}>
                         {pct}%
                       </div>
                       <div>
-                        <div className="text-xs font-medium text-white">{src.name}</div>
-                        <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>{src.count} leads</div>
+                        <div className="text-xs font-medium text-gray-900">{src.name}</div>
+                        <div className="text-[10px]" style={{ color: "#9ca3af" }}>{src.count} leads</div>
                       </div>
                     </div>
                   );
@@ -444,13 +444,13 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                 { label: "Tổng pipeline", value: formatVND(metrics.pipelineValue) + "đ", color: "#60a5fa", icon: Target },
               ].map((item, i) => (
                 <div key={i} className="rounded-2xl p-4"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
                     style={{ background: `${item.color}15` }}>
                     <item.icon size={18} style={{ color: item.color }} />
                   </div>
                   <div className="text-lg font-bold mb-1" style={{ color: item.color }}>{item.value}</div>
-                  <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{item.label}</div>
+                  <div className="text-[10px]" style={{ color: "#6b7280" }}>{item.label}</div>
                 </div>
               ))}
             </div>
@@ -470,19 +470,19 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                   return (
                     <div key={stage} className="flex items-center gap-3">
                       <div className="w-28 text-right">
-                        <div className="text-xs font-medium text-white">{STAGE_LABELS[stage]}</div>
-                        <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>Xác suất {prob}%</div>
+                        <div className="text-xs font-medium text-gray-900">{STAGE_LABELS[stage]}</div>
+                        <div className="text-[10px]" style={{ color: "#9ca3af" }}>Xác suất {prob}%</div>
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                          <span className="text-[10px]" style={{ color: "#9ca3af" }}>
                             {formatVND(value)}đ pipeline
                           </span>
                           <span className="text-xs font-bold" style={{ color }}>
                             ~{formatVND(forecast)}đ
                           </span>
                         </div>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
                           <div className="h-full rounded-full" style={{ width: `${prob}%`, background: color }} />
                         </div>
                       </div>
@@ -491,8 +491,8 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                 })}
               </div>
               <div className="mt-4 pt-4 flex items-center justify-between"
-                style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <span className="text-sm font-semibold text-white">Tổng dự báo</span>
+                style={{ borderTop: "1px solid #e5e7eb" }}>
+                <span className="text-sm font-semibold text-gray-900">Tổng dự báo</span>
                 <span className="text-lg font-bold" style={{ color: "#C9A84C" }}>
                   ~{formatVND(metrics.forecastValue)}đ
                 </span>
@@ -510,9 +510,9 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
                     { label: "Từ chối", value: quotes.filter(q => q.status === "rejected").length, color: "#f87171" },
                   ].map((item, i) => (
                     <div key={i} className="text-center p-3 rounded-xl"
-                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                       <div className="text-xl font-bold mb-1" style={{ color: item.color }}>{item.value}</div>
-                      <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{item.label}</div>
+                      <div className="text-[10px]" style={{ color: "#6b7280" }}>{item.label}</div>
                     </div>
                   ))}
                 </div>
@@ -528,10 +528,10 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
 function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl p-5"
-      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
       <div className="mb-4">
-        <div className="text-sm font-bold text-white">{title}</div>
-        {subtitle && <div className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{subtitle}</div>}
+        <div className="text-sm font-bold text-gray-900">{title}</div>
+        {subtitle && <div className="text-[11px] mt-0.5" style={{ color: "#6b7280" }}>{subtitle}</div>}
       </div>
       {children}
     </div>
