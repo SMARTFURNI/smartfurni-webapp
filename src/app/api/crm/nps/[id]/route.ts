@@ -1,8 +1,11 @@
+import { getCrmSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getNpsSurvey, submitNpsResponse, updateNpsSurveyStatus } from "@/lib/crm-nps-store";
 
 // Public endpoint - customers submit NPS responses via survey link
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getCrmSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const survey = await getNpsSurvey(id);
   if (!survey) return NextResponse.json({ error: "Survey not found" }, { status: 404 });
@@ -17,6 +20,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getCrmSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const survey = await getNpsSurvey(id);
   if (!survey) return NextResponse.json({ error: "Survey not found" }, { status: 404 });
@@ -31,6 +36,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getCrmSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const body = await req.json();
   if (body.status) await updateNpsSurveyStatus(id, body.status);
