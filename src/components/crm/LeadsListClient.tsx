@@ -14,14 +14,14 @@ import {
 } from "@/lib/crm-types";
 import AddLeadModal from "./AddLeadModal";
 
-interface Props { initialLeads: Lead[] }
+interface Props { initialLeads: Lead[]; isAdmin?: boolean; }
 
 type SortKey = "name" | "expectedValue" | "lastContactAt" | "createdAt";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 20;
 
-export default function LeadsListClient({ initialLeads }: Props) {
+export default function LeadsListClient({ initialLeads, isAdmin = false }: Props) {
   const [leads, setLeads] = useState(initialLeads);
   const [search, setSearch] = useState("");
   const [filterStage, setFilterStage] = useState<LeadStage | "">("");
@@ -314,12 +314,14 @@ export default function LeadsListClient({ initialLeads }: Props) {
                           title="Chỉnh sửa">
                           <Edit3 size={14} />
                         </Link>
-                        <button
-                          onClick={() => setConfirmDeleteId(lead.id)}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                          title="Xóa">
-                          <Trash2 size={14} />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => setConfirmDeleteId(lead.id)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            title="Xóa">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

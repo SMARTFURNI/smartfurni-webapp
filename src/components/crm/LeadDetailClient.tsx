@@ -20,6 +20,7 @@ interface Props {
   initialActivities: Activity[];
   initialQuotes: Quote[];
   initialTasks: CrmTask[];
+  isAdmin?: boolean;
 }
 
 const TABS = ["timeline", "quotes", "tasks", "info"] as const;
@@ -50,7 +51,7 @@ const ACTIVITY_COLORS: Record<ActivityType, string> = {
   contract: "#06b6d4",
 };
 
-export default function LeadDetailClient({ lead: initialLead, initialActivities, initialQuotes, initialTasks }: Props) {
+export default function LeadDetailClient({ lead: initialLead, initialActivities, initialQuotes, initialTasks, isAdmin = false }: Props) {
   const [lead, setLead] = useState(initialLead);
   const [activities, setActivities] = useState(initialActivities);
   const [quotes, setQuotes] = useState(initialQuotes);
@@ -159,10 +160,12 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
               <Edit3 size={14} /> Sửa
             </button>
-            <button onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
-              <Trash2 size={14} /> Xóa
-            </button>
+            {isAdmin && (
+              <button onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
+                <Trash2 size={14} /> Xóa
+              </button>
+            )}
           </div>
         </div>
       </div>
