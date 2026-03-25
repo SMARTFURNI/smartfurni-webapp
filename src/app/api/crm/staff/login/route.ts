@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateStaff, createStaffSession } from "@/lib/crm-staff-store";
 
 const STAFF_SESSION_COOKIE = "sf_crm_staff_session";
+const ADMIN_SESSION_COOKIE = "sf_admin_session"; // Xóa cookie admin khi nhân viên đăng nhập
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +40,16 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 8 * 60 * 60, // 8 giờ
+      path: "/",
+    });
+
+    // Xóa admin session cookie để tránh xung đột phân quyền
+    // Khi nhân viên đăng nhập, họ không nên có quyền admin
+    response.cookies.set(ADMIN_SESSION_COOKIE, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 0, // Xóa ngay lập tức
       path: "/",
     });
 
