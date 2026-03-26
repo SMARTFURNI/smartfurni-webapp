@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Lead, CrmTask, Quote, CrmStats } from "@/lib/crm-types";
 import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS, formatVND, isOverdue } from "@/lib/crm-types";
+import AddLeadModal from "./AddLeadModal";
 
 interface CurrentUser {
   name: string;
@@ -64,6 +65,8 @@ const SOURCE_COLORS: Record<string, string> = {
 
 export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, currentUser }: Props) {
   const [tasks, setTasks] = useState(todayTasks);
+  const [allLeads, setAllLeads] = useState(leads);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const overdueLeads = leads.filter(isOverdue);
   const wonLeads = leads.filter(l => l.stage === "won");
@@ -138,14 +141,30 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
               )}
             </Link>
           )}
-          <Link href="/crm/leads/new"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-gray-900 transition-opacity hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}>
-            <Plus size={13} />
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+            style={{ background: "linear-gradient(135deg, #C9A84C 0%, #9A7A2E 100%)", letterSpacing: "0.01em" }}
+          >
+            <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+              <Plus size={12} className="text-white" />
+            </div>
             Thêm khách hàng
-          </Link>
+          </button>
         </div>
       </div>
+
+      {showAddModal && (
+        <AddLeadModal
+          onClose={() => setShowAddModal(false)}
+          onCreated={(lead) => {
+            setAllLeads(prev => [lead, ...prev]);
+            setShowAddModal(false);
+          }}
+          isAdmin={currentUser?.isAdmin}
+          currentUserName={currentUser?.name || ""}
+        />
+      )}
 
       <div className="p-6 space-y-5">
 
