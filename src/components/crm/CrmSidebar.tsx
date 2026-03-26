@@ -28,7 +28,7 @@ import {
   UserCircle,
   Database,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Roles: "super_admin" | "manager" | "sales" | "support"
 // adminOnly: chỉ super_admin và manager mới thấy
@@ -40,6 +40,7 @@ type NavItem = {
   exact?: boolean;
   adminOnly?: boolean;      // manager + super_admin
   superAdminOnly?: boolean; // chỉ super_admin (admin hệ thống)
+  showPendingBadge?: boolean; // hiển thị badge số data pool pending
 };
 
 type NavGroup = {
@@ -60,7 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Khách hàng",
     items: [
-      { label: "Data Pool", href: "/crm/data-pool", icon: Database },
+      { label: "Data Pool", href: "/crm/data-pool", icon: Database, showPendingBadge: true },
       { label: "Danh sách KH", href: "/crm/leads", icon: Users },
       { label: "Báo giá", href: "/crm/quotes", icon: FileText },
       { label: "Việc cần làm", href: "/crm/tasks", icon: CheckSquare },
@@ -150,6 +151,26 @@ interface CrmSidebarProps {
 export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staffName }: CrmSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
+  // Fetch số data pool pending mỗi 60 giây
+  useEffect(() => {
+    let mounted = true;
+    async function fetchPending() {
+      try {
+        const res = await fetch("/api/crm/raw-leads/stats", { cache: "no-store" });
+        if (res.ok && mounted) {
+          const data = await res.json();
+          setPendingCount(data.pending ?? 0);
+        }
+      } catch {
+        // silent fail
+      }
+    }
+    fetchPending();
+    const interval = setInterval(fetchPending, 60_000);
+    return () => { mounted = false; clearInterval(interval); };
+  }, []);
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
@@ -215,12 +236,13 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
               )}
               {visibleItems.map(item => {
                 const active = isActive(item.href, item.exact);
+                const showBadge = item.showPendingBadge && pendingCount > 0;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     prefetch={false}
-                    title={collapsed ? item.label : undefined}
+                    title={collapsed ? `${item.label}${showBadge ? ` (${pendingCount} chờ nhận)` : ""}` : undefined}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all mb-0.5 group ${
                       active
                         ? "bg-amber-50 text-amber-700 font-medium"
@@ -228,12 +250,31 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                     }`}
                     style={active ? { borderLeft: "3px solid #C9A84C", paddingLeft: "7px" } : {}}
                   >
-                    <item.icon
-                      size={16}
-                      className={`flex-shrink-0 ${active ? "text-amber-600" : "text-gray-500 group-hover:text-gray-600"}`}
-                    />
+                    {/* Icon + badge dot khi collapsed */}
+                    <div className="relative flex-shrink-0">
+                      <item.icon
+                        size={16}
+                        className={active ? "text-amber-600" : "text-gray-500 group-hover:text-gray-600"}
+                      />
+                      {showBadge && collapsed && (
+                        <span
+                          className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
+                          style={{ background: "#EF4444" }}
+                        />
+                      )}
+                    </div>
                     {!collapsed && (
-                      <span className="truncate">{item.label}</span>
+                      <>
+                        <span className="truncate flex-1">{item.label}</span>
+                        {showBadge && (
+                          <span
+                            className="flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
+                            style={{ background: "#EF4444", lineHeight: 1 }}
+                          >
+                            {pendingCount > 99 ? "99+" : pendingCount}
+                          </span>
+                        )}
+                      </>
                     )}
                   </Link>
                 );

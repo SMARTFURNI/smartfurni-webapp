@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Users, TrendingUp, FileText, CheckSquare, AlertCircle,
@@ -8,6 +8,7 @@ import {
   Phone, Mail, Calendar, ArrowUpRight, Zap, Activity,
   BarChart2, PieChart, Plus, RefreshCw, Star, Trophy,
   TrendingDown, Minus, ArrowRight, Briefcase, UserCheck,
+  Database, Inbox, ArrowRight as ArrowRightIcon,
 } from "lucide-react";
 import type { Lead, CrmTask, Quote, CrmStats } from "@/lib/crm-types";
 import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS, formatVND, isOverdue } from "@/lib/crm-types";
@@ -67,6 +68,22 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
   const [tasks, setTasks] = useState(todayTasks);
   const [allLeads, setAllLeads] = useState(leads);
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Data Pool pending stats
+  const [poolStats, setPoolStats] = useState<{ pending: number; claimed: number; converted: number; total: number; bySource: { source: string; count: number }[] } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchPoolStats() {
+      try {
+        const res = await fetch("/api/crm/raw-leads/stats", { cache: "no-store" });
+        if (res.ok && mounted) setPoolStats(await res.json());
+      } catch { /* silent */ }
+    }
+    fetchPoolStats();
+    const iv = setInterval(fetchPoolStats, 60_000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
 
   const overdueLeads = leads.filter(isOverdue);
   const wonLeads = leads.filter(l => l.stage === "won");
@@ -210,6 +227,102 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             badgeColor={overdueLeads.length > 0 ? "#ef4444" : "#22c55e"}
           />
         </div>
+
+
+        {/* ── Data Pool Banner ─────────────────────────────────────────── */}
+        {poolStats !== null && poolStats.pending > 0 && (
+          <Link
+            href="/crm/data-pool"
+            className="block rounded-2xl overflow-hidden transition-all hover:shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%)",
+              border: "1px solid rgba(201,168,76,0.3)",
+              boxShadow: "0 4px 20px rgba(201,168,76,0.12), 0 1px 3px rgba(0,0,0,0.2)",
+            }}
+          >
+            <div className="px-6 py-4 flex items-center justify-between gap-4">
+              {/* Left: icon + info */}
+              <div className="flex items-center gap-4 min-w-0">
+                <div
+                  className="relative w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)" }}
+                >
+                  <Database size={24} style={{ color: "#C9A84C" }} />
+                  <span
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white"
+                    style={{ background: "#EF4444", boxShadow: "0 0 0 2px #1a1a2e", animation: "pulse 2s infinite" }}
+                  >
+                    {poolStats.pending > 9 ? "9+" : poolStats.pending}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-white font-bold text-base">Data Pool</span>
+                    <span
+                      className="px-2 py-0.5 rounded-full text-[10px] font-black text-white flex-shrink-0"
+                      style={{ background: "#EF4444" }}
+                    >
+                      {poolStats.pending > 99 ? "99+" : poolStats.pending} chờ nhận
+                    </span>
+                  </div>
+                  <p className="text-sm truncate" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    Có{" "}
+                    <span className="font-bold" style={{ color: "#C9A84C" }}>{poolStats.pending}</span>
+                    {" "}data khách hàng mới chưa có người nhận
+                    {poolStats.bySource.length > 0 && (
+                      <span style={{ color: "rgba(255,255,255,0.4)" }}>
+                        {" — "}
+                        {poolStats.bySource.slice(0, 2).map((s, i) => (
+                          <span key={s.source}>
+                            {i > 0 && ", "}
+                            <span style={{ color: "rgba(255,255,255,0.7)" }}>
+                              {s.source === "facebook_lead" ? "Facebook" : s.source === "tiktok_lead" ? "TikTok" : s.source === "manual" ? "Nhập tay" : s.source}
+                            </span>
+                            {" "}({s.count})
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              {/* Right: CTA */}
+              <div
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold flex-shrink-0"
+                style={{
+                  background: "linear-gradient(135deg, #C9A84C, #9A7A2E)",
+                  color: "#fff",
+                  boxShadow: "0 2px 8px rgba(201,168,76,0.4)",
+                }}
+              >
+                Nhận ngay
+                <ArrowRight size={14} />
+              </div>
+            </div>
+
+            {/* Progress bar: pending / total */}
+            {poolStats.total > 0 && (
+              <div className="px-6 pb-4">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Tiến độ xử lý</span>
+                  <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    {poolStats.claimed + poolStats.converted}/{poolStats.total} đã xử lý
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`,
+                      background: "linear-gradient(90deg, #C9A84C, #E2C97E)",
+                      transition: "width 0.7s ease",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </Link>
+        )}
 
         {/* ── Admin: This Month Summary ─────────────────────────────────── */}
         {currentUser?.isAdmin && (
