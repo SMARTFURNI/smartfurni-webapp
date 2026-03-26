@@ -73,6 +73,55 @@ export interface WebhookConfig {
   fbPageName: string;
 }
 
+/** Cấu hình cho 1 sheet nguồn (Facebook / TikTok / Website / ...) */
+export interface SheetSourceConfig {
+  /** ID duy nhất của sheet này */
+  id: string;
+  /** Tên hiển thị, ví dụ: "Facebook Lead Ads" */
+  label: string;
+  /** Bật/tắt sheet này */
+  enabled: boolean;
+  /** Spreadsheet ID (lấy từ URL Google Sheet) */
+  spreadsheetId: string;
+  /** Tên sheet tab, ví dụ: Trang tính1 */
+  sheetName: string;
+  /** Nguồn kênh cố định cho sheet này */
+  source: "facebook_lead" | "tiktok_lead" | "website" | "other";
+  /** Màu badge hiển thị */
+  color: string;
+  /** Thời điểm sync lần cuối (ISO string) */
+  lastSyncedAt: string;
+  /** Số lead đã sync */
+  totalSynced: number;
+}
+
+export interface GoogleSheetConfig {
+  /** Bật/tắt toàn bộ tích hợp Google Sheet */
+  enabled: boolean;
+  /** Google Service Account JSON key (dùng chung cho tất cả sheet) */
+  serviceAccountKey: string;
+  /** Danh sách các sheet nguồn */
+  sources: SheetSourceConfig[];
+  /** Cột ID để dedup (tránh import trùng) */
+  idColumn: string;
+  /** Cột tên đầy đủ */
+  nameColumn: string;
+  /** Cột số điện thoại */
+  phoneColumn: string;
+  /** Cột email */
+  emailColumn: string;
+  /** Cột tên quảng cáo */
+  adNameColumn: string;
+  /** Cột tên campaign */
+  campaignNameColumn: string;
+  /** Cột tên form */
+  formNameColumn: string;
+  /** Cột ghi chú/nhu cầu (tùy chọn) */
+  messageColumn: string;
+  /** Tổng số lead đã sync */
+  totalSynced: number;
+}
+
 export interface NotificationConfig {
   overdueThresholdDays: number;
   reminderBeforeMeetingMinutes: number;
@@ -233,6 +282,7 @@ export interface CrmSettings {
   leadTypes: LeadTypeConfig[];
   discountTiers: DiscountTierConfig[];
   webhook: WebhookConfig;
+  googleSheet: GoogleSheetConfig;
   notifications: NotificationConfig;
   quote: QuoteConfig;
   email: EmailConfig;
@@ -287,6 +337,54 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     { minQty: 20, discountPct: 20, label: "Từ 20 bộ" },
     { minQty: 50, discountPct: 25, label: "Từ 50 bộ" },
   ],
+  googleSheet: {
+    enabled: false,
+    serviceAccountKey: "",
+    sources: [
+      {
+        id: "facebook",
+        label: "Facebook Lead Ads",
+        enabled: false,
+        spreadsheetId: "",
+        sheetName: "Trang tính1",
+        source: "facebook_lead",
+        color: "#1877f2",
+        lastSyncedAt: "",
+        totalSynced: 0,
+      },
+      {
+        id: "tiktok",
+        label: "TikTok Lead Ads",
+        enabled: false,
+        spreadsheetId: "",
+        sheetName: "Trang tính1",
+        source: "tiktok_lead",
+        color: "#010101",
+        lastSyncedAt: "",
+        totalSynced: 0,
+      },
+      {
+        id: "website",
+        label: "Website / Landing Page",
+        enabled: false,
+        spreadsheetId: "",
+        sheetName: "Trang tính1",
+        source: "website",
+        color: "#f97316",
+        lastSyncedAt: "",
+        totalSynced: 0,
+      },
+    ],
+    idColumn: "id",
+    nameColumn: "tên_đầy_đủ",
+    phoneColumn: "số_điện_thoại",
+    emailColumn: "email",
+    adNameColumn: "ad_name",
+    campaignNameColumn: "campaign_name",
+    formNameColumn: "form_name",
+    messageColumn: "",
+    totalSynced: 0,
+  },
   webhook: {
     secret: "smartfurni-webhook-2025",
     enabledSources: ["Facebook Ads", "Google Ads", "Zalo", "Website"],
@@ -424,6 +522,9 @@ export async function getCrmSettings(): Promise<CrmSettings> {
     leadTypes:     (stored.leadTypes     as LeadTypeConfig[])  ?? DEFAULT_SETTINGS.leadTypes,
     discountTiers: (stored.discountTiers as DiscountTierConfig[]) ?? DEFAULT_SETTINGS.discountTiers,
     webhook:       (stored.webhook       as WebhookConfig)     ?? DEFAULT_SETTINGS.webhook,
+    googleSheet: stored.googleSheet
+      ? { ...DEFAULT_SETTINGS.googleSheet, ...(stored.googleSheet as GoogleSheetConfig) }
+      : DEFAULT_SETTINGS.googleSheet,
     notifications: (stored.notifications as NotificationConfig) ?? DEFAULT_SETTINGS.notifications,
     quote:         (stored.quote         as QuoteConfig)       ?? DEFAULT_SETTINGS.quote,
     email:         (stored.email         as EmailConfig)       ?? DEFAULT_SETTINGS.email,

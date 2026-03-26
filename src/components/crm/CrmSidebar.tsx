@@ -28,6 +28,7 @@ import {
   UserCircle,
   Database,
   Share2,
+  Sheet,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -74,6 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true },
       { label: "Facebook Lead Ads", href: "/crm/integrations/facebook", icon: Share2, superAdminOnly: true },
+      { label: "Google Sheet Sync", href: "/crm/integrations/google-sheet", icon: Sheet, superAdminOnly: true },
     ],
     adminOnly: true,
   },
