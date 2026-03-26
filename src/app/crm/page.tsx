@@ -1,6 +1,7 @@
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { getStaffById } from "@/lib/crm-staff-store";
 import { getLeads, getTasks, getQuotes, getCrmStats } from "@/lib/crm-store";
+import { getCrmSettings } from "@/lib/crm-settings-store";
 import CrmDashboardClient from "@/components/crm/CrmDashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -22,11 +23,12 @@ export default async function CrmDashboardPage() {
   // Admin thấy tất cả, nhân viên chỉ thấy leads được giao cho mình
   const staffFilter = (!session.isAdmin && staffName) ? { assignedTo: staffName } : undefined;
 
-  const [leads, tasks, quotes, stats] = await Promise.all([
+  const [leads, tasks, quotes, stats, crmSettings] = await Promise.all([
     getLeads(staffFilter),
     getTasks({ dueToday: true, ...(staffFilter ?? {}) }),
     getQuotes(),
     getCrmStats(staffFilter),
+    getCrmSettings(),
   ]);
 
   return (
@@ -35,6 +37,7 @@ export default async function CrmDashboardPage() {
       todayTasks={tasks}
       quotes={quotes}
       stats={stats}
+      dashboardTheme={crmSettings.dashboardTheme}
       currentUser={{
         name: staffName,
         username: staffUsername,

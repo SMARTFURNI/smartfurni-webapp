@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import type { Lead, CrmTask, Quote, CrmStats } from "@/lib/crm-types";
 import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS, formatVND, isOverdue } from "@/lib/crm-types";
+import type { DashboardTheme } from "@/lib/crm-settings-store";
+import { DEFAULT_SETTINGS } from "@/lib/crm-settings-store";
 import AddLeadModal from "./AddLeadModal";
 
 interface CurrentUser {
@@ -29,6 +31,7 @@ interface Props {
   todayTasks: CrmTask[];
   quotes: Quote[];
   stats: CrmStats;
+  dashboardTheme?: DashboardTheme;
   currentUser?: CurrentUser;
 }
 
@@ -216,7 +219,9 @@ function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen =
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
-export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, currentUser }: Props) {
+export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser }: Props) {
+  // Merge with defaults so all keys are always defined
+  const theme: DashboardTheme = { ...DEFAULT_SETTINGS.dashboardTheme, ...(themeProp ?? {}) };
   const [tasks, setTasks] = useState(todayTasks);
   const [showAddModal, setShowAddModal] = useState(false);
   const [period, setPeriod] = useState<Period>("month");
@@ -316,12 +321,24 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
 
   const fmtVal = (v: number) => v >= 1e9 ? `${(v/1e9).toFixed(1)}B` : v >= 1e6 ? `${(v/1e6).toFixed(0)}tr` : formatVND(v);
 
-  // Dark mode class
+  // Build effective theme (dark mode overrides theme settings)
   const dm = darkMode ? {
     bg: "#0F172A", card: "#1E293B", cardBorder: "#334155",
     textPrimary: "#F1F5F9", textSecondary: "#94A3B8", textMuted: "#64748B",
     divider: "#1E293B", headerBg: "#1E293B", headerBorder: "#334155",
-  } : T;
+    cardShadow: T.cardShadow,
+  } : {
+    bg: theme.pageBg,
+    card: theme.kpiCardBg,
+    cardBorder: theme.kpiCardBorder,
+    textPrimary: theme.kpiCardTitleColor,
+    textSecondary: T.textSecondary,
+    textMuted: theme.kpiCardMutedColor,
+    divider: T.divider,
+    headerBg: theme.kpiCardBg,
+    headerBorder: theme.kpiCardBorder,
+    cardShadow: T.cardShadow,
+  };
 
   return (
     <div className="flex flex-col h-full overflow-y-auto transition-colors duration-300"
@@ -437,39 +454,39 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           <KpiCard
             icon={Users} label="Tổng khách hàng"
             value={leads.length} sub={`${activeLeads.length} đang theo dõi`}
-            color={T.indigo} colorBg={T.indigoBg}
+            color={theme.kpiCustomerColor} colorBg={theme.kpiCustomerColor + "18"}
             badge={`${periodStats?.newLeads ?? stats.newLeadsThisMonth} mới ${PERIOD_LABELS[period].toLowerCase()}`}
-            badgeColor={T.indigo}
+            badgeColor={theme.kpiCustomerColor}
             sparkline={periodStats?.sparkline}
-            sparklineColor={T.indigo}
+            sparklineColor={theme.kpiCustomerColor}
             darkMode={darkMode}
           />
           <KpiCard
             icon={DollarSign} label="Pipeline giá trị"
             value={fmtVal(totalValue)} sub={`Won: ${fmtVal(wonValue)}`}
-            color={T.gold} colorBg={T.goldBg}
+            color={theme.kpiPipelineColor} colorBg={theme.kpiPipelineColor + "18"}
             badge={revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% tháng trước` : undefined}
-            badgeColor={revenueChange >= 0 ? T.green : T.red}
+            badgeColor={revenueChange >= 0 ? theme.kpiWonColor : theme.kpiOverdueColor}
             isText darkMode={darkMode}
           />
           <KpiCard
             icon={Trophy} label="Tỷ lệ chốt đơn"
             value={`${periodStats?.convRate ?? stats.conversionRate}%`}
             sub={`${periodStats?.wonLeads ?? stats.wonLeadsThisMonth} đơn thành công`}
-            color={T.green} colorBg={T.greenBg}
+            color={theme.kpiWonColor} colorBg={theme.kpiWonColor + "18"}
             badge={`${periodStats?.wonLeads ?? stats.wonLeadsThisMonth} chốt ${PERIOD_LABELS[period].toLowerCase()}`}
-            badgeColor={T.green}
+            badgeColor={theme.kpiWonColor}
             sparkline={periodStats?.wonSparkline}
-            sparklineColor={T.green}
+            sparklineColor={theme.kpiWonColor}
             isText darkMode={darkMode}
           />
           <KpiCard
             icon={AlertCircle} label="Cần liên hệ ngay"
             value={overdueLeads.length} sub="Quá 3 ngày không tương tác"
-            color={T.red} colorBg={T.redBg}
+            color={theme.kpiOverdueColor} colorBg={theme.kpiOverdueColor + "18"}
             urgent={overdueLeads.length > 0}
             badge={overdueLeads.length > 0 ? "Cần xử lý" : "Tốt"}
-            badgeColor={overdueLeads.length > 0 ? T.red : T.green}
+            badgeColor={overdueLeads.length > 0 ? theme.kpiOverdueColor : theme.kpiWonColor}
             darkMode={darkMode}
           />
         </div>
@@ -515,30 +532,30 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           <Link href="/crm/data-pool"
             className="block rounded-2xl overflow-hidden transition-all hover:shadow-lg"
             style={{
-              background: "linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #1E3A5F 100%)",
-              border: "1px solid rgba(201,168,76,0.25)",
+              background: theme.dataPoolBannerBg,
+              border: `1px solid ${theme.accentColor}40`,
               boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
             }}>
             <div className="px-6 py-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)" }}>
-                  <Database size={20} style={{ color: T.gold }} />
+                  <Database size={20} style={{ color: theme.dataPoolBtnBg }} />
                   <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-                    style={{ background: T.red, boxShadow: "0 0 0 2px #0F172A" }}>
+                    style={{ background: theme.kpiOverdueColor, boxShadow: `0 0 0 2px ${theme.dataPoolBannerBg}` }}>
                     {poolStats.pending > 9 ? "9+" : poolStats.pending}
                   </span>
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="text-white font-bold text-sm">Data Pool</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black text-white flex-shrink-0"
-                      style={{ background: T.red }}>
+                    <span className="font-bold text-sm" style={{ color: theme.dataPoolBannerText }}>Data Pool</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black flex-shrink-0"
+                      style={{ background: theme.kpiOverdueColor, color: "#fff" }}>
                       {poolStats.pending} chờ nhận
                     </span>
                   </div>
-                  <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.55)" }}>
-                    <span className="font-bold" style={{ color: T.gold }}>{poolStats.pending}</span> data chưa có người nhận
+                  <p className="text-xs truncate" style={{ color: theme.dataPoolBannerText + "88" }}>
+                    <span className="font-bold" style={{ color: theme.dataPoolBtnBg }}>{poolStats.pending}</span> data chưa có người nhận
                     {poolStats.bySource.length > 0 && (
                       <span style={{ color: "rgba(255,255,255,0.35)" }}>
                         {" — "}{poolStats.bySource.slice(0, 2).map((s, i) => (
@@ -554,7 +571,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                 </div>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold flex-shrink-0"
-                style={{ background: `linear-gradient(135deg, ${T.gold}, ${T.goldDark})`, color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+                style={{ background: theme.dataPoolBtnBg, color: theme.dataPoolBtnText, boxShadow: `0 2px 8px ${theme.dataPoolBtnBg}55` }}>
                 Nhận ngay <ArrowRight size={14} />
               </div>
             </div>
@@ -568,7 +585,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
                   <div className="h-full rounded-full"
-                    style={{ width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`, background: `linear-gradient(90deg, ${T.gold}, #E2C97E)`, transition: "width 0.7s ease" }} />
+                    style={{ width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`, background: theme.dataPoolBtnBg, transition: "width 0.7s ease" }} />
                 </div>
               </div>
             )}
@@ -578,9 +595,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
         {/* ── This Month Summary ──────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: `Doanh thu ${PERIOD_LABELS[period].toLowerCase()}`, value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth), icon: DollarSign, color: T.gold, bg: T.goldBg, sub: revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% tháng trước` : "So tháng trước", subColor: revenueChange >= 0 ? T.green : T.red },
-            { label: `KH mới ${PERIOD_LABELS[period].toLowerCase()}`, value: String(periodStats?.newLeads ?? stats.newLeadsThisMonth), icon: UserCheck, color: T.indigo, bg: T.indigoBg, sub: `Tổng ${leads.length} khách hàng`, subColor: T.textMuted },
-            { label: `Đơn chốt ${PERIOD_LABELS[period].toLowerCase()}`, value: String(periodStats?.wonLeads ?? stats.wonLeadsThisMonth), icon: Trophy, color: T.green, bg: T.greenBg, sub: `Tỷ lệ chốt ${periodStats?.convRate ?? stats.conversionRate}%`, subColor: T.textMuted },
+            { label: `Doanh thu ${PERIOD_LABELS[period].toLowerCase()}`, value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth), icon: DollarSign, color: theme.summaryRevenueColor, bg: theme.summaryCardBg, sub: revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% tháng trước` : "So tháng trước", subColor: revenueChange >= 0 ? theme.kpiWonColor : theme.kpiOverdueColor },
+            { label: `KH mới ${PERIOD_LABELS[period].toLowerCase()}`, value: String(periodStats?.newLeads ?? stats.newLeadsThisMonth), icon: UserCheck, color: theme.summaryNewLeadColor, bg: theme.summaryCardBg, sub: `Tổng ${leads.length} khách hàng`, subColor: theme.kpiCardMutedColor },
+            { label: `Đơn chốt ${PERIOD_LABELS[period].toLowerCase()}`, value: String(periodStats?.wonLeads ?? stats.wonLeadsThisMonth), icon: Trophy, color: theme.summaryWonColor, bg: theme.summaryCardBg, sub: `Tỷ lệ chốt ${periodStats?.convRate ?? stats.conversionRate}%`, subColor: theme.kpiCardMutedColor },
           ].map(({ label, value, icon: Icon, color, bg, sub, subColor }) => (
             <div key={label} className="rounded-2xl p-5 flex items-center gap-4"
               style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
@@ -603,7 +620,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           <div className="xl:col-span-2 space-y-5">
 
             {/* Revenue Chart + Forecast */}
-            <Section title="Doanh thu & Dự báo" icon={BarChart2} iconColor={T.gold} iconBg={T.goldBg}>
+            <Section title="Doanh thu & Dự báo" icon={BarChart2} iconColor={theme.accentColor} iconBg={theme.accentColor + "18"}>
               <div className="p-6">
                 {forecast ? (
                   <div>
@@ -625,17 +642,17 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                                 style={{
                                   height: `${Math.max(6, pct)}%`,
                                   background: isForecast
-                                    ? `repeating-linear-gradient(45deg, ${T.gold}40, ${T.gold}40 3px, transparent 3px, transparent 6px)`
+                                    ? `repeating-linear-gradient(45deg, ${theme.accentColor}40, ${theme.accentColor}40 3px, transparent 3px, transparent 6px)`
                                     : isCurrentMonth
-                                    ? `linear-gradient(180deg, #E2C97E, ${T.gold})`
+                                    ? `linear-gradient(180deg, ${theme.accentColor}CC, ${theme.accentColor})`
                                     : T.cardBorder,
-                                  border: isForecast ? `1px dashed ${T.gold}` : "none",
+                                  border: isForecast ? `1px dashed ${theme.accentColor}` : "none",
                                   minHeight: 6,
                                 }}>
                               </div>
                             </div>
                             <span className="text-[10px] font-semibold"
-                              style={{ color: isForecast ? T.gold : isCurrentMonth ? T.gold : T.textMuted }}>
+                              style={{ color: isForecast ? theme.accentColor : isCurrentMonth ? theme.accentColor : T.textMuted }}>
                               {m.label}{isForecast ? " *" : ""}
                             </span>
                           </div>
@@ -644,23 +661,23 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                     </div>
                     <div className="flex items-center gap-4 pt-3 mb-4" style={{ borderTop: `1px solid ${T.divider}` }}>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-2 rounded-sm" style={{ background: T.gold }} />
+                        <div className="w-3 h-2 rounded-sm" style={{ background: theme.accentColor }} />
                         <span className="text-[10px]" style={{ color: T.textMuted }}>Thực tế</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-2 rounded-sm" style={{ border: `1px dashed ${T.gold}`, background: `${T.gold}20` }} />
+                        <div className="w-3 h-2 rounded-sm" style={{ border: `1px dashed ${theme.accentColor}`, background: `${theme.accentColor}20` }} />
                         <span className="text-[10px]" style={{ color: T.textMuted }}>Dự báo tháng tới</span>
                       </div>
                       <div className="ml-auto text-right">
-                        <div className="text-xs font-black" style={{ color: T.gold }}>~{fmtVal(forecast.forecastValue)}</div>
+                        <div className="text-xs font-black" style={{ color: theme.accentColor }}>~{fmtVal(forecast.forecastValue)}</div>
                         <div className="text-[10px]" style={{ color: T.textMuted }}>Dự báo từ {forecast.pipelineCount} deal</div>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       {[
-                        { label: "KH mới", value: periodStats?.newLeads ?? stats.newLeadsThisMonth, color: T.indigo, bg: T.bg },
-                        { label: "Đơn chốt", value: periodStats?.wonLeads ?? stats.wonLeadsThisMonth, color: T.green, bg: T.greenBg },
-                        { label: "Doanh thu", value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth), color: T.gold, bg: T.goldBg },
+                        { label: "KH mới", value: periodStats?.newLeads ?? stats.newLeadsThisMonth, color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12" },
+                        { label: "Đơn chốt", value: periodStats?.wonLeads ?? stats.wonLeadsThisMonth, color: theme.kpiWonColor, bg: theme.kpiWonColor + "12" },
+                        { label: "Doanh thu", value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth), color: theme.accentColor, bg: theme.accentColor + "12" },
                       ].map(({ label, value, color, bg }) => (
                         <div key={label} className="text-center p-3 rounded-xl" style={{ background: bg }}>
                           <div className="text-sm font-black" style={{ color }}>{value}</div>
@@ -679,9 +696,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                         <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
                           <div className="w-full relative flex-1 flex items-end">
                             <div className="w-full rounded-t-md"
-                              style={{ height: `${Math.max(6, pct)}%`, background: isCurrentMonth ? `linear-gradient(180deg, #E2C97E, ${T.gold})` : T.cardBorder, minHeight: 6 }} />
+                              style={{ height: `${Math.max(6, pct)}%`, background: isCurrentMonth ? `linear-gradient(180deg, ${theme.accentColor}CC, ${theme.accentColor})` : T.cardBorder, minHeight: 6 }} />
                           </div>
-                          <span className="text-[10px] font-semibold" style={{ color: isCurrentMonth ? T.gold : T.textMuted }}>{m.label}</span>
+                          <span className="text-[10px] font-semibold" style={{ color: isCurrentMonth ? theme.accentColor : T.textMuted }}>{m.label}</span>
                         </div>
                       );
                     })}
@@ -691,7 +708,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             </Section>
 
             {/* Conversion Funnel */}
-            <Section title="Conversion Funnel" icon={Filter} iconColor={T.indigo} iconBg={T.indigoBg}>
+            <Section title="Conversion Funnel" icon={Filter} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
               <div className="p-5">
                 <div className="space-y-2">
                   {(Object.keys(STAGE_LABELS) as Array<keyof typeof STAGE_LABELS>).map((stage, i) => {
@@ -1142,7 +1159,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
 
             {/* Overdue Alert */}
             {overdueLeads.length > 0 && (
-              <Section title="Cần liên hệ ngay" icon={Zap} iconColor={T.red} iconBg={T.redBg}
+              <Section title="Cần liên hệ ngay" icon={Zap} iconColor={theme.kpiOverdueColor} iconBg={theme.kpiOverdueColor + "18"}
                 badge={`${overdueLeads.length}`}>
                 <div className="p-3 space-y-2">
                   {overdueLeads.slice(0, 5).map(lead => {
@@ -1170,13 +1187,13 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             )}
 
             {/* Quick Stats */}
-            <Section title="Thống kê nhanh" icon={Eye} iconColor={T.blue} iconBg={T.blueBg}>
+            <Section title="Thống kê nhanh" icon={Eye} iconColor={theme.kpiPipelineColor} iconBg={theme.kpiPipelineColor + "18"}>
               <div className="p-4 space-y-2.5">
                 {[
-                  { label: "Đang thương thảo", value: (stats.byStage["negotiating"] || 0), color: T.orange, bg: T.orangeBg, icon: Target },
-                  { label: "Đã báo giá", value: (stats.byStage["quoted"] || 0), color: T.gold, bg: T.goldBg, icon: FileText },
-                  { label: "Đã khảo sát", value: (stats.byStage["surveyed"] || 0), color: T.purple, bg: T.purpleBg, icon: Briefcase },
-                  { label: "Đã gửi Profile", value: (stats.byStage["profile_sent"] || 0), color: T.blue, bg: T.blueBg, icon: Mail },
+                  { label: "Đang thương thảo", value: (stats.byStage["negotiating"] || 0), color: theme.accentColor, bg: theme.accentColor + "12", icon: Target },
+                  { label: "Đã báo giá", value: (stats.byStage["quoted"] || 0), color: theme.kpiPipelineColor, bg: theme.kpiPipelineColor + "12", icon: FileText },
+                  { label: "Đã khảo sát", value: (stats.byStage["surveyed"] || 0), color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12", icon: Briefcase },
+                  { label: "Đã gửi Profile", value: (stats.byStage["profile_sent"] || 0), color: theme.kpiWonColor, bg: theme.kpiWonColor + "12", icon: Mail },
                 ].map(({ label, value, color, bg, icon: Icon }) => (
                   <div key={label} className="flex items-center justify-between p-2.5 rounded-xl"
                     style={{ background: bg, border: `1px solid ${color}18` }}>
@@ -1193,16 +1210,16 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             </Section>
 
             {/* Quick Links */}
-            <Section title="Truy cập nhanh" icon={ArrowUpRight} iconColor={T.indigo} iconBg={T.indigoBg}>
+            <Section title="Truy cập nhanh" icon={ArrowUpRight} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
               <div className="p-3 grid grid-cols-2 gap-2">
                 {[
-                  { href: "/crm/leads", label: "Khách hàng", icon: Users, color: T.indigo, bg: T.indigoBg },
-                  { href: "/crm/kanban", label: "Kanban", icon: BarChart2, color: T.orange, bg: T.orangeBg },
-                  { href: "/crm/quotes/new", label: "Báo giá mới", icon: FileText, color: T.green, bg: T.greenBg },
-                  { href: "/crm/calendar", label: "Lịch hẹn", icon: Calendar, color: T.blue, bg: T.blueBg },
+                  { href: "/crm/leads", label: "Khách hàng", icon: Users, color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12" },
+                  { href: "/crm/kanban", label: "Kanban", icon: BarChart2, color: theme.accentColor, bg: theme.accentColor + "12" },
+                  { href: "/crm/quotes/new", label: "Báo giá mới", icon: FileText, color: theme.kpiWonColor, bg: theme.kpiWonColor + "12" },
+                  { href: "/crm/calendar", label: "Lịch hẹn", icon: Calendar, color: theme.kpiPipelineColor, bg: theme.kpiPipelineColor + "12" },
                   ...(currentUser?.isAdmin ? [
-                    { href: "/crm/reports", label: "Báo cáo", icon: TrendingUp, color: T.purple, bg: T.purpleBg },
-                    { href: "/crm/staff", label: "Nhân viên", icon: Award, color: T.gold, bg: T.goldBg },
+                    { href: "/crm/reports", label: "Báo cáo", icon: TrendingUp, color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12" },
+                    { href: "/crm/staff", label: "Nhân viên", icon: Award, color: theme.accentColor, bg: theme.accentColor + "12" },
                   ] : []),
                 ].map(({ href, label, icon: Icon, color, bg }) => (
                   <Link key={href} href={href}
@@ -1236,9 +1253,9 @@ function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeCo
   return (
     <div className="rounded-2xl p-5 relative overflow-hidden transition-all hover:shadow-md"
       style={{
-        background: darkMode ? "#1E293B" : "#FFFFFF",
-        border: urgent ? `1px solid ${color}50` : `1px solid #E4E7EC`,
-        boxShadow: urgent ? `0 1px 4px ${color}18` : "0 1px 4px rgba(16,24,40,0.06)",
+        background: darkMode ? "#1E293B" : T.card,
+        border: urgent ? `1px solid ${color}50` : `1px solid ${T.cardBorder}`,
+        boxShadow: urgent ? `0 1px 4px ${color}18` : T.cardShadow,
       }}>
       {urgent && <div className="absolute inset-0 opacity-[0.025]" style={{ background: color }} />}
       <div className="flex items-start justify-between mb-3">
@@ -1250,9 +1267,9 @@ function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeCo
           {urgent && <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: color }} />}
         </div>
       </div>
-      <div className="text-2xl font-black leading-none mb-1" style={{ color: darkMode ? "#F1F5F9" : "#101828" }}>{value}</div>
-      <div className="text-xs font-semibold mb-1" style={{ color: darkMode ? "#94A3B8" : "#475467" }}>{label}</div>
-      <div className="text-[10px] truncate" style={{ color: "#98A2B3" }}>{sub}</div>
+      <div className="text-2xl font-black leading-none mb-1" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>{value}</div>
+      <div className="text-xs font-semibold mb-1" style={{ color: darkMode ? "#94A3B8" : T.textSecondary }}>{label}</div>
+      <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{sub}</div>
       {badge && (
         <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
           style={{ background: `${badgeColor}15`, color: badgeColor }}>

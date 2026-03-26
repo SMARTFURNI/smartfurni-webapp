@@ -88,6 +88,46 @@ export interface EmailConfig {
   useSsl: boolean;
 }
 
+export interface DashboardTheme {
+  // Nền tổng thể
+  pageBg: string;
+  // KPI Cards
+  kpiCardBg: string;
+  kpiCardBorder: string;
+  kpiCardTitleColor: string;
+  kpiCardValueColor: string;
+  kpiCardMutedColor: string;
+  // KPI icon accent colors
+  kpiCustomerColor: string;
+  kpiPipelineColor: string;
+  kpiWonColor: string;
+  kpiOverdueColor: string;
+  // Data Pool banner
+  dataPoolBannerBg: string;
+  dataPoolBannerText: string;
+  dataPoolBtnBg: string;
+  dataPoolBtnText: string;
+  // This Month Summary cards
+  summaryCardBg: string;
+  summaryCardBorder: string;
+  summaryRevenueColor: string;
+  summaryNewLeadColor: string;
+  summaryWonColor: string;
+  // Section cards (chart, pipeline, etc.)
+  sectionCardBg: string;
+  sectionCardBorder: string;
+  sectionHeaderColor: string;
+  sectionBodyColor: string;
+  // Right column (tasks, quick links)
+  taskCardBg: string;
+  taskUrgentColor: string;
+  quickLinkBg: string;
+  quickLinkIconColor: string;
+  // Accent / brand color
+  accentColor: string;
+  accentTextColor: string;
+}
+
 export interface CrmSettings {
   company: CompanyInfo;
   pipeline: PipelineStage[];
@@ -98,6 +138,7 @@ export interface CrmSettings {
   notifications: NotificationConfig;
   quote: QuoteConfig;
   email: EmailConfig;
+  dashboardTheme: DashboardTheme;
 }
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -181,6 +222,37 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     smtpPassword: "",
     useSsl: true,
   },
+  dashboardTheme: {
+    pageBg: "#F0F2F5",
+    kpiCardBg: "#FFFFFF",
+    kpiCardBorder: "#E4E7EC",
+    kpiCardTitleColor: "#101828",
+    kpiCardValueColor: "#101828",
+    kpiCardMutedColor: "#667085",
+    kpiCustomerColor: "#4F46E5",
+    kpiPipelineColor: "#C9A84C",
+    kpiWonColor: "#059669",
+    kpiOverdueColor: "#DC2626",
+    dataPoolBannerBg: "#0F172A",
+    dataPoolBannerText: "#F1F5F9",
+    dataPoolBtnBg: "#C9A84C",
+    dataPoolBtnText: "#FFFFFF",
+    summaryCardBg: "#FFFFFF",
+    summaryCardBorder: "#E4E7EC",
+    summaryRevenueColor: "#C9A84C",
+    summaryNewLeadColor: "#4F46E5",
+    summaryWonColor: "#059669",
+    sectionCardBg: "#FFFFFF",
+    sectionCardBorder: "#E4E7EC",
+    sectionHeaderColor: "#101828",
+    sectionBodyColor: "#475467",
+    taskCardBg: "#FFFFFF",
+    taskUrgentColor: "#DC2626",
+    quickLinkBg: "#F9FAFB",
+    quickLinkIconColor: "#C9A84C",
+    accentColor: "#C9A84C",
+    accentTextColor: "#FFFFFF",
+  },
 };
 
 // ─── DB Init ──────────────────────────────────────────────────────────────────
@@ -214,6 +286,7 @@ export async function getCrmSettings(): Promise<CrmSettings> {
     notifications: (stored.notifications as NotificationConfig) ?? DEFAULT_SETTINGS.notifications,
     quote:         (stored.quote         as QuoteConfig)       ?? DEFAULT_SETTINGS.quote,
     email:         (stored.email         as EmailConfig)       ?? DEFAULT_SETTINGS.email,
+    dashboardTheme: (stored.dashboardTheme as DashboardTheme)    ?? DEFAULT_SETTINGS.dashboardTheme,
   };
 }
 

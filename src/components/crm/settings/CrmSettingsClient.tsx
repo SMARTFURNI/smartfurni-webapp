@@ -5,9 +5,9 @@ import {
   Building2, GitBranch, Users, Tag, Percent, Webhook,
   Bell, FileText, Mail, Save, RotateCcw, Plus, Trash2,
   GripVertical, Eye, EyeOff, ChevronRight, CheckCircle2,
-  AlertCircle, Settings, Copy, RefreshCw,
+  AlertCircle, Settings, Copy, RefreshCw, Palette,
 } from "lucide-react";
-import type { CrmSettings, PipelineStage, LeadSource, LeadTypeConfig, DiscountTierConfig } from "@/lib/crm-settings-store";
+import type { CrmSettings, PipelineStage, LeadSource, LeadTypeConfig, DiscountTierConfig, DashboardTheme } from "@/lib/crm-settings-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ interface Props {
   initialSettings: CrmSettings;
 }
 
-type TabId = "company" | "pipeline" | "sources" | "leadtypes" | "discount" | "webhook" | "notifications" | "quote" | "email";
+type TabId = "company" | "pipeline" | "sources" | "leadtypes" | "discount" | "webhook" | "notifications" | "quote" | "email" | "dashboardtheme";
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; desc: string }[] = [
   { id: "company",       label: "Thông tin công ty",   icon: Building2,  desc: "Tên, địa chỉ, liên hệ, ngân hàng" },
@@ -27,6 +27,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; desc: string }[
   { id: "notifications", label: "Thông báo",           icon: Bell,       desc: "Nhắc nhở quá hạn, lịch hẹn" },
   { id: "quote",         label: "Cấu hình Báo giá",   icon: FileText,   desc: "Hiệu lực, điều khoản, ghi chú" },
   { id: "email",         label: "Email & SMTP",        icon: Mail,       desc: "Cấu hình gửi email marketing" },
+  { id: "dashboardtheme", label: "Giao diện Dashboard",  icon: Palette,    desc: "Màu sắc các khối trên dashboard" },
 ];
 
 const PRESET_COLORS = [
@@ -736,6 +737,232 @@ function EmailTab({ data, onChange }: { data: CrmSettings["email"]; onChange: (d
   );
 }
 
+// ─── DashboardThemeTab ───────────────────────────────────────────────────────
+
+const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
+  {
+    name: "Mặc định (Gold & Navy)",
+    theme: {
+      pageBg: "#F0F2F5", kpiCardBg: "#FFFFFF", kpiCardBorder: "#E4E7EC",
+      kpiCustomerColor: "#4F46E5", kpiPipelineColor: "#C9A84C",
+      kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
+      dataPoolBannerBg: "#0F172A", dataPoolBtnBg: "#C9A84C",
+      accentColor: "#C9A84C", accentTextColor: "#FFFFFF",
+    },
+  },
+  {
+    name: "Xanh dương hiện đại",
+    theme: {
+      pageBg: "#EFF6FF", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BFDBFE",
+      kpiCustomerColor: "#2563EB", kpiPipelineColor: "#0EA5E9",
+      kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
+      dataPoolBannerBg: "#1E3A5F", dataPoolBtnBg: "#2563EB",
+      accentColor: "#2563EB", accentTextColor: "#FFFFFF",
+    },
+  },
+  {
+    name: "Tối sang trọng",
+    theme: {
+      pageBg: "#0F172A", kpiCardBg: "#1E293B", kpiCardBorder: "#334155",
+      kpiCardTitleColor: "#F1F5F9", kpiCardValueColor: "#F8FAFC", kpiCardMutedColor: "#94A3B8",
+      kpiCustomerColor: "#818CF8", kpiPipelineColor: "#FBBF24",
+      kpiWonColor: "#34D399", kpiOverdueColor: "#F87171",
+      dataPoolBannerBg: "#1E293B", dataPoolBannerText: "#F1F5F9", dataPoolBtnBg: "#FBBF24",
+      sectionCardBg: "#1E293B", sectionCardBorder: "#334155",
+      sectionHeaderColor: "#F1F5F9", sectionBodyColor: "#94A3B8",
+      taskCardBg: "#1E293B", quickLinkBg: "#0F172A",
+      accentColor: "#FBBF24", accentTextColor: "#0F172A",
+    },
+  },
+  {
+    name: "Xanh lá tươi mát",
+    theme: {
+      pageBg: "#F0FDF4", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BBF7D0",
+      kpiCustomerColor: "#16A34A", kpiPipelineColor: "#CA8A04",
+      kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
+      dataPoolBannerBg: "#14532D", dataPoolBtnBg: "#16A34A",
+      accentColor: "#16A34A", accentTextColor: "#FFFFFF",
+    },
+  },
+];
+
+const COLOR_GROUPS: { title: string; fields: { key: keyof DashboardTheme; label: string }[] }[] = [
+  {
+    title: "Nền trang",
+    fields: [
+      { key: "pageBg", label: "Màu nền trang" },
+    ],
+  },
+  {
+    title: "KPI Cards (4 ô đầu trang)",
+    fields: [
+      { key: "kpiCardBg",         label: "Nền card" },
+      { key: "kpiCardBorder",     label: "Viền card" },
+      { key: "kpiCardTitleColor", label: "Chữ tiêu đề" },
+      { key: "kpiCardValueColor", label: "Chữ số liệu" },
+      { key: "kpiCardMutedColor", label: "Chữ phụ" },
+      { key: "kpiCustomerColor",  label: "Icon Tổng KH" },
+      { key: "kpiPipelineColor",  label: "Icon Pipeline" },
+      { key: "kpiWonColor",       label: "Icon Chốt đơn" },
+      { key: "kpiOverdueColor",   label: "Icon Cần liên hệ" },
+    ],
+  },
+  {
+    title: "Banner Data Pool",
+    fields: [
+      { key: "dataPoolBannerBg",   label: "Nền banner" },
+      { key: "dataPoolBannerText", label: "Chữ banner" },
+      { key: "dataPoolBtnBg",      label: "Nền nút" },
+      { key: "dataPoolBtnText",    label: "Chữ nút" },
+    ],
+  },
+  {
+    title: "3 Card thống kê tháng",
+    fields: [
+      { key: "summaryCardBg",       label: "Nền card" },
+      { key: "summaryCardBorder",   label: "Viền card" },
+      { key: "summaryRevenueColor", label: "Doanh thu" },
+      { key: "summaryNewLeadColor", label: "KH mới" },
+      { key: "summaryWonColor",     label: "Chốt đơn" },
+    ],
+  },
+  {
+    title: "Section Cards (biểu đồ, pipeline, nguồn KH)",
+    fields: [
+      { key: "sectionCardBg",     label: "Nền card" },
+      { key: "sectionCardBorder", label: "Viền card" },
+      { key: "sectionHeaderColor",label: "Tiêu đề" },
+      { key: "sectionBodyColor",  label: "Nội dung" },
+    ],
+  },
+  {
+    title: "Cột phải (Task, Quick Links)",
+    fields: [
+      { key: "taskCardBg",       label: "Nền card" },
+      { key: "taskUrgentColor",  label: "Task khẩn cấp" },
+      { key: "quickLinkBg",      label: "Nền quick link" },
+      { key: "quickLinkIconColor",label: "Icon quick link" },
+    ],
+  },
+  {
+    title: "Accent / Thương hiệu",
+    fields: [
+      { key: "accentColor",     label: "Màu accent chính" },
+      { key: "accentTextColor", label: "Chữ trên accent" },
+    ],
+  },
+];
+
+function ThemeColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
+      <span className="text-sm" style={{ color: "#374151" }}>{label}</span>
+      <div className="flex items-center gap-2">
+        {/* Swatch preview */}
+        <div
+          className="w-8 h-8 rounded-lg border flex-shrink-0 shadow-sm"
+          style={{ background: value, borderColor: "#d1d5db" }}
+        />
+        {/* Hex input */}
+        <input
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="w-24 text-xs px-2 py-1.5 rounded-lg border font-mono"
+          style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+          placeholder="#RRGGBB"
+        />
+        {/* Native color picker */}
+        <input
+          type="color"
+          value={value.startsWith("#") && value.length === 7 ? value : "#000000"}
+          onChange={e => onChange(e.target.value)}
+          className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0.5"
+          style={{ background: "transparent" }}
+          title="Chọn màu"
+        />
+      </div>
+    </div>
+  );
+}
+
+function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange: (d: DashboardTheme) => void }) {
+  const applyPreset = (preset: Partial<DashboardTheme>) => {
+    onChange({ ...data, ...preset });
+  };
+
+  const updateField = (key: keyof DashboardTheme, value: string) => {
+    onChange({ ...data, [key]: value });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Preview strip */}
+      <div className="rounded-2xl overflow-hidden border" style={{ borderColor: "#e5e7eb" }}>
+        <div className="px-4 py-3 text-xs font-semibold" style={{ background: "#f9fafb", color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>
+          XEM TRƯỚC — Màu hiện tại
+        </div>
+        <div className="p-4 flex gap-3 flex-wrap" style={{ background: data.pageBg }}>
+          {/* KPI card preview */}
+          <div className="rounded-xl p-3 flex-1 min-w-[100px]" style={{ background: data.kpiCardBg, border: `1px solid ${data.kpiCardBorder}` }}>
+            <div className="text-[10px] mb-1" style={{ color: data.kpiCardMutedColor }}>Tổng KH</div>
+            <div className="text-lg font-bold" style={{ color: data.kpiCardValueColor }}>42</div>
+            <div className="w-5 h-5 rounded mt-1" style={{ background: data.kpiCustomerColor + "22" }}>
+              <div className="w-2.5 h-2.5 rounded m-1.5" style={{ background: data.kpiCustomerColor }} />
+            </div>
+          </div>
+          {/* Summary card preview */}
+          <div className="rounded-xl p-3 flex-1 min-w-[100px]" style={{ background: data.summaryCardBg, border: `1px solid ${data.summaryCardBorder}` }}>
+            <div className="text-[10px] mb-1" style={{ color: data.kpiCardMutedColor }}>Doanh thu</div>
+            <div className="text-lg font-bold" style={{ color: data.summaryRevenueColor }}>850tr</div>
+          </div>
+          {/* Data pool banner preview */}
+          <div className="rounded-xl p-3 flex-1 min-w-[120px] flex items-center justify-between" style={{ background: data.dataPoolBannerBg }}>
+            <span className="text-xs font-medium" style={{ color: data.dataPoolBannerText }}>Data Pool</span>
+            <span className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: data.dataPoolBtnBg, color: data.dataPoolBtnText }}>Nhận ngay</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Preset buttons */}
+      <div>
+        <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>BỘ MÀU CÓ SẴN</div>
+        <div className="grid grid-cols-2 gap-2">
+          {THEME_PRESETS.map(preset => (
+            <button
+              key={preset.name}
+              onClick={() => applyPreset(preset.theme)}
+              className="text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-90"
+              style={{ background: preset.theme.kpiCardBg ?? "#fff", border: `2px solid ${preset.theme.accentColor ?? "#e5e7eb"}`, color: "#111827" }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: preset.theme.accentColor ?? "#C9A84C" }} />
+                <span>{preset.name}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Color groups */}
+      {COLOR_GROUPS.map(group => (
+        <SectionCard key={group.title} title={group.title} icon={Palette}>
+          <div className="divide-y divide-gray-50">
+            {group.fields.map(field => (
+              <ThemeColorRow
+                key={field.key}
+                label={field.label}
+                value={data[field.key] as string}
+                onChange={v => updateField(field.key, v)}
+              />
+            ))}
+          </div>
+        </SectionCard>
+      ))}
+    </div>
+  );
+}
+
 // ─── SectionCard ──────────────────────────────────────────────────────────────
 
 function SectionCard({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
@@ -894,7 +1121,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
               </div>
             )}
             <button
-              onClick={() => saveSection(activeTab === "leadtypes" ? "leadTypes" : activeTab as keyof CrmSettings)}
+              onClick={() => saveSection(activeTab === "leadtypes" ? "leadTypes" : activeTab === "dashboardtheme" ? "dashboardTheme" : activeTab as keyof CrmSettings)}
               disabled={saving}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
               style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }}
@@ -916,6 +1143,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
           {activeTab === "notifications" && <NotificationsTab data={settings.notifications} onChange={v => updateSection("notifications", v)} />}
           {activeTab === "quote"         && <QuoteTab         data={settings.quote}         onChange={v => updateSection("quote", v)} />}
           {activeTab === "email"         && <EmailTab         data={settings.email}         onChange={v => updateSection("email", v)} />}
+          {activeTab === "dashboardtheme" && <DashboardThemeTab data={settings.dashboardTheme} onChange={v => updateSection("dashboardTheme", v)} />}
         </div>
       </div>
     </div>
