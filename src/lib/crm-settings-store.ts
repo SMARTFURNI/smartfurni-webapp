@@ -319,7 +319,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     kpiPipelineColor: "#C9A84C",
     kpiWonColor: "#059669",
     kpiOverdueColor: "#DC2626",
-    dataPoolBannerBg: "#0F172A",
+    dataPoolBannerBg: "#1E3A5F",
     dataPoolBannerText: "#F1F5F9",
     dataPoolBtnBg: "#C9A84C",
     dataPoolBtnText: "#FFFFFF",

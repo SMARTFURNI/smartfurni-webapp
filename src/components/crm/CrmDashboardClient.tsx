@@ -433,9 +433,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         {focusItems.length > 0 && (
           <div className="rounded-2xl p-4"
             style={{
-              background: darkMode ? "#1E293B" : "linear-gradient(135deg, #0F172A, #1E3A5F)",
-              border: "1px solid rgba(201,168,76,0.2)",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+              background: darkMode ? "linear-gradient(135deg, #1E293B, #1E3A5F)" : "linear-gradient(135deg, #1E3A5F, #2D5A8E)",
+              border: "1px solid rgba(201,168,76,0.25)",
+              boxShadow: "0 4px 20px rgba(30,58,95,0.25)",
             }}>
             <div className="flex items-center gap-2 mb-3">
               <Crosshair size={14} style={{ color: T.gold }} />
