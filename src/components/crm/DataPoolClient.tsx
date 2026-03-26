@@ -680,7 +680,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
   const [refreshing, setRefreshing] = useState(false);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState<RawLeadStatus | "">("");
+  const [statusFilter, setStatusFilter] = useState<RawLeadStatus | "">("pending");
   const [sourceFilter, setSourceFilter] = useState<RawLeadSource | "">("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -748,10 +748,22 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
         setClaimError(data.error || "Có lỗi xảy ra");
         setTimeout(() => setClaimError(null), 5000);
       } else {
+        // Hiển thị thông báo nếu tự động tạo lead thành công
+        if (data.autoConverted && data.crmLead) {
+          setClaimError(null);
+          // Dùng claimError tạm để hiển thị success (màu xanh)
+          setClaimingId("success:" + data.crmLead.id);
+          setTimeout(() => setClaimingId(null), 3000);
+        }
         fetchData(false);
+        if (data.warning) {
+          setClaimError(data.warning);
+          setTimeout(() => setClaimError(null), 6000);
+        }
       }
     } finally {
-      setClaimingId(null);
+      // Chỉ reset nếu không phải success state
+      setClaimingId(prev => prev?.startsWith("success:") ? prev : null);
     }
   };
 
@@ -869,6 +881,16 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
           <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
             <AlertCircle size={16} style={{ color: "#DC2626", flexShrink: 0 }} />
             <p className="text-sm font-semibold" style={{ color: "#DC2626" }}>{claimError}</p>
+          </div>
+        )}
+
+        {/* Claim Success Toast */}
+        {claimingId?.startsWith("success:") && (
+          <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: "#D1FAE5", border: "1px solid #6EE7B7" }}>
+            <CheckCircle2 size={16} style={{ color: "#059669", flexShrink: 0 }} />
+            <p className="text-sm font-semibold" style={{ color: "#065F46" }}>
+              Đã nhận data thành công! Khách hàng đã được tạo tự động trong danh sách của bạn.
+            </p>
           </div>
         )}
 
