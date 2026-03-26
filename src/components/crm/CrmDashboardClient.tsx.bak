@@ -226,13 +226,13 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const ALL_SECTION_IDS: DashboardSectionId[] = [
     "kpiCards", "dataPool", "monthSummary", "revenueChart",
     "pipeline", "funnel", "staleDeals", "staffPerformance",
-    "recentActivities", "recentQuotes",
-    "teamOnline", "tasks", "overdue", "quickStats", "quickLinks",
-    "leaderboard", "heatmap",
+    "tasks", "quickStats", "quickLinks", "overdue",
+    "leaderboard", "teamOnline", "heatmap",
   ];
   const effectiveSectionOrder: DashboardSectionId[] = (() => {
     const saved = theme.sectionOrder;
     if (!saved || saved.length === 0) return ALL_SECTION_IDS;
+    // Include any new sections not in saved order at the end
     const missing = ALL_SECTION_IDS.filter(id => !saved.includes(id));
     return [...saved, ...missing];
   })();
@@ -505,11 +505,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             badgeColor={overdueLeads.length > 0 ? theme.kpiOverdueColor : theme.kpiWonColor}
             darkMode={darkMode}
           />
-        </div>}
-
-        {/* ── Personal Rank (staff only) ───────────────────────────────── */}
-        {isVisible("leaderboard") && !currentUser?.isAdmin && myRank && (
-          <div className="rounded-2xl p-4 flex items-center gap-4"
+                {/* ── Personal Rank (staff only) ──────────────────────────────────────────── */}
+        {isVisible("leaderboard") && !currentUser?.isAdmin && myRank && (         <div className="rounded-2xl p-4 flex items-center gap-4"
             style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: myRank.rank === 1 ? `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` : T.bg }}>
@@ -544,7 +541,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         )}
 
         {/* ── Data Pool Banner ─────────────────────────────────────────── */}
-        {isVisible("dataPool") && poolStats !== null && poolStats.pending > 0 && (
+        {poolStats !== null && poolStats.pending > 0 && (
           <Link href="/crm/data-pool"
             className="block rounded-2xl overflow-hidden transition-all hover:shadow-lg"
             style={{
@@ -609,7 +606,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         )}
 
         {/* ── This Month Summary ──────────────────────────────────────── */}
-        {isVisible("monthSummary") && <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {[
             { label: `Doanh thu ${PERIOD_LABELS[period].toLowerCase()}`, value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth), icon: DollarSign, color: theme.summaryRevenueColor, bg: theme.summaryCardBg, sub: revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% tháng trước` : "So tháng trước", subColor: revenueChange >= 0 ? theme.kpiWonColor : theme.kpiOverdueColor },
             { label: `KH mới ${PERIOD_LABELS[period].toLowerCase()}`, value: String(periodStats?.newLeads ?? stats.newLeadsThisMonth), icon: UserCheck, color: theme.summaryNewLeadColor, bg: theme.summaryCardBg, sub: `Tổng ${leads.length} khách hàng`, subColor: theme.kpiCardMutedColor },
@@ -627,7 +624,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               </div>
             </div>
           ))}
-        </div>}
+        </div>
 
         {/* ── Main Grid ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -636,7 +633,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           <div className="xl:col-span-2 space-y-5">
 
             {/* Revenue Chart + Forecast */}
-            {isVisible("revenueChart") && <Section title="Doanh thu & Dự báo" icon={BarChart2} iconColor={theme.accentColor} iconBg={theme.accentColor + "18"}>
+            <Section title="Doanh thu & Dự báo" icon={BarChart2} iconColor={theme.accentColor} iconBg={theme.accentColor + "18"}>
               <div className="p-6">
                 {forecast ? (
                   <div>
@@ -721,10 +718,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   </div>
                 )}
               </div>
-            </Section>}
+            </Section>
 
             {/* Conversion Funnel */}
-            {isVisible("funnel") && <Section title="Conversion Funnel" icon={Filter} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
+            <Section title="Conversion Funnel" icon={Filter} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
               <div className="p-5">
                 <div className="space-y-2">
                   {(Object.keys(STAGE_LABELS) as Array<keyof typeof STAGE_LABELS>).map((stage, i) => {
@@ -769,10 +766,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   <span className="text-sm font-black" style={{ color: T.green }}>{stats.conversionRate}%</span>
                 </div>
               </div>
-            </Section>}
+            </Section>
 
             {/* Stale Deals Alert */}
-            {isVisible("staleDeals") && staleDeals.length > 0 && (
+            {staleDeals.length > 0 && (
               <Section title="Deal có nguy cơ mất" icon={AlertTriangle} iconColor={T.orange} iconBg={T.orangeBg}
                 badge={`${staleDeals.length} deal`}>
                 <div className="p-4 space-y-2">
@@ -809,7 +806,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Source + Type row */}
-            {isVisible("pipeline") && <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Section title="Nguồn khách hàng" icon={TrendingUp} iconColor={T.orange} iconBg={T.orangeBg}>
                 <div className="p-4 space-y-3">
                   {stats.bySource.length === 0 ? (
@@ -876,10 +873,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   })}
                 </div>
               </Section>
-            </div>}
+            </div>
 
             {/* Activity Heatmap */}
-            {isVisible("heatmap") && Object.keys(heatmap).length > 0 && (
+            {Object.keys(heatmap).length > 0 && (
               <Section title="Heatmap hoạt động" icon={Activity} iconColor={T.purple} iconBg={T.purpleBg}>
                 <div className="p-5">
                   <div className="flex gap-2">
@@ -936,7 +933,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Staff Performance (admin only) */}
-            {isVisible("staffPerformance") && currentUser?.isAdmin && stats.staffPerformance.length > 0 && (
+            {currentUser?.isAdmin && stats.staffPerformance.length > 0 && (
               <Section title="Hiệu suất nhân viên" icon={Star} iconColor={T.gold} iconBg={T.goldBg}>
                 <div className="px-6 py-2 grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wide"
                   style={{ background: T.bg, borderBottom: `1px solid ${T.divider}`, color: T.textMuted }}>
@@ -989,7 +986,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Recent Activities */}
-            {isVisible("recentActivities") && stats.recentActivities.length > 0 && (
+            {stats.recentActivities.length > 0 && (
               <Section title="Hoạt động gần đây" icon={Activity} iconColor={T.green} iconBg={T.greenBg} defaultOpen={false}>
                 <div className="divide-y" style={{ borderColor: T.divider }}>
                   {stats.recentActivities.slice(0, 6).map((act) => {
@@ -1026,7 +1023,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Recent Quotes */}
-            {isVisible("recentQuotes") && <Section title="Báo giá gần đây" icon={FileText} iconColor={T.green} iconBg={T.greenBg} defaultOpen={false}>
+            <Section title="Báo giá gần đây" icon={FileText} iconColor={T.green} iconBg={T.greenBg} defaultOpen={false}>
               <div className="divide-y" style={{ borderColor: T.divider }}>
                 {quotes.length === 0 ? (
                   <div className="text-center py-6" style={{ color: T.textMuted }}>
@@ -1065,7 +1062,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   </Link>
                 </div>
               )}
-            </Section>}
+            </Section>
 
           </div>
 
@@ -1073,7 +1070,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           <div className="space-y-5">
 
             {/* Team Online (admin only) */}
-            {isVisible("teamOnline") && currentUser?.isAdmin && teamOnline.length > 0 && (
+            {currentUser?.isAdmin && teamOnline.length > 0 && (
               <Section title="Trạng thái team" icon={Wifi} iconColor={T.green} iconBg={T.greenBg}>
                 <div className="p-4 space-y-2">
                   {teamOnline.slice(0, 6).map(member => (
@@ -1103,7 +1100,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Today's Tasks */}
-            {isVisible("tasks") && <Section title="Việc hôm nay" icon={CheckSquare} iconColor={T.gold} iconBg={T.goldBg}
+            <Section title="Việc hôm nay" icon={CheckSquare} iconColor={T.gold} iconBg={T.goldBg}
               badge={pendingTasks.length > 0 ? `${pendingTasks.length}` : undefined}>
               <div>
                 {tasks.length > 0 && (
@@ -1171,10 +1168,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   })}
                 </div>
               </div>
-            </Section>}
+            </Section>
 
             {/* Overdue Alert */}
-            {isVisible("overdue") && overdueLeads.length > 0 && (
+            {overdueLeads.length > 0 && (
               <Section title="Cần liên hệ ngay" icon={Zap} iconColor={theme.kpiOverdueColor} iconBg={theme.kpiOverdueColor + "18"}
                 badge={`${overdueLeads.length}`}>
                 <div className="p-3 space-y-2">
@@ -1203,7 +1200,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Quick Stats */}
-            {isVisible("quickStats") && <Section title="Thống kê nhanh" icon={Eye} iconColor={theme.kpiPipelineColor} iconBg={theme.kpiPipelineColor + "18"}>
+            <Section title="Thống kê nhanh" icon={Eye} iconColor={theme.kpiPipelineColor} iconBg={theme.kpiPipelineColor + "18"}>
               <div className="p-4 space-y-2.5">
                 {[
                   { label: "Đang thương thảo", value: (stats.byStage["negotiating"] || 0), color: theme.accentColor, bg: theme.accentColor + "12", icon: Target },
@@ -1223,10 +1220,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   </div>
                 ))}
               </div>
-            </Section>}
+            </Section>
 
             {/* Quick Links */}
-            {isVisible("quickLinks") && <Section title="Truy cập nhanh" icon={ArrowUpRight} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
+            <Section title="Truy cập nhanh" icon={ArrowUpRight} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
               <div className="p-3 grid grid-cols-2 gap-2">
                 {[
                   { href: "/crm/leads", label: "Khách hàng", icon: Users, color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12" },
@@ -1248,7 +1245,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   </Link>
                 ))}
               </div>
-            </Section>}
+            </Section>
 
           </div>
         </div>

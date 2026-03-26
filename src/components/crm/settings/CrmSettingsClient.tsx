@@ -750,6 +750,8 @@ const SECTION_LABELS: Record<DashboardSectionId, string> = {
   staleDeals: "Deal sắp mất",
   heatmap: "Heatmap hoạt động",
   staffPerformance: "Hiệu suất nhân viên",
+  recentActivities: "Hoạt động gần đây",
+  recentQuotes: "Báo giá gần đây",
   tasks: "Nhiệm vụ hôm nay",
   quickStats: "Thống kê nhanh",
   quickLinks: "Truy cập nhanh",
@@ -772,6 +774,7 @@ const KPI_CARD_LABELS: Record<KpiCardId, string> = {
 const ALL_SECTIONS: DashboardSectionId[] = [
   "kpiCards", "dataPool", "monthSummary", "revenueChart",
   "pipeline", "funnel", "staleDeals", "staffPerformance",
+  "recentActivities", "recentQuotes",
   "tasks", "quickStats", "quickLinks", "overdue",
   "leaderboard", "teamOnline", "heatmap",
 ];

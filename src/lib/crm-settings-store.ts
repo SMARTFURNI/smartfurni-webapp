@@ -93,7 +93,8 @@ export interface EmailConfig {
 export type DashboardSectionId =
   | "kpiCards" | "dataPool" | "monthSummary" | "revenueChart"
   | "pipeline" | "funnel" | "staleDeals" | "heatmap"
-  | "staffPerformance" | "tasks" | "quickStats" | "quickLinks"
+  | "staffPerformance" | "recentActivities" | "recentQuotes"
+  | "tasks" | "quickStats" | "quickLinks"
   | "overdue" | "leaderboard" | "teamOnline";
 
 export type KpiCardId =
@@ -341,6 +342,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     sectionOrder: [
       "kpiCards", "dataPool", "monthSummary", "revenueChart",
       "pipeline", "funnel", "staleDeals", "staffPerformance",
+      "recentActivities", "recentQuotes",
       "tasks", "quickStats", "quickLinks", "overdue",
       "leaderboard", "teamOnline", "heatmap",
     ],
