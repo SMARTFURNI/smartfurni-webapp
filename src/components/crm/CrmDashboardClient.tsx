@@ -59,10 +59,10 @@ const SOURCE_COLORS: Record<string, string> = {
 };
 
 const T = {
-  bg: "#F0F2F5", card: "#FFFFFF", cardBorder: "#E4E7EC",
-  cardShadow: "0 1px 4px rgba(16,24,40,0.06)", headerBg: "#FFFFFF",
-  headerBorder: "#E4E7EC", divider: "#F2F4F7",
-  textPrimary: "#101828", textSecondary: "#475467",
+  bg: "#F7F8FA", card: "#FFFFFF", cardBorder: "#EAECF0",
+  cardShadow: "0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04)",
+  headerBg: "#FFFFFF", headerBorder: "#F2F4F7", divider: "#F2F4F7",
+  textPrimary: "#101828", textSecondary: "#344054",
   textMuted: "#98A2B3", textLabel: "#667085",
   gold: "#C9A84C", goldDark: "#9A7A2E", goldLight: "#FEF3C7", goldBg: "#FFFBEB",
   indigo: "#4F46E5", indigoBg: "#EEF2FF",
@@ -361,30 +361,37 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
       style={{ background: dm.bg }}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 px-8 py-4 flex items-center justify-between"
+      <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between"
         style={{ background: dm.headerBg, borderBottom: `1px solid ${dm.headerBorder}` }}>
-        <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: T.green }} />
-            <span className="text-xs font-medium" style={{ color: dm.textMuted }}>{dateStr}</span>
+        <div className="flex items-center gap-4">
+          {/* Brand mark */}
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-sm"
+            style={{ background: `linear-gradient(135deg, ${T.gold} 0%, ${T.goldDark} 100%)`, color: "#fff", letterSpacing: "-0.5px" }}>
+            SF
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: dm.textPrimary }}>
-            {greeting}{currentUser?.name ? `, ${currentUser.name}` : ""} 👋
-          </h1>
-          <p className="text-sm" style={{ color: dm.textSecondary }}>
-            SmartFurni CRM — {currentUser?.isAdmin ? "Tổng quan kinh doanh B2B" : `${ROLE_LABELS[currentUser?.role ?? ""] ?? currentUser?.role}`}
-          </p>
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: T.green }} />
+              <span className="text-xs font-medium" style={{ color: dm.textMuted }}>{dateStr}</span>
+            </div>
+            <h1 className="text-xl font-bold leading-tight" style={{ color: dm.textPrimary }}>
+              {greeting}{currentUser?.name ? `, ${currentUser.name}` : ""} 👋
+            </h1>
+            <p className="text-xs mt-0.5" style={{ color: dm.textSecondary }}>
+              SmartFurni CRM — {currentUser?.isAdmin ? "Tổng quan kinh doanh B2B" : `${ROLE_LABELS[currentUser?.role ?? ""] ?? currentUser?.role}`}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Period selector */}
-          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: dm.bg, border: `1px solid ${dm.cardBorder}` }}>
-            {(["month", "quarter", "year"] as Period[]).map(p => (
+          {/* Period selector — pill group */}
+          <div className="flex items-center rounded-xl overflow-hidden" style={{ border: `1px solid ${dm.cardBorder}`, background: dm.bg }}>
+            {(["month", "quarter", "year"] as Period[]).map((p, i) => (
               <button key={p} onClick={() => setPeriod(p)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                className="px-4 py-2 text-xs font-semibold transition-all"
                 style={{
-                  background: period === p ? T.card : "transparent",
-                  color: period === p ? T.textPrimary : dm.textMuted,
-                  boxShadow: period === p ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  background: period === p ? T.gold : "transparent",
+                  color: period === p ? "#fff" : dm.textMuted,
+                  borderRight: i < 2 ? `1px solid ${dm.cardBorder}` : "none",
                 }}>
                 {PERIOD_LABELS[p]}
               </button>
@@ -402,7 +409,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           <NotificationBell currentUser={currentUser} />
 
           {overdueLeads.length > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
               style={{ background: T.redBg, color: T.red, border: `1px solid #FECACA` }}>
               <AlertCircle size={13} />
               {overdueLeads.length} quá hạn
@@ -411,7 +418,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
           <button onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: `linear-gradient(135deg, ${T.gold} 0%, ${T.goldDark} 100%)` }}>
+            style={{ background: `linear-gradient(135deg, ${T.indigo} 0%, #4338CA 100%)` }}>
             <Plus size={14} />
             Thêm KH
           </button>
@@ -431,34 +438,37 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
         {/* ── Focus Mode ──────────────────────────────────────────────────── */}
         {focusItems.length > 0 && (
-          <div className="rounded-2xl p-4"
+          <div className="rounded-2xl px-5 py-4"
             style={{
-              background: darkMode ? "#1E2022" : "#FFFFFF",
-              border: `1px solid ${T.gold}40`,
-              boxShadow: "0 1px 4px rgba(16,24,40,0.06)",
+              background: darkMode ? "#1E293B" : T.card,
+              border: `1px solid ${darkMode ? "#334155" : T.cardBorder}`,
+              borderLeft: `3px solid ${T.indigo}`,
+              boxShadow: T.cardShadow,
             }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Crosshair size={14} style={{ color: T.gold }} />
-              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: darkMode ? T.gold : T.textPrimary }}>Focus hôm nay</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                style={{ background: `${T.gold}18`, color: T.gold }}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: T.indigoBg }}>
+                <Crosshair size={11} style={{ color: T.indigo }} />
+              </div>
+              <span className="text-xs font-bold" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>Focus hôm nay</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                style={{ background: T.indigoBg, color: T.indigo }}>
                 {focusItems.length} việc ưu tiên
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="flex flex-wrap gap-2">
               {focusItems.map((item, i) => (
                 <Link key={i} href={item.href}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:opacity-90 transition-opacity"
-                  style={{ background: darkMode ? "rgba(255,255,255,0.05)" : "#F9FAFB", border: `1px solid ${darkMode ? "rgba(255,255,255,0.08)" : T.cardBorder}` }}>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${item.color}20` }}>
-                    <item.icon size={13} style={{ color: item.color }} />
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:opacity-80 transition-opacity"
+                  style={{ background: darkMode ? "rgba(255,255,255,0.06)" : T.bg, border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : T.cardBorder}` }}>
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${item.color}18` }}>
+                    <item.icon size={11} style={{ color: item.color }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold truncate" style={{ color: darkMode ? "#FFFFFF" : T.textPrimary }}>{item.label}</p>
-                    <p className="text-[10px] truncate" style={{ color: darkMode ? "rgba(255,255,255,0.45)" : T.textMuted }}>{item.sub}</p>
+                    <p className="text-xs font-semibold truncate" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>{item.label}</p>
+                    <p className="text-[10px] truncate" style={{ color: darkMode ? "rgba(255,255,255,0.4)" : T.textMuted }}>{item.sub}</p>
                   </div>
-                  <ArrowRight size={12} style={{ color: darkMode ? "rgba(255,255,255,0.3)" : T.textMuted }} className="flex-shrink-0 ml-auto" />
+                  <ArrowRight size={11} style={{ color: darkMode ? "rgba(255,255,255,0.25)" : T.textMuted }} className="flex-shrink-0 ml-1" />
                 </Link>
               ))}
             </div>
@@ -541,24 +551,22 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               Xem KH <ArrowUpRight size={12} />
             </Link>
           </div>
-        )}
-
-        {/* ── Data Pool Banner ─────────────────────────────────────────── */}
+        )}        {/* ── Data Pool Banner ──────────────────────────────────────────────── */}
         {isVisible("dataPool") && poolStats !== null && poolStats.pending > 0 && (
           <Link href="/crm/data-pool"
             className="block rounded-2xl overflow-hidden transition-all hover:shadow-md"
             style={{
-              background: darkMode ? "#1E2022" : "#FFFFFF",
-              border: `1px solid ${T.gold}40`,
-              boxShadow: "0 1px 4px rgba(16,24,40,0.06)",
-            }}>
-            <div className="px-6 py-4 flex items-center justify-between gap-4">
+              background: darkMode ? "#1E293B" : T.card,
+              border: `1px solid ${darkMode ? "#334155" : T.cardBorder}`,
+              borderLeft: `3px solid ${T.gold}`,
+              boxShadow: T.cardShadow,
+            }}>          <div className="px-6 py-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: `${T.gold}15`, border: `1px solid ${T.gold}30` }}>
-                  <Database size={20} style={{ color: theme.dataPoolBtnBg }} />
+                  <Database size={20} style={{ color: T.gold }} />
                   <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-                    style={{ background: theme.kpiOverdueColor, boxShadow: `0 0 0 2px ${darkMode ? "#1E2022" : "#FFFFFF"}` }}>
+                    style={{ background: theme.kpiOverdueColor, boxShadow: `0 0 0 2px ${darkMode ? "#1E293B" : "#FFFFFF"}` }}>
                     {poolStats.pending > 9 ? "9+" : poolStats.pending}
                   </span>
                 </div>
@@ -587,7 +595,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 </div>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold flex-shrink-0"
-                style={{ background: theme.dataPoolBtnBg, color: theme.dataPoolBtnText, boxShadow: `0 2px 8px ${theme.dataPoolBtnBg}55` }}>
+                style={{ background: T.gold, color: "#fff", boxShadow: `0 2px 8px ${T.gold}40` }}>
                 Nhận ngay <ArrowRight size={14} />
               </div>
             </div>
@@ -601,7 +609,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: darkMode ? "rgba(255,255,255,0.08)" : "#F3F4F6" }}>
                   <div className="h-full rounded-full"
-                    style={{ width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`, background: theme.dataPoolBtnBg, transition: "width 0.7s ease" }} />
+                    style={{ width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`, background: T.gold, transition: "width 0.7s ease" }} />
                 </div>
               </div>
             )}
@@ -1270,13 +1278,15 @@ function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeCo
     <div className="rounded-2xl p-5 relative overflow-hidden transition-all hover:shadow-md"
       style={{
         background: darkMode ? "#1E293B" : T.card,
-        border: urgent ? `1px solid ${color}50` : `1px solid ${T.cardBorder}`,
-        boxShadow: urgent ? `0 1px 4px ${color}18` : T.cardShadow,
+        border: urgent ? `1px solid ${color}40` : `1px solid ${T.cardBorder}`,
+        boxShadow: urgent ? `0 2px 8px ${color}15` : T.cardShadow,
       }}>
-      {urgent && <div className="absolute inset-0 opacity-[0.025]" style={{ background: color }} />}
+      {/* Top accent bar */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: color }} />
+      {urgent && <div className="absolute inset-0 opacity-[0.02]" style={{ background: color }} />}
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: colorBg }}>
-          <Icon size={20} style={{ color }} />
+          <Icon size={19} style={{ color }} />
         </div>
         <div className="flex items-center gap-2">
           {sparkline && <Sparkline data={sparkline} color={sparklineColor || color} />}
@@ -1284,7 +1294,7 @@ function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeCo
         </div>
       </div>
       <div className="text-2xl font-black leading-none mb-1" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>{value}</div>
-      <div className="text-xs font-semibold mb-1" style={{ color: darkMode ? "#94A3B8" : T.textSecondary }}>{label}</div>
+      <div className="text-xs font-semibold mb-1" style={{ color: darkMode ? "#94A3B8" : T.textLabel }}>{label}</div>
       <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{sub}</div>
       {badge && (
         <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
