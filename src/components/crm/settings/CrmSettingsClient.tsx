@@ -737,36 +737,36 @@ function EmailTab({ data, onChange }: { data: CrmSettings["email"]; onChange: (d
   );
 }
 
-// \u2500\u2500\u2500 DashboardThemeTab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── DashboardThemeTab ────────────────────────────────────────────────────────────────────────────
 
 
 const SECTION_LABELS: Record<DashboardSectionId, string> = {
   kpiCards: "4 KPI Cards",
   dataPool: "Banner Data Pool",
-  monthSummary: "3 Card th\u00e1ng n\u00e0y",
-  revenueChart: "Bi\u1ec3u \u0111\u1ed3 doanh thu",
+  monthSummary: "3 Card tháng này",
+  revenueChart: "Biểu đồ doanh thu",
   pipeline: "Pipeline Funnel",
   funnel: "Conversion Funnel",
-  staleDeals: "Deal s\u1eafp m\u1ea5t",
-  heatmap: "Heatmap ho\u1ea1t \u0111\u1ed9ng",
-  staffPerformance: "Hi\u1ec7u su\u1ea5t nh\u00e2n vi\u00ean",
-  tasks: "Nhi\u1ec7m v\u1ee5 h\u00f4m nay",
-  quickStats: "Th\u1ed1ng k\u00ea nhanh",
-  quickLinks: "Truy c\u1eadp nhanh",
-  overdue: "Qu\u00e1 h\u1ea1n li\u00ean h\u1ec7",
-  leaderboard: "X\u1ebfp h\u1ea1ng nh\u00e2n vi\u00ean",
+  staleDeals: "Deal sắp mất",
+  heatmap: "Heatmap hoạt động",
+  staffPerformance: "Hiệu suất nhân viên",
+  tasks: "Nhiệm vụ hôm nay",
+  quickStats: "Thống kê nhanh",
+  quickLinks: "Truy cập nhanh",
+  overdue: "Quá hạn liên hệ",
+  leaderboard: "Xếp hạng nhân viên",
   teamOnline: "Team Online",
 };
 
 const KPI_CARD_LABELS: Record<KpiCardId, string> = {
-  totalLeads: "T\u1ed5ng kh\u00e1ch h\u00e0ng",
-  pipelineValue: "Pipeline gi\u00e1 tr\u1ecb",
-  wonRate: "T\u1ef7 l\u1ec7 ch\u1ed1t \u0111\u01a1n",
-  overdue: "C\u1ea7n li\u00ean h\u1ec7 ngay",
-  revenueMonth: "Doanh thu th\u00e1ng",
-  newLeadsMonth: "KH m\u1edbi th\u00e1ng",
-  wonLeadsMonth: "\u0110\u01a1n ch\u1ed1t th\u00e1ng",
-  totalQuotes: "T\u1ed5ng b\u00e1o gi\u00e1",
+  totalLeads: "Tổng khách hàng",
+  pipelineValue: "Pipeline giá trị",
+  wonRate: "Tỷ lệ chốt đơn",
+  overdue: "Cần liên hệ ngay",
+  revenueMonth: "Doanh thu tháng",
+  newLeadsMonth: "KH mới tháng",
+  wonLeadsMonth: "Đơn chốt tháng",
+  totalQuotes: "Tổng báo giá",
 };
 
 const ALL_SECTIONS: DashboardSectionId[] = [
@@ -783,7 +783,7 @@ const ALL_KPI_CARDS: KpiCardId[] = [
 
 const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
   {
-    name: "M\u1eb7c \u0111\u1ecbnh (Gold & Navy)",
+    name: "Mặc định (Gold & Navy)",
     theme: {
       pageBg: "#F0F2F5", kpiCardBg: "#FFFFFF", kpiCardBorder: "#E4E7EC",
       kpiCustomerColor: "#4F46E5", kpiPipelineColor: "#C9A84C",
@@ -793,7 +793,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
     },
   },
   {
-    name: "Xanh d\u01b0\u01a1ng hi\u1ec7n \u0111\u1ea1i",
+    name: "Xanh dương hiện đại",
     theme: {
       pageBg: "#EFF6FF", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BFDBFE",
       kpiCustomerColor: "#2563EB", kpiPipelineColor: "#0EA5E9",
@@ -803,7 +803,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
     },
   },
   {
-    name: "T\u1ed1i sang tr\u1ecdng",
+    name: "Tối sang trọng",
     theme: {
       pageBg: "#0F172A", kpiCardBg: "#1E293B", kpiCardBorder: "#334155",
       kpiCardTitleColor: "#F1F5F9", kpiCardValueColor: "#F8FAFC", kpiCardMutedColor: "#94A3B8",
@@ -817,7 +817,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
     },
   },
   {
-    name: "Xanh l\u00e1 t\u01b0\u01a1i m\u00e1t",
+    name: "Xanh lá tươi mát",
     theme: {
       pageBg: "#F0FDF4", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BBF7D0",
       kpiCustomerColor: "#16A34A", kpiPipelineColor: "#CA8A04",
@@ -830,72 +830,72 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
 
 const COLOR_GROUPS: { title: string; fields: { key: keyof DashboardTheme; label: string }[] }[] = [
   {
-    title: "N\u1ec1n trang",
-    fields: [{ key: "pageBg", label: "M\u00e0u n\u1ec1n trang" }],
+    title: "Nền trang",
+    fields: [{ key: "pageBg", label: "Màu nền trang" }],
   },
   {
-    title: "KPI Cards (4 \u00f4 \u0111\u1ea7u trang)",
+    title: "KPI Cards (4 ô đầu trang)",
     fields: [
-      { key: "kpiCardBg",         label: "N\u1ec1n card" },
-      { key: "kpiCardBorder",     label: "Vi\u1ec1n card" },
-      { key: "kpiCardTitleColor", label: "Ch\u1eef ti\u00eau \u0111\u1ec1" },
-      { key: "kpiCardValueColor", label: "Ch\u1eef s\u1ed1 li\u1ec7u" },
-      { key: "kpiCardMutedColor", label: "Ch\u1eef ph\u1ee5" },
-      { key: "kpiCustomerColor",  label: "Icon T\u1ed5ng KH" },
+      { key: "kpiCardBg",         label: "Nền card" },
+      { key: "kpiCardBorder",     label: "Viền card" },
+      { key: "kpiCardTitleColor", label: "Chữ tiêu đề" },
+      { key: "kpiCardValueColor", label: "Chữ số liệu" },
+      { key: "kpiCardMutedColor", label: "Chữ phụ" },
+      { key: "kpiCustomerColor",  label: "Icon Tổng KH" },
       { key: "kpiPipelineColor",  label: "Icon Pipeline" },
-      { key: "kpiWonColor",       label: "Icon Ch\u1ed1t \u0111\u01a1n" },
-      { key: "kpiOverdueColor",   label: "Icon C\u1ea7n li\u00ean h\u1ec7" },
+      { key: "kpiWonColor",       label: "Icon Chốt đơn" },
+      { key: "kpiOverdueColor",   label: "Icon Cần liên hệ" },
     ],
   },
   {
     title: "Banner Data Pool",
     fields: [
-      { key: "dataPoolBannerBg",   label: "N\u1ec1n banner" },
-      { key: "dataPoolBannerText", label: "Ch\u1eef banner" },
-      { key: "dataPoolBtnBg",      label: "N\u1ec1n n\u00fat" },
-      { key: "dataPoolBtnText",    label: "Ch\u1eef n\u00fat" },
+      { key: "dataPoolBannerBg",   label: "Nền banner" },
+      { key: "dataPoolBannerText", label: "Chữ banner" },
+      { key: "dataPoolBtnBg",      label: "Nền nút" },
+      { key: "dataPoolBtnText",    label: "Chữ nút" },
     ],
   },
   {
-    title: "3 Card th\u1ed1ng k\u00ea th\u00e1ng",
+    title: "3 Card thống kê tháng",
     fields: [
-      { key: "summaryCardBg",       label: "N\u1ec1n card" },
-      { key: "summaryCardBorder",   label: "Vi\u1ec1n card" },
+      { key: "summaryCardBg",       label: "Nền card" },
+      { key: "summaryCardBorder",   label: "Viền card" },
       { key: "summaryRevenueColor", label: "Doanh thu" },
-      { key: "summaryNewLeadColor", label: "KH m\u1edbi" },
-      { key: "summaryWonColor",     label: "Ch\u1ed1t \u0111\u01a1n" },
+      { key: "summaryNewLeadColor", label: "KH mới" },
+      { key: "summaryWonColor",     label: "Chốt đơn" },
     ],
   },
   {
-    title: "Section Cards (bi\u1ec3u \u0111\u1ed3, pipeline, ngu\u1ed3n KH)",
+    title: "Section Cards (biểu đồ, pipeline, nguồn KH)",
     fields: [
-      { key: "sectionCardBg",      label: "N\u1ec1n card" },
-      { key: "sectionCardBorder",  label: "Vi\u1ec1n card" },
-      { key: "sectionHeaderColor", label: "Ti\u00eau \u0111\u1ec1" },
-      { key: "sectionBodyColor",   label: "N\u1ed9i dung" },
+      { key: "sectionCardBg",      label: "Nền card" },
+      { key: "sectionCardBorder",  label: "Viền card" },
+      { key: "sectionHeaderColor", label: "Tiêu đề" },
+      { key: "sectionBodyColor",   label: "Nội dung" },
     ],
   },
   {
-    title: "C\u1ed9t ph\u1ea3i (Task, Quick Links)",
+    title: "Cột phải (Task, Quick Links)",
     fields: [
-      { key: "taskCardBg",        label: "N\u1ec1n card" },
-      { key: "taskUrgentColor",   label: "Task kh\u1ea9n c\u1ea5p" },
-      { key: "quickLinkBg",       label: "N\u1ec1n quick link" },
+      { key: "taskCardBg",        label: "Nền card" },
+      { key: "taskUrgentColor",   label: "Task khẩn cấp" },
+      { key: "quickLinkBg",       label: "Nền quick link" },
       { key: "quickLinkIconColor", label: "Icon quick link" },
     ],
   },
   {
-    title: "Accent / Th\u01b0\u01a1ng hi\u1ec7u",
+    title: "Accent / Thương hiệu",
     fields: [
-      { key: "accentColor",     label: "M\u00e0u accent ch\u00ednh" },
-      { key: "accentTextColor", label: "Ch\u1eef tr\u00ean accent" },
+      { key: "accentColor",     label: "Màu accent chính" },
+      { key: "accentTextColor", label: "Chữ trên accent" },
     ],
   },
   {
-    title: "Ticker th\u00f4ng b\u00e1o",
+    title: "Ticker thông báo",
     fields: [
-      { key: "tickerBg",        label: "N\u1ec1n ticker" },
-      { key: "tickerTextColor", label: "Ch\u1eef ticker" },
+      { key: "tickerBg",        label: "Nền ticker" },
+      { key: "tickerTextColor", label: "Chữ ticker" },
     ],
   },
 ];
@@ -920,7 +920,7 @@ function ThemeColorRow({ label, value, onChange }: { label: string; value: strin
           onChange={e => onChange(e.target.value)}
           className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0.5"
           style={{ background: "transparent" }}
-          title="Ch\u1ecdn m\u00e0u"
+          title="Chọn màu"
         />
       </div>
     </div>
@@ -1015,12 +1015,12 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
   };
 
   const GROUP_TABS = [
-    { id: "colors" as const,     label: "M\u00e0u s\u1eafc" },
-    { id: "layout" as const,     label: "B\u1ed1 c\u1ee5c" },
-    { id: "typography" as const, label: "Ch\u1eef & M\u1eadt \u0111\u1ed9" },
-    { id: "charts" as const,     label: "Bi\u1ec3u \u0111\u1ed3" },
+    { id: "colors" as const,     label: "Màu sắc" },
+    { id: "layout" as const,     label: "Bố cục" },
+    { id: "typography" as const, label: "Chữ & Mật độ" },
+    { id: "charts" as const,     label: "Biểu đồ" },
     { id: "widgets" as const,    label: "Widget" },
-    { id: "behavior" as const,   label: "H\u00e0nh vi" },
+    { id: "behavior" as const,   label: "Hành vi" },
   ];
 
   return (
@@ -1028,11 +1028,11 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
       {/* Live preview */}
       <div className="rounded-2xl overflow-hidden border" style={{ borderColor: "#e5e7eb" }}>
         <div className="px-4 py-3 text-xs font-semibold" style={{ background: "#f9fafb", color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>
-          XEM TR\u01af\u1edaC \u2014 M\u00e0u hi\u1ec7n t\u1ea1i
+          XEM TRƯỚC — Màu hiện tại
         </div>
         <div className="p-4 flex gap-3 flex-wrap" style={{ background: data.pageBg }}>
           <div className="rounded-xl p-3 flex-1 min-w-[100px]" style={{ background: data.kpiCardBg, border: `1px solid ${data.kpiCardBorder}` }}>
-            <div className="text-[10px] mb-1" style={{ color: data.kpiCardMutedColor }}>T\u1ed5ng KH</div>
+            <div className="text-[10px] mb-1" style={{ color: data.kpiCardMutedColor }}>Tổng KH</div>
             <div className="text-lg font-bold" style={{ color: data.kpiCardValueColor }}>42</div>
             <div className="w-5 h-5 rounded mt-1" style={{ background: data.kpiCustomerColor + "22" }}>
               <div className="w-2.5 h-2.5 rounded m-1.5" style={{ background: data.kpiCustomerColor }} />
@@ -1044,14 +1044,14 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
           </div>
           <div className="rounded-xl p-3 flex-1 min-w-[120px] flex items-center justify-between" style={{ background: data.dataPoolBannerBg }}>
             <span className="text-xs font-medium" style={{ color: data.dataPoolBannerText }}>Data Pool</span>
-            <span className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: data.dataPoolBtnBg, color: data.dataPoolBtnText }}>Nh\u1eadn ngay</span>
+            <span className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: data.dataPoolBtnBg, color: data.dataPoolBtnText }}>Nhận ngay</span>
           </div>
           <div className="rounded-xl p-3 flex-1 min-w-[100px]" style={{ background: data.sectionCardBg, border: `1px solid ${data.sectionCardBorder}` }}>
             <div className="text-[10px] font-semibold mb-2" style={{ color: data.sectionHeaderColor }}>Pipeline</div>
             <div className="h-2 rounded-full mb-1" style={{ background: data.accentColor + "33" }}>
               <div className="h-2 rounded-full w-3/4" style={{ background: data.accentColor }} />
             </div>
-            <div className="text-[10px]" style={{ color: data.sectionBodyColor }}>3 kh\u00e1ch h\u00e0ng</div>
+            <div className="text-[10px]" style={{ color: data.sectionBodyColor }}>3 khách hàng</div>
           </div>
         </div>
       </div>
@@ -1078,7 +1078,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
       {activeGroup === "colors" && (
         <div className="space-y-4">
           <div>
-            <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>B\u1ed8 M\u00c0U C\u00d3 S\u1eb4N</div>
+            <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>BỘ MÀU CÓ SẴN</div>
             <div className="grid grid-cols-2 gap-2">
               {THEME_PRESETS.map(preset => (
                 <button
@@ -1115,7 +1115,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
       {/* Layout tab */}
       {activeGroup === "layout" && (
         <div className="space-y-4">
-          <SectionCard title="S\u1ed1 c\u1ed9t KPI Cards" icon={Palette}>
+          <SectionCard title="Số cột KPI Cards" icon={Palette}>
             <div className="flex gap-2 mt-1">
               {([2, 3, 4] as KpiColumns[]).map(n => (
                 <button
@@ -1128,13 +1128,13 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                     borderColor: data.kpiColumns === n ? "#C9A84C" : "#e5e7eb",
                   }}
                 >
-                  {n} c\u1ed9t
+                  {n} cột
                 </button>
               ))}
             </div>
           </SectionCard>
 
-          <SectionCard title="Ch\u1ecdn KPI Cards hi\u1ec3n th\u1ecb (t\u1ed1i \u0111a 6)" icon={Palette}>
+          <SectionCard title="Chọn KPI Cards hiển thị (tối đa 6)" icon={Palette}>
             <div className="grid grid-cols-2 gap-2 mt-1">
               {ALL_KPI_CARDS.map(id => {
                 const visible = data.visibleKpiCards ?? ALL_KPI_CARDS.slice(0, 4);
@@ -1161,7 +1161,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
             </div>
           </SectionCard>
 
-          <SectionCard title="S\u1eafp x\u1ebfp & \u1ea8n/hi\u1ec7n c\u00e1c Section" icon={GripVertical}>
+          <SectionCard title="Sắp xếp & Ẩn/hiện các Section" icon={GripVertical}>
             <div className="space-y-1 mt-1">
               {(data.sectionOrder ?? ALL_SECTIONS).map((id, idx) => {
                 const hidden = (data.hiddenSections ?? []).includes(id);
@@ -1175,12 +1175,12 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                     <span className="flex-1 text-xs font-medium" style={{ color: hidden ? "#ef4444" : "#374151" }}>
                       {SECTION_LABELS[id]}
                     </span>
-                    <button onClick={() => moveSectionUp(idx)} className="p-1 rounded hover:bg-gray-200 transition-colors" title="L\u00ean tr\u00ean">
+                    <button onClick={() => moveSectionUp(idx)} className="p-1 rounded hover:bg-gray-200 transition-colors" title="Lên trên">
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                         <path d="M5 2L9 7H1L5 2Z" fill="#6b7280" />
                       </svg>
                     </button>
-                    <button onClick={() => moveSectionDown(idx)} className="p-1 rounded hover:bg-gray-200 transition-colors" title="Xu\u1ed1ng d\u01b0\u1edbi">
+                    <button onClick={() => moveSectionDown(idx)} className="p-1 rounded hover:bg-gray-200 transition-colors" title="Xuống dưới">
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                         <path d="M5 8L1 3H9L5 8Z" fill="#6b7280" />
                       </svg>
@@ -1188,7 +1188,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                     <button
                       onClick={() => toggleSection(id)}
                       className="p-1 rounded transition-colors"
-                      title={hidden ? "Hi\u1ec7n section" : "\u1ea8n section"}
+                      title={hidden ? "Hiện section" : "Ẩn section"}
                     >
                       {hidden
                         ? <EyeOff size={14} style={{ color: "#ef4444" }} />
@@ -1205,12 +1205,12 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
       {/* Typography tab */}
       {activeGroup === "typography" && (
         <div className="space-y-4">
-          <SectionCard title="M\u1eadt \u0111\u1ed9 th\u00f4ng tin" icon={Palette}>
+          <SectionCard title="Mật độ thông tin" icon={Palette}>
             <div className="flex gap-2 mt-1">
               {([
-                { value: "compact", label: "Compact", desc: "Nhi\u1ec1u th\u00f4ng tin" },
-                { value: "default", label: "Default", desc: "C\u00e2n b\u1eb1ng" },
-                { value: "comfortable", label: "Tho\u00e1ng", desc: "D\u1ec5 \u0111\u1ecdc" },
+                { value: "compact", label: "Compact", desc: "Nhiều thông tin" },
+                { value: "default", label: "Default", desc: "Cân bằng" },
+                { value: "comfortable", label: "Thoáng", desc: "Dễ đọc" },
               ] as { value: DensityMode; label: string; desc: string }[]).map(opt => (
                 <button
                   key={opt.value}
@@ -1229,7 +1229,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
             </div>
           </SectionCard>
 
-          <SectionCard title="Font ch\u1eef" icon={Palette}>
+          <SectionCard title="Font chữ" icon={Palette}>
             <div className="grid grid-cols-2 gap-2 mt-1">
               {([
                 { value: "inter",           label: "Inter",            sample: "Aa Bb Cc" },
@@ -1254,11 +1254,11 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
             </div>
           </SectionCard>
 
-          <SectionCard title="C\u1ee1 ch\u1eef s\u1ed1 li\u1ec7u KPI" icon={Palette}>
+          <SectionCard title="Cỡ chữ số liệu KPI" icon={Palette}>
             <div className="flex gap-2 mt-1">
               {([
-                { value: "small",  label: "Nh\u1ecf",  size: "text-xl" },
-                { value: "medium", label: "V\u1eeba",  size: "text-3xl" },
+                { value: "small",  label: "Nhỏ",  size: "text-xl" },
+                { value: "medium", label: "Vừa",  size: "text-3xl" },
                 { value: "large",  label: "To",    size: "text-5xl" },
               ] as { value: KpiSize; label: string; size: string }[]).map(opt => (
                 <button
@@ -1282,12 +1282,12 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
       {/* Charts tab */}
       {activeGroup === "charts" && (
         <div className="space-y-4">
-          <SectionCard title="Lo\u1ea1i bi\u1ec3u \u0111\u1ed3 doanh thu" icon={Palette}>
+          <SectionCard title="Loại biểu đồ doanh thu" icon={Palette}>
             <div className="flex gap-2 mt-1">
               {([
-                { value: "bar",  label: "C\u1ed9t (Bar)" },
-                { value: "line", label: "\u0110\u01b0\u1eddng (Line)" },
-                { value: "area", label: "Di\u1ec7n t\u00edch (Area)" },
+                { value: "bar",  label: "Cột (Bar)" },
+                { value: "line", label: "Đường (Line)" },
+                { value: "area", label: "Diện tích (Area)" },
               ] as { value: ChartType; label: string }[]).map(opt => (
                 <button
                   key={opt.value}
@@ -1305,7 +1305,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
             </div>
           </SectionCard>
 
-          <SectionCard title="S\u1ed1 th\u00e1ng hi\u1ec3n th\u1ecb" icon={Palette}>
+          <SectionCard title="Số tháng hiển thị" icon={Palette}>
             <div className="flex gap-2 mt-1">
               {([3, 6, 12, 24] as (3|6|12|24)[]).map(n => (
                 <button
@@ -1318,17 +1318,17 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                     borderColor: data.chartMonths === n ? "#C9A84C" : "#e5e7eb",
                   }}
                 >
-                  {n} th\u00e1ng
+                  {n} tháng
                 </button>
               ))}
             </div>
           </SectionCard>
 
-          <SectionCard title="Ki\u1ec3u Pipeline Funnel" icon={Palette}>
+          <SectionCard title="Kiểu Pipeline Funnel" icon={Palette}>
             <div className="flex gap-2 mt-1">
               {([
                 { value: "bars",   label: "Thanh ngang" },
-                { value: "funnel", label: "H\u00ecnh ph\u1ec5u" },
+                { value: "funnel", label: "Hình phễu" },
                 { value: "donut",  label: "Donut chart" },
               ] as { value: FunnelStyle; label: string }[]).map(opt => (
                 <button
@@ -1347,12 +1347,12 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
             </div>
           </SectionCard>
 
-          <SectionCard title="Palette m\u00e0u bi\u1ec3u \u0111\u1ed3" icon={Palette}>
+          <SectionCard title="Palette màu biểu đồ" icon={Palette}>
             <div className="flex gap-2 mt-1">
               {([
-                { value: "brand",        label: "Th\u01b0\u01a1ng hi\u1ec7u", colors: ["#C9A84C", "#4F46E5", "#059669", "#DC2626"] },
-                { value: "categorical",  label: "Nhi\u1ec1u m\u00e0u",     colors: ["#60a5fa", "#f97316", "#a78bfa", "#34d399"] },
-                { value: "monochrome",   label: "\u0110\u01a1n s\u1eafc",     colors: ["#1e293b", "#475569", "#94a3b8", "#e2e8f0"] },
+                { value: "brand",        label: "Thương hiệu", colors: ["#C9A84C", "#4F46E5", "#059669", "#DC2626"] },
+                { value: "categorical",  label: "Nhiều màu",     colors: ["#60a5fa", "#f97316", "#a78bfa", "#34d399"] },
+                { value: "monochrome",   label: "Đơn sắc",     colors: ["#1e293b", "#475569", "#94a3b8", "#e2e8f0"] },
               ] as { value: ChartPalette; label: string; colors: string[] }[]).map(opt => (
                 <button
                   key={opt.value}
@@ -1377,42 +1377,42 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
       {/* Widgets tab */}
       {activeGroup === "widgets" && (
         <div className="space-y-4">
-          <SectionCard title="Ticker th\u00f4ng b\u00e1o n\u1ed9i b\u1ed9" icon={Palette}>
+          <SectionCard title="Ticker thông báo nội bộ" icon={Palette}>
             <ToggleRow
-              label="Hi\u1ec3n th\u1ecb ticker"
-              desc="D\u1ea3i ch\u1ea1y ch\u1eef th\u00f4ng b\u00e1o \u1edf \u0111\u1ea7u dashboard"
+              label="Hiển thị ticker"
+              desc="Dải chạy chữ thông báo ở đầu dashboard"
               value={data.tickerEnabled ?? false}
               onChange={v => set("tickerEnabled", v)}
             />
             {data.tickerEnabled && (
               <>
                 <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <div className="text-sm mb-1.5" style={{ color: "#374151" }}>N\u1ed9i dung ticker</div>
+                  <div className="text-sm mb-1.5" style={{ color: "#374151" }}>Nội dung ticker</div>
                   <input
                     type="text"
                     value={data.tickerText ?? ""}
                     onChange={e => set("tickerText", e.target.value)}
                     className="w-full text-sm px-3 py-2 rounded-lg border"
                     style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
-                    placeholder="Nh\u1eadp th\u00f4ng b\u00e1o n\u1ed9i b\u1ed9..."
+                    placeholder="Nhập thông báo nội bộ..."
                   />
                 </div>
-                <ThemeColorRow label="N\u1ec1n ticker" value={data.tickerBg ?? "#1E293B"} onChange={v => set("tickerBg", v)} />
-                <ThemeColorRow label="Ch\u1eef ticker" value={data.tickerTextColor ?? "#F1F5F9"} onChange={v => set("tickerTextColor", v)} />
+                <ThemeColorRow label="Nền ticker" value={data.tickerBg ?? "#1E293B"} onChange={v => set("tickerBg", v)} />
+                <ThemeColorRow label="Chữ ticker" value={data.tickerTextColor ?? "#F1F5F9"} onChange={v => set("tickerTextColor", v)} />
               </>
             )}
           </SectionCard>
 
-          <SectionCard title="Header th\u01b0\u01a1ng hi\u1ec7u" icon={Palette}>
+          <SectionCard title="Header thương hiệu" icon={Palette}>
             <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
-              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>T\u00ean c\u00f4ng ty tr\u00ean header</div>
+              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>Tên công ty trên header</div>
               <input
                 type="text"
                 value={data.headerCompanyName ?? ""}
                 onChange={e => set("headerCompanyName", e.target.value)}
                 className="w-full text-sm px-3 py-2 rounded-lg border"
                 style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
-                placeholder="M\u1eb7c \u0111\u1ecbnh: SmartFurni CRM"
+                placeholder="Mặc định: SmartFurni CRM"
               />
             </div>
             <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
@@ -1427,19 +1427,19 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
               />
             </div>
             <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
-              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>URL \u1ea3nh n\u1ec1n header</div>
+              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>URL ảnh nền header</div>
               <input
                 type="text"
                 value={data.headerBgImageUrl ?? ""}
                 onChange={e => set("headerBgImageUrl", e.target.value)}
                 className="w-full text-sm px-3 py-2 rounded-lg border"
                 style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
-                placeholder="https://... (t\u00f9y ch\u1ecdn)"
+                placeholder="https://... (tùy chọn)"
               />
             </div>
             <div className="py-2.5">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm" style={{ color: "#374151" }}>Opacity \u1ea3nh n\u1ec1n</span>
+                <span className="text-sm" style={{ color: "#374151" }}>Opacity ảnh nền</span>
                 <span className="text-xs font-mono" style={{ color: "#9ca3af" }}>{Math.round((data.headerBgOpacity ?? 0.08) * 100)}%</span>
               </div>
               <input
@@ -1458,14 +1458,14 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
       {/* Behavior tab */}
       {activeGroup === "behavior" && (
         <div className="space-y-4">
-          <SectionCard title="T\u1ef1 \u0111\u1ed9ng refresh" icon={RefreshCw}>
+          <SectionCard title="Tự động refresh" icon={RefreshCw}>
             <div className="flex flex-wrap gap-2 mt-1">
               {([
-                { value: 0,   label: "T\u1eaft" },
-                { value: 30,  label: "30 gi\u00e2y" },
-                { value: 60,  label: "1 ph\u00fat" },
-                { value: 300, label: "5 ph\u00fat" },
-                { value: 900, label: "15 ph\u00fat" },
+                { value: 0,   label: "Tắt" },
+                { value: 30,  label: "30 giây" },
+                { value: 60,  label: "1 phút" },
+                { value: 300, label: "5 phút" },
+                { value: 900, label: "15 phút" },
               ] as { value: RefreshInterval; label: string }[]).map(opt => (
                 <button
                   key={opt.value}
@@ -1483,16 +1483,16 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
             </div>
           </SectionCard>
 
-          <SectionCard title="Hi\u1ec7u \u1ee9ng & T\u01b0\u01a1ng t\u00e1c" icon={Palette}>
+          <SectionCard title="Hiệu ứng & Tương tác" icon={Palette}>
             <ToggleRow
-              label="B\u1eadt animation"
-              desc="S\u1ed1 \u0111\u1ebfm, bi\u1ec3u \u0111\u1ed3 grow-up, transition"
+              label="Bật animation"
+              desc="Số đếm, biểu đồ grow-up, transition"
               value={data.animationsEnabled ?? true}
               onChange={v => set("animationsEnabled", v)}
             />
             <ToggleRow
               label="Keyboard shortcuts"
-              desc="N: Th\u00eam KH | D: Dashboard | K: Kanban | T: Tasks"
+              desc="N: Thêm KH | D: Dashboard | K: Kanban | T: Tasks"
               value={data.keyboardShortcutsEnabled ?? true}
               onChange={v => set("keyboardShortcutsEnabled", v)}
             />
@@ -1500,14 +1500,14 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
 
           <SectionCard title="Presentation Mode" icon={Eye}>
             <ToggleRow
-              label="B\u1eadt Presentation Mode"
-              desc="\u1ea8n sidebar, ph\u00f3ng to s\u1ed1 li\u1ec7u \u2014 d\u00f9ng khi b\u00e1o c\u00e1o tr\u00ean m\u00e0n h\u00ecnh l\u1edbn"
+              label="Bật Presentation Mode"
+              desc="Ẩn sidebar, phóng to số liệu — dùng khi báo cáo trên màn hình lớn"
               value={data.presentationMode ?? false}
               onChange={v => set("presentationMode", v)}
             />
             {data.presentationMode && (
               <div className="mt-2 px-3 py-2.5 rounded-xl text-xs" style={{ background: "rgba(201,168,76,0.1)", color: "#92400e", border: "1px solid rgba(201,168,76,0.3)" }}>
-                Presentation Mode \u0111ang b\u1eadt. Sidebar s\u1ebd \u1ea9n v\u00e0 s\u1ed1 li\u1ec7u s\u1ebd \u0111\u01b0\u1ee3c ph\u00f3ng to khi t\u1ea3i l\u1ea1i trang.
+                Presentation Mode đang bật. Sidebar sẽ ẩn và số liệu sẽ được phóng to khi tải lại trang.
               </div>
             )}
           </SectionCard>
