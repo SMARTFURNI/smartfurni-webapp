@@ -326,8 +326,10 @@ export async function getTasks(filters?: { leadId?: string; done?: boolean; dueT
     conditions.push(`due_date <= CURRENT_DATE AND done = FALSE`);
   }
   if (filters?.assignedTo) {
-    conditions.push(`data->>'assignedTo' = $${idx++}`);
+    // Nhân viên thấy tasks được giao cho mình HOẶC tasks chưa giao (assignedTo rỗng)
+    conditions.push(`(data->>'assignedTo' = $${idx} OR data->>'assignedTo' = '' OR data->>'assignedTo' IS NULL)`);
     params.push(filters.assignedTo);
+    idx++;
   }
 
   if (conditions.length > 0) sql += ` WHERE ${conditions.join(" AND ")}`;
