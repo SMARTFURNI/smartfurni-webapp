@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Zap, Plus, Trash2, Save, RefreshCw, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Clock, GitBranch, Users, ArrowRight,
-  Play, Pause, BarChart2, Settings,
+  Play, Pause, BarChart2, Settings, Activity, Tag, Bell,
 } from "lucide-react";
 import type {
   AutomationRule, AutomationTrigger, AutomationAction,
@@ -561,7 +561,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-type TabId = "rules" | "sla" | "auto_assign";
+type TabId = "rules" | "sla" | "auto_assign" | "run";
 
 export default function AutomationSettingsClient() {
   const [activeTab, setActiveTab] = useState<TabId>("rules");
@@ -571,6 +571,15 @@ export default function AutomationSettingsClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [runResult, setRunResult] = useState<{
+    totalLeads: number;
+    totalTriggered: number;
+    logs: Array<{ ruleId: string; ruleName: string; leadName: string; actionsExecuted: string[]; success: boolean; error?: string; triggeredAt: string }>;
+    startedAt: string;
+    finishedAt: string;
+  } | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -616,10 +625,27 @@ export default function AutomationSettingsClient() {
     setRules(prev => [...prev, newRule]);
   };
 
+  const runEngine = async () => {
+    setRunning(true);
+    setRunError(null);
+    setRunResult(null);
+    try {
+      const res = await fetch("/api/crm/automation/run", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Lỗi không xác định");
+      setRunResult(data);
+    } catch (e) {
+      setRunError(e instanceof Error ? e.message : "Lỗi không xác định");
+    } finally {
+      setRunning(false);
+    }
+  };
+
   const TABS = [
     { id: "rules" as TabId, label: "Quy tắc tự động", icon: Zap, count: rules.filter(r => r.enabled).length },
     { id: "sla" as TabId, label: "SLA & Thời gian", icon: Clock, count: null },
     { id: "auto_assign" as TabId, label: "Phân công tự động", icon: Users, count: null },
+    { id: "run" as TabId, label: "Chạy & Kiểm tra", icon: Activity, count: null },
   ];
 
   if (loading) return (
@@ -707,6 +733,111 @@ export default function AutomationSettingsClient() {
 
       {activeTab === "auto_assign" && autoAssign && (
         <AutoAssignTab config={autoAssign} onChange={setAutoAssign} />
+      )}
+
+      {activeTab === "run" && (
+        <div className="space-y-5">
+          {/* Giới thiệu 4 nhóm */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              { icon: Clock, color: "#60a5fa", title: "Nhóm 1: Nhắc nhở & Follow-up", desc: "Tự động tạo task khi KH không tương tác quá N ngày" },
+              { icon: GitBranch, color: "#a78bfa", title: "Nhóm 2: Automation theo giai đoạn", desc: "Trigger action khi KH chuyển giai đoạn hoặc ở quá lâu" },
+              { icon: Tag, color: "#C9A84C", title: "Nhóm 3: Phân loại thông minh", desc: "Tự gắn tag Hot Lead, VIP, phân công nhân viên tự động" },
+              { icon: Bell, color: "#22c55e", title: "Nhóm 4: Thông báo đa kênh", desc: "Gửi Zalo/Email/SMS theo template khi có sự kiện" },
+            ].map(({ icon: Icon, color, title, desc }) => (
+              <div key={title} className="p-4 rounded-xl flex items-start gap-3"
+                style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
+                  <Icon size={15} style={{ color }} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-900">{title}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Nút chạy */}
+          <div className="p-5 rounded-2xl text-center" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+            <Activity size={28} className="mx-auto mb-3" style={{ color: "#C9A84C" }} />
+            <h3 className="text-sm font-bold text-gray-900 mb-1">Chạy engine tự động hóa</h3>
+            <p className="text-xs mb-4" style={{ color: "#6b7280" }}>
+              Kiểm tra tất cả khách hàng và thực thi các quy tắc đang bật.
+              Trên production, engine chạy tự động mỗi 30 phút qua cron job.
+            </p>
+            <button onClick={runEngine} disabled={running}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)", color: "#000" }}>
+              {running ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
+              {running ? "Đang chạy..." : "Chạy ngay"}
+            </button>
+          </div>
+
+          {/* Lỗi */}
+          {runError && (
+            <div className="p-4 rounded-xl flex items-start gap-3"
+              style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <AlertCircle size={16} style={{ color: "#ef4444" }} className="flex-shrink-0 mt-0.5" />
+              <p className="text-sm" style={{ color: "#ef4444" }}>{runError}</p>
+            </div>
+          )}
+
+          {/* Kết quả */}
+          {runResult && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Tổng KH kiểm tra", value: runResult.totalLeads, color: "#60a5fa" },
+                  { label: "Triggers thực thi", value: runResult.totalTriggered, color: "#22c55e" },
+                  { label: "Thời gian chạy", value: `${Math.round((new Date(runResult.finishedAt).getTime() - new Date(runResult.startedAt).getTime()) / 1000)}s`, color: "#C9A84C" },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="p-3 rounded-xl text-center" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                    <p className="text-xl font-bold" style={{ color }}>{value}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {runResult.logs.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold" style={{ color: "#6b7280" }}>Chi tiết thực thi ({runResult.logs.length} mục)</p>
+                  <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                    {runResult.logs.map((log, i) => (
+                      <div key={i} className="p-3 rounded-xl"
+                        style={{ background: log.success ? "rgba(34,197,94,0.04)" : "rgba(239,68,68,0.04)",
+                          border: `1px solid ${log.success ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)"}` }}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-gray-900">{log.leadName}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                            style={{ background: log.success ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
+                              color: log.success ? "#22c55e" : "#ef4444" }}>
+                            {log.ruleName}
+                          </span>
+                        </div>
+                        {log.actionsExecuted.map((a, j) => (
+                          <p key={j} className="text-[11px] flex items-center gap-1" style={{ color: "#6b7280" }}>
+                            <CheckCircle2 size={10} style={{ color: "#22c55e" }} /> {a}
+                          </p>
+                        ))}
+                        {log.error && <p className="text-[11px] mt-1" style={{ color: "#ef4444" }}>Lỗi: {log.error}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {runResult.logs.length === 0 && (
+                <div className="p-6 rounded-xl text-center" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                  <CheckCircle2 size={24} className="mx-auto mb-2" style={{ color: "#22c55e" }} />
+                  <p className="text-sm font-medium text-gray-900">Không có gì cần xử lý</p>
+                  <p className="text-xs mt-1" style={{ color: "#6b7280" }}>Tất cả khách hàng đều đang được chăm sóc tốt</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
