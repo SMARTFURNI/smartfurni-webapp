@@ -1,0 +1,262 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getCrmSession } from "@/lib/admin-auth";
+import { getLeads } from "@/lib/crm-store";
+import { getAllStaff } from "@/lib/crm-staff-store";
+import { query } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(req: NextRequest) {
+  const session = await getCrmSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get("type");
+  const period = searchParams.get("period") || "month"; // month | quarter | year
+  const staffFilter = (!session.isAdmin && session.staffId)
+    ? { assignedTo: undefined as string | undefined }
+    : undefined;
+
+  // Resolve assignedTo name for staff
+  let assignedToName: string | undefined;
+  if (!session.isAdmin && session.staffId) {
+    try {
+      const allStaff = await getAllStaff();
+      const me = allStaff.find(s => s.id === session.staffId);
+      assignedToName = me?.fullName;
+    } catch { /* ignore */ }
+  }
+  const filter = assignedToName ? { assignedTo: assignedToName } : undefined;
+
+  // ── Stale deals ──────────────────────────────────────────────────────────
+  if (type === "stale_deals") {
+    const leads = await getLeads(filter);
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+    const activeStages = ["new", "profile_sent", "surveyed", "quoted", "negotiating"];
+    const stale = leads
+      .filter(l => activeStages.includes(l.stage) && new Date(l.lastContactAt) < fiveDaysAgo)
+      .sort((a, b) => new Date(a.lastContactAt).getTime() - new Date(b.lastContactAt).getTime())
+      .slice(0, 8)
+      .map(l => ({
+        id: l.id,
+        name: l.name,
+        company: l.company,
+        stage: l.stage,
+        expectedValue: l.expectedValue,
+        lastContactAt: l.lastContactAt,
+        assignedTo: l.assignedTo,
+        daysStale: Math.floor((Date.now() - new Date(l.lastContactAt).getTime()) / (1000 * 60 * 60 * 24)),
+      }));
+    return NextResponse.json(stale);
+  }
+
+  // ── Team online status (admin only) ──────────────────────────────────────
+  if (type === "team_online") {
+    if (!session.isAdmin) return NextResponse.json([]);
+    try {
+      const allStaff = await getAllStaff();
+      const now = Date.now();
+      const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+      // Get active sessions
+      const sessions = await query<{ staff_id: string; created_at: string }>(
+        `SELECT DISTINCT staff_id, MAX(created_at) as created_at FROM crm_staff_sessions WHERE expires_at > NOW() GROUP BY staff_id`
+      );
+      const activeIds = new Set(sessions.map(s => s.staff_id));
+      return NextResponse.json(allStaff.map(s => ({
+        id: s.id,
+        name: s.fullName,
+        role: s.role,
+        online: activeIds.has(s.id),
+        lastLoginAt: s.lastLoginAt,
+        loginedToday: s.lastLoginAt ? new Date(s.lastLoginAt) > new Date(oneDayAgo) : false,
+      })));
+    } catch {
+      return NextResponse.json([]);
+    }
+  }
+
+  // ── Activity heatmap ─────────────────────────────────────────────────────
+  if (type === "heatmap") {
+    try {
+      const rows = await query<{ data: string; created_at: string }>(
+        `SELECT data, created_at FROM crm_activities ORDER BY created_at DESC LIMIT 500`
+      );
+      // Build 7-day × 24-hour grid
+      const grid: Record<string, number> = {};
+      for (const row of rows) {
+        const d = new Date(row.created_at);
+        const day = d.getDay(); // 0=Sun, 1=Mon...
+        const hour = d.getHours();
+        const key = `${day}-${hour}`;
+        grid[key] = (grid[key] || 0) + 1;
+      }
+      return NextResponse.json(grid);
+    } catch {
+      return NextResponse.json({});
+    }
+  }
+
+  // ── Revenue forecast ─────────────────────────────────────────────────────
+  if (type === "forecast") {
+    const leads = await getLeads(filter);
+    const STAGE_PROBABILITY: Record<string, number> = {
+      new: 0.05,
+      profile_sent: 0.10,
+      surveyed: 0.20,
+      quoted: 0.40,
+      negotiating: 0.70,
+      won: 1.0,
+      lost: 0,
+    };
+    const forecast = leads
+      .filter(l => !["won", "lost"].includes(l.stage) && l.expectedValue > 0)
+      .reduce((sum, l) => sum + l.expectedValue * (STAGE_PROBABILITY[l.stage] || 0), 0);
+
+    // Monthly trend for forecast line
+    const now = new Date();
+    const monthlyData = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const wonInMonth = leads.filter(l => {
+        if (l.stage !== "won") return false;
+        const ld = new Date(l.updatedAt);
+        return `${ld.getFullYear()}-${String(ld.getMonth() + 1).padStart(2, "0")}` === key;
+      });
+      monthlyData.push({
+        label: `Th ${d.getMonth() + 1}`,
+        actual: wonInMonth.reduce((s, l) => s + (l.expectedValue || 0), 0),
+        isForecast: false,
+      });
+    }
+    // Add next month forecast
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    monthlyData.push({
+      label: `Th ${nextMonth.getMonth() + 1}`,
+      actual: Math.round(forecast),
+      isForecast: true,
+    });
+
+    return NextResponse.json({
+      forecastValue: Math.round(forecast),
+      pipelineCount: leads.filter(l => !["won", "lost"].includes(l.stage)).length,
+      monthlyData,
+    });
+  }
+
+  // ── Period-filtered stats ─────────────────────────────────────────────────
+  if (type === "period_stats") {
+    const leads = await getLeads(filter);
+    const now = new Date();
+    let startDate: Date;
+    if (period === "quarter") {
+      const q = Math.floor(now.getMonth() / 3);
+      startDate = new Date(now.getFullYear(), q * 3, 1);
+    } else if (period === "year") {
+      startDate = new Date(now.getFullYear(), 0, 1);
+    } else {
+      // month (default)
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const inPeriod = (dateStr: string) => new Date(dateStr) >= startDate;
+    const newLeads = leads.filter(l => inPeriod(l.createdAt));
+    const wonLeads = leads.filter(l => l.stage === "won" && inPeriod(l.updatedAt));
+    const wonValue = wonLeads.reduce((s, l) => s + (l.expectedValue || 0), 0);
+    const totalClosed = wonLeads.length + leads.filter(l => l.stage === "lost" && inPeriod(l.updatedAt)).length;
+    const convRate = totalClosed > 0 ? Math.round((wonLeads.length / totalClosed) * 100) : 0;
+
+    // Sparkline: daily new leads for last 7 days
+    const sparkline = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dayStr = d.toISOString().slice(0, 10);
+      sparkline.push(leads.filter(l => l.createdAt.slice(0, 10) === dayStr).length);
+    }
+
+    // Won sparkline
+    const wonSparkline = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dayStr = d.toISOString().slice(0, 10);
+      wonSparkline.push(leads.filter(l => l.stage === "won" && l.updatedAt.slice(0, 10) === dayStr).length);
+    }
+
+    return NextResponse.json({
+      period,
+      newLeads: newLeads.length,
+      wonLeads: wonLeads.length,
+      wonValue,
+      convRate,
+      sparkline,
+      wonSparkline,
+    });
+  }
+
+  // ── In-app notifications ──────────────────────────────────────────────────
+  if (type === "inbox") {
+    const leads = await getLeads(filter);
+    const now = Date.now();
+    const notifications = [];
+
+    // Overdue leads
+    const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
+    const overdue = leads.filter(l =>
+      !["won", "lost"].includes(l.stage) &&
+      new Date(l.lastContactAt) < threeDaysAgo
+    );
+    if (overdue.length > 0) {
+      notifications.push({
+        id: "overdue",
+        type: "warning",
+        title: `${overdue.length} khách hàng quá hạn liên hệ`,
+        body: overdue.slice(0, 3).map(l => l.name).join(", ") + (overdue.length > 3 ? "..." : ""),
+        href: "/crm/leads?filter=overdue",
+        time: new Date().toISOString(),
+        read: false,
+      });
+    }
+
+    // Tasks due today
+    try {
+      const taskRows = await query<{ data: string }>(
+        `SELECT data FROM crm_tasks WHERE due_date = CURRENT_DATE AND done = false ORDER BY created_at DESC LIMIT 5`
+      );
+      if (taskRows.length > 0) {
+        notifications.push({
+          id: "tasks_today",
+          type: "info",
+          title: `${taskRows.length} việc cần làm hôm nay`,
+          body: "Nhấn để xem danh sách việc cần làm",
+          href: "/crm/tasks",
+          time: new Date().toISOString(),
+          read: false,
+        });
+      }
+    } catch { /* ignore */ }
+
+    // Stale deals
+    const fiveDaysAgo = new Date(now - 5 * 24 * 60 * 60 * 1000);
+    const stale = leads.filter(l =>
+      ["quoted", "negotiating"].includes(l.stage) &&
+      new Date(l.lastContactAt) < fiveDaysAgo
+    );
+    if (stale.length > 0) {
+      notifications.push({
+        id: "stale_deals",
+        type: "alert",
+        title: `${stale.length} deal có nguy cơ mất`,
+        body: stale.slice(0, 2).map(l => l.name).join(", ") + " — không có hoạt động 5+ ngày",
+        href: "/crm/leads",
+        time: new Date().toISOString(),
+        read: false,
+      });
+    }
+
+    return NextResponse.json(notifications);
+  }
+
+  return NextResponse.json({ error: "Unknown type" }, { status: 400 });
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   Users, TrendingUp, FileText, CheckSquare, AlertCircle,
@@ -8,7 +8,9 @@ import {
   Phone, Mail, Calendar, ArrowUpRight, Zap, Activity,
   BarChart2, PieChart, Plus, Star, Trophy,
   TrendingDown, Minus, ArrowRight, Briefcase, UserCheck,
-  Database,
+  Database, Bell, ChevronDown, ChevronUp, Sun, Moon,
+  Flame, Crosshair, Wifi, WifiOff, RefreshCw, Eye,
+  AlertTriangle, CheckCircle2, Info, X, Filter,
 } from "lucide-react";
 import type { Lead, CrmTask, Quote, CrmStats } from "@/lib/crm-types";
 import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS, formatVND, isOverdue } from "@/lib/crm-types";
@@ -37,90 +39,229 @@ const PRIORITY_CONFIG = {
 };
 
 const ACTIVITY_TYPE_ICONS: Record<string, React.ElementType> = {
-  call: Phone,
-  meeting: Users,
-  email: Mail,
-  note: FileText,
-  quote_sent: FileText,
-  contract: FileText,
+  call: Phone, meeting: Users, email: Mail,
+  note: FileText, quote_sent: FileText, contract: FileText,
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Quản trị viên",
-  manager: "Trưởng nhóm",
-  senior_sales: "Kinh doanh cấp cao",
-  sales: "Kinh doanh",
-  intern: "Thực tập sinh",
+  super_admin: "Quản trị viên", manager: "Trưởng nhóm",
+  senior_sales: "Kinh doanh cấp cao", sales: "Kinh doanh", intern: "Thực tập sinh",
 };
 
 const SOURCE_COLORS: Record<string, string> = {
-  "Facebook Ads": "#1877f2",
-  "Google Ads": "#ea4335",
-  "KTS giới thiệu": "#7C3AED",
-  "Khách hàng cũ giới thiệu": "#EA580C",
-  "Zalo": "#0068ff",
-  "Website": "#059669",
-  "Triển lãm": "#D97706",
-  "Telesale": "#DB2777",
+  "Facebook Ads": "#1877f2", "Google Ads": "#ea4335",
+  "KTS giới thiệu": "#7C3AED", "Khách hàng cũ giới thiệu": "#EA580C",
+  "Zalo": "#0068ff", "Website": "#059669",
+  "Triển lãm": "#D97706", "Telesale": "#DB2777",
 };
 
-// ── Design tokens ──────────────────────────────────────────────────────────
 const T = {
-  bg:          "#F0F2F5",   // page background
-  card:        "#FFFFFF",   // card background
-  cardBorder:  "#E4E7EC",   // card border
-  cardShadow:  "0 1px 4px rgba(16,24,40,0.06)",
-  headerBg:    "#FFFFFF",
-  headerBorder:"#E4E7EC",
-  divider:     "#F2F4F7",
-
-  // Text
-  textPrimary:   "#101828",
-  textSecondary: "#475467",
-  textMuted:     "#98A2B3",
-  textLabel:     "#667085",
-
-  // Brand accent
-  gold:        "#C9A84C",
-  goldDark:    "#9A7A2E",
-  goldLight:   "#FEF3C7",
-  goldBg:      "#FFFBEB",
-
-  // Semantic
-  indigo:      "#4F46E5",
-  indigoBg:    "#EEF2FF",
-  green:       "#059669",
-  greenBg:     "#ECFDF5",
-  red:         "#DC2626",
-  redBg:       "#FEF2F2",
-  orange:      "#EA580C",
-  orangeBg:    "#FFF7ED",
-  purple:      "#7C3AED",
-  purpleBg:    "#F5F3FF",
-  blue:        "#2563EB",
-  blueBg:      "#EFF6FF",
+  bg: "#F0F2F5", card: "#FFFFFF", cardBorder: "#E4E7EC",
+  cardShadow: "0 1px 4px rgba(16,24,40,0.06)", headerBg: "#FFFFFF",
+  headerBorder: "#E4E7EC", divider: "#F2F4F7",
+  textPrimary: "#101828", textSecondary: "#475467",
+  textMuted: "#98A2B3", textLabel: "#667085",
+  gold: "#C9A84C", goldDark: "#9A7A2E", goldLight: "#FEF3C7", goldBg: "#FFFBEB",
+  indigo: "#4F46E5", indigoBg: "#EEF2FF",
+  green: "#059669", greenBg: "#ECFDF5",
+  red: "#DC2626", redBg: "#FEF2F2",
+  orange: "#EA580C", orangeBg: "#FFF7ED",
+  purple: "#7C3AED", purpleBg: "#F5F3FF",
+  blue: "#2563EB", blueBg: "#EFF6FF",
 };
 
+// ── Sparkline mini chart ─────────────────────────────────────────────────────
+function Sparkline({ data, color, height = 28 }: { data: number[]; color: string; height?: number }) {
+  if (!data || data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const w = 56, h = height;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - (v / max) * (h - 4) - 2;
+    return `${x},${y}`;
+  }).join(" ");
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+      <circle cx={pts.split(" ").pop()?.split(",")[0]} cy={pts.split(" ").pop()?.split(",")[1]} r="2.5" fill={color} />
+    </svg>
+  );
+}
+
+// ── Period selector ──────────────────────────────────────────────────────────
+type Period = "month" | "quarter" | "year";
+const PERIOD_LABELS: Record<Period, string> = {
+  month: "Tháng này", quarter: "Quý này", year: "Năm nay",
+};
+
+// ── Notification bell ────────────────────────────────────────────────────────
+interface InboxItem {
+  id: string; type: "warning" | "info" | "alert";
+  title: string; body: string; href: string; time: string; read: boolean;
+}
+
+function NotificationBell({ currentUser }: { currentUser?: CurrentUser }) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<InboxItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const fetch_ = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch("/api/crm/dashboard-extras?type=inbox");
+      if (r.ok) setItems(await r.json());
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetch_(); }, [fetch_]);
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const unread = items.filter(i => !i.read).length;
+  const iconMap = { warning: AlertTriangle, info: Info, alert: Flame };
+  const colorMap = { warning: T.gold, info: T.blue, alert: T.red };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-80"
+        style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}
+      >
+        <Bell size={16} style={{ color: T.textSecondary }} />
+        {unread > 0 && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white"
+            style={{ background: T.red }}>
+            {unread > 9 ? "9+" : unread}
+          </span>
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-11 w-80 rounded-2xl overflow-hidden z-50"
+          style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: "0 8px 32px rgba(16,24,40,0.12)" }}>
+          <div className="px-4 py-3 flex items-center justify-between"
+            style={{ borderBottom: `1px solid ${T.divider}` }}>
+            <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Thông báo</span>
+            {loading && <RefreshCw size={12} className="animate-spin" style={{ color: T.textMuted }} />}
+          </div>
+          {items.length === 0 ? (
+            <div className="py-8 text-center">
+              <CheckCircle2 size={24} className="mx-auto mb-2 opacity-30" style={{ color: T.green }} />
+              <p className="text-xs" style={{ color: T.textMuted }}>Không có thông báo mới</p>
+            </div>
+          ) : (
+            <div className="divide-y" style={{ borderColor: T.divider }}>
+              {items.map(item => {
+                const Icon = iconMap[item.type];
+                const color = colorMap[item.type];
+                return (
+                  <Link key={item.id} href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="flex items-start gap-3 px-4 py-3 hover:opacity-90 transition-opacity">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                      style={{ background: `${color}15` }}>
+                      <Icon size={13} style={{ color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold" style={{ color: T.textPrimary }}>{item.title}</p>
+                      <p className="text-[10px] mt-0.5 line-clamp-2" style={{ color: T.textMuted }}>{item.body}</p>
+                    </div>
+                    {!item.read && <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: T.blue }} />}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Collapsible section ──────────────────────────────────────────────────────
+function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen = true, badge }: {
+  title: string; icon: React.ElementType; iconColor: string; iconBg: string;
+  children: React.ReactNode; defaultOpen?: boolean; badge?: string;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rounded-2xl overflow-hidden"
+      style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full px-5 py-4 flex items-center justify-between hover:opacity-90 transition-opacity"
+        style={{ borderBottom: open ? `1px solid ${T.divider}` : "none" }}
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: iconBg }}>
+            <Icon size={14} style={{ color: iconColor }} />
+          </div>
+          <span className="text-sm font-bold" style={{ color: T.textPrimary }}>{title}</span>
+          {badge && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: `${T.red}15`, color: T.red }}>{badge}</span>
+          )}
+        </div>
+        {open ? <ChevronUp size={14} style={{ color: T.textMuted }} /> : <ChevronDown size={14} style={{ color: T.textMuted }} />}
+      </button>
+      {open && children}
+    </div>
+  );
+}
+
+// ── Main Component ───────────────────────────────────────────────────────────
 export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, currentUser }: Props) {
   const [tasks, setTasks] = useState(todayTasks);
-  const [allLeads, setAllLeads] = useState(leads);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [period, setPeriod] = useState<Period>("month");
+  const [darkMode, setDarkMode] = useState(false);
 
-  // Data Pool pending stats
+  // API data states
   const [poolStats, setPoolStats] = useState<{ pending: number; claimed: number; converted: number; total: number; bySource: { source: string; count: number }[] } | null>(null);
+  const [periodStats, setPeriodStats] = useState<{ newLeads: number; wonLeads: number; wonValue: number; convRate: number; sparkline: number[]; wonSparkline: number[] } | null>(null);
+  const [staleDeals, setStaleDeals] = useState<Array<{ id: string; name: string; company: string; stage: string; expectedValue: number; lastContactAt: string; assignedTo: string; daysStale: number }>>([]);
+  const [teamOnline, setTeamOnline] = useState<Array<{ id: string; name: string; role: string; online: boolean; lastLoginAt: string | null; loginedToday: boolean }>>([]);
+  const [forecast, setForecast] = useState<{ forecastValue: number; pipelineCount: number; monthlyData: Array<{ label: string; actual: number; isForecast: boolean }> } | null>(null);
+  const [heatmap, setHeatmap] = useState<Record<string, number>>({});
+  const [loadingExtras, setLoadingExtras] = useState(true);
 
+  // Fetch all extras
   useEffect(() => {
     let mounted = true;
-    async function fetchPoolStats() {
+    async function fetchAll() {
+      setLoadingExtras(true);
       try {
-        const res = await fetch("/api/crm/raw-leads/stats", { cache: "no-store" });
-        if (res.ok && mounted) setPoolStats(await res.json());
-      } catch { /* silent */ }
+        const [pool, period_, stale, forecast_, heatmap_] = await Promise.all([
+          fetch("/api/crm/raw-leads/stats").then(r => r.ok ? r.json() : null),
+          fetch(`/api/crm/dashboard-extras?type=period_stats&period=${period}`).then(r => r.ok ? r.json() : null),
+          fetch("/api/crm/dashboard-extras?type=stale_deals").then(r => r.ok ? r.json() : []),
+          fetch("/api/crm/dashboard-extras?type=forecast").then(r => r.ok ? r.json() : null),
+          fetch("/api/crm/dashboard-extras?type=heatmap").then(r => r.ok ? r.json() : {}),
+        ]);
+        if (!mounted) return;
+        if (pool) setPoolStats(pool);
+        if (period_) setPeriodStats(period_);
+        if (stale) setStaleDeals(stale);
+        if (forecast_) setForecast(forecast_);
+        if (heatmap_) setHeatmap(heatmap_);
+        if (currentUser?.isAdmin) {
+          const team = await fetch("/api/crm/dashboard-extras?type=team_online").then(r => r.ok ? r.json() : []);
+          if (mounted) setTeamOnline(team);
+        }
+      } finally {
+        if (mounted) setLoadingExtras(false);
+      }
     }
-    fetchPoolStats();
-    const iv = setInterval(fetchPoolStats, 60_000);
+    fetchAll();
+    const iv = setInterval(fetchAll, 60_000);
     return () => { mounted = false; clearInterval(iv); };
-  }, []);
+  }, [period, currentUser?.isAdmin]);
 
   const overdueLeads = leads.filter(isOverdue);
   const wonLeads = leads.filter(l => l.stage === "won");
@@ -129,14 +270,19 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
   const doneTasks = tasks.filter(t => t.done);
   const totalValue = leads.reduce((s, l) => s + (l.expectedValue || 0), 0);
   const wonValue = wonLeads.reduce((s, l) => s + (l.expectedValue || 0), 0);
-  const winRate = stats.conversionRate;
+
+  // Personal rank
+  const myRank = currentUser?.isAdmin ? null : (() => {
+    const sorted = [...stats.staffPerformance].sort((a, b) => b.wonValue - a.wonValue);
+    const idx = sorted.findIndex(s => s.staffName === currentUser?.name);
+    return idx >= 0 ? { rank: idx + 1, total: sorted.length, nextName: sorted[idx - 1]?.staffName, nextGap: idx > 0 ? sorted[idx - 1].wonValue - sorted[idx].wonValue : 0 } : null;
+  })();
 
   async function toggleTask(task: CrmTask) {
     const updated = { ...task, done: !task.done };
     setTasks(prev => prev.map(t => t.id === task.id ? updated : t));
     await fetch(`/api/crm/tasks/${task.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !task.done }),
     });
   }
@@ -151,59 +297,90 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
   const prevMonthRev = monthlyRevArr[monthlyRevArr.length - 2]?.value ?? 0;
   const revenueChange = prevMonthRev > 0 ? Math.round(((currentMonthRev - prevMonthRev) / prevMonthRev) * 100) : 0;
 
-  return (
-    <div className="flex flex-col h-full overflow-y-auto" style={{ background: T.bg }}>
+  // Focus mode: top 3 priorities
+  const focusItems = [
+    ...overdueLeads.slice(0, 2).map(l => ({
+      type: "overdue" as const, label: `Liên hệ ${l.name}`,
+      sub: `Quá ${Math.floor((Date.now() - new Date(l.lastContactAt).getTime()) / 86400000)}n`,
+      href: `/crm/leads/${l.id}`, color: T.red, icon: Zap,
+    })),
+    ...pendingTasks.slice(0, 2).map(t => ({
+      type: "task" as const, label: t.title,
+      sub: t.leadName, href: `/crm/leads/${t.leadId}`, color: T.gold, icon: CheckSquare,
+    })),
+    ...staleDeals.slice(0, 2).map(d => ({
+      type: "stale" as const, label: `Follow-up ${d.name}`,
+      sub: `${d.daysStale}n không liên hệ`, href: `/crm/leads/${d.id}`, color: T.orange, icon: AlertTriangle,
+    })),
+  ].slice(0, 3);
 
-      {/* ── Top Header ─────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between"
-        style={{ background: T.headerBg, borderBottom: `1px solid ${T.headerBorder}` }}>
+  const fmtVal = (v: number) => v >= 1e9 ? `${(v/1e9).toFixed(1)}B` : v >= 1e6 ? `${(v/1e6).toFixed(0)}tr` : formatVND(v);
+
+  // Dark mode class
+  const dm = darkMode ? {
+    bg: "#0F172A", card: "#1E293B", cardBorder: "#334155",
+    textPrimary: "#F1F5F9", textSecondary: "#94A3B8", textMuted: "#64748B",
+    divider: "#1E293B", headerBg: "#1E293B", headerBorder: "#334155",
+  } : T;
+
+  return (
+    <div className="flex flex-col h-full overflow-y-auto transition-colors duration-300"
+      style={{ background: dm.bg }}>
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="flex-shrink-0 px-8 py-4 flex items-center justify-between"
+        style={{ background: dm.headerBg, borderBottom: `1px solid ${dm.headerBorder}` }}>
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-0.5">
             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: T.green }} />
-            <span className="text-xs font-medium" style={{ color: T.textMuted }}>{dateStr}</span>
+            <span className="text-xs font-medium" style={{ color: dm.textMuted }}>{dateStr}</span>
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: T.textPrimary }}>
+          <h1 className="text-2xl font-bold" style={{ color: dm.textPrimary }}>
             {greeting}{currentUser?.name ? `, ${currentUser.name}` : ""} 👋
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: T.textSecondary }}>
-            SmartFurni CRM — {currentUser?.isAdmin ? "Tổng quan kinh doanh B2B" : `Dữ liệu của bạn · ${ROLE_LABELS[currentUser?.role ?? ""] ?? currentUser?.role}`}
+          <p className="text-sm" style={{ color: dm.textSecondary }}>
+            SmartFurni CRM — {currentUser?.isAdmin ? "Tổng quan kinh doanh B2B" : `${ROLE_LABELS[currentUser?.role ?? ""] ?? currentUser?.role}`}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Period selector */}
+          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: dm.bg, border: `1px solid ${dm.cardBorder}` }}>
+            {(["month", "quarter", "year"] as Period[]).map(p => (
+              <button key={p} onClick={() => setPeriod(p)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={{
+                  background: period === p ? T.card : "transparent",
+                  color: period === p ? T.textPrimary : dm.textMuted,
+                  boxShadow: period === p ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                }}>
+                {PERIOD_LABELS[p]}
+              </button>
+            ))}
+          </div>
+
+          {/* Dark mode toggle */}
+          <button onClick={() => setDarkMode(d => !d)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-80"
+            style={{ background: dm.bg, border: `1px solid ${dm.cardBorder}` }}>
+            {darkMode ? <Sun size={15} style={{ color: T.gold }} /> : <Moon size={15} style={{ color: dm.textSecondary }} />}
+          </button>
+
+          {/* Notification bell */}
+          <NotificationBell currentUser={currentUser} />
+
           {overdueLeads.length > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
               style={{ background: T.redBg, color: T.red, border: `1px solid #FECACA` }}>
               <AlertCircle size={13} />
-              {overdueLeads.length} KH quá hạn
+              {overdueLeads.length} quá hạn
             </div>
           )}
-          {currentUser && (
-            <Link
-              href="/crm/profile"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors hover:opacity-90"
-              style={{ border: `1px solid ${T.cardBorder}`, background: T.card }}
-            >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                style={{ background: `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` }}>
-                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
-              </div>
-              {!currentUser.isAdmin && (
-                <div className="text-left">
-                  <div className="text-xs font-semibold leading-tight" style={{ color: T.textPrimary }}>{currentUser.name}</div>
-                  <div className="text-[10px] leading-tight" style={{ color: T.textMuted }}>{currentUser.username}</div>
-                </div>
-              )}
-            </Link>
-          )}
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: `linear-gradient(135deg, ${T.gold} 0%, ${T.goldDark} 100%)` }}
-          >
-            <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}>
-              <Plus size={12} className="text-white" />
-            </div>
-            Thêm khách hàng
+
+          <button onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+            style={{ background: `linear-gradient(135deg, ${T.gold} 0%, ${T.goldDark} 100%)` }}>
+            <Plus size={14} />
+            Thêm KH
           </button>
         </div>
       </div>
@@ -211,10 +388,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
       {showAddModal && (
         <AddLeadModal
           onClose={() => setShowAddModal(false)}
-          onCreated={(lead) => {
-            setAllLeads(prev => [lead, ...prev]);
-            setShowAddModal(false);
-          }}
+          onCreated={() => setShowAddModal(false)}
           isAdmin={currentUser?.isAdmin}
           currentUserName={currentUser?.name || ""}
         />
@@ -222,102 +396,156 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
 
       <div className="p-6 space-y-5">
 
+        {/* ── Focus Mode ──────────────────────────────────────────────────── */}
+        {focusItems.length > 0 && (
+          <div className="rounded-2xl p-4"
+            style={{
+              background: darkMode ? "#1E293B" : "linear-gradient(135deg, #0F172A, #1E3A5F)",
+              border: "1px solid rgba(201,168,76,0.2)",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+            }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Crosshair size={14} style={{ color: T.gold }} />
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: T.gold }}>Focus hôm nay</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                style={{ background: "rgba(201,168,76,0.15)", color: T.gold }}>
+                {focusItems.length} việc ưu tiên
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              {focusItems.map((item, i) => (
+                <Link key={i} href={item.href}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:opacity-90 transition-opacity"
+                  style={{ background: "rgba(255,255,255,0.05)", border: `1px solid rgba(255,255,255,0.08)` }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${item.color}20` }}>
+                    <item.icon size={13} style={{ color: item.color }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold truncate text-white">{item.label}</p>
+                    <p className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.45)" }}>{item.sub}</p>
+                  </div>
+                  <ArrowRight size={12} style={{ color: "rgba(255,255,255,0.3)" }} className="flex-shrink-0 ml-auto" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── KPI Row ─────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard
-            icon={Users}
-            label="Tổng khách hàng"
-            value={leads.length}
-            sub={`${activeLeads.length} đang theo dõi`}
-            color={T.indigo}
-            colorBg={T.indigoBg}
-            badge={`${stats.newLeadsThisMonth} mới tháng này`}
+            icon={Users} label="Tổng khách hàng"
+            value={leads.length} sub={`${activeLeads.length} đang theo dõi`}
+            color={T.indigo} colorBg={T.indigoBg}
+            badge={`${periodStats?.newLeads ?? stats.newLeadsThisMonth} mới ${PERIOD_LABELS[period].toLowerCase()}`}
             badgeColor={T.indigo}
+            sparkline={periodStats?.sparkline}
+            sparklineColor={T.indigo}
+            darkMode={darkMode}
           />
           <KpiCard
-            icon={DollarSign}
-            label="Pipeline giá trị"
-            value={totalValue >= 1e9 ? `${(totalValue/1e9).toFixed(1)}B` : totalValue >= 1e6 ? `${(totalValue/1e6).toFixed(0)}tr` : formatVND(totalValue)}
-            sub={`Won: ${wonValue >= 1e9 ? `${(wonValue/1e9).toFixed(1)}B` : wonValue >= 1e6 ? `${(wonValue/1e6).toFixed(0)}tr` : formatVND(wonValue)}`}
-            color={T.gold}
-            colorBg={T.goldBg}
-            badge={revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% so tháng trước` : undefined}
+            icon={DollarSign} label="Pipeline giá trị"
+            value={fmtVal(totalValue)} sub={`Won: ${fmtVal(wonValue)}`}
+            color={T.gold} colorBg={T.goldBg}
+            badge={revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% tháng trước` : undefined}
             badgeColor={revenueChange >= 0 ? T.green : T.red}
-            isText
+            isText darkMode={darkMode}
           />
           <KpiCard
-            icon={Trophy}
-            label="Tỷ lệ chốt đơn"
-            value={`${winRate}%`}
-            sub={`${wonLeads.length} đơn thành công`}
-            color={T.green}
-            colorBg={T.greenBg}
-            badge={`${stats.wonLeadsThisMonth} chốt tháng này`}
+            icon={Trophy} label="Tỷ lệ chốt đơn"
+            value={`${periodStats?.convRate ?? stats.conversionRate}%`}
+            sub={`${periodStats?.wonLeads ?? stats.wonLeadsThisMonth} đơn thành công`}
+            color={T.green} colorBg={T.greenBg}
+            badge={`${periodStats?.wonLeads ?? stats.wonLeadsThisMonth} chốt ${PERIOD_LABELS[period].toLowerCase()}`}
             badgeColor={T.green}
-            isText
+            sparkline={periodStats?.wonSparkline}
+            sparklineColor={T.green}
+            isText darkMode={darkMode}
           />
           <KpiCard
-            icon={AlertCircle}
-            label="Cần liên hệ ngay"
-            value={overdueLeads.length}
-            sub="Quá 3 ngày không tương tác"
-            color={T.red}
-            colorBg={T.redBg}
+            icon={AlertCircle} label="Cần liên hệ ngay"
+            value={overdueLeads.length} sub="Quá 3 ngày không tương tác"
+            color={T.red} colorBg={T.redBg}
             urgent={overdueLeads.length > 0}
             badge={overdueLeads.length > 0 ? "Cần xử lý" : "Tốt"}
             badgeColor={overdueLeads.length > 0 ? T.red : T.green}
+            darkMode={darkMode}
           />
         </div>
 
+        {/* ── Personal Rank (staff only) ───────────────────────────────── */}
+        {!currentUser?.isAdmin && myRank && (
+          <div className="rounded-2xl p-4 flex items-center gap-4"
+            style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
+              style={{ background: myRank.rank === 1 ? `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` : T.bg }}>
+              {myRank.rank === 1 ? "🥇" : myRank.rank === 2 ? "🥈" : myRank.rank === 3 ? "🥉" : `#${myRank.rank}`}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold" style={{ color: T.textPrimary }}>
+                  Hạng {myRank.rank}/{myRank.total} trong team
+                </span>
+                {myRank.rank === 1 && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: T.goldBg, color: T.gold }}>Dẫn đầu 🔥</span>
+                )}
+              </div>
+              {myRank.rank > 1 && myRank.nextGap > 0 ? (
+                <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>
+                  Cần thêm <span className="font-bold" style={{ color: T.gold }}>{fmtVal(myRank.nextGap)}</span> để vượt {myRank.nextName}
+                </p>
+              ) : (
+                <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>
+                  Doanh số của bạn: <span className="font-bold" style={{ color: T.green }}>{fmtVal(stats.staffPerformance.find(s => s.staffName === currentUser?.name)?.wonValue ?? 0)}</span>
+                </p>
+              )}
+            </div>
+            <Link href="/crm/leads"
+              className="flex items-center gap-1 text-xs font-semibold hover:opacity-80 transition-opacity"
+              style={{ color: T.indigo }}>
+              Xem KH <ArrowUpRight size={12} />
+            </Link>
+          </div>
+        )}
+
         {/* ── Data Pool Banner ─────────────────────────────────────────── */}
         {poolStats !== null && poolStats.pending > 0 && (
-          <Link
-            href="/crm/data-pool"
+          <Link href="/crm/data-pool"
             className="block rounded-2xl overflow-hidden transition-all hover:shadow-lg"
             style={{
               background: "linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #1E3A5F 100%)",
               border: "1px solid rgba(201,168,76,0.25)",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.15), 0 1px 4px rgba(201,168,76,0.1)",
-            }}
-          >
+              boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+            }}>
             <div className="px-6 py-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
-                <div
-                  className="relative w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)" }}
-                >
-                  <Database size={22} style={{ color: T.gold }} />
-                  <span
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-                    style={{ background: T.red, boxShadow: "0 0 0 2px #0F172A" }}
-                  >
+                <div className="relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)" }}>
+                  <Database size={20} style={{ color: T.gold }} />
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white"
+                    style={{ background: T.red, boxShadow: "0 0 0 2px #0F172A" }}>
                     {poolStats.pending > 9 ? "9+" : poolStats.pending}
                   </span>
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="text-white font-bold text-sm">Data Pool</span>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-[10px] font-black text-white flex-shrink-0"
-                      style={{ background: T.red }}
-                    >
-                      {poolStats.pending > 99 ? "99+" : poolStats.pending} chờ nhận
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black text-white flex-shrink-0"
+                      style={{ background: T.red }}>
+                      {poolStats.pending} chờ nhận
                     </span>
                   </div>
                   <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.55)" }}>
-                    Có{" "}
-                    <span className="font-bold" style={{ color: T.gold }}>{poolStats.pending}</span>
-                    {" "}data khách hàng mới chưa có người nhận
+                    <span className="font-bold" style={{ color: T.gold }}>{poolStats.pending}</span> data chưa có người nhận
                     {poolStats.bySource.length > 0 && (
                       <span style={{ color: "rgba(255,255,255,0.35)" }}>
-                        {" — "}
-                        {poolStats.bySource.slice(0, 2).map((s, i) => (
-                          <span key={s.source}>
-                            {i > 0 && ", "}
+                        {" — "}{poolStats.bySource.slice(0, 2).map((s, i) => (
+                          <span key={s.source}>{i > 0 && ", "}
                             <span style={{ color: "rgba(255,255,255,0.65)" }}>
                               {s.source === "facebook_lead" ? "Facebook" : s.source === "tiktok_lead" ? "TikTok" : s.source === "manual" ? "Nhập tay" : s.source}
-                            </span>
-                            {" "}({s.count})
+                            </span> ({s.count})
                           </span>
                         ))}
                       </span>
@@ -325,16 +553,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                   </p>
                 </div>
               </div>
-              <div
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold flex-shrink-0"
-                style={{
-                  background: `linear-gradient(135deg, ${T.gold}, ${T.goldDark})`,
-                  color: "#fff",
-                  boxShadow: "0 2px 8px rgba(201,168,76,0.35)",
-                }}
-              >
-                Nhận ngay
-                <ArrowRight size={14} />
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold flex-shrink-0"
+                style={{ background: `linear-gradient(135deg, ${T.gold}, ${T.goldDark})`, color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+                Nhận ngay <ArrowRight size={14} />
               </div>
             </div>
             {poolStats.total > 0 && (
@@ -346,14 +567,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                   </span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`,
-                      background: `linear-gradient(90deg, ${T.gold}, #E2C97E)`,
-                      transition: "width 0.7s ease",
-                    }}
-                  />
+                  <div className="h-full rounded-full"
+                    style={{ width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`, background: `linear-gradient(90deg, ${T.gold}, #E2C97E)`, transition: "width 0.7s ease" }} />
                 </div>
               </div>
             )}
@@ -362,57 +577,23 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
 
         {/* ── This Month Summary ──────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-4">
-          {/* Doanh thu */}
-          <div className="rounded-2xl p-5 flex items-center gap-4"
-            style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: T.goldBg }}>
-              <DollarSign size={20} style={{ color: T.gold }} />
-            </div>
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: T.textMuted }}>Doanh thu tháng này</div>
-              <div className="text-xl font-black leading-tight" style={{ color: T.textPrimary }}>
-                {stats.wonValueThisMonth >= 1e9
-                  ? `${(stats.wonValueThisMonth/1e9).toFixed(2)}B`
-                  : stats.wonValueThisMonth >= 1e6
-                  ? `${(stats.wonValueThisMonth/1e6).toFixed(0)}tr`
-                  : formatVND(stats.wonValueThisMonth)}
+          {[
+            { label: `Doanh thu ${PERIOD_LABELS[period].toLowerCase()}`, value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth), icon: DollarSign, color: T.gold, bg: T.goldBg, sub: revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% tháng trước` : "So tháng trước", subColor: revenueChange >= 0 ? T.green : T.red },
+            { label: `KH mới ${PERIOD_LABELS[period].toLowerCase()}`, value: String(periodStats?.newLeads ?? stats.newLeadsThisMonth), icon: UserCheck, color: T.indigo, bg: T.indigoBg, sub: `Tổng ${leads.length} khách hàng`, subColor: T.textMuted },
+            { label: `Đơn chốt ${PERIOD_LABELS[period].toLowerCase()}`, value: String(periodStats?.wonLeads ?? stats.wonLeadsThisMonth), icon: Trophy, color: T.green, bg: T.greenBg, sub: `Tỷ lệ chốt ${periodStats?.convRate ?? stats.conversionRate}%`, subColor: T.textMuted },
+          ].map(({ label, value, icon: Icon, color, bg, sub, subColor }) => (
+            <div key={label} className="rounded-2xl p-5 flex items-center gap-4"
+              style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
+                <Icon size={20} style={{ color }} />
               </div>
-              <div className={`flex items-center gap-1 mt-1 text-[10px] font-semibold`}
-                style={{ color: revenueChange >= 0 ? T.green : T.red }}>
-                {revenueChange > 0 ? <TrendingUp size={10} /> : revenueChange < 0 ? <TrendingDown size={10} /> : <Minus size={10} />}
-                {revenueChange > 0 ? "+" : ""}{revenueChange}% so tháng trước
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: dm.textMuted }}>{label}</div>
+                <div className="text-xl font-black leading-tight" style={{ color: dm.textPrimary }}>{value}</div>
+                <div className="text-[10px] mt-1 font-semibold" style={{ color: subColor }}>{sub}</div>
               </div>
             </div>
-          </div>
-
-          {/* KH mới */}
-          <div className="rounded-2xl p-5 flex items-center gap-4"
-            style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: T.indigoBg }}>
-              <UserCheck size={20} style={{ color: T.indigo }} />
-            </div>
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: T.textMuted }}>KH mới tháng này</div>
-              <div className="text-xl font-black leading-tight" style={{ color: T.textPrimary }}>{stats.newLeadsThisMonth}</div>
-              <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>Tổng {leads.length} khách hàng</div>
-            </div>
-          </div>
-
-          {/* Đơn chốt */}
-          <div className="rounded-2xl p-5 flex items-center gap-4"
-            style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: T.greenBg }}>
-              <Trophy size={20} style={{ color: T.green }} />
-            </div>
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: T.textMuted }}>Đơn chốt tháng này</div>
-              <div className="text-xl font-black leading-tight" style={{ color: T.textPrimary }}>{stats.wonLeadsThisMonth}</div>
-              <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>Tỷ lệ chốt {winRate}%</div>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* ── Main Grid ───────────────────────────────────────────────────── */}
@@ -421,184 +602,182 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           {/* Left col (2/3) */}
           <div className="xl:col-span-2 space-y-5">
 
-            {/* ── Monthly Revenue Chart ── */}
-            <div className="rounded-2xl overflow-hidden"
-              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-              <div className="px-6 py-4 flex items-center justify-between"
-                style={{ borderBottom: `1px solid ${T.divider}` }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                    style={{ background: T.goldBg }}>
-                    <BarChart2 size={16} style={{ color: T.gold }} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Doanh thu theo tháng</h2>
-                    <p className="text-[10px]" style={{ color: T.textMuted }}>6 tháng gần nhất (đơn đã chốt)</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-black" style={{ color: T.textPrimary }}>
-                    {stats.wonValueThisMonth >= 1e9
-                      ? `${(stats.wonValueThisMonth/1e9).toFixed(2)}B`
-                      : `${(stats.wonValueThisMonth/1e6).toFixed(0)}tr`}
-                  </div>
-                  <div className="text-[10px]" style={{ color: T.textMuted }}>Tháng hiện tại</div>
-                </div>
-              </div>
+            {/* Revenue Chart + Forecast */}
+            <Section title="Doanh thu & Dự báo" icon={BarChart2} iconColor={T.gold} iconBg={T.goldBg}>
               <div className="p-6">
-                {stats.monthlyRevenue.every(m => m.value === 0) ? (
-                  <div className="flex flex-col items-center justify-center py-10" style={{ color: T.textMuted }}>
-                    <BarChart2 size={32} className="mb-2 opacity-20" />
-                    <p className="text-xs">Chưa có dữ liệu doanh thu</p>
-                  </div>
-                ) : (
+                {forecast ? (
                   <div>
-                    <div className="flex items-end gap-3 h-28 mb-4">
-                      {stats.monthlyRevenue.map((m, i) => {
-                        const maxVal = Math.max(...stats.monthlyRevenue.map(x => x.value), 1);
-                        const pct = maxVal > 0 ? (m.value / maxVal) * 100 : 0;
-                        const isCurrentMonth = i === stats.monthlyRevenue.length - 1;
-                        const valLabel = m.value >= 1e9
-                          ? `${(m.value/1e9).toFixed(1)}B`
-                          : m.value >= 1e6
-                          ? `${(m.value/1e6).toFixed(0)}tr`
-                          : m.value > 0 ? `${(m.value/1000).toFixed(0)}k` : "0";
+                    <div className="flex items-end gap-3 h-32 mb-4">
+                      {forecast.monthlyData.map((m, i) => {
+                        const maxVal = Math.max(...forecast.monthlyData.map(x => x.actual), 1);
+                        const pct = maxVal > 0 ? (m.actual / maxVal) * 100 : 0;
+                        const isCurrentMonth = i === forecast.monthlyData.length - 2;
+                        const isForecast = m.isForecast;
+                        const valLabel = fmtVal(m.actual);
                         return (
-                          <div key={m.month} className="flex-1 flex flex-col items-center gap-1 group">
-                            {m.value > 0 && (
+                          <div key={m.label} className="flex-1 flex flex-col items-center gap-1 group">
+                            {m.actual > 0 && (
                               <div className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                                style={{ color: T.textSecondary }}>
-                                {valLabel}
-                              </div>
+                                style={{ color: T.textSecondary }}>{valLabel}</div>
                             )}
                             <div className="w-full relative flex-1 flex items-end">
                               <div className="w-full rounded-t-md transition-all duration-700 relative overflow-hidden"
                                 style={{
                                   height: `${Math.max(6, pct)}%`,
-                                  background: isCurrentMonth
+                                  background: isForecast
+                                    ? `repeating-linear-gradient(45deg, ${T.gold}40, ${T.gold}40 3px, transparent 3px, transparent 6px)`
+                                    : isCurrentMonth
                                     ? `linear-gradient(180deg, #E2C97E, ${T.gold})`
-                                    : "#E4E7EC",
+                                    : T.cardBorder,
+                                  border: isForecast ? `1px dashed ${T.gold}` : "none",
                                   minHeight: 6,
-                                  boxShadow: isCurrentMonth ? `0 2px 8px rgba(201,168,76,0.25)` : "none",
                                 }}>
-                                {isCurrentMonth && (
-                                  <div className="absolute inset-0 opacity-25"
-                                    style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.5), transparent)" }} />
-                                )}
                               </div>
                             </div>
                             <span className="text-[10px] font-semibold"
-                              style={{ color: isCurrentMonth ? T.gold : T.textMuted }}>
-                              {m.label}
+                              style={{ color: isForecast ? T.gold : isCurrentMonth ? T.gold : T.textMuted }}>
+                              {m.label}{isForecast ? " *" : ""}
                             </span>
                           </div>
                         );
                       })}
                     </div>
-                    {/* Summary row */}
-                    <div className="grid grid-cols-3 gap-3 pt-4" style={{ borderTop: `1px solid ${T.divider}` }}>
-                      <div className="text-center p-3 rounded-xl" style={{ background: T.bg }}>
-                        <div className="text-sm font-black" style={{ color: T.textPrimary }}>{stats.newLeadsThisMonth}</div>
-                        <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>KH mới</div>
+                    <div className="flex items-center gap-4 pt-3 mb-4" style={{ borderTop: `1px solid ${T.divider}` }}>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-2 rounded-sm" style={{ background: T.gold }} />
+                        <span className="text-[10px]" style={{ color: T.textMuted }}>Thực tế</span>
                       </div>
-                      <div className="text-center p-3 rounded-xl" style={{ background: T.greenBg }}>
-                        <div className="text-sm font-black" style={{ color: T.green }}>{stats.wonLeadsThisMonth}</div>
-                        <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>Đơn chốt</div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-2 rounded-sm" style={{ border: `1px dashed ${T.gold}`, background: `${T.gold}20` }} />
+                        <span className="text-[10px]" style={{ color: T.textMuted }}>Dự báo tháng tới</span>
                       </div>
-                      <div className="text-center p-3 rounded-xl" style={{ background: T.goldBg }}>
-                        <div className="text-sm font-black" style={{ color: T.gold }}>
-                          {stats.wonValueThisMonth >= 1e9
-                            ? `${(stats.wonValueThisMonth/1e9).toFixed(2)}B`
-                            : `${(stats.wonValueThisMonth/1e6).toFixed(0)}tr`}
-                        </div>
-                        <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>Doanh thu</div>
+                      <div className="ml-auto text-right">
+                        <div className="text-xs font-black" style={{ color: T.gold }}>~{fmtVal(forecast.forecastValue)}</div>
+                        <div className="text-[10px]" style={{ color: T.textMuted }}>Dự báo từ {forecast.pipelineCount} deal</div>
                       </div>
                     </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: "KH mới", value: periodStats?.newLeads ?? stats.newLeadsThisMonth, color: T.indigo, bg: T.bg },
+                        { label: "Đơn chốt", value: periodStats?.wonLeads ?? stats.wonLeadsThisMonth, color: T.green, bg: T.greenBg },
+                        { label: "Doanh thu", value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth), color: T.gold, bg: T.goldBg },
+                      ].map(({ label, value, color, bg }) => (
+                        <div key={label} className="text-center p-3 rounded-xl" style={{ background: bg }}>
+                          <div className="text-sm font-black" style={{ color }}>{value}</div>
+                          <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-end gap-3 h-28 mb-4">
+                    {stats.monthlyRevenue.map((m, i) => {
+                      const maxVal = Math.max(...stats.monthlyRevenue.map(x => x.value), 1);
+                      const pct = maxVal > 0 ? (m.value / maxVal) * 100 : 0;
+                      const isCurrentMonth = i === stats.monthlyRevenue.length - 1;
+                      return (
+                        <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                          <div className="w-full relative flex-1 flex items-end">
+                            <div className="w-full rounded-t-md"
+                              style={{ height: `${Math.max(6, pct)}%`, background: isCurrentMonth ? `linear-gradient(180deg, #E2C97E, ${T.gold})` : T.cardBorder, minHeight: 6 }} />
+                          </div>
+                          <span className="text-[10px] font-semibold" style={{ color: isCurrentMonth ? T.gold : T.textMuted }}>{m.label}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-            </div>
+            </Section>
 
-            {/* Pipeline Funnel */}
-            <div className="rounded-2xl overflow-hidden"
-              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-              <div className="px-6 py-4 flex items-center justify-between"
-                style={{ borderBottom: `1px solid ${T.divider}` }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                    style={{ background: T.indigoBg }}>
-                    <BarChart2 size={16} style={{ color: T.indigo }} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Pipeline Sales</h2>
-                    <p className="text-[10px]" style={{ color: T.textMuted }}>Phân bổ theo giai đoạn</p>
-                  </div>
-                </div>
-                <Link href="/crm/kanban"
-                  className="flex items-center gap-1 text-xs font-medium hover:opacity-80 transition-opacity"
-                  style={{ color: T.indigo }}>
-                  Xem Kanban <ArrowUpRight size={12} />
-                </Link>
-              </div>
+            {/* Conversion Funnel */}
+            <Section title="Conversion Funnel" icon={Filter} iconColor={T.indigo} iconBg={T.indigoBg}>
               <div className="p-5">
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {(Object.keys(STAGE_LABELS) as Array<keyof typeof STAGE_LABELS>).map((stage, i) => {
                     const stageLeads = leads.filter(l => l.stage === stage);
                     const count = stageLeads.length;
                     const value = stageLeads.reduce((s, l) => s + (l.expectedValue || 0), 0);
+                    const prevStage = i > 0 ? (Object.keys(STAGE_LABELS) as Array<keyof typeof STAGE_LABELS>)[i - 1] : null;
+                    const prevCount = prevStage ? leads.filter(l => l.stage === prevStage).length : leads.length;
+                    const convPct = prevCount > 0 ? Math.round((count / prevCount) * 100) : 0;
                     const maxCount = Math.max(...Object.keys(STAGE_LABELS).map(s => leads.filter(l => l.stage === s).length), 1);
-                    const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                    const barW = maxCount > 0 ? (count / maxCount) * 100 : 0;
                     return (
                       <div key={stage} className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black text-white flex-shrink-0"
-                          style={{ background: STAGE_COLORS[stage] }}>
-                          {i + 1}
-                        </div>
+                          style={{ background: STAGE_COLORS[stage] }}>{i + 1}</div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-semibold" style={{ color: T.textSecondary }}>{STAGE_LABELS[stage]}</span>
                             <div className="flex items-center gap-3">
                               <span className="text-xs font-bold" style={{ color: T.textPrimary }}>{count} KH</span>
-                              {value > 0 && (
-                                <span className="text-[10px] font-semibold" style={{ color: T.gold }}>
-                                  {value >= 1e9 ? `${(value/1e9).toFixed(1)}B` : value >= 1e6 ? `${(value/1e6).toFixed(0)}tr` : formatVND(value)}
+                              {value > 0 && <span className="text-[10px] font-semibold" style={{ color: T.gold }}>{fmtVal(value)}</span>}
+                              {i > 0 && count > 0 && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                  style={{ background: convPct >= 50 ? T.greenBg : T.bg, color: convPct >= 50 ? T.green : T.textMuted }}>
+                                  {convPct}%
                                 </span>
                               )}
                             </div>
                           </div>
                           <div className="h-2 rounded-full overflow-hidden" style={{ background: T.bg }}>
                             <div className="h-full rounded-full transition-all duration-700"
-                              style={{
-                                width: `${pct}%`,
-                                background: STAGE_COLORS[stage],
-                                opacity: count === 0 ? 0.15 : 1,
-                              }} />
+                              style={{ width: `${barW}%`, background: STAGE_COLORS[stage], opacity: count === 0 ? 0.15 : 1 }} />
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
+                <div className="mt-4 p-3 rounded-xl flex items-center justify-between"
+                  style={{ background: T.greenBg, border: `1px solid ${T.green}20` }}>
+                  <span className="text-xs font-semibold" style={{ color: T.green }}>Tỷ lệ chốt tổng thể</span>
+                  <span className="text-sm font-black" style={{ color: T.green }}>{stats.conversionRate}%</span>
+                </div>
               </div>
-            </div>
+            </Section>
+
+            {/* Stale Deals Alert */}
+            {staleDeals.length > 0 && (
+              <Section title="Deal có nguy cơ mất" icon={AlertTriangle} iconColor={T.orange} iconBg={T.orangeBg}
+                badge={`${staleDeals.length} deal`}>
+                <div className="p-4 space-y-2">
+                  {staleDeals.map(deal => (
+                    <Link key={deal.id} href={`/crm/leads/${deal.id}`}
+                      className="flex items-center justify-between p-3 rounded-xl hover:opacity-90 transition-opacity"
+                      style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs font-bold truncate" style={{ color: T.textPrimary }}>{deal.name}</div>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                            style={{ background: `${STAGE_COLORS[deal.stage as keyof typeof STAGE_COLORS]}15`, color: STAGE_COLORS[deal.stage as keyof typeof STAGE_COLORS] }}>
+                            {STAGE_LABELS[deal.stage as keyof typeof STAGE_LABELS]}
+                          </span>
+                        </div>
+                        <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>
+                          {deal.company} · {deal.assignedTo}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                        <div className="text-right">
+                          <div className="text-xs font-bold" style={{ color: T.gold }}>{fmtVal(deal.expectedValue)}</div>
+                          <div className="flex items-center gap-0.5 justify-end">
+                            <Clock size={9} style={{ color: T.orange }} />
+                            <span className="text-[10px] font-bold" style={{ color: T.orange }}>{deal.daysStale}n</span>
+                          </div>
+                        </div>
+                        <ChevronRight size={12} style={{ color: T.textMuted }} />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </Section>
+            )}
 
             {/* Source + Type row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-              {/* Source Effectiveness */}
-              <div className="rounded-2xl overflow-hidden"
-                style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-                <div className="px-5 py-4 flex items-center gap-2"
-                  style={{ borderBottom: `1px solid ${T.divider}` }}>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ background: T.orangeBg }}>
-                    <TrendingUp size={14} style={{ color: T.orange }} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Nguồn khách hàng</h2>
-                    <p className="text-[10px]" style={{ color: T.textMuted }}>Hiệu quả theo nguồn</p>
-                  </div>
-                </div>
+              <Section title="Nguồn khách hàng" icon={TrendingUp} iconColor={T.orange} iconBg={T.orangeBg}>
                 <div className="p-4 space-y-3">
                   {stats.bySource.length === 0 ? (
                     <p className="text-xs text-center py-4" style={{ color: T.textMuted }}>Chưa có dữ liệu</p>
@@ -616,10 +795,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                           <div className="flex items-center gap-2">
                             <span className="text-[10px]" style={{ color: T.textMuted }}>{count} KH</span>
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                              style={{
-                                background: wr >= 30 ? T.greenBg : T.bg,
-                                color: wr >= 30 ? T.green : T.textMuted,
-                              }}>
+                              style={{ background: wr >= 30 ? T.greenBg : T.bg, color: wr >= 30 ? T.green : T.textMuted }}>
                               {wr}%
                             </span>
                           </div>
@@ -632,22 +808,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                     );
                   })}
                 </div>
-              </div>
+              </Section>
 
-              {/* Customer Type */}
-              <div className="rounded-2xl overflow-hidden"
-                style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-                <div className="px-5 py-4 flex items-center gap-2"
-                  style={{ borderBottom: `1px solid ${T.divider}` }}>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ background: T.purpleBg }}>
-                    <PieChart size={14} style={{ color: T.purple }} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Phân loại khách</h2>
-                    <p className="text-[10px]" style={{ color: T.textMuted }}>Theo nhóm đối tượng</p>
-                  </div>
-                </div>
+              <Section title="Phân loại khách" icon={PieChart} iconColor={T.purple} iconBg={T.purpleBg}>
                 <div className="p-4 space-y-3">
                   {(["architect", "investor", "dealer"] as const).map(type => {
                     const typeLeads = leads.filter(l => l.type === type);
@@ -656,7 +819,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                     const pct = leads.length > 0 ? Math.round((count / leads.length) * 100) : 0;
                     const typeValue = typeLeads.reduce((s, l) => s + (l.expectedValue || 0), 0);
                     return (
-                      <div key={type} className="p-3 rounded-xl transition-colors"
+                      <div key={type} className="p-3 rounded-xl"
                         style={{ background: `${TYPE_COLORS[type]}08`, border: `1px solid ${TYPE_COLORS[type]}18` }}>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
@@ -666,56 +829,88 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-black" style={{ color: T.textPrimary }}>{count}</span>
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                              style={{ background: `${TYPE_COLORS[type]}18`, color: TYPE_COLORS[type] }}>
-                              {pct}%
-                            </span>
+                              style={{ background: `${TYPE_COLORS[type]}18`, color: TYPE_COLORS[type] }}>{pct}%</span>
                           </div>
                         </div>
                         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${TYPE_COLORS[type]}15` }}>
-                          <div className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${pct}%`, background: TYPE_COLORS[type] }} />
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: TYPE_COLORS[type] }} />
                         </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-[10px]" style={{ color: T.textMuted }}>
-                            {wonCount} đã chốt · {typeValue >= 1e6 ? `${(typeValue/1e6).toFixed(0)}tr` : formatVND(typeValue)}
-                          </span>
+                        <div className="text-[10px] mt-1.5" style={{ color: T.textMuted }}>
+                          {wonCount} đã chốt · {typeValue >= 1e6 ? `${(typeValue/1e6).toFixed(0)}tr` : formatVND(typeValue)}
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              </Section>
             </div>
+
+            {/* Activity Heatmap */}
+            {Object.keys(heatmap).length > 0 && (
+              <Section title="Heatmap hoạt động" icon={Activity} iconColor={T.purple} iconBg={T.purpleBg}>
+                <div className="p-5">
+                  <div className="flex gap-2">
+                    <div className="flex flex-col gap-1 pt-6">
+                      {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map(d => (
+                        <div key={d} className="h-6 flex items-center text-[9px] font-semibold w-6"
+                          style={{ color: T.textMuted }}>{d}</div>
+                      ))}
+                    </div>
+                    <div className="flex-1 overflow-x-auto">
+                      <div className="flex gap-1 mb-1">
+                        {Array.from({ length: 24 }, (_, h) => (
+                          <div key={h} className="flex-1 text-center text-[8px] font-medium"
+                            style={{ color: T.textMuted, minWidth: 16 }}>
+                            {h % 6 === 0 ? `${h}h` : ""}
+                          </div>
+                        ))}
+                      </div>
+                      {Array.from({ length: 7 }, (_, day) => {
+                        const maxVal = Math.max(...Object.values(heatmap), 1);
+                        return (
+                          <div key={day} className="flex gap-1 mb-1">
+                            {Array.from({ length: 24 }, (_, hour) => {
+                              const val = heatmap[`${day}-${hour}`] || 0;
+                              const intensity = maxVal > 0 ? val / maxVal : 0;
+                              return (
+                                <div key={hour}
+                                  className="flex-1 h-6 rounded-sm transition-all"
+                                  title={`${["CN","T2","T3","T4","T5","T6","T7"][day]} ${hour}h: ${val} hoạt động`}
+                                  style={{
+                                    minWidth: 16,
+                                    background: intensity === 0 ? T.bg : `rgba(79,70,229,${0.1 + intensity * 0.9})`,
+                                    border: `1px solid ${intensity > 0.5 ? T.indigo + "30" : "transparent"}`,
+                                  }} />
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mt-3">
+                    <span className="text-[10px]" style={{ color: T.textMuted }}>Ít</span>
+                    <div className="flex gap-1">
+                      {[0.1, 0.3, 0.5, 0.7, 0.9].map(i => (
+                        <div key={i} className="w-4 h-4 rounded-sm"
+                          style={{ background: `rgba(79,70,229,${i})` }} />
+                      ))}
+                    </div>
+                    <span className="text-[10px]" style={{ color: T.textMuted }}>Nhiều</span>
+                  </div>
+                </div>
+              </Section>
+            )}
 
             {/* Staff Performance (admin only) */}
             {currentUser?.isAdmin && stats.staffPerformance.length > 0 && (
-              <div className="rounded-2xl overflow-hidden"
-                style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-                <div className="px-6 py-4 flex items-center justify-between"
-                  style={{ borderBottom: `1px solid ${T.divider}` }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                      style={{ background: T.goldBg }}>
-                      <Star size={15} style={{ color: T.gold }} />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Hiệu suất nhân viên</h2>
-                      <p className="text-[10px]" style={{ color: T.textMuted }}>Xếp hạng theo doanh số</p>
-                    </div>
-                  </div>
-                  <Link href="/crm/staff"
-                    className="flex items-center gap-1 text-xs font-medium hover:opacity-80 transition-opacity"
-                    style={{ color: T.indigo }}>
-                    Quản lý nhân viên <ArrowUpRight size={12} />
-                  </Link>
-                </div>
-                {/* Table header */}
+              <Section title="Hiệu suất nhân viên" icon={Star} iconColor={T.gold} iconBg={T.goldBg}>
                 <div className="px-6 py-2 grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wide"
                   style={{ background: T.bg, borderBottom: `1px solid ${T.divider}`, color: T.textMuted }}>
                   <div className="col-span-1">#</div>
                   <div className="col-span-3">Nhân viên</div>
-                  <div className="col-span-2 text-center">KH phụ trách</div>
-                  <div className="col-span-2 text-center">Đã chốt</div>
+                  <div className="col-span-2 text-center">KH</div>
+                  <div className="col-span-2 text-center">Chốt</div>
                   <div className="col-span-2 text-center">Tỷ lệ</div>
                   <div className="col-span-2 text-right">Doanh số</div>
                 </div>
@@ -727,94 +922,62 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                     const isTop = i === 0;
                     return (
                       <div key={s.staffName}
-                        className="px-6 py-3 grid grid-cols-12 gap-2 items-center transition-colors hover:opacity-90"
+                        className="px-6 py-3 grid grid-cols-12 gap-2 items-center hover:opacity-90 transition-opacity"
                         style={{ background: isTop ? T.goldBg : undefined }}>
                         <div className="col-span-1 text-sm">{medals[i] ?? <span className="text-xs font-bold" style={{ color: T.textMuted }}>{i+1}</span>}</div>
                         <div className="col-span-3">
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0"
-                              style={{
-                                background: isTop ? `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` : T.bg,
-                                color: isTop ? "white" : T.textMuted,
-                                border: isTop ? "none" : `1px solid ${T.cardBorder}`,
-                              }}>
+                              style={{ background: isTop ? `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` : T.bg, color: isTop ? "white" : T.textMuted, border: isTop ? "none" : `1px solid ${T.cardBorder}` }}>
                               {s.staffName.charAt(0).toUpperCase()}
                             </div>
                             <span className="text-xs font-semibold truncate" style={{ color: T.textPrimary }}>{s.staffName}</span>
                           </div>
                         </div>
-                        <div className="col-span-2 text-center">
-                          <span className="text-xs font-bold" style={{ color: T.textSecondary }}>{s.leadsCount}</span>
-                        </div>
-                        <div className="col-span-2 text-center">
-                          <span className="text-xs font-bold" style={{ color: T.green }}>{s.wonCount}</span>
-                        </div>
+                        <div className="col-span-2 text-center"><span className="text-xs font-bold" style={{ color: T.textSecondary }}>{s.leadsCount}</span></div>
+                        <div className="col-span-2 text-center"><span className="text-xs font-bold" style={{ color: T.green }}>{s.wonCount}</span></div>
                         <div className="col-span-2 text-center">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                            style={{
-                              background: s.conversionRate >= 40 ? T.greenBg : s.conversionRate >= 20 ? T.goldBg : T.bg,
-                              color: s.conversionRate >= 40 ? T.green : s.conversionRate >= 20 ? T.gold : T.textMuted,
-                            }}>
+                            style={{ background: s.conversionRate >= 40 ? T.greenBg : s.conversionRate >= 20 ? T.goldBg : T.bg, color: s.conversionRate >= 40 ? T.green : s.conversionRate >= 20 ? T.gold : T.textMuted }}>
                             {s.conversionRate}%
                           </span>
                         </div>
                         <div className="col-span-2 text-right">
-                          <div className="text-xs font-black" style={{ color: isTop ? T.gold : T.textPrimary }}>
-                            {s.wonValue >= 1e9 ? `${(s.wonValue/1e9).toFixed(1)}B` : s.wonValue >= 1e6 ? `${(s.wonValue/1e6).toFixed(0)}tr` : `${(s.wonValue/1000).toFixed(0)}k`}
-                          </div>
+                          <div className="text-xs font-black" style={{ color: isTop ? T.gold : T.textPrimary }}>{fmtVal(s.wonValue)}</div>
                           <div className="w-full h-1 rounded-full mt-1 overflow-hidden" style={{ background: T.bg }}>
-                            <div className="h-full rounded-full transition-all duration-700"
-                              style={{ width: `${barPct}%`, background: isTop ? `linear-gradient(90deg, ${T.gold}, ${T.goldDark})` : T.cardBorder }} />
+                            <div className="h-full rounded-full" style={{ width: `${barPct}%`, background: isTop ? `linear-gradient(90deg, ${T.gold}, ${T.goldDark})` : T.cardBorder }} />
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              </Section>
             )}
 
             {/* Recent Activities */}
             {stats.recentActivities.length > 0 && (
-              <div className="rounded-2xl overflow-hidden"
-                style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-                <div className="px-5 py-4 flex items-center justify-between"
-                  style={{ borderBottom: `1px solid ${T.divider}` }}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                      style={{ background: T.greenBg }}>
-                      <Activity size={14} style={{ color: T.green }} />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Hoạt động gần đây</h2>
-                      <p className="text-[10px]" style={{ color: T.textMuted }}>10 hoạt động mới nhất</p>
-                    </div>
-                  </div>
-                </div>
+              <Section title="Hoạt động gần đây" icon={Activity} iconColor={T.green} iconBg={T.greenBg} defaultOpen={false}>
                 <div className="divide-y" style={{ borderColor: T.divider }}>
                   {stats.recentActivities.slice(0, 6).map((act) => {
                     const IconComp = ACTIVITY_TYPE_ICONS[act.type] || FileText;
                     const actColors: Record<string, { bg: string; color: string }> = {
-                      call:       { bg: T.blueBg,   color: T.blue },
-                      meeting:    { bg: T.purpleBg, color: T.purple },
-                      email:      { bg: T.orangeBg, color: T.orange },
-                      note:       { bg: T.bg,       color: T.textMuted },
-                      quote_sent: { bg: T.goldBg,   color: T.gold },
-                      contract:   { bg: T.greenBg,  color: T.green },
+                      call: { bg: T.blueBg, color: T.blue }, meeting: { bg: T.purpleBg, color: T.purple },
+                      email: { bg: T.orangeBg, color: T.orange }, note: { bg: T.bg, color: T.textMuted },
+                      quote_sent: { bg: T.goldBg, color: T.gold }, contract: { bg: T.greenBg, color: T.green },
                     };
                     const c = actColors[act.type] || { bg: T.bg, color: T.textMuted };
                     const timeAgo = (() => {
                       const diff = Date.now() - new Date(act.createdAt).getTime();
                       const mins = Math.floor(diff / 60000);
-                      if (mins < 60) return `${mins}p trước`;
+                      if (mins < 60) return `${mins}p`;
                       const hrs = Math.floor(mins / 60);
-                      if (hrs < 24) return `${hrs}h trước`;
-                      return `${Math.floor(hrs / 24)}n trước`;
+                      if (hrs < 24) return `${hrs}h`;
+                      return `${Math.floor(hrs / 24)}n`;
                     })();
                     return (
                       <div key={act.id} className="flex items-start gap-3 px-5 py-3 hover:opacity-90 transition-opacity">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                          style={{ background: c.bg }}>
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: c.bg }}>
                           <IconComp size={13} style={{ color: c.color }} />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -826,30 +989,11 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                     );
                   })}
                 </div>
-              </div>
+              </Section>
             )}
 
             {/* Recent Quotes */}
-            <div className="rounded-2xl overflow-hidden"
-              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-              <div className="px-5 py-4 flex items-center justify-between"
-                style={{ borderBottom: `1px solid ${T.divider}` }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ background: T.greenBg }}>
-                    <FileText size={14} style={{ color: T.green }} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Báo giá gần đây</h2>
-                    <p className="text-[10px]" style={{ color: T.textMuted }}>{quotes.length} báo giá</p>
-                  </div>
-                </div>
-                <Link href="/crm/quotes"
-                  className="text-[10px] font-medium flex items-center gap-0.5 hover:opacity-80 transition-opacity"
-                  style={{ color: T.indigo }}>
-                  Tất cả <ArrowUpRight size={10} />
-                </Link>
-              </div>
+            <Section title="Báo giá gần đây" icon={FileText} iconColor={T.green} iconBg={T.greenBg} defaultOpen={false}>
               <div className="divide-y" style={{ borderColor: T.divider }}>
                 {quotes.length === 0 ? (
                   <div className="text-center py-6" style={{ color: T.textMuted }}>
@@ -858,10 +1002,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                   </div>
                 ) : quotes.slice(0, 4).map(q => {
                   const statusConfig = {
-                    draft:    { label: "Nháp",      color: T.textMuted,  bg: T.bg },
-                    sent:     { label: "Đã gửi",    color: T.blue,       bg: T.blueBg },
-                    accepted: { label: "Chấp nhận", color: T.green,      bg: T.greenBg },
-                    rejected: { label: "Từ chối",   color: T.red,        bg: T.redBg },
+                    draft: { label: "Nháp", color: T.textMuted, bg: T.bg },
+                    sent: { label: "Đã gửi", color: T.blue, bg: T.blueBg },
+                    accepted: { label: "Chấp nhận", color: T.green, bg: T.greenBg },
+                    rejected: { label: "Từ chối", color: T.red, bg: T.redBg },
                   }[q.status];
                   return (
                     <Link key={q.id} href={`/crm/quotes/${q.id}`}
@@ -871,13 +1015,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                         <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{q.leadName}</div>
                       </div>
                       <div className="text-right flex-shrink-0 ml-3">
-                        <div className="text-xs font-bold" style={{ color: T.gold }}>
-                          {q.total >= 1e9 ? `${(q.total/1e9).toFixed(1)}B` : q.total >= 1e6 ? `${(q.total/1e6).toFixed(0)}tr` : formatVND(q.total)}
-                        </div>
+                        <div className="text-xs font-bold" style={{ color: T.gold }}>{fmtVal(q.total)}</div>
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
-                          style={{ background: statusConfig?.bg, color: statusConfig?.color }}>
-                          {statusConfig?.label}
-                        </span>
+                          style={{ background: statusConfig?.bg, color: statusConfig?.color }}>{statusConfig?.label}</span>
                       </div>
                     </Link>
                   );
@@ -886,87 +1026,79 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
               {quotes.length > 0 && (
                 <div className="px-5 py-3" style={{ borderTop: `1px solid ${T.divider}` }}>
                   <Link href="/crm/quotes/new"
-                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold hover:opacity-80 transition-opacity"
                     style={{ border: `1px dashed ${T.gold}`, color: T.gold }}>
-                    <Plus size={12} />
-                    Tạo báo giá mới
+                    <Plus size={12} /> Tạo báo giá mới
                   </Link>
                 </div>
               )}
-            </div>
+            </Section>
 
           </div>
 
           {/* Right col (1/3) */}
           <div className="space-y-5">
 
-            {/* Today's Tasks */}
-            <div className="rounded-2xl overflow-hidden"
-              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-              <div className="px-5 py-4 flex items-center justify-between"
-                style={{ borderBottom: `1px solid ${T.divider}` }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ background: T.goldBg }}>
-                    <CheckSquare size={14} style={{ color: T.gold }} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Việc hôm nay</h2>
-                    <p className="text-[10px]" style={{ color: T.textMuted }}>{doneTasks.length}/{tasks.length} hoàn thành</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link href="/crm/tasks" className="text-xs font-medium hover:opacity-80 transition-opacity"
-                    style={{ color: T.gold }}>Xem tất cả</Link>
-                  {pendingTasks.length > 0 && (
-                    <span className="text-xs font-black px-2 py-0.5 rounded-full"
-                      style={{ background: T.goldBg, color: T.gold }}>
-                      {pendingTasks.length}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              {tasks.length > 0 && (
-                <div className="px-5 pt-3 pb-1">
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: T.bg }}>
-                    <div className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${tasks.length > 0 ? (doneTasks.length / tasks.length) * 100 : 0}%`,
-                        background: `linear-gradient(90deg, ${T.green}, #047857)`,
-                      }} />
-                  </div>
-                </div>
-              )}
-
-              <div className="p-4 space-y-2">
-                {tasks.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
-                      style={{ background: T.bg }}>
-                      <CheckSquare size={18} style={{ color: T.textMuted }} />
+            {/* Team Online (admin only) */}
+            {currentUser?.isAdmin && teamOnline.length > 0 && (
+              <Section title="Trạng thái team" icon={Wifi} iconColor={T.green} iconBg={T.greenBg}>
+                <div className="p-4 space-y-2">
+                  {teamOnline.slice(0, 6).map(member => (
+                    <div key={member.id} className="flex items-center gap-3 p-2.5 rounded-xl"
+                      style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+                      <div className="relative flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white"
+                          style={{ background: member.online ? `linear-gradient(135deg, ${T.green}, #047857)` : T.cardBorder, color: member.online ? "white" : T.textMuted }}>
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
+                          style={{ background: member.online ? T.green : member.loginedToday ? T.gold : T.cardBorder }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold truncate" style={{ color: T.textPrimary }}>{member.name}</div>
+                        <div className="text-[10px]" style={{ color: T.textMuted }}>
+                          {member.online ? "Đang online" : member.loginedToday ? "Đã đăng nhập hôm nay" : "Chưa đăng nhập"}
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        {member.online ? <Wifi size={12} style={{ color: T.green }} /> : <WifiOff size={12} style={{ color: T.textMuted }} />}
+                      </div>
                     </div>
-                    <p className="text-xs" style={{ color: T.textMuted }}>Không có việc hôm nay</p>
-                    <p className="text-[10px] mt-0.5" style={{ color: T.textLabel }}>Tận hưởng ngày của bạn! 🎉</p>
+                  ))}
+                </div>
+              </Section>
+            )}
+
+            {/* Today's Tasks */}
+            <Section title="Việc hôm nay" icon={CheckSquare} iconColor={T.gold} iconBg={T.goldBg}
+              badge={pendingTasks.length > 0 ? `${pendingTasks.length}` : undefined}>
+              <div>
+                {tasks.length > 0 && (
+                  <div className="px-5 pt-3 pb-1">
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${(doneTasks.length / tasks.length) * 100}%`, background: `linear-gradient(90deg, ${T.green}, #047857)` }} />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px]" style={{ color: T.textMuted }}>{doneTasks.length}/{tasks.length} hoàn thành</span>
+                      <Link href="/crm/tasks" className="text-[10px] font-medium hover:opacity-80" style={{ color: T.gold }}>Xem tất cả</Link>
+                    </div>
                   </div>
-                ) : (
-                  tasks.map(task => {
+                )}
+                <div className="p-4 space-y-2">
+                  {tasks.length === 0 ? (
+                    <div className="text-center py-6">
+                      <CheckCircle2 size={22} className="mx-auto mb-2 opacity-20" style={{ color: T.green }} />
+                      <p className="text-xs" style={{ color: T.textMuted }}>Không có việc hôm nay 🎉</p>
+                    </div>
+                  ) : tasks.map(task => {
                     const pc = PRIORITY_CONFIG[task.priority];
                     return (
-                      <div key={task.id}
-                        className="flex items-start gap-2.5 p-3 rounded-xl transition-all"
-                        style={{
-                          background: task.done ? T.bg : T.card,
-                          border: `1px solid ${task.done ? T.divider : T.cardBorder}`,
-                        }}>
+                      <div key={task.id} className="flex items-start gap-2.5 p-3 rounded-xl transition-all"
+                        style={{ background: task.done ? T.bg : T.card, border: `1px solid ${task.done ? T.divider : T.cardBorder}` }}>
                         <button onClick={() => toggleTask(task)}
                           className="flex-shrink-0 mt-0.5 rounded-md transition-all flex items-center justify-center"
-                          style={{
-                            width: 18, height: 18,
-                            border: `2px solid ${task.done ? T.green : T.cardBorder}`,
-                            background: task.done ? T.green : "transparent",
-                          }}>
+                          style={{ width: 18, height: 18, border: `2px solid ${task.done ? T.green : T.cardBorder}`, background: task.done ? T.green : "transparent" }}>
                           {task.done && (
                             <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
                               <path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -974,63 +1106,57 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                           )}
                         </button>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold leading-snug`}
-                            style={{ color: task.done ? T.textMuted : T.textPrimary,
-                                     textDecoration: task.done ? "line-through" : "none" }}>
+                          <p className="text-xs font-semibold leading-snug"
+                            style={{ color: task.done ? T.textMuted : T.textPrimary, textDecoration: task.done ? "line-through" : "none" }}>
                             {task.title}
                           </p>
-                          <Link href={`/crm/leads/${task.leadId}`}
-                            className="text-[10px] font-medium hover:underline mt-0.5 block truncate"
-                            style={{ color: T.gold }}>
-                            {task.leadName}
-                          </Link>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Link href={`/crm/leads/${task.leadId}`}
+                              className="text-[10px] font-medium hover:underline truncate"
+                              style={{ color: T.gold }}>{task.leadName}</Link>
+                            {/* Quick actions */}
+                            {!task.done && (
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Link href={`tel:${task.leadId}`}
+                                  className="w-5 h-5 rounded-md flex items-center justify-center hover:opacity-80"
+                                  style={{ background: T.blueBg }}>
+                                  <Phone size={9} style={{ color: T.blue }} />
+                                </Link>
+                                <Link href={`/crm/leads/${task.leadId}?tab=activities`}
+                                  className="w-5 h-5 rounded-md flex items-center justify-center hover:opacity-80"
+                                  style={{ background: T.greenBg }}>
+                                  <FileText size={9} style={{ color: T.green }} />
+                                </Link>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0"
-                          style={{ background: pc.bg, color: pc.color }}>
-                          {pc.label}
-                        </span>
+                          style={{ background: pc.bg, color: pc.color }}>{pc.label}</span>
                       </div>
                     );
-                  })
-                )}
+                  })}
+                </div>
               </div>
-            </div>
+            </Section>
 
             {/* Overdue Alert */}
             {overdueLeads.length > 0 && (
-              <div className="rounded-2xl overflow-hidden"
-                style={{ border: `1px solid #FECACA`, boxShadow: `0 1px 4px rgba(220,38,38,0.08)` }}>
-                <div className="px-5 py-4 flex items-center justify-between"
-                  style={{ background: "linear-gradient(135deg, #FEF2F2, #FFFFFF)", borderBottom: "1px solid #FECACA" }}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                      style={{ background: "#FEE2E2" }}>
-                      <Zap size={14} style={{ color: T.red }} />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-bold" style={{ color: "#991B1B" }}>Cần liên hệ ngay</h2>
-                      <p className="text-[10px]" style={{ color: "#F87171" }}>Quá 3 ngày không tương tác</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-black px-2 py-0.5 rounded-full"
-                    style={{ background: "#FEE2E2", color: T.red }}>
-                    {overdueLeads.length}
-                  </span>
-                </div>
-                <div className="p-3 space-y-2" style={{ background: T.card }}>
+              <Section title="Cần liên hệ ngay" icon={Zap} iconColor={T.red} iconBg={T.redBg}
+                badge={`${overdueLeads.length}`}>
+                <div className="p-3 space-y-2">
                   {overdueLeads.slice(0, 5).map(lead => {
                     const daysAgo = Math.floor((Date.now() - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
                     return (
                       <Link key={lead.id} href={`/crm/leads/${lead.id}`}
-                        className="flex items-center justify-between p-2.5 rounded-xl transition-colors hover:opacity-90 group"
+                        className="flex items-center justify-between p-2.5 rounded-xl hover:opacity-90 transition-opacity"
                         style={{ border: "1px solid #FEE2E2" }}>
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-bold truncate" style={{ color: T.textPrimary }}>{lead.name}</div>
                           <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{lead.company || STAGE_LABELS[lead.stage]}</div>
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md"
-                            style={{ background: "#FEE2E2" }}>
+                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md" style={{ background: "#FEE2E2" }}>
                             <Clock size={9} style={{ color: T.red }} />
                             <span className="text-[10px] font-black" style={{ color: T.red }}>{daysAgo}n</span>
                           </div>
@@ -1040,27 +1166,22 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                     );
                   })}
                 </div>
-              </div>
+              </Section>
             )}
 
             {/* Quick Stats */}
-            <div className="rounded-2xl overflow-hidden"
-              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.divider}` }}>
-                <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Thống kê nhanh</h2>
-              </div>
+            <Section title="Thống kê nhanh" icon={Eye} iconColor={T.blue} iconBg={T.blueBg}>
               <div className="p-4 space-y-2.5">
                 {[
                   { label: "Đang thương thảo", value: (stats.byStage["negotiating"] || 0), color: T.orange, bg: T.orangeBg, icon: Target },
-                  { label: "Đã báo giá",        value: (stats.byStage["quoted"] || 0),       color: T.gold,   bg: T.goldBg,   icon: FileText },
-                  { label: "Đã khảo sát",       value: (stats.byStage["surveyed"] || 0),     color: T.purple, bg: T.purpleBg, icon: Briefcase },
-                  { label: "Đã gửi Profile",    value: (stats.byStage["profile_sent"] || 0), color: T.blue,   bg: T.blueBg,   icon: Mail },
+                  { label: "Đã báo giá", value: (stats.byStage["quoted"] || 0), color: T.gold, bg: T.goldBg, icon: FileText },
+                  { label: "Đã khảo sát", value: (stats.byStage["surveyed"] || 0), color: T.purple, bg: T.purpleBg, icon: Briefcase },
+                  { label: "Đã gửi Profile", value: (stats.byStage["profile_sent"] || 0), color: T.blue, bg: T.blueBg, icon: Mail },
                 ].map(({ label, value, color, bg, icon: Icon }) => (
                   <div key={label} className="flex items-center justify-between p-2.5 rounded-xl"
                     style={{ background: bg, border: `1px solid ${color}18` }}>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                        style={{ background: `${color}18` }}>
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: `${color}18` }}>
                         <Icon size={12} style={{ color }} />
                       </div>
                       <span className="text-xs font-medium" style={{ color: T.textSecondary }}>{label}</span>
@@ -1069,37 +1190,32 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                   </div>
                 ))}
               </div>
-            </div>
+            </Section>
 
             {/* Quick Links */}
-            <div className="rounded-2xl overflow-hidden"
-              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.divider}` }}>
-                <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Truy cập nhanh</h2>
-              </div>
+            <Section title="Truy cập nhanh" icon={ArrowUpRight} iconColor={T.indigo} iconBg={T.indigoBg}>
               <div className="p-3 grid grid-cols-2 gap-2">
                 {[
-                  { href: "/crm/leads",      label: "Khách hàng",  icon: Users,     color: T.indigo, bg: T.indigoBg },
-                  { href: "/crm/kanban",     label: "Kanban",      icon: BarChart2, color: T.orange, bg: T.orangeBg },
-                  { href: "/crm/quotes/new", label: "Báo giá mới", icon: FileText,  color: T.green,  bg: T.greenBg },
-                  { href: "/crm/calendar",   label: "Lịch hẹn",   icon: Calendar,  color: T.blue,   bg: T.blueBg },
+                  { href: "/crm/leads", label: "Khách hàng", icon: Users, color: T.indigo, bg: T.indigoBg },
+                  { href: "/crm/kanban", label: "Kanban", icon: BarChart2, color: T.orange, bg: T.orangeBg },
+                  { href: "/crm/quotes/new", label: "Báo giá mới", icon: FileText, color: T.green, bg: T.greenBg },
+                  { href: "/crm/calendar", label: "Lịch hẹn", icon: Calendar, color: T.blue, bg: T.blueBg },
                   ...(currentUser?.isAdmin ? [
-                    { href: "/crm/reports", label: "Báo cáo",    icon: TrendingUp, color: T.purple, bg: T.purpleBg },
-                    { href: "/crm/staff",   label: "Nhân viên",  icon: Award,      color: T.gold,   bg: T.goldBg },
+                    { href: "/crm/reports", label: "Báo cáo", icon: TrendingUp, color: T.purple, bg: T.purpleBg },
+                    { href: "/crm/staff", label: "Nhân viên", icon: Award, color: T.gold, bg: T.goldBg },
                   ] : []),
                 ].map(({ href, label, icon: Icon, color, bg }) => (
                   <Link key={href} href={href}
                     className="flex items-center gap-2 p-3 rounded-xl hover:opacity-90 transition-opacity"
                     style={{ background: bg, border: `1px solid ${color}18` }}>
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                      style={{ background: `${color}20` }}>
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: `${color}20` }}>
                       <Icon size={12} style={{ color }} />
                     </div>
                     <span className="text-xs font-semibold" style={{ color: T.textSecondary }}>{label}</span>
                   </Link>
                 ))}
               </div>
-            </div>
+            </Section>
 
           </div>
         </div>
@@ -1108,40 +1224,34 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
   );
 }
 
-// ── KPI Card Component ──────────────────────────────────────────────────────
+// ── KPI Card ─────────────────────────────────────────────────────────────────
 interface KpiCardProps {
-  icon: React.ElementType;
-  label: string;
-  value: number | string;
-  sub: string;
-  color: string;
-  colorBg: string;
-  badge?: string;
-  badgeColor?: string;
-  isText?: boolean;
-  urgent?: boolean;
+  icon: React.ElementType; label: string; value: number | string; sub: string;
+  color: string; colorBg: string; badge?: string; badgeColor?: string;
+  isText?: boolean; urgent?: boolean; sparkline?: number[]; sparklineColor?: string;
+  darkMode?: boolean;
 }
 
-function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeColor, urgent }: KpiCardProps) {
+function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeColor, urgent, sparkline, sparklineColor, darkMode }: KpiCardProps) {
   return (
     <div className="rounded-2xl p-5 relative overflow-hidden transition-all hover:shadow-md"
       style={{
-        background: "#FFFFFF",
+        background: darkMode ? "#1E293B" : "#FFFFFF",
         border: urgent ? `1px solid ${color}50` : `1px solid #E4E7EC`,
         boxShadow: urgent ? `0 1px 4px ${color}18` : "0 1px 4px rgba(16,24,40,0.06)",
       }}>
       {urgent && <div className="absolute inset-0 opacity-[0.025]" style={{ background: color }} />}
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: colorBg }}>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: colorBg }}>
           <Icon size={20} style={{ color }} />
         </div>
-        {urgent && (
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: color }} />
-        )}
+        <div className="flex items-center gap-2">
+          {sparkline && <Sparkline data={sparkline} color={sparklineColor || color} />}
+          {urgent && <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: color }} />}
+        </div>
       </div>
-      <div className="text-2xl font-black leading-none mb-1" style={{ color: "#101828" }}>{value}</div>
-      <div className="text-xs font-semibold mb-1" style={{ color: "#475467" }}>{label}</div>
+      <div className="text-2xl font-black leading-none mb-1" style={{ color: darkMode ? "#F1F5F9" : "#101828" }}>{value}</div>
+      <div className="text-xs font-semibold mb-1" style={{ color: darkMode ? "#94A3B8" : "#475467" }}>{label}</div>
       <div className="text-[10px] truncate" style={{ color: "#98A2B3" }}>{sub}</div>
       {badge && (
         <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
