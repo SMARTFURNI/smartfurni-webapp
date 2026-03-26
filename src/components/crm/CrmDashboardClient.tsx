@@ -324,9 +324,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           </Link>
         )}
 
-        {/* ── Admin: This Month Summary ─────────────────────────────────── */}
-        {currentUser?.isAdmin && (
-          <div className="grid grid-cols-3 gap-4">
+        {/* ── This Month Summary (admin + staff) ──────────────────────── */}
+        <div className="grid grid-cols-3 gap-4">
             <div className="bg-white rounded-2xl p-5 flex items-center gap-4"
               style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
@@ -372,8 +371,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                 <div className="text-[10px] text-gray-500 mt-1">Tỷ lệ chốt {winRate}%</div>
               </div>
             </div>
-          </div>
-        )}
+        </div>
 
         {/* ── Main Grid ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -381,9 +379,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           {/* Left col (2/3) */}
           <div className="xl:col-span-2 space-y-5">
 
-            {/* ── Admin: Monthly Revenue Chart ── */}
-            {currentUser?.isAdmin && (
-              <div className="bg-white rounded-2xl overflow-hidden"
+            {/* ── Monthly Revenue Chart (admin + staff) ── */}
+            <div className="bg-white rounded-2xl overflow-hidden"
                 style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
                 <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <div className="flex items-center gap-3">
@@ -477,7 +474,6 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                   )}
                 </div>
               </div>
-            )}
 
             {/* Pipeline Funnel */}
             <div className="bg-white rounded-2xl overflow-hidden"
