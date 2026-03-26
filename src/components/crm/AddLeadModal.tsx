@@ -10,6 +10,8 @@ interface Props {
   onClose: () => void;
   onCreated: (lead: Lead) => void;
   defaultStage?: LeadStage;
+  currentUserName?: string; // Tên nhân viên đang đăng nhập - pre-fill assignedTo
+  isAdmin?: boolean; // Admin có thể chỉnh sửa assignedTo
 }
 
 const TYPE_CONFIG: Record<LeadType, { label: string; color: string; bg: string }> = {
@@ -18,7 +20,7 @@ const TYPE_CONFIG: Record<LeadType, { label: string; color: string; bg: string }
   dealer:     { label: "Đại lý",           color: "#C9A84C", bg: "rgba(201,168,76,0.12)" },
 };
 
-export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" }: Props) {
+export default function AddLeadModal({ onClose, onCreated, defaultStage = "new", currentUserName = "", isAdmin = false }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"basic" | "project" | "notes">("basic");
@@ -33,7 +35,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
     district: "",
     expectedValue: "",
     source: "Facebook Ads",
-    assignedTo: "",
+    assignedTo: currentUserName,
     projectName: "",
     projectAddress: "",
     unitCount: "",
@@ -233,7 +235,12 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new" 
                     <DarkInput value={form.expectedValue} onChange={v => set("expectedValue", v)} placeholder="50,000,000" type="number" />
                   </DarkField>
                   <DarkField label="Sales phụ trách" icon={<User size={13} />}>
-                    <DarkInput value={form.assignedTo} onChange={v => set("assignedTo", v)} placeholder="Tên sales" />
+                    <DarkInput
+                      value={form.assignedTo}
+                      onChange={v => isAdmin ? set("assignedTo", v) : undefined}
+                      placeholder="Tên sales"
+                      style={!isAdmin ? { background: "#f0fdf4", color: "#166534", fontWeight: 600 } : {}}
+                    />
                   </DarkField>
                 </div>
               </>
@@ -314,8 +321,8 @@ function DarkField({ label, icon, children }: { label: string; icon?: React.Reac
   );
 }
 
-function DarkInput({ value, onChange, placeholder, type = "text" }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+function DarkInput({ value, onChange, placeholder, type = "text", style }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; type?: string; style?: React.CSSProperties;
 }) {
   return (
     <input
@@ -324,7 +331,7 @@ function DarkInput({ value, onChange, placeholder, type = "text" }: {
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none transition-all"
-      style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}
+      style={{ background: "#f3f4f6", border: "1px solid #d1d5db", ...style }}
     />
   );
 }

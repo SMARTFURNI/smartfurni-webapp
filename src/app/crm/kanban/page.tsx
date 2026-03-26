@@ -18,5 +18,5 @@ export default async function KanbanPage() {
   const staffFilter = (!session.isAdmin && staffName) ? { assignedTo: staffName } : undefined;
 
   const leads = await getLeads(staffFilter);
-  return <KanbanClient initialLeads={leads} />;
+  return <KanbanClient initialLeads={leads} isAdmin={session.isAdmin} currentUserName={staffName || ""} />;
 }

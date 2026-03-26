@@ -18,9 +18,11 @@ const STAGES: LeadStage[] = ["new", "profile_sent", "surveyed", "quoted", "negot
 
 interface Props {
   initialLeads: Lead[];
+  isAdmin?: boolean;
+  currentUserName?: string;
 }
 
-export default function KanbanClient({ initialLeads }: Props) {
+export default function KanbanClient({ initialLeads, isAdmin = false, currentUserName = "" }: Props) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [search, setSearch] = useState("");
   const [filterDistrict, setFilterDistrict] = useState("");
@@ -297,6 +299,8 @@ export default function KanbanClient({ initialLeads }: Props) {
             setLeads(prev => [lead, ...prev]);
             setShowAddModal(false);
           }}
+          currentUserName={currentUserName}
+          isAdmin={isAdmin}
         />
       )}
     </div>

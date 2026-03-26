@@ -24,5 +24,5 @@ export default async function LeadsPage() {
     console.error("[crm/leads] Failed to load leads:", err);
   }
 
-  return <LeadsListClient initialLeads={leads} isAdmin={session.isAdmin} />;
+  return <LeadsListClient initialLeads={leads} isAdmin={session.isAdmin} currentUserName={staffName || ""} />;
 }

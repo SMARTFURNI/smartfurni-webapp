@@ -14,14 +14,14 @@ import {
 } from "@/lib/crm-types";
 import AddLeadModal from "./AddLeadModal";
 
-interface Props { initialLeads: Lead[]; isAdmin?: boolean; }
+interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; }
 
 type SortKey = "name" | "expectedValue" | "lastContactAt" | "createdAt";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 20;
 
-export default function LeadsListClient({ initialLeads, isAdmin = false }: Props) {
+export default function LeadsListClient({ initialLeads, isAdmin = false, currentUserName = "" }: Props) {
   const [leads, setLeads] = useState(initialLeads);
   const [search, setSearch] = useState("");
   const [filterStage, setFilterStage] = useState<LeadStage | "">("");
@@ -375,6 +375,8 @@ export default function LeadsListClient({ initialLeads, isAdmin = false }: Props
         <AddLeadModal
           onClose={() => setShowAddModal(false)}
           onCreated={lead => { setLeads(prev => [lead, ...prev]); setShowAddModal(false); }}
+          currentUserName={currentUserName}
+          isAdmin={isAdmin}
         />
       )}
 
