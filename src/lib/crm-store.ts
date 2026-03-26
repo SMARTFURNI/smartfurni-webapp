@@ -326,9 +326,21 @@ export async function getTasks(filters?: { leadId?: string; done?: boolean; dueT
     conditions.push(`due_date <= CURRENT_DATE AND done = FALSE`);
   }
   if (filters?.assignedTo) {
-    // Nhân viên chỉ thấy tasks được giao đích danh cho mình
-    conditions.push(`data->>'assignedTo' = $${idx++}`);
-    params.push(filters.assignedTo);
+    // Nhân viên thấy tasks:
+    // 1. Được giao đích danh cho mình (assignedTo = staffName)
+    // 2. assignedTo rỗng nhưng thuộc lead được giao cho mình
+    // 3. Thuộc lead được giao cho mình (bất kể assignedTo)
+    const p1 = idx++; params.push(filters.assignedTo);
+    const p2 = idx++; params.push(filters.assignedTo);
+    const p3 = idx++; params.push(filters.assignedTo);
+    conditions.push(`(
+      data->>'assignedTo' = $${p1}
+      OR (
+        (data->>'assignedTo' = '' OR data->>'assignedTo' IS NULL)
+        AND lead_id IN (SELECT id FROM crm_leads WHERE data->>'assignedTo' = $${p2})
+      )
+      OR lead_id IN (SELECT id FROM crm_leads WHERE data->>'assignedTo' = $${p3})
+    )`);
   }
 
   if (conditions.length > 0) sql += ` WHERE ${conditions.join(" AND ")}`;
