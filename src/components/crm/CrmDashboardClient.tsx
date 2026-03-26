@@ -714,12 +714,15 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                     <p className="text-[10px] text-gray-500">{doneTasks.length}/{tasks.length} hoàn thành</p>
                   </div>
                 </div>
-                {pendingTasks.length > 0 && (
-                  <span className="text-xs font-black px-2 py-0.5 rounded-full text-amber-700"
-                    style={{ background: "#fef3c7" }}>
-                    {pendingTasks.length}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <Link href="/crm/tasks" className="text-xs font-medium hover:underline" style={{ color: "#C9A84C" }}>Xem tất cả</Link>
+                  {pendingTasks.length > 0 && (
+                    <span className="text-xs font-black px-2 py-0.5 rounded-full text-amber-700"
+                      style={{ background: "#fef3c7" }}>
+                      {pendingTasks.length}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Progress bar */}
