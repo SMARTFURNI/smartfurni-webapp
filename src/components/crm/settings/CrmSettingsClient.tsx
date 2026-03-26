@@ -7,7 +7,7 @@ import {
   GripVertical, Eye, EyeOff, ChevronRight, CheckCircle2,
   AlertCircle, Settings, Copy, RefreshCw, Palette,
 } from "lucide-react";
-import type { CrmSettings, PipelineStage, LeadSource, LeadTypeConfig, DiscountTierConfig, DashboardTheme } from "@/lib/crm-settings-store";
+import type { CrmSettings, PipelineStage, LeadSource, LeadTypeConfig, DiscountTierConfig, DashboardTheme, DashboardSectionId, KpiCardId, ChartType, FunnelStyle, ChartPalette, DensityMode, FontFamily, KpiSize, KpiColumns, RefreshInterval } from "@/lib/crm-settings-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -737,11 +737,53 @@ function EmailTab({ data, onChange }: { data: CrmSettings["email"]; onChange: (d
   );
 }
 
-// ─── DashboardThemeTab ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DashboardThemeTab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+
+const SECTION_LABELS: Record<DashboardSectionId, string> = {
+  kpiCards: "4 KPI Cards",
+  dataPool: "Banner Data Pool",
+  monthSummary: "3 Card th\u00e1ng n\u00e0y",
+  revenueChart: "Bi\u1ec3u \u0111\u1ed3 doanh thu",
+  pipeline: "Pipeline Funnel",
+  funnel: "Conversion Funnel",
+  staleDeals: "Deal s\u1eafp m\u1ea5t",
+  heatmap: "Heatmap ho\u1ea1t \u0111\u1ed9ng",
+  staffPerformance: "Hi\u1ec7u su\u1ea5t nh\u00e2n vi\u00ean",
+  tasks: "Nhi\u1ec7m v\u1ee5 h\u00f4m nay",
+  quickStats: "Th\u1ed1ng k\u00ea nhanh",
+  quickLinks: "Truy c\u1eadp nhanh",
+  overdue: "Qu\u00e1 h\u1ea1n li\u00ean h\u1ec7",
+  leaderboard: "X\u1ebfp h\u1ea1ng nh\u00e2n vi\u00ean",
+  teamOnline: "Team Online",
+};
+
+const KPI_CARD_LABELS: Record<KpiCardId, string> = {
+  totalLeads: "T\u1ed5ng kh\u00e1ch h\u00e0ng",
+  pipelineValue: "Pipeline gi\u00e1 tr\u1ecb",
+  wonRate: "T\u1ef7 l\u1ec7 ch\u1ed1t \u0111\u01a1n",
+  overdue: "C\u1ea7n li\u00ean h\u1ec7 ngay",
+  revenueMonth: "Doanh thu th\u00e1ng",
+  newLeadsMonth: "KH m\u1edbi th\u00e1ng",
+  wonLeadsMonth: "\u0110\u01a1n ch\u1ed1t th\u00e1ng",
+  totalQuotes: "T\u1ed5ng b\u00e1o gi\u00e1",
+};
+
+const ALL_SECTIONS: DashboardSectionId[] = [
+  "kpiCards", "dataPool", "monthSummary", "revenueChart",
+  "pipeline", "funnel", "staleDeals", "staffPerformance",
+  "tasks", "quickStats", "quickLinks", "overdue",
+  "leaderboard", "teamOnline", "heatmap",
+];
+
+const ALL_KPI_CARDS: KpiCardId[] = [
+  "totalLeads", "pipelineValue", "wonRate", "overdue",
+  "revenueMonth", "newLeadsMonth", "wonLeadsMonth", "totalQuotes",
+];
 
 const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
   {
-    name: "Mặc định (Gold & Navy)",
+    name: "M\u1eb7c \u0111\u1ecbnh (Gold & Navy)",
     theme: {
       pageBg: "#F0F2F5", kpiCardBg: "#FFFFFF", kpiCardBorder: "#E4E7EC",
       kpiCustomerColor: "#4F46E5", kpiPipelineColor: "#C9A84C",
@@ -751,7 +793,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
     },
   },
   {
-    name: "Xanh dương hiện đại",
+    name: "Xanh d\u01b0\u01a1ng hi\u1ec7n \u0111\u1ea1i",
     theme: {
       pageBg: "#EFF6FF", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BFDBFE",
       kpiCustomerColor: "#2563EB", kpiPipelineColor: "#0EA5E9",
@@ -761,7 +803,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
     },
   },
   {
-    name: "Tối sang trọng",
+    name: "T\u1ed1i sang tr\u1ecdng",
     theme: {
       pageBg: "#0F172A", kpiCardBg: "#1E293B", kpiCardBorder: "#334155",
       kpiCardTitleColor: "#F1F5F9", kpiCardValueColor: "#F8FAFC", kpiCardMutedColor: "#94A3B8",
@@ -775,7 +817,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
     },
   },
   {
-    name: "Xanh lá tươi mát",
+    name: "Xanh l\u00e1 t\u01b0\u01a1i m\u00e1t",
     theme: {
       pageBg: "#F0FDF4", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BBF7D0",
       kpiCustomerColor: "#16A34A", kpiPipelineColor: "#CA8A04",
@@ -788,67 +830,72 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
 
 const COLOR_GROUPS: { title: string; fields: { key: keyof DashboardTheme; label: string }[] }[] = [
   {
-    title: "Nền trang",
-    fields: [
-      { key: "pageBg", label: "Màu nền trang" },
-    ],
+    title: "N\u1ec1n trang",
+    fields: [{ key: "pageBg", label: "M\u00e0u n\u1ec1n trang" }],
   },
   {
-    title: "KPI Cards (4 ô đầu trang)",
+    title: "KPI Cards (4 \u00f4 \u0111\u1ea7u trang)",
     fields: [
-      { key: "kpiCardBg",         label: "Nền card" },
-      { key: "kpiCardBorder",     label: "Viền card" },
-      { key: "kpiCardTitleColor", label: "Chữ tiêu đề" },
-      { key: "kpiCardValueColor", label: "Chữ số liệu" },
-      { key: "kpiCardMutedColor", label: "Chữ phụ" },
-      { key: "kpiCustomerColor",  label: "Icon Tổng KH" },
+      { key: "kpiCardBg",         label: "N\u1ec1n card" },
+      { key: "kpiCardBorder",     label: "Vi\u1ec1n card" },
+      { key: "kpiCardTitleColor", label: "Ch\u1eef ti\u00eau \u0111\u1ec1" },
+      { key: "kpiCardValueColor", label: "Ch\u1eef s\u1ed1 li\u1ec7u" },
+      { key: "kpiCardMutedColor", label: "Ch\u1eef ph\u1ee5" },
+      { key: "kpiCustomerColor",  label: "Icon T\u1ed5ng KH" },
       { key: "kpiPipelineColor",  label: "Icon Pipeline" },
-      { key: "kpiWonColor",       label: "Icon Chốt đơn" },
-      { key: "kpiOverdueColor",   label: "Icon Cần liên hệ" },
+      { key: "kpiWonColor",       label: "Icon Ch\u1ed1t \u0111\u01a1n" },
+      { key: "kpiOverdueColor",   label: "Icon C\u1ea7n li\u00ean h\u1ec7" },
     ],
   },
   {
     title: "Banner Data Pool",
     fields: [
-      { key: "dataPoolBannerBg",   label: "Nền banner" },
-      { key: "dataPoolBannerText", label: "Chữ banner" },
-      { key: "dataPoolBtnBg",      label: "Nền nút" },
-      { key: "dataPoolBtnText",    label: "Chữ nút" },
+      { key: "dataPoolBannerBg",   label: "N\u1ec1n banner" },
+      { key: "dataPoolBannerText", label: "Ch\u1eef banner" },
+      { key: "dataPoolBtnBg",      label: "N\u1ec1n n\u00fat" },
+      { key: "dataPoolBtnText",    label: "Ch\u1eef n\u00fat" },
     ],
   },
   {
-    title: "3 Card thống kê tháng",
+    title: "3 Card th\u1ed1ng k\u00ea th\u00e1ng",
     fields: [
-      { key: "summaryCardBg",       label: "Nền card" },
-      { key: "summaryCardBorder",   label: "Viền card" },
+      { key: "summaryCardBg",       label: "N\u1ec1n card" },
+      { key: "summaryCardBorder",   label: "Vi\u1ec1n card" },
       { key: "summaryRevenueColor", label: "Doanh thu" },
-      { key: "summaryNewLeadColor", label: "KH mới" },
-      { key: "summaryWonColor",     label: "Chốt đơn" },
+      { key: "summaryNewLeadColor", label: "KH m\u1edbi" },
+      { key: "summaryWonColor",     label: "Ch\u1ed1t \u0111\u01a1n" },
     ],
   },
   {
-    title: "Section Cards (biểu đồ, pipeline, nguồn KH)",
+    title: "Section Cards (bi\u1ec3u \u0111\u1ed3, pipeline, ngu\u1ed3n KH)",
     fields: [
-      { key: "sectionCardBg",     label: "Nền card" },
-      { key: "sectionCardBorder", label: "Viền card" },
-      { key: "sectionHeaderColor",label: "Tiêu đề" },
-      { key: "sectionBodyColor",  label: "Nội dung" },
+      { key: "sectionCardBg",      label: "N\u1ec1n card" },
+      { key: "sectionCardBorder",  label: "Vi\u1ec1n card" },
+      { key: "sectionHeaderColor", label: "Ti\u00eau \u0111\u1ec1" },
+      { key: "sectionBodyColor",   label: "N\u1ed9i dung" },
     ],
   },
   {
-    title: "Cột phải (Task, Quick Links)",
+    title: "C\u1ed9t ph\u1ea3i (Task, Quick Links)",
     fields: [
-      { key: "taskCardBg",       label: "Nền card" },
-      { key: "taskUrgentColor",  label: "Task khẩn cấp" },
-      { key: "quickLinkBg",      label: "Nền quick link" },
-      { key: "quickLinkIconColor",label: "Icon quick link" },
+      { key: "taskCardBg",        label: "N\u1ec1n card" },
+      { key: "taskUrgentColor",   label: "Task kh\u1ea9n c\u1ea5p" },
+      { key: "quickLinkBg",       label: "N\u1ec1n quick link" },
+      { key: "quickLinkIconColor", label: "Icon quick link" },
     ],
   },
   {
-    title: "Accent / Thương hiệu",
+    title: "Accent / Th\u01b0\u01a1ng hi\u1ec7u",
     fields: [
-      { key: "accentColor",     label: "Màu accent chính" },
-      { key: "accentTextColor", label: "Chữ trên accent" },
+      { key: "accentColor",     label: "M\u00e0u accent ch\u00ednh" },
+      { key: "accentTextColor", label: "Ch\u1eef tr\u00ean accent" },
+    ],
+  },
+  {
+    title: "Ticker th\u00f4ng b\u00e1o",
+    fields: [
+      { key: "tickerBg",        label: "N\u1ec1n ticker" },
+      { key: "tickerTextColor", label: "Ch\u1eef ticker" },
     ],
   },
 ];
@@ -858,12 +905,7 @@ function ThemeColorRow({ label, value, onChange }: { label: string; value: strin
     <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
       <span className="text-sm" style={{ color: "#374151" }}>{label}</span>
       <div className="flex items-center gap-2">
-        {/* Swatch preview */}
-        <div
-          className="w-8 h-8 rounded-lg border flex-shrink-0 shadow-sm"
-          style={{ background: value, borderColor: "#d1d5db" }}
-        />
-        {/* Hex input */}
+        <div className="w-8 h-8 rounded-lg border flex-shrink-0 shadow-sm" style={{ background: value, borderColor: "#d1d5db" }} />
         <input
           type="text"
           value={value}
@@ -872,93 +914,605 @@ function ThemeColorRow({ label, value, onChange }: { label: string; value: strin
           style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
           placeholder="#RRGGBB"
         />
-        {/* Native color picker */}
         <input
           type="color"
           value={value.startsWith("#") && value.length === 7 ? value : "#000000"}
           onChange={e => onChange(e.target.value)}
           className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0.5"
           style={{ background: "transparent" }}
-          title="Chọn màu"
+          title="Ch\u1ecdn m\u00e0u"
         />
       </div>
     </div>
   );
 }
 
+function ToggleRow({ label, desc, value, onChange }: { label: string; desc?: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
+      <div>
+        <div className="text-sm font-medium" style={{ color: "#374151" }}>{label}</div>
+        {desc && <div className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>{desc}</div>}
+      </div>
+      <button
+        onClick={() => onChange(!value)}
+        className="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+        style={{ background: value ? "#C9A84C" : "#d1d5db" }}
+      >
+        <span
+          className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform"
+          style={{ transform: value ? "translateX(22px)" : "translateX(2px)" }}
+        />
+      </button>
+    </div>
+  );
+}
+
+function SelectRow({ label, value, options, onChange }: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
+      <span className="text-sm" style={{ color: "#374151" }}>{label}</span>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="text-sm px-3 py-1.5 rounded-lg border"
+        style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+      >
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  );
+}
+
 function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange: (d: DashboardTheme) => void }) {
+  const [activeGroup, setActiveGroup] = useState<"colors" | "layout" | "typography" | "charts" | "widgets" | "behavior">("colors");
+
+  const set = <K extends keyof DashboardTheme>(key: K, value: DashboardTheme[K]) => {
+    onChange({ ...data, [key]: value });
+  };
+
   const applyPreset = (preset: Partial<DashboardTheme>) => {
     onChange({ ...data, ...preset });
   };
 
-  const updateField = (key: keyof DashboardTheme, value: string) => {
-    onChange({ ...data, [key]: value });
+  const toggleSection = (id: DashboardSectionId) => {
+    const hidden = data.hiddenSections ?? [];
+    if (hidden.includes(id)) {
+      set("hiddenSections", hidden.filter(s => s !== id));
+    } else {
+      set("hiddenSections", [...hidden, id]);
+    }
   };
 
+  const toggleKpiCard = (id: KpiCardId) => {
+    const visible = data.visibleKpiCards ?? ALL_KPI_CARDS.slice(0, 4);
+    if (visible.includes(id)) {
+      if (visible.length <= 1) return;
+      set("visibleKpiCards", visible.filter(k => k !== id));
+    } else {
+      if (visible.length >= 6) return;
+      set("visibleKpiCards", [...visible, id]);
+    }
+  };
+
+  const moveSectionUp = (idx: number) => {
+    if (idx === 0) return;
+    const order = [...(data.sectionOrder ?? ALL_SECTIONS)];
+    [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+    set("sectionOrder", order);
+  };
+
+  const moveSectionDown = (idx: number) => {
+    const order = [...(data.sectionOrder ?? ALL_SECTIONS)];
+    if (idx >= order.length - 1) return;
+    [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
+    set("sectionOrder", order);
+  };
+
+  const GROUP_TABS = [
+    { id: "colors" as const,     label: "M\u00e0u s\u1eafc" },
+    { id: "layout" as const,     label: "B\u1ed1 c\u1ee5c" },
+    { id: "typography" as const, label: "Ch\u1eef & M\u1eadt \u0111\u1ed9" },
+    { id: "charts" as const,     label: "Bi\u1ec3u \u0111\u1ed3" },
+    { id: "widgets" as const,    label: "Widget" },
+    { id: "behavior" as const,   label: "H\u00e0nh vi" },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Preview strip */}
+    <div className="space-y-5">
+      {/* Live preview */}
       <div className="rounded-2xl overflow-hidden border" style={{ borderColor: "#e5e7eb" }}>
         <div className="px-4 py-3 text-xs font-semibold" style={{ background: "#f9fafb", color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>
-          XEM TRƯỚC — Màu hiện tại
+          XEM TR\u01af\u1edaC \u2014 M\u00e0u hi\u1ec7n t\u1ea1i
         </div>
         <div className="p-4 flex gap-3 flex-wrap" style={{ background: data.pageBg }}>
-          {/* KPI card preview */}
           <div className="rounded-xl p-3 flex-1 min-w-[100px]" style={{ background: data.kpiCardBg, border: `1px solid ${data.kpiCardBorder}` }}>
-            <div className="text-[10px] mb-1" style={{ color: data.kpiCardMutedColor }}>Tổng KH</div>
+            <div className="text-[10px] mb-1" style={{ color: data.kpiCardMutedColor }}>T\u1ed5ng KH</div>
             <div className="text-lg font-bold" style={{ color: data.kpiCardValueColor }}>42</div>
             <div className="w-5 h-5 rounded mt-1" style={{ background: data.kpiCustomerColor + "22" }}>
               <div className="w-2.5 h-2.5 rounded m-1.5" style={{ background: data.kpiCustomerColor }} />
             </div>
           </div>
-          {/* Summary card preview */}
           <div className="rounded-xl p-3 flex-1 min-w-[100px]" style={{ background: data.summaryCardBg, border: `1px solid ${data.summaryCardBorder}` }}>
             <div className="text-[10px] mb-1" style={{ color: data.kpiCardMutedColor }}>Doanh thu</div>
             <div className="text-lg font-bold" style={{ color: data.summaryRevenueColor }}>850tr</div>
           </div>
-          {/* Data pool banner preview */}
           <div className="rounded-xl p-3 flex-1 min-w-[120px] flex items-center justify-between" style={{ background: data.dataPoolBannerBg }}>
             <span className="text-xs font-medium" style={{ color: data.dataPoolBannerText }}>Data Pool</span>
-            <span className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: data.dataPoolBtnBg, color: data.dataPoolBtnText }}>Nhận ngay</span>
+            <span className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: data.dataPoolBtnBg, color: data.dataPoolBtnText }}>Nh\u1eadn ngay</span>
+          </div>
+          <div className="rounded-xl p-3 flex-1 min-w-[100px]" style={{ background: data.sectionCardBg, border: `1px solid ${data.sectionCardBorder}` }}>
+            <div className="text-[10px] font-semibold mb-2" style={{ color: data.sectionHeaderColor }}>Pipeline</div>
+            <div className="h-2 rounded-full mb-1" style={{ background: data.accentColor + "33" }}>
+              <div className="h-2 rounded-full w-3/4" style={{ background: data.accentColor }} />
+            </div>
+            <div className="text-[10px]" style={{ color: data.sectionBodyColor }}>3 kh\u00e1ch h\u00e0ng</div>
           </div>
         </div>
       </div>
 
-      {/* Preset buttons */}
-      <div>
-        <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>BỘ MÀU CÓ SẴN</div>
-        <div className="grid grid-cols-2 gap-2">
-          {THEME_PRESETS.map(preset => (
-            <button
-              key={preset.name}
-              onClick={() => applyPreset(preset.theme)}
-              className="text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-90"
-              style={{ background: preset.theme.kpiCardBg ?? "#fff", border: `2px solid ${preset.theme.accentColor ?? "#e5e7eb"}`, color: "#111827" }}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: preset.theme.accentColor ?? "#C9A84C" }} />
-                <span>{preset.name}</span>
+      {/* Sub-tab navigation */}
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f3f4f6" }}>
+        {GROUP_TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveGroup(tab.id)}
+            className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all"
+            style={{
+              background: activeGroup === tab.id ? "#ffffff" : "transparent",
+              color: activeGroup === tab.id ? "#C9A84C" : "#6b7280",
+              boxShadow: activeGroup === tab.id ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Colors tab */}
+      {activeGroup === "colors" && (
+        <div className="space-y-4">
+          <div>
+            <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>B\u1ed8 M\u00c0U C\u00d3 S\u1eb4N</div>
+            <div className="grid grid-cols-2 gap-2">
+              {THEME_PRESETS.map(preset => (
+                <button
+                  key={preset.name}
+                  onClick={() => applyPreset(preset.theme)}
+                  className="text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-90"
+                  style={{ background: preset.theme.kpiCardBg ?? "#fff", border: `2px solid ${preset.theme.accentColor ?? "#e5e7eb"}`, color: "#111827" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: preset.theme.accentColor ?? "#C9A84C" }} />
+                    <span>{preset.name}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+          {COLOR_GROUPS.map(group => (
+            <SectionCard key={group.title} title={group.title} icon={Palette}>
+              <div className="divide-y divide-gray-50">
+                {group.fields.map(field => (
+                  <ThemeColorRow
+                    key={field.key}
+                    label={field.label}
+                    value={data[field.key] as string}
+                    onChange={v => set(field.key, v as DashboardTheme[typeof field.key])}
+                  />
+                ))}
               </div>
-            </button>
+            </SectionCard>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Color groups */}
-      {COLOR_GROUPS.map(group => (
-        <SectionCard key={group.title} title={group.title} icon={Palette}>
-          <div className="divide-y divide-gray-50">
-            {group.fields.map(field => (
-              <ThemeColorRow
-                key={field.key}
-                label={field.label}
-                value={data[field.key] as string}
-                onChange={v => updateField(field.key, v)}
+      {/* Layout tab */}
+      {activeGroup === "layout" && (
+        <div className="space-y-4">
+          <SectionCard title="S\u1ed1 c\u1ed9t KPI Cards" icon={Palette}>
+            <div className="flex gap-2 mt-1">
+              {([2, 3, 4] as KpiColumns[]).map(n => (
+                <button
+                  key={n}
+                  onClick={() => set("kpiColumns", n)}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all"
+                  style={{
+                    background: data.kpiColumns === n ? "#C9A84C" : "#f9fafb",
+                    color: data.kpiColumns === n ? "#fff" : "#374151",
+                    borderColor: data.kpiColumns === n ? "#C9A84C" : "#e5e7eb",
+                  }}
+                >
+                  {n} c\u1ed9t
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Ch\u1ecdn KPI Cards hi\u1ec3n th\u1ecb (t\u1ed1i \u0111a 6)" icon={Palette}>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {ALL_KPI_CARDS.map(id => {
+                const visible = data.visibleKpiCards ?? ALL_KPI_CARDS.slice(0, 4);
+                const isOn = visible.includes(id);
+                return (
+                  <button
+                    key={id}
+                    onClick={() => toggleKpiCard(id)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all"
+                    style={{
+                      background: isOn ? "rgba(201,168,76,0.1)" : "#f9fafb",
+                      borderColor: isOn ? "#C9A84C" : "#e5e7eb",
+                      color: isOn ? "#C9A84C" : "#6b7280",
+                    }}
+                  >
+                    <div className="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center"
+                      style={{ borderColor: isOn ? "#C9A84C" : "#d1d5db", background: isOn ? "#C9A84C" : "transparent" }}>
+                      {isOn && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </div>
+                    {KPI_CARD_LABELS[id]}
+                  </button>
+                );
+              })}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="S\u1eafp x\u1ebfp & \u1ea8n/hi\u1ec7n c\u00e1c Section" icon={GripVertical}>
+            <div className="space-y-1 mt-1">
+              {(data.sectionOrder ?? ALL_SECTIONS).map((id, idx) => {
+                const hidden = (data.hiddenSections ?? []).includes(id);
+                return (
+                  <div
+                    key={id}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                    style={{ background: hidden ? "#fef2f2" : "#f9fafb", border: `1px solid ${hidden ? "#fecaca" : "#e5e7eb"}` }}
+                  >
+                    <GripVertical size={14} style={{ color: "#9ca3af" }} />
+                    <span className="flex-1 text-xs font-medium" style={{ color: hidden ? "#ef4444" : "#374151" }}>
+                      {SECTION_LABELS[id]}
+                    </span>
+                    <button onClick={() => moveSectionUp(idx)} className="p-1 rounded hover:bg-gray-200 transition-colors" title="L\u00ean tr\u00ean">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M5 2L9 7H1L5 2Z" fill="#6b7280" />
+                      </svg>
+                    </button>
+                    <button onClick={() => moveSectionDown(idx)} className="p-1 rounded hover:bg-gray-200 transition-colors" title="Xu\u1ed1ng d\u01b0\u1edbi">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M5 8L1 3H9L5 8Z" fill="#6b7280" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => toggleSection(id)}
+                      className="p-1 rounded transition-colors"
+                      title={hidden ? "Hi\u1ec7n section" : "\u1ea8n section"}
+                    >
+                      {hidden
+                        ? <EyeOff size={14} style={{ color: "#ef4444" }} />
+                        : <Eye size={14} style={{ color: "#22c55e" }} />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* Typography tab */}
+      {activeGroup === "typography" && (
+        <div className="space-y-4">
+          <SectionCard title="M\u1eadt \u0111\u1ed9 th\u00f4ng tin" icon={Palette}>
+            <div className="flex gap-2 mt-1">
+              {([
+                { value: "compact", label: "Compact", desc: "Nhi\u1ec1u th\u00f4ng tin" },
+                { value: "default", label: "Default", desc: "C\u00e2n b\u1eb1ng" },
+                { value: "comfortable", label: "Tho\u00e1ng", desc: "D\u1ec5 \u0111\u1ecdc" },
+              ] as { value: DensityMode; label: string; desc: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => set("density", opt.value)}
+                  className="flex-1 py-2 px-2 rounded-xl text-xs font-semibold border transition-all"
+                  style={{
+                    background: data.density === opt.value ? "#C9A84C" : "#f9fafb",
+                    color: data.density === opt.value ? "#fff" : "#374151",
+                    borderColor: data.density === opt.value ? "#C9A84C" : "#e5e7eb",
+                  }}
+                >
+                  <div>{opt.label}</div>
+                  <div className="text-[10px] opacity-70 mt-0.5">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Font ch\u1eef" icon={Palette}>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {([
+                { value: "inter",           label: "Inter",            sample: "Aa Bb Cc" },
+                { value: "roboto",          label: "Roboto",           sample: "Aa Bb Cc" },
+                { value: "be-vietnam-pro",  label: "Be Vietnam Pro",   sample: "Aa Bb Cc" },
+                { value: "playfair",        label: "Playfair Display", sample: "Aa Bb Cc" },
+              ] as { value: FontFamily; label: string; sample: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => set("fontFamily", opt.value)}
+                  className="px-3 py-2.5 rounded-xl text-sm border transition-all text-left"
+                  style={{
+                    background: data.fontFamily === opt.value ? "rgba(201,168,76,0.1)" : "#f9fafb",
+                    borderColor: data.fontFamily === opt.value ? "#C9A84C" : "#e5e7eb",
+                    color: "#374151",
+                  }}
+                >
+                  <div className="font-semibold text-xs" style={{ color: data.fontFamily === opt.value ? "#C9A84C" : "#374151" }}>{opt.label}</div>
+                  <div className="text-[11px] mt-0.5 opacity-60">{opt.sample}</div>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="C\u1ee1 ch\u1eef s\u1ed1 li\u1ec7u KPI" icon={Palette}>
+            <div className="flex gap-2 mt-1">
+              {([
+                { value: "small",  label: "Nh\u1ecf",  size: "text-xl" },
+                { value: "medium", label: "V\u1eeba",  size: "text-3xl" },
+                { value: "large",  label: "To",    size: "text-5xl" },
+              ] as { value: KpiSize; label: string; size: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => set("kpiValueSize", opt.value)}
+                  className="flex-1 py-3 rounded-xl border transition-all"
+                  style={{
+                    background: data.kpiValueSize === opt.value ? "rgba(201,168,76,0.1)" : "#f9fafb",
+                    borderColor: data.kpiValueSize === opt.value ? "#C9A84C" : "#e5e7eb",
+                  }}
+                >
+                  <div className={`${opt.size} font-bold`} style={{ color: data.kpiValueSize === opt.value ? "#C9A84C" : "#374151" }}>42</div>
+                  <div className="text-xs mt-1" style={{ color: "#9ca3af" }}>{opt.label}</div>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* Charts tab */}
+      {activeGroup === "charts" && (
+        <div className="space-y-4">
+          <SectionCard title="Lo\u1ea1i bi\u1ec3u \u0111\u1ed3 doanh thu" icon={Palette}>
+            <div className="flex gap-2 mt-1">
+              {([
+                { value: "bar",  label: "C\u1ed9t (Bar)" },
+                { value: "line", label: "\u0110\u01b0\u1eddng (Line)" },
+                { value: "area", label: "Di\u1ec7n t\u00edch (Area)" },
+              ] as { value: ChartType; label: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => set("chartType", opt.value)}
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
+                  style={{
+                    background: data.chartType === opt.value ? "#C9A84C" : "#f9fafb",
+                    color: data.chartType === opt.value ? "#fff" : "#374151",
+                    borderColor: data.chartType === opt.value ? "#C9A84C" : "#e5e7eb",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="S\u1ed1 th\u00e1ng hi\u1ec3n th\u1ecb" icon={Palette}>
+            <div className="flex gap-2 mt-1">
+              {([3, 6, 12, 24] as (3|6|12|24)[]).map(n => (
+                <button
+                  key={n}
+                  onClick={() => set("chartMonths", n)}
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
+                  style={{
+                    background: data.chartMonths === n ? "#C9A84C" : "#f9fafb",
+                    color: data.chartMonths === n ? "#fff" : "#374151",
+                    borderColor: data.chartMonths === n ? "#C9A84C" : "#e5e7eb",
+                  }}
+                >
+                  {n} th\u00e1ng
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Ki\u1ec3u Pipeline Funnel" icon={Palette}>
+            <div className="flex gap-2 mt-1">
+              {([
+                { value: "bars",   label: "Thanh ngang" },
+                { value: "funnel", label: "H\u00ecnh ph\u1ec5u" },
+                { value: "donut",  label: "Donut chart" },
+              ] as { value: FunnelStyle; label: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => set("funnelStyle", opt.value)}
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
+                  style={{
+                    background: data.funnelStyle === opt.value ? "#C9A84C" : "#f9fafb",
+                    color: data.funnelStyle === opt.value ? "#fff" : "#374151",
+                    borderColor: data.funnelStyle === opt.value ? "#C9A84C" : "#e5e7eb",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Palette m\u00e0u bi\u1ec3u \u0111\u1ed3" icon={Palette}>
+            <div className="flex gap-2 mt-1">
+              {([
+                { value: "brand",        label: "Th\u01b0\u01a1ng hi\u1ec7u", colors: ["#C9A84C", "#4F46E5", "#059669", "#DC2626"] },
+                { value: "categorical",  label: "Nhi\u1ec1u m\u00e0u",     colors: ["#60a5fa", "#f97316", "#a78bfa", "#34d399"] },
+                { value: "monochrome",   label: "\u0110\u01a1n s\u1eafc",     colors: ["#1e293b", "#475569", "#94a3b8", "#e2e8f0"] },
+              ] as { value: ChartPalette; label: string; colors: string[] }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => set("chartPalette", opt.value)}
+                  className="flex-1 py-2.5 px-2 rounded-xl border transition-all"
+                  style={{
+                    background: data.chartPalette === opt.value ? "rgba(201,168,76,0.1)" : "#f9fafb",
+                    borderColor: data.chartPalette === opt.value ? "#C9A84C" : "#e5e7eb",
+                  }}
+                >
+                  <div className="flex gap-0.5 justify-center mb-1">
+                    {opt.colors.map(c => <div key={c} className="w-3 h-3 rounded-full" style={{ background: c }} />)}
+                  </div>
+                  <div className="text-xs font-medium" style={{ color: data.chartPalette === opt.value ? "#C9A84C" : "#374151" }}>{opt.label}</div>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* Widgets tab */}
+      {activeGroup === "widgets" && (
+        <div className="space-y-4">
+          <SectionCard title="Ticker th\u00f4ng b\u00e1o n\u1ed9i b\u1ed9" icon={Palette}>
+            <ToggleRow
+              label="Hi\u1ec3n th\u1ecb ticker"
+              desc="D\u1ea3i ch\u1ea1y ch\u1eef th\u00f4ng b\u00e1o \u1edf \u0111\u1ea7u dashboard"
+              value={data.tickerEnabled ?? false}
+              onChange={v => set("tickerEnabled", v)}
+            />
+            {data.tickerEnabled && (
+              <>
+                <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <div className="text-sm mb-1.5" style={{ color: "#374151" }}>N\u1ed9i dung ticker</div>
+                  <input
+                    type="text"
+                    value={data.tickerText ?? ""}
+                    onChange={e => set("tickerText", e.target.value)}
+                    className="w-full text-sm px-3 py-2 rounded-lg border"
+                    style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+                    placeholder="Nh\u1eadp th\u00f4ng b\u00e1o n\u1ed9i b\u1ed9..."
+                  />
+                </div>
+                <ThemeColorRow label="N\u1ec1n ticker" value={data.tickerBg ?? "#1E293B"} onChange={v => set("tickerBg", v)} />
+                <ThemeColorRow label="Ch\u1eef ticker" value={data.tickerTextColor ?? "#F1F5F9"} onChange={v => set("tickerTextColor", v)} />
+              </>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Header th\u01b0\u01a1ng hi\u1ec7u" icon={Palette}>
+            <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
+              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>T\u00ean c\u00f4ng ty tr\u00ean header</div>
+              <input
+                type="text"
+                value={data.headerCompanyName ?? ""}
+                onChange={e => set("headerCompanyName", e.target.value)}
+                className="w-full text-sm px-3 py-2 rounded-lg border"
+                style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+                placeholder="M\u1eb7c \u0111\u1ecbnh: SmartFurni CRM"
               />
-            ))}
-          </div>
-        </SectionCard>
-      ))}
+            </div>
+            <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
+              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>URL logo (header)</div>
+              <input
+                type="text"
+                value={data.headerLogoUrl ?? ""}
+                onChange={e => set("headerLogoUrl", e.target.value)}
+                className="w-full text-sm px-3 py-2 rounded-lg border"
+                style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
+              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>URL \u1ea3nh n\u1ec1n header</div>
+              <input
+                type="text"
+                value={data.headerBgImageUrl ?? ""}
+                onChange={e => set("headerBgImageUrl", e.target.value)}
+                className="w-full text-sm px-3 py-2 rounded-lg border"
+                style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+                placeholder="https://... (t\u00f9y ch\u1ecdn)"
+              />
+            </div>
+            <div className="py-2.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm" style={{ color: "#374151" }}>Opacity \u1ea3nh n\u1ec1n</span>
+                <span className="text-xs font-mono" style={{ color: "#9ca3af" }}>{Math.round((data.headerBgOpacity ?? 0.08) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0} max={0.4} step={0.01}
+                value={data.headerBgOpacity ?? 0.08}
+                onChange={e => set("headerBgOpacity", parseFloat(e.target.value))}
+                className="w-full"
+                style={{ accentColor: "#C9A84C" }}
+              />
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* Behavior tab */}
+      {activeGroup === "behavior" && (
+        <div className="space-y-4">
+          <SectionCard title="T\u1ef1 \u0111\u1ed9ng refresh" icon={RefreshCw}>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {([
+                { value: 0,   label: "T\u1eaft" },
+                { value: 30,  label: "30 gi\u00e2y" },
+                { value: 60,  label: "1 ph\u00fat" },
+                { value: 300, label: "5 ph\u00fat" },
+                { value: 900, label: "15 ph\u00fat" },
+              ] as { value: RefreshInterval; label: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => set("refreshInterval", opt.value)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+                  style={{
+                    background: data.refreshInterval === opt.value ? "#C9A84C" : "#f9fafb",
+                    color: data.refreshInterval === opt.value ? "#fff" : "#374151",
+                    borderColor: data.refreshInterval === opt.value ? "#C9A84C" : "#e5e7eb",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Hi\u1ec7u \u1ee9ng & T\u01b0\u01a1ng t\u00e1c" icon={Palette}>
+            <ToggleRow
+              label="B\u1eadt animation"
+              desc="S\u1ed1 \u0111\u1ebfm, bi\u1ec3u \u0111\u1ed3 grow-up, transition"
+              value={data.animationsEnabled ?? true}
+              onChange={v => set("animationsEnabled", v)}
+            />
+            <ToggleRow
+              label="Keyboard shortcuts"
+              desc="N: Th\u00eam KH | D: Dashboard | K: Kanban | T: Tasks"
+              value={data.keyboardShortcutsEnabled ?? true}
+              onChange={v => set("keyboardShortcutsEnabled", v)}
+            />
+          </SectionCard>
+
+          <SectionCard title="Presentation Mode" icon={Eye}>
+            <ToggleRow
+              label="B\u1eadt Presentation Mode"
+              desc="\u1ea8n sidebar, ph\u00f3ng to s\u1ed1 li\u1ec7u \u2014 d\u00f9ng khi b\u00e1o c\u00e1o tr\u00ean m\u00e0n h\u00ecnh l\u1edbn"
+              value={data.presentationMode ?? false}
+              onChange={v => set("presentationMode", v)}
+            />
+            {data.presentationMode && (
+              <div className="mt-2 px-3 py-2.5 rounded-xl text-xs" style={{ background: "rgba(201,168,76,0.1)", color: "#92400e", border: "1px solid rgba(201,168,76,0.3)" }}>
+                Presentation Mode \u0111ang b\u1eadt. Sidebar s\u1ebd \u1ea9n v\u00e0 s\u1ed1 li\u1ec7u s\u1ebd \u0111\u01b0\u1ee3c ph\u00f3ng to khi t\u1ea3i l\u1ea1i trang.
+              </div>
+            )}
+          </SectionCard>
+        </div>
+      )}
     </div>
   );
 }

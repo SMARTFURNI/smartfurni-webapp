@@ -3,7 +3,7 @@
  * Lưu trữ và quản lý toàn bộ cấu hình CRM trong database
  */
 
-import { query, queryOne } from "./db";
+import { query } from "./db";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ export interface LeadSource {
 }
 
 export interface LeadTypeConfig {
-  id: string;         // "architect" | "investor" | "dealer" | custom
+  id: string;
   label: string;
   color: string;
   order: number;
@@ -88,6 +88,37 @@ export interface EmailConfig {
   useSsl: boolean;
 }
 
+// ─── Dashboard Theme Types ────────────────────────────────────────────────────
+
+export type DashboardSectionId =
+  | "kpiCards" | "dataPool" | "monthSummary" | "revenueChart"
+  | "pipeline" | "funnel" | "staleDeals" | "heatmap"
+  | "staffPerformance" | "tasks" | "quickStats" | "quickLinks"
+  | "overdue" | "leaderboard" | "teamOnline";
+
+export type KpiCardId =
+  | "totalLeads" | "pipelineValue" | "wonRate" | "overdue"
+  | "revenueMonth" | "newLeadsMonth" | "wonLeadsMonth" | "totalQuotes";
+
+export type ChartType = "bar" | "line" | "area";
+export type FunnelStyle = "bars" | "funnel" | "donut";
+export type ChartPalette = "brand" | "categorical" | "monochrome";
+export type DensityMode = "compact" | "default" | "comfortable";
+export type FontFamily = "inter" | "roboto" | "be-vietnam-pro" | "playfair";
+export type KpiSize = "small" | "medium" | "large";
+export type KpiColumns = 2 | 3 | 4;
+export type RefreshInterval = 0 | 30 | 60 | 300 | 900;
+
+export interface CustomWidget {
+  id: string;
+  title: string;
+  dataType: "leads" | "tasks" | "quotes";
+  filterStage?: string;
+  filterSource?: string;
+  displayType: "count" | "value" | "list";
+  enabled: boolean;
+}
+
 export interface DashboardTheme {
   // Nền tổng thể
   pageBg: string;
@@ -126,6 +157,59 @@ export interface DashboardTheme {
   // Accent / brand color
   accentColor: string;
   accentTextColor: string;
+
+  // ── Nhóm 1: Bố cục ──────────────────────────────────────────────────────────
+  /** Thứ tự hiển thị các section */
+  sectionOrder: DashboardSectionId[];
+  /** Các section bị ẩn */
+  hiddenSections: DashboardSectionId[];
+  /** Số cột KPI cards: 2 | 3 | 4 */
+  kpiColumns: KpiColumns;
+  /** Các KPI card được chọn hiển thị */
+  visibleKpiCards: KpiCardId[];
+
+  // ── Nhóm 2: Typography ──────────────────────────────────────────────────────
+  /** Mật độ thông tin */
+  density: DensityMode;
+  /** Font chữ */
+  fontFamily: FontFamily;
+  /** Cỡ chữ KPI value */
+  kpiValueSize: KpiSize;
+
+  // ── Nhóm 3: Biểu đồ ─────────────────────────────────────────────────────────
+  /** Loại biểu đồ doanh thu */
+  chartType: ChartType;
+  /** Số tháng hiển thị trên biểu đồ */
+  chartMonths: 3 | 6 | 12 | 24;
+  /** Kiểu hiển thị Pipeline Funnel */
+  funnelStyle: FunnelStyle;
+  /** Palette màu biểu đồ */
+  chartPalette: ChartPalette;
+
+  // ── Nhóm 4: Widget & Nội dung ────────────────────────────────────────────────
+  /** Custom widgets do admin tạo */
+  customWidgets: CustomWidget[];
+  /** Ticker thông báo nội bộ */
+  tickerEnabled: boolean;
+  tickerText: string;
+  tickerBg: string;
+  tickerTextColor: string;
+  /** Logo & tên công ty trên header */
+  headerLogoUrl: string;
+  headerCompanyName: string;
+  /** Ảnh nền header */
+  headerBgImageUrl: string;
+  headerBgOpacity: number;
+
+  // ── Nhóm 5: Hành vi ──────────────────────────────────────────────────────────
+  /** Tần suất tự động refresh (giây, 0 = tắt) */
+  refreshInterval: RefreshInterval;
+  /** Bật/tắt animation */
+  animationsEnabled: boolean;
+  /** Presentation mode (ẩn sidebar, phóng to số liệu) */
+  presentationMode: boolean;
+  /** Keyboard shortcuts enabled */
+  keyboardShortcutsEnabled: boolean;
 }
 
 export interface CrmSettings {
@@ -223,6 +307,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     useSsl: true,
   },
   dashboardTheme: {
+    // Colors
     pageBg: "#F0F2F5",
     kpiCardBg: "#FFFFFF",
     kpiCardBorder: "#E4E7EC",
@@ -252,6 +337,40 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     quickLinkIconColor: "#C9A84C",
     accentColor: "#C9A84C",
     accentTextColor: "#FFFFFF",
+    // Layout
+    sectionOrder: [
+      "kpiCards", "dataPool", "monthSummary", "revenueChart",
+      "pipeline", "funnel", "staleDeals", "staffPerformance",
+      "tasks", "quickStats", "quickLinks", "overdue",
+      "leaderboard", "teamOnline", "heatmap",
+    ],
+    hiddenSections: [],
+    kpiColumns: 4,
+    visibleKpiCards: ["totalLeads", "pipelineValue", "wonRate", "overdue"],
+    // Typography
+    density: "default",
+    fontFamily: "inter",
+    kpiValueSize: "medium",
+    // Charts
+    chartType: "bar",
+    chartMonths: 6,
+    funnelStyle: "bars",
+    chartPalette: "brand",
+    // Widgets
+    customWidgets: [],
+    tickerEnabled: false,
+    tickerText: "",
+    tickerBg: "#1E293B",
+    tickerTextColor: "#F1F5F9",
+    headerLogoUrl: "",
+    headerCompanyName: "",
+    headerBgImageUrl: "",
+    headerBgOpacity: 0.08,
+    // Behavior
+    refreshInterval: 60,
+    animationsEnabled: true,
+    presentationMode: false,
+    keyboardShortcutsEnabled: true,
   },
 };
 
@@ -276,6 +395,7 @@ export async function getCrmSettings(): Promise<CrmSettings> {
   for (const row of rows) {
     stored[row.key as keyof CrmSettings] = row.value;
   }
+  const savedTheme = stored.dashboardTheme as Partial<DashboardTheme> | undefined;
   return {
     company:       (stored.company       as CompanyInfo)       ?? DEFAULT_SETTINGS.company,
     pipeline:      (stored.pipeline      as PipelineStage[])   ?? DEFAULT_SETTINGS.pipeline,
@@ -286,7 +406,10 @@ export async function getCrmSettings(): Promise<CrmSettings> {
     notifications: (stored.notifications as NotificationConfig) ?? DEFAULT_SETTINGS.notifications,
     quote:         (stored.quote         as QuoteConfig)       ?? DEFAULT_SETTINGS.quote,
     email:         (stored.email         as EmailConfig)       ?? DEFAULT_SETTINGS.email,
-    dashboardTheme: (stored.dashboardTheme as DashboardTheme)    ?? DEFAULT_SETTINGS.dashboardTheme,
+    // Merge saved theme with defaults so new fields always have a value
+    dashboardTheme: savedTheme
+      ? { ...DEFAULT_SETTINGS.dashboardTheme, ...savedTheme }
+      : DEFAULT_SETTINGS.dashboardTheme,
   };
 }
 
