@@ -163,7 +163,7 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
               </select>
             </div>
           </div>
-          {isAdmin && staffList && staffList.length > 0 && (
+          {isAdmin && staffList && staffList.length > 0 ? (
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Giao cho nhân viên</label>
               <select
@@ -177,7 +177,16 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
                 ))}
               </select>
             </div>
-          )}
+          ) : !isAdmin && currentUserName ? (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Giao cho</label>
+              <div className="w-full px-3 py-2 text-sm rounded-lg border border-gray-100 bg-gray-50 text-gray-700 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">{currentUserName[0]}</span>
+                {currentUserName}
+                <span className="ml-auto text-xs text-gray-400">(bạn)</span>
+              </div>
+            </div>
+          ) : null}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -207,10 +216,11 @@ interface EditTaskModalProps {
   onClose: () => void;
   onUpdated: (task: CrmTask) => void;
   isAdmin?: boolean;
+  currentUserName?: string;
   staffList?: { id: string; fullName: string }[];
 }
 
-function EditTaskModal({ task, onClose, onUpdated, isAdmin, staffList }: EditTaskModalProps) {
+function EditTaskModal({ task, onClose, onUpdated, isAdmin, currentUserName = "", staffList }: EditTaskModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -303,7 +313,7 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, staffList }: EditTas
               </select>
             </div>
           </div>
-          {isAdmin && staffList && staffList.length > 0 && (
+          {isAdmin && staffList && staffList.length > 0 ? (
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Giao cho</label>
               <select
@@ -317,7 +327,16 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, staffList }: EditTas
                 ))}
               </select>
             </div>
-          )}
+          ) : !isAdmin && currentUserName ? (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Giao cho</label>
+              <div className="w-full px-3 py-2 text-sm rounded-lg border border-gray-100 bg-gray-50 text-gray-700 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">{currentUserName[0]}</span>
+                {currentUserName}
+                <span className="ml-auto text-xs text-gray-400">(bạn)</span>
+              </div>
+            </div>
+          ) : null}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors font-medium">
               Hủy
@@ -753,6 +772,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
           onClose={() => setEditingTask(null)}
           onUpdated={updated => setTasks(prev => prev.map(t => t.id === updated.id ? updated : t))}
           isAdmin={isAdmin}
+          currentUserName={currentUserName}
           staffList={staffList}
         />
       )}

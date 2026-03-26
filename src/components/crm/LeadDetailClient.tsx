@@ -21,6 +21,8 @@ interface Props {
   initialQuotes: Quote[];
   initialTasks: CrmTask[];
   isAdmin?: boolean;
+  currentUserName?: string;
+  staffList?: { id: string; fullName: string }[];
 }
 
 const TABS = ["timeline", "quotes", "tasks", "info"] as const;
@@ -51,7 +53,7 @@ const ACTIVITY_COLORS: Record<ActivityType, string> = {
   contract: "#06b6d4",
 };
 
-export default function LeadDetailClient({ lead: initialLead, initialActivities, initialQuotes, initialTasks, isAdmin = false }: Props) {
+export default function LeadDetailClient({ lead: initialLead, initialActivities, initialQuotes, initialTasks, isAdmin = false, currentUserName = "", staffList = [] }: Props) {
   const [lead, setLead] = useState(initialLead);
   const [activities, setActivities] = useState(initialActivities);
   const [quotes, setQuotes] = useState(initialQuotes);
@@ -574,6 +576,9 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
         <AddTaskModal
           leadId={lead.id}
           leadName={lead.name}
+          isAdmin={isAdmin}
+          currentUserName={currentUserName}
+          staffList={staffList}
           onClose={() => setShowAddTask(false)}
           onCreated={task => {
             setTasks(prev => [task, ...prev]);
@@ -782,11 +787,11 @@ function AddActivityModal({ leadId, onClose, onCreated }: { leadId: string; onCl
   );
 }
 
-function AddTaskModal({ leadId, leadName, onClose, onCreated }: { leadId: string; leadName: string; onClose: () => void; onCreated: (t: CrmTask) => void }) {
+function AddTaskModal({ leadId, leadName, isAdmin = false, currentUserName = "", staffList = [], onClose, onCreated }: { leadId: string; leadName: string; isAdmin?: boolean; currentUserName?: string; staffList?: { id: string; fullName: string }[]; onClose: () => void; onCreated: (t: CrmTask) => void }) {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState(new Date().toISOString().split("T")[0]);
   const [priority, setPriority] = useState<CrmTask["priority"]>("medium");
-  const [assignedTo, setAssignedTo] = useState("");
+  const [assignedTo, setAssignedTo] = useState(isAdmin ? "" : currentUserName);
   const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -838,12 +843,27 @@ function AddTaskModal({ leadId, leadName, onClose, onCreated }: { leadId: string
               </select>
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Giao cho</label>
-            <input value={assignedTo} onChange={e => setAssignedTo(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
-              placeholder="Tên sales" />
-          </div>
+          {isAdmin && staffList.length > 0 ? (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Giao cho nhân viên</label>
+              <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
+                <option value="">— Chưa phân công —</option>
+                {staffList.map(s => (
+                  <option key={s.id} value={s.fullName}>{s.fullName}</option>
+                ))}
+              </select>
+            </div>
+          ) : !isAdmin && currentUserName ? (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Giao cho</label>
+              <div className="w-full px-3 py-2 text-sm rounded-lg border border-gray-100 bg-gray-50 text-gray-700 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">{currentUserName[0]}</span>
+                {currentUserName}
+                <span className="ml-auto text-xs text-gray-400">(bạn)</span>
+              </div>
+            </div>
+          ) : null}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
               className="flex-1 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Hủy</button>
