@@ -11,8 +11,8 @@ const nextConfig: NextConfig = {
       static: 0,
     },
   },
-  // Externalize server-only packages (mysql2, pg) from server bundle
-  serverExternalPackages: ["mysql2", "pg", "pg-native"],
+  // Externalize server-only packages (mysql2, pg, googleapis) from server bundle
+  serverExternalPackages: ["mysql2", "pg", "pg-native", "googleapis", "google-auth-library"],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Prevent bundling Node.js-only modules into the client bundle.
@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
         v8: false,
       };
 
-      // Externalize mysql2, pg and node: scheme modules from client bundle
+      // Externalize mysql2, pg, googleapis and node: scheme modules from client bundle
       const prevExternals = config.externals || [];
       config.externals = [
         ...(Array.isArray(prevExternals) ? prevExternals : [prevExternals]),
@@ -54,7 +54,9 @@ const nextConfig: NextConfig = {
               request === "mysql2/promise" ||
               request === "pg" ||
               request === "pg-native" ||
-              request === "pg-pool")
+              request === "pg-pool" ||
+              request === "googleapis" ||
+              request === "google-auth-library")
           ) {
             return callback(null, `commonjs ${request}`);
           }
