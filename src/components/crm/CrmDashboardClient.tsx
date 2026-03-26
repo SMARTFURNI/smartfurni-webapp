@@ -6,9 +6,9 @@ import {
   Users, TrendingUp, FileText, CheckSquare, AlertCircle,
   Clock, ChevronRight, Target, Award, DollarSign,
   Phone, Mail, Calendar, ArrowUpRight, Zap, Activity,
-  BarChart2, PieChart, Plus, RefreshCw, Star, Trophy,
+  BarChart2, PieChart, Plus, Star, Trophy,
   TrendingDown, Minus, ArrowRight, Briefcase, UserCheck,
-  Database, Inbox, ArrowRight as ArrowRightIcon,
+  Database,
 } from "lucide-react";
 import type { Lead, CrmTask, Quote, CrmStats } from "@/lib/crm-types";
 import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS, formatVND, isOverdue } from "@/lib/crm-types";
@@ -31,9 +31,9 @@ interface Props {
 }
 
 const PRIORITY_CONFIG = {
-  high:   { color: "#ef4444", bg: "#fef2f2", label: "Cao" },
-  medium: { color: "#f59e0b", bg: "#fffbeb", label: "TB" },
-  low:    { color: "#22c55e", bg: "#f0fdf4", label: "Thấp" },
+  high:   { color: "#DC2626", bg: "#FEF2F2", label: "Cao" },
+  medium: { color: "#D97706", bg: "#FFFBEB", label: "TB" },
+  low:    { color: "#059669", bg: "#ECFDF5", label: "Thấp" },
 };
 
 const ACTIVITY_TYPE_ICONS: Record<string, React.ElementType> = {
@@ -56,12 +56,49 @@ const ROLE_LABELS: Record<string, string> = {
 const SOURCE_COLORS: Record<string, string> = {
   "Facebook Ads": "#1877f2",
   "Google Ads": "#ea4335",
-  "KTS giới thiệu": "#8b5cf6",
-  "Khách hàng cũ giới thiệu": "#f97316",
+  "KTS giới thiệu": "#7C3AED",
+  "Khách hàng cũ giới thiệu": "#EA580C",
   "Zalo": "#0068ff",
-  "Website": "#22c55e",
-  "Triển lãm": "#f59e0b",
-  "Telesale": "#ec4899",
+  "Website": "#059669",
+  "Triển lãm": "#D97706",
+  "Telesale": "#DB2777",
+};
+
+// ── Design tokens ──────────────────────────────────────────────────────────
+const T = {
+  bg:          "#F0F2F5",   // page background
+  card:        "#FFFFFF",   // card background
+  cardBorder:  "#E4E7EC",   // card border
+  cardShadow:  "0 1px 4px rgba(16,24,40,0.06)",
+  headerBg:    "#FFFFFF",
+  headerBorder:"#E4E7EC",
+  divider:     "#F2F4F7",
+
+  // Text
+  textPrimary:   "#101828",
+  textSecondary: "#475467",
+  textMuted:     "#98A2B3",
+  textLabel:     "#667085",
+
+  // Brand accent
+  gold:        "#C9A84C",
+  goldDark:    "#9A7A2E",
+  goldLight:   "#FEF3C7",
+  goldBg:      "#FFFBEB",
+
+  // Semantic
+  indigo:      "#4F46E5",
+  indigoBg:    "#EEF2FF",
+  green:       "#059669",
+  greenBg:     "#ECFDF5",
+  red:         "#DC2626",
+  redBg:       "#FEF2F2",
+  orange:      "#EA580C",
+  orangeBg:    "#FFF7ED",
+  purple:      "#7C3AED",
+  purpleBg:    "#F5F3FF",
+  blue:        "#2563EB",
+  blueBg:      "#EFF6FF",
 };
 
 export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, currentUser }: Props) {
@@ -109,34 +146,33 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
   const greeting = hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
   const dateStr = now.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-  // Tính % thay đổi so với tháng trước
   const monthlyRevArr = stats.monthlyRevenue;
   const currentMonthRev = monthlyRevArr[monthlyRevArr.length - 1]?.value ?? 0;
   const prevMonthRev = monthlyRevArr[monthlyRevArr.length - 2]?.value ?? 0;
   const revenueChange = prevMonthRev > 0 ? Math.round(((currentMonthRev - prevMonthRev) / prevMonthRev) * 100) : 0;
 
   return (
-    <div className="flex flex-col h-full bg-[#f4f5f7] overflow-y-auto">
+    <div className="flex flex-col h-full overflow-y-auto" style={{ background: T.bg }}>
 
       {/* ── Top Header ─────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 bg-white px-8 py-5 flex items-center justify-between"
-        style={{ borderBottom: "1px solid #e8eaed" }}>
+      <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between"
+        style={{ background: T.headerBg, borderBottom: `1px solid ${T.headerBorder}` }}>
         <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs text-gray-500 font-medium">{dateStr}</span>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: T.green }} />
+            <span className="text-xs font-medium" style={{ color: T.textMuted }}>{dateStr}</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold" style={{ color: T.textPrimary }}>
             {greeting}{currentUser?.name ? `, ${currentUser.name}` : ""} 👋
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm mt-0.5" style={{ color: T.textSecondary }}>
             SmartFurni CRM — {currentUser?.isAdmin ? "Tổng quan kinh doanh B2B" : `Dữ liệu của bạn · ${ROLE_LABELS[currentUser?.role ?? ""] ?? currentUser?.role}`}
           </p>
         </div>
         <div className="flex items-center gap-3">
           {overdueLeads.length > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600"
-              style={{ background: "#fef2f2", border: "1px solid #fecaca" }}>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: T.redBg, color: T.red, border: `1px solid #FECACA` }}>
               <AlertCircle size={13} />
               {overdueLeads.length} KH quá hạn
             </div>
@@ -144,26 +180,27 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           {currentUser && (
             <Link
               href="/crm/profile"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors hover:opacity-90"
+              style={{ border: `1px solid ${T.cardBorder}`, background: T.card }}
             >
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}>
+                style={{ background: `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` }}>
                 {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
               </div>
               {!currentUser.isAdmin && (
                 <div className="text-left">
-                  <div className="text-xs font-semibold text-gray-800 leading-tight">{currentUser.name}</div>
-                  <div className="text-[10px] text-gray-500 leading-tight">{currentUser.username}</div>
+                  <div className="text-xs font-semibold leading-tight" style={{ color: T.textPrimary }}>{currentUser.name}</div>
+                  <div className="text-[10px] leading-tight" style={{ color: T.textMuted }}>{currentUser.username}</div>
                 </div>
               )}
             </Link>
           )}
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: "linear-gradient(135deg, #C9A84C 0%, #9A7A2E 100%)", letterSpacing: "0.01em" }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+            style={{ background: `linear-gradient(135deg, ${T.gold} 0%, ${T.goldDark} 100%)` }}
           >
-            <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}>
               <Plus size={12} className="text-white" />
             </div>
             Thêm khách hàng
@@ -192,18 +229,20 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             label="Tổng khách hàng"
             value={leads.length}
             sub={`${activeLeads.length} đang theo dõi`}
-            color="#6366f1"
+            color={T.indigo}
+            colorBg={T.indigoBg}
             badge={`${stats.newLeadsThisMonth} mới tháng này`}
-            badgeColor="#6366f1"
+            badgeColor={T.indigo}
           />
           <KpiCard
             icon={DollarSign}
             label="Pipeline giá trị"
             value={totalValue >= 1e9 ? `${(totalValue/1e9).toFixed(1)}B` : totalValue >= 1e6 ? `${(totalValue/1e6).toFixed(0)}tr` : formatVND(totalValue)}
             sub={`Won: ${wonValue >= 1e9 ? `${(wonValue/1e9).toFixed(1)}B` : wonValue >= 1e6 ? `${(wonValue/1e6).toFixed(0)}tr` : formatVND(wonValue)}`}
-            color="#C9A84C"
+            color={T.gold}
+            colorBg={T.goldBg}
             badge={revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% so tháng trước` : undefined}
-            badgeColor={revenueChange >= 0 ? "#22c55e" : "#ef4444"}
+            badgeColor={revenueChange >= 0 ? T.green : T.red}
             isText
           />
           <KpiCard
@@ -211,9 +250,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             label="Tỷ lệ chốt đơn"
             value={`${winRate}%`}
             sub={`${wonLeads.length} đơn thành công`}
-            color="#22c55e"
+            color={T.green}
+            colorBg={T.greenBg}
             badge={`${stats.wonLeadsThisMonth} chốt tháng này`}
-            badgeColor="#22c55e"
+            badgeColor={T.green}
             isText
           />
           <KpiCard
@@ -221,13 +261,13 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             label="Cần liên hệ ngay"
             value={overdueLeads.length}
             sub="Quá 3 ngày không tương tác"
-            color="#ef4444"
+            color={T.red}
+            colorBg={T.redBg}
             urgent={overdueLeads.length > 0}
             badge={overdueLeads.length > 0 ? "Cần xử lý" : "Tốt"}
-            badgeColor={overdueLeads.length > 0 ? "#ef4444" : "#22c55e"}
+            badgeColor={overdueLeads.length > 0 ? T.red : T.green}
           />
         </div>
-
 
         {/* ── Data Pool Banner ─────────────────────────────────────────── */}
         {poolStats !== null && poolStats.pending > 0 && (
@@ -235,47 +275,46 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             href="/crm/data-pool"
             className="block rounded-2xl overflow-hidden transition-all hover:shadow-lg"
             style={{
-              background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%)",
-              border: "1px solid rgba(201,168,76,0.3)",
-              boxShadow: "0 4px 20px rgba(201,168,76,0.12), 0 1px 3px rgba(0,0,0,0.2)",
+              background: "linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #1E3A5F 100%)",
+              border: "1px solid rgba(201,168,76,0.25)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.15), 0 1px 4px rgba(201,168,76,0.1)",
             }}
           >
             <div className="px-6 py-4 flex items-center justify-between gap-4">
-              {/* Left: icon + info */}
               <div className="flex items-center gap-4 min-w-0">
                 <div
-                  className="relative w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)" }}
+                  className="relative w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)" }}
                 >
-                  <Database size={24} style={{ color: "#C9A84C" }} />
+                  <Database size={22} style={{ color: T.gold }} />
                   <span
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-                    style={{ background: "#EF4444", boxShadow: "0 0 0 2px #1a1a2e", animation: "pulse 2s infinite" }}
+                    style={{ background: T.red, boxShadow: "0 0 0 2px #0F172A" }}
                   >
                     {poolStats.pending > 9 ? "9+" : poolStats.pending}
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-white font-bold text-base">Data Pool</span>
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <span className="text-white font-bold text-sm">Data Pool</span>
                     <span
                       className="px-2 py-0.5 rounded-full text-[10px] font-black text-white flex-shrink-0"
-                      style={{ background: "#EF4444" }}
+                      style={{ background: T.red }}
                     >
                       {poolStats.pending > 99 ? "99+" : poolStats.pending} chờ nhận
                     </span>
                   </div>
-                  <p className="text-sm truncate" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.55)" }}>
                     Có{" "}
-                    <span className="font-bold" style={{ color: "#C9A84C" }}>{poolStats.pending}</span>
+                    <span className="font-bold" style={{ color: T.gold }}>{poolStats.pending}</span>
                     {" "}data khách hàng mới chưa có người nhận
                     {poolStats.bySource.length > 0 && (
-                      <span style={{ color: "rgba(255,255,255,0.4)" }}>
+                      <span style={{ color: "rgba(255,255,255,0.35)" }}>
                         {" — "}
                         {poolStats.bySource.slice(0, 2).map((s, i) => (
                           <span key={s.source}>
                             {i > 0 && ", "}
-                            <span style={{ color: "rgba(255,255,255,0.7)" }}>
+                            <span style={{ color: "rgba(255,255,255,0.65)" }}>
                               {s.source === "facebook_lead" ? "Facebook" : s.source === "tiktok_lead" ? "TikTok" : s.source === "manual" ? "Nhập tay" : s.source}
                             </span>
                             {" "}({s.count})
@@ -286,35 +325,32 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                   </p>
                 </div>
               </div>
-              {/* Right: CTA */}
               <div
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold flex-shrink-0"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold flex-shrink-0"
                 style={{
-                  background: "linear-gradient(135deg, #C9A84C, #9A7A2E)",
+                  background: `linear-gradient(135deg, ${T.gold}, ${T.goldDark})`,
                   color: "#fff",
-                  boxShadow: "0 2px 8px rgba(201,168,76,0.4)",
+                  boxShadow: "0 2px 8px rgba(201,168,76,0.35)",
                 }}
               >
                 Nhận ngay
                 <ArrowRight size={14} />
               </div>
             </div>
-
-            {/* Progress bar: pending / total */}
             {poolStats.total > 0 && (
               <div className="px-6 pb-4">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Tiến độ xử lý</span>
-                  <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>Tiến độ xử lý</span>
+                  <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.55)" }}>
                     {poolStats.claimed + poolStats.converted}/{poolStats.total} đã xử lý
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
                   <div
                     className="h-full rounded-full"
                     style={{
                       width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`,
-                      background: "linear-gradient(90deg, #C9A84C, #E2C97E)",
+                      background: `linear-gradient(90deg, ${T.gold}, #E2C97E)`,
                       transition: "width 0.7s ease",
                     }}
                   />
@@ -324,53 +360,59 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           </Link>
         )}
 
-        {/* ── This Month Summary (admin + staff) ──────────────────────── */}
+        {/* ── This Month Summary ──────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl p-5 flex items-center gap-4"
-              style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #C9A84C20, #9A7A2E10)" }}>
-                <DollarSign size={22} style={{ color: "#C9A84C" }} />
+          {/* Doanh thu */}
+          <div className="rounded-2xl p-5 flex items-center gap-4"
+            style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: T.goldBg }}>
+              <DollarSign size={20} style={{ color: T.gold }} />
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: T.textMuted }}>Doanh thu tháng này</div>
+              <div className="text-xl font-black leading-tight" style={{ color: T.textPrimary }}>
+                {stats.wonValueThisMonth >= 1e9
+                  ? `${(stats.wonValueThisMonth/1e9).toFixed(2)}B`
+                  : stats.wonValueThisMonth >= 1e6
+                  ? `${(stats.wonValueThisMonth/1e6).toFixed(0)}tr`
+                  : formatVND(stats.wonValueThisMonth)}
               </div>
-              <div>
-                <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Doanh thu tháng này</div>
-                <div className="text-xl font-black text-gray-900 leading-tight mt-0.5">
-                  {stats.wonValueThisMonth >= 1e9
-                    ? `${(stats.wonValueThisMonth/1e9).toFixed(2)}B`
-                    : stats.wonValueThisMonth >= 1e6
-                    ? `${(stats.wonValueThisMonth/1e6).toFixed(0)}tr`
-                    : formatVND(stats.wonValueThisMonth)}
-                </div>
-                <div className={`flex items-center gap-1 mt-1 text-[10px] font-semibold ${revenueChange >= 0 ? "text-green-600" : "text-red-500"}`}>
-                  {revenueChange > 0 ? <TrendingUp size={10} /> : revenueChange < 0 ? <TrendingDown size={10} /> : <Minus size={10} />}
-                  {revenueChange > 0 ? "+" : ""}{revenueChange}% so tháng trước
-                </div>
+              <div className={`flex items-center gap-1 mt-1 text-[10px] font-semibold`}
+                style={{ color: revenueChange >= 0 ? T.green : T.red }}>
+                {revenueChange > 0 ? <TrendingUp size={10} /> : revenueChange < 0 ? <TrendingDown size={10} /> : <Minus size={10} />}
+                {revenueChange > 0 ? "+" : ""}{revenueChange}% so tháng trước
               </div>
             </div>
-            <div className="bg-white rounded-2xl p-5 flex items-center gap-4"
-              style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "#6366f115" }}>
-                <UserCheck size={22} style={{ color: "#6366f1" }} />
-              </div>
-              <div>
-                <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">KH mới tháng này</div>
-                <div className="text-xl font-black text-gray-900 leading-tight mt-0.5">{stats.newLeadsThisMonth}</div>
-                <div className="text-[10px] text-gray-500 mt-1">Tổng {leads.length} khách hàng</div>
-              </div>
+          </div>
+
+          {/* KH mới */}
+          <div className="rounded-2xl p-5 flex items-center gap-4"
+            style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: T.indigoBg }}>
+              <UserCheck size={20} style={{ color: T.indigo }} />
             </div>
-            <div className="bg-white rounded-2xl p-5 flex items-center gap-4"
-              style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "#22c55e15" }}>
-                <Trophy size={22} style={{ color: "#22c55e" }} />
-              </div>
-              <div>
-                <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Đơn chốt tháng này</div>
-                <div className="text-xl font-black text-gray-900 leading-tight mt-0.5">{stats.wonLeadsThisMonth}</div>
-                <div className="text-[10px] text-gray-500 mt-1">Tỷ lệ chốt {winRate}%</div>
-              </div>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: T.textMuted }}>KH mới tháng này</div>
+              <div className="text-xl font-black leading-tight" style={{ color: T.textPrimary }}>{stats.newLeadsThisMonth}</div>
+              <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>Tổng {leads.length} khách hàng</div>
             </div>
+          </div>
+
+          {/* Đơn chốt */}
+          <div className="rounded-2xl p-5 flex items-center gap-4"
+            style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: T.greenBg }}>
+              <Trophy size={20} style={{ color: T.green }} />
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: T.textMuted }}>Đơn chốt tháng này</div>
+              <div className="text-xl font-black leading-tight" style={{ color: T.textPrimary }}>{stats.wonLeadsThisMonth}</div>
+              <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>Tỷ lệ chốt {winRate}%</div>
+            </div>
+          </div>
         </div>
 
         {/* ── Main Grid ───────────────────────────────────────────────────── */}
@@ -379,116 +421,122 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           {/* Left col (2/3) */}
           <div className="xl:col-span-2 space-y-5">
 
-            {/* ── Monthly Revenue Chart (admin + staff) ── */}
-            <div className="bg-white rounded-2xl overflow-hidden"
-                style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                      style={{ background: "linear-gradient(135deg, #C9A84C20, #9A7A2E10)" }}>
-                      <BarChart2 size={16} style={{ color: "#C9A84C" }} />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-bold text-gray-900">Doanh thu theo tháng</h2>
-                      <p className="text-[10px] text-gray-500">6 tháng gần nhất (đơn đã chốt)</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-black text-gray-900">
-                      {stats.wonValueThisMonth >= 1e9
-                        ? `${(stats.wonValueThisMonth/1e9).toFixed(2)}B`
-                        : `${(stats.wonValueThisMonth/1e6).toFixed(0)}tr`}
-                    </div>
-                    <div className="text-[10px] text-gray-500">Tháng hiện tại</div>
-                  </div>
-                </div>
-                <div className="p-6">
-                  {stats.monthlyRevenue.every(m => m.value === 0) ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-                      <BarChart2 size={32} className="mb-2 opacity-20" />
-                      <p className="text-xs">Chưa có dữ liệu doanh thu</p>
-                    </div>
-                  ) : (
-                    <div>
-                      {/* Bar chart */}
-                      <div className="flex items-end gap-3 h-28 mb-4">
-                        {stats.monthlyRevenue.map((m, i) => {
-                          const maxVal = Math.max(...stats.monthlyRevenue.map(x => x.value), 1);
-                          const pct = maxVal > 0 ? (m.value / maxVal) * 100 : 0;
-                          const isCurrentMonth = i === stats.monthlyRevenue.length - 1;
-                          const valLabel = m.value >= 1e9
-                            ? `${(m.value/1e9).toFixed(1)}B`
-                            : m.value >= 1e6
-                            ? `${(m.value/1e6).toFixed(0)}tr`
-                            : m.value > 0 ? `${(m.value/1000).toFixed(0)}k` : "0";
-                          return (
-                            <div key={m.month} className="flex-1 flex flex-col items-center gap-1 group">
-                              {m.value > 0 && (
-                                <div className="text-[9px] font-bold text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  {valLabel}
-                                </div>
-                              )}
-                              <div className="w-full relative flex-1 flex items-end">
-                                <div className="w-full rounded-t-lg transition-all duration-700 relative overflow-hidden"
-                                  style={{
-                                    height: `${Math.max(6, pct)}%`,
-                                    background: isCurrentMonth
-                                      ? "linear-gradient(180deg, #E2C97E, #C9A84C)"
-                                      : "#e5e7eb",
-                                    minHeight: 6,
-                                    boxShadow: isCurrentMonth ? "0 2px 8px rgba(201,168,76,0.3)" : "none",
-                                  }}>
-                                  {isCurrentMonth && (
-                                    <div className="absolute inset-0 opacity-30"
-                                      style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.4), transparent)" }} />
-                                  )}
-                                </div>
-                              </div>
-                              <span className={`text-[10px] font-semibold ${isCurrentMonth ? "text-amber-600" : "text-gray-500"}`}>
-                                {m.label}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {/* Summary row */}
-                      <div className="grid grid-cols-3 gap-3 pt-4" style={{ borderTop: "1px solid #f3f4f6" }}>
-                        <div className="text-center p-3 rounded-xl" style={{ background: "#f9fafb" }}>
-                          <div className="text-sm font-black text-gray-900">{stats.newLeadsThisMonth}</div>
-                          <div className="text-[10px] text-gray-500 mt-0.5">KH mới</div>
-                        </div>
-                        <div className="text-center p-3 rounded-xl" style={{ background: "#f0fdf4" }}>
-                          <div className="text-sm font-black text-green-700">{stats.wonLeadsThisMonth}</div>
-                          <div className="text-[10px] text-gray-500 mt-0.5">Đơn chốt</div>
-                        </div>
-                        <div className="text-center p-3 rounded-xl" style={{ background: "#fffbeb" }}>
-                          <div className="text-sm font-black" style={{ color: "#C9A84C" }}>
-                            {stats.wonValueThisMonth >= 1e9
-                              ? `${(stats.wonValueThisMonth/1e9).toFixed(2)}B`
-                              : `${(stats.wonValueThisMonth/1e6).toFixed(0)}tr`}
-                          </div>
-                          <div className="text-[10px] text-gray-500 mt-0.5">Doanh thu</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-            {/* Pipeline Funnel */}
-            <div className="bg-white rounded-2xl overflow-hidden"
-              style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-              <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #f3f4f6" }}>
+            {/* ── Monthly Revenue Chart ── */}
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="px-6 py-4 flex items-center justify-between"
+                style={{ borderBottom: `1px solid ${T.divider}` }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "#f0f4ff" }}>
-                    <BarChart2 size={16} style={{ color: "#6366f1" }} />
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                    style={{ background: T.goldBg }}>
+                    <BarChart2 size={16} style={{ color: T.gold }} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-900">Pipeline Sales</h2>
-                    <p className="text-[10px] text-gray-500">Phân bổ theo giai đoạn</p>
+                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Doanh thu theo tháng</h2>
+                    <p className="text-[10px]" style={{ color: T.textMuted }}>6 tháng gần nhất (đơn đã chốt)</p>
                   </div>
                 </div>
-                <Link href="/crm/kanban" className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">
+                <div className="text-right">
+                  <div className="text-sm font-black" style={{ color: T.textPrimary }}>
+                    {stats.wonValueThisMonth >= 1e9
+                      ? `${(stats.wonValueThisMonth/1e9).toFixed(2)}B`
+                      : `${(stats.wonValueThisMonth/1e6).toFixed(0)}tr`}
+                  </div>
+                  <div className="text-[10px]" style={{ color: T.textMuted }}>Tháng hiện tại</div>
+                </div>
+              </div>
+              <div className="p-6">
+                {stats.monthlyRevenue.every(m => m.value === 0) ? (
+                  <div className="flex flex-col items-center justify-center py-10" style={{ color: T.textMuted }}>
+                    <BarChart2 size={32} className="mb-2 opacity-20" />
+                    <p className="text-xs">Chưa có dữ liệu doanh thu</p>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-end gap-3 h-28 mb-4">
+                      {stats.monthlyRevenue.map((m, i) => {
+                        const maxVal = Math.max(...stats.monthlyRevenue.map(x => x.value), 1);
+                        const pct = maxVal > 0 ? (m.value / maxVal) * 100 : 0;
+                        const isCurrentMonth = i === stats.monthlyRevenue.length - 1;
+                        const valLabel = m.value >= 1e9
+                          ? `${(m.value/1e9).toFixed(1)}B`
+                          : m.value >= 1e6
+                          ? `${(m.value/1e6).toFixed(0)}tr`
+                          : m.value > 0 ? `${(m.value/1000).toFixed(0)}k` : "0";
+                        return (
+                          <div key={m.month} className="flex-1 flex flex-col items-center gap-1 group">
+                            {m.value > 0 && (
+                              <div className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ color: T.textSecondary }}>
+                                {valLabel}
+                              </div>
+                            )}
+                            <div className="w-full relative flex-1 flex items-end">
+                              <div className="w-full rounded-t-md transition-all duration-700 relative overflow-hidden"
+                                style={{
+                                  height: `${Math.max(6, pct)}%`,
+                                  background: isCurrentMonth
+                                    ? `linear-gradient(180deg, #E2C97E, ${T.gold})`
+                                    : "#E4E7EC",
+                                  minHeight: 6,
+                                  boxShadow: isCurrentMonth ? `0 2px 8px rgba(201,168,76,0.25)` : "none",
+                                }}>
+                                {isCurrentMonth && (
+                                  <div className="absolute inset-0 opacity-25"
+                                    style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.5), transparent)" }} />
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-semibold"
+                              style={{ color: isCurrentMonth ? T.gold : T.textMuted }}>
+                              {m.label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Summary row */}
+                    <div className="grid grid-cols-3 gap-3 pt-4" style={{ borderTop: `1px solid ${T.divider}` }}>
+                      <div className="text-center p-3 rounded-xl" style={{ background: T.bg }}>
+                        <div className="text-sm font-black" style={{ color: T.textPrimary }}>{stats.newLeadsThisMonth}</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>KH mới</div>
+                      </div>
+                      <div className="text-center p-3 rounded-xl" style={{ background: T.greenBg }}>
+                        <div className="text-sm font-black" style={{ color: T.green }}>{stats.wonLeadsThisMonth}</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>Đơn chốt</div>
+                      </div>
+                      <div className="text-center p-3 rounded-xl" style={{ background: T.goldBg }}>
+                        <div className="text-sm font-black" style={{ color: T.gold }}>
+                          {stats.wonValueThisMonth >= 1e9
+                            ? `${(stats.wonValueThisMonth/1e9).toFixed(2)}B`
+                            : `${(stats.wonValueThisMonth/1e6).toFixed(0)}tr`}
+                        </div>
+                        <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>Doanh thu</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Pipeline Funnel */}
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="px-6 py-4 flex items-center justify-between"
+                style={{ borderBottom: `1px solid ${T.divider}` }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                    style={{ background: T.indigoBg }}>
+                    <BarChart2 size={16} style={{ color: T.indigo }} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Pipeline Sales</h2>
+                    <p className="text-[10px]" style={{ color: T.textMuted }}>Phân bổ theo giai đoạn</p>
+                  </div>
+                </div>
+                <Link href="/crm/kanban"
+                  className="flex items-center gap-1 text-xs font-medium hover:opacity-80 transition-opacity"
+                  style={{ color: T.indigo }}>
                   Xem Kanban <ArrowUpRight size={12} />
                 </Link>
               </div>
@@ -508,17 +556,17 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-xs font-semibold text-gray-700">{STAGE_LABELS[stage]}</span>
+                            <span className="text-xs font-semibold" style={{ color: T.textSecondary }}>{STAGE_LABELS[stage]}</span>
                             <div className="flex items-center gap-3">
-                              <span className="text-xs font-bold text-gray-900">{count} KH</span>
+                              <span className="text-xs font-bold" style={{ color: T.textPrimary }}>{count} KH</span>
                               {value > 0 && (
-                                <span className="text-[10px] font-semibold" style={{ color: "#C9A84C" }}>
+                                <span className="text-[10px] font-semibold" style={{ color: T.gold }}>
                                   {value >= 1e9 ? `${(value/1e9).toFixed(1)}B` : value >= 1e6 ? `${(value/1e6).toFixed(0)}tr` : formatVND(value)}
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="h-2 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
+                          <div className="h-2 rounded-full overflow-hidden" style={{ background: T.bg }}>
                             <div className="h-full rounded-full transition-all duration-700"
                               style={{
                                 width: `${pct}%`,
@@ -538,20 +586,22 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
               {/* Source Effectiveness */}
-              <div className="bg-white rounded-2xl overflow-hidden"
-                style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                <div className="px-5 py-4 flex items-center gap-2" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#fff7ed" }}>
-                    <TrendingUp size={15} style={{ color: "#f97316" }} />
+              <div className="rounded-2xl overflow-hidden"
+                style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+                <div className="px-5 py-4 flex items-center gap-2"
+                  style={{ borderBottom: `1px solid ${T.divider}` }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ background: T.orangeBg }}>
+                    <TrendingUp size={14} style={{ color: T.orange }} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-900">Nguồn khách hàng</h2>
-                    <p className="text-[10px] text-gray-500">Hiệu quả theo nguồn</p>
+                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Nguồn khách hàng</h2>
+                    <p className="text-[10px]" style={{ color: T.textMuted }}>Hiệu quả theo nguồn</p>
                   </div>
                 </div>
                 <div className="p-4 space-y-3">
                   {stats.bySource.length === 0 ? (
-                    <p className="text-xs text-gray-500 text-center py-4">Chưa có dữ liệu</p>
+                    <p className="text-xs text-center py-4" style={{ color: T.textMuted }}>Chưa có dữ liệu</p>
                   ) : stats.bySource.slice(0, 5).map(({ source, count, wonCount }) => {
                     const wr = count > 0 ? Math.round((wonCount / count) * 100) : 0;
                     const maxCount = Math.max(...stats.bySource.map(s => s.count), 1);
@@ -561,20 +611,20 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                            <span className="text-xs font-medium text-gray-700 truncate max-w-[110px]">{source}</span>
+                            <span className="text-xs font-medium truncate max-w-[110px]" style={{ color: T.textSecondary }}>{source}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-gray-500">{count} KH</span>
+                            <span className="text-[10px]" style={{ color: T.textMuted }}>{count} KH</span>
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                               style={{
-                                background: wr >= 30 ? "#dcfce7" : "#f3f4f6",
-                                color: wr >= 30 ? "#16a34a" : "#6b7280",
+                                background: wr >= 30 ? T.greenBg : T.bg,
+                                color: wr >= 30 ? T.green : T.textMuted,
                               }}>
                               {wr}%
                             </span>
                           </div>
                         </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: T.bg }}>
                           <div className="h-full rounded-full transition-all duration-700"
                             style={{ width: `${(count / maxCount) * 100}%`, background: color }} />
                         </div>
@@ -585,15 +635,17 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
               </div>
 
               {/* Customer Type */}
-              <div className="bg-white rounded-2xl overflow-hidden"
-                style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                <div className="px-5 py-4 flex items-center gap-2" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#f5f3ff" }}>
-                    <PieChart size={15} style={{ color: "#8b5cf6" }} />
+              <div className="rounded-2xl overflow-hidden"
+                style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+                <div className="px-5 py-4 flex items-center gap-2"
+                  style={{ borderBottom: `1px solid ${T.divider}` }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ background: T.purpleBg }}>
+                    <PieChart size={14} style={{ color: T.purple }} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-900">Phân loại khách</h2>
-                    <p className="text-[10px] text-gray-500">Theo nhóm đối tượng</p>
+                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Phân loại khách</h2>
+                    <p className="text-[10px]" style={{ color: T.textMuted }}>Theo nhóm đối tượng</p>
                   </div>
                 </div>
                 <div className="p-4 space-y-3">
@@ -604,24 +656,29 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                     const pct = leads.length > 0 ? Math.round((count / leads.length) * 100) : 0;
                     const typeValue = typeLeads.reduce((s, l) => s + (l.expectedValue || 0), 0);
                     return (
-                      <div key={type} className="p-3 rounded-xl transition-colors hover:opacity-90"
-                        style={{ background: `${TYPE_COLORS[type]}08`, border: `1px solid ${TYPE_COLORS[type]}20` }}>
-                        <div className="flex items-center justify-between">
+                      <div key={type} className="p-3 rounded-xl transition-colors"
+                        style={{ background: `${TYPE_COLORS[type]}08`, border: `1px solid ${TYPE_COLORS[type]}18` }}>
+                        <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black"
-                              style={{ background: TYPE_COLORS[type] }}>
-                              {count}
-                            </div>
-                            <div>
-                              <div className="text-xs font-bold text-gray-800">{TYPE_LABELS[type]}</div>
-                              <div className="text-[10px] text-gray-500">{pct}% · {wonCount} đã chốt</div>
-                            </div>
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: TYPE_COLORS[type] }} />
+                            <span className="text-xs font-semibold" style={{ color: T.textPrimary }}>{TYPE_LABELS[type]}</span>
                           </div>
-                          {typeValue > 0 && (
-                            <div className="text-[10px] font-bold text-right" style={{ color: TYPE_COLORS[type] }}>
-                              {typeValue >= 1e9 ? `${(typeValue/1e9).toFixed(1)}B` : typeValue >= 1e6 ? `${(typeValue/1e6).toFixed(0)}tr` : formatVND(typeValue)}
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black" style={{ color: T.textPrimary }}>{count}</span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                              style={{ background: `${TYPE_COLORS[type]}18`, color: TYPE_COLORS[type] }}>
+                              {pct}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${TYPE_COLORS[type]}15` }}>
+                          <div className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${pct}%`, background: TYPE_COLORS[type] }} />
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-[10px]" style={{ color: T.textMuted }}>
+                            {wonCount} đã chốt · {typeValue >= 1e6 ? `${(typeValue/1e6).toFixed(0)}tr` : formatVND(typeValue)}
+                          </span>
                         </div>
                       </div>
                     );
@@ -630,27 +687,31 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
               </div>
             </div>
 
-            {/* ── Admin: Staff Performance Table ── */}
+            {/* Staff Performance (admin only) */}
             {currentUser?.isAdmin && stats.staffPerformance.length > 0 && (
-              <div className="bg-white rounded-2xl overflow-hidden"
-                style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #f3f4f6" }}>
+              <div className="rounded-2xl overflow-hidden"
+                style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+                <div className="px-6 py-4 flex items-center justify-between"
+                  style={{ borderBottom: `1px solid ${T.divider}` }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "#fefce8" }}>
-                      <Trophy size={16} style={{ color: "#ca8a04" }} />
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                      style={{ background: T.goldBg }}>
+                      <Star size={15} style={{ color: T.gold }} />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-gray-900">Hiệu suất nhân viên</h2>
-                      <p className="text-[10px] text-gray-500">Xếp hạng theo doanh số</p>
+                      <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Hiệu suất nhân viên</h2>
+                      <p className="text-[10px]" style={{ color: T.textMuted }}>Xếp hạng theo doanh số</p>
                     </div>
                   </div>
-                  <Link href="/crm/staff" className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">
+                  <Link href="/crm/staff"
+                    className="flex items-center gap-1 text-xs font-medium hover:opacity-80 transition-opacity"
+                    style={{ color: T.indigo }}>
                     Quản lý nhân viên <ArrowUpRight size={12} />
                   </Link>
                 </div>
                 {/* Table header */}
-                <div className="px-6 py-2 grid grid-cols-12 gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wide"
-                  style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6" }}>
+                <div className="px-6 py-2 grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wide"
+                  style={{ background: T.bg, borderBottom: `1px solid ${T.divider}`, color: T.textMuted }}>
                   <div className="col-span-1">#</div>
                   <div className="col-span-3">Nhân viên</div>
                   <div className="col-span-2 text-center">KH phụ trách</div>
@@ -658,7 +719,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                   <div className="col-span-2 text-center">Tỷ lệ</div>
                   <div className="col-span-2 text-right">Doanh số</div>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y" style={{ borderColor: T.divider }}>
                   {stats.staffPerformance.slice(0, 8).map((s, i) => {
                     const medals = ["🥇", "🥈", "🥉"];
                     const maxWonValue = Math.max(...stats.staffPerformance.map(x => x.wonValue), 1);
@@ -666,40 +727,44 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                     const isTop = i === 0;
                     return (
                       <div key={s.staffName}
-                        className="px-6 py-3 grid grid-cols-12 gap-2 items-center hover:bg-gray-50 transition-colors"
-                        style={{ background: isTop ? "#fffbeb" : undefined }}>
-                        <div className="col-span-1 text-sm">{medals[i] ?? <span className="text-xs font-bold text-gray-400">{i+1}</span>}</div>
+                        className="px-6 py-3 grid grid-cols-12 gap-2 items-center transition-colors hover:opacity-90"
+                        style={{ background: isTop ? T.goldBg : undefined }}>
+                        <div className="col-span-1 text-sm">{medals[i] ?? <span className="text-xs font-bold" style={{ color: T.textMuted }}>{i+1}</span>}</div>
                         <div className="col-span-3">
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0"
-                              style={{ background: isTop ? "linear-gradient(135deg, #C9A84C, #9A7A2E)" : "#e5e7eb", color: isTop ? "white" : "#6b7280" }}>
+                              style={{
+                                background: isTop ? `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` : T.bg,
+                                color: isTop ? "white" : T.textMuted,
+                                border: isTop ? "none" : `1px solid ${T.cardBorder}`,
+                              }}>
                               {s.staffName.charAt(0).toUpperCase()}
                             </div>
-                            <span className="text-xs font-semibold text-gray-800 truncate">{s.staffName}</span>
+                            <span className="text-xs font-semibold truncate" style={{ color: T.textPrimary }}>{s.staffName}</span>
                           </div>
                         </div>
                         <div className="col-span-2 text-center">
-                          <span className="text-xs font-bold text-gray-700">{s.leadsCount}</span>
+                          <span className="text-xs font-bold" style={{ color: T.textSecondary }}>{s.leadsCount}</span>
                         </div>
                         <div className="col-span-2 text-center">
-                          <span className="text-xs font-bold text-green-600">{s.wonCount}</span>
+                          <span className="text-xs font-bold" style={{ color: T.green }}>{s.wonCount}</span>
                         </div>
                         <div className="col-span-2 text-center">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                             style={{
-                              background: s.conversionRate >= 40 ? "#dcfce7" : s.conversionRate >= 20 ? "#fefce8" : "#f3f4f6",
-                              color: s.conversionRate >= 40 ? "#16a34a" : s.conversionRate >= 20 ? "#ca8a04" : "#6b7280",
+                              background: s.conversionRate >= 40 ? T.greenBg : s.conversionRate >= 20 ? T.goldBg : T.bg,
+                              color: s.conversionRate >= 40 ? T.green : s.conversionRate >= 20 ? T.gold : T.textMuted,
                             }}>
                             {s.conversionRate}%
                           </span>
                         </div>
                         <div className="col-span-2 text-right">
-                          <div className="text-xs font-black" style={{ color: isTop ? "#C9A84C" : "#374151" }}>
+                          <div className="text-xs font-black" style={{ color: isTop ? T.gold : T.textPrimary }}>
                             {s.wonValue >= 1e9 ? `${(s.wonValue/1e9).toFixed(1)}B` : s.wonValue >= 1e6 ? `${(s.wonValue/1e6).toFixed(0)}tr` : `${(s.wonValue/1000).toFixed(0)}k`}
                           </div>
-                          <div className="w-full h-1 rounded-full mt-1 overflow-hidden" style={{ background: "#f3f4f6" }}>
+                          <div className="w-full h-1 rounded-full mt-1 overflow-hidden" style={{ background: T.bg }}>
                             <div className="h-full rounded-full transition-all duration-700"
-                              style={{ width: `${barPct}%`, background: isTop ? "linear-gradient(90deg, #C9A84C, #9A7A2E)" : "#d1d5db" }} />
+                              style={{ width: `${barPct}%`, background: isTop ? `linear-gradient(90deg, ${T.gold}, ${T.goldDark})` : T.cardBorder }} />
                           </div>
                         </div>
                       </div>
@@ -711,31 +776,33 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
 
             {/* Recent Activities */}
             {stats.recentActivities.length > 0 && (
-              <div className="bg-white rounded-2xl overflow-hidden"
-                style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #f3f4f6" }}>
+              <div className="rounded-2xl overflow-hidden"
+                style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+                <div className="px-5 py-4 flex items-center justify-between"
+                  style={{ borderBottom: `1px solid ${T.divider}` }}>
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#f0fdf4" }}>
-                      <Activity size={15} style={{ color: "#22c55e" }} />
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                      style={{ background: T.greenBg }}>
+                      <Activity size={14} style={{ color: T.green }} />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-gray-900">Hoạt động gần đây</h2>
-                      <p className="text-[10px] text-gray-500">10 hoạt động mới nhất</p>
+                      <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Hoạt động gần đây</h2>
+                      <p className="text-[10px]" style={{ color: T.textMuted }}>10 hoạt động mới nhất</p>
                     </div>
                   </div>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y" style={{ borderColor: T.divider }}>
                   {stats.recentActivities.slice(0, 6).map((act) => {
                     const IconComp = ACTIVITY_TYPE_ICONS[act.type] || FileText;
                     const actColors: Record<string, { bg: string; color: string }> = {
-                      call: { bg: "#eff6ff", color: "#3b82f6" },
-                      meeting: { bg: "#f5f3ff", color: "#8b5cf6" },
-                      email: { bg: "#fff7ed", color: "#f97316" },
-                      note: { bg: "#f9fafb", color: "#6b7280" },
-                      quote_sent: { bg: "#fefce8", color: "#ca8a04" },
-                      contract: { bg: "#f0fdf4", color: "#22c55e" },
+                      call:       { bg: T.blueBg,   color: T.blue },
+                      meeting:    { bg: T.purpleBg, color: T.purple },
+                      email:      { bg: T.orangeBg, color: T.orange },
+                      note:       { bg: T.bg,       color: T.textMuted },
+                      quote_sent: { bg: T.goldBg,   color: T.gold },
+                      contract:   { bg: T.greenBg,  color: T.green },
                     };
-                    const c = actColors[act.type] || { bg: "#f9fafb", color: "#6b7280" };
+                    const c = actColors[act.type] || { bg: T.bg, color: T.textMuted };
                     const timeAgo = (() => {
                       const diff = Date.now() - new Date(act.createdAt).getTime();
                       const mins = Math.floor(diff / 60000);
@@ -745,16 +812,16 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                       return `${Math.floor(hrs / 24)}n trước`;
                     })();
                     return (
-                      <div key={act.id} className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                      <div key={act.id} className="flex items-start gap-3 px-5 py-3 hover:opacity-90 transition-opacity">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                           style={{ background: c.bg }}>
                           <IconComp size={13} style={{ color: c.color }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-800 truncate">{act.title}</p>
-                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{act.content}</p>
+                          <p className="text-xs font-semibold truncate" style={{ color: T.textPrimary }}>{act.title}</p>
+                          <p className="text-[10px] truncate mt-0.5" style={{ color: T.textMuted }}>{act.content}</p>
                         </div>
-                        <div className="flex-shrink-0 text-[10px] text-gray-400 mt-0.5">{timeAgo}</div>
+                        <div className="flex-shrink-0 text-[10px] mt-0.5" style={{ color: T.textMuted }}>{timeAgo}</div>
                       </div>
                     );
                   })}
@@ -763,49 +830,53 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             )}
 
             {/* Recent Quotes */}
-            <div className="bg-white rounded-2xl overflow-hidden"
-              style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #f3f4f6" }}>
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="px-5 py-4 flex items-center justify-between"
+                style={{ borderBottom: `1px solid ${T.divider}` }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#f0fdf4" }}>
-                    <FileText size={15} style={{ color: "#22c55e" }} />
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ background: T.greenBg }}>
+                    <FileText size={14} style={{ color: T.green }} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-900">Báo giá gần đây</h2>
-                    <p className="text-[10px] text-gray-500">{quotes.length} báo giá</p>
+                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Báo giá gần đây</h2>
+                    <p className="text-[10px]" style={{ color: T.textMuted }}>{quotes.length} báo giá</p>
                   </div>
                 </div>
-                <Link href="/crm/quotes" className="text-[10px] text-indigo-500 hover:underline font-medium flex items-center gap-0.5">
+                <Link href="/crm/quotes"
+                  className="text-[10px] font-medium flex items-center gap-0.5 hover:opacity-80 transition-opacity"
+                  style={{ color: T.indigo }}>
                   Tất cả <ArrowUpRight size={10} />
                 </Link>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y" style={{ borderColor: T.divider }}>
                 {quotes.length === 0 ? (
-                  <div className="text-center py-6 text-gray-500">
+                  <div className="text-center py-6" style={{ color: T.textMuted }}>
                     <FileText size={22} className="mx-auto mb-1.5 opacity-20" />
                     <p className="text-xs">Chưa có báo giá</p>
                   </div>
                 ) : quotes.slice(0, 4).map(q => {
                   const statusConfig = {
-                    draft:    { label: "Nháp",      color: "#6b7280", bg: "#f9fafb" },
-                    sent:     { label: "Đã gửi",    color: "#3b82f6", bg: "#eff6ff" },
-                    accepted: { label: "Chấp nhận", color: "#22c55e", bg: "#f0fdf4" },
-                    rejected: { label: "Từ chối",   color: "#ef4444", bg: "#fef2f2" },
+                    draft:    { label: "Nháp",      color: T.textMuted,  bg: T.bg },
+                    sent:     { label: "Đã gửi",    color: T.blue,       bg: T.blueBg },
+                    accepted: { label: "Chấp nhận", color: T.green,      bg: T.greenBg },
+                    rejected: { label: "Từ chối",   color: T.red,        bg: T.redBg },
                   }[q.status];
                   return (
                     <Link key={q.id} href={`/crm/quotes/${q.id}`}
-                      className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
+                      className="flex items-center justify-between px-5 py-3 hover:opacity-90 transition-opacity">
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-gray-900">{q.quoteNumber}</div>
-                        <div className="text-[10px] text-gray-500 truncate">{q.leadName}</div>
+                        <div className="text-xs font-bold" style={{ color: T.textPrimary }}>{q.quoteNumber}</div>
+                        <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{q.leadName}</div>
                       </div>
                       <div className="text-right flex-shrink-0 ml-3">
-                        <div className="text-xs font-bold" style={{ color: "#C9A84C" }}>
+                        <div className="text-xs font-bold" style={{ color: T.gold }}>
                           {q.total >= 1e9 ? `${(q.total/1e9).toFixed(1)}B` : q.total >= 1e6 ? `${(q.total/1e6).toFixed(0)}tr` : formatVND(q.total)}
                         </div>
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
-                          style={{ background: statusConfig.bg, color: statusConfig.color }}>
-                          {statusConfig.label}
+                          style={{ background: statusConfig?.bg, color: statusConfig?.color }}>
+                          {statusConfig?.label}
                         </span>
                       </div>
                     </Link>
@@ -813,10 +884,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                 })}
               </div>
               {quotes.length > 0 && (
-                <div className="px-5 py-3" style={{ borderTop: "1px solid #f3f4f6" }}>
+                <div className="px-5 py-3" style={{ borderTop: `1px solid ${T.divider}` }}>
                   <Link href="/crm/quotes/new"
-                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-amber-50"
-                    style={{ border: "1px dashed #C9A84C", color: "#C9A84C" }}>
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
+                    style={{ border: `1px dashed ${T.gold}`, color: T.gold }}>
                     <Plus size={12} />
                     Tạo báo giá mới
                   </Link>
@@ -830,23 +901,26 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
           <div className="space-y-5">
 
             {/* Today's Tasks */}
-            <div className="bg-white rounded-2xl overflow-hidden"
-              style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #f3f4f6" }}>
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="px-5 py-4 flex items-center justify-between"
+                style={{ borderBottom: `1px solid ${T.divider}` }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#fefce8" }}>
-                    <CheckSquare size={15} style={{ color: "#ca8a04" }} />
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ background: T.goldBg }}>
+                    <CheckSquare size={14} style={{ color: T.gold }} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-900">Việc hôm nay</h2>
-                    <p className="text-[10px] text-gray-500">{doneTasks.length}/{tasks.length} hoàn thành</p>
+                    <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Việc hôm nay</h2>
+                    <p className="text-[10px]" style={{ color: T.textMuted }}>{doneTasks.length}/{tasks.length} hoàn thành</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link href="/crm/tasks" className="text-xs font-medium hover:underline" style={{ color: "#C9A84C" }}>Xem tất cả</Link>
+                  <Link href="/crm/tasks" className="text-xs font-medium hover:opacity-80 transition-opacity"
+                    style={{ color: T.gold }}>Xem tất cả</Link>
                   {pendingTasks.length > 0 && (
-                    <span className="text-xs font-black px-2 py-0.5 rounded-full text-amber-700"
-                      style={{ background: "#fef3c7" }}>
+                    <span className="text-xs font-black px-2 py-0.5 rounded-full"
+                      style={{ background: T.goldBg, color: T.gold }}>
                       {pendingTasks.length}
                     </span>
                   )}
@@ -856,11 +930,11 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
               {/* Progress bar */}
               {tasks.length > 0 && (
                 <div className="px-5 pt-3 pb-1">
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: T.bg }}>
                     <div className="h-full rounded-full transition-all duration-500"
                       style={{
                         width: `${tasks.length > 0 ? (doneTasks.length / tasks.length) * 100 : 0}%`,
-                        background: "linear-gradient(90deg, #22c55e, #16a34a)",
+                        background: `linear-gradient(90deg, ${T.green}, #047857)`,
                       }} />
                   </div>
                 </div>
@@ -869,11 +943,12 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
               <div className="p-4 space-y-2">
                 {tasks.length === 0 ? (
                   <div className="text-center py-8">
-                    <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: "#f9fafb" }}>
-                      <CheckSquare size={18} className="text-gray-600" />
+                    <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
+                      style={{ background: T.bg }}>
+                      <CheckSquare size={18} style={{ color: T.textMuted }} />
                     </div>
-                    <p className="text-xs text-gray-500">Không có việc hôm nay</p>
-                    <p className="text-[10px] text-gray-600 mt-0.5">Tận hưởng ngày của bạn! 🎉</p>
+                    <p className="text-xs" style={{ color: T.textMuted }}>Không có việc hôm nay</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: T.textLabel }}>Tận hưởng ngày của bạn! 🎉</p>
                   </div>
                 ) : (
                   tasks.map(task => {
@@ -882,15 +957,15 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                       <div key={task.id}
                         className="flex items-start gap-2.5 p-3 rounded-xl transition-all"
                         style={{
-                          background: task.done ? "#fafafa" : "#fff",
-                          border: `1px solid ${task.done ? "#f3f4f6" : "#e8eaed"}`,
+                          background: task.done ? T.bg : T.card,
+                          border: `1px solid ${task.done ? T.divider : T.cardBorder}`,
                         }}>
                         <button onClick={() => toggleTask(task)}
                           className="flex-shrink-0 mt-0.5 rounded-md transition-all flex items-center justify-center"
                           style={{
                             width: 18, height: 18,
-                            border: `2px solid ${task.done ? "#22c55e" : "#d1d5db"}`,
-                            background: task.done ? "#22c55e" : "transparent",
+                            border: `2px solid ${task.done ? T.green : T.cardBorder}`,
+                            background: task.done ? T.green : "transparent",
                           }}>
                           {task.done && (
                             <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
@@ -899,12 +974,14 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
                           )}
                         </button>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold leading-snug ${task.done ? "line-through text-gray-400" : "text-gray-800"}`}>
+                          <p className={`text-xs font-semibold leading-snug`}
+                            style={{ color: task.done ? T.textMuted : T.textPrimary,
+                                     textDecoration: task.done ? "line-through" : "none" }}>
                             {task.title}
                           </p>
                           <Link href={`/crm/leads/${task.leadId}`}
                             className="text-[10px] font-medium hover:underline mt-0.5 block truncate"
-                            style={{ color: "#C9A84C" }}>
+                            style={{ color: T.gold }}>
                             {task.leadName}
                           </Link>
                         </div>
@@ -921,40 +998,43 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
 
             {/* Overdue Alert */}
             {overdueLeads.length > 0 && (
-              <div className="bg-white rounded-2xl overflow-hidden"
-                style={{ border: "1px solid #fecaca", boxShadow: "0 1px 3px rgba(239,68,68,0.08)" }}>
+              <div className="rounded-2xl overflow-hidden"
+                style={{ border: `1px solid #FECACA`, boxShadow: `0 1px 4px rgba(220,38,38,0.08)` }}>
                 <div className="px-5 py-4 flex items-center justify-between"
-                  style={{ background: "linear-gradient(135deg, #fef2f2, #fff)", borderBottom: "1px solid #fecaca" }}>
+                  style={{ background: "linear-gradient(135deg, #FEF2F2, #FFFFFF)", borderBottom: "1px solid #FECACA" }}>
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#fee2e2" }}>
-                      <Zap size={14} style={{ color: "#ef4444" }} />
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                      style={{ background: "#FEE2E2" }}>
+                      <Zap size={14} style={{ color: T.red }} />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-red-700">Cần liên hệ ngay</h2>
-                      <p className="text-[10px] text-red-400">Quá 3 ngày không tương tác</p>
+                      <h2 className="text-sm font-bold" style={{ color: "#991B1B" }}>Cần liên hệ ngay</h2>
+                      <p className="text-[10px]" style={{ color: "#F87171" }}>Quá 3 ngày không tương tác</p>
                     </div>
                   </div>
-                  <span className="text-xs font-black px-2 py-0.5 rounded-full text-red-600" style={{ background: "#fee2e2" }}>
+                  <span className="text-xs font-black px-2 py-0.5 rounded-full"
+                    style={{ background: "#FEE2E2", color: T.red }}>
                     {overdueLeads.length}
                   </span>
                 </div>
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-2" style={{ background: T.card }}>
                   {overdueLeads.slice(0, 5).map(lead => {
                     const daysAgo = Math.floor((Date.now() - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
                     return (
                       <Link key={lead.id} href={`/crm/leads/${lead.id}`}
-                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-red-50 transition-colors group"
-                        style={{ border: "1px solid #fee2e2" }}>
+                        className="flex items-center justify-between p-2.5 rounded-xl transition-colors hover:opacity-90 group"
+                        style={{ border: "1px solid #FEE2E2" }}>
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-bold text-gray-900 truncate">{lead.name}</div>
-                          <div className="text-[10px] text-gray-500 truncate">{lead.company || STAGE_LABELS[lead.stage]}</div>
+                          <div className="text-xs font-bold truncate" style={{ color: T.textPrimary }}>{lead.name}</div>
+                          <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{lead.company || STAGE_LABELS[lead.stage]}</div>
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md" style={{ background: "#fee2e2" }}>
-                            <Clock size={9} style={{ color: "#ef4444" }} />
-                            <span className="text-[10px] font-black text-red-500">{daysAgo}n</span>
+                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md"
+                            style={{ background: "#FEE2E2" }}>
+                            <Clock size={9} style={{ color: T.red }} />
+                            <span className="text-[10px] font-black" style={{ color: T.red }}>{daysAgo}n</span>
                           </div>
-                          <ChevronRight size={12} className="text-gray-400 group-hover:text-red-400 transition-colors" />
+                          <ChevronRight size={12} style={{ color: T.textMuted }} />
                         </div>
                       </Link>
                     );
@@ -964,25 +1044,26 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             )}
 
             {/* Quick Stats */}
-            <div className="bg-white rounded-2xl overflow-hidden"
-              style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-              <div className="px-5 py-4" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                <h2 className="text-sm font-bold text-gray-900">Thống kê nhanh</h2>
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.divider}` }}>
+                <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Thống kê nhanh</h2>
               </div>
-              <div className="p-4 space-y-3">
+              <div className="p-4 space-y-2.5">
                 {[
-                  { label: "Đang thương thảo", value: (stats.byStage["negotiating"] || 0), color: "#f97316", icon: Target },
-                  { label: "Đã báo giá", value: (stats.byStage["quoted"] || 0), color: "#f59e0b", icon: FileText },
-                  { label: "Đã khảo sát", value: (stats.byStage["surveyed"] || 0), color: "#8b5cf6", icon: Briefcase },
-                  { label: "Đã gửi Profile", value: (stats.byStage["profile_sent"] || 0), color: "#3b82f6", icon: Mail },
-                ].map(({ label, value, color, icon: Icon }) => (
+                  { label: "Đang thương thảo", value: (stats.byStage["negotiating"] || 0), color: T.orange, bg: T.orangeBg, icon: Target },
+                  { label: "Đã báo giá",        value: (stats.byStage["quoted"] || 0),       color: T.gold,   bg: T.goldBg,   icon: FileText },
+                  { label: "Đã khảo sát",       value: (stats.byStage["surveyed"] || 0),     color: T.purple, bg: T.purpleBg, icon: Briefcase },
+                  { label: "Đã gửi Profile",    value: (stats.byStage["profile_sent"] || 0), color: T.blue,   bg: T.blueBg,   icon: Mail },
+                ].map(({ label, value, color, bg, icon: Icon }) => (
                   <div key={label} className="flex items-center justify-between p-2.5 rounded-xl"
-                    style={{ background: `${color}08`, border: `1px solid ${color}15` }}>
+                    style={{ background: bg, border: `1px solid ${color}18` }}>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: `${color}15` }}>
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+                        style={{ background: `${color}18` }}>
                         <Icon size={12} style={{ color }} />
                       </div>
-                      <span className="text-xs text-gray-700 font-medium">{label}</span>
+                      <span className="text-xs font-medium" style={{ color: T.textSecondary }}>{label}</span>
                     </div>
                     <span className="text-sm font-black" style={{ color }}>{value}</span>
                   </div>
@@ -991,29 +1072,30 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, c
             </div>
 
             {/* Quick Links */}
-            <div className="bg-white rounded-2xl overflow-hidden"
-              style={{ border: "1px solid #e8eaed", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-              <div className="px-5 py-4" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                <h2 className="text-sm font-bold text-gray-900">Truy cập nhanh</h2>
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.divider}` }}>
+                <h2 className="text-sm font-bold" style={{ color: T.textPrimary }}>Truy cập nhanh</h2>
               </div>
               <div className="p-3 grid grid-cols-2 gap-2">
                 {[
-                  { href: "/crm/leads", label: "Khách hàng", icon: Users, color: "#6366f1" },
-                  { href: "/crm/kanban", label: "Kanban", icon: BarChart2, color: "#f97316" },
-                  { href: "/crm/quotes/new", label: "Báo giá mới", icon: FileText, color: "#22c55e" },
-                  { href: "/crm/calendar", label: "Lịch hẹn", icon: Calendar, color: "#3b82f6" },
+                  { href: "/crm/leads",      label: "Khách hàng",  icon: Users,     color: T.indigo, bg: T.indigoBg },
+                  { href: "/crm/kanban",     label: "Kanban",      icon: BarChart2, color: T.orange, bg: T.orangeBg },
+                  { href: "/crm/quotes/new", label: "Báo giá mới", icon: FileText,  color: T.green,  bg: T.greenBg },
+                  { href: "/crm/calendar",   label: "Lịch hẹn",   icon: Calendar,  color: T.blue,   bg: T.blueBg },
                   ...(currentUser?.isAdmin ? [
-                    { href: "/crm/reports", label: "Báo cáo", icon: TrendingUp, color: "#8b5cf6" },
-                    { href: "/crm/staff", label: "Nhân viên", icon: Award, color: "#C9A84C" },
+                    { href: "/crm/reports", label: "Báo cáo",    icon: TrendingUp, color: T.purple, bg: T.purpleBg },
+                    { href: "/crm/staff",   label: "Nhân viên",  icon: Award,      color: T.gold,   bg: T.goldBg },
                   ] : []),
-                ].map(({ href, label, icon: Icon, color }) => (
+                ].map(({ href, label, icon: Icon, color, bg }) => (
                   <Link key={href} href={href}
                     className="flex items-center gap-2 p-3 rounded-xl hover:opacity-90 transition-opacity"
-                    style={{ background: `${color}08`, border: `1px solid ${color}15` }}>
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: `${color}20` }}>
+                    style={{ background: bg, border: `1px solid ${color}18` }}>
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+                      style={{ background: `${color}20` }}>
                       <Icon size={12} style={{ color }} />
                     </div>
-                    <span className="text-xs font-semibold text-gray-700">{label}</span>
+                    <span className="text-xs font-semibold" style={{ color: T.textSecondary }}>{label}</span>
                   </Link>
                 ))}
               </div>
@@ -1033,32 +1115,34 @@ interface KpiCardProps {
   value: number | string;
   sub: string;
   color: string;
+  colorBg: string;
   badge?: string;
   badgeColor?: string;
   isText?: boolean;
   urgent?: boolean;
 }
 
-function KpiCard({ icon: Icon, label, value, sub, color, badge, badgeColor, urgent }: KpiCardProps) {
+function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeColor, urgent }: KpiCardProps) {
   return (
-    <div className="bg-white rounded-2xl p-5 relative overflow-hidden transition-all hover:shadow-md"
+    <div className="rounded-2xl p-5 relative overflow-hidden transition-all hover:shadow-md"
       style={{
-        border: urgent ? `1px solid ${color}40` : "1px solid #e8eaed",
-        boxShadow: urgent ? `0 1px 3px ${color}15` : "0 1px 3px rgba(0,0,0,0.04)",
+        background: "#FFFFFF",
+        border: urgent ? `1px solid ${color}50` : `1px solid #E4E7EC`,
+        boxShadow: urgent ? `0 1px 4px ${color}18` : "0 1px 4px rgba(16,24,40,0.06)",
       }}>
-      {urgent && <div className="absolute inset-0 opacity-[0.02]" style={{ background: color }} />}
+      {urgent && <div className="absolute inset-0 opacity-[0.025]" style={{ background: color }} />}
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: `${color}12` }}>
+          style={{ background: colorBg }}>
           <Icon size={20} style={{ color }} />
         </div>
         {urgent && (
           <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: color }} />
         )}
       </div>
-      <div className="text-2xl font-black text-gray-900 leading-none mb-1">{value}</div>
-      <div className="text-xs font-semibold text-gray-600 mb-1">{label}</div>
-      <div className="text-[10px] text-gray-500 truncate">{sub}</div>
+      <div className="text-2xl font-black leading-none mb-1" style={{ color: "#101828" }}>{value}</div>
+      <div className="text-xs font-semibold mb-1" style={{ color: "#475467" }}>{label}</div>
+      <div className="text-[10px] truncate" style={{ color: "#98A2B3" }}>{sub}</div>
       {badge && (
         <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
           style={{ background: `${badgeColor}15`, color: badgeColor }}>
