@@ -26,6 +26,7 @@ import {
   Menu,
   X,
   UserCircle,
+  Database,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -59,6 +60,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Khách hàng",
     items: [
+      { label: "Data Pool", href: "/crm/data-pool", icon: Database },
       { label: "Danh sách KH", href: "/crm/leads", icon: Users },
       { label: "Báo giá", href: "/crm/quotes", icon: FileText },
       { label: "Việc cần làm", href: "/crm/tasks", icon: CheckSquare },
