@@ -756,19 +756,19 @@ function AddActivityModal({ leadId, onClose, onCreated }: { leadId: string; onCl
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Tiêu đề</label>
             <input value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
               placeholder="VD: Gọi tư vấn lần 1" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Nội dung *</label>
             <textarea value={content} onChange={e => setContent(e.target.value)} rows={3} required
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
+              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
               placeholder="Mô tả chi tiết..." />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Người thực hiện</label>
             <input value={createdBy} onChange={e => setCreatedBy(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
               placeholder="Tên sales" />
           </div>
           <div className="flex gap-3 pt-2">
@@ -824,19 +824,19 @@ function AddTaskModal({ leadId, leadName, isAdmin = false, currentUserName = "",
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Nội dung *</label>
             <input value={title} onChange={e => setTitle(e.target.value)} required
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
               placeholder="VD: Gọi lại cho khách sau 2 ngày" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Hạn chót</label>
               <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
+                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Ưu tiên</label>
               <select value={priority} onChange={e => setPriority(e.target.value as CrmTask["priority"])}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
+                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
                 <option value="high">Cao</option>
                 <option value="medium">Trung bình</option>
                 <option value="low">Thấp</option>
@@ -847,7 +847,7 @@ function AddTaskModal({ leadId, leadName, isAdmin = false, currentUserName = "",
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Giao cho nhân viên</label>
               <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
+                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
                 <option value="">— Chưa phân công —</option>
                 {staffList.map(s => (
                   <option key={s.id} value={s.fullName}>{s.fullName}</option>
@@ -956,19 +956,19 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Tên khách hàng *</label>
                 <input value={form.name} onChange={e => set("name", e.target.value)} required
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="Nguyễn Văn A" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Công ty / Dự án</label>
                 <input value={form.company} onChange={e => set("company", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="Tên công ty" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Loại khách *</label>
                 <select value={form.type} onChange={e => set("type", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
                   <option value="architect">Kiến trúc sư</option>
                   <option value="investor">Chủ đầu tư CHDV</option>
                   <option value="dealer">Đại lý</option>
@@ -977,13 +977,13 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Số điện thoại *</label>
                 <input value={form.phone} onChange={e => set("phone", e.target.value)} required
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="0901234567" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Email</label>
                 <input type="email" value={form.email} onChange={e => set("email", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="email@example.com" />
               </div>
             </div>
@@ -996,31 +996,31 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Giá trị dự kiến (VND)</label>
                 <input type="number" value={form.expectedValue} onChange={e => set("expectedValue", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="500000000" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Số căn / phòng</label>
                 <input type="number" value={form.unitCount} onChange={e => set("unitCount", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="10" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Khu vực</label>
                 <input value={form.district} onChange={e => set("district", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="Q1, TP.HCM" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Nguồn</label>
                 <input value={form.source} onChange={e => set("source", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="Facebook Ads" />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Sales phụ trách</label>
                 <input value={form.assignedTo} onChange={e => set("assignedTo", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="Tên nhân viên" />
               </div>
             </div>
@@ -1033,13 +1033,13 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Tên dự án</label>
                 <input value={form.projectName} onChange={e => set("projectName", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="Vinhomes Central Park" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Địa chỉ dự án</label>
                 <input value={form.projectAddress} onChange={e => set("projectAddress", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="720A Điện Biên Phủ, Q.Bình Thạnh" />
               </div>
             </div>
@@ -1049,7 +1049,7 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Ghi chú</label>
             <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
+              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
               placeholder="Ghi chú thêm về khách hàng..." />
           </div>
 

@@ -270,19 +270,19 @@ function ProductModal({ product, onClose, onSaved }: { product: CrmProduct | nul
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Tên sản phẩm *</label>
               <input value={form.name} onChange={e => set("name", e.target.value)} required
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
+                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">SKU</label>
               <input value={form.sku} onChange={e => set("sku", e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" placeholder="SF-PRO-MAX" />
+                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" placeholder="SF-PRO-MAX" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Danh mục</label>
               <select value={form.category} onChange={e => set("category", e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none bg-white">
+                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none bg-white">
                 <option value="ergonomic_bed">Giường công thái học</option>
                 <option value="sofa_bed">Sofa giường</option>
               </select>
@@ -290,29 +290,29 @@ function ProductModal({ product, onClose, onSaved }: { product: CrmProduct | nul
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Giá gốc (VND)</label>
               <input type="number" value={form.basePrice} onChange={e => set("basePrice", e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" placeholder="28900000" />
+                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" placeholder="28900000" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">URL ảnh</label>
             <input value={form.imageUrl} onChange={e => set("imageUrl", e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" placeholder="https://..." />
+              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" placeholder="https://..." />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Mô tả</label>
             <textarea value={form.description} onChange={e => set("description", e.target.value)} rows={2}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none" />
+              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Thông số kỹ thuật (mỗi dòng: Tên: Giá trị)</label>
             <textarea value={form.specsText} onChange={e => set("specsText", e.target.value)} rows={4}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none font-mono"
+              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none font-mono"
               placeholder="Kích thước: 160x200cm&#10;Tải trọng: 200kg&#10;Bảo hành: 5 năm" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Chiết khấu (mỗi dòng: SốLượng:Phần%:Nhãn)</label>
             <textarea value={form.tiersText} onChange={e => set("tiersText", e.target.value)} rows={3}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none font-mono"
+              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none font-mono"
               placeholder="5:10:≥5 bộ: -10%&#10;10:15:≥10 bộ: -15%" />
           </div>
           <div className="flex gap-3 pt-2">

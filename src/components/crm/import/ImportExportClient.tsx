@@ -286,7 +286,7 @@ function ZaloOATab() {
                   onChange={e => setConfig(c => ({ ...c, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   className="w-full pl-8 pr-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+                  style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
               </div>
             </div>
           ))}
@@ -297,7 +297,7 @@ function ZaloOATab() {
                 onChange={e => setConfig(c => ({ ...c, appSecret: e.target.value }))}
                 placeholder="••••••••••••••••"
                 className="w-full pl-3 pr-9 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+                style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
               <button onClick={() => setShowSecret(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2"
                 style={{ color: "#9ca3af" }}>
                 {showSecret ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -311,7 +311,7 @@ function ZaloOATab() {
                 onChange={e => setConfig(c => ({ ...c, accessToken: e.target.value }))}
                 placeholder="••••••••••••••••"
                 className="w-full pl-3 pr-9 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+                style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
               <button onClick={() => setShowToken(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2"
                 style={{ color: "#9ca3af" }}>
                 {showToken ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -353,7 +353,7 @@ function ZaloOATab() {
               onChange={e => setConfig(c => ({ ...c, autoReplyMessage: e.target.value }))}
               rows={3}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
           </div>
         )}
       </div>
@@ -385,7 +385,7 @@ export default function ImportExportClient() {
   const [tab, setTab] = useState<TabId>("import");
 
   return (
-    <div className="space-y-5" style={{ color: "#fff" }}>
+    <div className="space-y-5" style={{ color: "#111827" }}>
       <div>
         <h1 className="text-lg font-bold text-gray-900">Dữ liệu & Tích hợp</h1>
         <p className="text-xs mt-0.5" style={{  }}>

@@ -215,19 +215,19 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Hiệu lực đến</label>
                 <input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Người lập</label>
                 <input value={createdBy} onChange={e => setCreatedBy(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="Tên sales" />
               </div>
             </div>
             <div className="mt-4">
               <label className="block text-xs font-semibold text-gray-600 mb-1">Ghi chú</label>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
+                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
                 placeholder="Điều khoản, ghi chú thêm..." />
             </div>
           </div>

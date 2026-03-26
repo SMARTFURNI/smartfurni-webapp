@@ -100,7 +100,7 @@ export default function AuditLogClient() {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="space-y-5" style={{ color: "#fff" }}>
+    <div className="space-y-5" style={{ color: "#111827" }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -132,7 +132,7 @@ export default function AuditLogClient() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Tìm theo tên, hành động..."
             className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none"
-            style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#fff" }}
+            style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151" }}
           />
         </div>
         <button
@@ -155,7 +155,7 @@ export default function AuditLogClient() {
             <label className="block text-xs mb-1.5" style={{  }}>Loại hành động</label>
             <select value={filterAction} onChange={e => { setFilterAction(e.target.value as AuditAction | ""); setPage(0); }}
               className="w-full px-2 py-1.5 rounded-lg text-xs outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}>
               <option value="">Tất cả</option>
               {ACTION_GROUPS.map(g => (
                 <optgroup key={g.label} label={g.label}>
@@ -168,7 +168,7 @@ export default function AuditLogClient() {
             <label className="block text-xs mb-1.5" style={{  }}>Đối tượng</label>
             <select value={filterEntityType} onChange={e => { setFilterEntityType(e.target.value); setPage(0); }}
               className="w-full px-2 py-1.5 rounded-lg text-xs outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}>
               <option value="">Tất cả</option>
               <option value="lead">Khách hàng</option>
               <option value="quote">Báo giá</option>
@@ -181,13 +181,13 @@ export default function AuditLogClient() {
             <label className="block text-xs mb-1.5" style={{  }}>Từ ngày</label>
             <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(0); }}
               className="w-full px-2 py-1.5 rounded-lg text-xs outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }} />
           </div>
           <div>
             <label className="block text-xs mb-1.5" style={{  }}>Đến ngày</label>
             <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(0); }}
               className="w-full px-2 py-1.5 rounded-lg text-xs outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }} />
           </div>
         </div>
       )}

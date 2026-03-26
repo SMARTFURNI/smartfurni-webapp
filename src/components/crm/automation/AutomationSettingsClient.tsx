@@ -69,7 +69,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
         <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>Điều kiện kích hoạt</label>
         <select value={trigger.type} onChange={e => onChange({ type: e.target.value as TriggerType })}
           className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-          style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
+          style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
           {(Object.entries(TRIGGER_LABELS) as [TriggerType, string][]).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
@@ -82,7 +82,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
             <label className="block text-xs mb-1" style={{  }}>Từ giai đoạn</label>
             <select value={trigger.fromStage ?? ""} onChange={e => onChange({ ...trigger, fromStage: e.target.value || undefined })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
+              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
               <option value="">Bất kỳ</option>
               {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
@@ -91,7 +91,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
             <label className="block text-xs mb-1" style={{  }}>Sang giai đoạn</label>
             <select value={trigger.toStage ?? ""} onChange={e => onChange({ ...trigger, toStage: e.target.value || undefined })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
+              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
               <option value="">Bất kỳ</option>
               {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
@@ -105,7 +105,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
           <input type="number" min={1} max={30} value={trigger.days ?? 3}
             onChange={e => onChange({ ...trigger, days: parseInt(e.target.value) })}
             className="w-32 px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+            style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
         </div>
       )}
 
@@ -115,14 +115,14 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
           <div className="flex items-center gap-3">
             <select value={trigger.fromStage ?? ""} onChange={e => onChange({ ...trigger, fromStage: e.target.value || undefined })}
               className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
+              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
               <option value="">Chọn giai đoạn</option>
               {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
             <input type="number" min={1} value={trigger.hours ?? 24}
               onChange={e => onChange({ ...trigger, hours: parseInt(e.target.value) })}
               className="w-24 px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
             <span className="text-xs" style={{ color: "#6b7280" }}>giờ</span>
           </div>
         </div>
@@ -134,7 +134,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
           <input type="number" value={trigger.minValue ?? 500000000}
             onChange={e => onChange({ ...trigger, minValue: parseInt(e.target.value) })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+            style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
         </div>
       )}
 
@@ -143,7 +143,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
           <label className="block text-xs mb-1" style={{  }}>Phân loại KH</label>
           <select value={trigger.leadType ?? ""} onChange={e => onChange({ ...trigger, leadType: e.target.value })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}>
+            style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
             <option value="architect">Kiến trúc sư</option>
             <option value="investor">Chủ đầu tư CHDV</option>
             <option value="dealer">Đại lý</option>
@@ -180,10 +180,10 @@ function ActionEditor({ action, onChange, onRemove }: {
         <div className="grid grid-cols-2 gap-2">
           <input placeholder="Tiêu đề task" value={action.taskTitle ?? ""} onChange={e => onChange({ ...action, taskTitle: e.target.value })}
             className="col-span-2 px-2 py-1.5 rounded text-xs outline-none"
-            style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
+            style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
           <select value={action.taskPriority ?? "medium"} onChange={e => onChange({ ...action, taskPriority: e.target.value as "high" | "medium" | "low" })}
             className="px-2 py-1.5 rounded text-xs outline-none"
-            style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }}>
+            style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }}>
             <option value="high">Ưu tiên Cao</option>
             <option value="medium">Ưu tiên TB</option>
             <option value="low">Ưu tiên Thấp</option>
@@ -192,7 +192,7 @@ function ActionEditor({ action, onChange, onRemove }: {
             <input type="number" min={0} max={30} value={action.taskDueDays ?? 1}
               onChange={e => onChange({ ...action, taskDueDays: parseInt(e.target.value) })}
               className="w-16 px-2 py-1.5 rounded text-xs outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
+              style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
             <span className="text-xs" style={{  }}>ngày sau</span>
           </div>
         </div>
@@ -201,25 +201,25 @@ function ActionEditor({ action, onChange, onRemove }: {
       {action.type === "send_email" && (
         <input placeholder="Tiêu đề email" value={action.emailSubject ?? ""} onChange={e => onChange({ ...action, emailSubject: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
+          style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
       )}
 
       {action.type === "add_tag" && (
         <input placeholder="Nhãn (VD: VIP, Hot, Tiềm năng)" value={action.tag ?? ""} onChange={e => onChange({ ...action, tag: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
+          style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
       )}
 
       {action.type === "notify_manager" && (
         <input placeholder="Nội dung thông báo" value={action.notifyMessage ?? ""} onChange={e => onChange({ ...action, notifyMessage: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
+          style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
       )}
 
       {action.type === "move_stage" && (
         <select value={action.targetStage ?? ""} onChange={e => onChange({ ...action, targetStage: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }}>
+          style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }}>
           <option value="">Chọn giai đoạn đích</option>
           {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
         </select>
@@ -303,7 +303,7 @@ function RuleCard({ rule, onChange, onDelete }: {
                 onChange={e => onChange({ ...rule, name: e.target.value })}
                 placeholder="Tên quy tắc"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none mb-2"
-                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
+                style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}
               />
               <input
                 value={rule.description}
@@ -519,7 +519,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
                   updated[idx] = { ...updated[idx], province: e.target.value };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
+                  style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
               </div>
               <div>
                 <label className="block text-xs mb-1" style={{  }}>Nhân viên phụ trách</label>
@@ -528,7 +528,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
                   updated[idx] = { ...updated[idx], staffName: e.target.value };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }} />
+                  style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
               </div>
               <div>
                 <label className="block text-xs mb-1" style={{  }}>Loại KH</label>
@@ -537,7 +537,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
                   updated[idx] = { ...updated[idx], leadTypes: e.target.value ? [e.target.value] : [] };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#fff" }}>
+                  style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }}>
                   <option value="">Tất cả</option>
                   <option value="architect">Kiến trúc sư</option>
                   <option value="investor">Chủ đầu tư</option>
@@ -629,7 +629,7 @@ export default function AutomationSettingsClient() {
   );
 
   return (
-    <div className="space-y-5" style={{ color: "#fff" }}>
+    <div className="space-y-5" style={{ color: "#111827" }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

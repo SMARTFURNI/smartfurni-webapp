@@ -254,13 +254,13 @@ function ApiKeysTab() {
               <input value={newKeyName} onChange={e => setNewKeyName(e.target.value)}
                 placeholder="VD: Make.com Integration"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+                style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
             </div>
             <div>
               <label className="block text-xs mb-1.5" style={{  }}>Hết hạn (để trống = không hết hạn)</label>
               <input type="date" value={newKeyExpiry} onChange={e => setNewKeyExpiry(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+                style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
             </div>
           </div>
           <div>
@@ -385,7 +385,7 @@ export default function PermissionsClient() {
   ];
 
   return (
-    <div className="space-y-5" style={{ color: "#fff" }}>
+    <div className="space-y-5" style={{ color: "#111827" }}>
       <div>
         <h1 className="text-lg font-bold text-gray-900">Bảo mật & Truy cập</h1>
         <p className="text-xs mt-0.5" style={{  }}>

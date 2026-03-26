@@ -113,3 +113,37 @@ section {
   font-style: italic;
   color: var(--color-primary, #C9A84C);
 }
+
+/* ─── CRM Override ────────────────────────────────────────────────────────────
+   The landing page uses dark theme (body bg #0D0B00, color #F5EDD6).
+   CRM uses light theme. Override all body-inherited dark styles inside .crm-root.
+*/
+.crm-root {
+  background-color: #f8f9fb !important;
+  color: #111827 !important;
+}
+.crm-root input,
+.crm-root textarea,
+.crm-root select {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
+.crm-root input::placeholder,
+.crm-root textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+.crm-root label {
+  color: #374151 !important;
+}
+/* Scrollbar for CRM (light) */
+.crm-root ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.crm-root ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.crm-root ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

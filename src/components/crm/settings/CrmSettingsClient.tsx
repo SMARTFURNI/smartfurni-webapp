@@ -80,9 +80,9 @@ function InputField({
         placeholder={placeholder}
         className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
         style={{
-          background: "#f3f4f6",
+          background: "#ffffff",
           border: "1px solid #d1d5db",
-          color: "#fff",
+          color: "#111827",
         }}
         onFocus={e => { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(201,168,76,0.15)"; }}
         onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.boxShadow = "none"; }}
@@ -109,9 +109,9 @@ function TextareaField({
         placeholder={placeholder}
         className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all resize-none"
         style={{
-          background: "#f3f4f6",
+          background: "#ffffff",
           border: "1px solid #d1d5db",
-          color: "#fff",
+          color: "#111827",
         }}
         onFocus={e => { e.currentTarget.style.borderColor = "#C9A84C"; }}
         onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }}
@@ -234,7 +234,7 @@ function PipelineTab({ data, onChange }: { data: PipelineStage[]; onChange: (d: 
                   value={stage.label}
                   onChange={e => update(idx, "label", e.target.value)}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
+                  style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
                 />
               </div>
               <div>
@@ -304,7 +304,7 @@ function SourcesTab({ data, onChange }: { data: LeadSource[]; onChange: (d: Lead
               value={src.label}
               onChange={e => update(idx, "label", e.target.value)}
               className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
             />
             <ColorPicker value={src.color} onChange={v => update(idx, "color", v)} />
             <button onClick={() => remove(idx)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
@@ -350,7 +350,7 @@ function LeadTypesTab({ data, onChange }: { data: LeadTypeConfig[]; onChange: (d
               value={type.label}
               onChange={e => update(idx, "label", e.target.value)}
               className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
             />
             <ColorPicker value={type.color} onChange={v => update(idx, "color", v)} />
             <button onClick={() => remove(idx)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
@@ -401,12 +401,12 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
                 <td className="px-4 py-3">
                   <input value={tier.label} onChange={e => update(idx, "label", e.target.value)}
                     className="w-full px-2 py-1 rounded text-sm outline-none"
-                    style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+                    style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }} />
                 </td>
                 <td className="px-4 py-3">
                   <input type="number" value={tier.minQty} onChange={e => update(idx, "minQty", e.target.value)}
                     className="w-24 px-2 py-1 rounded text-sm outline-none"
-                    style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }} />
+                    style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }} />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -654,7 +654,7 @@ function QuoteTab({ data, onChange }: { data: CrmSettings["quote"]; onChange: (d
               value={data.currency}
               onChange={e => onChange({ ...data, currency: e.target.value })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
+              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
             >
               <option value="VND">VND — Việt Nam Đồng</option>
               <option value="USD">USD — US Dollar</option>
@@ -716,7 +716,7 @@ function EmailTab({ data, onChange }: { data: CrmSettings["email"]; onChange: (d
                 onChange={e => onChange({ ...data, smtpPassword: e.target.value })}
                 placeholder="••••••••"
                 className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#fff" }}
+                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
               />
               <button onClick={() => setShowPassword(v => !v)} className="p-2 rounded-lg hover:bg-gray-100 transition-all"
                 style={{ color: "#6b7280" }}>
@@ -808,7 +808,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
   const activeTabData = TABS.find(t => t.id === activeTab)!;
 
   return (
-    <div className="flex h-full" style={{ background: "#ffffff", color: "#fff" }}>
+    <div className="flex h-full" style={{ background: "#ffffff", color: "#111827" }}>
       {/* Left sidebar */}
       <div className="w-64 flex-shrink-0 flex flex-col"
         style={{ background: "#f8f9fb", borderRight: "1px solid #e5e7eb" }}>

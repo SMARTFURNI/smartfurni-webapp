@@ -5,7 +5,7 @@ import AutomationSettingsClient from "@/components/crm/automation/AutomationSett
 export default async function AutomationPage() {
   await requireSuperAdminCrm();
   return (
-    <div className="p-6" style={{ background: "#080806", minHeight: "100vh" }}>
+    <div className="p-6" style={{ background: "#f8f9fb", minHeight: "100vh" }}>
       <AutomationSettingsClient />
     </div>
   );
