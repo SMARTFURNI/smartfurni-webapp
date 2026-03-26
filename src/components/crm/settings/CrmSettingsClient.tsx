@@ -786,12 +786,32 @@ const ALL_KPI_CARDS: KpiCardId[] = [
 
 const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
   {
-    name: "Mặc định (Gold & Navy)",
+    name: "Clean Minimal (Mặc định)",
     theme: {
-      pageBg: "#F0F2F5", kpiCardBg: "#FFFFFF", kpiCardBorder: "#E4E7EC",
+      pageBg: "#F7F8FA", kpiCardBg: "#FFFFFF", kpiCardBorder: "#EAECF0",
+      kpiCardTitleColor: "#101828", kpiCardValueColor: "#101828", kpiCardMutedColor: "#667085",
       kpiCustomerColor: "#4F46E5", kpiPipelineColor: "#C9A84C",
       kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
-      dataPoolBannerBg: "#0F172A", dataPoolBtnBg: "#C9A84C",
+      dataPoolBannerBg: "#FFFFFF", dataPoolBannerText: "#101828", dataPoolBtnBg: "#C9A84C", dataPoolBtnText: "#FFFFFF",
+      summaryCardBg: "#FFFFFF", summaryCardBorder: "#EAECF0",
+      sectionCardBg: "#FFFFFF", sectionCardBorder: "#EAECF0",
+      sectionHeaderColor: "#101828", sectionBodyColor: "#344054",
+      quickLinkBg: "#F7F8FA", quickLinkIconColor: "#4F46E5",
+      accentColor: "#4F46E5", accentTextColor: "#FFFFFF",
+    },
+  },
+  {
+    name: "Gold & Navy (Cổ điển)",
+    theme: {
+      pageBg: "#F0F2F5", kpiCardBg: "#FFFFFF", kpiCardBorder: "#E4E7EC",
+      kpiCardTitleColor: "#101828", kpiCardValueColor: "#101828", kpiCardMutedColor: "#667085",
+      kpiCustomerColor: "#4F46E5", kpiPipelineColor: "#C9A84C",
+      kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
+      dataPoolBannerBg: "#0F172A", dataPoolBannerText: "#F1F5F9", dataPoolBtnBg: "#C9A84C", dataPoolBtnText: "#FFFFFF",
+      summaryCardBg: "#FFFFFF", summaryCardBorder: "#E4E7EC",
+      sectionCardBg: "#FFFFFF", sectionCardBorder: "#E4E7EC",
+      sectionHeaderColor: "#101828", sectionBodyColor: "#475467",
+      quickLinkBg: "#F9FAFB", quickLinkIconColor: "#C9A84C",
       accentColor: "#C9A84C", accentTextColor: "#FFFFFF",
     },
   },
@@ -799,9 +819,14 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
     name: "Xanh dương hiện đại",
     theme: {
       pageBg: "#EFF6FF", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BFDBFE",
+      kpiCardTitleColor: "#1E3A5F", kpiCardValueColor: "#1E3A5F", kpiCardMutedColor: "#64748B",
       kpiCustomerColor: "#2563EB", kpiPipelineColor: "#0EA5E9",
       kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
-      dataPoolBannerBg: "#1E3A5F", dataPoolBtnBg: "#2563EB",
+      dataPoolBannerBg: "#FFFFFF", dataPoolBannerText: "#1E3A5F", dataPoolBtnBg: "#2563EB", dataPoolBtnText: "#FFFFFF",
+      summaryCardBg: "#FFFFFF", summaryCardBorder: "#BFDBFE",
+      sectionCardBg: "#FFFFFF", sectionCardBorder: "#BFDBFE",
+      sectionHeaderColor: "#1E3A5F", sectionBodyColor: "#475467",
+      quickLinkBg: "#EFF6FF", quickLinkIconColor: "#2563EB",
       accentColor: "#2563EB", accentTextColor: "#FFFFFF",
     },
   },
@@ -812,10 +837,10 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
       kpiCardTitleColor: "#F1F5F9", kpiCardValueColor: "#F8FAFC", kpiCardMutedColor: "#94A3B8",
       kpiCustomerColor: "#818CF8", kpiPipelineColor: "#FBBF24",
       kpiWonColor: "#34D399", kpiOverdueColor: "#F87171",
-      dataPoolBannerBg: "#1E293B", dataPoolBannerText: "#F1F5F9", dataPoolBtnBg: "#FBBF24",
+      dataPoolBannerBg: "#1E293B", dataPoolBannerText: "#F1F5F9", dataPoolBtnBg: "#FBBF24", dataPoolBtnText: "#0F172A",
       sectionCardBg: "#1E293B", sectionCardBorder: "#334155",
       sectionHeaderColor: "#F1F5F9", sectionBodyColor: "#94A3B8",
-      taskCardBg: "#1E293B", quickLinkBg: "#0F172A",
+      taskCardBg: "#1E293B", quickLinkBg: "#0F172A", quickLinkIconColor: "#FBBF24",
       accentColor: "#FBBF24", accentTextColor: "#0F172A",
     },
   },
@@ -823,9 +848,14 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
     name: "Xanh lá tươi mát",
     theme: {
       pageBg: "#F0FDF4", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BBF7D0",
+      kpiCardTitleColor: "#14532D", kpiCardValueColor: "#14532D", kpiCardMutedColor: "#64748B",
       kpiCustomerColor: "#16A34A", kpiPipelineColor: "#CA8A04",
       kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
-      dataPoolBannerBg: "#14532D", dataPoolBtnBg: "#16A34A",
+      dataPoolBannerBg: "#FFFFFF", dataPoolBannerText: "#14532D", dataPoolBtnBg: "#16A34A", dataPoolBtnText: "#FFFFFF",
+      summaryCardBg: "#FFFFFF", summaryCardBorder: "#BBF7D0",
+      sectionCardBg: "#FFFFFF", sectionCardBorder: "#BBF7D0",
+      sectionHeaderColor: "#14532D", sectionBodyColor: "#475467",
+      quickLinkBg: "#F0FDF4", quickLinkIconColor: "#16A34A",
       accentColor: "#16A34A", accentTextColor: "#FFFFFF",
     },
   },
@@ -1045,7 +1075,12 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
             <div className="text-[10px] mb-1" style={{ color: data.kpiCardMutedColor }}>Doanh thu</div>
             <div className="text-lg font-bold" style={{ color: data.summaryRevenueColor }}>850tr</div>
           </div>
-          <div className="rounded-xl p-3 flex-1 min-w-[120px] flex items-center justify-between" style={{ background: data.dataPoolBannerBg }}>
+          <div className="rounded-xl p-3 flex-1 min-w-[120px] flex items-center justify-between"
+            style={{
+              background: data.dataPoolBannerBg,
+              border: `1px solid ${data.dataPoolBannerBg === "#FFFFFF" || data.dataPoolBannerBg === "#ffffff" ? data.kpiCardBorder : "transparent"}`,
+              borderLeft: `3px solid ${data.dataPoolBtnBg}`,
+            }}>
             <span className="text-xs font-medium" style={{ color: data.dataPoolBannerText }}>Data Pool</span>
             <span className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: data.dataPoolBtnBg, color: data.dataPoolBtnText }}>Nhận ngay</span>
           </div>
@@ -1068,7 +1103,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
             className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all"
             style={{
               background: activeGroup === tab.id ? "#ffffff" : "transparent",
-              color: activeGroup === tab.id ? "#C9A84C" : "#6b7280",
+              color: activeGroup === tab.id ? "#4F46E5" : "#6b7280",
               boxShadow: activeGroup === tab.id ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
             }}
           >
