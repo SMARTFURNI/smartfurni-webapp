@@ -58,6 +58,19 @@ export interface WebhookConfig {
   defaultStage: string;
   notifyOnNewLead: boolean;
   notifyEmail: string;
+  // ── Facebook Lead Ads ──────────────────────────────────────────────────────
+  /** Bật/tắt tích hợp Facebook Lead Ads */
+  fbEnabled: boolean;
+  /** Facebook App ID (lấy từ Meta for Developers) */
+  fbAppId: string;
+  /** Facebook App Secret (dùng để xác thực chữ ký webhook) */
+  fbAppSecret: string;
+  /** Verify Token (tự đặt, dùng khi đăng ký webhook trên Facebook) */
+  fbVerifyToken: string;
+  /** Page Access Token (lấy từ Facebook Page Settings → Integrations) */
+  fbPageAccessToken: string;
+  /** Tên Page Facebook đang kết nối */
+  fbPageName: string;
 }
 
 export interface NotificationConfig {
@@ -281,6 +294,12 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     defaultStage: "new",
     notifyOnNewLead: true,
     notifyEmail: "",
+    fbEnabled: false,
+    fbAppId: "",
+    fbAppSecret: "",
+    fbVerifyToken: "smartfurni_fb_webhook_2026",
+    fbPageAccessToken: "",
+    fbPageName: "",
   },
   notifications: {
     overdueThresholdDays: 3,

@@ -531,6 +531,154 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
         </div>
       </SectionCard>
 
+      {/* Facebook Lead Ads Integration */}
+      <SectionCard
+        title="Facebook Lead Ads"
+        icon={() => (
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="#1877F2">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+        )}
+      >
+        <div className="space-y-5">
+          {/* Toggle bật/tắt */}
+          <div className="flex items-center justify-between p-3 rounded-xl"
+            style={{ background: data.fbEnabled ? "rgba(24,119,242,0.06)" : "#f9fafb", border: `1px solid ${data.fbEnabled ? "rgba(24,119,242,0.2)" : "#e5e7eb"}` }}>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: data.fbEnabled ? "#1877F2" : "#374151" }}>
+                {data.fbEnabled ? "✅ Đang hoạt động" : "⚪ Tắt"}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>
+                {data.fbEnabled
+                  ? "Lead từ Facebook sẽ tự động đổ vào Data Pool"
+                  : "Bật để nhận lead từ Facebook Lead Ads"}
+              </p>
+            </div>
+            <button
+              onClick={() => onChange({ ...data, fbEnabled: !data.fbEnabled })}
+              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+              style={{ background: data.fbEnabled ? "#1877F2" : "#d1d5db" }}
+            >
+              <span
+                className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                style={{ transform: data.fbEnabled ? "translateX(1.375rem)" : "translateX(0.25rem)" }}
+              />
+            </button>
+          </div>
+
+          {/* Webhook URL để điền vào Facebook */}
+          <div>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+              Webhook URL (dán vào Facebook App → Webhooks)
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 px-3 py-2 rounded-lg text-xs font-mono truncate"
+                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#1877F2" }}>
+                {typeof window !== "undefined" ? `${window.location.origin}/api/webhooks/facebook-lead` : "https://yourdomain.com/api/webhooks/facebook-lead"}
+              </div>
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}/api/webhooks/facebook-lead`;
+                  navigator.clipboard.writeText(url);
+                }}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-all flex-shrink-0"
+                style={{ color: "#6b7280" }}
+                title="Sao chép"
+              >
+                <Copy size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* Verify Token */}
+          <div>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+              Verify Token (dán vào Facebook App → Webhooks → Verify Token)
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 px-3 py-2 rounded-lg text-sm font-mono"
+                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151" }}>
+                {data.fbVerifyToken || "smartfurni_fb_webhook_2026"}
+              </div>
+              <button
+                onClick={() => {
+                  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
+                  const token = "smartfurni_" + Array.from({ length: 20 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+                  onChange({ ...data, fbVerifyToken: token });
+                }}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-all"
+                style={{ color: "#6b7280" }}
+                title="Tạo token mới"
+              >
+                <RefreshCw size={14} />
+              </button>
+              <button
+                onClick={() => navigator.clipboard.writeText(data.fbVerifyToken || "smartfurni_fb_webhook_2026")}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-all"
+                style={{ color: "#6b7280" }}
+                title="Sao chép"
+              >
+                <Copy size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* App ID + App Secret */}
+          <div className="grid grid-cols-2 gap-4">
+            <InputField
+              label="App ID"
+              value={data.fbAppId || ""}
+              onChange={v => onChange({ ...data, fbAppId: v })}
+              placeholder="123456789012345"
+            />
+            <div>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>App Secret</label>
+              <input
+                type="password"
+                value={data.fbAppSecret || ""}
+                onChange={e => onChange({ ...data, fbAppSecret: e.target.value })}
+                placeholder="••••••••••••"
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#111827" }}
+                onFocus={e => { e.currentTarget.style.borderColor = "#1877F2"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(24,119,242,0.1)"; }}
+                onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.boxShadow = "none"; }}
+              />
+              <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>Dùng để xác thực chữ ký webhook</p>
+            </div>
+          </div>
+
+          {/* Page Access Token */}
+          <InputField
+            label="Page Access Token (tùy chọn — dùng để lấy chi tiết lead qua API)"
+            value={data.fbPageAccessToken || ""}
+            onChange={v => onChange({ ...data, fbPageAccessToken: v })}
+            placeholder="EAABsbCS..."
+          />
+
+          {/* Page Name */}
+          <InputField
+            label="Tên Facebook Page"
+            value={data.fbPageName || ""}
+            onChange={v => onChange({ ...data, fbPageName: v })}
+            placeholder="SmartFurni Official"
+          />
+
+          {/* Hướng dẫn ngắn */}
+          <div className="p-4 rounded-xl space-y-2"
+            style={{ background: "rgba(24,119,242,0.04)", border: "1px solid rgba(24,119,242,0.15)" }}>
+            <p className="text-xs font-semibold" style={{ color: "#1877F2" }}>Hướng dẫn kết nối nhanh</p>
+            <ol className="text-xs space-y-1.5 list-decimal list-inside" style={{ color: "#6b7280" }}>
+              <li>Vào <strong style={{ color: "#374151" }}>Meta for Developers</strong> → Tạo App mới (loại Business)</li>
+              <li>Vào <strong style={{ color: "#374151" }}>App → Webhooks</strong> → Chọn sự kiện <code style={{ background: "#f3f4f6", padding: "1px 4px", borderRadius: 3 }}>leadgen</code></li>
+              <li>Dán <strong style={{ color: "#374151" }}>Webhook URL</strong> và <strong style={{ color: "#374151" }}>Verify Token</strong> ở trên vào Facebook</li>
+              <li>Sao chép <strong style={{ color: "#374151" }}>App ID</strong> và <strong style={{ color: "#374151" }}>App Secret</strong> từ trang App Dashboard</li>
+              <li>Bật toggle “Đang hoạt động” → Nhấn <strong style={{ color: "#374151" }}>Lưu cài đặt</strong></li>
+              <li>Test bằng cách gửi lead thử từ Facebook Lead Ads Manager</li>
+            </ol>
+          </div>
+        </div>
+      </SectionCard>
+
       <SectionCard title="Hướng dẫn tích hợp Make.com / n8n" icon={FileText}>
         <div className="space-y-3 text-sm" style={{ color: "#6b7280" }}>
           <p>Gửi <strong className="text-gray-900">POST</strong> request đến webhook URL với header:</p>
