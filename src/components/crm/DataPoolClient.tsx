@@ -80,20 +80,67 @@ function formatDate(iso: string) {
   return d.toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+// ─── Source Option Card ───────────────────────────────────────────────────────
+const SOURCE_OPTIONS: { value: RawLeadSource; label: string; desc: string; color: string; bg: string; border: string }[] = [
+  {
+    value: "facebook_lead",
+    label: "Facebook Lead",
+    desc: "Từ Facebook Lead Ads",
+    color: "#1877F2",
+    bg: "#EFF6FF",
+    border: "#BFDBFE",
+  },
+  {
+    value: "tiktok_lead",
+    label: "TikTok Lead",
+    desc: "Từ TikTok Lead Gen",
+    color: "#111827",
+    bg: "#F9FAFB",
+    border: "#E5E7EB",
+  },
+  {
+    value: "manual",
+    label: "Nhập tay",
+    desc: "Data nhập trực tiếp",
+    color: "#C9A84C",
+    bg: "#FFFBEB",
+    border: "#FDE68A",
+  },
+  {
+    value: "other",
+    label: "Khác",
+    desc: "Nguồn khác",
+    color: "#6B7280",
+    bg: "#F9FAFB",
+    border: "#E5E7EB",
+  },
+];
+
 // ─── Add Raw Lead Modal (admin only) ─────────────────────────────────────────
 function AddRawLeadModal({ onClose, onAdded }: { onClose: () => void; onAdded: () => void }) {
+  const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState({
     source: "manual" as RawLeadSource,
     fullName: "", phone: "", email: "",
     adName: "", campaignName: "", message: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.fullName.trim()) { setError("Vui lòng nhập tên khách hàng"); return; }
-    setLoading(true); setError("");
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!form.fullName.trim()) e.fullName = "Bắt buộc nhập tên";
+    if (form.phone && !/^[0-9+\s()-]{8,15}$/.test(form.phone.trim())) e.phone = "Số điện thoại không hợp lệ";
+    if (form.email && !/^[^@]+@[^@]+\.[^@]+$/.test(form.email.trim())) e.email = "Email không hợp lệ";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const submit = async () => {
+    if (!validate()) return;
+    setLoading(true); setSubmitError("");
     try {
       const res = await fetch("/api/crm/raw-leads", {
         method: "POST",
@@ -109,86 +156,325 @@ function AddRawLeadModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
         }),
       });
       if (!res.ok) throw new Error(await res.text());
-      onAdded();
-      onClose();
+      setSuccess(true);
+      setTimeout(() => { onAdded(); onClose(); }, 1200);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Có lỗi xảy ra");
+      setSubmitError(e instanceof Error ? e.message : "Có lỗi xảy ra");
     } finally {
       setLoading(false);
     }
   };
 
+  const selectedSource = SOURCE_OPTIONS.find(s => s.value === form.source)!;
+
+  const Field = ({
+    label, name, type = "text", placeholder, required, hint
+  }: {
+    label: string; name: keyof typeof form; type?: string;
+    placeholder?: string; required?: boolean; hint?: string;
+  }) => (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="text-xs font-semibold text-gray-700">
+          {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+        </label>
+        {hint && <span className="text-[10px] text-gray-400">{hint}</span>}
+      </div>
+      <input
+        type={type}
+        value={form[name] as string}
+        onChange={e => {
+          setForm(f => ({ ...f, [name]: e.target.value }));
+          if (errors[name]) setErrors(prev => { const n = { ...prev }; delete n[name]; return n; });
+        }}
+        placeholder={placeholder}
+        className="w-full px-3.5 py-2.5 text-sm text-gray-900 rounded-xl transition-all"
+        style={{
+          border: errors[name] ? "1.5px solid #EF4444" : "1.5px solid #E5E7EB",
+          outline: "none",
+          background: errors[name] ? "#FFF5F5" : "#FAFAFA",
+          boxShadow: errors[name] ? "0 0 0 3px rgba(239,68,68,0.08)" : undefined,
+        }}
+        onFocus={e => { if (!errors[name]) e.target.style.border = "1.5px solid #C9A84C"; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
+        onBlur={e => { e.target.style.border = errors[name] ? "1.5px solid #EF4444" : "1.5px solid #E5E7EB"; e.target.style.boxShadow = ""; }}
+      />
+      {errors[name] && (
+        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+          <AlertCircle size={10} /> {errors[name]}
+        </p>
+      )}
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4" style={{ border: "1px solid #e5e7eb" }}>
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #f3f4f6" }}>
-          <h3 className="text-base font-bold text-gray-900">Thêm data thủ công</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="bg-white w-full max-w-xl flex flex-col"
+        style={{
+          borderRadius: "20px",
+          boxShadow: "0 25px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)",
+          maxHeight: "90vh",
+          overflow: "hidden",
+        }}
+      >
+        {/* ── Header ── */}
+        <div
+          className="flex items-center justify-between px-6 py-5 flex-shrink-0"
+          style={{
+            background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+            borderRadius: "20px 20px 0 0",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: "rgba(201,168,76,0.2)", border: "1px solid rgba(201,168,76,0.3)" }}
+            >
+              <Database size={18} style={{ color: "#C9A84C" }} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Thêm data thủ công</h3>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Nhập data khách hàng vào Data Pool</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Step indicator */}
+            <div className="flex items-center gap-1.5">
+              {[1, 2].map(s => (
+                <div key={s}
+                  className="flex items-center justify-center text-[10px] font-bold transition-all"
+                  style={{
+                    width: step === s ? 24 : 20,
+                    height: step === s ? 24 : 20,
+                    borderRadius: "50%",
+                    background: step >= s ? "#C9A84C" : "rgba(255,255,255,0.15)",
+                    color: step >= s ? "#fff" : "rgba(255,255,255,0.4)",
+                  }}
+                >{s}</div>
+              ))}
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+              style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
-        <form onSubmit={submit} className="p-6 space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg text-sm" style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}>
-              <AlertCircle size={14} /> {error}
+
+        {/* ── Body ── */}
+        <div className="flex-1 overflow-y-auto">
+          {success ? (
+            // ── Success State ──
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                style={{ background: "#D1FAE5" }}
+              >
+                <CheckCircle2 size={32} style={{ color: "#059669" }} />
+              </div>
+              <h4 className="text-lg font-bold text-gray-900 mb-1">Đã thêm thành công!</h4>
+              <p className="text-sm text-gray-500">Data đã được thêm vào Data Pool và sẵn sàng để nhân viên nhận.</p>
+            </div>
+          ) : step === 1 ? (
+            // ── Step 1: Chọn nguồn ──
+            <div className="p-6">
+              <div className="mb-5">
+                <h4 className="text-sm font-bold text-gray-900 mb-1">Bước 1 — Chọn nguồn data</h4>
+                <p className="text-xs text-gray-500">Data đến từ kênh nào? Thông tin này giúp phân tích hiệu quả từng kênh.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {SOURCE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, source: opt.value }))}
+                    className="relative p-4 rounded-2xl text-left transition-all"
+                    style={{
+                      background: form.source === opt.value ? opt.bg : "#FAFAFA",
+                      border: form.source === opt.value ? `2px solid ${opt.color}` : "2px solid #F3F4F6",
+                      boxShadow: form.source === opt.value ? `0 4px 16px ${opt.color}20` : "none",
+                    }}
+                  >
+                    {/* Source icon */}
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+                      style={{ background: `${opt.color}15`, border: `1px solid ${opt.color}25` }}
+                    >
+                      {opt.value === "facebook_lead" && (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={opt.color}>
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                      )}
+                      {opt.value === "tiktok_lead" && (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={opt.color}>
+                          <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+                        </svg>
+                      )}
+                      {opt.value === "manual" && <Database size={20} style={{ color: opt.color }} />}
+                      {opt.value === "other" && <Plus size={20} style={{ color: opt.color }} />}
+                    </div>
+                    <p className="text-sm font-bold text-gray-900">{opt.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                    {/* Check */}
+                    {form.source === opt.value && (
+                      <div
+                        className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{ background: opt.color }}
+                      >
+                        <Check size={11} color="#fff" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            // ── Step 2: Nhập thông tin ──
+            <div className="p-6 space-y-4">
+              {/* Source recap */}
+              <div
+                className="flex items-center gap-3 p-3 rounded-xl"
+                style={{ background: `${selectedSource.color}0D`, border: `1px solid ${selectedSource.color}25` }}
+              >
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${selectedSource.color}20` }}
+                >
+                  {selectedSource.value === "facebook_lead" && <Facebook size={14} style={{ color: selectedSource.color }} />}
+                  {selectedSource.value === "tiktok_lead" && <Smartphone size={14} style={{ color: selectedSource.color }} />}
+                  {selectedSource.value === "manual" && <Database size={14} style={{ color: selectedSource.color }} />}
+                  {selectedSource.value === "other" && <Plus size={14} style={{ color: selectedSource.color }} />}
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold" style={{ color: selectedSource.color }}>{selectedSource.label}</p>
+                  <p className="text-[10px] text-gray-400">{selectedSource.desc}</p>
+                </div>
+                <button
+                  onClick={() => setStep(1)}
+                  className="text-xs font-medium px-2 py-1 rounded-lg transition-colors"
+                  style={{ color: selectedSource.color, background: `${selectedSource.color}15` }}
+                >
+                  Đổi
+                </button>
+              </div>
+
+              <div className="mb-1">
+                <h4 className="text-sm font-bold text-gray-900 mb-0.5">Bước 2 — Thông tin khách hàng</h4>
+                <p className="text-xs text-gray-500">Điền thông tin liên hệ của khách hàng.</p>
+              </div>
+
+              {submitError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl text-sm"
+                  style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}>
+                  <AlertCircle size={14} className="flex-shrink-0" /> {submitError}
+                </div>
+              )}
+
+              {/* Thông tin cơ bản */}
+              <div
+                className="p-4 rounded-2xl space-y-3"
+                style={{ background: "#F9FAFB", border: "1px solid #F3F4F6" }}
+              >
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Thông tin liên hệ</p>
+                <Field label="Họ và tên" name="fullName" placeholder="VD: Nguyễn Văn A" required />
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Số điện thoại" name="phone" placeholder="0912 345 678" hint="Không bắt buộc" />
+                  <Field label="Email" name="email" type="email" placeholder="email@example.com" hint="Không bắt buộc" />
+                </div>
+              </div>
+
+              {/* Thông tin quảng cáo */}
+              <div
+                className="p-4 rounded-2xl space-y-3"
+                style={{ background: "#F9FAFB", border: "1px solid #F3F4F6" }}
+              >
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Thông tin quảng cáo <span className="normal-case font-normal">(tuỳ chọn)</span></p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Tên quảng cáo" name="adName" placeholder="VD: Ad_Gường_CT_HCM" />
+                  <Field label="Chiến dịch" name="campaignName" placeholder="VD: Campaign_Q1_2026" />
+                </div>
+              </div>
+
+              {/* Ghi chú */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-gray-700">Ghi chú</label>
+                  <span className="text-[10px] text-gray-400">{form.message.length}/300</span>
+                </div>
+                <textarea
+                  value={form.message}
+                  onChange={e => setForm(f => ({ ...f, message: e.target.value.slice(0, 300) }))}
+                  placeholder="Ghi chú thêm về khách hàng này..."
+                  rows={3}
+                  className="w-full px-3.5 py-2.5 text-sm text-gray-900 rounded-xl resize-none transition-all"
+                  style={{ border: "1.5px solid #E5E7EB", outline: "none", background: "#FAFAFA" }}
+                  onFocus={e => { e.target.style.border = "1.5px solid #C9A84C"; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
+                  onBlur={e => { e.target.style.border = "1.5px solid #E5E7EB"; e.target.style.boxShadow = ""; }}
+                />
+              </div>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Nguồn *</label>
-              <select value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value as RawLeadSource }))}
-                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none bg-white">
-                <option value="facebook_lead">Facebook Lead</option>
-                <option value="tiktok_lead">TikTok Lead</option>
-                <option value="manual">Nhập tay</option>
-                <option value="other">Khác</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Tên khách hàng *</label>
-              <input value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} required
-                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
-            </div>
+        </div>
+
+        {/* ── Footer ── */}
+        {!success && (
+          <div
+            className="flex items-center gap-3 px-6 py-4 flex-shrink-0"
+            style={{ borderTop: "1px solid #F3F4F6", background: "#FAFAFA", borderRadius: "0 0 20px 20px" }}
+          >
+            {step === 1 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-white transition-all flex items-center justify-center gap-2"
+                  style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}
+                >
+                  Tiếp theo
+                  <ArrowRight size={14} />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="py-2.5 px-5 text-sm font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1.5"
+                >
+                  <ChevronLeft size={14} /> Quay lại
+                </button>
+                <button
+                  type="button"
+                  onClick={submit}
+                  disabled={loading}
+                  className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-white transition-all flex items-center justify-center gap-2"
+                  style={{
+                    background: loading ? "#9ca3af" : "linear-gradient(135deg, #C9A84C, #9A7A2E)",
+                    boxShadow: loading ? "none" : "0 4px 14px rgba(201,168,76,0.35)",
+                  }}
+                >
+                  {loading ? (
+                    <><RefreshCw size={14} className="animate-spin" /> Đang lưu...</>
+                  ) : (
+                    <><Database size={14} /> Thêm vào Data Pool</>
+                  )}
+                </button>
+              </>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Số điện thoại</label>
-              <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Email</label>
-              <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Tên quảng cáo</label>
-              <input value={form.adName} onChange={e => setForm(f => ({ ...f, adName: e.target.value }))}
-                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Chiến dịch</label>
-              <input value={form.campaignName} onChange={e => setForm(f => ({ ...f, campaignName: e.target.value }))}
-                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Ghi chú</label>
-            <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={2}
-              className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none" />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
-              Hủy
-            </button>
-            <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-white transition-all"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)", opacity: loading ? 0.7 : 1 }}>
-              {loading ? "Đang lưu..." : "Thêm data"}
-            </button>
-          </div>
-        </form>
+        )}
       </div>
     </div>
   );
