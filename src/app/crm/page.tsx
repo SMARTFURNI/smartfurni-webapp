@@ -20,13 +20,13 @@ export default async function CrmDashboardPage() {
   const staffId = currentStaff?.id ?? null;
 
   // Admin thấy tất cả, nhân viên chỉ thấy leads được giao cho mình
-  const assignedToFilter = (!session.isAdmin && staffName) ? staffName : undefined;
+  const staffFilter = (!session.isAdmin && staffName) ? { assignedTo: staffName } : undefined;
 
   const [leads, tasks, quotes, stats] = await Promise.all([
-    getLeads(assignedToFilter ? { assignedTo: assignedToFilter } : undefined),
-    getTasks({ dueToday: true }),
+    getLeads(staffFilter),
+    getTasks({ dueToday: true, ...(staffFilter ?? {}) }),
     getQuotes(),
-    getCrmStats(),
+    getCrmStats(staffFilter),
   ]);
 
   return (

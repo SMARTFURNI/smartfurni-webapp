@@ -313,7 +313,7 @@ export async function deleteQuote(id: string): Promise<void> {
 
 // ─── Tasks CRUD ───────────────────────────────────────────────────────────────
 
-export async function getTasks(filters?: { leadId?: string; done?: boolean; dueToday?: boolean }): Promise<CrmTask[]> {
+export async function getTasks(filters?: { leadId?: string; done?: boolean; dueToday?: boolean; assignedTo?: string }): Promise<CrmTask[]> {
   await initCrmSchema();
   let sql = `SELECT data FROM crm_tasks`;
   const conditions: string[] = [];
@@ -324,6 +324,10 @@ export async function getTasks(filters?: { leadId?: string; done?: boolean; dueT
   if (filters?.done !== undefined) { conditions.push(`done = $${idx++}`); params.push(filters.done); }
   if (filters?.dueToday) {
     conditions.push(`due_date <= CURRENT_DATE AND done = FALSE`);
+  }
+  if (filters?.assignedTo) {
+    conditions.push(`data->>'assignedTo' = $${idx++}`);
+    params.push(filters.assignedTo);
   }
 
   if (conditions.length > 0) sql += ` WHERE ${conditions.join(" AND ")}`;
@@ -364,10 +368,10 @@ export async function deleteTask(id: string): Promise<void> {
 
 // ─── CRM Stats ────────────────────────────────────────────────────────────────
 
-export async function getCrmStats(): Promise<CrmStats> {
+export async function getCrmStats(staffFilter?: { assignedTo?: string }): Promise<CrmStats> {
   await initCrmSchema();
 
-  const leads = await getLeads();
+  const leads = await getLeads(staffFilter);
   const now = new Date();
   const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
 
@@ -404,7 +408,7 @@ export async function getCrmStats(): Promise<CrmStats> {
   const totalClosed = wonCount + (byStage["lost"] || 0);
   const conversionRate = totalClosed > 0 ? Math.round((wonCount / totalClosed) * 100) : 0;
 
-  const todayTaskRows = await getTasks({ dueToday: true });
+  const todayTaskRows = await getTasks({ dueToday: true, ...(staffFilter?.assignedTo ? { assignedTo: staffFilter.assignedTo } : {}) });
 
   const activityRows = await query<{ data: Activity | string }>(
     `SELECT data FROM crm_activities ORDER BY created_at DESC LIMIT 10`
