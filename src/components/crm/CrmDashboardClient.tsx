@@ -433,15 +433,15 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         {focusItems.length > 0 && (
           <div className="rounded-2xl p-4"
             style={{
-              background: darkMode ? "linear-gradient(135deg, #1E293B, #1E3A5F)" : "linear-gradient(135deg, #1E3A5F, #2D5A8E)",
-              border: "1px solid rgba(201,168,76,0.25)",
-              boxShadow: "0 4px 20px rgba(30,58,95,0.25)",
+              background: darkMode ? "#1E2022" : "#FFFFFF",
+              border: `1px solid ${T.gold}40`,
+              boxShadow: "0 1px 4px rgba(16,24,40,0.06)",
             }}>
             <div className="flex items-center gap-2 mb-3">
               <Crosshair size={14} style={{ color: T.gold }} />
-              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: T.gold }}>Focus hôm nay</span>
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: darkMode ? T.gold : T.textPrimary }}>Focus hôm nay</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                style={{ background: "rgba(201,168,76,0.15)", color: T.gold }}>
+                style={{ background: `${T.gold}18`, color: T.gold }}>
                 {focusItems.length} việc ưu tiên
               </span>
             </div>
@@ -449,16 +449,16 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               {focusItems.map((item, i) => (
                 <Link key={i} href={item.href}
                   className="flex items-center gap-3 p-3 rounded-xl hover:opacity-90 transition-opacity"
-                  style={{ background: "rgba(255,255,255,0.05)", border: `1px solid rgba(255,255,255,0.08)` }}>
+                  style={{ background: darkMode ? "rgba(255,255,255,0.05)" : "#F9FAFB", border: `1px solid ${darkMode ? "rgba(255,255,255,0.08)" : T.cardBorder}` }}>
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: `${item.color}20` }}>
                     <item.icon size={13} style={{ color: item.color }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold truncate text-white">{item.label}</p>
-                    <p className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.45)" }}>{item.sub}</p>
+                    <p className="text-xs font-semibold truncate" style={{ color: darkMode ? "#FFFFFF" : T.textPrimary }}>{item.label}</p>
+                    <p className="text-[10px] truncate" style={{ color: darkMode ? "rgba(255,255,255,0.45)" : T.textMuted }}>{item.sub}</p>
                   </div>
-                  <ArrowRight size={12} style={{ color: "rgba(255,255,255,0.3)" }} className="flex-shrink-0 ml-auto" />
+                  <ArrowRight size={12} style={{ color: darkMode ? "rgba(255,255,255,0.3)" : T.textMuted }} className="flex-shrink-0 ml-auto" />
                 </Link>
               ))}
             </div>
@@ -546,37 +546,37 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         {/* ── Data Pool Banner ─────────────────────────────────────────── */}
         {isVisible("dataPool") && poolStats !== null && poolStats.pending > 0 && (
           <Link href="/crm/data-pool"
-            className="block rounded-2xl overflow-hidden transition-all hover:shadow-lg"
+            className="block rounded-2xl overflow-hidden transition-all hover:shadow-md"
             style={{
-              background: theme.dataPoolBannerBg,
-              border: `1px solid ${theme.accentColor}40`,
-              boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+              background: darkMode ? "#1E2022" : "#FFFFFF",
+              border: `1px solid ${T.gold}40`,
+              boxShadow: "0 1px 4px rgba(16,24,40,0.06)",
             }}>
             <div className="px-6 py-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)" }}>
+                  style={{ background: `${T.gold}15`, border: `1px solid ${T.gold}30` }}>
                   <Database size={20} style={{ color: theme.dataPoolBtnBg }} />
                   <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-                    style={{ background: theme.kpiOverdueColor, boxShadow: `0 0 0 2px ${theme.dataPoolBannerBg}` }}>
+                    style={{ background: theme.kpiOverdueColor, boxShadow: `0 0 0 2px ${darkMode ? "#1E2022" : "#FFFFFF"}` }}>
                     {poolStats.pending > 9 ? "9+" : poolStats.pending}
                   </span>
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="font-bold text-sm" style={{ color: theme.dataPoolBannerText }}>Data Pool</span>
+                    <span className="font-bold text-sm" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>Data Pool</span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black flex-shrink-0"
                       style={{ background: theme.kpiOverdueColor, color: "#fff" }}>
                       {poolStats.pending} chờ nhận
                     </span>
                   </div>
-                  <p className="text-xs truncate" style={{ color: theme.dataPoolBannerText + "88" }}>
-                    <span className="font-bold" style={{ color: theme.dataPoolBtnBg }}>{poolStats.pending}</span> data chưa có người nhận
+                  <p className="text-xs truncate" style={{ color: darkMode ? "rgba(241,245,249,0.6)" : T.textMuted }}>
+                    <span className="font-bold" style={{ color: T.gold }}>{poolStats.pending}</span> data chưa có người nhận
                     {poolStats.bySource.length > 0 && (
-                      <span style={{ color: "rgba(255,255,255,0.35)" }}>
+                      <span style={{ color: darkMode ? "rgba(255,255,255,0.35)" : T.textMuted }}>
                         {" — "}{poolStats.bySource.slice(0, 2).map((s, i) => (
                           <span key={s.source}>{i > 0 && ", "}
-                            <span style={{ color: "rgba(255,255,255,0.65)" }}>
+                            <span style={{ color: darkMode ? "rgba(255,255,255,0.65)" : T.textSecondary }}>
                               {s.source === "facebook_lead" ? "Facebook" : s.source === "tiktok_lead" ? "TikTok" : s.source === "manual" ? "Nhập tay" : s.source}
                             </span> ({s.count})
                           </span>
@@ -594,12 +594,12 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             {poolStats.total > 0 && (
               <div className="px-6 pb-4">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>Tiến độ xử lý</span>
-                  <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  <span className="text-[10px]" style={{ color: darkMode ? "rgba(255,255,255,0.35)" : T.textMuted }}>Tiến độ xử lý</span>
+                  <span className="text-[10px] font-semibold" style={{ color: darkMode ? "rgba(255,255,255,0.55)" : T.textSecondary }}>
                     {poolStats.claimed + poolStats.converted}/{poolStats.total} đã xử lý
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: darkMode ? "rgba(255,255,255,0.08)" : "#F3F4F6" }}>
                   <div className="h-full rounded-full"
                     style={{ width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`, background: theme.dataPoolBtnBg, transition: "width 0.7s ease" }} />
                 </div>
