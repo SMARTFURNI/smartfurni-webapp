@@ -75,6 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Marketing",
     items: [
       { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true },
+      { label: "Email Automation", href: "/crm/email-automation", icon: Zap, adminOnly: true },
       { label: "Facebook Lead Ads", href: "/crm/integrations/facebook", icon: Share2, superAdminOnly: true },
       { label: "Google Sheet Sync", href: "/crm/integrations/google-sheet", icon: Sheet, superAdminOnly: true },
     ],
