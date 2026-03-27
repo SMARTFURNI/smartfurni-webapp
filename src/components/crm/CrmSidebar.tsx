@@ -29,6 +29,7 @@ import {
   Database,
   Share2,
   Sheet,
+  Zap,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -96,6 +97,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tự động hóa",
     items: [
+      { label: "AI Agent", href: "/crm/ai-agent", icon: Zap, superAdminOnly: true },
       { label: "Automation Rules", href: "/crm/automation", icon: Bot, superAdminOnly: true },
     ],
     superAdminOnly: true,
