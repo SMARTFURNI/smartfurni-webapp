@@ -237,17 +237,17 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 return (
                   <tr
                     key={lead.id}
-                    className="hover:bg-amber-50/20 transition-colors"
+                    className="hover:bg-gradient-to-r hover:from-amber-50/30 hover:to-blue-50/30 transition-all duration-300 hover:shadow-sm"
                     style={{
                       borderBottom: "1px solid #f3f4f6",
-                      borderLeft: overdue ? "3px solid #ef4444" : "3px solid transparent",
+                      borderLeft: overdue ? "4px solid #ef4444" : "4px solid #3b82f6",
                     }}>
                     {/* Customer */}
                     <td className="px-4 py-3">
                       <Link href={`/crm/leads/${lead.id}`} className="block group">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                            style={{ background: overdue ? "#ef4444" : TYPE_COLORS[lead.type] }}>
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-md"
+                            style={{ background: overdue ? "linear-gradient(135deg, #ef4444, #dc2626)" : `linear-gradient(135deg, ${TYPE_COLORS[lead.type]}, ${TYPE_COLORS[lead.type]}dd)` }}>
                             {lead.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
