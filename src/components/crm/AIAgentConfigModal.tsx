@@ -39,23 +39,51 @@ export const AIAgentConfigModal: React.FC<AIAgentConfigModalProps> = ({ isOpen, 
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Simulate API call to save configuration
+      // Validate required fields
+      if (!config.gemini.apiKey) {
+        setMessage({ type: 'error', text: 'Vui lòng nhập Gemini API Key' });
+        setLoading(false);
+        return;
+      }
+
+      if (!config.email.email || !config.email.appPassword) {
+        setMessage({ type: 'error', text: 'Vui lòng nhập Email và App Password' });
+        setLoading(false);
+        return;
+      }
+
+      if (!config.zalo.oaId || !config.zalo.accessToken) {
+        setMessage({ type: 'error', text: 'Vui lòng nhập Zalo OA ID và Access Token' });
+        setLoading(false);
+        return;
+      }
+
+      if (!config.facebook.appId || !config.facebook.appSecret) {
+        setMessage({ type: 'error', text: 'Vui lòng nhập Facebook App ID và App Secret' });
+        setLoading(false);
+        return;
+      }
+
+      // Call API to save configuration
       const response = await fetch('/api/ai-agent/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Cấu hình đã được lưu thành công!' });
+        setMessage({ type: 'success', text: 'Cấu hình đã được lưu thành công! ✅' });
         setTimeout(() => {
           onClose();
           setMessage(null);
         }, 2000);
       } else {
-        setMessage({ type: 'error', text: 'Lỗi khi lưu cấu hình. Vui lòng thử lại.' });
+        setMessage({ type: 'error', text: data.error || 'Lỗi khi lưu cấu hình. Vui lòng thử lại.' });
       }
     } catch (error) {
+      console.error('Config save error:', error);
       setMessage({ type: 'error', text: 'Lỗi kết nối. Vui lòng kiểm tra kết nối mạng.' });
     } finally {
       setLoading(false);
