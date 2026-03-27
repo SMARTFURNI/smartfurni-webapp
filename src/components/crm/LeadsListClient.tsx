@@ -13,7 +13,7 @@ import {
   formatVND, isOverdue,
 } from "@/lib/crm-types";
 import AddLeadModal from "./AddLeadModal";
-import ZaloContactButton from "./high-performance-features/ZaloContactButton";
+import CustomerContactActions from "./high-performance-features/CustomerContactActions";
 
 interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; }
 
@@ -305,7 +305,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
-                        <ZaloContactButton lead={lead} className="w-auto" />
+                        <CustomerContactActions lead={lead} />
                         <Link href={`/crm/leads/${lead.id}`}
                           className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors"
                           title="Xem chi tiết">
