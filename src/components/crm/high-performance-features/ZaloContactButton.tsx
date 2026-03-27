@@ -1,30 +1,29 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MessageCircle, Copy, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { MessageCircle, Copy, CheckCircle2, ExternalLink } from 'lucide-react';
 import type { Lead } from '@/lib/crm-types';
 
 interface ZaloContactButtonProps {
   lead: Lead;
-  staffName?: string;
-  staffZaloPhone?: string;
   className?: string;
 }
 
 export default function ZaloContactButton({
   lead,
-  staffName = 'Nhân viên',
-  staffZaloPhone,
   className = '',
 }: ZaloContactButtonProps) {
   const [copied, setCopied] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  if (!staffZaloPhone) {
+  // Sử dụng số Zalo của khách hàng
+  const zaloPhone = lead.zaloPhone || lead.phone;
+
+  if (!zaloPhone) {
     return (
       <button
         disabled
-        title="Nhân viên chưa cấu hình số Zalo"
+        title="Khách hàng chưa có số Zalo"
         className={`
           inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 font-medium
           transition-all duration-200 text-sm whitespace-nowrap
@@ -39,11 +38,12 @@ export default function ZaloContactButton({
     );
   }
 
-  const zaloLink = `https://zalo.me/${staffZaloPhone}`;
-  const zaloMessage = `Xin chào ${lead.name}, tôi là ${staffName} của SmartFurni. Hãy kết bạn để nhận thông tin sản phẩm tốt nhất!`;
+  // Chuẩn hóa số điện thoại Zalo
+  const normalizedPhone = zaloPhone.replace(/\D/g, '');
+  const zaloLink = `https://zalo.me/${normalizedPhone}`;
 
   const handleCopyPhone = () => {
-    navigator.clipboard.writeText(staffZaloPhone);
+    navigator.clipboard.writeText(normalizedPhone);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -56,7 +56,7 @@ export default function ZaloContactButton({
     <div className="relative">
       <button
         onClick={() => setShowMenu(!showMenu)}
-        title={`Kết bạn Zalo với ${staffName}`}
+        title={`Kết bạn Zalo với ${lead.name}`}
         className={`
           inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 font-medium
           transition-all duration-200 text-sm whitespace-nowrap
@@ -65,17 +65,20 @@ export default function ZaloContactButton({
         `}
       >
         <MessageCircle className="w-4 h-4" />
-        <span>Zalo {staffName}</span>
+        <span>Kết Bạn Zalo</span>
       </button>
 
       {/* Dropdown Menu */}
       {showMenu && (
-        <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+        <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
           {/* Header */}
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="text-xs font-semibold text-gray-600">KẾT BẠN ZALO</p>
-            <p className="text-sm font-medium text-gray-900 mt-1">{staffName}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{staffZaloPhone}</p>
+            <p className="text-sm font-medium text-gray-900 mt-1">{lead.name}</p>
+            {lead.company && (
+              <p className="text-xs text-gray-500 mt-0.5">{lead.company}</p>
+            )}
+            <p className="text-sm font-mono text-blue-600 mt-1">{normalizedPhone}</p>
           </div>
 
           {/* Actions */}
@@ -120,8 +123,8 @@ export default function ZaloContactButton({
 
           {/* Footer */}
           <div className="px-4 py-2 border-t border-gray-100 bg-gray-50 text-xs text-gray-600">
-            <p>Khách hàng: <span className="font-medium">{lead.name}</span></p>
-            <p>SĐT: <span className="font-medium">{lead.phone}</span></p>
+            <p>Loại: <span className="font-medium">{lead.type}</span></p>
+            <p>Giai đoạn: <span className="font-medium">{lead.stage}</span></p>
           </div>
         </div>
       )}

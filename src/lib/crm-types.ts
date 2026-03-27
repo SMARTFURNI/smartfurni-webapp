@@ -23,6 +23,7 @@ export interface Lead {
   name: string;
   company: string;
   phone: string;
+  zaloPhone?: string;        // Số Zalo của khách hàng
   email: string;
   type: LeadType;
   stage: LeadStage;
