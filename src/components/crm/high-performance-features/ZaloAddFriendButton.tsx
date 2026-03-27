@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { MessageCircle, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Lead } from '@/lib/types';
+import type { Lead } from '@/lib/crm-types';
 
 interface ZaloAddFriendButtonProps {
   lead: Lead;
