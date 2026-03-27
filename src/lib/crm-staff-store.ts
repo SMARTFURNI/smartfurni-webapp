@@ -49,6 +49,7 @@ export interface StaffMember {
   fullName: string;
   email: string;
   phone: string;
+  zaloPhone?: string;       // Số Zalo cá nhân để khách hàng kết bạn
   role: StaffRole;
   status: StaffStatus;
   permissions: StaffPermissions;
