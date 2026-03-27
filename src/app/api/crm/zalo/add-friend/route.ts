@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCrmSession } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { leads, zaloInteractions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import axios from 'axios';
+import { getCrmSession } from '@/lib/admin-auth';
+import { query, queryOne } from '@/lib/db';
 
 /**
  * POST /api/crm/zalo/add-friend
@@ -52,7 +49,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ZaloAddFr
   try {
     // Check authentication
     const session = await getCrmSession();
-    if (!session || !session.user) {
+    if (!session) {
       return NextResponse.json(
         {
           success: false,
@@ -77,10 +74,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ZaloAddFr
       );
     }
 
-    // Verify lead exists and belongs to user's company
-    const lead = await db.query.leads.findFirst({
-      where: eq(leads.id, leadId),
-    });
+    // Verify lead exists
+    const lead = await queryOne(
+      'SELECT id, name, phone FROM leads WHERE id = $1',
+      [leadId]
+    );
 
     if (!lead) {
       return NextResponse.json(
@@ -92,7 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ZaloAddFr
       );
     }
 
-    // Get Zalo settings from environment or database
+    // Get Zalo settings from environment
     const zaloAccessToken = process.env.ZALO_ACCESS_TOKEN;
     const zaloOAIdFromEnv = zaloOAId || process.env.ZALO_OA_ID;
 
@@ -118,26 +116,36 @@ export async function POST(request: NextRequest): Promise<NextResponse<ZaloAddFr
     );
 
     // Record interaction in database
-    const interaction = await db.insert(zaloInteractions).values({
-      leadId,
-      type: 'add_friend',
-      phone: normalizedPhone,
-      status: zaloResponse.status,
-      zaloUserId: zaloResponse.zaloUserId,
-      response: zaloResponse.rawResponse,
-      createdAt: new Date(),
-      createdBy: session.user.id,
-    });
+    try {
+      await query(
+        `INSERT INTO zalo_interactions (lead_id, type, phone, zalo_user_id, status, response, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          leadId,
+          'add_friend',
+          normalizedPhone,
+          zaloResponse.zaloUserId || null,
+          zaloResponse.status,
+          JSON.stringify(zaloResponse.rawResponse),
+          session.staffId || 'system',
+        ]
+      );
+    } catch (dbError) {
+      console.error('Error recording interaction:', dbError);
+      // Continue even if recording fails
+    }
 
     // Update lead with Zalo info if available
     if (zaloResponse.zaloUserId) {
-      await db
-        .update(leads)
-        .set({
-          zaloUserId: zaloResponse.zaloUserId,
-          zaloAddedAt: new Date(),
-        })
-        .where(eq(leads.id, leadId));
+      try {
+        await query(
+          'UPDATE leads SET zalo_user_id = $1, zalo_added_at = NOW() WHERE id = $2',
+          [zaloResponse.zaloUserId, leadId]
+        );
+      } catch (dbError) {
+        console.error('Error updating lead:', dbError);
+        // Continue even if update fails
+      }
     }
 
     return NextResponse.json({
@@ -186,7 +194,7 @@ function normalizePhoneNumber(phone: string): string {
 }
 
 /**
- * Call Zalo API to add friend
+ * Call Zalo API to add friend using fetch API
  * Supports multiple approaches:
  * 1. Direct API call to Zalo Official Account
  * 2. Generate add friend link
@@ -204,48 +212,54 @@ async function addZaloFriend(
 }> {
   try {
     // Approach 1: Try to get user info by phone and send add friend request
-    const userResponse = await axios.post(
+    const userResponse = await fetch(
       'https://graph.zalo.me/v2.0/me/findByPhoneNumber',
       {
-        phone_number: phone,
-      },
-      {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          phone_number: phone,
+        }),
       }
     );
 
-    if (userResponse.data && userResponse.data.data && userResponse.data.data.user_id) {
-      const zaloUserId = userResponse.data.data.user_id;
+    const userData = await userResponse.json();
+
+    if (userData && userData.data && userData.data.user_id) {
+      const zaloUserId = userData.data.user_id;
 
       // Send add friend request
-      const addFriendResponse = await axios.post(
+      const addFriendResponse = await fetch(
         `https://graph.zalo.me/v2.0/${oaId}/addFriend`,
         {
-          user_id: zaloUserId,
-          message: `Xin chào ${name}, tôi là nhân viên của SmartFurni. Hãy kết bạn để nhận thông tin sản phẩm tốt nhất!`,
-        },
-        {
+          method: 'POST',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            user_id: zaloUserId,
+            message: `Xin chào ${name}, tôi là nhân viên của SmartFurni. Hãy kết bạn để nhận thông tin sản phẩm tốt nhất!`,
+          }),
         }
       );
+
+      const addFriendData = await addFriendResponse.json();
 
       return {
         status: 'sent',
         zaloUserId,
-        rawResponse: addFriendResponse.data,
+        rawResponse: addFriendData,
       };
     }
 
     // Approach 2: If user not found, return pending status with add friend link
     return {
       status: 'pending',
-      rawResponse: userResponse.data,
+      rawResponse: userData,
     };
   } catch (error) {
     console.error('Zalo API error:', error);
@@ -275,17 +289,20 @@ function generateZaloAddFriendLink(phone: string, name: string): string {
 
 /**
  * Database schema for Zalo interactions
- * Add this to your schema.ts file:
+ * Add this to your database:
  *
- * export const zaloInteractions = pgTable('zalo_interactions', {
- *   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
- *   leadId: text('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
- *   type: text('type').notNull(), // 'add_friend', 'send_message', 'call', etc.
- *   phone: text('phone').notNull(),
- *   zaloUserId: text('zalo_user_id'),
- *   status: text('status').notNull(), // 'pending', 'sent', 'accepted', 'rejected'
- *   response: jsonb('response'),
- *   createdAt: timestamp('created_at').notNull().defaultNow(),
- *   createdBy: text('created_by').notNull(),
- * });
+ * CREATE TABLE zalo_interactions (
+ *   id TEXT PRIMARY KEY,
+ *   lead_id TEXT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+ *   type TEXT NOT NULL,
+ *   phone TEXT NOT NULL,
+ *   zalo_user_id TEXT,
+ *   status TEXT NOT NULL,
+ *   response JSONB,
+ *   created_at TIMESTAMP DEFAULT NOW(),
+ *   created_by TEXT NOT NULL
+ * );
+ *
+ * ALTER TABLE leads ADD COLUMN zalo_user_id TEXT;
+ * ALTER TABLE leads ADD COLUMN zalo_added_at TIMESTAMP;
  */
