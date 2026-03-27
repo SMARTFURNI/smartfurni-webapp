@@ -18,6 +18,36 @@ export default function EmailScenarioBuilder() {
   const [loading, setLoading] = useState(true);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioWithStats | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
+  // Tiếng Việt translations
+  const t = {
+    title: 'Kịch Bản Email',
+    newScenario: 'Kịch Bản Mới',
+    loading: 'Đang tải kịch bản...',
+    noScenarios: 'Không tìm thấy kịch bản nào',
+    sent: 'Đã gửi',
+    openRate: 'Tỷ lệ mở',
+    trigger: 'Kích hoạt',
+    steps: 'Bước',
+    pause: 'Tạm dừng',
+    activate: 'Kích hoạt',
+    edit: 'Sửa',
+    delete: 'Xóa',
+    view: 'Xem',
+    confirmDelete: 'Bạn chắc chắn muốn xóa kịch bản này?',
+    createScenario: 'Tạo Kịch Bản Mới',
+    editScenario: 'Sửa Kịch Bản',
+    scenarioName: 'Tên Kịch Bản',
+    description: 'Mô Tả',
+    triggerType: 'Loại Kích Hoạt',
+    emailSteps: 'Bước Email',
+    step: 'Bước',
+    day: 'Ngày',
+    template: 'Mẫu',
+    save: 'Lưu Kịch Bản',
+    cancel: 'Hủy',
+    active: 'Hoạt động',
+    inactive: 'Không hoạt động',
+  };
 
   useEffect(() => {
     fetchScenarios();
@@ -77,7 +107,7 @@ export default function EmailScenarioBuilder() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Email Scenarios</h1>
+        <h1 className="text-2xl font-bold text-white">{t.title}</h1>
         <button
           onClick={() => {
             setSelectedScenario(null);
@@ -86,15 +116,15 @@ export default function EmailScenarioBuilder() {
           className="flex items-center gap-2 px-4 py-2 bg-[#C9A84C] text-white rounded-lg hover:bg-[#B89A3C] transition"
         >
           <Plus className="w-4 h-4" />
-          New Scenario
+          {t.newScenario}
         </button>
       </div>
 
       {/* Scenario List */}
       {loading ? (
-        <div className="text-center py-8 text-[#9CA3AF]">Loading scenarios...</div>
+        <div className="text-center py-8 text-[#9CA3AF]">{t.loading}</div>
       ) : scenarios.length === 0 ? (
-        <div className="text-center py-8 text-[#9CA3AF]">No scenarios found</div>
+        <div className="text-center py-8 text-[#9CA3AF]">{t.noScenarios}</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {scenarios.map((scenario) => (
@@ -113,7 +143,7 @@ export default function EmailScenarioBuilder() {
                     ? 'bg-[#22C55E] text-white'
                     : 'bg-[#6B7280] text-white'
                 }`}>
-                  {scenario.enabled ? 'Active' : 'Inactive'}
+                  {scenario.enabled ? t.active : t.inactive}
                 </div>
               </div>
 
@@ -121,11 +151,11 @@ export default function EmailScenarioBuilder() {
               {scenario.stats && (
                 <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-[#080600] rounded">
                   <div>
-                    <div className="text-xs text-[#9CA3AF]">Sent</div>
+                    <div className="text-xs text-[#9CA3AF]">{t.sent}</div>
                     <div className="text-lg font-bold text-[#C9A84C]">{scenario.stats.totalSent}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-[#9CA3AF]">Open Rate</div>
+                    <div className="text-xs text-[#9CA3AF]">{t.openRate}</div>
                     <div className="text-lg font-bold text-[#22C55E]">{scenario.stats.openRate.toFixed(1)}%</div>
                   </div>
                 </div>
@@ -133,17 +163,17 @@ export default function EmailScenarioBuilder() {
 
               {/* Trigger Info */}
               <div className="mb-4 p-3 bg-[#080600] rounded">
-                <div className="text-xs text-[#9CA3AF] mb-1">Trigger</div>
+                <div className="text-xs text-[#9CA3AF] mb-1">{t.trigger}</div>
                 <div className="text-sm text-white capitalize">{scenario.trigger.type.replace('_', ' ')}</div>
               </div>
 
               {/* Steps */}
               <div className="mb-4 p-3 bg-[#080600] rounded">
-                <div className="text-xs text-[#9CA3AF] mb-2">Steps</div>
+                <div className="text-xs text-[#9CA3AF] mb-2">{t.steps}</div>
                 <div className="space-y-1">
                   {scenario.steps.map((step, idx) => (
                     <div key={step.id} className="text-sm text-white">
-                      <span className="text-[#C9A84C]">Day {step.delayDays}:</span> Email {idx + 1}
+                      <span className="text-[#C9A84C]">{t.day} {step.delayDays}:</span> Email {idx + 1}
                     </div>
                   ))}
                 </div>
@@ -158,12 +188,12 @@ export default function EmailScenarioBuilder() {
                   {scenario.enabled ? (
                     <>
                       <Pause className="w-4 h-4" />
-                      Pause
+                      {t.pause}
                     </>
                   ) : (
                     <>
                       <Play className="w-4 h-4" />
-                      Activate
+                      {t.activate}
                     </>
                   )}
                 </button>
@@ -199,24 +229,24 @@ export default function EmailScenarioBuilder() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-[#1A1500] border border-[#2D2500] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-white mb-4">
-              {selectedScenario ? 'Edit Scenario' : 'Create New Scenario'}
+              {selectedScenario ? t.editScenario : t.createScenario}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-[#9CA3AF] mb-2">Scenario Name</label>
+                <label className="block text-sm text-[#9CA3AF] mb-2">{t.scenarioName}</label>
                 <input
                   type="text"
-                  placeholder="e.g., Welcome Series - New Lead"
+                  placeholder="Ví dụ: Chuỗi Chào Mừng - Lead Mới"
                   defaultValue={selectedScenario?.name || ''}
                   className="w-full px-3 py-2 bg-[#080600] border border-[#2D2500] rounded text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-[#9CA3AF] mb-2">Description</label>
+                <label className="block text-sm text-[#9CA3AF] mb-2">{t.description}</label>
                 <textarea
-                  placeholder="Describe this scenario..."
+                  placeholder="Mô tả kịch bản này..."
                   defaultValue={selectedScenario?.description || ''}
                   className="w-full px-3 py-2 bg-[#080600] border border-[#2D2500] rounded text-white"
                   rows={3}
@@ -224,7 +254,7 @@ export default function EmailScenarioBuilder() {
               </div>
 
               <div>
-                <label className="block text-sm text-[#9CA3AF] mb-2">Trigger Type</label>
+                <label className="block text-sm text-[#9CA3AF] mb-2">{t.triggerType}</label>
                 <select className="w-full px-3 py-2 bg-[#080600] border border-[#2D2500] rounded text-white">
                   <option>new_lead</option>
                   <option>lead_score_change</option>
@@ -234,14 +264,14 @@ export default function EmailScenarioBuilder() {
               </div>
 
               <div className="bg-[#080600] p-4 rounded">
-                <h3 className="text-sm font-semibold text-white mb-3">Email Steps</h3>
+                <h3 className="text-sm font-semibold text-white mb-3">{t.emailSteps}</h3>
                 {selectedScenario?.steps.map((step, idx) => (
                   <div key={step.id} className="mb-3 p-3 bg-[#1A1500] rounded border border-[#2D2500]">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-white">Step {idx + 1}</span>
-                      <span className="text-xs text-[#9CA3AF]">Day {step.delayDays}</span>
+                      <span className="text-sm font-semibold text-white">{t.step} {idx + 1}</span>
+                      <span className="text-xs text-[#9CA3AF]">{t.day} {step.delayDays}</span>
                     </div>
-                    <p className="text-xs text-[#9CA3AF]">Template: {step.templateId}</p>
+                    <p className="text-xs text-[#9CA3AF]">{t.template}: {step.templateId}</p>
                   </div>
                 ))}
               </div>
@@ -251,13 +281,13 @@ export default function EmailScenarioBuilder() {
                   onClick={() => setShowBuilder(false)}
                   className="flex-1 px-4 py-2 bg-[#C9A84C] text-white rounded hover:bg-[#B89A3C] transition"
                 >
-                  Save Scenario
+                  {t.save}
                 </button>
                 <button
                   onClick={() => setShowBuilder(false)}
                   className="flex-1 px-4 py-2 bg-[#2D2500] text-white rounded hover:bg-[#3D3500] transition"
                 >
-                  Cancel
+                  {t.cancel}
                 </button>
               </div>
             </div>
