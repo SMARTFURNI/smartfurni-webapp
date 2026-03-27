@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&display=swap');
+
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E2C97E;
+  --dark-bg: #0D0B00;
+  --dark-surface: #1A1600;
+  --dark-card: #221D00;
+  --dark-border: #2E2800;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0D0B00;
+  color: #F5EDD6;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Gold gradient text */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #E2C97E 0%, #C9A84C 50%, #9A7A2E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Cormorant Garamond brand font */
+.font-brand {
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.12em;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1A1600;
+}
+::-webkit-scrollbar-thumb {
+  background: #C9A84C40;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C9A84C80;
+}
+
+/* Gold border glow */
+.border-gold-glow {
+  border: 1px solid #C9A84C40;
+  box-shadow: 0 0 20px #C9A84C10;
+}
+
+/* Smooth section transitions */
+section {
+  transition: opacity 0.3s ease;
+}
+
+/* Product detailed description styles */
+.prose-custom h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+.prose-custom h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-primary, #C9A84C);
+}
+.prose-custom p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+  opacity: 0.85;
+}
+.prose-custom ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+.prose-custom ul li {
+  padding: 0.5rem 0 0.5rem 1.5rem;
+  position: relative;
+  line-height: 1.7;
+  opacity: 0.85;
+}
+.prose-custom ul li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--color-primary, #C9A84C);
+  font-weight: 600;
+}
+.prose-custom strong {
+  font-weight: 600;
+  opacity: 1;
+}
+.prose-custom em {
+  font-style: italic;
+  color: var(--color-primary, #C9A84C);
+}
+
+/* ─── CRM Override ────────────────────────────────────────────────────────────
+   The landing page uses dark theme (body bg #0D0B00, color #F5EDD6).
+   CRM uses light theme. Override all body-inherited dark styles inside .crm-root.
+*/
+.crm-root {
+  background-color: #f8f9fb !important;
+  color: #111827 !important;
+}
+.crm-root input,
+.crm-root textarea,
+.crm-root select {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
+.crm-root input::placeholder,
+.crm-root textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+.crm-root label {
+  color: #374151 !important;
+}
+/* Scrollbar for CRM (light) */
+.crm-root ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.crm-root ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.crm-root ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
