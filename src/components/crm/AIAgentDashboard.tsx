@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Zap, Mail, MessageCircle, TrendingUp, CheckCircle, Clock } from 'lucide-react';
+import { AIAgentConfigModal } from './AIAgentConfigModal';
 
 interface AIAgentStats {
   emailsSent: number;
@@ -34,6 +35,7 @@ export function AIAgentDashboard() {
 
   const [tasks, setTasks] = useState<AutomationTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   useEffect(() => {
     // Fetch AI Agent stats
@@ -120,7 +122,10 @@ export function AIAgentDashboard() {
           <h2 className="text-3xl font-bold tracking-tight">🤖 AI Agent Dashboard</h2>
           <p className="text-gray-600 mt-1">Tự động hoá chăm sóc khách hàng B2B với Gemini 2.5 Flash</p>
         </div>
-        <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all">
+        <button 
+          onClick={() => setIsConfigOpen(true)}
+          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all"
+        >
           ⚙️ Cấu Hình AI Agent
         </button>
       </div>
@@ -246,6 +251,9 @@ export function AIAgentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Config Modal */}
+      <AIAgentConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
     </div>
   );
 }
