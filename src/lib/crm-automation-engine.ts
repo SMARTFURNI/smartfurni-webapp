@@ -115,8 +115,9 @@ async function executeAction(
 
     case "add_tag": {
       const tag = action.tag ?? "";
-      if (tag && !lead.tags.includes(tag)) {
-        await updateLead(lead.id, { tags: [...lead.tags, tag] });
+      const currentTags = Array.isArray(lead.tags) ? lead.tags : [];
+      if (tag && !currentTags.includes(tag)) {
+        await updateLead(lead.id, { tags: [...currentTags, tag] });
         return `Gan tag "${tag}"`;
       }
       return `Tag "${tag}" da ton tai`;
@@ -212,7 +213,7 @@ async function runSmartTagging(leads: Lead[]): Promise<AutomationRunLog[]> {
     if (!activeStages.includes(lead.stage)) continue;
 
     const actions: string[] = [];
-    const newTags = [...lead.tags];
+    const newTags = [...(Array.isArray(lead.tags) ? lead.tags : [])];
 
     // Hot lead: gia tri cao + dang thuong thao
     if (lead.expectedValue >= 500_000_000 && lead.stage === "negotiating") {

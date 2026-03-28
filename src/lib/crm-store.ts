@@ -156,6 +156,7 @@ export async function createLead(input: Omit<Lead, "id" | "createdAt" | "updated
     createdAt: now,
     updatedAt: now,
     lastContactAt: input.lastContactAt || now,
+    tags: Array.isArray(input.tags) ? input.tags : [],
   };
   await query(
     `INSERT INTO crm_leads (id, data, stage, last_contact_at, updated_at) VALUES ($1, $2, $3, $4, NOW())`,
