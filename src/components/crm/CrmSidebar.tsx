@@ -27,10 +27,6 @@ import {
   X,
   UserCircle,
   Database,
-  Share2,
-  Sheet,
-  Zap,
-  ChevronDown,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -39,13 +35,12 @@ import { useState, useEffect } from "react";
 // superAdminOnly: chỉ super_admin (admin) mới thấy
 type NavItem = {
   label: string;
-  href?: string;
+  href: string;
   icon: React.ElementType;
   exact?: boolean;
   adminOnly?: boolean;      // manager + super_admin
   superAdminOnly?: boolean; // chỉ super_admin (admin hệ thống)
   showPendingBadge?: boolean; // hiển thị badge số data pool pending
-  children?: NavItem[]; // submenu items
 };
 
 type NavGroup = {
@@ -75,26 +70,9 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Email Marketing",
+    label: "Marketing",
     items: [
-      {
-        label: "Email Marketing",
-        href: "/crm/email",
-        icon: Mail,
-        adminOnly: true,
-        children: [
-          { label: "Chiến Dịch", href: "/crm/email", icon: Mail, adminOnly: true },
-          { label: "Campaigns", href: "/crm/email-campaigns", icon: Mail, adminOnly: true },
-          { label: "Email Builder", href: "/crm/email-builder", icon: Mail, adminOnly: true },
-          { label: "Mẫu Email", href: "/crm/email-templates", icon: Mail, adminOnly: true },
-          { label: "Workflow", href: "/crm/workflow-builder", icon: Zap, adminOnly: true },
-          { label: "Automation", href: "/crm/email-automation", icon: Zap, adminOnly: true },
-          { label: "Scenarios", href: "/crm/email-scenarios", icon: Bot, adminOnly: true },
-          { label: "Cài Đặt", href: "/crm/email-automation-settings", icon: Settings, adminOnly: true },
-          { label: "Facebook Lead", href: "/crm/integrations/facebook", icon: Share2, superAdminOnly: true },
-          { label: "Google Sheet", href: "/crm/integrations/google-sheet", icon: Sheet, superAdminOnly: true },
-        ],
-      },
+      { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true },
     ],
     adminOnly: true,
   },
@@ -115,7 +93,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tự động hóa",
     items: [
-      { label: "AI Agent", href: "/crm/ai-agent", icon: Zap, superAdminOnly: true },
+      { label: "AI Agent", href: "/crm/ai-agent", icon: Bot, superAdminOnly: true },
       { label: "Automation Rules", href: "/crm/automation", icon: Bot, superAdminOnly: true },
     ],
     superAdminOnly: true,
@@ -176,7 +154,6 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   // Fetch số data pool pending mỗi 60 giây
   useEffect(() => {
@@ -197,29 +174,12 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
-  function isActive(href?: string, exact?: boolean) {
-    if (!href) return false;
+  function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
     return pathname.startsWith(href);
   }
 
-  function isItemOrChildActive(item: NavItem): boolean {
-    if (isActive(item.href, item.exact)) return true;
-    if (item.children) {
-      return item.children.some(child => isActive(child.href, child.exact));
-    }
-    return false;
-  }
-
   const logoutHref = isAdmin ? "/admin/logout" : "/api/crm/staff/logout-redirect";
-
-  const toggleExpanded = (label: string) => {
-    setExpandedItems(prev =>
-      prev.includes(label)
-        ? prev.filter(l => l !== label)
-        : [...prev, label]
-    );
-  };
 
   return (
     <aside
@@ -277,77 +237,12 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                 </div>
               )}
               {visibleItems.map(item => {
-                const active = isItemOrChildActive(item);
-                const hasChildren = item.children && item.children.length > 0;
-                const isExpanded = expandedItems.includes(item.label);
+                const active = isActive(item.href, item.exact);
                 const showBadge = item.showPendingBadge && pendingCount > 0;
-
-                if (hasChildren) {
-                  // Parent item with submenu
-                  return (
-                    <div key={item.label}>
-                      <button
-                        onClick={() => !collapsed && toggleExpanded(item.label)}
-                        title={collapsed ? item.label : undefined}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all mb-0.5 group ${
-                          active
-                            ? "bg-amber-50 text-amber-700 font-medium"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                        style={active ? { borderLeft: "3px solid #C9A84C", paddingLeft: "7px" } : {}}
-                      >
-                        <div className="relative flex-shrink-0">
-                          <item.icon
-                            size={16}
-                            className={active ? "text-amber-600" : "text-gray-500 group-hover:text-gray-600"}
-                          />
-                        </div>
-                        {!collapsed && (
-                          <>
-                            <span className="truncate flex-1">{item.label}</span>
-                            <ChevronDown
-                              size={14}
-                              className={`flex-shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                            />
-                          </>
-                        )}
-                      </button>
-
-                      {/* Submenu */}
-                      {!collapsed && isExpanded && item.children && (
-                        <div className="ml-2 mt-1 space-y-0.5 border-l border-gray-200 pl-2">
-                          {item.children
-                            .filter(child => canSeeItem(child, staffRole, isAdmin))
-                            .map(child => {
-                              const childActive = isActive(child.href, child.exact);
-                              return (
-                                <Link
-                                  key={child.href}
-                                  href={child.href || "#"}
-                                  prefetch={false}
-                                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-xs transition-all ${
-                                    childActive
-                                      ? "bg-amber-50 text-amber-700 font-medium"
-                                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                                  }`}
-                                  style={childActive ? { borderLeft: "2px solid #C9A84C", paddingLeft: "6px" } : {}}
-                                >
-                                  <child.icon size={14} className={childActive ? "text-amber-600" : "text-gray-500"} />
-                                  <span className="truncate">{child.label}</span>
-                                </Link>
-                              );
-                            })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                // Regular item without submenu
                 return (
                   <Link
                     key={item.href}
-                    href={item.href || "#"}
+                    href={item.href}
                     prefetch={false}
                     title={collapsed ? `${item.label}${showBadge ? ` (${pendingCount} chờ nhận)` : ""}` : undefined}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all mb-0.5 group ${
