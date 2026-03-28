@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   Mail, Plus, Send, Eye, Trash2, FileText, Users, BarChart3,
   ChevronRight, Clock, CheckCircle, AlertCircle, Loader2,
-  Palette, Copy, Edit3, X, Search,
+  Palette, Copy, Edit3, X, Search, Bot,
 } from "lucide-react";
 import type { EmailCampaign, EmailTemplate, EmailSegment, EmailTemplateCategory } from "@/lib/crm-email-store";
 import { SEGMENT_LABELS, TEMPLATE_CATEGORY_LABELS } from "@/lib/crm-email-store";
@@ -14,7 +14,7 @@ interface Props {
   initialTemplates: EmailTemplate[];
 }
 
-type Tab = "campaigns" | "templates";
+type Tab = "campaigns" | "templates" | "workflows" | "automation" | "scenarios" | "builder" | "settings";
 
 const STATUS_CONFIG = {
   draft:     { label: "Bản nháp",    color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
@@ -155,10 +155,18 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 mt-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
-          {([["campaigns", "Chiến dịch"], ["templates", "Templates"]] as [Tab, string][]).map(([id, label]) => (
+        <div className="flex gap-0 mt-4 overflow-x-auto" style={{ borderBottom: "1px solid #e5e7eb" }}>
+          {([
+            ["campaigns", "Chiến dịch"],
+            ["templates", "Mẫu Email"],
+            ["builder", "Email Builder"],
+            ["workflows", "Workflow"],
+            ["automation", "Automation"],
+            ["scenarios", "Scenarios"],
+            ["settings", "Cài Đặt"],
+          ] as [Tab, string][]).map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)}
-              className="px-5 py-2 text-sm font-semibold relative transition-colors"
+              className="px-5 py-2 text-sm font-semibold relative transition-colors whitespace-nowrap"
               style={{ color: tab === id ? "#C9A84C" : "#6b7280" }}>
               {label}
               {tab === id && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "#C9A84C" }} />}
@@ -329,6 +337,65 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {tab === "builder" && (
+          <EmptyState
+            icon={<Palette size={32} style={{ color: "#C9A84C" }} />}
+            title="Email Builder"
+            description="Công cụ thiết kế email kéo thả với preview thời gian thực"
+            action={<button className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>Mở Email Builder</button>}
+          />
+        )}
+
+        {tab === "workflows" && (
+          <EmptyState
+            icon={<Send size={32} style={{ color: "#60a5fa" }} />}
+            title="Workflow Builder"
+            description="Tạo quy trình tự động gửi email theo hành động khách hàng"
+            action={<button className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>+ Tạo Workflow</button>}
+          />
+        )}
+
+        {tab === "automation" && (
+          <EmptyState
+            icon={<Bot size={32} style={{ color: "#a78bfa" }} />}
+            title="Email Automation"
+            description="Tự động hoá các quy trình gửi email dựa trên điều kiện"
+            action={<button className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>+ Tạo Automation</button>}
+          />
+        )}
+
+        {tab === "scenarios" && (
+          <EmptyState
+            icon={<BarChart3 size={32} style={{ color: "#f87171" }} />}
+            title="Email Scenarios"
+            description="Quản lý các kịch bản gửi email cho các tình huống khác nhau"
+            action={<button className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>+ Tạo Scenario</button>}
+          />
+        )}
+
+        {tab === "settings" && (
+          <div className="max-w-2xl">
+            <div className="rounded-2xl p-6" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              <h2 className="text-lg font-bold text-gray-900 mb-6">Cài Đặt Email Marketing</h2>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Tên người gửi</label>
+                  <input type="text" placeholder="SmartFurni" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Email người gửi</label>
+                  <input type="email" placeholder="noreply@smartfurni.com" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Chữ ký email</label>
+                  <textarea placeholder="Nhập chữ ký email..." className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none" rows={4} />
+                </div>
+                <button className="px-6 py-2 rounded-xl text-sm font-bold text-black" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>Lưu Cài Đặt</button>
+              </div>
             </div>
           </div>
         )}
