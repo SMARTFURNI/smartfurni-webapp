@@ -42,6 +42,10 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showBuilderModal, setShowBuilderModal] = useState(false);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+  const [showAutomationModal, setShowAutomationModal] = useState(false);
+  const [showScenarioModal, setShowScenarioModal] = useState(false);
 
   // Stats
   const totalSent = campaigns.filter(c => c.status === "sent").reduce((s, c) => s + c.sentCount, 0);
@@ -335,7 +339,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
             icon={<Palette size={32} style={{ color: "#C9A84C" }} />}
             title="Email Builder"
             description="Công cụ thiết kế email kéo thả với preview thời gian thực"
-            action={<button className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>Mở Email Builder</button>}
+            action={<button onClick={() => setShowBuilderModal(true)} className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>Mở Email Builder</button>}
           />
         )}
 
@@ -344,7 +348,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
             icon={<Send size={32} style={{ color: "#60a5fa" }} />}
             title="Workflow Builder"
             description="Tạo quy trình tự động gửi email theo hành động khách hàng"
-            action={<button className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>+ Tạo Workflow</button>}
+            action={<button onClick={() => setShowWorkflowModal(true)} className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>+ Tạo Workflow</button>}
           />
         )}
 
@@ -353,7 +357,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
             icon={<Bot size={32} style={{ color: "#a78bfa" }} />}
             title="Email Automation"
             description="Tự động hoá các quy trình gửi email dựa trên điều kiện"
-            action={<button className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>+ Tạo Automation</button>}
+            action={<button onClick={() => setShowAutomationModal(true)} className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>+ Tạo Automation</button>}
           />
         )}
 
@@ -362,7 +366,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
             icon={<BarChart3 size={32} style={{ color: "#f87171" }} />}
             title="Email Scenarios"
             description="Quản lý các kịch bản gửi email cho các tình huống khác nhau"
-            action={<button className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>+ Tạo Scenario</button>}
+            action={<button onClick={() => setShowScenarioModal(true)} className="px-4 py-2 rounded-xl text-sm font-bold text-black mt-3" style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>+ Tạo Scenario</button>}
           />
         )}
 
@@ -406,6 +410,18 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
       )}
       {previewTemplate && (
         <TemplatePreviewModal template={previewTemplate} onClose={() => setPreviewTemplate(null)} />
+      )}
+      {showBuilderModal && (
+        <EmailBuilderModal onClose={() => setShowBuilderModal(false)} />
+      )}
+      {showWorkflowModal && (
+        <WorkflowModal onClose={() => setShowWorkflowModal(false)} />
+      )}
+      {showAutomationModal && (
+        <AutomationModal onClose={() => setShowAutomationModal(false)} />
+      )}
+      {showScenarioModal && (
+        <ScenarioModal onClose={() => setShowScenarioModal(false)} />
       )}
     </div>
   );
@@ -646,5 +662,219 @@ function DarkInput({ value, onChange, placeholder, type = "text" }: {
     <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
       className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none"
       style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
+  );
+}
+
+// ── Email Builder Modal ────────────────────────────────────────────────────────
+function EmailBuilderModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ name: "", subject: "" });
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name || !form.subject) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/crm/email/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          name: form.name,
+          subject: form.subject,
+          category: "custom",
+          htmlContent: "<div>Email template content</div>",
+        }),
+      });
+      if (res.ok) {
+        onClose();
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <DarkModal title="Email Builder" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <DarkField label="Tên template">
+          <DarkInput value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="Nhập tên template..." />
+        </DarkField>
+        <DarkField label="Tiêu đề email">
+          <DarkInput value={form.subject} onChange={v => setForm(p => ({ ...p, subject: v }))} placeholder="Nhập tiêu đề email..." />
+        </DarkField>
+        <button type="submit" disabled={loading}
+          className="w-full py-2 rounded-xl text-sm font-bold text-black"
+          style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+          {loading ? "Đang tạo..." : "Tạo Email"}
+        </button>
+      </form>
+    </DarkModal>
+  );
+}
+
+// ── Workflow Modal ─────────────────────────────────────────────────────────────
+function WorkflowModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ name: "", trigger: "subscribe", action: "send_email" });
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/crm/email/workflows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          trigger: form.trigger,
+          action: form.action,
+        }),
+      });
+      if (res.ok) {
+        onClose();
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <DarkModal title="Tạo Workflow" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <DarkField label="Tên workflow">
+          <DarkInput value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="Nhập tên workflow..." />
+        </DarkField>
+        <DarkField label="Trigger">
+          <select value={form.trigger} onChange={e => setForm(p => ({ ...p, trigger: e.target.value }))}
+            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+            <option value="subscribe">Đăng ký</option>
+            <option value="purchase">Mua hàng</option>
+            <option value="abandoned_cart">Giỏ hàng bị bỏ</option>
+          </select>
+        </DarkField>
+        <button type="submit" disabled={loading}
+          className="w-full py-2 rounded-xl text-sm font-bold text-black"
+          style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+          {loading ? "Đang tạo..." : "Tạo Workflow"}
+        </button>
+      </form>
+    </DarkModal>
+  );
+}
+
+// ── Automation Modal ───────────────────────────────────────────────────────────
+function AutomationModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ name: "", condition: "open_rate", value: "50" });
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/crm/email/automations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          condition: form.condition,
+          value: parseInt(form.value),
+        }),
+      });
+      if (res.ok) {
+        onClose();
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <DarkModal title="Tạo Automation" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <DarkField label="Tên automation">
+          <DarkInput value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="Nhập tên automation..." />
+        </DarkField>
+        <DarkField label="Điều kiện">
+          <select value={form.condition} onChange={e => setForm(p => ({ ...p, condition: e.target.value }))}
+            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+            <option value="open_rate">Tỷ lệ mở</option>
+            <option value="click_rate">Tỷ lệ click</option>
+            <option value="unsubscribe">Hủy đăng ký</option>
+          </select>
+        </DarkField>
+        <DarkField label="Giá trị (%)">
+          <DarkInput value={form.value} onChange={v => setForm(p => ({ ...p, value: v }))} placeholder="Nhập giá trị..." type="number" />
+        </DarkField>
+        <button type="submit" disabled={loading}
+          className="w-full py-2 rounded-xl text-sm font-bold text-black"
+          style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+          {loading ? "Đang tạo..." : "Tạo Automation"}
+        </button>
+      </form>
+    </DarkModal>
+  );
+}
+
+// ── Scenario Modal ────────────────────────────────────────────────────────────
+function ScenarioModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ name: "", type: "welcome", description: "" });
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/crm/email/scenarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          type: form.type,
+          description: form.description,
+        }),
+      });
+      if (res.ok) {
+        onClose();
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <DarkModal title="Tạo Scenario" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <DarkField label="Tên scenario">
+          <DarkInput value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="Nhập tên scenario..." />
+        </DarkField>
+        <DarkField label="Loại scenario">
+          <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
+            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+            <option value="welcome">Chào mừng</option>
+            <option value="abandoned_cart">Giỏ hàng bị bỏ</option>
+            <option value="post_purchase">Sau mua hàng</option>
+            <option value="re_engagement">Tái kích hoạt</option>
+          </select>
+        </DarkField>
+        <DarkField label="Mô tả">
+          <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+            placeholder="Nhập mô tả scenario..."
+            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none"
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} rows={3} />
+        </DarkField>
+        <button type="submit" disabled={loading}
+          className="w-full py-2 rounded-xl text-sm font-bold text-black"
+          style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+          {loading ? "Đang tạo..." : "Tạo Scenario"}
+        </button>
+      </form>
+    </DarkModal>
   );
 }
