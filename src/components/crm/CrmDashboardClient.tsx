@@ -833,25 +833,81 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         )}
 
         {/* ── This Month Summary ──────────────────────────────────────── */}
-        {isVisible("monthSummary") && <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: `Doanh thu ${PERIOD_LABELS[period].toLowerCase()}`, value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth), icon: DollarSign, color: theme.summaryRevenueColor, bg: theme.summaryCardBg, sub: revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% tháng trước` : "So tháng trước", subColor: revenueChange >= 0 ? theme.kpiWonColor : theme.kpiOverdueColor },
-            { label: `KH mới ${PERIOD_LABELS[period].toLowerCase()}`, value: String(periodStats?.newLeads ?? stats.newLeadsThisMonth), icon: UserCheck, color: theme.summaryNewLeadColor, bg: theme.summaryCardBg, sub: `Tổng ${leads.length} khách hàng`, subColor: theme.kpiCardMutedColor },
-            { label: `Đơn chốt ${PERIOD_LABELS[period].toLowerCase()}`, value: String(periodStats?.wonLeads ?? stats.wonLeadsThisMonth), icon: Trophy, color: theme.summaryWonColor, bg: theme.summaryCardBg, sub: `Tỷ lệ chốt ${periodStats?.convRate ?? stats.conversionRate}%`, subColor: theme.kpiCardMutedColor },
-          ].map(({ label, value, icon: Icon, color, bg, sub, subColor }) => (
-            <div key={label} className="rounded-2xl p-5 flex items-center gap-4"
-              style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
-                <Icon size={20} style={{ color }} />
+        {isVisible("monthSummary") && (() => {
+          const currentRev = periodStats?.wonValue ?? stats.wonValueThisMonth;
+          const target = 1_200_000_000;
+          const pct = Math.min(100, Math.round((currentRev / target) * 100));
+          const remaining = Math.max(0, target - currentRev);
+          const barColor = pct >= 100 ? T.green : pct >= 70 ? T.gold : pct >= 40 ? T.indigo : T.red;
+          const wonCount = periodStats?.wonLeads ?? stats.wonLeadsThisMonth;
+          const newLeadsCount = periodStats?.newLeads ?? stats.newLeadsThisMonth;
+          const targetLeads = 15;
+          const targetWon = 3;
+          const leadPct = Math.min(100, Math.round((newLeadsCount / targetLeads) * 100));
+          const wonPct2 = Math.min(100, Math.round((wonCount / targetWon) * 100));
+          return (
+            <div className="rounded-2xl p-5" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+              {/* Title row */}
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: T.indigoBg }}>
+                  <Crosshair size={13} style={{ color: T.indigo }} />
+                </div>
+                <span className="text-sm font-bold" style={{ color: dm.textPrimary }}>Mục tiêu {PERIOD_LABELS[period].toLowerCase()}</span>
+                <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: `${barColor}15`, color: barColor }}>{pct}% hoàn thành</span>
               </div>
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: dm.textMuted }}>{label}</div>
-                <div className="text-xl font-black leading-tight" style={{ color: dm.textPrimary }}>{value}</div>
-                <div className="text-[10px] mt-1 font-semibold" style={{ color: subColor }}>{sub}</div>
+              {/* 3-column metrics */}
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                {/* Doanh thu */}
+                <div className="rounded-xl p-3.5" style={{ background: `${barColor}08`, border: `1px solid ${barColor}20` }}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <DollarSign size={13} style={{ color: barColor }} />
+                    <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Doanh thu</span>
+                  </div>
+                  <div className="text-xl font-black" style={{ color: barColor }}>{fmtVal(currentRev)}</div>
+                  <div className="text-[10px] mt-1" style={{ color: revenueChange >= 0 ? T.green : T.red }}>
+                    {revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% so tháng trước` : "So tháng trước"}
+                  </div>
+                  <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ background: `${barColor}20` }}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${pct}%`, background: barColor }} />
+                  </div>
+                  <div className="text-[9px] mt-1" style={{ color: T.textMuted }}>
+                    {remaining > 0 ? `Còn ${fmtVal(remaining)} / ${fmtVal(target)}` : "✅ Đạt mục tiêu!"}
+                  </div>
+                </div>
+                {/* KH mới */}
+                <div className="rounded-xl p-3.5" style={{ background: `${theme.kpiCustomerColor}08`, border: `1px solid ${theme.kpiCustomerColor}20` }}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <UserCheck size={13} style={{ color: theme.kpiCustomerColor }} />
+                    <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>KH mới</span>
+                  </div>
+                  <div className="text-xl font-black" style={{ color: theme.kpiCustomerColor }}>{newLeadsCount}</div>
+                  <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>Tổng {leads.length} khách hàng</div>
+                  <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ background: `${theme.kpiCustomerColor}20` }}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${leadPct}%`, background: theme.kpiCustomerColor }} />
+                  </div>
+                  <div className="text-[9px] mt-1" style={{ color: T.textMuted }}>{newLeadsCount}/{targetLeads} mục tiêu</div>
+                </div>
+                {/* Đơn chốt */}
+                <div className="rounded-xl p-3.5" style={{ background: `${T.green}08`, border: `1px solid ${T.green}20` }}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Trophy size={13} style={{ color: T.green }} />
+                    <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Đơn chốt</span>
+                  </div>
+                  <div className="text-xl font-black" style={{ color: T.green }}>{wonCount}</div>
+                  <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>Tỷ lệ chốt {periodStats?.convRate ?? stats.conversionRate}%</div>
+                  <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ background: `${T.green}20` }}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${wonPct2}%`, background: T.green }} />
+                  </div>
+                  <div className="text-[9px] mt-1" style={{ color: T.textMuted }}>{wonCount}/{targetWon} mục tiêu</div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>}
+          );
+        })()}
 
         {/* ── Main Grid ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -1543,67 +1599,6 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 </div>
               </Section>
             )}
-
-            {/* Monthly Target */}
-            <Section title="Mục tiêu tháng" icon={Crosshair} iconColor={T.indigo} iconBg={T.indigoBg}>
-              <div className="p-4">
-                {(() => {
-                  const currentRev = periodStats?.wonValue ?? stats.wonValueThisMonth;
-                  const target = 1_200_000_000; // 1.2B default target
-                  const pct = Math.min(100, Math.round((currentRev / target) * 100));
-                  const remaining = Math.max(0, target - currentRev);
-                  const barColor = pct >= 100 ? T.green : pct >= 70 ? T.gold : pct >= 40 ? T.indigo : T.red;
-                  const wonCount = periodStats?.wonLeads ?? stats.wonLeadsThisMonth;
-                  const newLeadsCount = periodStats?.newLeads ?? stats.newLeadsThisMonth;
-                  const targetLeads = 15;
-                  const targetWon = 3;
-                  const leadPct = Math.min(100, Math.round((newLeadsCount / targetLeads) * 100));
-                  const wonPct2 = Math.min(100, Math.round((wonCount / targetWon) * 100));
-                  return (
-                    <>
-                      {/* Revenue target */}
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Doanh thu</span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-black" style={{ color: barColor }}>{pct}%</span>
-                            <span className="text-[10px]" style={{ color: T.textMuted }}>/ {fmtVal(target)}</span>
-                          </div>
-                        </div>
-                        <div className="h-3 rounded-full overflow-hidden" style={{ background: T.bg }}>
-                          <div className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
-                            style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${barColor}CC, ${barColor})` }}>
-                            <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)" }} />
-                          </div>
-                        </div>
-                        <div className="flex justify-between mt-1.5">
-                          <span className="text-[10px] font-bold" style={{ color: T.textPrimary }}>{fmtVal(currentRev)}</span>
-                          {remaining > 0 && <span className="text-[10px]" style={{ color: T.textMuted }}>Còn {fmtVal(remaining)}</span>}
-                          {remaining === 0 && <span className="text-[10px] font-bold" style={{ color: T.green }}>✅ Đạt mục tiêu!</span>}
-                        </div>
-                      </div>
-                      {/* Sub-targets */}
-                      <div className="space-y-2.5">
-                        {[
-                          { label: "KH mới", current: newLeadsCount, target: targetLeads, pct: leadPct, color: theme.kpiCustomerColor },
-                          { label: "Đơn chốt", current: wonCount, target: targetWon, pct: wonPct2, color: T.green },
-                        ].map(({ label, current, target: t, pct: p, color }) => (
-                          <div key={label}>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] font-medium" style={{ color: T.textMuted }}>{label}</span>
-                              <span className="text-[10px] font-bold" style={{ color }}>{current}/{t}</span>
-                            </div>
-                            <div className="h-2 rounded-full overflow-hidden" style={{ background: T.bg }}>
-                              <div className="h-full rounded-full" style={{ width: `${p}%`, background: color }} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </Section>
 
             {/* Quick Stats */}
             {isVisible("quickStats") && <Section title="Thống kê nhanh" icon={Eye} iconColor={theme.kpiPipelineColor} iconBg={theme.kpiPipelineColor + "18"}>
