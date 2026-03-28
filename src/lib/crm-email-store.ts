@@ -265,6 +265,33 @@ export async function deleteEmailCampaign(id: string): Promise<void> {
   await query("DELETE FROM crm_email_logs WHERE campaign_id=$1", [id]);
 }
 
+export async function createEmailLog(data: {
+  campaignId: string;
+  leadId: string;
+  email: string;
+  status: "pending" | "sent" | "failed" | "opened" | "clicked";
+  leadName?: string;
+  messageId?: string;
+  error?: string;
+}): Promise<void> {
+  await initEmailTables();
+  const id = `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  await query(
+    `INSERT INTO crm_email_logs (id, campaign_id, lead_id, lead_name, email, status, sent_at, error)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [
+      id,
+      data.campaignId,
+      data.leadId,
+      data.leadName || "",
+      data.email,
+      data.status,
+      data.status === "sent" ? new Date() : null,
+      data.error || null,
+    ]
+  );
+}
+
 export async function getEmailLogs(campaignId: string): Promise<EmailLog[]> {
   await initEmailTables();
   const rows = await query(

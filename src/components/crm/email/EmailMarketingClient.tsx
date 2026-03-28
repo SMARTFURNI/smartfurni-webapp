@@ -5,7 +5,7 @@ import {
   ChevronRight, Clock, CheckCircle, AlertCircle, Loader2,
   Palette, Copy, Edit2, Edit3, X, Search, Bot, Play, Pause,
   Settings, Save, Download, TrendingUp, Zap,
-  Target, Activity, ArrowUpRight, Tag, FlaskConical,
+  Target, Activity, ArrowUpRight, Tag, FlaskConical, Rocket,
 } from "lucide-react";
 import type {
   EmailCampaign, EmailTemplate, EmailSegment, EmailTemplateCategory,
@@ -117,6 +117,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
     subject: string;
     htmlContent: string;
   } | null>(null);
+  const [launchingCampaign, setLaunchingCampaign] = useState<EmailCampaign | null>(null);
 
   const totalSent = campaigns.filter(c => c.status === "sent").reduce((s, c) => s + c.sentCount, 0);
   const totalOpens = campaigns.filter(c => c.status === "sent").reduce((s, c) => s + c.openCount, 0);
@@ -347,6 +348,15 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                           </>
                         )}
                         <div className="flex items-center gap-1">
+                          {(campaign.status === "draft" || campaign.status === "scheduled") && (
+                            <button
+                              onClick={() => setLaunchingCampaign(campaign)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                              style={{ background: "linear-gradient(135deg,#C9A84C,#E2C97E)", color: "#000", border: "none" }}
+                              title="Phát động chiến dịch — gửi email hàng loạt">
+                              <Rocket size={11} /> Phát động
+                            </button>
+                          )}
                           <button
                             onClick={() => setSendTestFor({
                               sourceType: "campaign",
@@ -660,6 +670,16 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
           defaultSubject={sendTestFor.subject}
           defaultHtmlContent={sendTestFor.htmlContent}
           onClose={() => setSendTestFor(null)}
+        />
+      )}
+      {launchingCampaign && (
+        <LaunchCampaignModal
+          campaign={launchingCampaign}
+          onClose={() => setLaunchingCampaign(null)}
+          onLaunched={(updated) => {
+            setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
+            setLaunchingCampaign(null);
+          }}
         />
       )}
       {editingCampaign && (
@@ -1887,6 +1907,238 @@ function SendTestEmailModal({
             {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
             {sending ? "Đang gửi..." : "Gửi email test"}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Launch Campaign Modal ──────────────────────────────────────────────────────
+function LaunchCampaignModal({
+  campaign,
+  onClose,
+  onLaunched,
+}: {
+  campaign: EmailCampaign;
+  onClose: () => void;
+  onLaunched: (updated: EmailCampaign) => void;
+}) {
+  const [step, setStep] = useState<"confirm" | "sending" | "done">("confirm");
+  const [recipientCount, setRecipientCount] = useState<number | null>(null);
+  const [result, setResult] = useState<{
+    success: boolean;
+    sentCount: number;
+    failedCount: number;
+    totalTargeted: number;
+    errors?: string[];
+  } | null>(null);
+  const [loadingCount, setLoadingCount] = useState(true);
+
+  useEffect(() => {
+    // Lấy số lượng người nhận theo segment
+    fetch("/api/crm/email/campaigns", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "count_recipients", segment: campaign.segment }),
+    })
+      .then(r => r.json())
+      .then(d => { setRecipientCount(d.count ?? 0); setLoadingCount(false); })
+      .catch(() => { setRecipientCount(0); setLoadingCount(false); });
+  }, [campaign.segment]);
+
+  async function handleLaunch() {
+    setStep("sending");
+    try {
+      const res = await fetch(`/api/crm/email/campaigns/${campaign.id}/launch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResult({ success: false, sentCount: 0, failedCount: 0, totalTargeted: 0, errors: [data.error || "Lỗi không xác định"] });
+      } else {
+        setResult({
+          success: data.success,
+          sentCount: data.sentCount,
+          failedCount: data.failedCount,
+          totalTargeted: data.totalTargeted,
+          errors: data.errors,
+        });
+        // Cập nhật campaign trong danh sách
+        onLaunched({
+          ...campaign,
+          status: data.status,
+          sentCount: data.sentCount,
+          sentAt: data.sentAt,
+        });
+      }
+    } catch (err) {
+      setResult({ success: false, sentCount: 0, failedCount: 0, totalTargeted: 0, errors: [String(err)] });
+    }
+    setStep("done");
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "90vh" }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: "1px solid #e5e7eb" }}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
+              <Rocket size={16} style={{ color: "#000" }} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900">Phát động chiến dịch</h3>
+              <p className="text-[10px] text-gray-500 truncate max-w-[240px]">{campaign.name}</p>
+            </div>
+          </div>
+          {step !== "sending" && (
+            <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100">
+              <X size={14} className="text-gray-500" />
+            </button>
+          )}
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {step === "confirm" && (
+            <>
+              {/* Campaign info */}
+              <div className="rounded-xl p-4 space-y-2" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Chiến dịch</span>
+                  <span className="font-semibold text-gray-900 text-right max-w-[200px] truncate">{campaign.name}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Tiêu đề email</span>
+                  <span className="font-semibold text-gray-900 text-right max-w-[200px] truncate">{campaign.subject}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Phân khúc</span>
+                  <span className="font-semibold text-gray-900">{SEGMENT_LABELS[campaign.segment]}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Số người nhận</span>
+                  <span className="font-bold" style={{ color: "#C9A84C" }}>
+                    {loadingCount ? <Loader2 size={12} className="animate-spin inline" /> : `${recipientCount?.toLocaleString("vi-VN") ?? 0} người`}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Gửi từ</span>
+                  <span className="font-semibold text-gray-900">noreply@smartfurni.vn</span>
+                </div>
+              </div>
+
+              {/* Warning */}
+              <div className="rounded-xl px-4 py-3 flex items-start gap-2.5" style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)" }}>
+                <AlertCircle size={14} style={{ color: "#C9A84C", marginTop: 1, flexShrink: 0 }} />
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: "#92400e" }}>Lưu ý trước khi phát động</p>
+                  <p className="text-xs mt-0.5 text-gray-600 leading-relaxed">
+                    Email sẽ được gửi <strong>ngay lập tức</strong> tới toàn bộ khách hàng trong phân khúc có địa chỉ email.
+                    Hãy đảm bảo đã gửi email test và kiểm tra nội dung trước khi phát động.
+                  </p>
+                </div>
+              </div>
+
+              {recipientCount === 0 && !loadingCount && (
+                <div className="rounded-xl px-4 py-3 flex items-start gap-2.5" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                  <AlertCircle size={14} style={{ color: "#dc2626", marginTop: 1, flexShrink: 0 }} />
+                  <p className="text-xs text-red-700">Không có khách hàng nào trong phân khúc này có địa chỉ email. Vui lòng chọn phân khúc khác hoặc thêm email cho khách hàng.</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {step === "sending" && (
+            <div className="flex flex-col items-center justify-center py-8 gap-4">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#C9A84C22,#E2C97E22)" }}>
+                <Loader2 size={32} className="animate-spin" style={{ color: "#C9A84C" }} />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold text-gray-900">Đang gửi email hàng loạt...</p>
+                <p className="text-xs text-gray-500 mt-1">Vui lòng không đóng cửa sổ này</p>
+                <p className="text-xs text-gray-400 mt-1">Thời gian gửi phụ thuộc vào số lượng người nhận</p>
+              </div>
+            </div>
+          )}
+
+          {step === "done" && result && (
+            <div className="space-y-3">
+              {/* Result summary */}
+              <div className="rounded-xl p-4" style={{
+                background: result.success ? "rgba(34,197,94,0.06)" : "rgba(239,68,68,0.06)",
+                border: `1px solid ${result.success ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+              }}>
+                <div className="flex items-center gap-2 mb-3">
+                  {result.success
+                    ? <CheckCircle size={18} style={{ color: "#16a34a" }} />
+                    : <AlertCircle size={18} style={{ color: "#dc2626" }} />
+                  }
+                  <p className="text-sm font-bold" style={{ color: result.success ? "#15803d" : "#dc2626" }}>
+                    {result.success ? "Chiến dịch đã được phát động!" : "Gửi thất bại"}
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center rounded-lg p-2" style={{ background: "rgba(34,197,94,0.1)" }}>
+                    <div className="text-lg font-bold" style={{ color: "#16a34a" }}>{result.sentCount.toLocaleString("vi-VN")}</div>
+                    <div className="text-[10px] text-gray-500">Đã gửi</div>
+                  </div>
+                  <div className="text-center rounded-lg p-2" style={{ background: "rgba(239,68,68,0.1)" }}>
+                    <div className="text-lg font-bold" style={{ color: "#dc2626" }}>{result.failedCount.toLocaleString("vi-VN")}</div>
+                    <div className="text-[10px] text-gray-500">Thất bại</div>
+                  </div>
+                  <div className="text-center rounded-lg p-2" style={{ background: "rgba(96,165,250,0.1)" }}>
+                    <div className="text-lg font-bold" style={{ color: "#3b82f6" }}>{result.totalTargeted.toLocaleString("vi-VN")}</div>
+                    <div className="text-[10px] text-gray-500">Tổng mục tiêu</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Errors */}
+              {result.errors && result.errors.length > 0 && (
+                <div className="rounded-xl p-3" style={{ background: "#fef2f2", border: "1px solid #fecaca" }}>
+                  <p className="text-xs font-semibold text-red-700 mb-1">Lỗi gửi ({result.errors.length}):</p>
+                  <div className="space-y-0.5 max-h-24 overflow-y-auto">
+                    {result.errors.map((e, i) => (
+                      <p key={i} className="text-[10px] text-red-600 font-mono">{e}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid #e5e7eb" }}>
+          {step === "confirm" && (
+            <>
+              <button onClick={onClose}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                style={{ border: "1px solid #e5e7eb" }}>
+                Hủy
+              </button>
+              <button
+                onClick={handleLaunch}
+                disabled={loadingCount || recipientCount === 0}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                style={{
+                  background: (loadingCount || recipientCount === 0) ? "#e5e7eb" : "linear-gradient(135deg,#C9A84C,#E2C97E)",
+                  color: (loadingCount || recipientCount === 0) ? "#9ca3af" : "#000",
+                }}>
+                <Rocket size={14} />
+                Phát động ngay ({recipientCount ?? "..."} người)
+              </button>
+            </>
+          )}
+          {step === "done" && (
+            <button onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+              style={{ background: "linear-gradient(135deg,#C9A84C,#E2C97E)", color: "#000" }}>
+              Đóng
+            </button>
+          )}
         </div>
       </div>
     </div>
