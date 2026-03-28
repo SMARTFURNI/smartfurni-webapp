@@ -5,7 +5,7 @@ import {
   ChevronRight, Clock, CheckCircle, AlertCircle, Loader2,
   Palette, Copy, Edit2, Edit3, X, Search, Bot, Play, Pause,
   Settings, Save, Download, TrendingUp, Zap,
-  Target, Activity, ArrowUpRight, Tag,
+  Target, Activity, ArrowUpRight, Tag, FlaskConical,
 } from "lucide-react";
 import type {
   EmailCampaign, EmailTemplate, EmailSegment, EmailTemplateCategory,
@@ -111,6 +111,12 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null>(null);
   const [editingWorkflow, setEditingWorkflow] = useState<EmailWorkflow | null>(null);
+  const [sendTestFor, setSendTestFor] = useState<{
+    sourceType: "campaign" | "template" | "builder" | "workflow";
+    sourceName: string;
+    subject: string;
+    htmlContent: string;
+  } | null>(null);
 
   const totalSent = campaigns.filter(c => c.status === "sent").reduce((s, c) => s + c.sentCount, 0);
   const totalOpens = campaigns.filter(c => c.status === "sent").reduce((s, c) => s + c.openCount, 0);
@@ -224,6 +230,14 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 <Plus size={14} /> Tạo workflow
               </button>
             )}
+            {tab === "builder" && (
+              <button
+                onClick={() => setSendTestFor({ sourceType: "builder", sourceName: "Email Builder", subject: "", htmlContent: "" })}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+                style={{ background: "rgba(96,165,250,0.1)", color: "#3b82f6", border: "1px solid rgba(96,165,250,0.3)" }}>
+                <FlaskConical size={14} /> Gửi email test
+              </button>
+            )}
           </div>
         </div>
 
@@ -333,6 +347,18 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                           </>
                         )}
                         <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setSendTestFor({
+                              sourceType: "campaign",
+                              sourceName: campaign.name,
+                              subject: campaign.subject,
+                              htmlContent: campaign.htmlContent || `<div style="font-family:Arial,sans-serif;padding:32px;max-width:600px"><h2>${campaign.name}</h2><p>${campaign.subject}</p></div>`,
+                            })}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-50 transition-colors"
+                            style={{ border: "1px solid #e5e7eb", color: "#3b82f6" }}
+                            title="Gửi email test">
+                            <FlaskConical size={11} /> Test
+                          </button>
                           <button onClick={() => setEditingCampaign(campaign)}
                             className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
                             style={{ border: "1px solid #e5e7eb" }}>
@@ -423,6 +449,17 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                             style={{ border: "1px solid #e5e7eb", color: "#6b7280" }}>
                             <Eye size={11} /> Xem trước
                           </button>
+                          <button
+                            onClick={() => setSendTestFor({
+                              sourceType: "template",
+                              sourceName: template.name,
+                              subject: template.subject,
+                              htmlContent: template.htmlContent,
+                            })}
+                            className="flex-1 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-1"
+                            style={{ border: "1px solid #e5e7eb", color: "#3b82f6" }}>
+                            <FlaskConical size={11} /> Gửi test
+                          </button>
                           <button onClick={() => deleteTemplate(template.id)}
                             className="w-8 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
                             style={{ border: "1px solid #e5e7eb" }}>
@@ -446,7 +483,11 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
 
         {/* ── TAB: Email Builder ── */}
         {tab === "builder" && (
-          <EmailBuilderTab templates={templates} onTemplateSaved={(t) => setTemplates(prev => [t, ...prev])} />
+          <EmailBuilderTab
+            templates={templates}
+            onTemplateSaved={(t) => setTemplates(prev => [t, ...prev])}
+            onSendTest={(subject, htmlContent) => setSendTestFor({ sourceType: "builder", sourceName: "Email Builder", subject, htmlContent })}
+          />
         )}
 
         {/* ── TAB: Workflow ── */}
@@ -522,6 +563,26 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => {
+                            const firstStep = wf.steps?.[0];
+                            setSendTestFor({
+                              sourceType: "workflow",
+                              sourceName: wf.name,
+                              subject: firstStep?.subject || `[Workflow] ${wf.name}`,
+                              htmlContent: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px">
+                                <h2 style="color:#1a1a1a">${wf.name}</h2>
+                                <p style="color:#555">Trigger: ${wf.description || TRIGGER_LABELS[wf.triggerType] || wf.triggerType}</p>
+                                <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0"/>
+                                <h3 style="color:#374151;font-size:14px">Các bước trong workflow (${wf.steps?.length || 0} bước):</h3>
+                                ${(wf.steps || []).map((s, i) => `<div style="margin:8px 0;padding:10px 14px;background:#f9fafb;border-radius:8px;border-left:3px solid #C9A84C"><strong style="font-size:13px">Bước ${i+1}</strong> ${s.delayDays > 0 ? `(sau ${s.delayDays} ngày)` : "(ngay lập tức)"}: <span style="color:#374151">${s.subject || s.templateName || "Email"}</span></div>`).join("")}
+                              </div>`,
+                            });
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          style={{ background: "rgba(96,165,250,0.08)", color: "#3b82f6", border: "1px solid rgba(96,165,250,0.25)" }}>
+                          <FlaskConical size={11} /> Gửi test
+                        </button>
                         <button onClick={() => setEditingWorkflow(wf)}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                           style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }}>
@@ -592,6 +653,15 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
       {previewTemplate && (
         <TemplatePreviewModal template={previewTemplate} onClose={() => setPreviewTemplate(null)} />
       )}
+      {sendTestFor && (
+        <SendTestEmailModal
+          sourceType={sendTestFor.sourceType}
+          sourceName={sendTestFor.sourceName}
+          defaultSubject={sendTestFor.subject}
+          defaultHtmlContent={sendTestFor.htmlContent}
+          onClose={() => setSendTestFor(null)}
+        />
+      )}
       {editingCampaign && (
         <CampaignModal
           templates={templates}
@@ -608,7 +678,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
 }
 
 // ─── Email Builder Tab ─────────────────────────────────────────────────────────
-function EmailBuilderTab({ templates, onTemplateSaved }: { templates: EmailTemplate[]; onTemplateSaved: (t: EmailTemplate) => void }) {
+function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates: EmailTemplate[]; onTemplateSaved: (t: EmailTemplate) => void; onSendTest?: (subject: string, htmlContent: string) => void }) {
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState<EmailTemplateCategory>("custom");
@@ -735,12 +805,22 @@ function EmailBuilderTab({ templates, onTemplateSaved }: { templates: EmailTempl
           />
         </div>
 
-        <button onClick={handleSave} disabled={saving}
-          className="w-full py-2.5 rounded-xl text-sm font-bold text-black flex items-center justify-center gap-2"
-          style={{ background: saving ? "#e5e7eb" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
-          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-          {saving ? "Đang lưu..." : saved ? "✓ Đã lưu!" : "Lưu template"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onSendTest?.(subject, htmlContent)}
+            disabled={!subject && !htmlContent}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+            style={{ background: "rgba(96,165,250,0.1)", color: "#3b82f6", border: "1px solid rgba(96,165,250,0.3)" }}>
+            <FlaskConical size={14} /> Gửi email test
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-black flex items-center justify-center gap-2"
+            style={{ background: saving ? "#e5e7eb" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            {saving ? "Đang lưu..." : saved ? "✓ Đã lưu!" : "Lưu template"}
+          </button>
+        </div>
       </div>
 
       {/* Right: Preview */}
@@ -1604,6 +1684,211 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <label className="block text-xs font-semibold text-gray-700 mb-1">{label}</label>
       {children}
+    </div>
+  );
+}
+
+// ─── Send Test Email Modal ──────────────────────────────────────────────────────────────────────────────────────────
+function SendTestEmailModal({
+  sourceType,
+  sourceName,
+  defaultSubject,
+  defaultHtmlContent,
+  onClose,
+}: {
+  sourceType: "campaign" | "template" | "builder" | "workflow";
+  sourceName: string;
+  defaultSubject: string;
+  defaultHtmlContent: string;
+  onClose: () => void;
+}) {
+  const [toEmail, setToEmail] = useState("");
+  const [subject, setSubject] = useState(defaultSubject);
+  const [htmlContent, setHtmlContent] = useState(defaultHtmlContent);
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ success: boolean; message: string; mock?: boolean } | null>(null);
+
+  const SOURCE_LABELS: Record<string, string> = {
+    campaign: "Chiến dịch",
+    template: "Mẫu email",
+    builder: "Email Builder",
+    workflow: "Workflow",
+  };
+
+  const SOURCE_COLORS: Record<string, string> = {
+    campaign: "#C9A84C",
+    template: "#60a5fa",
+    builder: "#a78bfa",
+    workflow: "#22c55e",
+  };
+
+  async function handleSend() {
+    if (!toEmail) { setResult({ success: false, message: "Vui lòng nhập địa chỉ email" }); return; }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(toEmail)) { setResult({ success: false, message: "Email không hợp lệ" }); return; }
+    if (!htmlContent) { setResult({ success: false, message: "Không có nội dung HTML để gửi" }); return; }
+
+    setSending(true);
+    setResult(null);
+    try {
+      const res = await fetch("/api/crm/email/send-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: toEmail,
+          subject: subject || `[TEST] Email từ SmartFurni CRM`,
+          htmlContent,
+          sourceType,
+          sourceName,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setResult({ success: true, message: data.message, mock: data.mock });
+      } else {
+        setResult({ success: false, message: data.error || "Gửi thất bại" });
+      }
+    } catch {
+      setResult({ success: false, message: "Lỗi kết nối mạng" });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const srcColor = SOURCE_COLORS[sourceType] || "#C9A84C";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
+        style={{ width: "520px", maxHeight: "85vh", border: "1px solid #e5e7eb" }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
+          style={{ borderBottom: "1px solid #e5e7eb" }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${srcColor}15` }}>
+              <FlaskConical size={15} style={{ color: srcColor }} />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-gray-900">Gửi email test</div>
+              <div className="text-xs text-gray-500">
+                <span className="font-semibold" style={{ color: srcColor }}>{SOURCE_LABELS[sourceType]}</span>
+                {sourceName && ` · ${sourceName}`}
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors">
+            <X size={16} className="text-gray-500" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+
+          {/* Info banner */}
+          <div className="rounded-xl px-4 py-3 flex items-start gap-3"
+            style={{ background: `${srcColor}0d`, border: `1px solid ${srcColor}30` }}>
+            <FlaskConical size={14} style={{ color: srcColor, marginTop: 2, flexShrink: 0 }} />
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Email test sẽ được gửi ngay tới địa chỉ bạn nhập. Các biến động <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#f3f4f6" }}>{'{{name}}'}</code>, <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#f3f4f6" }}>{'{{company}}'}</code>... sẽ được thay thế bằng dữ liệu mẫu. Email sẽ có banner <strong>[TEST]</strong> ở đầu.
+            </p>
+          </div>
+
+          {/* Email to */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Gửi tới email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={toEmail}
+              onChange={e => { setToEmail(e.target.value); setResult(null); }}
+              placeholder="your@email.com"
+              className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none"
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}
+              onKeyDown={e => e.key === "Enter" && handleSend()}
+            />
+          </div>
+
+          {/* Subject */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Tiêu đề email</label>
+            <input
+              value={subject}
+              onChange={e => setSubject(e.target.value)}
+              placeholder="Tiêu đề email..."
+              className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none"
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}
+            />
+            <p className="text-[10px] text-gray-400 mt-1">Email sẽ có tiêu đề <strong>[TEST]</strong> ở đầu</p>
+          </div>
+
+          {/* HTML Preview */}
+          {htmlContent && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Xem trước nội dung</label>
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb", maxHeight: "200px", overflow: "auto" }}>
+                <iframe
+                  srcDoc={htmlContent}
+                  className="w-full"
+                  style={{ minHeight: "180px", border: "none", background: "#fff" }}
+                  sandbox="allow-same-origin"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Result */}
+          {result && (
+            <div className="rounded-xl px-4 py-3 flex items-start gap-2.5"
+              style={{
+                background: result.success ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
+                border: `1px solid ${result.success ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+              }}>
+              {result.success
+                ? <CheckCircle size={14} style={{ color: "#16a34a", marginTop: 1, flexShrink: 0 }} />
+                : <AlertCircle size={14} style={{ color: "#dc2626", marginTop: 1, flexShrink: 0 }} />
+              }
+              <div>
+                <p className="text-xs font-semibold" style={{ color: result.success ? "#15803d" : "#dc2626" }}>
+                  {result.success ? (result.mock ? "ℹ️ Chế độ xem trước" : "✓ Đã gửi thành công!") : "✗ Gửi thất bại"}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: result.success ? "#166534" : "#991b1b" }}>
+                  {result.message}
+                </p>
+                {result.mock && (
+                  <p className="text-[10px] mt-1 text-gray-500">
+                    Để gửi email thật, cấu hình SMTP trong <strong>Cài đặt → Email Settings</strong>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid #e5e7eb" }}>
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            style={{ border: "1px solid #e5e7eb" }}>
+            Đóng
+          </button>
+          <button
+            onClick={handleSend}
+            disabled={sending || !toEmail}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+            style={{
+              background: sending || !toEmail ? "#e5e7eb" : `linear-gradient(135deg, ${srcColor}, ${srcColor}cc)`,
+              color: sending || !toEmail ? "#9ca3af" : "#fff",
+            }}>
+            {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+            {sending ? "Đang gửi..." : "Gửi email test"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
