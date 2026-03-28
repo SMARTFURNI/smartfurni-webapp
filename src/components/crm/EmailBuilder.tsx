@@ -207,7 +207,13 @@ export default function EmailBuilder() {
                 <h3 className="text-[#C9A84C] font-bold mb-4">👁️ Preview</h3>
                 <div className="bg-white rounded p-4 text-black text-sm max-h-96 overflow-y-auto">
                   <p className="font-bold mb-2">Tiêu đề: {template.subject}</p>
-                  <div dangerouslySetInnerHTML={{ __html: template.bodyHtml }} />
+                  <div className="border-t pt-4">
+                    {template.bodyHtml ? (
+                      <div dangerouslySetInnerHTML={{ __html: template.bodyHtml }} />
+                    ) : (
+                      <p className="text-gray-500">Chưa có nội dung</p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
