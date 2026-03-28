@@ -66,6 +66,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Data Pool", href: "/crm/data-pool", icon: Database, showPendingBadge: true },
       { label: "Danh sách KH", href: "/crm/leads", icon: Users },
+      { label: "Phân Loại Lead", href: "/crm/lead-segmentation", icon: Users, adminOnly: true },
       { label: "Báo giá", href: "/crm/quotes", icon: FileText },
       { label: "Việc cần làm", href: "/crm/tasks", icon: CheckSquare },
       { label: "Lịch hẹn", href: "/crm/calendar", icon: CalendarDays },
