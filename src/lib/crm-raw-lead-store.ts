@@ -182,6 +182,15 @@ export async function getRawLeads(filters?: {
     `SELECT * FROM crm_raw_leads ${where} ORDER BY created_at ASC LIMIT $${i} OFFSET $${i + 1}`,
     [...params, limit, offset]
   );
+  
+  console.log('[getRawLeads] Query:', {
+    where,
+    params,
+    limit,
+    offset,
+    total,
+    rowsCount: rows.length,
+  });
 
   return { items: rows.map(mapRow), total };
 }
