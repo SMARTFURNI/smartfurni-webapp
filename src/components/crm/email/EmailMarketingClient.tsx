@@ -1949,7 +1949,7 @@ function LaunchCampaignModal({
   async function handleLaunch() {
     setStep("sending");
     try {
-      const res = await fetch(`/api/crm/email/campaigns/${campaign.id}/launch`, {
+      const res = await fetch(`/api/crm/email/campaigns/${campaign.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
