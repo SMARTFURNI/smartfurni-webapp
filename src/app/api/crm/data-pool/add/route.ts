@@ -107,7 +107,8 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Lấy danh sách khách hàng từ database
-    const rawLeads = await getRawLeads();
+    const result = await getRawLeads();
+    const rawLeads = result.items || [];
     
     // Map dữ liệu để trả về format tương thích
     const customers = rawLeads.map(lead => ({
@@ -131,39 +132,23 @@ export async function GET(request: NextRequest) {
       {
         success: true,
         data: customers,
-        total: customers.length,
+        total: result.total || customers.length,
       },
       { status: 200 }
     );
   } catch (error) {
     console.error('Lỗi khi lấy danh sách khách hàng:', error);
     
-    // Nếu lỗi, trả về mock data để không break UI
-    const mockCustomers = [
-      {
-        id: 'lead_001',
-        name: 'Phạm Nhất Bá Tuất',
-        email: 'contact.foodcom@gmail.com',
-        phone: '0915694552',
-        company: 'FoodCom',
-        source: 'manual_test',
-        campaign: 'Test_Gường_Công_Thái_Học',
-        tags: ['B2B_Potential', 'Giường_Công_Thái_Học'],
-        notes: 'Khách hàng quan tâm mua giường công thái học cho nhà hàng',
-        status: 'pending',
-        product: 'Giường công thái học',
-        created_at: new Date().toISOString(),
-      },
-    ];
-
+    // Trả về error thực tế thay vì fallback
     return NextResponse.json(
       {
-        success: true,
-        data: mockCustomers,
-        total: mockCustomers.length,
-        warning: 'Có lỗi khi lấy dữ liệu từ database, đang hiển thị mock data',
+        success: false,
+        error: 'Lỗi khi lấy dữ liệu từ database',
+        details: error instanceof Error ? error.message : String(error),
+        data: [],
+        total: 0,
       },
-      { status: 200 }
+      { status: 500 }
     );
   }
 }
