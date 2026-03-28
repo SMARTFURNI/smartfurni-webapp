@@ -73,6 +73,222 @@ const T = {
   blue: "#2563EB", blueBg: "#EFF6FF",
 };
 
+// ── Revenue Chart (Doanh thu & Dự báo) ─────────────────────────────────────
+interface RevenueChartProps {
+  forecast: { forecastValue: number; pipelineCount: number; monthlyData: Array<{ label: string; actual: number; isForecast: boolean }> } | null;
+  stats: import("@/lib/crm-types").CrmStats;
+  periodStats: { newLeads: number; wonLeads: number; wonValue: number; convRate: number; sparkline: number[]; wonSparkline: number[] } | null;
+  theme: import("@/lib/crm-settings-store").DashboardTheme;
+  fmtVal: (v: number) => string;
+}
+
+function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueChartProps) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
+  const data = forecast?.monthlyData ?? stats.monthlyRevenue.map(m => ({ label: m.label, actual: m.value, isForecast: false }));
+  const maxVal = Math.max(...data.map(x => x.actual), 1);
+  const totalActual = data.filter(m => !m.isForecast).reduce((s, m) => s + m.actual, 0);
+  const currentIdx = forecast ? data.length - 2 : data.length - 1;
+  const currentVal = data[currentIdx]?.actual ?? 0;
+  const prevVal = data[currentIdx - 1]?.actual ?? 0;
+  const growthPct = prevVal > 0 ? Math.round(((currentVal - prevVal) / prevVal) * 100) : 0;
+
+  // SVG trend line
+  const CHART_W = 520;
+  const CHART_H = 56;
+  const nonForecast = data.filter(m => !m.isForecast);
+  const trendPts = nonForecast.map((m, i) => {
+    const x = (i / Math.max(nonForecast.length - 1, 1)) * CHART_W;
+    const y = CHART_H - (m.actual / maxVal) * (CHART_H - 8) - 4;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <div className="px-5 pb-5 pt-2">
+      {/* ── Header KPIs ── */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        {[
+          {
+            label: "Doanh thu tháng này",
+            value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth),
+            sub: growthPct !== 0 ? `${growthPct > 0 ? "+" : ""}${growthPct}% so tháng trước` : "So tháng trước",
+            subColor: growthPct >= 0 ? T.green : T.red,
+            icon: "$",
+            color: theme.accentColor,
+            bg: theme.accentColor + "10",
+            border: theme.accentColor + "30",
+          },
+          {
+            label: "KH mới tháng này",
+            value: String(periodStats?.newLeads ?? stats.newLeadsThisMonth),
+            sub: `Tổng ${stats.totalLeads} khách hàng`,
+            subColor: T.textMuted,
+            icon: "👥",
+            color: theme.kpiCustomerColor,
+            bg: theme.kpiCustomerColor + "10",
+            border: theme.kpiCustomerColor + "30",
+          },
+          {
+            label: "Dự báo tháng tới",
+            value: forecast ? `~${fmtVal(forecast.forecastValue)}` : "—",
+            sub: forecast ? `Từ ${forecast.pipelineCount} deal trong pipeline` : "Chưa có dữ liệu",
+            subColor: T.textMuted,
+            icon: "📈",
+            color: T.indigo,
+            bg: T.indigoBg,
+            border: T.indigo + "30",
+          },
+        ].map(({ label, value, sub, subColor, icon, color, bg, border }) => (
+          <div key={label} className="rounded-2xl p-3.5" style={{ background: bg, border: `1px solid ${border}` }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-base leading-none">{icon}</span>
+              <span className="text-[11px] font-semibold" style={{ color: T.textMuted }}>{label}</span>
+            </div>
+            <div className="text-xl font-black tracking-tight" style={{ color }}>{value}</div>
+            <div className="text-[10px] mt-1 font-medium" style={{ color: subColor }}>{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Bar Chart ── */}
+      <div className="rounded-2xl p-4" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+        {/* Y-axis labels */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Doanh thu (VNĐ)</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: `linear-gradient(180deg, ${theme.accentColor}CC, ${theme.accentColor})` }} />
+              <span className="text-[10px]" style={{ color: T.textMuted }}>Thực tế</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: T.indigoBg, border: `1.5px dashed ${T.indigo}` }} />
+              <span className="text-[10px]" style={{ color: T.textMuted }}>Dự báo</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bars */}
+        <div className="flex items-end gap-2" style={{ height: 140 }}>
+          {data.map((m, i) => {
+            const pct = maxVal > 0 ? (m.actual / maxVal) * 100 : 0;
+            const isCurrent = i === currentIdx;
+            const isForecast = m.isForecast;
+            const isHovered = hoveredIdx === i;
+            const barH = Math.max(8, (pct / 100) * 116);
+
+            return (
+              <div
+                key={m.label}
+                className="flex-1 flex flex-col items-center gap-1.5 cursor-pointer"
+                onMouseEnter={() => setHoveredIdx(i)}
+                onMouseLeave={() => setHoveredIdx(null)}
+              >
+                {/* Tooltip */}
+                <div
+                  className="text-[10px] font-bold px-2 py-1 rounded-lg whitespace-nowrap transition-all duration-150"
+                  style={{
+                    opacity: isHovered ? 1 : 0,
+                    transform: isHovered ? "translateY(0)" : "translateY(4px)",
+                    background: isForecast ? T.indigoBg : T.card,
+                    color: isForecast ? T.indigo : theme.accentColor,
+                    border: `1px solid ${isForecast ? T.indigo + "40" : theme.accentColor + "40"}`,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    pointerEvents: "none",
+                  }}
+                >
+                  {m.actual > 0 ? fmtVal(m.actual) : "—"}
+                </div>
+
+                {/* Bar container */}
+                <div className="w-full flex items-end" style={{ height: 116 }}>
+                  <div
+                    className="w-full rounded-t-xl transition-all duration-500 relative overflow-hidden"
+                    style={{
+                      height: barH,
+                      background: isForecast
+                        ? `repeating-linear-gradient(135deg, ${T.indigo}25, ${T.indigo}25 4px, ${T.indigoBg} 4px, ${T.indigoBg} 8px)`
+                        : isCurrent
+                        ? `linear-gradient(180deg, ${theme.accentColor}EE 0%, ${theme.accentColor} 100%)`
+                        : isHovered
+                        ? `linear-gradient(180deg, ${theme.accentColor}99 0%, ${theme.accentColor}CC 100%)`
+                        : `linear-gradient(180deg, ${theme.accentColor}45 0%, ${theme.accentColor}70 100%)`,
+                      border: isForecast ? `1.5px dashed ${T.indigo}80` : "none",
+                      transform: isHovered ? "scaleX(0.92)" : "scaleX(1)",
+                      transformOrigin: "bottom",
+                      boxShadow: isCurrent ? `0 -2px 12px ${theme.accentColor}50` : "none",
+                    }}
+                  >
+                    {/* Shine effect for current month */}
+                    {isCurrent && (
+                      <div className="absolute inset-0" style={{
+                        background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+                      }} />
+                    )}
+                  </div>
+                </div>
+
+                {/* Label */}
+                <span
+                  className="text-[10px] font-bold"
+                  style={{
+                    color: isForecast ? T.indigo : isCurrent ? theme.accentColor : T.textMuted,
+                  }}
+                >
+                  {m.label}{isForecast ? " *" : ""}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* SVG Trend Line */}
+        {nonForecast.length >= 2 && (
+          <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${T.divider}` }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <TrendingUp size={11} style={{ color: T.indigo }} />
+              <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Xu hướng 6 tháng</span>
+              <span className="ml-auto text-[10px] font-bold" style={{ color: T.textMuted }}>
+                Tổng: <span style={{ color: T.textSecondary }}>{fmtVal(totalActual)}</span>
+              </span>
+            </div>
+            <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full" style={{ height: 40 }} preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={T.indigo} stopOpacity="0.15" />
+                  <stop offset="100%" stopColor={T.indigo} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {/* Area fill */}
+              <polygon
+                points={`0,${CHART_H} ${trendPts} ${CHART_W},${CHART_H}`}
+                fill="url(#trendGrad)"
+              />
+              {/* Line */}
+              <polyline
+                points={trendPts}
+                fill="none"
+                stroke={T.indigo}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.7"
+              />
+              {/* Dots */}
+              {nonForecast.map((m, i) => {
+                const x = (i / Math.max(nonForecast.length - 1, 1)) * CHART_W;
+                const y = CHART_H - (m.actual / maxVal) * (CHART_H - 8) - 4;
+                return (
+                  <circle key={i} cx={x} cy={y} r="3" fill={T.indigo} opacity="0.8" />
+                );
+              })}
+            </svg>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Sparkline mini chart ─────────────────────────────────────────────────────
 function Sparkline({ data, color, height = 28 }: { data: number[]; color: string; height?: number }) {
   if (!data || data.length < 2) return null;
@@ -645,90 +861,13 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
             {/* Revenue Chart + Forecast */}
             {isVisible("revenueChart") && <Section title="Doanh thu & Dự báo" icon={BarChart2} iconColor={theme.accentColor} iconBg={theme.accentColor + "18"}>
-              <div className="p-6">
-                {forecast ? (
-                  <div>
-                    <div className="flex items-end gap-3 h-32 mb-4">
-                      {forecast.monthlyData.map((m, i) => {
-                        const maxVal = Math.max(...forecast.monthlyData.map(x => x.actual), 1);
-                        const pct = maxVal > 0 ? (m.actual / maxVal) * 100 : 0;
-                        const isCurrentMonth = i === forecast.monthlyData.length - 2;
-                        const isForecast = m.isForecast;
-                        const valLabel = fmtVal(m.actual);
-                        return (
-                          <div key={m.label} className="flex-1 flex flex-col items-center gap-1 group">
-                            {m.actual > 0 && (
-                              <div className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                                style={{ color: T.textSecondary }}>{valLabel}</div>
-                            )}
-                            <div className="w-full relative flex-1 flex items-end">
-                              <div className="w-full rounded-t-md transition-all duration-700 relative overflow-hidden"
-                                style={{
-                                  height: `${Math.max(6, pct)}%`,
-                                  background: isForecast
-                                    ? `repeating-linear-gradient(45deg, ${theme.accentColor}40, ${theme.accentColor}40 3px, transparent 3px, transparent 6px)`
-                                    : isCurrentMonth
-                                    ? `linear-gradient(180deg, ${theme.accentColor}CC, ${theme.accentColor})`
-                                    : T.cardBorder,
-                                  border: isForecast ? `1px dashed ${theme.accentColor}` : "none",
-                                  minHeight: 6,
-                                }}>
-                              </div>
-                            </div>
-                            <span className="text-[10px] font-semibold"
-                              style={{ color: isForecast ? theme.accentColor : isCurrentMonth ? theme.accentColor : T.textMuted }}>
-                              {m.label}{isForecast ? " *" : ""}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex items-center gap-4 pt-3 mb-4" style={{ borderTop: `1px solid ${T.divider}` }}>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-2 rounded-sm" style={{ background: theme.accentColor }} />
-                        <span className="text-[10px]" style={{ color: T.textMuted }}>Thực tế</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-2 rounded-sm" style={{ border: `1px dashed ${theme.accentColor}`, background: `${theme.accentColor}20` }} />
-                        <span className="text-[10px]" style={{ color: T.textMuted }}>Dự báo tháng tới</span>
-                      </div>
-                      <div className="ml-auto text-right">
-                        <div className="text-xs font-black" style={{ color: theme.accentColor }}>~{fmtVal(forecast.forecastValue)}</div>
-                        <div className="text-[10px]" style={{ color: T.textMuted }}>Dự báo từ {forecast.pipelineCount} deal</div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { label: "KH mới", value: periodStats?.newLeads ?? stats.newLeadsThisMonth, color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12" },
-                        { label: "Đơn chốt", value: periodStats?.wonLeads ?? stats.wonLeadsThisMonth, color: theme.kpiWonColor, bg: theme.kpiWonColor + "12" },
-                        { label: "Doanh thu", value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth), color: theme.accentColor, bg: theme.accentColor + "12" },
-                      ].map(({ label, value, color, bg }) => (
-                        <div key={label} className="text-center p-3 rounded-xl" style={{ background: bg }}>
-                          <div className="text-sm font-black" style={{ color }}>{value}</div>
-                          <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>{label}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-end gap-3 h-28 mb-4">
-                    {stats.monthlyRevenue.map((m, i) => {
-                      const maxVal = Math.max(...stats.monthlyRevenue.map(x => x.value), 1);
-                      const pct = maxVal > 0 ? (m.value / maxVal) * 100 : 0;
-                      const isCurrentMonth = i === stats.monthlyRevenue.length - 1;
-                      return (
-                        <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                          <div className="w-full relative flex-1 flex items-end">
-                            <div className="w-full rounded-t-md"
-                              style={{ height: `${Math.max(6, pct)}%`, background: isCurrentMonth ? `linear-gradient(180deg, ${theme.accentColor}CC, ${theme.accentColor})` : T.cardBorder, minHeight: 6 }} />
-                          </div>
-                          <span className="text-[10px] font-semibold" style={{ color: isCurrentMonth ? theme.accentColor : T.textMuted }}>{m.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <RevenueChart
+                forecast={forecast}
+                stats={stats}
+                periodStats={periodStats}
+                theme={theme}
+                fmtVal={fmtVal}
+              />
             </Section>}
 
             {/* Conversion Funnel */}
