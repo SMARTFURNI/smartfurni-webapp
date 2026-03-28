@@ -49,23 +49,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transporter
+    const gmailUser = process.env.GMAIL_USER || "smartfurni.crm@gmail.com";
+    const gmailPassword = process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD;
+    
+    if (!gmailUser || !gmailPassword) {
+      console.error("[send-test] Missing Gmail credentials");
+      return NextResponse.json(
+        { success: false, error: "Cấu hình Gmail chưa hoàn thành" },
+        { status: 500 }
+      );
+    }
+    
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASSWORD,
+        user: gmailUser,
+        pass: gmailPassword,
       },
     });
 
     // Send email
     const info = await transporter.sendMail({
-      from: process.env.GMAIL_USER,
+      from: gmailUser,
       to: emailToSend,
       subject: `[TEST] ${emailSubject}`,
       html: finalHtml,
     });
 
-    console.log("[send-test] Email sent:", info.messageId);
+    console.log("[send-test] Email sent successfully:", info.messageId);
+    console.log("[send-test] To:", emailToSend);
+    console.log("[send-test] Subject:", emailSubject);
 
     return NextResponse.json({
       success: true,
@@ -80,7 +93,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[send-test] Error:", error);
     return NextResponse.json(
-      { success: false, error: "Lỗi gửi email test" },
+      { success: false, error: "Lỗi gửi email test: " + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

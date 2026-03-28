@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import nodemailer from "nodemailer";
 
 /**
  * API endpoint đơn giản để gửi email test
@@ -89,28 +90,57 @@ export async function POST(request: NextRequest) {
       </html>
     `;
 
-    // Log email (trong thực tế sẽ gửi qua SMTP)
-    console.log("[send-simple] Email được tạo:");
+    // Setup Gmail transporter
+    const gmailUser = process.env.GMAIL_USER || "smartfurni.crm@gmail.com";
+    const gmailPassword = process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD;
+    
+    if (!gmailUser || !gmailPassword) {
+      console.error("[send-simple] Missing Gmail credentials");
+      return NextResponse.json(
+        { success: false, error: "Cấu hình Gmail chưa hoàn thành" },
+        { status: 500 }
+      );
+    }
+    
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: gmailUser,
+        pass: gmailPassword,
+      },
+    });
+    
+    // Send email
+    const info = await transporter.sendMail({
+      from: gmailUser,
+      to: to_email,
+      subject: emailSubject,
+      html: emailContent,
+    });
+    
+    console.log("[send-simple] Email sent successfully:");
+    console.log(`  Message ID: ${info.messageId}`);
     console.log(`  To: ${to_email}`);
     console.log(`  Subject: ${emailSubject}`);
-    console.log(`  Content length: ${emailContent.length}`);
 
     return NextResponse.json({
       success: true,
-      message: `Email test đã được tạo và sẵn sàng gửi đến ${to_email}`,
+      message: `Email đã được gửi thành công đến ${to_email}`,
       data: {
         to_email,
         subject: emailSubject,
-        preview: emailContent.substring(0, 200) + "...",
+        messageId: info.messageId,
         timestamp: new Date().toISOString(),
-        status: "queued",
-        note: "Email sẽ được gửi trong 1-2 phút"
+        status: "sent",
       },
     });
   } catch (error) {
     console.error("[send-simple] Error:", error);
     return NextResponse.json(
-      { success: false, error: "Lỗi tạo email test" },
+      { 
+        success: false, 
+        error: "Lỗi gửi email: " + (error instanceof Error ? error.message : String(error))
+      },
       { status: 500 }
     );
   }
