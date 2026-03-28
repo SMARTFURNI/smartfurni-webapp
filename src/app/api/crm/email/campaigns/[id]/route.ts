@@ -130,8 +130,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const result = await resend.emails.send({
         from: `${FROM_NAME} <${FROM_EMAIL}>`,
         to: [lead.email],
+        replyTo: FROM_EMAIL,
         subject: campaign.subject,
         html: personalizedHtml,
+        headers: {
+          // Precedence bulk khiến Gmail nhận diện là newsletter → bỏ để vào Primary
+          // "Precedence": "bulk",
+          // List-Unsubscribe giúp tránh spam nhưng cũng trigger Promotions tab
+          // Chỉ thêm khi cần tuân thủ CAN-SPAM nghiêm ngặt
+          "X-Mailer": "SmartFurni-CRM",
+          "X-Priority": "3",
+        },
         tags: [
           { name: "campaign_id", value: id },
           { name: "segment", value: campaign.segment },
