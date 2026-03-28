@@ -77,6 +77,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true },
       { label: "Email Automation", href: "/crm/email-automation", icon: Zap, adminOnly: true },
       { label: "Email Scenarios", href: "/crm/email-scenarios", icon: Bot, adminOnly: true },
+      { label: "Quản Lý Mẫu Email", href: "/crm/email-templates", icon: Mail, adminOnly: true },
       { label: "Cài Đặt Tự Động Hoá", href: "/crm/email-automation-settings", icon: Settings, adminOnly: true },
       { label: "Facebook Lead Ads", href: "/crm/integrations/facebook", icon: Share2, superAdminOnly: true },
       { label: "Google Sheet Sync", href: "/crm/integrations/google-sheet", icon: Sheet, superAdminOnly: true },
