@@ -35,10 +35,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: {
-        scenarios,
-        stats,
-      },
+      data: scenarios,
+      stats,
     });
   } catch (error) {
     console.error('[EMAIL-SCENARIOS-API] Lỗi:', error);
