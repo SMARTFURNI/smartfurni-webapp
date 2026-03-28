@@ -4,6 +4,7 @@
  */
 
 import { getTemplateById, renderTemplate } from './email-template-service';
+import { productLaunchScenario } from './product-launch-templates';
 
 export interface EmailScenarioStep {
   id: string;
@@ -44,7 +45,7 @@ export interface EmailScenario {
   };
 }
 
-// 3 kịch bản mặc định
+// 4 kịch bản mặc định (3 cơ bản + 1 ra mắt sản phẩm)
 const DEFAULT_SCENARIOS: EmailScenario[] = [
   {
     id: 'scenario-welcome-series',
@@ -172,6 +173,17 @@ const DEFAULT_SCENARIOS: EmailScenario[] = [
       clickRate: 35,
       conversionRate: 15,
     },
+  },
+  {
+    id: productLaunchScenario.id,
+    name: productLaunchScenario.name,
+    description: productLaunchScenario.description,
+    trigger: productLaunchScenario.trigger as EmailScenarioTrigger,
+    steps: productLaunchScenario.steps as EmailScenarioStep[],
+    enabled: productLaunchScenario.enabled,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    stats: productLaunchScenario.stats,
   },
 ];
 
@@ -316,6 +328,17 @@ export async function executeScenario(
         discountPrice: '40,000,000 VNĐ',
         savings: '10,000,000 VNĐ',
         orderId: leadData.id,
+        // Thêm biến cho ra mắt sản phẩm
+        feature1: 'Công nghệ AI tiên tiến',
+        feature2: 'Thiết kế hiện đại',
+        feature3: 'Giá cạnh tranh',
+        feature4: 'Hỗ trợ 24/7',
+        launchPrice: '45,000,000 VNĐ',
+        discount: '20',
+        benefit1: 'Tiết kiệm 50% thời gian',
+        benefit2: 'Tăng hiệu suất 200%',
+        benefit3: 'Giảm chi phí 30%',
+        expiryTime: '23:59 hôm nay',
       });
 
       // Tính thời gian gửi
