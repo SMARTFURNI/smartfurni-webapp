@@ -1025,6 +1025,201 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               </Section>
             </div>}
 
+            {/* ── Business Metrics Row ──────────────────────────────────── */}
+            <div className="grid grid-cols-2 gap-5">
+              {/* Sales Velocity + AOV */}
+              <Section title="Chỉ số bán hàng" icon={TrendingUp} iconColor={T.green} iconBg={T.greenBg}>
+                <div className="p-4 space-y-3">
+                  {(() => {
+                    const wonLeadsAll = leads.filter(l => l.stage === "won");
+                    const aov = wonLeadsAll.length > 0 ? Math.round(wonLeads.reduce((s, l) => s + (l.expectedValue || 0), 0) / Math.max(wonLeadsAll.length, 1)) : 0;
+                    const activeCount = activeLeads.length;
+                    const convRate = leads.length > 0 ? (wonLeadsAll.length / leads.length) : 0;
+                    const avgCycleDays = 45; // B2B furniture avg
+                    const velocity = activeCount > 0 ? Math.round((convRate * aov) / avgCycleDays * 30) : 0;
+                    const lostLeads = leads.filter(l => l.stage === "lost");
+                    const winRate = (wonLeadsAll.length + lostLeads.length) > 0
+                      ? Math.round((wonLeadsAll.length / (wonLeadsAll.length + lostLeads.length)) * 100) : 0;
+                    const items = [
+                      { label: "Giá trị đơn TB (AOV)", value: aov >= 1e6 ? `${(aov/1e6).toFixed(0)}tr` : aov > 0 ? formatVND(aov) : "—", icon: DollarSign, color: T.gold, sub: "Trung bình đơn đã chốt" },
+                      { label: "Tốc độ bán hàng", value: velocity >= 1e6 ? `${(velocity/1e6).toFixed(0)}tr/th` : velocity > 0 ? `${(velocity/1e3).toFixed(0)}k/th` : "—", icon: Zap, color: T.indigo, sub: "Doanh thu dự kiến/tháng" },
+                      { label: "Win Rate thực tế", value: `${winRate}%`, icon: Trophy, color: winRate >= 40 ? T.green : winRate >= 20 ? T.gold : T.red, sub: `${wonLeadsAll.length} chốt / ${lostLeads.length} mất` },
+                      { label: "Pipeline đang xử lý", value: activeCount, icon: Target, color: theme.accentColor, sub: `Tổng ${fmtVal(activeLeads.reduce((s,l) => s+(l.expectedValue||0),0))} giá trị` },
+                    ];
+                    return items.map(({ label, value, icon: Icon, color, sub }) => (
+                      <div key={label} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
+                          <Icon size={14} style={{ color }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-medium" style={{ color: T.textMuted }}>{label}</div>
+                          <div className="text-sm font-black" style={{ color: T.textPrimary }}>{value}</div>
+                        </div>
+                        <div className="text-[9px] text-right" style={{ color: T.textMuted }}>{sub}</div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </Section>
+
+              {/* Pipeline Health Score */}
+              <Section title="Sức khỏe Pipeline" icon={Activity} iconColor={T.indigo} iconBg={T.indigoBg}>
+                <div className="p-4">
+                  {(() => {
+                    const totalPipeline = activeLeads.length;
+                    const highValueLeads = activeLeads.filter(l => (l.expectedValue || 0) >= 500_000_000);
+                    const staleCount = staleDeals.length;
+                    const overdueCount = overdueLeads.length;
+                    const hotLeads = activeLeads.filter(l => ["negotiating", "quoted"].includes(l.stage));
+                    // Health score 0-100
+                    const staleRatio = totalPipeline > 0 ? staleCount / totalPipeline : 0;
+                    const overdueRatio = totalPipeline > 0 ? overdueCount / totalPipeline : 0;
+                    const hotRatio = totalPipeline > 0 ? hotLeads.length / totalPipeline : 0;
+                    const score = Math.max(0, Math.min(100, Math.round(
+                      100 - staleRatio * 40 - overdueRatio * 30 + hotRatio * 20
+                    )));
+                    const scoreColor = score >= 70 ? T.green : score >= 40 ? T.gold : T.red;
+                    const scoreLabel = score >= 70 ? "Tốt" : score >= 40 ? "Trung bình" : "Cần cải thiện";
+                    const metrics = [
+                      { label: "Deal nóng (sắp chốt)", value: hotLeads.length, color: T.green, icon: Flame },
+                      { label: "Deal giá trị cao (>500tr)", value: highValueLeads.length, color: T.gold, icon: Star },
+                      { label: "Deal có nguy cơ mất", value: staleCount, color: T.orange, icon: AlertTriangle },
+                      { label: "Quá hạn liên hệ", value: overdueCount, color: T.red, icon: Clock },
+                    ];
+                    return (
+                      <>
+                        {/* Score Circle */}
+                        <div className="flex items-center gap-4 mb-4 p-3 rounded-2xl" style={{ background: `${scoreColor}08`, border: `1px solid ${scoreColor}20` }}>
+                          <div className="relative w-16 h-16 flex-shrink-0">
+                            <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
+                              <circle cx="32" cy="32" r="26" fill="none" stroke={T.bg} strokeWidth="8" />
+                              <circle cx="32" cy="32" r="26" fill="none" stroke={scoreColor} strokeWidth="8"
+                                strokeDasharray={`${(score / 100) * 163.4} 163.4`}
+                                strokeLinecap="round" />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <span className="text-lg font-black leading-none" style={{ color: scoreColor }}>{score}</span>
+                              <span className="text-[8px] font-bold" style={{ color: T.textMuted }}>/100</span>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm font-black" style={{ color: scoreColor }}>{scoreLabel}</div>
+                            <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>Pipeline Health Score</div>
+                            <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>{totalPipeline} deal đang xử lý</div>
+                          </div>
+                        </div>
+                        {/* Breakdown */}
+                        <div className="grid grid-cols-2 gap-2">
+                          {metrics.map(({ label, value, color, icon: Icon }) => (
+                            <div key={label} className="p-2.5 rounded-xl" style={{ background: `${color}08`, border: `1px solid ${color}18` }}>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <Icon size={11} style={{ color }} />
+                                <span className="text-[9px] font-semibold" style={{ color: T.textMuted }}>{label}</span>
+                              </div>
+                              <div className="text-xl font-black" style={{ color }}>{value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </Section>
+            </div>
+
+            {/* ── Win/Loss Analysis ─────────────────────────────────────────── */}
+            <Section title="Phân tích Win/Loss" icon={PieChart} iconColor={T.purple} iconBg={T.purpleBg}>
+              <div className="p-4">
+                {(() => {
+                  const wonLeadsAll = leads.filter(l => l.stage === "won");
+                  const lostLeads = leads.filter(l => l.stage === "lost");
+                  const wonVal = wonLeadsAll.reduce((s, l) => s + (l.expectedValue || 0), 0);
+                  const lostVal = lostLeads.reduce((s, l) => s + (l.expectedValue || 0), 0);
+                  const total = wonLeadsAll.length + lostLeads.length;
+                  const wonPct = total > 0 ? Math.round((wonLeadsAll.length / total) * 100) : 0;
+                  const lostPct = total > 0 ? 100 - wonPct : 0;
+
+                  // By source win analysis
+                  const sourceWinData = stats.bySource.slice(0, 4).map(s => ({
+                    source: s.source,
+                    winRate: s.count > 0 ? Math.round((s.wonCount / s.count) * 100) : 0,
+                    count: s.count,
+                    color: SOURCE_COLORS[s.source] || "#6b7280",
+                  }));
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Win vs Loss */}
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: T.textMuted }}>Tổng kết</div>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="flex-1">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-[10px] font-semibold" style={{ color: T.green }}>Won</span>
+                              <span className="text-[10px] font-black" style={{ color: T.green }}>{wonPct}%</span>
+                            </div>
+                            <div className="h-3 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                              <div className="h-full rounded-full" style={{ width: `${wonPct}%`, background: `linear-gradient(90deg, ${T.green}, #047857)` }} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="flex-1">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-[10px] font-semibold" style={{ color: T.red }}>Lost</span>
+                              <span className="text-[10px] font-black" style={{ color: T.red }}>{lostPct}%</span>
+                            </div>
+                            <div className="h-3 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                              <div className="h-full rounded-full" style={{ width: `${lostPct}%`, background: `linear-gradient(90deg, ${T.red}, #B91C1C)` }} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="p-3 rounded-xl text-center" style={{ background: T.greenBg, border: `1px solid ${T.green}20` }}>
+                            <div className="text-lg font-black" style={{ color: T.green }}>{wonLeadsAll.length}</div>
+                            <div className="text-[9px] font-semibold" style={{ color: T.green }}>Deal chốt</div>
+                            <div className="text-[9px] mt-0.5" style={{ color: T.textMuted }}>{fmtVal(wonVal)}</div>
+                          </div>
+                          <div className="p-3 rounded-xl text-center" style={{ background: T.redBg, border: `1px solid ${T.red}20` }}>
+                            <div className="text-lg font-black" style={{ color: T.red }}>{lostLeads.length}</div>
+                            <div className="text-[9px] font-semibold" style={{ color: T.red }}>Deal mất</div>
+                            <div className="text-[9px] mt-0.5" style={{ color: T.textMuted }}>{fmtVal(lostVal)}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Win rate by source */}
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: T.textMuted }}>Win Rate theo nguồn</div>
+                        <div className="space-y-2.5">
+                          {sourceWinData.length === 0 ? (
+                            <p className="text-xs text-center py-4" style={{ color: T.textMuted }}>Chưa có dữ liệu</p>
+                          ) : sourceWinData.map(({ source, winRate, count, color }) => (
+                            <div key={source}>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+                                  <span className="text-[10px] font-medium truncate max-w-[100px]" style={{ color: T.textSecondary }}>{source}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px]" style={{ color: T.textMuted }}>{count} KH</span>
+                                  <span className="text-[10px] font-black" style={{ color: winRate >= 40 ? T.green : winRate >= 20 ? T.gold : T.red }}>{winRate}%</span>
+                                </div>
+                              </div>
+                              <div className="h-2 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                                <div className="h-full rounded-full transition-all duration-700"
+                                  style={{ width: `${winRate}%`, background: winRate >= 40 ? T.green : winRate >= 20 ? T.gold : T.red }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </Section>
+
             {/* Activity Heatmap */}
             {isVisible("heatmap") && Object.keys(heatmap).length > 0 && (
               <Section title="Heatmap hoạt động" icon={Activity} iconColor={T.purple} iconBg={T.purpleBg}>
@@ -1348,6 +1543,67 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 </div>
               </Section>
             )}
+
+            {/* Monthly Target */}
+            <Section title="Mục tiêu tháng" icon={Crosshair} iconColor={T.indigo} iconBg={T.indigoBg}>
+              <div className="p-4">
+                {(() => {
+                  const currentRev = periodStats?.wonValue ?? stats.wonValueThisMonth;
+                  const target = 1_200_000_000; // 1.2B default target
+                  const pct = Math.min(100, Math.round((currentRev / target) * 100));
+                  const remaining = Math.max(0, target - currentRev);
+                  const barColor = pct >= 100 ? T.green : pct >= 70 ? T.gold : pct >= 40 ? T.indigo : T.red;
+                  const wonCount = periodStats?.wonLeads ?? stats.wonLeadsThisMonth;
+                  const newLeadsCount = periodStats?.newLeads ?? stats.newLeadsThisMonth;
+                  const targetLeads = 15;
+                  const targetWon = 3;
+                  const leadPct = Math.min(100, Math.round((newLeadsCount / targetLeads) * 100));
+                  const wonPct2 = Math.min(100, Math.round((wonCount / targetWon) * 100));
+                  return (
+                    <>
+                      {/* Revenue target */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Doanh thu</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black" style={{ color: barColor }}>{pct}%</span>
+                            <span className="text-[10px]" style={{ color: T.textMuted }}>/ {fmtVal(target)}</span>
+                          </div>
+                        </div>
+                        <div className="h-3 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                          <div className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
+                            style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${barColor}CC, ${barColor})` }}>
+                            <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)" }} />
+                          </div>
+                        </div>
+                        <div className="flex justify-between mt-1.5">
+                          <span className="text-[10px] font-bold" style={{ color: T.textPrimary }}>{fmtVal(currentRev)}</span>
+                          {remaining > 0 && <span className="text-[10px]" style={{ color: T.textMuted }}>Còn {fmtVal(remaining)}</span>}
+                          {remaining === 0 && <span className="text-[10px] font-bold" style={{ color: T.green }}>✅ Đạt mục tiêu!</span>}
+                        </div>
+                      </div>
+                      {/* Sub-targets */}
+                      <div className="space-y-2.5">
+                        {[
+                          { label: "KH mới", current: newLeadsCount, target: targetLeads, pct: leadPct, color: theme.kpiCustomerColor },
+                          { label: "Đơn chốt", current: wonCount, target: targetWon, pct: wonPct2, color: T.green },
+                        ].map(({ label, current, target: t, pct: p, color }) => (
+                          <div key={label}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] font-medium" style={{ color: T.textMuted }}>{label}</span>
+                              <span className="text-[10px] font-bold" style={{ color }}>{current}/{t}</span>
+                            </div>
+                            <div className="h-2 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                              <div className="h-full rounded-full" style={{ width: `${p}%`, background: color }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </Section>
 
             {/* Quick Stats */}
             {isVisible("quickStats") && <Section title="Thống kê nhanh" icon={Eye} iconColor={theme.kpiPipelineColor} iconBg={theme.kpiPipelineColor + "18"}>
