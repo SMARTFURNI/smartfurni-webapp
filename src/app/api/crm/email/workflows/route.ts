@@ -106,9 +106,58 @@ export async function PATCH(req: NextRequest) {
     const existing = workflows.find(w => w.id === id);
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const updated = { ...existing, status: status || existing.status, updatedAt: new Date().toISOString() };
-    await saveEmailWorkflow(updated);
-    return NextResponse.json({ ok: true });
+    // Toggle status only (from WorkflowTab activate/deactivate button)
+    if (status && Object.keys(body).length === 2) {
+      const updated = { ...existing, status, updatedAt: new Date().toISOString() };
+      await saveEmailWorkflow(updated);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Full update from WorkflowModal (edit workflow with steps, templates, etc.)
+    const updatedSteps = (body.steps || existing.steps || []).map((s: any, i: number) => ({
+      id: s.id || generateId(),
+      stepOrder: i + 1,
+      type: "action_send_email" as const,
+      config: {
+        templateId: s.templateId ?? s.config?.templateId ?? "",
+        subject: s.subject ?? s.config?.subject ?? "",
+        delayDays: s.delayDays ?? s.config?.delayDays ?? 0,
+        action: s.action ?? "send_email",
+      },
+      nextStepId: null,
+    }));
+
+    const updated = {
+      ...existing,
+      name: body.name ?? existing.name,
+      description: body.description ?? (existing as any).description ?? "",
+      triggerType: body.triggerType ?? existing.triggerType,
+      status: body.status ?? existing.status,
+      steps: updatedSteps,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await saveEmailWorkflow(updated as EmailWorkflow);
+
+    // Return UI-friendly format
+    return NextResponse.json({
+      id: updated.id,
+      name: updated.name,
+      description: (updated as any).description,
+      triggerType: updated.triggerType,
+      status: updated.status,
+      steps: updatedSteps.map((s: any) => ({
+        id: s.id,
+        stepOrder: s.stepOrder,
+        delayDays: s.config.delayDays,
+        templateId: s.config.templateId,
+        templateName: "",
+        subject: s.config.subject,
+        action: s.config.action,
+      })),
+      createdAt: existing.createdAt,
+      runCount: (existing as any).runCount ?? 0,
+    });
   } catch (err) {
     console.error("PATCH /api/crm/email/workflows error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
