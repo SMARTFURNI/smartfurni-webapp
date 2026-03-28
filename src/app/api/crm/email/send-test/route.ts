@@ -26,11 +26,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Check SMTP configuration — support multiple env var naming conventions
-    const smtpHost = process.env.SMTP_HOST || (process.env.GMAIL_EMAIL ? "smtp.gmail.com" : "");
-    const smtpUser = process.env.SMTP_USER || process.env.GMAIL_EMAIL || "";
-    const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || process.env.GMAIL_APP_PASSWORD || "";
-    const smtpPort = parseInt(process.env.SMTP_PORT || "587");
-    const isGmail = !!(process.env.GMAIL_EMAIL || process.env.GMAIL_APP_PASSWORD);
+    const gmailEmail = process.env.GMAIL_EMAIL || "";
+    const gmailPass = process.env.GMAIL_APP_PASSWORD || "";
+    const smtpHost = process.env.SMTP_HOST || (gmailEmail ? "smtp.gmail.com" : "");
+    const smtpUser = process.env.SMTP_USER || gmailEmail;
+    const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || gmailPass;
+    const isGmail = !!(gmailEmail && gmailPass) || smtpHost === "smtp.gmail.com";
 
     if (!smtpHost || !smtpUser || !smtpPass) {
       // Return mock success when SMTP not configured (for preview/demo)
@@ -47,10 +48,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Build test email HTML with test banner
+    const sourceLabel =
+      sourceType === "campaign" ? "CHIẾN DỊCH" :
+      sourceType === "template" ? "MẪU EMAIL" :
+      sourceType === "workflow" ? "WORKFLOW" : "EMAIL BUILDER";
+
     const testBanner = `
       <div style="background:#fef3c7;border:2px dashed #f59e0b;padding:12px 20px;margin-bottom:0;font-family:Arial,sans-serif;text-align:center">
         <span style="font-size:12px;font-weight:700;color:#92400e;letter-spacing:1px">
-          🧪 EMAIL TEST — ${sourceType === "campaign" ? "CHIẾN DỊCH" : sourceType === "template" ? "MẪU EMAIL" : sourceType === "workflow" ? "WORKFLOW" : "EMAIL BUILDER"}: ${sourceName || ""}
+          🧪 EMAIL TEST — ${sourceLabel}: ${sourceName || ""}
         </span>
         <span style="display:block;font-size:11px;color:#b45309;margin-top:2px">
           Gửi lúc ${new Date().toLocaleString("vi-VN")} · Đây là email test, không phải email thật
@@ -82,22 +88,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Use Gmail service (SSL port 465) for faster, more reliable delivery
     const transporter = isGmail
       ? nodemailer.default.createTransport({
-          service: "gmail",
+          host: "smtp.gmail.com",
+          port: 465,
+          secure: true, // SSL
           auth: { user: smtpUser, pass: smtpPass },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
         })
       : nodemailer.default.createTransport({
           host: smtpHost,
-          port: smtpPort,
-          secure: smtpPort === 465,
+          port: parseInt(process.env.SMTP_PORT || "587"),
+          secure: process.env.SMTP_PORT === "465",
           auth: { user: smtpUser, pass: smtpPass },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
         });
 
     const fromName = senderName || "SmartFurni CRM";
     const fromEmail = senderEmail || smtpUser;
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to,
       subject: `[TEST] ${subject}`,
@@ -108,6 +123,7 @@ export async function POST(req: NextRequest) {
       success: true,
       mock: false,
       message: `Email test đã được gửi thành công tới ${to}`,
+      messageId: info.messageId,
       to,
       subject: `[TEST] ${subject}`,
       sourceType: sourceType || "unknown",
