@@ -8,6 +8,7 @@ import {
   getEmailLogs,
 } from "@/lib/crm-email-store";
 import { getLeads } from "@/lib/crm-store";
+import { query } from "@/lib/db";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -26,20 +27,39 @@ function replaceVariables(html: string, lead: { name: string; company: string; e
     .replace(/\{\{assignedTo\}\}/g, String(lead.assignedTo || "SmartFurni Team"));
 }
 
-// Thêm unsubscribe footer vào email
-function addEmailFooter(html: string, campaignId: string, leadEmail: string): string {
-  const unsubscribeUrl = `https://smartfurni-webapp-production.up.railway.app/unsubscribe?campaign=${campaignId}&email=${encodeURIComponent(leadEmail)}`;
+const BASE_URL = "https://smartfurni-webapp-production.up.railway.app";
+
+// Nhúng tracking pixel 1x1 và footer vào email
+function addEmailFooter(html: string, campaignId: string, leadEmail: string, logId: string): string {
+  const unsubscribeUrl = `${BASE_URL}/unsubscribe?campaign=${campaignId}&email=${encodeURIComponent(leadEmail)}`;
+  const pixelUrl = `${BASE_URL}/api/track/open?c=${encodeURIComponent(campaignId)}&l=${encodeURIComponent(logId)}`;
+
+  const trackingPixel = `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;margin:0;padding:0" />`;
+
   const footer = `
-    <div style="margin-top:32px;padding-top:16px;border-top:1px solid #222;text-align:center">
-      <p style="color:#666;font-size:11px;margin:0">
+    <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;text-align:center">
+      <p style="color:#9ca3af;font-size:11px;margin:0;line-height:1.6">
         Bạn nhận email này vì đã đăng ký nhận thông tin từ SmartFurni.<br/>
-        <a href="${unsubscribeUrl}" style="color:#888;text-decoration:underline">Hủy đăng ký nhận email</a>
+        <a href="${unsubscribeUrl}" style="color:#9ca3af;text-decoration:underline">Hủy đăng ký nhận email</a>
       </p>
-    </div>`;
+    </div>
+    ${trackingPixel}`;
+
   if (html.includes("</body>")) {
     return html.replace("</body>", `${footer}</body>`);
   }
   return html + footer;
+}
+
+// Wrap tất cả link trong email qua /api/track/click
+function wrapLinksForTracking(html: string, campaignId: string, logId: string): string {
+  // Match href="https://..." nhưng bỏ qua link đã là tracking
+  const hrefRegex = new RegExp('href="(https?://[^"]+)"', 'g');
+  return html.replace(hrefRegex, (match: string, url: string) => {
+    if (url.includes('/api/track/')) return match;
+    const trackUrl = `${BASE_URL}/api/track/click?c=${encodeURIComponent(campaignId)}&l=${encodeURIComponent(logId)}&url=${encodeURIComponent(url)}`;
+    return `href="${trackUrl}"`;
+  });
 }
 
 // Lọc leads theo segment
@@ -121,11 +141,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     try {
-      const personalizedHtml = addEmailFooter(
-        replaceVariables(campaign.htmlContent || `<p>Kính gửi ${lead.name || "Quý khách"},</p><p>${campaign.subject}</p>`, lead),
-        id,
-        lead.email
+      // Bước 1: Tạo log trước để lấy logId nhúng vào tracking pixel
+      const logId = await createEmailLog({
+        campaignId: id,
+        leadId: lead.id,
+        leadName: lead.name || "",
+        email: lead.email,
+        status: "sent",
+      });
+
+      // Bước 2: Personalize HTML
+      const rawHtml = replaceVariables(
+        campaign.htmlContent || `<p>Kính gửi ${lead.name || "Quý khách"},</p><p>${campaign.subject}</p>`,
+        lead
       );
+
+      // Bước 3: Wrap links để tracking click
+      const linkedHtml = wrapLinksForTracking(rawHtml, id, logId);
+
+      // Bước 4: Thêm footer + tracking pixel
+      const personalizedHtml = addEmailFooter(linkedHtml, id, lead.email, logId);
 
       const result = await resend.emails.send({
         from: `${FROM_NAME} <${FROM_EMAIL}>`,
@@ -134,10 +169,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         subject: campaign.subject,
         html: personalizedHtml,
         headers: {
-          // Precedence bulk khiến Gmail nhận diện là newsletter → bỏ để vào Primary
-          // "Precedence": "bulk",
-          // List-Unsubscribe giúp tránh spam nhưng cũng trigger Promotions tab
-          // Chỉ thêm khi cần tuân thủ CAN-SPAM nghiêm ngặt
           "X-Mailer": "SmartFurni-CRM",
           "X-Priority": "3",
         },
@@ -148,29 +179,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
 
       if (result.error) {
+        // Cập nhật log thành failed nếu gửi lỗi
+        await query(
+          `UPDATE crm_email_logs SET status='failed', error=$1 WHERE id=$2`,
+          [result.error.message, logId]
+        );
         throw new Error(result.error.message);
       }
 
-      await createEmailLog({
-        campaignId: id,
-        leadId: lead.id,
-        email: lead.email,
-        status: "sent",
-        messageId: result.data?.id,
-      });
+      // Cập nhật messageId vào log
+      await query(
+        `UPDATE crm_email_logs SET message_id=$1 WHERE id=$2`,
+        [result.data?.id || null, logId]
+      );
       sentCount++;
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       errors.push(`${lead.email}: ${errMsg}`);
       failedCount++;
-
-      await createEmailLog({
-        campaignId: id,
-        leadId: lead.id,
-        email: lead.email,
-        status: "failed",
-        error: errMsg,
-      });
     }
 
     // Rate limiting: delay 100ms giữa các email

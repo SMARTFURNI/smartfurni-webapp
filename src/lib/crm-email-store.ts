@@ -51,6 +51,8 @@ export interface EmailLog {
   status: "pending" | "sent" | "failed" | "opened" | "clicked";
   sentAt: string | null;
   openedAt: string | null;
+  clickedAt: string | null;
+  messageId: string | null;
   error: string | null;
 }
 
@@ -123,10 +125,15 @@ export async function initEmailTables() {
       status TEXT NOT NULL DEFAULT 'pending',
       sent_at TIMESTAMPTZ,
       opened_at TIMESTAMPTZ,
+      clicked_at TIMESTAMPTZ,
+      message_id TEXT,
       error TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  // Migration: thêm cột mới nếu chưa có
+  await query(`ALTER TABLE crm_email_logs ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMPTZ`).catch(() => {});
+  await query(`ALTER TABLE crm_email_logs ADD COLUMN IF NOT EXISTS message_id TEXT`).catch(() => {});
 }
 
 // ─── Template CRUD ────────────────────────────────────────────────────────────
@@ -273,12 +280,12 @@ export async function createEmailLog(data: {
   leadName?: string;
   messageId?: string;
   error?: string;
-}): Promise<void> {
+}): Promise<string> {
   await initEmailTables();
   const id = `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   await query(
-    `INSERT INTO crm_email_logs (id, campaign_id, lead_id, lead_name, email, status, sent_at, error)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    `INSERT INTO crm_email_logs (id, campaign_id, lead_id, lead_name, email, status, sent_at, message_id, error)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       id,
       data.campaignId,
@@ -287,9 +294,11 @@ export async function createEmailLog(data: {
       data.email,
       data.status,
       data.status === "sent" ? new Date() : null,
+      data.messageId || null,
       data.error || null,
     ]
   );
+  return id; // trả về logId để nhúng vào tracking pixel
 }
 
 export async function getEmailLogs(campaignId: string): Promise<EmailLog[]> {
@@ -307,6 +316,8 @@ export async function getEmailLogs(campaignId: string): Promise<EmailLog[]> {
     status: row.status as EmailLog["status"],
     sentAt: row.sent_at ? (row.sent_at as Date).toISOString() : null,
     openedAt: row.opened_at ? (row.opened_at as Date).toISOString() : null,
+    clickedAt: row.clicked_at ? (row.clicked_at as Date).toISOString() : null,
+    messageId: row.message_id as string | null,
     error: row.error as string | null,
   }));
 }

@@ -1038,6 +1038,68 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
         )}
       </div>
 
+      {/* Thống kê Inbox vs Promotions */}
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-gray-900">Phân loại hộp thư (Inbox vs Quảng cáo)</h3>
+          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Dựa trên tỷ lệ mở email</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Inbox */}
+          <div className="rounded-xl p-4" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#22c55e20" }}>
+                <CheckCircle size={16} style={{ color: "#22c55e" }} />
+              </div>
+              <div className="text-sm font-semibold text-gray-800">Hộp thư đến (Primary)</div>
+            </div>
+            <div className="text-3xl font-bold" style={{ color: "#16a34a" }}>
+              {totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0}%
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Ưc tính dựa trên tỷ lệ mở email ({totalOpened.toLocaleString("vi-VN")} người mở)
+            </div>
+            <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div className="h-full rounded-full" style={{
+                width: `${totalSent > 0 ? Math.min(100, Math.round((totalOpened / totalSent) * 100)) : 0}%`,
+                background: "#22c55e"
+              }} />
+            </div>
+          </div>
+          {/* Promotions */}
+          <div className="rounded-xl p-4" style={{ background: "#fffbeb", border: "1px solid #fde68a" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#f59e0b20" }}>
+                <Tag size={16} style={{ color: "#f59e0b" }} />
+              </div>
+              <div className="text-sm font-semibold text-gray-800">Quảng cáo (Promotions)</div>
+            </div>
+            <div className="text-3xl font-bold" style={{ color: "#d97706" }}>
+              {totalSent > 0 ? Math.max(0, 100 - Math.round((totalOpened / totalSent) * 100)) : 100}%
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Ưc tính email chưa được mở ({(totalSent - totalOpened).toLocaleString("vi-VN")} email)
+            </div>
+            <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div className="h-full rounded-full" style={{
+                width: `${totalSent > 0 ? Math.max(0, 100 - Math.round((totalOpened / totalSent) * 100)) : 100}%`,
+                background: "#f59e0b"
+              }} />
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl p-3" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+          <div className="flex items-start gap-2">
+            <AlertCircle size={14} style={{ color: "#64748b", marginTop: 2, flexShrink: 0 }} />
+            <p className="text-xs text-gray-500 leading-relaxed">
+              <strong>Lưu ý:</strong> Tỷ lệ Inbox/Promotions được ước tính dựa trên tỷ lệ mở email thực tế.
+              Gmail không cung cấp API để biết chính xác email vào tab nào.
+              Để cải thiện: thêm SPF record, dùng mẫu email B2B plain-text, cá nhân hóa nội dung.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-3">Benchmark ngành B2B</h3>
         <div className="grid grid-cols-3 gap-4 text-sm">
