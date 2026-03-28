@@ -76,6 +76,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true },
       { label: "Chiến Dịch Email", href: "/crm/email-campaigns", icon: Mail, adminOnly: true },
+      { label: "Trình Soạn Email", href: "/crm/email-builder", icon: Mail, adminOnly: true },
+      { label: "Workflow Builder", href: "/crm/workflow-builder", icon: Zap, adminOnly: true },
       { label: "Email Automation", href: "/crm/email-automation", icon: Zap, adminOnly: true },
       { label: "Email Scenarios", href: "/crm/email-scenarios", icon: Bot, adminOnly: true },
       { label: "Quản Lý Mẫu Email", href: "/crm/email-templates", icon: Mail, adminOnly: true },
