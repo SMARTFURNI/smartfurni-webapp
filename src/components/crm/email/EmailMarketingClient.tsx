@@ -118,6 +118,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
     htmlContent: string;
   } | null>(null);
   const [launchingCampaign, setLaunchingCampaign] = useState<EmailCampaign | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
 
   const totalSent = campaigns.filter(c => c.status === "sent").reduce((s, c) => s + c.sentCount, 0);
   const totalOpens = campaigns.filter(c => c.status === "sent").reduce((s, c) => s + c.openCount, 0);
@@ -470,6 +471,12 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                             style={{ border: "1px solid #e5e7eb", color: "#3b82f6" }}>
                             <FlaskConical size={11} /> Gửi test
                           </button>
+                          <button onClick={() => setEditingTemplate(template)}
+                            className="w-8 h-7 rounded-lg flex items-center justify-center hover:bg-blue-50 transition-colors"
+                            style={{ border: "1px solid #e5e7eb" }}
+                            title="Chỉnh sửa mẫu email">
+                            <Edit3 size={12} className="text-blue-500" />
+                          </button>
                           <button onClick={() => deleteTemplate(template.id)}
                             className="w-8 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
                             style={{ border: "1px solid #e5e7eb" }}>
@@ -693,6 +700,16 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
           }}
         />
       )}
+      {editingTemplate && (
+        <EditTemplateModal
+          template={editingTemplate}
+          onClose={() => setEditingTemplate(null)}
+          onSaved={(updated) => {
+            setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
+            setEditingTemplate(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -703,6 +720,8 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState<EmailTemplateCategory>("custom");
   const [previewText, setPreviewText] = useState("");
+  const [editorMode, setEditorMode] = useState<"html" | "text">("html");
+  const [plainText, setPlainText] = useState("Kính gửi anh/chị {{name}},\n\nNội dung email của bạn ở đây...\n\nTrân trọng,\nPhạm Nhất Bá Tuất\nGiám đốc Kinh doanh · SmartFurni\n📞 0820 xxx xxx · 🌐 smartfurni.vn");
   const [htmlContent, setHtmlContent] = useState(`<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#fff;border-radius:12px;overflow:hidden">
   <div style="background:linear-gradient(135deg,#1a1a1a,#0d0d0d);padding:40px;text-align:center;border-bottom:1px solid #222">
     <div style="font-size:28px;font-weight:900;color:#C9A84C;letter-spacing:2px">SMARTFURNI</div>
@@ -725,13 +744,33 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
   const VARIABLES = ["name", "company", "phone", "email", "stage", "assignedTo"];
 
   function insertVariable(v: string) {
-    const ta = document.getElementById("html-editor") as HTMLTextAreaElement;
-    if (!ta) return;
-    const s = ta.selectionStart, e = ta.selectionEnd;
-    const newVal = htmlContent.substring(0, s) + `{{${v}}}` + htmlContent.substring(e);
-    setHtmlContent(newVal);
-    setTimeout(() => { ta.focus(); ta.setSelectionRange(s + v.length + 4, s + v.length + 4); }, 0);
+    if (editorMode === "text") {
+      const ta = document.getElementById("builder-text-editor") as HTMLTextAreaElement;
+      if (!ta) return;
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      const newVal = plainText.substring(0, s) + `{{${v}}}` + plainText.substring(e);
+      setPlainText(newVal);
+      setTimeout(() => { ta.focus(); ta.setSelectionRange(s + v.length + 4, s + v.length + 4); }, 0);
+    } else {
+      const ta = document.getElementById("html-editor") as HTMLTextAreaElement;
+      if (!ta) return;
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      const newVal = htmlContent.substring(0, s) + `{{${v}}}` + htmlContent.substring(e);
+      setHtmlContent(newVal);
+      setTimeout(() => { ta.focus(); ta.setSelectionRange(s + v.length + 4, s + v.length + 4); }, 0);
+    }
   }
+
+  function plainTextToHtml(text: string): string {
+    const lines = text.split("\n");
+    const htmlLines = lines.map(line => {
+      if (line.trim() === "") return "<br>";
+      return `<p style="font-size:15px;color:#1a1a1a;line-height:1.7;margin:0 0 12px">${line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</p>`;
+    });
+    return `<!DOCTYPE html>\n<html><head><meta charset="UTF-8"></head>\n<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif">\n<table width="100%" cellpadding="0" cellspacing="0" border="0">\n<tr><td style="padding:32px 24px;max-width:600px">\n${htmlLines.join("\n")}\n<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px">\n<p style="font-size:11px;color:#9ca3af;line-height:1.5;margin:0">\nSmartFurni · smartfurni.vn<br>\n<a href="{{unsubscribe_url}}" style="color:#9ca3af">Hủy nhận email</a>\n</p>\n</td></tr>\n</table>\n</body></html>`;
+  }
+
+  const finalHtml = editorMode === "text" ? plainTextToHtml(plainText) : htmlContent;
 
   async function handleSave() {
     if (!name || !subject) { alert("Vui lòng nhập tên và tiêu đề email"); return; }
@@ -740,7 +779,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
       const res = await fetch("/api/crm/email/templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, subject, category, previewText, htmlContent }),
+        body: JSON.stringify({ name, subject, category, previewText, htmlContent: finalHtml }),
       });
       if (res.ok) {
         const t = await res.json();
@@ -813,23 +852,67 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
         <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
           <div className="flex items-center justify-between px-4 py-2.5"
             style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
-            <span className="text-xs font-semibold text-gray-700">HTML Content</span>
+            <span className="text-xs font-semibold text-gray-700">Nội dung email</span>
+            <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+              <button
+                onClick={() => setEditorMode("text")}
+                className="px-3 py-1 text-xs font-semibold transition-colors"
+                style={{
+                  background: editorMode === "text" ? "#1e1e1e" : "#f9fafb",
+                  color: editorMode === "text" ? "#d4d4d4" : "#6b7280",
+                  borderRight: "1px solid #e5e7eb",
+                }}>
+                ✏️ Văn bản
+              </button>
+              <button
+                onClick={() => setEditorMode("html")}
+                className="px-3 py-1 text-xs font-semibold transition-colors"
+                style={{
+                  background: editorMode === "html" ? "#1e1e1e" : "#f9fafb",
+                  color: editorMode === "html" ? "#d4d4d4" : "#6b7280",
+                }}>
+                {"</>"}  HTML
+              </button>
+            </div>
           </div>
-          <textarea
-            id="html-editor"
-            value={htmlContent}
-            onChange={e => setHtmlContent(e.target.value)}
-            className="w-full p-4 text-xs font-mono focus:outline-none resize-none"
-            style={{ minHeight: "200px", background: "#1e1e1e", color: "#d4d4d4" }}
-            rows={12}
-          />
+          {editorMode === "text" ? (
+            <div className="p-3" style={{ background: "#fafafa" }}>
+              <div className="text-xs text-gray-400 mb-2">
+                Soạn thảo như viết email thông thường. Dùng **chữ đậm** để in đậm. Click biến động ở trên để chèn.
+              </div>
+              <textarea
+                id="builder-text-editor"
+                value={plainText}
+                onChange={e => setPlainText(e.target.value)}
+                className="w-full p-3 text-sm focus:outline-none resize-none rounded-xl"
+                style={{
+                  border: "1px solid #e5e7eb",
+                  background: "#ffffff",
+                  color: "#1a1a1a",
+                  minHeight: "220px",
+                  fontFamily: "Arial, sans-serif",
+                  lineHeight: "1.7",
+                }}
+                rows={10}
+              />
+            </div>
+          ) : (
+            <textarea
+              id="html-editor"
+              value={htmlContent}
+              onChange={e => setHtmlContent(e.target.value)}
+              className="w-full p-4 text-xs font-mono focus:outline-none resize-none"
+              style={{ minHeight: "200px", background: "#1e1e1e", color: "#d4d4d4" }}
+              rows={12}
+            />
+          )}
         </div>
 
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => onSendTest?.(subject, htmlContent)}
-            disabled={!subject && !htmlContent}
+            onClick={() => onSendTest?.(subject, finalHtml)}
+            disabled={!subject && !finalHtml}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
             style={{ background: "rgba(96,165,250,0.1)", color: "#3b82f6", border: "1px solid rgba(96,165,250,0.3)" }}>
             <FlaskConical size={14} /> Gửi email test
@@ -854,10 +937,11 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
           <div className="p-4">
             {subject && <div className="text-xs font-semibold text-gray-700 mb-2 px-2">Tiêu đề: {subject}</div>}
             <iframe
-              srcDoc={htmlContent}
+              srcDoc={finalHtml}
               className="w-full rounded-xl"
               style={{ minHeight: "500px", border: "none", background: "#fff" }}
               sandbox="allow-same-origin"
+              key={finalHtml.substring(0, 50)}
             />
           </div>
         </div>
@@ -2139,6 +2223,345 @@ function LaunchCampaignModal({
               Đóng
             </button>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Template Modal ────────────────────────────────────────────────────────
+function EditTemplateModal({
+  template,
+  onClose,
+  onSaved,
+}: {
+  template: EmailTemplate;
+  onClose: () => void;
+  onSaved: (updated: EmailTemplate) => void;
+}) {
+  const [name, setName] = useState(template.name);
+  const [subject, setSubject] = useState(template.subject);
+  const [category, setCategory] = useState<EmailTemplateCategory>(template.category as EmailTemplateCategory);
+  const [previewText, setPreviewText] = useState(template.previewText || "");
+  const [htmlContent, setHtmlContent] = useState(template.htmlContent);
+  const [editorMode, setEditorMode] = useState<"html" | "text">("html");
+  const [plainText, setPlainText] = useState(() => {
+    // Chuyển HTML sang plain text khi mở lần đầu
+    const div = typeof document !== "undefined" ? document.createElement("div") : null;
+    if (div) { div.innerHTML = template.htmlContent; return div.innerText || div.textContent || ""; }
+    return template.htmlContent.replace(/<[^>]+>/g, "");
+  });
+  const [saving, setSaving] = useState(false);
+  const [activePreview, setActivePreview] = useState<"preview" | "html" | "text">("preview");
+
+  const VARIABLES = ["name", "company", "phone", "email", "stage", "assignedTo"];
+
+  function insertVariable(v: string) {
+    if (editorMode === "html") {
+      const ta = document.getElementById("edit-html-editor") as HTMLTextAreaElement;
+      if (!ta) return;
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      const newVal = htmlContent.substring(0, s) + `{{${v}}}` + htmlContent.substring(e);
+      setHtmlContent(newVal);
+      setTimeout(() => { ta.focus(); ta.setSelectionRange(s + v.length + 4, s + v.length + 4); }, 0);
+    } else {
+      const ta = document.getElementById("edit-text-editor") as HTMLTextAreaElement;
+      if (!ta) return;
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      const newVal = plainText.substring(0, s) + `{{${v}}}` + plainText.substring(e);
+      setPlainText(newVal);
+      setTimeout(() => { ta.focus(); ta.setSelectionRange(s + v.length + 4, s + v.length + 4); }, 0);
+    }
+  }
+
+  // Chuyển plain text thành HTML đơn giản B2B style
+  function plainTextToHtml(text: string): string {
+    const lines = text.split("\n");
+    const htmlLines = lines.map(line => {
+      if (line.trim() === "") return "<br>";
+      return `<p style="font-size:15px;color:#1a1a1a;line-height:1.7;margin:0 0 12px">${line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</p>`;
+    });
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="padding:32px 24px;max-width:600px">
+${htmlLines.join("\n")}
+<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px">
+<p style="font-size:11px;color:#9ca3af;line-height:1.5;margin:0">
+SmartFurni · smartfurni.vn<br>
+<a href="{{unsubscribe_url}}" style="color:#9ca3af">Hủy nhận email</a>
+</p>
+</td></tr>
+</table>
+</body></html>`;
+  }
+
+  // Khi chuyển từ text sang html, cập nhật htmlContent
+  function switchToHtml() {
+    if (editorMode === "text") {
+      setHtmlContent(plainTextToHtml(plainText));
+    }
+    setEditorMode("html");
+  }
+
+  // Khi chuyển từ html sang text, trích xuất plain text
+  function switchToText() {
+    if (editorMode === "html") {
+      const div = typeof document !== "undefined" ? document.createElement("div") : null;
+      if (div) {
+        div.innerHTML = htmlContent;
+        setPlainText(div.innerText || div.textContent || "");
+      }
+    }
+    setEditorMode("text");
+  }
+
+  // Nội dung HTML cuối cùng để lưu
+  const finalHtml = editorMode === "text" ? plainTextToHtml(plainText) : htmlContent;
+
+  async function handleSave() {
+    if (!name || !subject) { alert("Vui lòng nhập tên và tiêu đề email"); return; }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/crm/email/templates/${template.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, subject, category, previewText, htmlContent: finalHtml }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        onSaved(updated);
+      } else {
+        alert("Lưu thất bại. Vui lòng thử lại.");
+      }
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.6)" }}>
+      <div className="bg-white rounded-2xl flex flex-col overflow-hidden"
+        style={{ width: "min(1100px, 96vw)", height: "90vh", border: "1px solid #e5e7eb" }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
+          style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
+              <Edit3 size={14} className="text-black" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-gray-900">Chỉnh sửa mẫu email</div>
+              <div className="text-xs text-gray-500">{template.name}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={handleSave} disabled={saving}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-black transition-all"
+              style={{ background: saving ? "#e5e7eb" : "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
+              {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+              {saving ? "Đang lưu..." : "Lưu thay đổi"}
+            </button>
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-colors">
+              <X size={16} className="text-gray-500" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* Left: Form + Editor */}
+          <div className="flex flex-col overflow-y-auto" style={{ width: "420px", flexShrink: 0, borderRight: "1px solid #e5e7eb" }}>
+
+            {/* Thông tin cơ bản */}
+            <div className="p-4 space-y-3" style={{ borderBottom: "1px solid #f3f4f6" }}>
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Thông tin template</div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Tên template *</label>
+                <input value={name} onChange={e => setName(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Tiêu đề email *</label>
+                <input value={subject} onChange={e => setSubject(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Danh mục</label>
+                  <select value={category} onChange={e => setCategory(e.target.value as EmailTemplateCategory)}
+                    className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                    style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+                    {Object.entries(TEMPLATE_CATEGORY_LABELS).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Preview text</label>
+                  <input value={previewText} onChange={e => setPreviewText(e.target.value)}
+                    placeholder="Mô tả ngắn..."
+                    className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                    style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Biến động */}
+            <div className="px-4 py-3" style={{ borderBottom: "1px solid #f3f4f6" }}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <Tag size={11} className="text-gray-400" />
+                <span className="text-xs font-semibold text-gray-600">Biến động (click để chèn)</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {VARIABLES.map(v => (
+                  <button key={v} onClick={() => insertVariable(v)}
+                    className="px-2 py-0.5 rounded-lg text-xs font-mono font-medium hover:bg-yellow-50 transition-colors"
+                    style={{ border: "1px solid #e5e7eb", color: "#C9A84C" }}>
+                    {`{{${v}}}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Editor mode toggle */}
+            <div className="px-4 pt-3 pb-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-gray-700">Nội dung email</span>
+                <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+                  <button
+                    onClick={switchToText}
+                    className="px-3 py-1.5 text-xs font-semibold transition-colors"
+                    style={{
+                      background: editorMode === "text" ? "#1e1e1e" : "#f9fafb",
+                      color: editorMode === "text" ? "#d4d4d4" : "#6b7280",
+                      borderRight: "1px solid #e5e7eb",
+                    }}>
+                    ✏️ Văn bản
+                  </button>
+                  <button
+                    onClick={switchToHtml}
+                    className="px-3 py-1.5 text-xs font-semibold transition-colors"
+                    style={{
+                      background: editorMode === "html" ? "#1e1e1e" : "#f9fafb",
+                      color: editorMode === "html" ? "#d4d4d4" : "#6b7280",
+                    }}>
+                    {"</>"} HTML
+                  </button>
+                </div>
+              </div>
+
+              {/* Plain text editor */}
+              {editorMode === "text" && (
+                <div>
+                  <div className="text-xs text-gray-400 mb-1.5">
+                    Soạn thảo như viết email thông thường. Dùng **chữ đậm** để in đậm. Biến động: {"{{name}}"}, {"{{company}}"}...
+                  </div>
+                  <textarea
+                    id="edit-text-editor"
+                    value={plainText}
+                    onChange={e => setPlainText(e.target.value)}
+                    className="w-full p-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 resize-none rounded-xl"
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      background: "#fafafa",
+                      color: "#1a1a1a",
+                      minHeight: "320px",
+                      fontFamily: "Arial, sans-serif",
+                      lineHeight: "1.7",
+                    }}
+                    placeholder={"Kính gửi anh/chị {{name}},\n\nNội dung email của bạn...\n\nTrân trọng,\nPhạm Nhất Bá Tuất\nGiám đốc Kinh doanh · SmartFurni\n📞 0820 xxx xxx"}
+                  />
+                </div>
+              )}
+
+              {/* HTML editor */}
+              {editorMode === "html" && (
+                <textarea
+                  id="edit-html-editor"
+                  value={htmlContent}
+                  onChange={e => setHtmlContent(e.target.value)}
+                  className="w-full p-3 text-xs font-mono focus:outline-none resize-none rounded-xl"
+                  style={{
+                    border: "1px solid #e5e7eb",
+                    background: "#1e1e1e",
+                    color: "#d4d4d4",
+                    minHeight: "320px",
+                  }}
+                  rows={16}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Right: Preview */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Preview tabs */}
+            <div className="flex items-center gap-1 px-4 py-2.5 flex-shrink-0"
+              style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              <Eye size={13} className="text-gray-400 mr-1" />
+              <span className="text-xs font-semibold text-gray-600 mr-3">Xem trước</span>
+              {(["preview", "html", "text"] as const).map(mode => (
+                <button key={mode} onClick={() => setActivePreview(mode)}
+                  className="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
+                  style={{
+                    background: activePreview === mode ? "#1e1e1e" : "transparent",
+                    color: activePreview === mode ? "#d4d4d4" : "#9ca3af",
+                  }}>
+                  {mode === "preview" ? "📧 Email" : mode === "html" ? "</> HTML" : "📝 Text"}
+                </button>
+              ))}
+            </div>
+
+            {/* Preview content */}
+            <div className="flex-1 overflow-auto" style={{ background: "#f3f4f6" }}>
+              {activePreview === "preview" && (
+                <div className="p-4">
+                  <div className="text-xs font-semibold text-gray-600 mb-2 px-1">
+                    Tiêu đề: <span className="text-gray-900">{subject}</span>
+                  </div>
+                  <iframe
+                    srcDoc={finalHtml}
+                    className="w-full rounded-xl"
+                    style={{ minHeight: "500px", border: "none", background: "#fff" }}
+                    sandbox="allow-same-origin"
+                    key={finalHtml.substring(0, 50)}
+                  />
+                </div>
+              )}
+              {activePreview === "html" && (
+                <div className="p-4">
+                  <pre className="text-xs font-mono p-4 rounded-xl overflow-auto"
+                    style={{ background: "#1e1e1e", color: "#d4d4d4", minHeight: "500px", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                    {finalHtml}
+                  </pre>
+                </div>
+              )}
+              {activePreview === "text" && (
+                <div className="p-4">
+                  <div className="bg-white rounded-xl p-6" style={{ minHeight: "500px", border: "1px solid #e5e7eb" }}>
+                    <div className="text-xs text-gray-400 mb-3 pb-2" style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      Plain text version (dự phòng khi email client không hiển thị HTML)
+                    </div>
+                    <pre className="text-sm text-gray-800 whitespace-pre-wrap"
+                      style={{ fontFamily: "Arial, sans-serif", lineHeight: "1.7" }}>
+                      {editorMode === "text" ? plainText : (() => {
+                        const div = typeof document !== "undefined" ? document.createElement("div") : null;
+                        if (div) { div.innerHTML = htmlContent; return div.innerText || ""; }
+                        return htmlContent.replace(/<[^>]+>/g, "");
+                      })()}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
