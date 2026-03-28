@@ -414,7 +414,7 @@ function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen =
       style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full px-5 py-4 flex items-center justify-between hover:opacity-90 transition-opacity"
+        className="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between hover:opacity-90 transition-opacity"
         style={{ borderBottom: open ? `1px solid ${T.divider}` : "none" }}
       >
         <div className="flex items-center gap-2">
@@ -577,55 +577,56 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
       style={{ background: dm.bg }}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between"
+      <div className="flex-shrink-0 px-4 md:px-8 py-3 md:py-5 flex items-center justify-between gap-2"
         style={{ background: dm.headerBg, borderBottom: `1px solid ${dm.headerBorder}` }}>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 min-w-0">
           {/* Brand mark */}
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-sm"
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-sm"
             style={{ background: `linear-gradient(135deg, ${T.gold} 0%, ${T.goldDark} 100%)`, color: "#fff", letterSpacing: "-0.5px" }}>
             SF
           </div>
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
+          <div className="min-w-0">
+            <div className="hidden md:flex items-center gap-2 mb-0.5">
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: T.green }} />
               <span className="text-xs font-medium" style={{ color: dm.textMuted }}>{dateStr}</span>
             </div>
-            <h1 className="text-xl font-bold leading-tight" style={{ color: dm.textPrimary }}>
-              {greeting}{currentUser?.name ? `, ${currentUser.name}` : ""} 👋
+            <h1 className="text-sm md:text-xl font-bold leading-tight truncate" style={{ color: dm.textPrimary }}>
+              {greeting}{currentUser?.name ? `, ${currentUser.name.split(" ").pop()}` : ""} 👋
             </h1>
-            <p className="text-xs mt-0.5" style={{ color: dm.textSecondary }}>
+            <p className="hidden md:block text-xs mt-0.5" style={{ color: dm.textSecondary }}>
               SmartFurni CRM — {currentUser?.isAdmin ? "Tổng quan kinh doanh B2B" : `${ROLE_LABELS[currentUser?.role ?? ""] ?? currentUser?.role}`}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
           {/* Period selector — pill group */}
           <div className="flex items-center rounded-xl overflow-hidden" style={{ border: `1px solid ${dm.cardBorder}`, background: dm.bg }}>
             {(["month", "quarter", "year"] as Period[]).map((p, i) => (
               <button key={p} onClick={() => setPeriod(p)}
-                className="px-4 py-2 text-xs font-semibold transition-all"
+                className="px-2.5 md:px-4 py-1.5 md:py-2 text-[11px] md:text-xs font-semibold transition-all"
                 style={{
                   background: period === p ? T.gold : "transparent",
                   color: period === p ? "#fff" : dm.textMuted,
                   borderRight: i < 2 ? `1px solid ${dm.cardBorder}` : "none",
                 }}>
-                {PERIOD_LABELS[p]}
+                <span className="md:hidden">{p === "month" ? "Th" : p === "quarter" ? "Quý" : "Năm"}</span>
+                <span className="hidden md:inline">{PERIOD_LABELS[p]}</span>
               </button>
             ))}
           </div>
 
           {/* Dark mode toggle */}
           <button onClick={() => setDarkMode(d => !d)}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-80"
+            className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-80"
             style={{ background: dm.bg, border: `1px solid ${dm.cardBorder}` }}>
-            {darkMode ? <Sun size={15} style={{ color: T.gold }} /> : <Moon size={15} style={{ color: dm.textSecondary }} />}
+            {darkMode ? <Sun size={14} style={{ color: T.gold }} /> : <Moon size={14} style={{ color: dm.textSecondary }} />}
           </button>
 
           {/* Notification bell */}
           <NotificationBell currentUser={currentUser} />
 
           {overdueLeads.length > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
               style={{ background: T.redBg, color: T.red, border: `1px solid #FECACA` }}>
               <AlertCircle size={13} />
               {overdueLeads.length} quá hạn
@@ -633,10 +634,11 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           )}
 
           <button onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold text-white shadow-sm active:scale-[0.98] transition-all"
             style={{ background: `linear-gradient(135deg, ${T.indigo} 0%, #4338CA 100%)` }}>
-            <Plus size={14} />
-            Thêm KH
+            <Plus size={13} />
+            <span className="hidden md:inline">Thêm KH</span>
+            <span className="md:hidden">Thêm</span>
           </button>
         </div>
       </div>
@@ -650,7 +652,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         />
       )}
 
-      <div className="p-6 space-y-5">
+      <div className="p-3 md:p-6 space-y-4 md:space-y-5">
 
         {/* ── Focus Mode ──────────────────────────────────────────────────── */}
         {focusItems.length > 0 && (
@@ -692,7 +694,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         )}
 
         {/* ── KPI Row ─────────────────────────────────────────────────────── */}
-        {isVisible("kpiCards") && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {isVisible("kpiCards") && <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <KpiCard
             icon={Users} label="Tổng khách hàng"
             value={leads.length} sub={`${activeLeads.length} đang theo dõi`}
@@ -846,9 +848,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           const leadPct = Math.min(100, Math.round((newLeadsCount / targetLeads) * 100));
           const wonPct2 = Math.min(100, Math.round((wonCount / targetWon) * 100));
           return (
-            <div className="rounded-2xl p-5" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+            <div className="rounded-2xl p-3.5 md:p-5" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
               {/* Title row */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3 md:mb-4">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: T.indigoBg }}>
                   <Crosshair size={13} style={{ color: T.indigo }} />
                 </div>
@@ -857,7 +859,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   style={{ background: `${barColor}15`, color: barColor }}>{pct}% hoàn thành</span>
               </div>
               {/* 3-column metrics */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-3 gap-2 md:gap-4 mb-3 md:mb-4">
                 {/* Doanh thu */}
                 <div className="rounded-xl p-3.5" style={{ background: `${barColor}08`, border: `1px solid ${barColor}20` }}>
                   <div className="flex items-center gap-1.5 mb-2">
@@ -905,15 +907,15 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   <div className="text-[9px] mt-1" style={{ color: T.textMuted }}>{wonCount}/{targetWon} mục tiêu</div>
                 </div>
               </div>
-            </div>
+             </div>
           );
         })()}
 
-        {/* ── Main Grid ───────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+        {/* ── Main Grid ─────────────────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-5">
 
           {/* Left col (2/3) */}
-          <div className="xl:col-span-2 space-y-5">
+          <div className="xl:col-span-2 space-y-4 md:space-y-5">
 
             {/* Revenue Chart + Forecast */}
             {isVisible("revenueChart") && <Section title="Doanh thu & Dự báo" icon={BarChart2} iconColor={theme.accentColor} iconBg={theme.accentColor + "18"}>
@@ -1012,7 +1014,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Source + Type row */}
-            {isVisible("pipeline") && <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {isVisible("pipeline") && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
               <Section title="Nguồn khách hàng" icon={TrendingUp} iconColor={T.orange} iconBg={T.orangeBg}>
                 <div className="p-4 space-y-3">
                   {stats.bySource.length === 0 ? (
@@ -1082,7 +1084,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             </div>}
 
             {/* ── Business Metrics Row ──────────────────────────────────── */}
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
               {/* Sales Velocity + AOV */}
               <Section title="Chỉ số bán hàng" icon={TrendingUp} iconColor={T.green} iconBg={T.greenBg}>
                 <div className="p-4 space-y-3">
@@ -1468,7 +1470,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           </div>
 
           {/* Right col (1/3) */}
-          <div className="space-y-5">
+          <div className="space-y-4 md:space-y-5">
 
             {/* Team Online (admin only) */}
             {isVisible("teamOnline") && currentUser?.isAdmin && teamOnline.length > 0 && (
@@ -1665,7 +1667,7 @@ interface KpiCardProps {
 
 function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeColor, urgent, sparkline, sparklineColor, darkMode }: KpiCardProps) {
   return (
-    <div className="rounded-2xl p-5 relative overflow-hidden transition-all hover:shadow-md"
+    <div className="rounded-2xl p-3.5 md:p-5 relative overflow-hidden transition-all hover:shadow-md"
       style={{
         background: darkMode ? "#1E293B" : T.card,
         border: urgent ? `1px solid ${color}40` : `1px solid ${T.cardBorder}`,
@@ -1674,20 +1676,20 @@ function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeCo
       {/* Top accent bar */}
       <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: color }} />
       {urgent && <div className="absolute inset-0 opacity-[0.02]" style={{ background: color }} />}
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: colorBg }}>
-          <Icon size={19} style={{ color }} />
+      <div className="flex items-start justify-between mb-2.5 md:mb-3">
+        <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center" style={{ background: colorBg }}>
+          <Icon size={16} style={{ color }} />
         </div>
         <div className="flex items-center gap-2">
           {sparkline && <Sparkline data={sparkline} color={sparklineColor || color} />}
           {urgent && <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: color }} />}
         </div>
       </div>
-      <div className="text-2xl font-black leading-none mb-1" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>{value}</div>
-      <div className="text-xs font-semibold mb-1" style={{ color: darkMode ? "#94A3B8" : T.textLabel }}>{label}</div>
+      <div className="text-xl md:text-2xl font-black leading-none mb-1" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>{value}</div>
+      <div className="text-[11px] md:text-xs font-semibold mb-1" style={{ color: darkMode ? "#94A3B8" : T.textLabel }}>{label}</div>
       <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{sub}</div>
       {badge && (
-        <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
+        <div className="mt-1.5 md:mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
           style={{ background: `${badgeColor}15`, color: badgeColor }}>
           {badge}
         </div>
