@@ -8,27 +8,39 @@ import nodemailer from "nodemailer";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { testEmail, templateHtml, subject, variables } = body;
+    const { to_email, testEmail, templateHtml, template_id, subject, variables } = body;
 
-    // Validate
-    if (!testEmail || !templateHtml || !subject) {
+    // Validate - chấp nhận to_email hoặc testEmail
+    const emailToSend = to_email || testEmail;
+    const emailSubject = subject || "Email Test SmartFurni";
+    
+    if (!emailToSend) {
       return NextResponse.json(
-        { success: false, error: "Thiếu thông tin bắt buộc" },
+        { success: false, error: "Thiếu email nhận" },
         { status: 400 }
       );
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(testEmail)) {
+    if (!emailRegex.test(emailToSend)) {
       return NextResponse.json(
         { success: false, error: "Email không hợp lệ" },
         { status: 400 }
       );
     }
 
+    // Tạo template HTML nếu không có
+    let finalHtml = templateHtml || `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Chào {{name}},</h2>
+        <p>SmartFurni gửi Anh/Chị giải pháp {{product}} chuyên nghiệp.</p>
+        <p>Đây là email test để kiểm tra hiển thị trước khi chạy chiến dịch thật.</p>
+        <p>Trân trọng,<br/>SmartFurni Team</p>
+      </div>
+    `;
+    
     // Replace variables in template
-    let finalHtml = templateHtml;
     if (variables) {
       Object.entries(variables).forEach(([key, value]) => {
         const regex = new RegExp(`{{${key}}}`, 'g');
@@ -48,8 +60,8 @@ export async function POST(request: NextRequest) {
     // Send email
     const info = await transporter.sendMail({
       from: process.env.GMAIL_USER,
-      to: testEmail,
-      subject: `[TEST] ${subject}`,
+      to: emailToSend,
+      subject: `[TEST] ${emailSubject}`,
       html: finalHtml,
     });
 
@@ -57,11 +69,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Email test đã được gửi đến ${testEmail}`,
+      message: `Email test đã được gửi đến ${emailToSend}`,
       data: {
         messageId: info.messageId,
-        testEmail,
-        subject: `[TEST] ${subject}`,
+        testEmail: emailToSend,
+        subject: `[TEST] ${emailSubject}`,
         timestamp: new Date().toISOString(),
       },
     });
@@ -78,6 +90,16 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     message: "Send Test Email endpoint is ready",
-    documentation: "POST với body: { testEmail, templateHtml, subject, variables }",
+    documentation: "POST với body: { to_email (hoặc testEmail), template_id, subject, variables }",
+    example: {
+      to_email: "contact.foodcom@gmail.com",
+      template_id: "welcome_email",
+      subject: "Giải pháp Giường Công Thái Học",
+      variables: {
+        name: "Phạm Nhất Bá Tuật",
+        company: "FoodCom",
+        product: "Giường công thái học"
+      }
+    }
   });
 }
