@@ -1,42 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getScenarioById, getScenarioStats, getCampaignLogsByScenario } from '@/lib/email-scenario-store';
+import {
+  getScenarioById,
+  updateScenario,
+  deleteScenario,
+  executeScenario,
+} from '@/services/email-scenario-builder';
 
 /**
  * GET /api/ai-agent/email/scenarios/[id]
- * Get scenario details with stats and logs
+ * Lấy chi tiết kịch bản
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const scenario = getScenarioById(params.id);
 
-    const scenario = getScenarioById(id);
     if (!scenario) {
       return NextResponse.json(
-        { success: false, error: 'Scenario not found' },
+        {
+          success: false,
+          error: 'Kịch bản không tìm thấy',
+        },
         { status: 404 }
       );
     }
 
-    const stats = getScenarioStats(id);
-    const logs = getCampaignLogsByScenario(id);
-
     return NextResponse.json({
       success: true,
-      data: {
-        scenario,
-        stats,
-        logs,
-      },
+      data: scenario,
     });
   } catch (error) {
-    console.error('Failed to get scenario:', error);
+    console.error('[EMAIL-SCENARIOS-API] Lỗi:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to get scenario',
+        error: 'Lỗi khi lấy kịch bản',
       },
       { status: 500 }
     );
@@ -45,41 +45,44 @@ export async function GET(
 
 /**
  * PUT /api/ai-agent/email/scenarios/[id]
- * Update scenario
+ * Cập nhật kịch bản
  */
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
     const body = await request.json();
+    const { name, description, trigger, steps, enabled } = body;
 
-    const scenario = getScenarioById(id);
+    const scenario = updateScenario(params.id, {
+      name,
+      description,
+      trigger,
+      steps,
+      enabled,
+    });
+
     if (!scenario) {
       return NextResponse.json(
-        { success: false, error: 'Scenario not found' },
+        {
+          success: false,
+          error: 'Kịch bản không tìm thấy',
+        },
         { status: 404 }
       );
     }
 
-    // Update scenario (in production, save to database)
-    const updatedScenario = {
-      ...scenario,
-      ...body,
-      updatedAt: new Date(),
-    };
-
     return NextResponse.json({
       success: true,
-      data: updatedScenario,
+      data: scenario,
     });
   } catch (error) {
-    console.error('Failed to update scenario:', error);
+    console.error('[EMAIL-SCENARIOS-API] Lỗi:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to update scenario',
+        error: 'Lỗi khi cập nhật kịch bản',
       },
       { status: 500 }
     );
@@ -88,34 +91,88 @@ export async function PUT(
 
 /**
  * DELETE /api/ai-agent/email/scenarios/[id]
- * Delete scenario
+ * Xóa kịch bản
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const success = deleteScenario(params.id);
 
-    const scenario = getScenarioById(id);
-    if (!scenario) {
+    if (!success) {
       return NextResponse.json(
-        { success: false, error: 'Scenario not found' },
+        {
+          success: false,
+          error: 'Kịch bản không tìm thấy',
+        },
         { status: 404 }
       );
     }
 
-    // Delete scenario (in production, delete from database)
     return NextResponse.json({
       success: true,
-      message: 'Scenario deleted successfully',
+      message: 'Kịch bản đã được xóa',
     });
   } catch (error) {
-    console.error('Failed to delete scenario:', error);
+    console.error('[EMAIL-SCENARIOS-API] Lỗi:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to delete scenario',
+        error: 'Lỗi khi xóa kịch bản',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/ai-agent/email/scenarios/[id]/execute
+ * Thực thi kịch bản cho một lead
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const scenario = getScenarioById(params.id);
+
+    if (!scenario) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Kịch bản không tìm thấy',
+        },
+        { status: 404 }
+      );
+    }
+
+    const body = await request.json();
+    const { leadData } = body;
+
+    if (!leadData) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Thiếu dữ liệu lead',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Thực thi kịch bản
+    const result = await executeScenario(scenario, leadData);
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error('[EMAIL-SCENARIOS-API] Lỗi:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Lỗi khi thực thi kịch bản',
       },
       { status: 500 }
     );

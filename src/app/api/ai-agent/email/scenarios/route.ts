@@ -1,27 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockScenarios, getScenarioStats } from '@/lib/email-scenario-store';
+import {
+  getAllScenarios,
+  createScenario,
+  getScenarioStats,
+  findApplicableScenarios,
+} from '@/services/email-scenario-builder';
 
 /**
  * GET /api/ai-agent/email/scenarios
- * Get all email scenarios
+ * Lấy danh sách tất cả kịch bản
  */
 export async function GET(request: NextRequest) {
   try {
-    const scenarios = mockScenarios.map((scenario) => ({
-      ...scenario,
-      stats: getScenarioStats(scenario.id),
-    }));
+    const { searchParams } = new URL(request.url);
+    const triggerType = searchParams.get('triggerType');
+    const leadScore = searchParams.get('leadScore');
+    const leadStage = searchParams.get('leadStage');
+    const leadSource = searchParams.get('leadSource');
+
+    let scenarios;
+
+    // Nếu có tham số lead, tìm kịch bản áp dụng
+    if (leadScore || leadStage || leadSource) {
+      scenarios = findApplicableScenarios({
+        score: leadScore ? parseInt(leadScore) : undefined,
+        stage: leadStage || undefined,
+        source: leadSource || undefined,
+      });
+    } else {
+      scenarios = getAllScenarios();
+    }
+
+    const stats = getScenarioStats();
 
     return NextResponse.json({
       success: true,
-      data: scenarios,
+      data: {
+        scenarios,
+        stats,
+      },
     });
   } catch (error) {
-    console.error('Failed to get scenarios:', error);
+    console.error('[EMAIL-SCENARIOS-API] Lỗi:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to get scenarios',
+        error: 'Lỗi khi lấy danh sách kịch bản',
       },
       { status: 500 }
     );
@@ -30,45 +54,42 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/ai-agent/email/scenarios
- * Create a new email scenario
+ * Tạo kịch bản mới
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { name, description, trigger, steps, enabled } = body;
 
+    // Validate
     if (!name || !trigger || !steps || steps.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: name, trigger, steps',
+          error: 'Thiếu thông tin bắt buộc',
         },
         { status: 400 }
       );
     }
 
-    // Create new scenario (in production, save to database)
-    const newScenario = {
-      id: `scenario-${Date.now()}`,
+    const scenario = createScenario({
       name,
       description,
       trigger,
       steps,
       enabled: enabled !== false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    });
 
     return NextResponse.json({
       success: true,
-      data: newScenario,
+      data: scenario,
     });
   } catch (error) {
-    console.error('Failed to create scenario:', error);
+    console.error('[EMAIL-SCENARIOS-API] Lỗi:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to create scenario',
+        error: 'Lỗi khi tạo kịch bản',
       },
       { status: 500 }
     );
