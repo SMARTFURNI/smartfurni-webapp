@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { to, subject, htmlContent, senderName, senderEmail, sourceType, sourceName } = body;
+    const { to, subject, htmlContent, senderName, sourceType, sourceName } = body;
 
     if (!to || !subject || !htmlContent) {
       return NextResponse.json(
@@ -25,20 +25,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check SMTP configuration — support multiple env var naming conventions
-    const gmailEmail = process.env.GMAIL_EMAIL || "";
-    const gmailPass = process.env.GMAIL_APP_PASSWORD || "";
-    const smtpHost = process.env.SMTP_HOST || (gmailEmail ? "smtp.gmail.com" : "");
-    const smtpUser = process.env.SMTP_USER || gmailEmail;
-    const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || gmailPass;
-    const isGmail = !!(gmailEmail && gmailPass) || smtpHost === "smtp.gmail.com";
+    const resendApiKey = process.env.RESEND_API_KEY || "";
 
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      // Return mock success when SMTP not configured (for preview/demo)
+    if (!resendApiKey) {
+      // Return mock success when Resend not configured
       return NextResponse.json({
         success: true,
         mock: true,
-        message: `[CHẾ ĐỘ XEM TRƯỚC] Email test đã được ghi nhận. Để gửi email thực, vui lòng cấu hình SMTP trong Cài đặt.`,
+        message: `[CHẾ ĐỘ XEM TRƯỚC] Email test đã được ghi nhận. Để gửi email thực, vui lòng cấu hình RESEND_API_KEY trong Cài đặt.`,
         to,
         subject,
         sourceType: sourceType || "unknown",
@@ -47,14 +41,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Build test email HTML with test banner
+    // Build source label for banner
     const sourceLabel =
       sourceType === "campaign" ? "CHIẾN DỊCH" :
       sourceType === "template" ? "MẪU EMAIL" :
       sourceType === "workflow" ? "WORKFLOW" : "EMAIL BUILDER";
 
+    // Test banner at top of email
     const testBanner = `
-      <div style="background:#fef3c7;border:2px dashed #f59e0b;padding:12px 20px;margin-bottom:0;font-family:Arial,sans-serif;text-align:center">
+      <div style="background:#fef3c7;border:2px dashed #f59e0b;padding:12px 20px;font-family:Arial,sans-serif;text-align:center">
         <span style="font-size:12px;font-weight:700;color:#92400e;letter-spacing:1px">
           🧪 EMAIL TEST — ${sourceLabel}: ${sourceName || ""}
         </span>
@@ -79,57 +74,42 @@ export async function POST(req: NextRequest) {
 
     const finalHtml = testBanner + processedHtml;
 
-    // Send via nodemailer
-    const nodemailer = await import("nodemailer").catch(() => null);
-    if (!nodemailer) {
-      return NextResponse.json(
-        { error: "nodemailer chưa được cài đặt" },
-        { status: 500 }
-      );
-    }
-
-    // Use Gmail service (SSL port 465) for faster, more reliable delivery
-    const transporter = isGmail
-      ? nodemailer.default.createTransport({
-          host: "smtp.gmail.com",
-          port: 465,
-          secure: true, // SSL
-          auth: { user: smtpUser, pass: smtpPass },
-          connectionTimeout: 10000,
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
-        })
-      : nodemailer.default.createTransport({
-          host: smtpHost,
-          port: parseInt(process.env.SMTP_PORT || "587"),
-          secure: process.env.SMTP_PORT === "465",
-          auth: { user: smtpUser, pass: smtpPass },
-          connectionTimeout: 10000,
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
-        });
+    // Send via Resend (HTTPS API — not blocked by Railway)
+    const { Resend } = await import("resend");
+    const resend = new Resend(resendApiKey);
 
     const fromName = senderName || "SmartFurni CRM";
-    const fromEmail = senderEmail || smtpUser;
+    // Resend requires a verified domain; use onboarding@resend.dev for testing
+    // or a verified sender like noreply@yourdomain.com
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 
-    const info = await transporter.sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
-      to,
+    const { data, error } = await resend.emails.send({
+      from: `${fromName} <${fromAddress}>`,
+      to: [to],
       subject: `[TEST] ${subject}`,
       html: finalHtml,
     });
+
+    if (error) {
+      console.error("[send-test] Resend error:", error);
+      return NextResponse.json(
+        { error: `Gửi email thất bại: ${error.message}` },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       mock: false,
       message: `Email test đã được gửi thành công tới ${to}`,
-      messageId: info.messageId,
+      messageId: data?.id,
       to,
       subject: `[TEST] ${subject}`,
       sourceType: sourceType || "unknown",
       sourceName: sourceName || "",
       sentAt: new Date().toISOString(),
     });
+
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[send-test] Error:", message);
