@@ -1,16 +1,16 @@
 import { Metadata } from 'next';
-import EmailScenarioBuilder from '@/components/crm/EmailScenarioBuilder';
+import EmailScenariosSimple from '@/components/crm/EmailScenariosSimple';
 
 export const metadata: Metadata = {
-  title: 'Email Scenarios - SmartFurni CRM',
-  description: 'Manage email automation scenarios',
+  title: 'Kịch Bản Email - SmartFurni CRM',
+  description: 'Quản lý kịch bản tự động hoá email',
 };
 
 export default function EmailScenariosPage() {
   return (
-    <div className="min-h-screen bg-[#f8f9fb] p-6">
+    <div className="min-h-screen bg-[#080600] p-6">
       <div className="max-w-7xl mx-auto">
-        <EmailScenarioBuilder />
+        <EmailScenariosSimple />
       </div>
     </div>
   );
