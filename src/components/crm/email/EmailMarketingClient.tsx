@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   Mail, Plus, Send, Eye, Trash2, FileText, Users, BarChart3,
   ChevronRight, Clock, CheckCircle, AlertCircle, Loader2,
-  Palette, Copy, Edit3, X, Search, Bot, Play, Pause,
+  Palette, Copy, Edit2, Edit3, X, Search, Bot, Play, Pause,
   Settings, Save, Download, TrendingUp, Zap,
   Target, Activity, ArrowUpRight, Tag,
 } from "lucide-react";
@@ -36,11 +36,22 @@ interface WorkflowStep {
 interface AutomationConfig {
   enabled: boolean;
   scheduleTime: string;
+  scheduleTimeEnd: string;
   timezone: string;
   senderName: string;
   senderEmail: string;
+  replyToEmail: string;
   retryCount: number;
   emailSignature: string;
+  dailyLimit: number;
+  minIntervalHours: number;
+  allowedDays: string[];
+  stopOnWon: boolean;
+  stopOnUnsubscribe: boolean;
+  blacklistDomains: string;
+  trackOpens: boolean;
+  trackClicks: boolean;
+  unsubscribeLink: boolean;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -99,6 +110,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
   const [showNewWorkflow, setShowNewWorkflow] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null>(null);
+  const [editingWorkflow, setEditingWorkflow] = useState<EmailWorkflow | null>(null);
 
   const totalSent = campaigns.filter(c => c.status === "sent").reduce((s, c) => s + c.sentCount, 0);
   const totalOpens = campaigns.filter(c => c.status === "sent").reduce((s, c) => s + c.openCount, 0);
@@ -509,16 +521,23 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                           </div>
                         )}
                       </div>
-                      <button onClick={() => toggleWorkflow(wf.id, wf.status)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-shrink-0"
-                        style={{
-                          background: wf.status === "active" ? "rgba(34,197,94,0.1)" : "rgba(148,163,184,0.1)",
-                          color: wf.status === "active" ? "#16a34a" : "#64748b",
-                          border: `1px solid ${wf.status === "active" ? "rgba(34,197,94,0.3)" : "#e5e7eb"}`,
-                        }}>
-                        {wf.status === "active" ? <Pause size={11} /> : <Play size={11} />}
-                        {wf.status === "active" ? "Tạm dừng" : "Kích hoạt"}
-                      </button>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => setEditingWorkflow(wf)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }}>
+                          <Edit2 size={11} /> Sửa
+                        </button>
+                        <button onClick={() => toggleWorkflow(wf.id, wf.status)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          style={{
+                            background: wf.status === "active" ? "rgba(34,197,94,0.1)" : "rgba(148,163,184,0.1)",
+                            color: wf.status === "active" ? "#16a34a" : "#64748b",
+                            border: `1px solid ${wf.status === "active" ? "rgba(34,197,94,0.3)" : "#e5e7eb"}`,
+                          }}>
+                          {wf.status === "active" ? <Pause size={11} /> : <Play size={11} />}
+                          {wf.status === "active" ? "Tạm dừng" : "Kích hoạt"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -557,6 +576,17 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
           templates={templates}
           onClose={() => setShowNewWorkflow(false)}
           onCreated={w => { setWorkflows(prev => [w, ...prev]); setShowNewWorkflow(false); }}
+        />
+      )}
+      {editingWorkflow && (
+        <WorkflowModal
+          templates={templates}
+          editing={editingWorkflow}
+          onClose={() => setEditingWorkflow(null)}
+          onCreated={w => {
+            setWorkflows(prev => prev.map(x => x.id === w.id ? w : x));
+            setEditingWorkflow(null);
+          }}
         />
       )}
       {previewTemplate && (
@@ -853,15 +883,47 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
 }
 
 // ─── Settings Tab ──────────────────────────────────────────────────────────────
+const DAYS_OF_WEEK = [
+  { key: "Mon", label: "T2" },
+  { key: "Tue", label: "T3" },
+  { key: "Wed", label: "T4" },
+  { key: "Thu", label: "T5" },
+  { key: "Fri", label: "T6" },
+  { key: "Sat", label: "T7" },
+  { key: "Sun", label: "CN" },
+];
+
+function ToggleSwitch({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button type="button" onClick={() => onChange(!value)}
+      className="relative w-10 h-5 rounded-full transition-colors flex-shrink-0"
+      style={{ background: value ? "#22c55e" : "#d1d5db" }}>
+      <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
+        style={{ transform: value ? "translateX(22px)" : "translateX(2px)" }} />
+    </button>
+  );
+}
+
 function SettingsTab() {
   const [config, setConfig] = useState<AutomationConfig>({
     enabled: true,
     scheduleTime: "09:00",
+    scheduleTimeEnd: "17:00",
     timezone: "Asia/Ho_Chi_Minh",
     senderName: "SmartFurni",
     senderEmail: "noreply@smartfurni.com",
+    replyToEmail: "",
     retryCount: 3,
     emailSignature: "Trân trọng,\nĐội ngũ SmartFurni\nHotline: 1900 xxxx",
+    dailyLimit: 200,
+    minIntervalHours: 24,
+    allowedDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    stopOnWon: true,
+    stopOnUnsubscribe: true,
+    blacklistDomains: "",
+    trackOpens: true,
+    trackClicks: true,
+    unsubscribeLink: true,
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -881,6 +943,8 @@ function SettingsTab() {
 
   return (
     <div className="max-w-2xl space-y-5">
+
+      {/* ── Thông tin người gửi ── */}
       <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Mail size={14} style={{ color: "#C9A84C" }} /> Thông tin người gửi
@@ -901,6 +965,13 @@ function SettingsTab() {
             </div>
           </div>
           <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Reply-to Email <span className="font-normal text-gray-400">(tùy chọn)</span></label>
+            <input type="email" value={config.replyToEmail} onChange={e => setConfig(p => ({ ...p, replyToEmail: e.target.value }))}
+              placeholder="sales@smartfurni.com"
+              className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+          </div>
+          <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Chữ ký email</label>
             <textarea value={config.emailSignature} onChange={e => setConfig(p => ({ ...p, emailSignature: e.target.value }))}
               rows={3} className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none resize-none"
@@ -909,40 +980,86 @@ function SettingsTab() {
         </div>
       </div>
 
+      {/* ── Lịch gửi ── */}
       <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Zap size={14} style={{ color: "#60a5fa" }} /> Cài đặt tự động hoá
+          <Clock size={14} style={{ color: "#60a5fa" }} /> Lịch gửi email
         </h3>
         <div className="space-y-4">
-          <div className="flex items-center justify-between py-2 rounded-xl px-3"
-            style={{ background: config.enabled ? "rgba(34,197,94,0.06)" : "#f9fafb", border: "1px solid #e5e7eb" }}>
-            <div>
-              <div className="text-sm font-semibold text-gray-900">Bật tự động hoá email hàng ngày</div>
-              <div className="text-xs text-gray-500">Tự động gửi email theo lịch đã cài đặt</div>
-            </div>
-            <button onClick={() => setConfig(p => ({ ...p, enabled: !p.enabled }))}
-              className="relative w-10 h-5 rounded-full transition-colors flex-shrink-0"
-              style={{ background: config.enabled ? "#22c55e" : "#d1d5db" }}>
-              <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
-                style={{ transform: config.enabled ? "translateX(22px)" : "translateX(2px)" }} />
-            </button>
-          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Giờ gửi hàng ngày</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Giờ bắt đầu gửi</label>
               <input type="time" value={config.scheduleTime} onChange={e => setConfig(p => ({ ...p, scheduleTime: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
                 style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Múi giờ</label>
-              <select value={config.timezone} onChange={e => setConfig(p => ({ ...p, timezone: e.target.value }))}
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Giờ kết thúc gửi</label>
+              <input type="time" value={config.scheduleTimeEnd} onChange={e => setConfig(p => ({ ...p, scheduleTimeEnd: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
-                <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (GMT+7)</option>
-                <option value="Asia/Bangkok">Asia/Bangkok (GMT+7)</option>
-                <option value="UTC">UTC</option>
-              </select>
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-2">Múi giờ</label>
+            <select value={config.timezone} onChange={e => setConfig(p => ({ ...p, timezone: e.target.value }))}
+              className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (GMT+7)</option>
+              <option value="Asia/Bangkok">Asia/Bangkok (GMT+7)</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-2">Ngày trong tuần được gửi</label>
+            <div className="flex gap-2">
+              {DAYS_OF_WEEK.map(d => {
+                const active = config.allowedDays.includes(d.key);
+                return (
+                  <button key={d.key} type="button"
+                    onClick={() => setConfig(p => ({
+                      ...p,
+                      allowedDays: active
+                        ? p.allowedDays.filter(x => x !== d.key)
+                        : [...p.allowedDays, d.key],
+                    }))}
+                    className="w-9 h-9 rounded-xl text-xs font-bold transition-colors"
+                    style={{
+                      background: active ? "rgba(201,168,76,0.15)" : "#f9fafb",
+                      color: active ? "#C9A84C" : "#9ca3af",
+                      border: `1px solid ${active ? "#C9A84C" : "#e5e7eb"}`,
+                    }}>
+                    {d.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Giới hạn & Kiểm soát ── */}
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
+        <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Target size={14} style={{ color: "#a78bfa" }} /> Giới hạn & Kiểm soát gửi
+        </h3>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Số email tối đa/ngày</label>
+              <input type="number" min={10} max={2000} value={config.dailyLimit}
+                onChange={e => setConfig(p => ({ ...p, dailyLimit: parseInt(e.target.value) || 200 }))}
+                className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+              <p className="text-[10px] text-gray-400 mt-1">Giới hạn tổng email gửi mỗi ngày</p>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Khoảng cách tối thiểu (giờ)</label>
+              <input type="number" min={1} max={168} value={config.minIntervalHours}
+                onChange={e => setConfig(p => ({ ...p, minIntervalHours: parseInt(e.target.value) || 24 }))}
+                className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+              <p className="text-[10px] text-gray-400 mt-1">Thời gian chờ giữa 2 email cho cùng 1 lead</p>
             </div>
           </div>
           <div>
@@ -952,6 +1069,77 @@ function SettingsTab() {
               className="w-32 px-3 py-2 text-sm rounded-xl focus:outline-none"
               style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
           </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Blacklist domain <span className="font-normal text-gray-400">(phân cách bởi dấu phẩy)</span></label>
+            <input value={config.blacklistDomains} onChange={e => setConfig(p => ({ ...p, blacklistDomains: e.target.value }))}
+              placeholder="spam.com, test.com, ..."
+              className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Điều kiện dừng ── */}
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
+        <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <AlertCircle size={14} style={{ color: "#f87171" }} /> Điều kiện dừng workflow
+        </h3>
+        <div className="space-y-3">
+          {[
+            { key: "stopOnWon",          label: "Dừng khi lead chốt đơn (Won)",        desc: "Không gửi thêm email sau khi lead đã ký hợp đồng" },
+            { key: "stopOnUnsubscribe",  label: "Dừng khi khách hủy đăng ký",          desc: "Tự động loại khỏi mọi workflow khi nhận unsubscribe" },
+          ].map(item => (
+            <div key={item.key} className="flex items-center justify-between py-2.5 px-3 rounded-xl"
+              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              <div>
+                <div className="text-sm font-semibold text-gray-900">{item.label}</div>
+                <div className="text-xs text-gray-500">{item.desc}</div>
+              </div>
+              <ToggleSwitch
+                value={config[item.key as keyof AutomationConfig] as boolean}
+                onChange={v => setConfig(p => ({ ...p, [item.key]: v }))}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Tracking ── */}
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
+        <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <BarChart3 size={14} style={{ color: "#22c55e" }} /> Tracking & Tuân thủ
+        </h3>
+        <div className="space-y-3">
+          {[
+            { key: "trackOpens",       label: "Theo dõi tỷ lệ mở email",          desc: "Chèn pixel tracking vào email" },
+            { key: "trackClicks",      label: "Theo dõi tỷ lệ click link",        desc: "Wrap links để đếm số lần click" },
+            { key: "unsubscribeLink",  label: "Tự động thêm link hủy đăng ký",   desc: "Bắt buộc theo quy định CAN-SPAM / GDPR" },
+          ].map(item => (
+            <div key={item.key} className="flex items-center justify-between py-2.5 px-3 rounded-xl"
+              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              <div>
+                <div className="text-sm font-semibold text-gray-900">{item.label}</div>
+                <div className="text-xs text-gray-500">{item.desc}</div>
+              </div>
+              <ToggleSwitch
+                value={config[item.key as keyof AutomationConfig] as boolean}
+                onChange={v => setConfig(p => ({ ...p, [item.key]: v }))}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Bật/tắt tổng thể ── */}
+      <div className="rounded-2xl p-4" style={{ background: config.enabled ? "rgba(34,197,94,0.04)" : "#fafafa", border: `1px solid ${config.enabled ? "rgba(34,197,94,0.3)" : "#e5e7eb"}` }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-bold text-gray-900">Tự động hoá email</div>
+            <div className="text-xs text-gray-500 mt-0.5">
+              {config.enabled ? `Đang chạy · Gửi ${config.scheduleTime}–${config.scheduleTimeEnd} · Tối đa ${config.dailyLimit} email/ngày` : "Đã tắt — không có email nào được gửi tự động"}
+            </div>
+          </div>
+          <ToggleSwitch value={config.enabled} onChange={v => setConfig(p => ({ ...p, enabled: v }))} />
         </div>
       </div>
 
@@ -1106,23 +1294,48 @@ function TemplateModal({ onClose, onCreated }: { onClose: () => void; onCreated:
 }
 
 // ─── Workflow Modal ────────────────────────────────────────────────────────────
-function WorkflowModal({ templates, onClose, onCreated }: {
+const STAGE_OPTIONS = [
+  { value: "", label: "Tất cả giai đoạn" },
+  { value: "new", label: "Lead mới" },
+  { value: "contacted", label: "Đã liên hệ" },
+  { value: "surveyed", label: "Đã khảo sát" },
+  { value: "quoted", label: "Đã báo giá" },
+  { value: "negotiating", label: "Thương thảo" },
+  { value: "won", label: "Chốt đơn" },
+  { value: "lost", label: "Thất bại" },
+];
+
+const VALUE_RANGE_OPTIONS = [
+  { value: "", label: "Tất cả giá trị" },
+  { value: "0-100", label: "Dưới 100 triệu" },
+  { value: "100-500", label: "100 – 500 triệu" },
+  { value: "500-1000", label: "500 triệu – 1 tỷ" },
+  { value: "1000+", label: "Trên 1 tỷ" },
+];
+
+function WorkflowModal({ templates, onClose, onCreated, editing }: {
   templates: EmailTemplate[];
   onClose: () => void;
   onCreated: (w: EmailWorkflow) => void;
+  editing?: EmailWorkflow | null;
 }) {
   const [form, setForm] = useState({
-    name: "",
-    description: "",
-    triggerType: "new_lead" as EmailWorkflow["triggerType"],
+    name: editing?.name ?? "",
+    description: editing?.description ?? "",
+    triggerType: (editing?.triggerType ?? "new_lead") as EmailWorkflow["triggerType"],
+    filterStage: "",
+    filterValueRange: "",
+    filterTag: "",
+    noActivityDays: 5,
   });
-  const [steps, setSteps] = useState<{ delayDays: number; templateId: string; subject: string }[]>([
-    { delayDays: 0, templateId: "", subject: "" },
-  ]);
+  const [steps, setSteps] = useState<{ delayDays: number; delayHours: number; templateId: string; subject: string; action: string }[]>(
+    editing?.steps?.map(s => ({ delayDays: s.delayDays, delayHours: 0, templateId: s.templateId, subject: s.subject, action: "send_email" })) ??
+    [{ delayDays: 0, delayHours: 0, templateId: "", subject: "", action: "send_email" }]
+  );
   const [loading, setLoading] = useState(false);
 
   function addStep() {
-    setSteps(prev => [...prev, { delayDays: 1, templateId: "", subject: "" }]);
+    setSteps(prev => [...prev, { delayDays: 1, delayHours: 0, templateId: "", subject: "", action: "send_email" }]);
   }
   function removeStep(i: number) {
     setSteps(prev => prev.filter((_, idx) => idx !== i));
@@ -1133,41 +1346,94 @@ function WorkflowModal({ templates, onClose, onCreated }: {
     if (!form.name) return;
     setLoading(true);
     try {
+      const method = editing ? "PATCH" : "POST";
+      const body = editing
+        ? { id: editing.id, ...form, steps }
+        : { ...form, steps };
       const res = await fetch("/api/crm/email/workflows", {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, steps }),
+        body: JSON.stringify(body),
       });
       if (res.ok) onCreated(await res.json());
     } finally { setLoading(false); }
   }
 
+  const showNoActivityDays = form.triggerType === "no_activity";
+  const showStageFilter = ["stage_changed", "new_lead"].includes(form.triggerType);
+
   return (
-    <Modal title="Tạo workflow email" onClose={onClose} wide>
+    <Modal title={editing ? "Sửa workflow email" : "Tạo workflow email"} onClose={onClose} wide>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Tên workflow *">
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              placeholder="VD: Chào mừng lead mới"
+
+        {/* ── Thông tin cơ bản ── */}
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+          <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Thông tin cơ bản</div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Tên workflow *">
+              <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="VĐ: Chào mừng lead mới"
+                className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+            </Field>
+            <Field label="Trigger kích hoạt">
+              <select value={form.triggerType} onChange={e => setForm(p => ({ ...p, triggerType: e.target.value as EmailWorkflow["triggerType"] }))}
+                className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                {Object.entries(TRIGGER_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <Field label="Mô tả">
+            <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+              placeholder="Mô tả ngắn về workflow..."
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
-          </Field>
-          <Field label="Trigger kích hoạt">
-            <select value={form.triggerType} onChange={e => setForm(p => ({ ...p, triggerType: e.target.value as EmailWorkflow["triggerType"] }))}
-              className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
-              {Object.entries(TRIGGER_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
+              style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
           </Field>
         </div>
-        <Field label="Mô tả">
-          <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-            placeholder="Mô tả ngắn về workflow..."
-            className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
-        </Field>
+
+        {/* ── Điều kiện lọc ── */}
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+          <div className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+            <Target size={11} /> Điều kiện lọc <span className="font-normal normal-case text-gray-400">(tùy chọn)</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {showStageFilter && (
+              <Field label="Giai đoạn lead">
+                <select value={form.filterStage} onChange={e => setForm(p => ({ ...p, filterStage: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                  style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                  {STAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </Field>
+            )}
+            <Field label="Giá trị lead">
+              <select value={form.filterValueRange} onChange={e => setForm(p => ({ ...p, filterValueRange: e.target.value }))}
+                className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                {VALUE_RANGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Có tag">
+              <input value={form.filterTag} onChange={e => setForm(p => ({ ...p, filterTag: e.target.value }))}
+                placeholder="VD: B2B, VIP, ..."
+                className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+            </Field>
+            {showNoActivityDays && (
+              <Field label="Không tương tác (ngày)">
+                <input type="number" min={1} max={90} value={form.noActivityDays}
+                  onChange={e => setForm(p => ({ ...p, noActivityDays: parseInt(e.target.value) || 5 }))}
+                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                  style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+              </Field>
+            )}
+          </div>
+        </div>
+
+        {/* ── Các bước email ── */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-semibold text-gray-700">Các bước email ({steps.length})</label>
@@ -1179,45 +1445,84 @@ function WorkflowModal({ templates, onClose, onCreated }: {
           </div>
           <div className="space-y-2">
             {steps.map((step, i) => (
-              <div key={i} className="rounded-xl p-3 flex items-center gap-3"
+              <div key={i} className="rounded-xl p-3 space-y-2"
                 style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
-                <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                  style={{ background: "#C9A84C20", color: "#C9A84C" }}>{i + 1}</span>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <span className="text-xs text-gray-500">Trễ</span>
-                  <input type="number" min={0} value={step.delayDays}
-                    onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, delayDays: parseInt(e.target.value) || 0 } : s))}
-                    className="w-12 px-2 py-1 text-xs rounded-lg text-center focus:outline-none"
-                    style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
-                  <span className="text-xs text-gray-500">ngày</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: "#C9A84C20", color: "#C9A84C" }}>{i + 1}</span>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <span className="text-xs text-gray-500">Sau</span>
+                    <input type="number" min={0} value={step.delayDays}
+                      onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, delayDays: parseInt(e.target.value) || 0 } : s))}
+                      className="w-10 px-1.5 py-1 text-xs rounded-lg text-center focus:outline-none"
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                    <span className="text-xs text-gray-500">ngày</span>
+                    <input type="number" min={0} max={23} value={step.delayHours}
+                      onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, delayHours: parseInt(e.target.value) || 0 } : s))}
+                      className="w-10 px-1.5 py-1 text-xs rounded-lg text-center focus:outline-none"
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                    <span className="text-xs text-gray-500">giờ</span>
+                  </div>
+                  <select value={step.action}
+                    onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, action: e.target.value } : s))}
+                    className="text-xs px-2 py-1.5 rounded-lg focus:outline-none flex-shrink-0"
+                    style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                    <option value="send_email">✉️ Gửi email</option>
+                    <option value="create_task">✅ Tạo task</option>
+                    <option value="add_tag">🏷️ Thêm tag</option>
+                    <option value="notify_manager">🔔 Thông báo QL</option>
+                  </select>
+                  {steps.length > 1 && (
+                    <button type="button" onClick={() => removeStep(i)}
+                      className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors flex-shrink-0 ml-auto">
+                      <X size={12} className="text-gray-400" />
+                    </button>
+                  )}
                 </div>
-                <input value={step.subject}
-                  onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
-                  placeholder="Tiêu đề email bước này..."
-                  className="flex-1 px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
-                  style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
-                <select value={step.templateId}
-                  onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, templateId: e.target.value } : s))}
-                  className="text-xs px-2 py-1.5 rounded-lg focus:outline-none"
-                  style={{ border: "1px solid #e5e7eb", background: "#fff", maxWidth: "120px" }}>
-                  <option value="">Không dùng template</option>
-                  {templates.map(t => <option key={t.id} value={t.id}>{t.name.substring(0, 20)}</option>)}
-                </select>
-                {steps.length > 1 && (
-                  <button type="button" onClick={() => removeStep(i)}
-                    className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors flex-shrink-0">
-                    <X size={12} className="text-gray-400" />
-                  </button>
+                {step.action === "send_email" && (
+                  <div className="grid grid-cols-2 gap-2 pl-8">
+                    <input value={step.subject}
+                      onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
+                      placeholder="Tiêu đề email..."
+                      className="px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                    <select value={step.templateId}
+                      onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, templateId: e.target.value } : s))}
+                      className="text-xs px-2 py-1.5 rounded-lg focus:outline-none"
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                      <option value="">Không dùng template</option>
+                      {templates.map(t => <option key={t.id} value={t.id}>{t.name.substring(0, 25)}</option>)}
+                    </select>
+                  </div>
+                )}
+                {step.action === "create_task" && (
+                  <div className="pl-8">
+                    <input value={step.subject}
+                      onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
+                      placeholder="Tiêu đề task... (VD: Gọi điện follow-up)"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                  </div>
+                )}
+                {step.action === "add_tag" && (
+                  <div className="pl-8">
+                    <input value={step.subject}
+                      onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
+                      placeholder="Tên tag cần thêm... (VD: hot-lead)"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                  </div>
                 )}
               </div>
             ))}
           </div>
         </div>
+
         <button type="submit" disabled={loading || !form.name}
           className="w-full py-2.5 rounded-xl text-sm font-bold text-black flex items-center justify-center gap-2"
           style={{ background: loading ? "#e5e7eb" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-          {loading ? "Đang lưu..." : "Tạo workflow"}
+          {loading ? "Đang lưu..." : editing ? "Cập nhật workflow" : "Tạo workflow"}
         </button>
       </form>
     </Modal>
