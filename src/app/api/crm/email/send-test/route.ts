@@ -25,10 +25,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check SMTP configuration
-    const smtpHost = process.env.SMTP_HOST;
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
+    // Check SMTP configuration — support multiple env var naming conventions
+    const smtpHost = process.env.SMTP_HOST || (process.env.GMAIL_EMAIL ? "smtp.gmail.com" : "");
+    const smtpUser = process.env.SMTP_USER || process.env.GMAIL_EMAIL || "";
+    const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || process.env.GMAIL_APP_PASSWORD || "";
+    const smtpPort = parseInt(process.env.SMTP_PORT || "587");
+    const isGmail = !!(process.env.GMAIL_EMAIL || process.env.GMAIL_APP_PASSWORD);
 
     if (!smtpHost || !smtpUser || !smtpPass) {
       // Return mock success when SMTP not configured (for preview/demo)
@@ -80,13 +82,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const smtpPort = parseInt(process.env.SMTP_PORT || "587");
-    const transporter = nodemailer.default.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: { user: smtpUser, pass: smtpPass },
-    });
+    const transporter = isGmail
+      ? nodemailer.default.createTransport({
+          service: "gmail",
+          auth: { user: smtpUser, pass: smtpPass },
+        })
+      : nodemailer.default.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: { user: smtpUser, pass: smtpPass },
+        });
 
     const fromName = senderName || "SmartFurni CRM";
     const fromEmail = senderEmail || smtpUser;
