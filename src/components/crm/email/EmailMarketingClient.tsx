@@ -14,7 +14,7 @@ interface Props {
   initialTemplates: EmailTemplate[];
 }
 
-type Tab = "campaigns" | "templates" | "workflows" | "automation" | "scenarios" | "builder" | "settings";
+type Tab = "campaigns" | "templates" | "builder" | "workflows" | "automation" | "scenarios" | "settings";
 
 const STATUS_CONFIG = {
   draft:     { label: "Bản nháp",    color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
@@ -155,18 +155,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 mt-4 overflow-x-auto" style={{ borderBottom: "1px solid #e5e7eb" }}>
-          {([
-            ["campaigns", "Chiến dịch"],
-            ["templates", "Mẫu Email"],
-            ["builder", "Email Builder"],
-            ["workflows", "Workflow"],
-            ["automation", "Automation"],
-            ["scenarios", "Scenarios"],
-            ["settings", "Cài Đặt"],
-          ] as [Tab, string][]).map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id)}
-              className="px-5 py-2 text-sm font-semibold relative transition-colors whitespace-nowrap"
+        <div className="flex gap-0 mt-4 overflow-x-auto" style={{ borderBottom: "1px solid #e5e7eb"          {([\n            ["campaigns", "Chiến dịch"],\n            ["templates", "Mẫu Email"],\n            ["builder", "Email Builder"],\n            ["workflows", "Workflow"],\n            ["automation", "Automation"],\n            ["scenarios", "Scenarios"],\n            ["settings", "Cài Đặt"],\n          ] as const).map(([id, label]) => (\n            <button key={id} onClick={() => setTab(id as Tab)}           className="px-5 py-2 text-sm font-semibold relative transition-colors whitespace-nowrap"
               style={{ color: tab === id ? "#C9A84C" : "#6b7280" }}>
               {label}
               {tab === id && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "#C9A84C" }} />}
