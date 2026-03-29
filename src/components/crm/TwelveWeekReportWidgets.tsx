@@ -8,6 +8,7 @@
 import React, { useState } from "react";
 import {
   Star, Eye, Award, BarChart2, TrendingUp, Zap, Target,
+  CheckCircle2, Clock, AlertCircle, List, ChevronDown, ChevronUp, CheckCircle, XCircle, Circle,
 } from "lucide-react";
 import type { TwelveWeekPlan, GoalColor } from "@/lib/twelve-week-plan-store";
 
@@ -34,7 +35,18 @@ const GOAL_COLORS: Record<GoalColor, { bg: string; text: string; border: string;
   blue:   { bg: "#EFF6FF", text: "#2563EB", border: "#BFDBFE", label: "Xanh dương" },
 };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────────────────────
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  return `${d.getDate()}/${d.getMonth() + 1}`;
+}
+
+const STATUS_CONFIG_W = {
+  done:    { icon: CheckCircle, color: T.green,    label: "Xong" },
+  pending: { icon: Circle,       color: T.textMuted, label: "Chưa" },
+  skipped: { icon: XCircle,      color: T.red,      label: "Bỏ qua" },
+} as const;
+
 function fmtDateFull(iso: string) {
   const d = new Date(iso);
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
@@ -465,6 +477,295 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── GoalDetailDashboard: Báo cáo chi tiết từng mục tiêu (dùng cho Dashboard) ─
+export function GoalDetailDashboard({ plan }: { plan: TwelveWeekPlan }) {
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(
+    plan.goals.length > 0 ? plan.goals[0].id : null
+  );
+  const [showTaskList, setShowTaskList] = useState(false);
+  const currentWeek = getCurrentWeek(plan.startDate);
+
+  const selectedGoal = plan.goals.find(g => g.id === selectedGoalId) ?? plan.goals[0];
+  if (!selectedGoal) return (
+    <div className="rounded-2xl p-8 text-center" style={{ background: T.card, border: `1px solid ${T.cardBorder}` }}>
+      <p style={{ color: T.textMuted }}>Chưa có mục tiêu nào trong kế hoạch</p>
+    </div>
+  );
+
+  const gc = GOAL_COLORS[selectedGoal.color];
+
+  const weekStats = Array.from({ length: 12 }, (_, i) => {
+    const w = i + 1;
+    const wAll   = plan.tasks.filter(t => t.goalId === selectedGoal.id && t.weekNumber === w);
+    const wTasks = wAll.filter(t => t.status !== "skipped");
+    const wDone  = wAll.filter(t => t.status === "done");
+    const wSkip  = wAll.filter(t => t.status === "skipped");
+    const wPend  = wAll.filter(t => t.status === "pending");
+    const pct = wTasks.length > 0 ? Math.round((wDone.length / wTasks.length) * 100) : 0;
+    return { week: w, total: wTasks.length, done: wDone.length, skip: wSkip.length, pending: wPend.length, pct, isPast: w < currentWeek, isCurrent: w === currentWeek, allTasks: [...wDone, ...wPend, ...wSkip] };
+  });
+
+  const allGoalTasks = plan.tasks.filter(t => t.goalId === selectedGoal.id && t.status !== "skipped");
+  const doneTasks    = plan.tasks.filter(t => t.goalId === selectedGoal.id && t.status === "done");
+  const skipTasks    = plan.tasks.filter(t => t.goalId === selectedGoal.id && t.status === "skipped");
+  const pendTasks    = plan.tasks.filter(t => t.goalId === selectedGoal.id && t.status === "pending");
+  const overallPct   = allGoalTasks.length > 0 ? Math.round((doneTasks.length / allGoalTasks.length) * 100) : 0;
+  const idealPct     = Math.round((currentWeek / 12) * 100);
+  const gap          = overallPct - idealPct;
+  const gapColor     = gap >= 0 ? T.green : gap >= -15 ? T.gold : T.red;
+  const gapLabel     = gap >= 0 ? "Vượt mục tiêu" : gap >= -15 ? "Đang bắt kịp" : "Cần tăng tốc";
+
+  const pastWeeks = weekStats.filter(w => w.isPast || w.isCurrent);
+  const totalDoneInPast = pastWeeks.reduce((s, w) => s + w.done, 0);
+  const velocity = pastWeeks.length > 0 ? (totalDoneInPast / pastWeeks.length).toFixed(1) : "0";
+  const velocityNum = parseFloat(velocity);
+  const weeksLeft = Math.max(0, 12 - currentWeek);
+  const forecastDone = Math.min(allGoalTasks.length, doneTasks.length + Math.round(velocityNum * weeksLeft));
+  const forecastPct = allGoalTasks.length > 0 ? Math.round((forecastDone / allGoalTasks.length) * 100) : 0;
+
+  const pastWithTasks = weekStats.filter(w => (w.isPast || w.isCurrent) && w.total > 0);
+  const bestWeek  = pastWithTasks.length > 0 ? pastWithTasks.reduce((b, w) => w.pct > b.pct ? w : b) : null;
+  const worstWeek = pastWithTasks.length > 0 ? pastWithTasks.reduce((b, w) => w.pct < b.pct ? w : b) : null;
+
+  // SVG chart
+  const W = 560; const H = 160;
+  const PAD = { t: 20, r: 12, b: 28, l: 36 };
+  const chartW = W - PAD.l - PAD.r; const chartH = H - PAD.t - PAD.b;
+  const maxTotal = Math.max(...weekStats.map(w => w.total), 1);
+  const barW = chartW / 12 - 4;
+  function barX(w: number) { return PAD.l + ((w - 1) / 12) * chartW + 2; }
+  function doneH2(done: number, total: number) { return total > 0 ? (done / total) * Math.max(4, (total / maxTotal) * chartH) : 0; }
+
+  return (
+    <div className="space-y-4">
+      {/* Goal selector tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {plan.goals.map(goal => {
+          const c = GOAL_COLORS[goal.color];
+          const gT = plan.tasks.filter(t => t.goalId === goal.id && t.status !== "skipped");
+          const gD = plan.tasks.filter(t => t.goalId === goal.id && t.status === "done");
+          const p = gT.length > 0 ? Math.round((gD.length / gT.length) * 100) : 0;
+          const isActive = goal.id === selectedGoalId;
+          return (
+            <button key={goal.id} onClick={() => setSelectedGoalId(goal.id)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+              style={{ background: isActive ? c.bg : T.card, border: `1.5px solid ${isActive ? c.text : T.cardBorder}`, color: isActive ? c.text : T.textMuted }}>
+              <div className="w-2 h-2 rounded-full" style={{ background: c.text }} />
+              <span className="max-w-[120px] truncate">{goal.title}</span>
+              <span className="font-black">{p}%</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Goal header card */}
+      <div className="rounded-2xl p-5" style={{ background: gc.bg, border: `1.5px solid ${gc.border}` }}>
+        <div className="flex items-start gap-4">
+          <div className="relative flex-shrink-0">
+            <ProgressRing pct={overallPct} size={72} stroke={6} color={gc.text} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xl font-black" style={{ color: gc.text }}>{overallPct}%</span>
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-black mb-1" style={{ color: T.textPrimary }}>{selectedGoal.title}</h2>
+            {selectedGoal.description && <p className="text-xs mb-2" style={{ color: T.textMuted }}>{selectedGoal.description}</p>}
+            <div className="flex flex-wrap gap-2">
+              {(selectedGoal as { targetMetric?: string }).targetMetric && (
+                <span className="text-[10px] font-semibold px-2 py-1 rounded-lg" style={{ background: `${gc.text}15`, color: gc.text }}>
+                  🎯 Mục tiêu: {(selectedGoal as { targetMetric?: string }).targetMetric}
+                </span>
+              )}
+              {(selectedGoal as { currentMetric?: string }).currentMetric && (
+                <span className="text-[10px] font-semibold px-2 py-1 rounded-lg" style={{ background: `${T.green}15`, color: T.green }}>
+                  ✅ Hiện tại: {(selectedGoal as { currentMetric?: string }).currentMetric}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <div className="text-xl font-black" style={{ color: gapColor }}>{gap >= 0 ? "+" : ""}{gap}%</div>
+            <div className="text-[10px] font-semibold" style={{ color: gapColor }}>{gapLabel}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4 KPI cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {([
+          { icon: CheckCircle2, label: "Đã hoàn thành", value: String(doneTasks.length), sub: `${allGoalTasks.length} tổng việc`, color: T.green },
+          { icon: Clock, label: "Còn lại", value: String(pendTasks.length), sub: `${weeksLeft} tuần còn lại`, color: T.gold },
+          { icon: Zap, label: "Tốc độ TB", value: `${velocity}/tuần`, sub: "Việc hoàn thành", color: T.indigo },
+          { icon: TrendingUp, label: "Dự báo cuối kỳ", value: `${forecastPct}%`, sub: `~${forecastDone}/${allGoalTasks.length} việc`, color: forecastPct >= 80 ? T.green : forecastPct >= 60 ? T.gold : T.red },
+        ] as const).map(({ icon: Icon, label, value, sub, color }) => (
+          <div key={label} className="rounded-xl p-3" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+            <div className="flex items-center gap-2 mb-1">
+              <Icon size={13} style={{ color }} />
+              <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>{label}</span>
+            </div>
+            <div className="text-xl font-black" style={{ color }}>{value}</div>
+            <div className="text-[9px]" style={{ color: T.textMuted }}>{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Weekly bar chart */}
+      <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+        <div className="flex items-center gap-2 mb-3">
+          <BarChart2 size={14} style={{ color: gc.text }} />
+          <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Tiến độ từng tuần</span>
+        </div>
+        <div className="w-full overflow-x-auto">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 280 }}>
+            <defs>
+              <linearGradient id="gGoalGradDash2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={gc.text} stopOpacity="1"/>
+                <stop offset="100%" stopColor={gc.text} stopOpacity="0.4"/>
+              </linearGradient>
+            </defs>
+            {[0, 25, 50, 75, 100].map(y => {
+              const yPos = PAD.t + (1 - y / 100) * chartH;
+              return (
+                <g key={y}>
+                  <line x1={PAD.l} y1={yPos} x2={W - PAD.r} y2={yPos} stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
+                  <text x={PAD.l - 4} y={yPos + 4} textAnchor="end" fontSize="8" fill="#9CA3AF">{y}%</text>
+                </g>
+              );
+            })}
+            {weekStats.map(({ week, total, done, pct, isCurrent, isPast }) => {
+              const x = barX(week);
+              const fullH2 = Math.max(4, (total / maxTotal) * chartH);
+              const dH = doneH2(done, total);
+              const bTop = PAD.t + chartH - fullH2;
+              return (
+                <g key={week}>
+                  <rect x={x} y={bTop} width={barW} height={fullH2} rx="3" fill={isCurrent ? `${gc.text}20` : `${gc.text}10`} />
+                  {dH > 0 && (
+                    <rect x={x} y={bTop + fullH2 - dH} width={barW} height={dH} rx="3"
+                      fill={isCurrent ? "url(#gGoalGradDash2)" : pct === 100 ? T.green : `${gc.text}80`} />
+                  )}
+                  {isCurrent && <circle cx={x + barW / 2} cy={bTop - 5} r={3} fill={T.gold} />}
+                  {(isPast || isCurrent) && total > 0 && (
+                    <text x={x + barW / 2} y={bTop - 8} textAnchor="middle" fontSize="8"
+                      fill={pct === 100 ? T.green : isCurrent ? gc.text : T.textMuted} fontWeight="bold">{pct}%</text>
+                  )}
+                  <text x={x + barW / 2} y={H - PAD.b + 12} textAnchor="middle" fontSize="9"
+                    fill={isCurrent ? gc.text : "#9CA3AF"} fontWeight={isCurrent ? "bold" : "normal"}>T{week}</text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+
+      {/* Insights: best/worst/forecast */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="rounded-xl p-4" style={{ background: T.greenBg, border: `1px solid ${T.green}30` }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Award size={14} style={{ color: T.green }} />
+            <span className="text-xs font-bold" style={{ color: T.green }}>Tuần tốt nhất</span>
+          </div>
+          {bestWeek ? (
+            <>
+              <div className="text-2xl font-black" style={{ color: T.green }}>Tuần {bestWeek.week}</div>
+              <div className="text-xs mt-1" style={{ color: T.textMuted }}>{bestWeek.pct}% — {bestWeek.done}/{bestWeek.total} việc</div>
+            </>
+          ) : <div className="text-xs" style={{ color: T.textMuted }}>Chưa có dữ liệu</div>}
+        </div>
+        <div className="rounded-xl p-4" style={{ background: T.redBg, border: `1px solid ${T.red}30` }}>
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle size={14} style={{ color: T.red }} />
+            <span className="text-xs font-bold" style={{ color: T.red }}>Cần cải thiện</span>
+          </div>
+          {worstWeek && worstWeek !== bestWeek ? (
+            <>
+              <div className="text-2xl font-black" style={{ color: T.red }}>Tuần {worstWeek.week}</div>
+              <div className="text-xs mt-1" style={{ color: T.textMuted }}>{worstWeek.pct}% — {worstWeek.done}/{worstWeek.total} việc</div>
+            </>
+          ) : <div className="text-xs" style={{ color: T.textMuted }}>Chưa có dữ liệu</div>}
+        </div>
+        <div className="rounded-xl p-4" style={{ background: forecastPct >= 80 ? T.greenBg : forecastPct >= 60 ? T.goldBg : T.redBg, border: `1px solid ${forecastPct >= 80 ? T.green : forecastPct >= 60 ? T.gold : T.red}30` }}>
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp size={14} style={{ color: forecastPct >= 80 ? T.green : forecastPct >= 60 ? T.gold : T.red }} />
+            <span className="text-xs font-bold" style={{ color: forecastPct >= 80 ? T.green : forecastPct >= 60 ? T.gold : T.red }}>Dự báo cuối kỳ</span>
+          </div>
+          <div className="text-2xl font-black" style={{ color: forecastPct >= 80 ? T.green : forecastPct >= 60 ? T.gold : T.red }}>{forecastPct}%</div>
+          <div className="text-xs mt-1" style={{ color: T.textMuted }}>
+            {forecastPct >= 100 ? "🎉 Sẽ hoàn thành!" : forecastPct >= 80 ? "✅ Đúng hướng" : forecastPct >= 60 ? "⚡ Cần tăng tốc" : "🚨 Nguy cơ không đạt"}
+          </div>
+        </div>
+      </div>
+
+      {/* Task list with toggle button */}
+      <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+        <button
+          onClick={() => setShowTaskList(v => !v)}
+          className="w-full px-5 py-3 flex items-center gap-2 transition-colors"
+          style={{ borderBottom: showTaskList ? `1px solid ${T.cardBorder}` : "none", background: gc.bg }}>
+          <List size={14} style={{ color: gc.text }} />
+          <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Danh sách công việc chi tiết</span>
+          <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${gc.text}15`, color: gc.text }}>
+            {doneTasks.length}/{allGoalTasks.length + skipTasks.length} việc
+          </span>
+          <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold" style={{ color: gc.text }}>
+            {showTaskList ? (
+              <><ChevronUp size={14} /> Ẩn đi</>
+            ) : (
+              <><ChevronDown size={14} /> Xem chi tiết</>
+            )}
+          </div>
+        </button>
+
+        {showTaskList && (
+          <div>
+            {weekStats.filter(w => w.allTasks.length > 0).map(({ week, done, total, pct, isCurrent, isPast, allTasks }) => {
+              const { start, end } = getWeekRange(plan.startDate, week);
+              const rowBg = pct === 100 ? T.greenBg : isCurrent ? `${gc.text}06` : isPast && total > 0 && pct < 50 ? `${T.red}04` : "transparent";
+              return (
+                <div key={week} style={{ borderTop: `1px solid ${T.divider}` }}>
+                  <div className="px-5 py-2.5 flex items-center gap-3" style={{ background: rowBg, borderBottom: `1px solid ${T.divider}` }}>
+                    <div className="flex items-center gap-2">
+                      {isCurrent && <div className="w-2 h-2 rounded-full" style={{ background: T.gold }} />}
+                      <span className="text-xs font-black" style={{ color: isCurrent ? gc.text : T.textPrimary }}>Tuần {week}</span>
+                      {isCurrent && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: T.goldBg, color: T.gold }}>Hiện tại</span>}
+                    </div>
+                    <span className="text-[10px]" style={{ color: T.textMuted }}>{fmtDate(start.toISOString())} – {fmtDate(end.toISOString())}</span>
+                    <div className="ml-auto flex items-center gap-2">
+                      <span className="text-[10px]" style={{ color: T.textMuted }}>{done}/{total}</span>
+                      <div className="w-14 h-1.5 rounded-full overflow-hidden" style={{ background: `${gc.text}15` }}>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct === 100 ? T.green : gc.text }} />
+                      </div>
+                      <span className="text-[10px] font-bold" style={{ color: pct === 100 ? T.green : isCurrent ? gc.text : T.textMuted }}>{pct}%</span>
+                    </div>
+                  </div>
+                  {allTasks.map(task => {
+                    const sc = STATUS_CONFIG_W[task.status as keyof typeof STATUS_CONFIG_W] ?? STATUS_CONFIG_W.pending;
+                    const Icon = sc.icon;
+                    return (
+                      <div key={task.id} className="px-5 py-2 flex items-start gap-3" style={{ background: rowBg }}>
+                        <Icon size={13} style={{ color: sc.color, marginTop: 2, flexShrink: 0 }} />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs" style={{ color: task.status === "done" ? T.textMuted : T.textPrimary, textDecoration: task.status === "done" ? "line-through" : "none" }}>{task.title}</span>
+                        </div>
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: `${sc.color}15`, color: sc.color }}>{sc.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {weekStats.every(w => w.allTasks.length === 0) && (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm" style={{ color: T.textMuted }}>Chưa có công việc nào cho mục tiêu này</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
