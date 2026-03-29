@@ -80,6 +80,71 @@ function ProgressRing({ pct, size = 48, stroke = 4, color }: { pct: number; size
   );
 }
 
+// ── InsightsPanel (collapsible) ──────────────────────────────────────────────
+function InsightsPanel({
+  insights,
+  insightColors,
+  insightBg,
+}: {
+  insights: { type: "success" | "warning" | "danger" | "info"; text: string }[];
+  insightColors: Record<string, string>;
+  insightBg: Record<string, string>;
+}) {
+  const [open, setOpen] = useState(true);
+  const dangerCount = insights.filter(i => i.type === "danger").length;
+  const warningCount = insights.filter(i => i.type === "warning").length;
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full px-5 py-3 flex items-center gap-2 transition-colors"
+        style={{ borderBottom: open ? `1px solid ${T.cardBorder}` : "none" }}
+      >
+        <Zap size={14} style={{ color: T.gold }} />
+        <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Nhận xét & Khuyến nghị tự động</span>
+        {!open && (
+          <div className="flex items-center gap-1.5 ml-2">
+            {dangerCount > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${T.red}15`, color: T.red }}>
+                {dangerCount} cảnh báo
+              </span>
+            )}
+            {warningCount > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${T.gold}20`, color: T.gold }}>
+                {warningCount} lưu ý
+              </span>
+            )}
+            {dangerCount === 0 && warningCount === 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${T.green}15`, color: T.green }}>
+                Đang tốt
+              </span>
+            )}
+          </div>
+        )}
+        <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold" style={{ color: T.textMuted }}>
+          {open ? (
+            <><ChevronUp size={14} /> Thu gọn</>
+          ) : (
+            <><ChevronDown size={14} /> Mở rộng</>
+          )}
+        </div>
+      </button>
+      {open && (
+        <div className="px-5 py-4 space-y-2">
+          {insights.map((ins, i) => (
+            <div key={i} className="flex items-start gap-3 p-3 rounded-xl"
+              style={{ background: insightBg[ins.type], border: `1px solid ${insightColors[ins.type]}20` }}>
+              <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: insightColors[ins.type] }} />
+              <p className="text-xs leading-relaxed" style={{ color: T.textPrimary }}>{ins.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main export: TwelveWeekReportDashboard ───────────────────────────────────
 export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
   const currentWeek = getCurrentWeek(plan.startDate);
@@ -463,21 +528,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
       </div>
 
       {/* ── 5. Auto insights ── */}
-      <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-        <div className="flex items-center gap-2 mb-3">
-          <Zap size={14} style={{ color: T.gold }} />
-          <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Nhận xét & Khuyến nghị tự động</span>
-        </div>
-        <div className="space-y-2">
-          {insights.map((ins, i) => (
-            <div key={i} className="flex items-start gap-3 p-3 rounded-xl"
-              style={{ background: insightBg[ins.type], border: `1px solid ${insightColors[ins.type]}20` }}>
-              <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: insightColors[ins.type] }} />
-              <p className="text-xs leading-relaxed" style={{ color: T.textPrimary }}>{ins.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <InsightsPanel insights={insights} insightColors={insightColors} insightBg={insightBg} />
     </div>
   );
 }
