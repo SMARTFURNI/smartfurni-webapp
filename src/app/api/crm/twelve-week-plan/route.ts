@@ -1,0 +1,242 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireCrmAccess } from "@/lib/admin-auth";
+import {
+  getAllPlans,
+  getPlanById,
+  savePlan,
+  deletePlan,
+  type TwelveWeekPlan,
+  type Goal,
+  type WeeklyTask,
+} from "@/lib/twelve-week-plan-store";
+
+export const dynamic = "force-dynamic";
+
+function nanoid() {
+  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+function calcEndDate(startDate: string): string {
+  const d = new Date(startDate);
+  d.setDate(d.getDate() + 12 * 7 - 1);
+  return d.toISOString().split("T")[0];
+}
+
+// GET - lấy danh sách plans (hoặc 1 plan theo id)
+export async function GET(req: NextRequest) {
+  try {
+    const session = await requireCrmAccess();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    const all = searchParams.get("all"); // admin only
+
+    if (id) {
+      const plan = await getPlanById(id);
+      if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      // Staff chỉ xem plan của mình
+      if (!session.isAdmin && plan.staffId !== (session.staffId ?? "admin")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      return NextResponse.json(plan);
+    }
+
+    // Lấy theo staffId
+    const staffId = session.isAdmin && all ? undefined : (session.staffId ?? "admin");
+    const plans = await getAllPlans(staffId);
+    return NextResponse.json(plans);
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
+}
+
+// POST - tạo plan mới
+export async function POST(req: NextRequest) {
+  try {
+    const session = await requireCrmAccess();
+    const body = await req.json();
+    const staffId = session.staffId ?? "admin";
+    const now = new Date().toISOString();
+    const startDate = body.startDate || new Date().toISOString().split("T")[0];
+
+    const plan: TwelveWeekPlan = {
+      id: "plan_" + nanoid(),
+      staffId,
+      title: body.title || "Kế hoạch 12 tuần",
+      vision: body.vision || "",
+      startDate,
+      endDate: calcEndDate(startDate),
+      isActive: true,
+      goals: [],
+      tasks: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await savePlan(plan);
+    return NextResponse.json(plan, { status: 201 });
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
+}
+
+// PATCH - cập nhật plan, goal, task
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await requireCrmAccess();
+    const body = await req.json();
+    const { planId, action } = body;
+
+    if (!planId) return NextResponse.json({ error: "planId required" }, { status: 400 });
+
+    const plan = await getPlanById(planId);
+    if (!plan) return NextResponse.json({ error: "Plan not found" }, { status: 404 });
+
+    const staffId = session.staffId ?? "admin";
+    if (!session.isAdmin && plan.staffId !== staffId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const now = new Date().toISOString();
+
+    switch (action) {
+      // ── Plan-level updates ─────────────────────────────────────────────
+      case "update_plan": {
+        if (body.title !== undefined) plan.title = body.title;
+        if (body.vision !== undefined) plan.vision = body.vision;
+        if (body.startDate !== undefined) {
+          plan.startDate = body.startDate;
+          plan.endDate = calcEndDate(body.startDate);
+        }
+        if (body.isActive !== undefined) plan.isActive = body.isActive;
+        plan.updatedAt = now;
+        break;
+      }
+
+      // ── Goal CRUD ──────────────────────────────────────────────────────
+      case "add_goal": {
+        const goal: Goal = {
+          id: "goal_" + nanoid(),
+          planId,
+          title: body.title || "Mục tiêu mới",
+          description: body.description,
+          color: body.color || "indigo",
+          targetMetric: body.targetMetric,
+          currentMetric: body.currentMetric,
+          order: plan.goals.length,
+          createdAt: now,
+          updatedAt: now,
+        };
+        plan.goals.push(goal);
+        plan.updatedAt = now;
+        break;
+      }
+      case "update_goal": {
+        const idx = plan.goals.findIndex((g) => g.id === body.goalId);
+        if (idx === -1) return NextResponse.json({ error: "Goal not found" }, { status: 404 });
+        const g = plan.goals[idx];
+        if (body.title !== undefined) g.title = body.title;
+        if (body.description !== undefined) g.description = body.description;
+        if (body.color !== undefined) g.color = body.color;
+        if (body.targetMetric !== undefined) g.targetMetric = body.targetMetric;
+        if (body.currentMetric !== undefined) g.currentMetric = body.currentMetric;
+        g.updatedAt = now;
+        plan.updatedAt = now;
+        break;
+      }
+      case "delete_goal": {
+        plan.goals = plan.goals.filter((g) => g.id !== body.goalId);
+        plan.tasks = plan.tasks.filter((t) => t.goalId !== body.goalId);
+        plan.updatedAt = now;
+        break;
+      }
+
+      // ── Task CRUD ──────────────────────────────────────────────────────
+      case "add_task": {
+        const task: WeeklyTask = {
+          id: "task_" + nanoid(),
+          goalId: body.goalId,
+          planId,
+          weekNumber: body.weekNumber || 1,
+          title: body.title || "Công việc mới",
+          description: body.description,
+          status: "pending",
+          dueDate: body.dueDate,
+          createdAt: now,
+          updatedAt: now,
+        };
+        plan.tasks.push(task);
+        plan.updatedAt = now;
+        break;
+      }
+      case "update_task": {
+        const idx = plan.tasks.findIndex((t) => t.id === body.taskId);
+        if (idx === -1) return NextResponse.json({ error: "Task not found" }, { status: 404 });
+        const t = plan.tasks[idx];
+        if (body.title !== undefined) t.title = body.title;
+        if (body.description !== undefined) t.description = body.description;
+        if (body.status !== undefined) {
+          t.status = body.status;
+          if (body.status === "done") t.completedAt = now;
+          else t.completedAt = undefined;
+        }
+        if (body.weekNumber !== undefined) t.weekNumber = body.weekNumber;
+        if (body.dueDate !== undefined) t.dueDate = body.dueDate;
+        t.updatedAt = now;
+        plan.updatedAt = now;
+        break;
+      }
+      case "delete_task": {
+        plan.tasks = plan.tasks.filter((t) => t.id !== body.taskId);
+        plan.updatedAt = now;
+        break;
+      }
+
+      // ── Bulk task status ───────────────────────────────────────────────
+      case "bulk_update_tasks": {
+        // body.updates: Array<{ taskId, status }>
+        for (const upd of body.updates ?? []) {
+          const t = plan.tasks.find((x) => x.id === upd.taskId);
+          if (t) {
+            t.status = upd.status;
+            if (upd.status === "done") t.completedAt = now;
+            else t.completedAt = undefined;
+            t.updatedAt = now;
+          }
+        }
+        plan.updatedAt = now;
+        break;
+      }
+
+      default:
+        return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+    }
+
+    await savePlan(plan);
+    return NextResponse.json(plan);
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
+}
+
+// DELETE - xóa plan
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await requireCrmAccess();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+    const plan = await getPlanById(id);
+    if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const staffId = session.staffId ?? "admin";
+    if (!session.isAdmin && plan.staffId !== staffId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    await deletePlan(id);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
+}

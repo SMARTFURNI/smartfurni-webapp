@@ -289,7 +289,172 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
   );
 }
 
-// ── Sparkline mini chart ─────────────────────────────────────────────────────
+// ──// ── 12 Week Plan Widget (Dashboard) ─────────────────────────────────────
+function TwelveWeekWidget() {
+  const [plan, setPlan] = useState<null | {
+    id: string; title: string; startDate: string; endDate: string;
+    goals: Array<{ id: string; title: string; color: string }>;
+    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string }>;
+  }>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/crm/twelve-week-plan")
+      .then((r) => r.ok ? r.json() : [])
+      .then((plans) => {
+        const active = plans.find((p: { isActive: boolean }) => p.isActive) ?? plans[0] ?? null;
+        setPlan(active);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const GOAL_COLORS_MAP: Record<string, string> = {
+    indigo: "#4F46E5", green: "#059669", gold: "#D97706",
+    red: "#DC2626", purple: "#7C3AED", blue: "#2563EB",
+  };
+
+  function getCurrentWeek(startDate: string) {
+    const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
+  }
+
+  if (loading) return (
+    <div className="rounded-2xl p-4 animate-pulse" style={{ background: T.card, border: `1px solid ${T.cardBorder}` }}>
+      <div className="h-4 rounded w-1/2 mb-3" style={{ background: `${T.textMuted}20` }} />
+      <div className="h-2 rounded w-full mb-2" style={{ background: `${T.textMuted}10` }} />
+      <div className="h-2 rounded w-3/4" style={{ background: `${T.textMuted}10` }} />
+    </div>
+  );
+
+  if (!plan) return (
+    <div className="rounded-2xl p-4" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#EEF2FF" }}>
+          <Crosshair size={14} style={{ color: "#4F46E5" }} />
+        </div>
+        <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Kế hoạch 12 Tuần</span>
+      </div>
+      <p className="text-xs mb-3" style={{ color: T.textMuted }}>Chưa có kế hoạch nào. Bắt đầu ngay!</p>
+      <Link href="/crm/twelve-week-plan"
+        className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-semibold text-white"
+        style={{ background: "#4F46E5" }}>
+        <Plus size={12} /> Tạo kế hoạch
+      </Link>
+    </div>
+  );
+
+  const currentWeek = getCurrentWeek(plan.startDate);
+  const totalTasks = plan.tasks.filter((t) => t.status !== "skipped").length;
+  const doneTasks = plan.tasks.filter((t) => t.status === "done").length;
+  const overallPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+  // Current week tasks
+  const thisWeekTasks = plan.tasks.filter((t) => t.weekNumber === currentWeek && t.status !== "skipped");
+  const thisWeekDone = thisWeekTasks.filter((t) => t.status === "done").length;
+  const thisWeekPct = thisWeekTasks.length > 0 ? Math.round((thisWeekDone / thisWeekTasks.length) * 100) : 0;
+
+  // 12-week progress bar
+  const weekBars = Array.from({ length: 12 }, (_, i) => {
+    const w = i + 1;
+    const wT = plan.tasks.filter((t) => t.weekNumber === w && t.status !== "skipped");
+    const wD = plan.tasks.filter((t) => t.weekNumber === w && t.status === "done");
+    return { pct: wT.length > 0 ? Math.round((wD.length / wT.length) * 100) : 0, isCurrent: w === currentWeek, hasData: wT.length > 0 };
+  });
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: "1px solid #C7D2FE", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+      {/* Header */}
+      <div className="px-4 py-3 flex items-center gap-2" style={{ background: "#EEF2FF", borderBottom: "1px solid #C7D2FE" }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#4F46E520" }}>
+          <Crosshair size={14} style={{ color: "#4F46E5" }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-black truncate" style={{ color: "#4F46E5" }}>{plan.title}</p>
+          <p className="text-[10px]" style={{ color: "#6366F1" }}>Tuần {currentWeek}/12 • {overallPct}% hoàn thành</p>
+        </div>
+        <Link href="/crm/twelve-week-plan"
+          className="text-[10px] font-semibold px-2 py-1 rounded-lg flex items-center gap-1"
+          style={{ background: "#4F46E5", color: "#fff" }}>
+          Xem <ChevronRight size={10} />
+        </Link>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {/* Overall progress */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Tiến độ tổng thể</span>
+            <span className="text-[10px] font-black" style={{ color: "#4F46E5" }}>{doneTasks}/{totalTasks} việc</span>
+          </div>
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: "#EEF2FF" }}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${overallPct}%`, background: "linear-gradient(90deg, #4F46E5, #818CF8)" }} />
+          </div>
+        </div>
+
+        {/* Current week */}
+        <div className="rounded-xl p-3" style={{ background: "#EEF2FF" }}>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-bold" style={{ color: "#4F46E5" }}>★ Tuần {currentWeek} (Hiện tại)</span>
+            <span className="text-[10px] font-black" style={{ color: thisWeekPct === 100 ? "#059669" : "#4F46E5" }}>{thisWeekPct}%</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.5)" }}>
+            <div className="h-full rounded-full transition-all"
+              style={{ width: `${thisWeekPct}%`, background: thisWeekPct === 100 ? "#059669" : "#4F46E5" }} />
+          </div>
+          <p className="text-[9px] mt-1" style={{ color: "#6366F1" }}>{thisWeekDone}/{thisWeekTasks.length} công việc tuần này</p>
+        </div>
+
+        {/* 12-week mini bars */}
+        <div>
+          <p className="text-[10px] font-semibold mb-1.5" style={{ color: T.textMuted }}>12 tuần</p>
+          <div className="flex items-end gap-0.5 h-8">
+            {weekBars.map((bar, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                <div className="w-full rounded-t overflow-hidden" style={{ height: 20, background: bar.isCurrent ? "#C7D2FE" : "#EEF2FF" }}>
+                  <div className="w-full rounded-t transition-all"
+                    style={{ height: `${bar.pct}%`, background: bar.pct === 100 ? "#059669" : bar.isCurrent ? "#4F46E5" : "#818CF8" }} />
+                </div>
+                {bar.isCurrent && <div className="w-1 h-1 rounded-full" style={{ background: "#D97706" }} />}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Goals */}
+        {plan.goals.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Mục tiêu</p>
+            {plan.goals.slice(0, 3).map((goal) => {
+              const gColor = GOAL_COLORS_MAP[goal.color] ?? "#4F46E5";
+              const gTasks = plan.tasks.filter((t) => t.goalId === goal.id && t.status !== "skipped");
+              const gDone = plan.tasks.filter((t) => t.goalId === goal.id && t.status === "done");
+              const gPct = gTasks.length > 0 ? Math.round((gDone.length / gTasks.length) * 100) : 0;
+              return (
+                <div key={goal.id}>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: gColor }} />
+                    <span className="text-[10px] font-medium flex-1 truncate" style={{ color: T.textPrimary }}>{goal.title}</span>
+                    <span className="text-[10px] font-black" style={{ color: gColor }}>{gPct}%</span>
+                  </div>
+                  <div className="h-1 rounded-full overflow-hidden ml-3" style={{ background: `${gColor}20` }}>
+                    <div className="h-full rounded-full" style={{ width: `${gPct}%`, background: gColor }} />
+                  </div>
+                </div>
+              );
+            })}
+            {plan.goals.length > 3 && (
+              <p className="text-[9px] text-center" style={{ color: T.textMuted }}>+{plan.goals.length - 3} mục tiêu khác</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Sparkline mini chart ───────────────────────────────────────────
 function Sparkline({ data, color, height = 28 }: { data: number[]; color: string; height?: number }) {
   if (!data || data.length < 2) return null;
   const max = Math.max(...data, 1);
@@ -1471,6 +1636,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
           {/* Right col (1/3) */}
           <div className="space-y-4 md:space-y-5">
+
+            {/* 12 Week Plan Widget */}
+            <TwelveWeekWidget />
 
             {/* Team Online (admin only) */}
             {isVisible("teamOnline") && currentUser?.isAdmin && teamOnline.length > 0 && (

@@ -27,6 +27,7 @@ import {
   X,
   UserCircle,
   Database,
+  Crosshair,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -56,6 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Dashboard", href: "/crm", icon: LayoutDashboard, exact: true },
       { label: "Bảng Kanban", href: "/crm/kanban", icon: Kanban },
+      { label: "Kế hoạch 12 Tuần", href: "/crm/twelve-week-plan", icon: Crosshair },
     ],
   },
   {
