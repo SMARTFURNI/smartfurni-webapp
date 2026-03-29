@@ -454,6 +454,461 @@ function TwelveWeekWidget() {
   );
 }
 
+// ── 12-Week KPI Row ──────────────────────────────────────────────────────────
+function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalValue, wonValue, stats, theme, fmtVal, darkMode, dm }: {
+  leads: Lead[]; activeLeads: Lead[]; overdueLeads: Lead[]; wonLeads: Lead[];
+  totalValue: number; wonValue: number; stats: CrmStats;
+  theme: DashboardTheme; fmtVal: (v: number) => string; darkMode: boolean;
+  dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
+}) {
+  const [plan, setPlan] = useState<null | {
+    id: string; startDate: string; endDate: string;
+    tasks: Array<{ weekNumber: number; status: string; goalId: string }>;
+    goals: Array<{ id: string; title: string; color: string }>;
+  }>(null);
+
+  useEffect(() => {
+    fetch("/api/crm/twelve-week-plan")
+      .then(r => r.ok ? r.json() : [])
+      .then(plans => {
+        const active = plans.find((p: { isActive: boolean }) => p.isActive) ?? plans[0] ?? null;
+        setPlan(active);
+      })
+      .catch(() => {});
+  }, []);
+
+  function getCurrentWeek(startDate: string) {
+    const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
+  }
+
+  const currentWeek = plan ? getCurrentWeek(plan.startDate) : 0;
+  const totalTasks = plan ? plan.tasks.filter(t => t.status !== "skipped").length : 0;
+  const doneTasks = plan ? plan.tasks.filter(t => t.status === "done").length : 0;
+  const overallPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const thisWeekTasks = plan ? plan.tasks.filter(t => t.weekNumber === currentWeek && t.status !== "skipped") : [];
+  const thisWeekDone = thisWeekTasks.filter(t => t.status === "done").length;
+  const thisWeekPct = thisWeekTasks.length > 0 ? Math.round((thisWeekDone / thisWeekTasks.length) * 100) : 0;
+
+  const kpis = [
+    {
+      icon: Crosshair,
+      label: "Tiến độ 12 tuần",
+      value: plan ? `${overallPct}%` : "—",
+      sub: plan ? `${doneTasks}/${totalTasks} việc hoàn thành` : "Chưa có kế hoạch",
+      color: "#4F46E5",
+      colorBg: "#EEF2FF",
+      badge: plan ? `Tuần ${currentWeek}/12` : undefined,
+      badgeColor: "#4F46E5",
+      href: "/crm/twelve-week-plan",
+    },
+    {
+      icon: Target,
+      label: "Tuần hiện tại",
+      value: plan ? `${thisWeekPct}%` : "—",
+      sub: plan ? `${thisWeekDone}/${thisWeekTasks.length} việc tuần ${currentWeek}` : "Chưa có kế hoạch",
+      color: thisWeekPct >= 100 ? T.green : thisWeekPct >= 60 ? T.gold : T.red,
+      colorBg: thisWeekPct >= 100 ? T.greenBg : thisWeekPct >= 60 ? T.goldBg : T.redBg,
+      badge: thisWeekPct >= 100 ? "Hoàn thành!" : `${thisWeekTasks.length - thisWeekDone} việc còn lại`,
+      badgeColor: thisWeekPct >= 100 ? T.green : T.gold,
+      href: "/crm/twelve-week-plan",
+    },
+    {
+      icon: Users,
+      label: "Khách hàng",
+      value: leads.length,
+      sub: `${activeLeads.length} đang theo dõi`,
+      color: theme.kpiCustomerColor,
+      colorBg: theme.kpiCustomerColor + "18",
+      badge: `${wonLeads.length} đã chốt`,
+      badgeColor: T.green,
+      href: "/crm/leads",
+    },
+    {
+      icon: AlertCircle,
+      label: "Cần liên hệ",
+      value: overdueLeads.length,
+      sub: "Quá 3 ngày không tương tác",
+      color: overdueLeads.length > 0 ? theme.kpiOverdueColor : T.green,
+      colorBg: overdueLeads.length > 0 ? theme.kpiOverdueColor + "18" : T.greenBg,
+      badge: overdueLeads.length > 0 ? "Cần xử lý" : "Tốt",
+      badgeColor: overdueLeads.length > 0 ? theme.kpiOverdueColor : T.green,
+      href: "/crm/leads?filter=overdue",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      {kpis.map(({ icon: Icon, label, value, sub, color, colorBg, badge, badgeColor, href }) => (
+        <Link key={label} href={href}
+          className="rounded-2xl p-3.5 md:p-5 relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 block"
+          style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+          <div className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-5 -translate-y-4 translate-x-4"
+            style={{ background: color }} />
+          <div className="flex items-start justify-between mb-3">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: colorBg }}>
+              <Icon size={18} style={{ color }} />
+            </div>
+            {badge && (
+              <span className="text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                style={{ background: `${badgeColor}15`, color: badgeColor }}>{badge}</span>
+            )}
+          </div>
+          <div className="text-xl md:text-2xl font-black" style={{ color }}>{value}</div>
+          <div className="text-[10px] md:text-xs font-semibold mt-0.5" style={{ color: dm.textPrimary }}>{label}</div>
+          <div className="text-[9px] md:text-[10px] mt-0.5" style={{ color: dm.textMuted }}>{sub}</div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+// ── 12-Week Progress Board ────────────────────────────────────────────────────
+function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats }: {
+  dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
+  fmtVal: (v: number) => string;
+  leads: Lead[]; wonLeads: Lead[]; stats: CrmStats;
+}) {
+  const [plan, setPlan] = useState<null | {
+    id: string; title: string; startDate: string; endDate: string;
+    goals: Array<{ id: string; title: string; color: string }>;
+    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string }>;
+  }>(null);
+
+  useEffect(() => {
+    fetch("/api/crm/twelve-week-plan")
+      .then(r => r.ok ? r.json() : [])
+      .then(plans => {
+        const active = plans.find((p: { isActive: boolean }) => p.isActive) ?? plans[0] ?? null;
+        setPlan(active);
+      })
+      .catch(() => {});
+  }, []);
+
+  const GOAL_COLORS_MAP: Record<string, string> = {
+    indigo: "#4F46E5", green: "#059669", gold: "#D97706",
+    red: "#DC2626", purple: "#7C3AED", blue: "#2563EB",
+  };
+
+  function getCurrentWeek(startDate: string) {
+    const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
+  }
+
+  if (!plan) return (
+    <div className="rounded-2xl p-5 flex items-center justify-between"
+      style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
+          <Crosshair size={18} style={{ color: "#4F46E5" }} />
+        </div>
+        <div>
+          <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Kế hoạch 12 Tuần</p>
+          <p className="text-xs" style={{ color: dm.textMuted }}>Chưa có kế hoạch nào. Bắt đầu ngay!</p>
+        </div>
+      </div>
+      <Link href="/crm/twelve-week-plan"
+        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+        style={{ background: "#4F46E5" }}>
+        <Plus size={14} /> Tạo kế hoạch
+      </Link>
+    </div>
+  );
+
+  const currentWeek = getCurrentWeek(plan.startDate);
+  const totalTasks = plan.tasks.filter(t => t.status !== "skipped").length;
+  const doneTasks = plan.tasks.filter(t => t.status === "done").length;
+  const overallPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const thisWeekTasks = plan.tasks.filter(t => t.weekNumber === currentWeek && t.status !== "skipped");
+  const thisWeekDone = thisWeekTasks.filter(t => t.status === "done").length;
+  const thisWeekPct = thisWeekTasks.length > 0 ? Math.round((thisWeekDone / thisWeekTasks.length) * 100) : 0;
+
+  // Week bars
+  const weekBars = Array.from({ length: 12 }, (_, i) => {
+    const w = i + 1;
+    const wT = plan.tasks.filter(t => t.weekNumber === w && t.status !== "skipped").length;
+    const wD = plan.tasks.filter(t => t.weekNumber === w && t.status === "done").length;
+    return { pct: wT > 0 ? Math.round((wD / wT) * 100) : 0, isCurrent: w === currentWeek, isPast: w < currentWeek, hasData: wT > 0 };
+  });
+
+  const barColor = overallPct >= 80 ? T.green : overallPct >= 50 ? T.gold : "#4F46E5";
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+      {/* Header */}
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
+            <Crosshair size={16} style={{ color: "#4F46E5" }} />
+          </div>
+          <div>
+            <p className="text-sm font-bold truncate max-w-[200px]" style={{ color: dm.textPrimary }}>{plan.title}</p>
+            <p className="text-[10px]" style={{ color: dm.textMuted }}>Tuần {currentWeek}/12 đang diễn ra</p>
+          </div>
+        </div>
+        <Link href="/crm/twelve-week-plan"
+          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+          style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+          Chi tiết <ChevronRight size={12} />
+        </Link>
+      </div>
+
+      {/* 3-column stats */}
+      <div className="grid grid-cols-3 divide-x" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
+        {[
+          { label: "Tiến độ tổng", value: `${overallPct}%`, sub: `${doneTasks}/${totalTasks} việc`, color: barColor },
+          { label: "Tuần này", value: `${thisWeekPct}%`, sub: `${thisWeekDone}/${thisWeekTasks.length} việc`, color: thisWeekPct >= 100 ? T.green : thisWeekPct >= 60 ? T.gold : T.red },
+          { label: "Còn lại", value: `${12 - currentWeek + 1} tuần`, sub: `${totalTasks - doneTasks} việc chưa xong`, color: T.indigo },
+        ].map(({ label, value, sub, color }) => (
+          <div key={label} className="p-4 text-center">
+            <div className="text-lg font-black" style={{ color }}>{value}</div>
+            <div className="text-[10px] font-semibold mt-0.5" style={{ color: dm.textPrimary }}>{label}</div>
+            <div className="text-[9px] mt-0.5" style={{ color: dm.textMuted }}>{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 12-week bar chart */}
+      <div className="px-5 pt-4 pb-2">
+        <div className="flex items-end gap-1 h-10">
+          {weekBars.map((bar, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+              <div className="w-full rounded-sm overflow-hidden relative" style={{ height: 28, background: bar.isCurrent ? "#C7D2FE" : bar.isPast ? "#F3F4F6" : "#EEF2FF" }}>
+                {bar.hasData && (
+                  <div className="w-full absolute bottom-0 rounded-sm transition-all duration-700"
+                    style={{ height: `${bar.pct}%`, background: bar.pct === 100 ? T.green : bar.isCurrent ? "#4F46E5" : bar.isPast ? "#818CF8" : "#C7D2FE" }} />
+                )}
+              </div>
+              <span className="text-[7px] font-medium" style={{ color: bar.isCurrent ? "#4F46E5" : dm.textMuted }}>
+                {bar.isCurrent ? "●" : i + 1}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Overall progress bar */}
+      <div className="px-5 pb-4">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-semibold" style={{ color: dm.textMuted }}>Tiến độ tổng thể</span>
+          <span className="text-[10px] font-black" style={{ color: barColor }}>{overallPct}%</span>
+        </div>
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: "#EEF2FF" }}>
+          <div className="h-full rounded-full transition-all duration-700"
+            style={{ width: `${overallPct}%`, background: `linear-gradient(90deg, #4F46E5, ${barColor})` }} />
+        </div>
+      </div>
+
+      {/* Goals mini list */}
+      {plan.goals.length > 0 && (
+        <div className="px-5 pb-4 space-y-2" style={{ borderTop: `1px solid ${dm.cardBorder}` }}>
+          <p className="text-[10px] font-semibold pt-3" style={{ color: dm.textMuted }}>MỤC TIÊU</p>
+          {plan.goals.map(goal => {
+            const gColor = GOAL_COLORS_MAP[goal.color] ?? "#4F46E5";
+            const gTasks = plan.tasks.filter(t => t.goalId === goal.id && t.status !== "skipped");
+            const gDone = plan.tasks.filter(t => t.goalId === goal.id && t.status === "done");
+            const gPct = gTasks.length > 0 ? Math.round((gDone.length / gTasks.length) * 100) : 0;
+            return (
+              <div key={goal.id}>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: gColor }} />
+                  <span className="text-xs font-medium flex-1 truncate" style={{ color: dm.textPrimary }}>{goal.title}</span>
+                  <span className="text-[10px] font-black" style={{ color: gColor }}>{gPct}%</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden ml-4" style={{ background: `${gColor}20` }}>
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${gPct}%`, background: gColor }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 12-Week Goals Board (replaces Revenue Chart) ──────────────────────────────
+function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats }: {
+  dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
+  fmtVal: (v: number) => string;
+  leads: Lead[]; wonLeads: Lead[]; stats: CrmStats;
+}) {
+  const [plan, setPlan] = useState<null | {
+    id: string; title: string; startDate: string; endDate: string;
+    goals: Array<{ id: string; title: string; color: string; description?: string }>;
+    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string }>;
+  }>(null);
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/crm/twelve-week-plan")
+      .then(r => r.ok ? r.json() : [])
+      .then(plans => {
+        const active = plans.find((p: { isActive: boolean }) => p.isActive) ?? plans[0] ?? null;
+        setPlan(active);
+        if (active?.goals?.length > 0) setSelectedGoal(active.goals[0].id);
+      })
+      .catch(() => {});
+  }, []);
+
+  const GOAL_COLORS_MAP: Record<string, string> = {
+    indigo: "#4F46E5", green: "#059669", gold: "#D97706",
+    red: "#DC2626", purple: "#7C3AED", blue: "#2563EB",
+  };
+
+  function getCurrentWeek(startDate: string) {
+    const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
+  }
+
+  if (!plan) return (
+    <div className="rounded-2xl p-8 text-center" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "#EEF2FF" }}>
+        <Crosshair size={24} style={{ color: "#4F46E5" }} />
+      </div>
+      <h3 className="text-base font-bold mb-2" style={{ color: dm.textPrimary }}>Chưa có kế hoạch 12 tuần</h3>
+      <p className="text-sm mb-4" style={{ color: dm.textMuted }}>Tạo kế hoạch để theo dõi tiến độ mục tiêu và công việc hàng tuần</p>
+      <Link href="/crm/twelve-week-plan"
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+        style={{ background: "#4F46E5" }}>
+        <Plus size={16} /> Tạo kế hoạch ngay
+      </Link>
+    </div>
+  );
+
+  const currentWeek = getCurrentWeek(plan.startDate);
+  const activeGoal = plan.goals.find(g => g.id === selectedGoal) ?? plan.goals[0];
+  const activeGoalColor = activeGoal ? (GOAL_COLORS_MAP[activeGoal.color] ?? "#4F46E5") : "#4F46E5";
+
+  // Build 12-week grid for selected goal
+  const weekData = Array.from({ length: 12 }, (_, i) => {
+    const w = i + 1;
+    const wTasks = plan.tasks.filter(t => t.goalId === (activeGoal?.id ?? "") && t.weekNumber === w);
+    const done = wTasks.filter(t => t.status === "done").length;
+    const total = wTasks.filter(t => t.status !== "skipped").length;
+    return { week: w, tasks: wTasks, done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0, isCurrent: w === currentWeek };
+  });
+
+  // Tasks for current week of selected goal
+  const currentWeekTasks = plan.tasks.filter(t => t.goalId === (activeGoal?.id ?? "") && t.weekNumber === currentWeek);
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+      {/* Header */}
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
+            <Target size={16} style={{ color: "#4F46E5" }} />
+          </div>
+          <div>
+            <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Bảng mục tiêu 12 tuần</p>
+            <p className="text-[10px]" style={{ color: dm.textMuted }}>Tuần {currentWeek}/12 • {plan.title}</p>
+          </div>
+        </div>
+        <Link href="/crm/twelve-week-plan"
+          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+          style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+          Xem đầy đủ <ArrowUpRight size={12} />
+        </Link>
+      </div>
+
+      <div className="p-5">
+        {/* Goal tabs */}
+        <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+          {plan.goals.map(goal => {
+            const gColor = GOAL_COLORS_MAP[goal.color] ?? "#4F46E5";
+            const gTasks = plan.tasks.filter(t => t.goalId === goal.id && t.status !== "skipped");
+            const gDone = plan.tasks.filter(t => t.goalId === goal.id && t.status === "done");
+            const gPct = gTasks.length > 0 ? Math.round((gDone.length / gTasks.length) * 100) : 0;
+            const isActive = selectedGoal === goal.id;
+            return (
+              <button key={goal.id} onClick={() => setSelectedGoal(goal.id)}
+                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                style={{
+                  background: isActive ? `${gColor}15` : dm.cardBorder + "40",
+                  border: `1.5px solid ${isActive ? gColor : "transparent"}`,
+                  color: isActive ? gColor : dm.textMuted,
+                }}>
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: gColor }} />
+                <span className="max-w-[120px] truncate">{goal.title}</span>
+                <span className="font-black">{gPct}%</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 12-week grid for selected goal */}
+        {activeGoal && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-3 h-3 rounded-full" style={{ background: activeGoalColor }} />
+              <span className="text-xs font-bold" style={{ color: dm.textPrimary }}>{activeGoal.title}</span>
+            </div>
+
+            {/* Week grid */}
+            <div className="grid grid-cols-6 gap-1.5 mb-4">
+              {weekData.map(({ week, done, total, pct, isCurrent }) => {
+                const bg = pct === 100 ? T.greenBg : isCurrent ? "#EEF2FF" : total === 0 ? dm.cardBorder + "40" : `${activeGoalColor}10`;
+                const border = isCurrent ? activeGoalColor : pct === 100 ? T.green : "transparent";
+                const textColor = pct === 100 ? T.green : isCurrent ? activeGoalColor : dm.textMuted;
+                return (
+                  <div key={week} className="rounded-lg p-2 text-center transition-all"
+                    style={{ background: bg, border: `1.5px solid ${border}` }}>
+                    <div className="text-[9px] font-semibold mb-1" style={{ color: dm.textMuted }}>T{week}</div>
+                    {total > 0 ? (
+                      <>
+                        <div className="text-xs font-black" style={{ color: textColor }}>{pct}%</div>
+                        <div className="text-[8px]" style={{ color: dm.textMuted }}>{done}/{total}</div>
+                      </>
+                    ) : (
+                      <div className="text-[9px]" style={{ color: dm.textMuted }}>—</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Current week tasks */}
+            {currentWeekTasks.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold mb-2" style={{ color: dm.textMuted }}>
+                  CÔNG VIỆC TUẦN {currentWeek}
+                </p>
+                <div className="space-y-1.5">
+                  {currentWeekTasks.slice(0, 5).map(task => (
+                    <div key={task.id} className="flex items-center gap-2.5 p-2.5 rounded-lg"
+                      style={{ background: task.status === "done" ? T.greenBg : `${activeGoalColor}08`, border: `1px solid ${task.status === "done" ? T.green + "30" : activeGoalColor + "20"}` }}>
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: task.status === "done" ? T.green : `${activeGoalColor}20`, border: `1.5px solid ${task.status === "done" ? T.green : activeGoalColor}` }}>
+                        {task.status === "done" && (
+                          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                            <path d="M1 3l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-xs flex-1 truncate"
+                        style={{ color: task.status === "done" ? T.textMuted : dm.textPrimary, textDecoration: task.status === "done" ? "line-through" : "none" }}>
+                        {task.title}
+                      </span>
+                    </div>
+                  ))}
+                  {currentWeekTasks.length > 5 && (
+                    <Link href="/crm/twelve-week-plan" className="block text-center text-[10px] font-semibold py-1.5 rounded-lg"
+                      style={{ background: `${activeGoalColor}10`, color: activeGoalColor }}>
+                      +{currentWeekTasks.length - 5} việc nữa →
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Sparkline mini chart ───────────────────────────────────────────
 function Sparkline({ data, color, height = 28 }: { data: number[]; color: string; height?: number }) {
   if (!data || data.length < 2) return null;
@@ -858,47 +1313,20 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           </div>
         )}
 
-        {/* ── KPI Row ─────────────────────────────────────────────────────── */}
-        {isVisible("kpiCards") && <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <KpiCard
-            icon={Users} label="Tổng khách hàng"
-            value={leads.length} sub={`${activeLeads.length} đang theo dõi`}
-            color={theme.kpiCustomerColor} colorBg={theme.kpiCustomerColor + "18"}
-            badge={`${periodStats?.newLeads ?? stats.newLeadsThisMonth} mới ${PERIOD_LABELS[period].toLowerCase()}`}
-            badgeColor={theme.kpiCustomerColor}
-            sparkline={periodStats?.sparkline}
-            sparklineColor={theme.kpiCustomerColor}
-            darkMode={darkMode}
-          />
-          <KpiCard
-            icon={DollarSign} label="Pipeline giá trị"
-            value={fmtVal(totalValue)} sub={`Won: ${fmtVal(wonValue)}`}
-            color={theme.kpiPipelineColor} colorBg={theme.kpiPipelineColor + "18"}
-            badge={revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% tháng trước` : undefined}
-            badgeColor={revenueChange >= 0 ? theme.kpiWonColor : theme.kpiOverdueColor}
-            isText darkMode={darkMode}
-          />
-          <KpiCard
-            icon={Trophy} label="Tỷ lệ chốt đơn"
-            value={`${periodStats?.convRate ?? stats.conversionRate}%`}
-            sub={`${periodStats?.wonLeads ?? stats.wonLeadsThisMonth} đơn thành công`}
-            color={theme.kpiWonColor} colorBg={theme.kpiWonColor + "18"}
-            badge={`${periodStats?.wonLeads ?? stats.wonLeadsThisMonth} chốt ${PERIOD_LABELS[period].toLowerCase()}`}
-            badgeColor={theme.kpiWonColor}
-            sparkline={periodStats?.wonSparkline}
-            sparklineColor={theme.kpiWonColor}
-            isText darkMode={darkMode}
-          />
-          <KpiCard
-            icon={AlertCircle} label="Cần liên hệ ngay"
-            value={overdueLeads.length} sub="Quá 3 ngày không tương tác"
-            color={theme.kpiOverdueColor} colorBg={theme.kpiOverdueColor + "18"}
-            urgent={overdueLeads.length > 0}
-            badge={overdueLeads.length > 0 ? "Cần xử lý" : "Tốt"}
-            badgeColor={overdueLeads.length > 0 ? theme.kpiOverdueColor : theme.kpiWonColor}
-            darkMode={darkMode}
-          />
-        </div>}
+        {/* ── 12-Week KPI Row ──────────────────────────────────────────── */}
+        {isVisible("kpiCards") && <TwelveWeekKpiRow
+          leads={leads}
+          activeLeads={activeLeads}
+          overdueLeads={overdueLeads}
+          wonLeads={wonLeads}
+          totalValue={totalValue}
+          wonValue={wonValue}
+          stats={stats}
+          theme={theme}
+          fmtVal={fmtVal}
+          darkMode={darkMode}
+          dm={dm}
+        />}
 
         {/* ── Personal Rank (staff only) ───────────────────────────────── */}
         {isVisible("leaderboard") && !currentUser?.isAdmin && myRank && (
@@ -999,82 +1427,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           </Link>
         )}
 
-        {/* ── This Month Summary ──────────────────────────────────────── */}
-        {isVisible("monthSummary") && (() => {
-          const currentRev = periodStats?.wonValue ?? stats.wonValueThisMonth;
-          const target = 1_200_000_000;
-          const pct = Math.min(100, Math.round((currentRev / target) * 100));
-          const remaining = Math.max(0, target - currentRev);
-          const barColor = pct >= 100 ? T.green : pct >= 70 ? T.gold : pct >= 40 ? T.indigo : T.red;
-          const wonCount = periodStats?.wonLeads ?? stats.wonLeadsThisMonth;
-          const newLeadsCount = periodStats?.newLeads ?? stats.newLeadsThisMonth;
-          const targetLeads = 15;
-          const targetWon = 3;
-          const leadPct = Math.min(100, Math.round((newLeadsCount / targetLeads) * 100));
-          const wonPct2 = Math.min(100, Math.round((wonCount / targetWon) * 100));
-          return (
-            <div className="rounded-2xl p-3.5 md:p-5" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
-              {/* Title row */}
-              <div className="flex items-center gap-2 mb-3 md:mb-4">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: T.indigoBg }}>
-                  <Crosshair size={13} style={{ color: T.indigo }} />
-                </div>
-                <span className="text-sm font-bold" style={{ color: dm.textPrimary }}>Mục tiêu {PERIOD_LABELS[period].toLowerCase()}</span>
-                <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: `${barColor}15`, color: barColor }}>{pct}% hoàn thành</span>
-              </div>
-              {/* 3-column metrics */}
-              <div className="grid grid-cols-3 gap-2 md:gap-4 mb-3 md:mb-4">
-                {/* Doanh thu */}
-                <div className="rounded-xl p-3.5" style={{ background: `${barColor}08`, border: `1px solid ${barColor}20` }}>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <DollarSign size={13} style={{ color: barColor }} />
-                    <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Doanh thu</span>
-                  </div>
-                  <div className="text-xl font-black" style={{ color: barColor }}>{fmtVal(currentRev)}</div>
-                  <div className="text-[10px] mt-1" style={{ color: revenueChange >= 0 ? T.green : T.red }}>
-                    {revenueChange !== 0 ? `${revenueChange > 0 ? "+" : ""}${revenueChange}% so tháng trước` : "So tháng trước"}
-                  </div>
-                  <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ background: `${barColor}20` }}>
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, background: barColor }} />
-                  </div>
-                  <div className="text-[9px] mt-1" style={{ color: T.textMuted }}>
-                    {remaining > 0 ? `Còn ${fmtVal(remaining)} / ${fmtVal(target)}` : "✅ Đạt mục tiêu!"}
-                  </div>
-                </div>
-                {/* KH mới */}
-                <div className="rounded-xl p-3.5" style={{ background: `${theme.kpiCustomerColor}08`, border: `1px solid ${theme.kpiCustomerColor}20` }}>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <UserCheck size={13} style={{ color: theme.kpiCustomerColor }} />
-                    <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>KH mới</span>
-                  </div>
-                  <div className="text-xl font-black" style={{ color: theme.kpiCustomerColor }}>{newLeadsCount}</div>
-                  <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>Tổng {leads.length} khách hàng</div>
-                  <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ background: `${theme.kpiCustomerColor}20` }}>
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${leadPct}%`, background: theme.kpiCustomerColor }} />
-                  </div>
-                  <div className="text-[9px] mt-1" style={{ color: T.textMuted }}>{newLeadsCount}/{targetLeads} mục tiêu</div>
-                </div>
-                {/* Đơn chốt */}
-                <div className="rounded-xl p-3.5" style={{ background: `${T.green}08`, border: `1px solid ${T.green}20` }}>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Trophy size={13} style={{ color: T.green }} />
-                    <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Đơn chốt</span>
-                  </div>
-                  <div className="text-xl font-black" style={{ color: T.green }}>{wonCount}</div>
-                  <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>Tỷ lệ chốt {periodStats?.convRate ?? stats.conversionRate}%</div>
-                  <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ background: `${T.green}20` }}>
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${wonPct2}%`, background: T.green }} />
-                  </div>
-                  <div className="text-[9px] mt-1" style={{ color: T.textMuted }}>{wonCount}/{targetWon} mục tiêu</div>
-                </div>
-              </div>
-             </div>
-          );
-        })()}
+        {/* ── 12-Week Progress Board ────────────────────────────────────────── */}
+        {isVisible("monthSummary") && <TwelveWeekProgressBoard dm={dm} fmtVal={fmtVal} leads={leads} wonLeads={wonLeads} stats={stats} />}
 
         {/* ── Main Grid ─────────────────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-5">
@@ -1082,16 +1436,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           {/* Left col (2/3) */}
           <div className="xl:col-span-2 space-y-4 md:space-y-5">
 
-            {/* Revenue Chart + Forecast */}
-            {isVisible("revenueChart") && <Section title="Doanh thu & Dự báo" icon={BarChart2} iconColor={theme.accentColor} iconBg={theme.accentColor + "18"}>
-              <RevenueChart
-                forecast={forecast}
-                stats={stats}
-                periodStats={periodStats}
-                theme={theme}
-                fmtVal={fmtVal}
-              />
-            </Section>}
+            {/* 12-Week Goals Board */}
+            {isVisible("revenueChart") && <TwelveWeekGoalsBoard dm={dm} fmtVal={fmtVal} leads={leads} wonLeads={wonLeads} stats={stats} />}
 
             {/* Conversion Funnel */}
             {isVisible("funnel") && <Section title="Conversion Funnel" icon={Filter} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
@@ -1797,6 +2143,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             {isVisible("quickLinks") && <Section title="Truy cập nhanh" icon={ArrowUpRight} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
               <div className="p-3 grid grid-cols-2 gap-2">
                 {[
+                  { href: "/crm/twelve-week-plan", label: "Kế hoạch 12T", icon: Crosshair, color: "#4F46E5", bg: "#EEF2FF" },
                   { href: "/crm/leads", label: "Khách hàng", icon: Users, color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12" },
                   { href: "/crm/kanban", label: "Kanban", icon: BarChart2, color: theme.accentColor, bg: theme.accentColor + "12" },
                   { href: "/crm/quotes/new", label: "Báo giá mới", icon: FileText, color: theme.kpiWonColor, bg: theme.kpiWonColor + "12" },
