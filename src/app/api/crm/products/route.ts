@@ -1,6 +1,6 @@
 import { getCrmSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getCrmProducts, upsertCrmProduct } from "@/lib/crm-store";
+import { getCrmProducts, upsertCrmProduct, deleteCrmProduct } from "@/lib/crm-store";
 
 export async function GET() {
   if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,4 +14,13 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const product = await upsertCrmProduct(body);
   return NextResponse.json(product, { status: 201 });
+}
+
+export async function DELETE(req: NextRequest) {
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  await deleteCrmProduct(id);
+  return NextResponse.json({ success: true });
 }

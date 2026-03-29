@@ -254,6 +254,11 @@ export async function upsertCrmProduct(product: CrmProduct): Promise<CrmProduct>
   return updated;
 }
 
+export async function deleteCrmProduct(id: string): Promise<void> {
+  await initCrmSchema();
+  await query(`DELETE FROM crm_products WHERE id = $1`, [id]);
+}
+
 // ─── Quotes CRUD ──────────────────────────────────────────────────────────────
 
 export async function getQuotes(leadId?: string): Promise<Quote[]> {
