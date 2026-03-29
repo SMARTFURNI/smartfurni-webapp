@@ -65,7 +65,7 @@ const T = {
   textPrimary: "#101828", textSecondary: "#344054",
   textMuted: "#98A2B3", textLabel: "#667085",
   gold: "#C9A84C", goldDark: "#9A7A2E", goldLight: "#FEF3C7", goldBg: "#FFFBEB",
-  indigo: "#4F46E5", indigoBg: "#EEF2FF",
+  indigo: "#4F46E5", indigoBg: "#EEF2FF", indigoLight: "#C7D2FE",
   green: "#059669", greenBg: "#ECFDF5",
   red: "#DC2626", redBg: "#FEF2F2",
   orange: "#EA580C", orangeBg: "#FFF7ED",
@@ -759,12 +759,11 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
   dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
   fmtVal: (v: number) => string;
   leads: Lead[]; wonLeads: Lead[]; stats: CrmStats;
-  plan: { id: string; title: string; startDate: string; endDate: string; goals: Array<{ id: string; title: string; color: string; description?: string; kpis?: Array<{ label: string; unit: string; targetTotal: number; weeklyTarget: number; currentValue?: number; format: string }> }>; tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string }> } | null;
+  plan: { id: string; title: string; startDate: string; endDate: string; goals: Array<{ id: string; title: string; color: string; description?: string; kpis?: Array<{ label: string; unit: string; targetTotal: number; weeklyTarget: number; weeklyAllocations?: Array<{ weekNumber: number; target: number }>; currentValue?: number; format: string }> }>; tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string }> } | null;
   loadingPlan: boolean;
 }) {
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
 
-  // Set default selected goal when plan loads
   useEffect(() => {
     if (plan?.goals?.length && !selectedGoal) {
       setSelectedGoal(plan.goals[0].id);
@@ -779,6 +778,12 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
   function getCurrentWeek(startDate: string) {
     const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
     return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
+  }
+
+  function getWeeklyKpiTarget(kpi: { weeklyTarget: number; weeklyAllocations?: Array<{ weekNumber: number; target: number }> }, weekNumber: number): number {
+    const alloc = kpi.weeklyAllocations?.find(a => a.weekNumber === weekNumber);
+    if (alloc) return alloc.target;
+    return Math.round(kpi.weeklyTarget);
   }
 
   if (loadingPlan) return (
@@ -820,7 +825,6 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
   const activeGoal = plan.goals.find(g => g.id === selectedGoal) ?? plan.goals[0];
   const activeGoalColor = activeGoal ? (GOAL_COLORS_MAP[activeGoal.color] ?? "#4F46E5") : "#4F46E5";
 
-  // Helper format KPI
   function fmtKpi(v: number, format: string): string {
     if (format === "currency") {
       if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1)}B`;
@@ -831,21 +835,28 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
     return String(Math.round(v));
   }
 
-  // Build 12-week grid for selected goal - bao gồm KPI mục tiêu từng tuần
+  // Build 12-week grid for selected goal
   const weekData = Array.from({ length: 12 }, (_, i) => {
     const w = i + 1;
     const wTasks = plan.tasks.filter(t => t.goalId === (activeGoal?.id ?? "") && t.weekNumber === w);
     const done = wTasks.filter(t => t.status === "done").length;
     const total = wTasks.filter(t => t.status !== "skipped").length;
     const kpi = activeGoal?.kpis?.[0];
-    const kpiTarget = kpi ? Math.round(kpi.weeklyTarget) : null;
-    const kpiCumTarget = kpi ? Math.round(kpi.weeklyTarget * w) : null;
-    return { week: w, tasks: wTasks, done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0, isCurrent: w === currentWeek, isPast: w < currentWeek, kpiTarget, kpiCumTarget, kpi };
+    const kpiTarget = kpi ? getWeeklyKpiTarget(kpi, w) : null;
+    return { week: w, tasks: wTasks, done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0, isCurrent: w === currentWeek, isPast: w < currentWeek, kpiTarget, kpi };
   });
 
   // Tasks for current week of selected goal
   const currentWeekTasks = plan.tasks.filter(t => t.goalId === (activeGoal?.id ?? "") && t.weekNumber === currentWeek);
   const activeKpi = activeGoal?.kpis?.[0];
+  const currentWeekKpiTarget = activeKpi ? getWeeklyKpiTarget(activeKpi, currentWeek) : null;
+  const cumKpiTarget = activeKpi ? Array.from({ length: currentWeek }, (_, i) => getWeeklyKpiTarget(activeKpi, i + 1)).reduce((a, b) => a + b, 0) : null;
+  const kpiProgress = (cumKpiTarget && activeKpi && cumKpiTarget > 0) ? Math.min(150, Math.round(((activeKpi.currentValue ?? 0) / cumKpiTarget) * 100)) : null;
+
+  // Overall stats for active goal
+  const activeDone = plan.tasks.filter(t => t.goalId === (activeGoal?.id ?? "") && t.status === "done").length;
+  const activeTotal = plan.tasks.filter(t => t.goalId === (activeGoal?.id ?? "") && t.status !== "skipped").length;
+  const activePct = activeTotal > 0 ? Math.round((activeDone / activeTotal) * 100) : 0;
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
@@ -856,7 +867,7 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
             <Target size={16} style={{ color: "#4F46E5" }} />
           </div>
           <div>
-            <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Bảng mục tiêu từng tuần</p>
+            <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Mục tiêu tuần {currentWeek}</p>
             <p className="text-[10px]" style={{ color: dm.textMuted }}>Tuần {currentWeek}/12 • {plan.title}</p>
           </div>
         </div>
@@ -892,88 +903,79 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
           })}
         </div>
 
-        {/* Active goal KPI summary */}
-        {activeGoal && activeKpi && (
-          <div className="rounded-xl p-3 mb-4" style={{ background: `${activeGoalColor}08`, border: `1.5px solid ${activeGoalColor}20` }}>
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: dm.textMuted }}>{activeKpi.label}</div>
-                <div className="flex items-baseline gap-1.5 mt-0.5">
-                  <span className="text-lg font-black" style={{ color: activeGoalColor }}>
-                    {activeKpi.currentValue !== undefined ? fmtKpi(activeKpi.currentValue, activeKpi.format) : "—"}
-                  </span>
-                  <span className="text-xs" style={{ color: dm.textMuted }}>/ {fmtKpi(activeKpi.targetTotal, activeKpi.format)} mục tiêu 12 tuần</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px]" style={{ color: dm.textMuted }}>Mục tiêu/tuần</div>
-                <div className="text-base font-black" style={{ color: dm.textPrimary }}>{fmtKpi(activeKpi.weeklyTarget, activeKpi.format)}</div>
-                <div className="text-[9px]" style={{ color: dm.textMuted }}>{activeKpi.unit}</div>
-              </div>
-            </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${activeGoalColor}15` }}>
-              <div className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${Math.min(100, activeKpi.currentValue !== undefined && activeKpi.targetTotal > 0 ? Math.round((activeKpi.currentValue / activeKpi.targetTotal) * 100) : 0)}%`, background: activeGoalColor }} />
-            </div>
-          </div>
-        )}
-
-        {/* 12-week grid - hiển thị mục tiêu KPI từng tuần */}
+        {/* ── Current week focus ── */}
         {activeGoal && (
-          <div>
-            <p className="text-[10px] font-semibold mb-2" style={{ color: dm.textMuted }}>MỤC TIÊU TỪ TỤNG TUẦN</p>
-            <div className="grid grid-cols-4 gap-1.5 mb-4">
-              {weekData.map(({ week, done, total, pct, isCurrent, isPast, kpiTarget, kpi: wKpi }) => {
-                const bg = pct === 100 ? T.greenBg : isCurrent ? "#EEF2FF" : total === 0 && !isPast ? dm.cardBorder + "30" : `${activeGoalColor}08`;
-                const border = isCurrent ? activeGoalColor : pct === 100 ? T.green : isPast && pct < 100 && total > 0 ? T.red + "40" : "transparent";
-                const textColor = pct === 100 ? T.green : isCurrent ? activeGoalColor : isPast && pct < 100 ? T.red : dm.textMuted;
-                return (
-                  <div key={week} className="rounded-lg p-2 transition-all"
-                    style={{ background: bg, border: `1.5px solid ${border}` }}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] font-bold" style={{ color: isCurrent ? activeGoalColor : dm.textMuted }}>T{week}</span>
-                      {isCurrent && <span className="text-[7px] font-black px-1 rounded" style={{ background: activeGoalColor, color: "white" }}>NOW</span>}
-                      {isPast && pct === 100 && <span className="text-[8px]" style={{ color: T.green }}>✓</span>}
-                      {isPast && pct < 100 && total > 0 && <span className="text-[8px]" style={{ color: T.red }}>!</span>}
-                    </div>
-                    {/* KPI target */}
-                    {kpiTarget !== null && wKpi ? (
-                      <div className="text-[10px] font-black" style={{ color: isCurrent ? activeGoalColor : dm.textPrimary }}>
-                        {fmtKpi(kpiTarget, wKpi.format)}
-                      </div>
-                    ) : null}
-                    {/* Task progress */}
-                    {total > 0 ? (
-                      <div className="text-[8px] mt-0.5" style={{ color: textColor }}>{done}/{total} việc</div>
-                    ) : (
-                      <div className="text-[8px] mt-0.5" style={{ color: dm.textMuted }}>chưa có</div>
-                    )}
-                    {/* Mini progress bar */}
-                    {total > 0 && (
-                      <div className="h-0.5 rounded-full mt-1 overflow-hidden" style={{ background: `${activeGoalColor}20` }}>
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct === 100 ? T.green : activeGoalColor }} />
-                      </div>
+          <div className="rounded-xl overflow-hidden mb-4" style={{ border: `1.5px solid ${activeGoalColor}25` }}>
+            {/* Week header */}
+            <div className="px-3.5 py-2.5 flex items-center justify-between"
+              style={{ background: `linear-gradient(135deg, ${activeGoalColor}10, ${activeGoalColor}05)`, borderBottom: `1px solid ${activeGoalColor}15` }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black px-2 py-0.5 rounded-full text-white" style={{ background: activeGoalColor }}>
+                  Tuần {currentWeek} ★
+                </span>
+                <span className="text-[10px] font-semibold" style={{ color: dm.textMuted }}>Hiện tại</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px]" style={{ color: dm.textMuted }}>
+                  {currentWeekTasks.filter(t => t.status === "done").length}/{currentWeekTasks.filter(t => t.status !== "skipped").length} việc
+                </span>
+                <span className="text-xs font-black" style={{ color: activePct >= 80 ? T.green : activePct >= 50 ? T.gold : T.red }}>{activePct}%</span>
+              </div>
+            </div>
+
+            {/* KPI for current week */}
+            {activeKpi && currentWeekKpiTarget !== null && (
+              <div className="px-3.5 py-2.5" style={{ borderBottom: `1px solid ${activeGoalColor}10` }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <BarChart2 size={11} style={{ color: activeGoalColor }} />
+                    <span className="text-[10px] font-bold" style={{ color: dm.textPrimary }}>{activeKpi.label}</span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-base font-black" style={{ color: activeGoalColor }}>
+                      {fmtKpi(activeKpi.currentValue ?? 0, activeKpi.format)}
+                    </span>
+                    <span className="text-[9px]" style={{ color: dm.textMuted }}>/ {fmtKpi(activeKpi.targetTotal, activeKpi.format)}</span>
+                    {kpiProgress !== null && (
+                      <span className="text-[9px] font-black" style={{ color: kpiProgress >= 100 ? T.green : kpiProgress >= 80 ? T.gold : T.red }}>
+                        {kpiProgress}%
+                      </span>
                     )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${activeGoalColor}12` }}>
+                      <div className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(100, kpiProgress ?? 0)}%`, background: kpiProgress && kpiProgress >= 100 ? T.green : activeGoalColor }} />
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <div className="text-[9px]" style={{ color: dm.textMuted }}>Tuần này cần</div>
+                    <div className="text-sm font-black" style={{ color: dm.textPrimary }}>{fmtKpi(currentWeekKpiTarget, activeKpi.format)}</div>
+                    <div className="text-[8px]" style={{ color: dm.textMuted }}>{activeKpi.unit}</div>
+                  </div>
+                  {cumKpiTarget !== null && (
+                    <div className="flex-shrink-0 text-right">
+                      <div className="text-[9px]" style={{ color: dm.textMuted }}>Lũy kế cần</div>
+                      <div className="text-xs font-bold" style={{ color: dm.textPrimary }}>{fmtKpi(cumKpiTarget, activeKpi.format)}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Current week tasks */}
-            {currentWeekTasks.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] font-semibold" style={{ color: dm.textMuted }}>CÔNG VIỆC TUẦN {currentWeek}</p>
-                  <span className="text-[10px] font-black" style={{ color: activeGoalColor }}>
-                    {currentWeekTasks.filter(t => t.status === "done").length}/{currentWeekTasks.length} xong
-                  </span>
-                </div>
+            <div className="px-3.5 py-2.5">
+              {currentWeekTasks.length === 0 ? (
+                <p className="text-[10px] text-center py-2" style={{ color: dm.textMuted }}>Chưa có công việc nào tuần này</p>
+              ) : (
                 <div className="space-y-1.5">
-                  {currentWeekTasks.slice(0, 4).map(task => (
-                    <div key={task.id} className="flex items-center gap-2.5 p-2.5 rounded-lg"
-                      style={{ background: task.status === "done" ? T.greenBg : `${activeGoalColor}08`, border: `1px solid ${task.status === "done" ? T.green + "30" : activeGoalColor + "20"}` }}>
+                  {currentWeekTasks.slice(0, 5).map(task => (
+                    <div key={task.id} className="flex items-center gap-2.5 p-2 rounded-lg"
+                      style={{ background: task.status === "done" ? `${T.green}08` : `${activeGoalColor}06`, border: `1px solid ${task.status === "done" ? T.green + "25" : activeGoalColor + "15"}` }}>
                       <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ background: task.status === "done" ? T.green : `${activeGoalColor}20`, border: `1.5px solid ${task.status === "done" ? T.green : activeGoalColor}` }}>
+                        style={{ background: task.status === "done" ? T.green : `${activeGoalColor}15`, border: `1.5px solid ${task.status === "done" ? T.green : activeGoalColor}` }}>
                         {task.status === "done" && (
                           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
                             <path d="M1 3l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -981,20 +983,62 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
                         )}
                       </div>
                       <span className="text-xs flex-1 truncate"
-                        style={{ color: task.status === "done" ? T.textMuted : dm.textPrimary, textDecoration: task.status === "done" ? "line-through" : "none" }}>
+                        style={{ color: task.status === "done" ? dm.textMuted : dm.textPrimary, textDecoration: task.status === "done" ? "line-through" : "none" }}>
                         {task.title}
                       </span>
+                      {task.status === "skipped" && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full" style={{ background: `${dm.textMuted}15`, color: dm.textMuted }}>bỏ qua</span>
+                      )}
                     </div>
                   ))}
-                  {currentWeekTasks.length > 4 && (
+                  {currentWeekTasks.length > 5 && (
                     <Link href="/crm/twelve-week-plan" className="block text-center text-[10px] font-semibold py-1.5 rounded-lg"
                       style={{ background: `${activeGoalColor}10`, color: activeGoalColor }}>
-                      +{currentWeekTasks.length - 4} việc nữa →
+                      +{currentWeekTasks.length - 5} việc nữa →
                     </Link>
                   )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── 12-week grid overview ── */}
+        {activeGoal && (
+          <div>
+            <p className="text-[10px] font-semibold mb-2" style={{ color: dm.textMuted }}>TẤT CẢ 12 TUẦN</p>
+            <div className="grid grid-cols-6 gap-1">
+              {weekData.map(({ week, done, total, pct, isCurrent, isPast, kpiTarget, kpi: wKpi }) => {
+                const bg = isCurrent ? `${activeGoalColor}15` : pct === 100 ? `${T.green}10` : isPast && total > 0 ? `${T.red}06` : `${dm.textMuted}06`;
+                const border = isCurrent ? activeGoalColor : pct === 100 ? T.green + "40" : isPast && pct < 100 && total > 0 ? T.red + "30" : "transparent";
+                return (
+                  <div key={week} className="rounded-lg p-1.5 transition-all"
+                    style={{ background: bg, border: `1.5px solid ${border}` }}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[8px] font-bold" style={{ color: isCurrent ? activeGoalColor : dm.textMuted }}>T{week}</span>
+                      {isCurrent && <div className="w-1 h-1 rounded-full" style={{ background: activeGoalColor }} />}
+                      {isPast && pct === 100 && <span className="text-[7px]" style={{ color: T.green }}>✓</span>}
+                      {isPast && pct < 100 && total > 0 && <span className="text-[7px]" style={{ color: T.red }}>!</span>}
+                    </div>
+                    {kpiTarget !== null && wKpi ? (
+                      <div className="text-[9px] font-black" style={{ color: isCurrent ? activeGoalColor : dm.textPrimary }}>
+                        {fmtKpi(kpiTarget, wKpi.format)}
+                      </div>
+                    ) : null}
+                    {total > 0 ? (
+                      <>
+                        <div className="text-[7px]" style={{ color: dm.textMuted }}>{done}/{total}</div>
+                        <div className="h-0.5 rounded-full mt-0.5 overflow-hidden" style={{ background: `${activeGoalColor}15` }}>
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct === 100 ? T.green : activeGoalColor }} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-[7px]" style={{ color: `${dm.textMuted}50` }}>—</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
