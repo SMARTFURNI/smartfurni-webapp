@@ -17,6 +17,7 @@ import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS, formatVND, isOver
 import type { DashboardTheme, DashboardSectionId } from "@/lib/crm-settings-store";
 import { DEFAULT_SETTINGS } from "@/lib/crm-settings-store";
 import AddLeadModal from "./AddLeadModal";
+import { TwelveWeekReportDashboard } from "./TwelveWeekReportWidgets";
 
 interface CurrentUser {
   name: string;
@@ -1226,8 +1227,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const [loadingExtras, setLoadingExtras] = useState(true);
   const [twelveWeekPlan, setTwelveWeekPlan] = useState<{
     id: string; title: string; startDate: string; endDate: string; isActive: boolean;
-    goals: Array<{ id: string; title: string; color: string; description?: string }>;
-    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string }>;
+    goals: Array<{ id: string; title: string; color: string; description?: string; kpis?: Array<{ id: string; label: string; unit: string; targetTotal: number; weeklyTarget: number; currentValue?: number; format: string; weeklyAllocations?: Array<{ weekNumber: number; target: number }> }> }>;
+    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string; assignedDate?: string; dueDate?: string; priority?: string }>;
   } | null>(null);
   const [loadingTwelveWeek, setLoadingTwelveWeek] = useState(true);
 
@@ -1597,8 +1598,55 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           {/* Left col (2/3) */}
           <div className="xl:col-span-2 space-y-4 md:space-y-5">
 
-            {/* 12-Week Goals Board */}
-            {isVisible("revenueChart") && <TwelveWeekGoalsBoard dm={dm} fmtVal={fmtVal} leads={leads} wonLeads={wonLeads} stats={stats} plan={twelveWeekPlan} loadingPlan={loadingTwelveWeek} />}
+            {/* 12-Week Report Dashboard */}
+            {isVisible("revenueChart") && (
+              <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+                {/* Header */}
+                <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
+                      <Crosshair size={16} style={{ color: "#4F46E5" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Báo cáo Kế hoạch 12 Tuần</p>
+                      <p className="text-[10px]" style={{ color: dm.textMuted }}>{twelveWeekPlan ? twelveWeekPlan.title : "Chưa có kế hoạch"}</p>
+                    </div>
+                  </div>
+                  <Link href="/crm/twelve-week-plan"
+                    className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                    style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+                    Chi tiết <ArrowUpRight size={12} />
+                  </Link>
+                </div>
+                <div className="p-4 md:p-5">
+                  {loadingTwelveWeek ? (
+                    <div className="space-y-3 animate-pulse">
+                      <div className="h-32 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="h-48 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                        <div className="h-48 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                      </div>
+                      <div className="h-32 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                    </div>
+                  ) : !twelveWeekPlan ? (
+                    <div className="text-center py-8">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "#EEF2FF" }}>
+                        <Crosshair size={24} style={{ color: "#4F46E5" }} />
+                      </div>
+                      <h3 className="text-base font-bold mb-2" style={{ color: dm.textPrimary }}>Chưa có kế hoạch 12 tuần</h3>
+                      <p className="text-sm mb-4" style={{ color: dm.textMuted }}>Tạo kế hoạch để theo dõi tiến độ mục tiêu và công việc hàng tuần</p>
+                      <Link href="/crm/twelve-week-plan"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                        style={{ background: "#4F46E5" }}>
+                        <Plus size={16} /> Tạo kế hoạch ngay
+                      </Link>
+                    </div>
+                  ) : (
+                    <TwelveWeekReportDashboard plan={twelveWeekPlan as Parameters<typeof TwelveWeekReportDashboard>[0]["plan"]} />
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Conversion Funnel */}
             {isVisible("funnel") && <Section title="Conversion Funnel" icon={Filter} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
