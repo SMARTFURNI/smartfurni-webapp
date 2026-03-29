@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { savePlan, getAllPlans } from "@/lib/twelve-week-plan-store";
-import type { TwelveWeekPlan, Goal, WeeklyTask, GoalColor } from "@/lib/twelve-week-plan-store";
+import type { TwelveWeekPlan, Goal, WeeklyTask, GoalColor, GoalKpi } from "@/lib/twelve-week-plan-store";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +44,10 @@ export async function POST(req: NextRequest) {
         color: "gold" as GoalColor,
         targetMetric: "1.2 tỷ VNĐ",
         currentMetric: "850 triệu",
+        kpis: [
+          { label: "Doanh thu", unit: "VNĐ", targetTotal: 1_200_000_000, weeklyTarget: 100_000_000, currentValue: 850_000_000, format: "currency" },
+          { label: "Đơn chốt", unit: "đơn", targetTotal: 24, weeklyTarget: 2, currentValue: 1, format: "number" },
+        ] as GoalKpi[],
         order: 0,
         createdAt: now,
         updatedAt: now,
@@ -56,6 +60,10 @@ export async function POST(req: NextRequest) {
         color: "indigo" as GoalColor,
         targetMetric: "15 KH mới",
         currentMetric: "3 KH",
+        kpis: [
+          { label: "KH mới", unit: "KH", targetTotal: 15, weeklyTarget: 1.25, currentValue: 11, format: "number" },
+          { label: "Cuộc gặp/gọi", unit: "cuộc", targetTotal: 120, weeklyTarget: 10, currentValue: 45, format: "number" },
+        ] as GoalKpi[],
         order: 1,
         createdAt: now,
         updatedAt: now,
@@ -68,6 +76,10 @@ export async function POST(req: NextRequest) {
         color: "green" as GoalColor,
         targetMetric: "Ra mắt Q1/2026",
         currentMetric: "Đang phát triển",
+        kpis: [
+          { label: "Milestone", unit: "mốc", targetTotal: 12, weeklyTarget: 1, currentValue: 5, format: "number" },
+          { label: "Demo KH VIP", unit: "KH", targetTotal: 10, weeklyTarget: 1, currentValue: 0, format: "number" },
+        ] as GoalKpi[],
         order: 2,
         createdAt: now,
         updatedAt: now,
@@ -80,6 +92,10 @@ export async function POST(req: NextRequest) {
         color: "purple" as GoalColor,
         targetMetric: "Tỷ lệ chốt ≥ 35%",
         currentMetric: "28%",
+        kpis: [
+          { label: "Tỷ lệ chốt", unit: "%", targetTotal: 35, weeklyTarget: 35, currentValue: 100, format: "percent" },
+          { label: "NPS Score", unit: "điểm", targetTotal: 70, weeklyTarget: 70, currentValue: 0, format: "number" },
+        ] as GoalKpi[],
         order: 3,
         createdAt: now,
         updatedAt: now,

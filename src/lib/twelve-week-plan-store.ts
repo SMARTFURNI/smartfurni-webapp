@@ -15,6 +15,15 @@ import { query } from "./db";
 export type TaskStatus = "pending" | "done" | "skipped";
 export type GoalColor = "indigo" | "green" | "gold" | "red" | "purple" | "blue";
 
+export interface GoalKpi {
+  label: string;           // e.g. "Doanh thu"
+  unit: string;            // e.g. "VNĐ" | "KH" | "đơn" | "%"
+  targetTotal: number;     // Mục tiêu 12 tuần (e.g. 1200000000)
+  weeklyTarget: number;    // Mục tiêu mỗi tuần = targetTotal / 12
+  currentValue?: number;   // Giá trị thực tế hiện tại (lấy từ CRM)
+  format: "currency" | "number" | "percent"; // Cách hiển thị
+}
+
 export interface WeeklyTask {
   id: string;
   goalId: string;
@@ -35,8 +44,9 @@ export interface Goal {
   title: string;
   description?: string;
   color: GoalColor;
-  targetMetric?: string; // e.g. "Doanh thu 1.2 tỷ"
-  currentMetric?: string; // e.g. "850 triệu"
+  targetMetric?: string; // e.g. "Doanh thu 1.2 tỷ" (text mô tả)
+  currentMetric?: string; // e.g. "850 triệu" (text mô tả)
+  kpis?: GoalKpi[];       // Các chỉ số KPI có thể đo lường
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -150,4 +160,51 @@ export function getWeekDateRange(startDate: string, weekNumber: number): { start
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
   return { start: weekStart, end: weekEnd };
+}
+
+/**
+ * Tính mục tiêu lũy kế đến tuần N (ideal pace)
+ * Ví dụ: mục tiêu 1.2 tỷ / 12 tuần → tuần 3 cần đạt 300 triệu
+ */
+export function calcCumulativeTarget(kpi: GoalKpi, weekNumber: number): number {
+  return Math.round((kpi.targetTotal / 12) * weekNumber);
+}
+
+/**
+ * Tính % hoàn thành KPI so với mục tiêu lũy kế đến tuần hiện tại
+ */
+export function calcKpiProgress(kpi: GoalKpi, currentWeek: number): {
+  weeklyTarget: number;
+  cumulativeTarget: number;
+  currentValue: number;
+  pct: number;
+  gap: number;
+  isOnTrack: boolean;
+} {
+  const cumulativeTarget = calcCumulativeTarget(kpi, currentWeek);
+  const currentValue = kpi.currentValue ?? 0;
+  const pct = cumulativeTarget > 0 ? Math.round((currentValue / cumulativeTarget) * 100) : 0;
+  const gap = currentValue - cumulativeTarget;
+  return {
+    weeklyTarget: kpi.weeklyTarget,
+    cumulativeTarget,
+    currentValue,
+    pct,
+    gap,
+    isOnTrack: currentValue >= cumulativeTarget * 0.9, // 90% là "đúng hướng"
+  };
+}
+
+/**
+ * Format giá trị KPI theo đơn vị
+ */
+export function formatKpiValue(value: number, format: GoalKpi["format"]): string {
+  if (format === "currency") {
+    if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+    if (value >= 1_000_000) return `${Math.round(value / 1_000_000)}tr`;
+    if (value >= 1_000) return `${Math.round(value / 1_000)}K`;
+    return String(value);
+  }
+  if (format === "percent") return `${value}%`;
+  return String(value);
 }
