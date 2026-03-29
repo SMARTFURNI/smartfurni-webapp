@@ -17,8 +17,10 @@ import {
   Target, Calendar, TrendingUp, CheckCircle2, Circle, SkipForward,
   Flag, Zap, Award, BarChart2, Eye, List, Clock, ChevronRight,
   Crosshair, Star, AlertCircle, RefreshCw, Save,
+  DollarSign, Layers, PieChart, Settings, ChevronLeft,
+  ArrowRight, Hash, Percent, BarChart, Info, Sliders,
 } from "lucide-react";
-import type { TwelveWeekPlan, Goal, WeeklyTask, GoalColor, TaskStatus } from "@/lib/twelve-week-plan-store";
+import type { TwelveWeekPlan, Goal, WeeklyTask, GoalColor, TaskStatus, GoalKpi, WeeklyAllocation } from "@/lib/twelve-week-plan-store";
 
 // ── Theme ────────────────────────────────────────────────────────────────────
 const T = {
@@ -69,6 +71,39 @@ function getCurrentWeek(startDate: string): number {
   const start = new Date(startDate);
   const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
+}
+
+// ── KPI Helpers ──────────────────────────────────────────────────────────────
+function fmtKpiValue(value: number, format: GoalKpi["format"]): string {
+  if (format === "currency") {
+    if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+    if (value >= 1_000_000) return `${Math.round(value / 1_000_000)}tr`;
+    if (value >= 1_000) return `${Math.round(value / 1_000)}K`;
+    return String(value);
+  }
+  if (format === "percent") return `${value}%`;
+  return String(value);
+}
+
+function parseKpiInput(raw: string, format: GoalKpi["format"]): number {
+  const s = raw.replace(/[,. ]/g, "").replace(/tr$/i, "000000").replace(/b$/i, "000000000").replace(/k$/i, "000");
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function getWeeklyTarget(kpi: GoalKpi, weekNumber: number): number {
+  const alloc = kpi.weeklyAllocations?.find(a => a.weekNumber === weekNumber);
+  if (alloc) return alloc.target;
+  return Math.round(kpi.targetTotal / 12);
+}
+
+function calcAllocatedTotal(kpi: GoalKpi): number {
+  if (!kpi.weeklyAllocations || kpi.weeklyAllocations.length === 0) return kpi.targetTotal;
+  const sum = kpi.weeklyAllocations.reduce((s, a) => s + a.target, 0);
+  // Fill in missing weeks with default
+  const missing = 12 - kpi.weeklyAllocations.length;
+  const defaultWeekly = Math.round(kpi.targetTotal / 12);
+  return sum + missing * defaultWeekly;
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -125,20 +160,748 @@ function InlineEdit({ value, onSave, placeholder, multiline, className, style }:
     : <input {...props} />;
 }
 
+// ── KPI Allocation Editor ───────────────────────────────────────────────────────────────
+function KpiAllocationEditor({ goal, kpi, kpiIndex, planStartDate, onSave, onClose }: {
+  goal: Goal;
+  kpi: GoalKpi;
+  kpiIndex: number;
+  planStartDate: string;
+  onSave: (weeklyAllocations: WeeklyAllocation[]) => void;
+  onClose: () => void;
+}) {
+  const gc = GOAL_COLORS[goal.color];
+  const defaultWeekly = Math.round(kpi.targetTotal / 12);
+
+  // Initialize allocations from existing data or defaults
+  const [allocations, setAllocations] = useState<number[]>(() => {
+    return Array.from({ length: 12 }, (_, i) => {
+      const existing = kpi.weeklyAllocations?.find(a => a.weekNumber === i + 1);
+      return existing ? existing.target : defaultWeekly;
+    });
+  });
+
+  const [editMode, setEditMode] = useState<"equal" | "manual" | "ramp" | "frontload">("manual");
+
+  const totalAllocated = allocations.reduce((s, v) => s + v, 0);
+  const diff = totalAllocated - kpi.targetTotal;
+  const isBalanced = Math.abs(diff) < kpi.targetTotal * 0.01; // within 1%
+
+  const applyPreset = (mode: typeof editMode) => {
+    setEditMode(mode);
+    if (mode === "equal") {
+      const weekly = Math.round(kpi.targetTotal / 12);
+      const arr = Array(12).fill(weekly);
+      // Adjust last week for rounding
+      arr[11] = kpi.targetTotal - arr.slice(0, 11).reduce((s, v) => s + v, 0);
+      setAllocations(arr);
+    } else if (mode === "ramp") {
+      // Ramp up: start at 50% of average, end at 150%
+      const avg = kpi.targetTotal / 12;
+      const arr = Array.from({ length: 12 }, (_, i) => Math.round(avg * (0.5 + (i / 11) * 1.0)));
+      const total = arr.reduce((s, v) => s + v, 0);
+      const scale = kpi.targetTotal / total;
+      const scaled = arr.map(v => Math.round(v * scale));
+      scaled[11] = kpi.targetTotal - scaled.slice(0, 11).reduce((s, v) => s + v, 0);
+      setAllocations(scaled);
+    } else if (mode === "frontload") {
+      // Front-load: start at 150%, end at 50%
+      const avg = kpi.targetTotal / 12;
+      const arr = Array.from({ length: 12 }, (_, i) => Math.round(avg * (1.5 - (i / 11) * 1.0)));
+      const total = arr.reduce((s, v) => s + v, 0);
+      const scale = kpi.targetTotal / total;
+      const scaled = arr.map(v => Math.round(v * scale));
+      scaled[11] = kpi.targetTotal - scaled.slice(0, 11).reduce((s, v) => s + v, 0);
+      setAllocations(scaled);
+    }
+  };
+
+  const updateWeek = (weekIdx: number, rawValue: string) => {
+    const num = parseKpiInput(rawValue, kpi.format);
+    setAllocations(prev => {
+      const next = [...prev];
+      next[weekIdx] = num;
+      return next;
+    });
+  };
+
+  const handleSave = () => {
+    const weeklyAllocations: WeeklyAllocation[] = allocations.map((target, i) => ({
+      weekNumber: i + 1,
+      target,
+    }));
+    onSave(weeklyAllocations);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden" style={{ background: T.card, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+        {/* Header */}
+        <div className="px-5 py-4 flex items-center gap-3" style={{ background: gc.bg, borderBottom: `1px solid ${gc.border}` }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: gc.text + "20" }}>
+            <Sliders size={16} style={{ color: gc.text }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-black" style={{ color: T.textPrimary }}>Phân bổ KPI theo tuần</h2>
+            <p className="text-xs" style={{ color: T.textMuted }}>
+              {kpi.label} • Tổng: <strong>{fmtKpiValue(kpi.targetTotal, kpi.format)} {kpi.unit}</strong>
+            </p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50">
+            <X size={16} style={{ color: T.textMuted }} />
+          </button>
+        </div>
+
+        {/* Preset buttons */}
+        <div className="px-5 py-3 flex items-center gap-2 flex-wrap" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+          <span className="text-xs font-semibold" style={{ color: T.textMuted }}>Mẫu phân bổ:</span>
+          {([
+            { id: "equal", label: "Chia đều", desc: "Mỗi tuần bằng nhau" },
+            { id: "ramp", label: "Tăng dần", desc: "Bắt đầu chậm, tăng dần" },
+            { id: "frontload", label: "Tập trung đầu", desc: "Mạnh đầu kỳ" },
+            { id: "manual", label: "Tùy chỉnh", desc: "Nhập thủ công" },
+          ] as const).map(({ id, label }) => (
+            <button key={id} onClick={() => applyPreset(id)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={{
+                background: editMode === id ? gc.text : `${gc.text}10`,
+                color: editMode === id ? "#fff" : gc.text,
+                border: `1px solid ${editMode === id ? gc.text : gc.border}`,
+              }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Allocation grid */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {/* Balance indicator */}
+          <div className="flex items-center gap-3 mb-4 p-3 rounded-xl" style={{ background: isBalanced ? `${T.green}08` : `${T.red}08`, border: `1px solid ${isBalanced ? T.green : T.red}20` }}>
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold" style={{ color: T.textPrimary }}>Tổng đã phân bổ</span>
+                <span className="text-sm font-black" style={{ color: isBalanced ? T.green : T.red }}>
+                  {fmtKpiValue(totalAllocated, kpi.format)} / {fmtKpiValue(kpi.targetTotal, kpi.format)} {kpi.unit}
+                </span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: `${T.textMuted}15` }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, (totalAllocated / kpi.targetTotal) * 100)}%`, background: isBalanced ? T.green : totalAllocated > kpi.targetTotal ? T.red : T.gold }} />
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <div className="text-xs font-bold" style={{ color: isBalanced ? T.green : T.red }}>
+                {diff === 0 ? "✓ Cân bằng" : diff > 0 ? `+${fmtKpiValue(diff, kpi.format)} thừa` : `${fmtKpiValue(Math.abs(diff), kpi.format)} thiếu`}
+              </div>
+            </div>
+          </div>
+
+          {/* Week inputs */}
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+            {allocations.map((val, i) => {
+              const weekNum = i + 1;
+              const { start, end } = getWeekRange(planStartDate, weekNum);
+              const pct = kpi.targetTotal > 0 ? Math.round((val / kpi.targetTotal) * 100) : 0;
+              const defaultVal = defaultWeekly;
+              const isAbove = val > defaultVal * 1.2;
+              const isBelow = val < defaultVal * 0.8;
+              return (
+                <div key={weekNum} className="rounded-xl p-3" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black" style={{ color: T.indigo }}>T{weekNum}</span>
+                    <span className="text-[9px]" style={{ color: T.textMuted }}>{fmtDate(start.toISOString())}</span>
+                  </div>
+                  <input
+                    type="text"
+                    defaultValue={fmtKpiValue(val, kpi.format)}
+                    key={`${weekNum}-${val}`}
+                    onBlur={(e) => updateWeek(i, e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                    className="w-full text-center text-sm font-bold rounded-lg px-2 py-1.5 outline-none border transition-all"
+                    style={{ borderColor: isAbove ? `${T.green}60` : isBelow ? `${T.red}60` : T.cardBorder, color: T.textPrimary }}
+                  />
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: `${gc.text}15` }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, background: gc.text }} />
+                    </div>
+                    <span className="text-[9px] font-bold" style={{ color: gc.text }}>{pct}%</span>
+                  </div>
+                  <div className="text-[9px] text-center mt-0.5" style={{ color: T.textMuted }}>{kpi.unit}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 flex gap-3" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
+            style={{ borderColor: T.cardBorder, color: T.textMuted }}>
+            Hủy
+          </button>
+          <button onClick={handleSave}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+            style={{ background: `linear-gradient(135deg, ${gc.text}, ${gc.text}cc)` }}>
+            <Save size={14} className="inline mr-1.5" />Lưu phân bổ
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── KPI Manager Panel ──────────────────────────────────────────────────────────────────
+function KpiManagerPanel({ goal, planStartDate, onUpdateGoal }: {
+  goal: Goal;
+  planStartDate: string;
+  onUpdateGoal: (goalId: string, data: Partial<Goal>) => void;
+}) {
+  const gc = GOAL_COLORS[goal.color];
+  const [showAddKpi, setShowAddKpi] = useState(false);
+  const [editingKpiIdx, setEditingKpiIdx] = useState<number | null>(null);
+  const [allocationEditorKpiIdx, setAllocationEditorKpiIdx] = useState<number | null>(null);
+
+  const [newKpi, setNewKpi] = useState<Partial<GoalKpi>>({
+    label: "", unit: "", targetTotal: 0, weeklyTarget: 0, format: "number",
+  });
+
+  const kpis = goal.kpis ?? [];
+
+  const addKpi = () => {
+    if (!newKpi.label || !newKpi.targetTotal) return;
+    const kpi: GoalKpi = {
+      label: newKpi.label!,
+      unit: newKpi.unit || "",
+      targetTotal: newKpi.targetTotal!,
+      weeklyTarget: Math.round(newKpi.targetTotal! / 12),
+      format: newKpi.format as GoalKpi["format"] || "number",
+    };
+    onUpdateGoal(goal.id, { kpis: [...kpis, kpi] });
+    setNewKpi({ label: "", unit: "", targetTotal: 0, weeklyTarget: 0, format: "number" });
+    setShowAddKpi(false);
+  };
+
+  const deleteKpi = (idx: number) => {
+    onUpdateGoal(goal.id, { kpis: kpis.filter((_, i) => i !== idx) });
+  };
+
+  const updateKpiCurrentValue = (idx: number, value: number) => {
+    const updated = [...kpis];
+    updated[idx] = { ...updated[idx], currentValue: value };
+    onUpdateGoal(goal.id, { kpis: updated });
+  };
+
+  const handleSaveAllocation = (kpiIdx: number, weeklyAllocations: WeeklyAllocation[]) => {
+    const updated = [...kpis];
+    updated[kpiIdx] = { ...updated[kpiIdx], weeklyAllocations };
+    onUpdateGoal(goal.id, { kpis: updated });
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* KPI list */}
+      {kpis.map((kpi, idx) => {
+        const weeklyTarget = getWeeklyTarget(kpi, 1); // default week 1
+        const pct = kpi.targetTotal > 0 ? Math.round(((kpi.currentValue ?? 0) / kpi.targetTotal) * 100) : 0;
+        const hasCustomAlloc = kpi.weeklyAllocations && kpi.weeklyAllocations.length > 0;
+        return (
+          <div key={idx} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${gc.border}` }}>
+            <div className="px-4 py-3 flex items-center gap-3" style={{ background: gc.bg }}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold" style={{ color: T.textPrimary }}>{kpi.label}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: `${gc.text}15`, color: gc.text }}>{kpi.unit}</span>
+                  {hasCustomAlloc && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: `${T.green}15`, color: T.green }}>✓ Đã phân bổ</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-xs" style={{ color: T.textMuted }}>Tổng: <strong style={{ color: gc.text }}>{fmtKpiValue(kpi.targetTotal, kpi.format)}</strong></span>
+                  <span className="text-xs" style={{ color: T.textMuted }}>TB/tuần: <strong style={{ color: T.indigo }}>{fmtKpiValue(Math.round(kpi.targetTotal / 12), kpi.format)}</strong></span>
+                </div>
+              </div>
+              {/* Progress */}
+              <div className="text-right flex-shrink-0">
+                <div className="text-lg font-black" style={{ color: pct >= 80 ? T.green : pct >= 50 ? T.gold : T.red }}>{pct}%</div>
+                <div className="text-[9px]" style={{ color: T.textMuted }}>{fmtKpiValue(kpi.currentValue ?? 0, kpi.format)} / {fmtKpiValue(kpi.targetTotal, kpi.format)}</div>
+              </div>
+              {/* Actions */}
+              <div className="flex gap-1 flex-shrink-0">
+                <button onClick={() => setAllocationEditorKpiIdx(idx)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                  style={{ background: `${T.indigo}10`, color: T.indigo }}
+                  title="Phân bổ theo tuần">
+                  <Sliders size={12} />
+                </button>
+                <button onClick={() => deleteKpi(idx)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
+                  title="Xóa KPI">
+                  <Trash2 size={12} style={{ color: T.red }} />
+                </button>
+              </div>
+            </div>
+
+            {/* Current value editor */}
+            <div className="px-4 py-2.5 flex items-center gap-3" style={{ borderTop: `1px solid ${gc.border}` }}>
+              <span className="text-xs" style={{ color: T.textMuted }}>Giá trị thực tế:</span>
+              <input
+                type="text"
+                defaultValue={fmtKpiValue(kpi.currentValue ?? 0, kpi.format)}
+                key={`cv-${idx}-${kpi.currentValue}`}
+                onBlur={(e) => updateKpiCurrentValue(idx, parseKpiInput(e.target.value, kpi.format))}
+                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                className="w-32 text-sm font-bold rounded-lg px-2 py-1 outline-none border"
+                style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                placeholder="Nhập giá trị..."
+              />
+              <span className="text-xs" style={{ color: T.textMuted }}>{kpi.unit}</span>
+              {/* Progress bar */}
+              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: `${gc.text}15` }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, pct)}%`, background: pct >= 80 ? T.green : pct >= 50 ? T.gold : T.red }} />
+              </div>
+            </div>
+
+            {/* Weekly allocation preview */}
+            {hasCustomAlloc && (
+              <div className="px-4 py-2 flex items-center gap-1 overflow-x-auto" style={{ borderTop: `1px solid ${gc.border}`, background: T.bg }}>
+                <span className="text-[9px] font-semibold flex-shrink-0 mr-1" style={{ color: T.textMuted }}>Phân bổ:</span>
+                {Array.from({ length: 12 }, (_, i) => {
+                  const wTarget = getWeeklyTarget(kpi, i + 1);
+                  return (
+                    <div key={i} className="flex-shrink-0 text-center" style={{ minWidth: 36 }}>
+                      <div className="text-[8px] font-bold" style={{ color: gc.text }}>{fmtKpiValue(wTarget, kpi.format)}</div>
+                      <div className="text-[7px]" style={{ color: T.textMuted }}>T{i+1}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Add KPI form */}
+      {showAddKpi ? (
+        <div className="rounded-xl p-4 space-y-3" style={{ background: T.bg, border: `2px dashed ${gc.border}` }}>
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart size={14} style={{ color: gc.text }} />
+            <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Thêm chỉ số KPI mới</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-semibold block mb-1" style={{ color: T.textSecondary }}>Tên chỉ số</label>
+              <input value={newKpi.label || ""} onChange={e => setNewKpi(p => ({ ...p, label: e.target.value }))}
+                className="w-full border rounded-lg px-2.5 py-1.5 text-sm outline-none"
+                style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                placeholder="VD: Doanh thu, Số khách..." />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold block mb-1" style={{ color: T.textSecondary }}>Đơn vị</label>
+              <input value={newKpi.unit || ""} onChange={e => setNewKpi(p => ({ ...p, unit: e.target.value }))}
+                className="w-full border rounded-lg px-2.5 py-1.5 text-sm outline-none"
+                style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                placeholder="VNĐ, KH, đơn..." />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold block mb-1" style={{ color: T.textSecondary }}>Mục tiêu 12 tuần</label>
+              <input value={newKpi.targetTotal || ""} onChange={e => setNewKpi(p => ({ ...p, targetTotal: parseFloat(e.target.value) || 0 }))}
+                className="w-full border rounded-lg px-2.5 py-1.5 text-sm outline-none"
+                style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                type="number" placeholder="1200000000" />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold block mb-1" style={{ color: T.textSecondary }}>Định dạng</label>
+              <select value={newKpi.format || "number"} onChange={e => setNewKpi(p => ({ ...p, format: e.target.value as GoalKpi["format"] }))}
+                className="w-full border rounded-lg px-2.5 py-1.5 text-sm outline-none"
+                style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
+                <option value="number">Số thường</option>
+                <option value="currency">Tiền tệ (VNĐ)</option>
+                <option value="percent">Phần trăm (%)</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setShowAddKpi(false)}
+              className="flex-1 py-2 rounded-lg text-sm border"
+              style={{ borderColor: T.cardBorder, color: T.textMuted }}>
+              Hủy
+            </button>
+            <button onClick={addKpi} disabled={!newKpi.label || !newKpi.targetTotal}
+              className="flex-1 py-2 rounded-lg text-sm font-bold text-white disabled:opacity-50"
+              style={{ background: gc.text }}>
+              Thêm KPI
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setShowAddKpi(true)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+          style={{ border: `2px dashed ${gc.border}`, color: gc.text, background: `${gc.text}05` }}>
+          <Plus size={14} /> Thêm chỉ số KPI
+        </button>
+      )}
+
+      {/* KPI Allocation Editor Modal */}
+      {allocationEditorKpiIdx !== null && kpis[allocationEditorKpiIdx] && (
+        <KpiAllocationEditor
+          goal={goal}
+          kpi={kpis[allocationEditorKpiIdx]}
+          kpiIndex={allocationEditorKpiIdx}
+          planStartDate={planStartDate}
+          onSave={(weeklyAllocations) => handleSaveAllocation(allocationEditorKpiIdx, weeklyAllocations)}
+          onClose={() => setAllocationEditorKpiIdx(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Daily Calendar View ──────────────────────────────────────────────────────────────────
+function DailyCalendarView({ plan, onUpdateTask }: {
+  plan: TwelveWeekPlan;
+  onUpdateTask: (taskId: string, data: Partial<WeeklyTask>) => void;
+}) {
+  const currentWeek = getCurrentWeek(plan.startDate);
+  const [selectedWeek, setSelectedWeek] = useState(currentWeek);
+  const { start: weekStart } = getWeekRange(plan.startDate, selectedWeek);
+
+  // Build 7 days of the selected week
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+
+  const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+  // Get tasks for this week
+  const weekTasks = plan.tasks.filter(t => t.weekNumber === selectedWeek);
+
+  // Group tasks by assignedDate
+  const tasksByDay: Record<string, WeeklyTask[]> = {};
+  days.forEach(d => {
+    const dateStr = d.toISOString().split("T")[0];
+    tasksByDay[dateStr] = weekTasks.filter(t => t.assignedDate === dateStr || t.dueDate === dateStr);
+  });
+
+  // Unassigned tasks (no date)
+  const unassignedTasks = weekTasks.filter(t => !t.assignedDate && !t.dueDate);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const assignTaskToDay = (taskId: string, dateStr: string | null) => {
+    onUpdateTask(taskId, { assignedDate: dateStr ?? undefined });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Week selector */}
+      <div className="rounded-2xl p-4" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+        <div className="flex items-center gap-2 mb-3">
+          <Calendar size={15} style={{ color: T.indigo }} />
+          <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Lịch công việc theo ngày</span>
+          <span className="ml-auto text-xs" style={{ color: T.textMuted }}>Tuần {selectedWeek}/12</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setSelectedWeek(w => Math.max(1, w - 1))}
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"
+            disabled={selectedWeek === 1}>
+            <ChevronLeft size={16} style={{ color: selectedWeek === 1 ? T.textMuted : T.textPrimary }} />
+          </button>
+          <div className="flex-1 grid grid-cols-6 md:grid-cols-12 gap-1">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(w => (
+              <button key={w} onClick={() => setSelectedWeek(w)}
+                className="rounded-lg py-1.5 text-[10px] font-bold transition-all"
+                style={{
+                  background: w === selectedWeek ? T.indigo : w === currentWeek ? T.indigoBg : `${T.textMuted}08`,
+                  color: w === selectedWeek ? "#fff" : w === currentWeek ? T.indigo : T.textMuted,
+                  border: `1px solid ${w === selectedWeek ? T.indigo : w === currentWeek ? T.indigoLight : T.cardBorder}`,
+                }}>
+                T{w}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setSelectedWeek(w => Math.min(12, w + 1))}
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"
+            disabled={selectedWeek === 12}>
+            <ChevronRight size={16} style={{ color: selectedWeek === 12 ? T.textMuted : T.textPrimary }} />
+          </button>
+        </div>
+      </div>
+
+      {/* 7-day grid */}
+      <div className="grid grid-cols-7 gap-2">
+        {days.map((day, dayIdx) => {
+          const dateStr = day.toISOString().split("T")[0];
+          const isToday = dateStr === today;
+          const dayTasks = tasksByDay[dateStr] ?? [];
+          const doneCnt = dayTasks.filter(t => t.status === "done").length;
+          const dayName = dayNames[day.getDay()];
+
+          return (
+            <div key={dateStr} className="rounded-xl overflow-hidden" style={{
+              border: `1.5px solid ${isToday ? T.indigo : T.cardBorder}`,
+              background: isToday ? T.indigoBg : T.card,
+              minHeight: 120,
+            }}>
+              {/* Day header */}
+              <div className="px-2 py-2 text-center" style={{ borderBottom: `1px solid ${isToday ? T.indigoLight : T.divider}`, background: isToday ? T.indigo : T.bg }}>
+                <div className="text-[9px] font-semibold" style={{ color: isToday ? "#fff" : T.textMuted }}>{dayName}</div>
+                <div className="text-base font-black" style={{ color: isToday ? "#fff" : T.textPrimary }}>{day.getDate()}</div>
+                {dayTasks.length > 0 && (
+                  <div className="text-[8px] font-bold" style={{ color: isToday ? "rgba(255,255,255,0.8)" : T.textMuted }}>
+                    {doneCnt}/{dayTasks.length}
+                  </div>
+                )}
+              </div>
+
+              {/* Tasks */}
+              <div className="p-1.5 space-y-1">
+                {dayTasks.map(task => {
+                  const goal = plan.goals.find(g => g.id === task.goalId);
+                  const gc2 = goal ? GOAL_COLORS[goal.color] : GOAL_COLORS.indigo;
+                  const sc = STATUS_CONFIG[task.status];
+                  const Icon = sc.icon;
+                  return (
+                    <div key={task.id}
+                      className="rounded-lg px-1.5 py-1 flex items-start gap-1 group cursor-pointer"
+                      style={{ background: gc2.bg, border: `1px solid ${gc2.border}` }}
+                      title={task.title}>
+                      <button onClick={() => {
+                        const next: Record<TaskStatus, TaskStatus> = { pending: "done", done: "skipped", skipped: "pending" };
+                        onUpdateTask(task.id, { status: next[task.status] });
+                      }} className="flex-shrink-0 mt-0.5">
+                        <Icon size={9} style={{ color: sc.color }} />
+                      </button>
+                      <span className="text-[9px] leading-tight flex-1 truncate" style={{ color: T.textPrimary, textDecoration: task.status === "done" ? "line-through" : "none", opacity: task.status === "done" ? 0.6 : 1 }}>
+                        {task.title}
+                      </span>
+                      <button
+                        onClick={() => assignTaskToDay(task.id, null)}
+                        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Bỏ gán ngày">
+                        <X size={8} style={{ color: T.red }} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Unassigned tasks */}
+      {unassignedTasks.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+          <div className="flex items-center gap-2 mb-3">
+            <List size={14} style={{ color: T.textMuted }} />
+            <span className="text-sm font-semibold" style={{ color: T.textPrimary }}>Chưa gán ngày ({unassignedTasks.length} việc)</span>
+            <span className="text-xs" style={{ color: T.textMuted }}>Nhấn vào ngày để gán</span>
+          </div>
+          <div className="space-y-1.5">
+            {unassignedTasks.map(task => {
+              const goal = plan.goals.find(g => g.id === task.goalId);
+              const gc2 = goal ? GOAL_COLORS[goal.color] : GOAL_COLORS.indigo;
+              const sc = STATUS_CONFIG[task.status];
+              const Icon = sc.icon;
+              return (
+                <div key={task.id} className="flex items-center gap-2 p-2 rounded-xl" style={{ background: gc2.bg, border: `1px solid ${gc2.border}` }}>
+                  <Icon size={12} style={{ color: sc.color }} />
+                  <span className="text-xs flex-1 truncate" style={{ color: T.textPrimary }}>{task.title}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: `${gc2.text}15`, color: gc2.text }}>{goal?.title?.slice(0, 12) ?? ""}</span>
+                  {/* Quick date assign */}
+                  <select
+                    value=""
+                    onChange={(e) => { if (e.target.value) assignTaskToDay(task.id, e.target.value); }}
+                    className="text-[9px] border rounded px-1 py-0.5 outline-none"
+                    style={{ borderColor: T.cardBorder, color: T.textMuted }}>
+                    <option value="">Gán ngày...</option>
+                    {days.map(d => (
+                      <option key={d.toISOString()} value={d.toISOString().split("T")[0]}>
+                        {dayNames[d.getDay()]} {d.getDate()}/{d.getMonth() + 1}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Allocation View (tab mới) ──────────────────────────────────────────────────────────────────
+function AllocationView({ plan, onUpdateGoal, onUpdateTask }: {
+  plan: TwelveWeekPlan;
+  onUpdateGoal: (goalId: string, data: Partial<Goal>) => void;
+  onUpdateTask: (taskId: string, data: Partial<WeeklyTask>) => void;
+}) {
+  const [activeTab, setActiveTab] = useState<"kpi" | "calendar">("kpi");
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(
+    plan.goals.length > 0 ? plan.goals[0].id : null
+  );
+
+  const selectedGoal = plan.goals.find(g => g.id === selectedGoalId);
+
+  return (
+    <div className="space-y-4">
+      {/* Sub-tabs */}
+      <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: T.card, border: `1px solid ${T.cardBorder}` }}>
+        <button onClick={() => setActiveTab("kpi")}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+          style={{ background: activeTab === "kpi" ? T.indigo : "transparent", color: activeTab === "kpi" ? "#fff" : T.textMuted }}>
+          <Sliders size={12} /> Phân bổ KPI
+        </button>
+        <button onClick={() => setActiveTab("calendar")}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+          style={{ background: activeTab === "calendar" ? T.indigo : "transparent", color: activeTab === "calendar" ? "#fff" : T.textMuted }}>
+          <Calendar size={12} /> Lịch hàng ngày
+        </button>
+      </div>
+
+      {activeTab === "kpi" && (
+        <div className="space-y-4">
+          {/* Goal selector */}
+          <div className="flex gap-2 flex-wrap">
+            {plan.goals.map(goal => {
+              const gc = GOAL_COLORS[goal.color];
+              const hasKpis = (goal.kpis?.length ?? 0) > 0;
+              const isActive = goal.id === selectedGoalId;
+              return (
+                <button key={goal.id} onClick={() => setSelectedGoalId(goal.id)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                  style={{ background: isActive ? gc.bg : T.card, border: `1.5px solid ${isActive ? gc.text : T.cardBorder}`, color: isActive ? gc.text : T.textMuted }}>
+                  <div className="w-2 h-2 rounded-full" style={{ background: gc.text }} />
+                  <span className="max-w-[120px] truncate">{goal.title}</span>
+                  {hasKpis && <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: `${gc.text}15`, color: gc.text }}>{goal.kpis!.length} KPI</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* KPI Manager for selected goal */}
+          {selectedGoal ? (
+            <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="px-4 py-3 flex items-center gap-3" style={{ background: GOAL_COLORS[selectedGoal.color].bg, borderBottom: `1px solid ${GOAL_COLORS[selectedGoal.color].border}` }}>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: GOAL_COLORS[selectedGoal.color].text + "20" }}>
+                  <Target size={15} style={{ color: GOAL_COLORS[selectedGoal.color].text }} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-bold" style={{ color: T.textPrimary }}>{selectedGoal.title}</h3>
+                  {selectedGoal.targetMetric && (
+                    <p className="text-xs" style={{ color: T.textMuted }}>{selectedGoal.targetMetric}</p>
+                  )}
+                </div>
+              </div>
+              <div className="p-4">
+                <KpiManagerPanel
+                  goal={selectedGoal}
+                  planStartDate={plan.startDate}
+                  onUpdateGoal={onUpdateGoal}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12" style={{ color: T.textMuted }}>
+              <Target size={32} className="mx-auto mb-3 opacity-20" />
+              <p className="text-sm">Chọn một mục tiêu để quản lý KPI</p>
+            </div>
+          )}
+
+          {/* KPI Summary table */}
+          {plan.goals.some(g => (g.kpis?.length ?? 0) > 0) && (
+            <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+                <BarChart2 size={14} style={{ color: T.indigo }} />
+                <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Tổng hợp KPI tất cả mục tiêu</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr style={{ background: T.bg }}>
+                      <th className="px-4 py-2 text-left font-semibold" style={{ color: T.textMuted }}>Mục tiêu</th>
+                      <th className="px-4 py-2 text-left font-semibold" style={{ color: T.textMuted }}>KPI</th>
+                      <th className="px-4 py-2 text-right font-semibold" style={{ color: T.textMuted }}>Tổng 12T</th>
+                      <th className="px-4 py-2 text-right font-semibold" style={{ color: T.textMuted }}>TB/Tuần</th>
+                      <th className="px-4 py-2 text-right font-semibold" style={{ color: T.textMuted }}>Thực tế</th>
+                      <th className="px-4 py-2 text-right font-semibold" style={{ color: T.textMuted }}>%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {plan.goals.flatMap(goal =>
+                      (goal.kpis ?? []).map((kpi, kpiIdx) => {
+                        const gc = GOAL_COLORS[goal.color];
+                        const pct = kpi.targetTotal > 0 ? Math.round(((kpi.currentValue ?? 0) / kpi.targetTotal) * 100) : 0;
+                        return (
+                          <tr key={`${goal.id}-${kpiIdx}`} style={{ borderTop: `1px solid ${T.divider}` }}>
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full" style={{ background: gc.text }} />
+                                <span className="font-semibold truncate max-w-[100px]" style={{ color: T.textPrimary }}>{goal.title}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span style={{ color: T.textSecondary }}>{kpi.label}</span>
+                              <span className="ml-1 text-[9px] px-1 py-0.5 rounded" style={{ background: `${gc.text}10`, color: gc.text }}>{kpi.unit}</span>
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-bold" style={{ color: T.textPrimary }}>{fmtKpiValue(kpi.targetTotal, kpi.format)}</td>
+                            <td className="px-4 py-2.5 text-right" style={{ color: T.indigo }}>{fmtKpiValue(Math.round(kpi.targetTotal / 12), kpi.format)}</td>
+                            <td className="px-4 py-2.5 text-right" style={{ color: T.textSecondary }}>{fmtKpiValue(kpi.currentValue ?? 0, kpi.format)}</td>
+                            <td className="px-4 py-2.5 text-right">
+                              <span className="font-bold text-[10px] px-1.5 py-0.5 rounded-full"
+                                style={{ background: pct >= 80 ? T.greenBg : pct >= 50 ? T.goldBg : T.redBg, color: pct >= 80 ? T.green : pct >= 50 ? T.gold : T.red }}>
+                                {pct}%
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "calendar" && (
+        <DailyCalendarView plan={plan} onUpdateTask={onUpdateTask} />
+      )}
+    </div>
+  );
+}
+
 // ── Task Row ──────────────────────────────────────────────────────────────────
+const PRIORITY_CONFIG = {
+  high:   { label: "Cao",   color: T.red,   bg: "#FEF2F2" },
+  medium: { label: "TB",    color: T.gold,  bg: "#FFFBEB" },
+  low:    { label: "Thấp",  color: T.green, bg: "#ECFDF5" },
+};
+
 function TaskRow({ task, goal, onUpdate, onDelete }: {
   task: WeeklyTask; goal: Goal;
   onUpdate: (taskId: string, data: Partial<WeeklyTask>) => void;
   onDelete: (taskId: string) => void;
 }) {
-  const [showMenu, setShowMenu] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const gc = GOAL_COLORS[goal.color];
   const sc = STATUS_CONFIG[task.status];
   const StatusIcon = sc.icon;
+  const priority = task.priority ?? "medium";
+  const pc = PRIORITY_CONFIG[priority];
 
   const cycleStatus = () => {
     const next: Record<TaskStatus, TaskStatus> = { pending: "done", done: "skipped", skipped: "pending" };
     onUpdate(task.id, { status: next[task.status] });
+  };
+
+  const cyclePriority = () => {
+    const next: Record<string, string> = { high: "medium", medium: "low", low: "high" };
+    onUpdate(task.id, { priority: next[priority] as WeeklyTask["priority"] });
   };
 
   return (
@@ -152,7 +915,7 @@ function TaskRow({ task, goal, onUpdate, onDelete }: {
         <StatusIcon size={11} style={{ color: task.status === "done" ? "#fff" : sc.color }} />
       </button>
 
-      {/* Title */}
+      {/* Title + meta */}
       <div className="flex-1 min-w-0">
         <InlineEdit
           value={task.title}
@@ -161,16 +924,67 @@ function TaskRow({ task, goal, onUpdate, onDelete }: {
           className={`text-sm font-medium ${task.status === "done" ? "line-through opacity-60" : ""}`}
           style={{ color: T.textPrimary }}
         />
-        {task.dueDate && (
-          <div className="flex items-center gap-1 mt-0.5">
-            <Clock size={9} style={{ color: T.textMuted }} />
-            <span className="text-[10px]" style={{ color: T.textMuted }}>{fmtDateFull(task.dueDate)}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {/* Priority badge */}
+          <button onClick={cyclePriority}
+            className="text-[9px] font-bold px-1.5 py-0.5 rounded-full transition-all hover:opacity-80"
+            style={{ background: pc.bg, color: pc.color }}
+            title="Độ ưu tiên — nhấn để thay đổi">
+            {pc.label}
+          </button>
+          {/* Assigned date */}
+          {task.assignedDate ? (
+            <div className="flex items-center gap-1">
+              <Calendar size={9} style={{ color: T.indigo }} />
+              <span className="text-[9px] font-semibold" style={{ color: T.indigo }}>{fmtDateFull(task.assignedDate)}</span>
+              <button onClick={() => onUpdate(task.id, { assignedDate: undefined })}
+                className="hover:opacity-70" title="Xóa ngày">
+                <X size={8} style={{ color: T.textMuted }} />
+              </button>
+            </div>
+          ) : task.dueDate ? (
+            <div className="flex items-center gap-1">
+              <Clock size={9} style={{ color: T.textMuted }} />
+              <span className="text-[9px]" style={{ color: T.textMuted }}>{fmtDateFull(task.dueDate)}</span>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        {/* Date picker */}
+        <div className="relative">
+          <button
+            onClick={() => setShowDatePicker(p => !p)}
+            className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-50 transition-colors"
+            title="Gán ngày">
+            <Calendar size={11} style={{ color: T.indigo }} />
+          </button>
+          {showDatePicker && (
+            <div className="absolute right-0 top-7 z-20 bg-white rounded-xl shadow-xl border p-2" style={{ borderColor: T.cardBorder, minWidth: 160 }}>
+              <div className="text-[10px] font-semibold mb-1.5" style={{ color: T.textMuted }}>Gán ngày thực hiện</div>
+              <input
+                type="date"
+                defaultValue={task.assignedDate || ""}
+                onChange={(e) => {
+                  onUpdate(task.id, { assignedDate: e.target.value || undefined });
+                  setShowDatePicker(false);
+                }}
+                className="w-full text-xs border rounded-lg px-2 py-1.5 outline-none"
+                style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+              />
+              {task.assignedDate && (
+                <button
+                  onClick={() => { onUpdate(task.id, { assignedDate: undefined }); setShowDatePicker(false); }}
+                  className="w-full mt-1 text-[10px] py-1 rounded-lg text-center hover:bg-red-50"
+                  style={{ color: T.red }}>
+                  Xóa ngày
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         <button onClick={() => onDelete(task.id)}
           className="w-6 h-6 rounded flex items-center justify-center hover:bg-red-50 transition-colors"
           title="Xóa">
@@ -1576,7 +2390,7 @@ export default function TwelveWeekPlanClient() {
   const [activePlan, setActivePlan] = useState<TwelveWeekPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [view, setView] = useState<"goals" | "weekly" | "progress">("goals");
+  const [view, setView] = useState<"goals" | "weekly" | "allocation" | "progress">("goals");
   const [showNewPlanModal, setShowNewPlanModal] = useState(false);
   const [expandedWeeks] = useState<Set<number>>(new Set(Array.from({ length: 12 }, (_, i) => i + 1)));
 
@@ -1816,6 +2630,7 @@ export default function TwelveWeekPlanClient() {
             {([
               { id: "goals", label: "Mục tiêu", icon: Target },
               { id: "weekly", label: "Theo tuần", icon: Calendar },
+              { id: "allocation", label: "Phân bổ", icon: Sliders },
               { id: "progress", label: "Báo cáo", icon: BarChart2 },
             ] as const).map(({ id, label, icon: Icon }) => (
               <button key={id} onClick={() => setView(id)}
@@ -1868,6 +2683,14 @@ export default function TwelveWeekPlanClient() {
 
           {view === "weekly" && (
             <WeeklyView plan={activePlan} onUpdateTask={handleUpdateTask} />
+          )}
+
+          {view === "allocation" && (
+            <AllocationView
+              plan={activePlan}
+              onUpdateGoal={handleUpdateGoal}
+              onUpdateTask={handleUpdateTask}
+            />
           )}
 
           {view === "progress" && (
