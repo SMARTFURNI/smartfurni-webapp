@@ -441,7 +441,7 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
 }
 
 // ── 12-Week KPI Row ──────────────────────────────────────────────────────────
-function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalValue, wonValue, stats, theme, fmtVal, darkMode, dm }: {
+function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalValue, wonValue, stats, theme, fmtVal, darkMode, dm, plan, loadingPlan }: {
   leads: Lead[]; activeLeads: Lead[]; overdueLeads: Lead[]; wonLeads: Lead[];
   totalValue: number; wonValue: number; stats: CrmStats;
   theme: DashboardTheme; fmtVal: (v: number) => string; darkMode: boolean;
@@ -538,7 +538,7 @@ function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalVal
 }
 
 // ── 12-Week Progress Board ────────────────────────────────────────────────────
-function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats }: {
+function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadingPlan }: {
   dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
   fmtVal: (v: number) => string;
   leads: Lead[]; wonLeads: Lead[]; stats: CrmStats;
@@ -697,7 +697,7 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats }: {
 }
 
 // ── 12-Week Goals Board (replaces Revenue Chart) ──────────────────────────────
-function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats }: {
+function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadingPlan }: {
   dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
   fmtVal: (v: number) => string;
   leads: Lead[]; wonLeads: Lead[]; stats: CrmStats;
