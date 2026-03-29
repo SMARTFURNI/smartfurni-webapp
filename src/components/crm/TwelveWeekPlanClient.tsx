@@ -428,6 +428,311 @@ function WeeklyView({ plan, onUpdateTask }: {
   );
 }
 
+// ── Comparison Chart: Thực tế vs Mục tiêu ────────────────────────────────────
+function ComparisonChart({ plan }: { plan: TwelveWeekPlan }) {
+  const currentWeek = getCurrentWeek(plan.startDate);
+  const totalTasks = plan.tasks.filter((t) => t.status !== "skipped").length;
+
+  // Build cumulative data for each week
+  const weeklyData = Array.from({ length: 12 }, (_, i) => {
+    const w = i + 1;
+    // Ideal pace: linear from 0% to 100% over 12 weeks
+    const idealPct = Math.round((w / 12) * 100);
+    // Actual: cumulative done up to this week (only for past/current weeks)
+    const doneSoFar = plan.tasks.filter(
+      (t) => t.weekNumber <= w && t.status === "done"
+    ).length;
+    const actualPct = w <= currentWeek && totalTasks > 0
+      ? Math.round((doneSoFar / totalTasks) * 100)
+      : null;
+    return { week: w, idealPct, actualPct, isCurrent: w === currentWeek, isFuture: w > currentWeek };
+  });
+
+  // Per-goal comparison
+  const goalData = plan.goals.map((goal) => {
+    const gc = GOAL_COLORS[goal.color];
+    const gTasks = plan.tasks.filter((t) => t.goalId === goal.id && t.status !== "skipped");
+    const gDone = plan.tasks.filter((t) => t.goalId === goal.id && t.status === "done");
+    const gPct = gTasks.length > 0 ? Math.round((gDone.length / gTasks.length) * 100) : 0;
+    // Ideal for this goal at current week
+    const idealAtNow = Math.round((currentWeek / 12) * 100);
+    const gap = gPct - idealAtNow;
+    return { goal, gc, gPct, idealAtNow, gap, gTasks: gTasks.length, gDone: gDone.length };
+  });
+
+  // SVG chart dimensions
+  const W = 560; const H = 200; const PAD = { t: 16, r: 16, b: 32, l: 40 };
+  const chartW = W - PAD.l - PAD.r;
+  const chartH = H - PAD.t - PAD.b;
+
+  // Build SVG path points
+  function toX(w: number) { return PAD.l + ((w - 1) / 11) * chartW; }
+  function toY(pct: number) { return PAD.t + (1 - pct / 100) * chartH; }
+
+  // Ideal line points
+  const idealPoints = weeklyData.map(d => `${toX(d.week)},${toY(d.idealPct)}`).join(" ");
+
+  // Actual line points (only up to currentWeek)
+  const actualPoints = weeklyData
+    .filter(d => d.actualPct !== null)
+    .map(d => `${toX(d.week)},${toY(d.actualPct!)}`).join(" ");
+
+  // Area fill under actual line
+  const actualAreaPoints = weeklyData
+    .filter(d => d.actualPct !== null)
+    .map(d => `${toX(d.week)},${toY(d.actualPct!)}`)
+    .join(" ");
+  const firstActual = weeklyData.find(d => d.actualPct !== null);
+  const lastActual = [...weeklyData].reverse().find(d => d.actualPct !== null);
+  const actualArea = firstActual && lastActual
+    ? `M${toX(firstActual.week)},${toY(0)} L${actualAreaPoints} L${toX(lastActual.week)},${toY(0)} Z`
+    : "";
+
+  // Y-axis labels
+  const yLabels = [0, 25, 50, 75, 100];
+
+  // Overall status
+  const currentActual = weeklyData[currentWeek - 1]?.actualPct ?? 0;
+  const currentIdeal = weeklyData[currentWeek - 1]?.idealPct ?? 0;
+  const gap = currentActual - currentIdeal;
+  const statusColor = gap >= 0 ? T.green : gap >= -15 ? T.gold : T.red;
+  const statusLabel = gap >= 0 ? "Vượt mục tiêu" : gap >= -15 ? "Đang bắt kịp" : "Cần tăng tốc";
+
+  return (
+    <div className="space-y-4">
+      {/* Header status cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Tiến độ thực tế", value: `${currentActual}%`, sub: `Tuần ${currentWeek}/12`, color: T.indigo },
+          { label: "Mục tiêu lý tưởng", value: `${currentIdeal}%`, sub: "Pace đều 12 tuần", color: "#64748B" },
+          { label: "Chênh lệch", value: `${gap >= 0 ? "+" : ""}${gap}%`, sub: statusLabel, color: statusColor },
+        ].map(({ label, value, sub, color }) => (
+          <div key={label} className="rounded-xl p-3 text-center"
+            style={{ background: `${color}08`, border: `1px solid ${color}20` }}>
+            <div className="text-xl font-black" style={{ color }}>{value}</div>
+            <div className="text-[10px] font-semibold mt-0.5" style={{ color: T.textPrimary }}>{label}</div>
+            <div className="text-[9px]" style={{ color: T.textMuted }}>{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main SVG Chart */}
+      <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={15} style={{ color: T.indigo }} />
+            <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Tiến độ tích lũy: Thực tế vs Mục tiêu</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-0.5 rounded" style={{ background: T.indigo }} />
+              <span className="text-[10px] font-medium" style={{ color: T.textMuted }}>Thực tế</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 3"/></svg>
+              <span className="text-[10px] font-medium" style={{ color: T.textMuted }}>Mục tiêu</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full overflow-x-auto">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 280 }}>
+            <defs>
+              <linearGradient id="actualGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={T.indigo} stopOpacity="0.15"/>
+                <stop offset="100%" stopColor={T.indigo} stopOpacity="0.01"/>
+              </linearGradient>
+              <linearGradient id="idealGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#94A3B8" stopOpacity="0.08"/>
+                <stop offset="100%" stopColor="#94A3B8" stopOpacity="0.01"/>
+              </linearGradient>
+            </defs>
+
+            {/* Grid lines */}
+            {yLabels.map(y => (
+              <g key={y}>
+                <line x1={PAD.l} y1={toY(y)} x2={W - PAD.r} y2={toY(y)}
+                  stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
+                <text x={PAD.l - 6} y={toY(y) + 4} textAnchor="end"
+                  fontSize="9" fill="#9CA3AF">{y}%</text>
+              </g>
+            ))}
+
+            {/* Current week vertical line */}
+            <line x1={toX(currentWeek)} y1={PAD.t} x2={toX(currentWeek)} y2={H - PAD.b}
+              stroke={T.gold} strokeWidth="1" strokeDasharray="4 3" opacity="0.6" />
+            <text x={toX(currentWeek)} y={PAD.t - 4} textAnchor="middle"
+              fontSize="8" fill={T.gold} fontWeight="bold">T{currentWeek}</text>
+
+            {/* Ideal area fill */}
+            <path d={`M${toX(1)},${toY(0)} L${idealPoints} L${toX(12)},${toY(0)} Z`}
+              fill="url(#idealGrad)" />
+
+            {/* Ideal line (dashed) */}
+            <polyline points={idealPoints} fill="none"
+              stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="5 4" />
+
+            {/* Actual area fill */}
+            {actualArea && <path d={actualArea} fill="url(#actualGrad)" />}
+
+            {/* Actual line */}
+            {actualPoints && (
+              <polyline points={actualPoints} fill="none"
+                stroke={T.indigo} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            )}
+
+            {/* Data points on actual line */}
+            {weeklyData.filter(d => d.actualPct !== null).map(d => (
+              <g key={d.week}>
+                <circle cx={toX(d.week)} cy={toY(d.actualPct!)} r={d.isCurrent ? 5 : 3.5}
+                  fill={d.isCurrent ? T.indigo : T.card} stroke={T.indigo}
+                  strokeWidth={d.isCurrent ? 0 : 2} />
+                {d.isCurrent && (
+                  <circle cx={toX(d.week)} cy={toY(d.actualPct!)} r={8}
+                    fill="none" stroke={T.indigo} strokeWidth="1" opacity="0.3" />
+                )}
+              </g>
+            ))}
+
+            {/* Gap annotation at current week */}
+            {gap !== 0 && (
+              <g>
+                <line x1={toX(currentWeek) + 8} y1={toY(currentIdeal)}
+                  x2={toX(currentWeek) + 8} y2={toY(currentActual)}
+                  stroke={statusColor} strokeWidth="1.5" />
+                <text x={toX(currentWeek) + 12} y={(toY(currentIdeal) + toY(currentActual)) / 2 + 4}
+                  fontSize="9" fill={statusColor} fontWeight="bold">
+                  {gap >= 0 ? "+" : ""}{gap}%
+                </text>
+              </g>
+            )}
+
+            {/* X-axis labels */}
+            {weeklyData.map(d => (
+              <text key={d.week} x={toX(d.week)} y={H - PAD.b + 14}
+                textAnchor="middle" fontSize="9"
+                fill={d.isCurrent ? T.indigo : "#9CA3AF"}
+                fontWeight={d.isCurrent ? "bold" : "normal"}>
+                T{d.week}
+              </text>
+            ))}
+          </svg>
+        </div>
+      </div>
+
+      {/* Per-goal comparison bars */}
+      <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Target size={15} style={{ color: T.indigo }} />
+          <span className="text-sm font-bold" style={{ color: T.textPrimary }}>So sánh từng mục tiêu</span>
+          <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full"
+            style={{ background: `${T.indigo}10`, color: T.indigo }}>
+            Mục tiêu lý tưởng: {currentIdeal}%
+          </span>
+        </div>
+        <div className="space-y-4">
+          {goalData.map(({ goal, gc, gPct, idealAtNow, gap: gGap, gTasks, gDone }) => {
+            const gStatusColor = gGap >= 0 ? T.green : gGap >= -15 ? T.gold : T.red;
+            return (
+              <div key={goal.id}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: gc.text }} />
+                  <span className="text-xs font-semibold flex-1 truncate" style={{ color: T.textPrimary }}>{goal.title}</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: `${gStatusColor}15`, color: gStatusColor }}>
+                    {gGap >= 0 ? "+" : ""}{gGap}%
+                  </span>
+                  <span className="text-xs font-black" style={{ color: gc.text }}>{gPct}%</span>
+                </div>
+                {/* Stacked bar: actual vs ideal */}
+                <div className="relative h-5 rounded-full overflow-hidden" style={{ background: `${gc.text}10` }}>
+                  {/* Ideal marker */}
+                  <div className="absolute top-0 bottom-0 w-0.5 z-10"
+                    style={{ left: `${idealAtNow}%`, background: "#94A3B8" }} />
+                  {/* Actual bar */}
+                  <div className="h-full rounded-full transition-all duration-700 relative"
+                    style={{ width: `${gPct}%`, background: `linear-gradient(90deg, ${gc.text}80, ${gc.text})` }}>
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 text-[8px] font-black text-white">
+                      {gPct}%
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-[9px]" style={{ color: T.textMuted }}>{gDone}/{gTasks} việc hoàn thành</span>
+                  <span className="text-[9px]" style={{ color: "#94A3B8" }}>Mục tiêu: {idealAtNow}%</span>
+                </div>
+              </div>
+            );
+          })}
+          {goalData.length === 0 && (
+            <p className="text-sm text-center py-4" style={{ color: T.textMuted }}>Chưa có mục tiêu nào</p>
+          )}
+        </div>
+      </div>
+
+      {/* Weekly detail table */}
+      <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+        <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+          <BarChart2 size={15} style={{ color: T.indigo }} />
+          <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Chi tiết từng tuần</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ background: T.bg }}>
+                <th className="px-4 py-2 text-left font-semibold" style={{ color: T.textMuted }}>Tuần</th>
+                <th className="px-4 py-2 text-left font-semibold" style={{ color: T.textMuted }}>Thời gian</th>
+                <th className="px-4 py-2 text-center font-semibold" style={{ color: T.textMuted }}>Mục tiêu</th>
+                <th className="px-4 py-2 text-center font-semibold" style={{ color: T.textMuted }}>Thực tế</th>
+                <th className="px-4 py-2 text-center font-semibold" style={{ color: T.textMuted }}>Chênh lệch</th>
+                <th className="px-4 py-2 text-center font-semibold" style={{ color: T.textMuted }}>Việc xong</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weeklyData.map((d) => {
+                const { start, end } = getWeekRange(plan.startDate, d.week);
+                const wTasks = plan.tasks.filter(t => t.weekNumber === d.week && t.status !== "skipped");
+                const wDone = plan.tasks.filter(t => t.weekNumber === d.week && t.status === "done");
+                const wGap = d.actualPct !== null ? d.actualPct - d.idealPct : null;
+                const rowBg = d.isCurrent ? `${T.indigo}06` : "transparent";
+                return (
+                  <tr key={d.week} style={{ background: rowBg, borderTop: `1px solid ${T.divider}` }}>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-1.5">
+                        {d.isCurrent && <div className="w-1.5 h-1.5 rounded-full" style={{ background: T.gold }} />}
+                        <span className="font-bold" style={{ color: d.isCurrent ? T.indigo : T.textPrimary }}>T{d.week}</span>
+                        {d.isCurrent && <span className="text-[9px] font-semibold px-1 py-0.5 rounded" style={{ background: T.goldBg, color: T.gold }}>Hiện tại</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5" style={{ color: T.textMuted }}>
+                      {fmtDate(start.toISOString())} – {fmtDate(end.toISOString())}
+                    </td>
+                    <td className="px-4 py-2.5 text-center font-semibold" style={{ color: "#94A3B8" }}>{d.idealPct}%</td>
+                    <td className="px-4 py-2.5 text-center font-bold" style={{ color: d.actualPct !== null ? T.indigo : T.textMuted }}>
+                      {d.actualPct !== null ? `${d.actualPct}%` : "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      {wGap !== null ? (
+                        <span className="font-bold text-[10px] px-1.5 py-0.5 rounded-full"
+                          style={{ background: wGap >= 0 ? T.greenBg : wGap >= -15 ? T.goldBg : T.redBg, color: wGap >= 0 ? T.green : wGap >= -15 ? T.gold : T.red }}>
+                          {wGap >= 0 ? "+" : ""}{wGap}%
+                        </span>
+                      ) : <span style={{ color: T.textMuted }}>—</span>}
+                    </td>
+                    <td className="px-4 py-2.5 text-center" style={{ color: T.textMuted }}>
+                      {wTasks.length > 0 ? `${wDone.length}/${wTasks.length}` : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Progress Dashboard ────────────────────────────────────────────────────────
 function ProgressView({ plan }: { plan: TwelveWeekPlan }) {
   const currentWeek = getCurrentWeek(plan.startDate);
@@ -447,6 +752,9 @@ function ProgressView({ plan }: { plan: TwelveWeekPlan }) {
 
   return (
     <div className="space-y-4">
+      {/* Comparison Chart */}
+      <ComparisonChart plan={plan} />
+
       {/* Overall */}
       <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
         <div className="flex items-center gap-4 mb-4">
