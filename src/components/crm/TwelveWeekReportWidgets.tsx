@@ -397,104 +397,172 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
       </div>
 
       {/* ── 3. Heatmap 12 tuần × mục tiêu ── */}
-      <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
-        <div className="flex items-center gap-2 mb-4">
+      <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+        {/* Header */}
+        <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${T.cardBorder}`, background: T.bg }}>
           <BarChart2 size={14} style={{ color: T.indigo }} />
           <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Heatmap tiến độ — 12 tuần × mục tiêu</span>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-[9px]" style={{ color: T.textMuted }}>0%</span>
-            {[10, 30, 50, 70, 100].map(v => (
-              <div key={v} className="w-3 h-3 rounded-sm"
-                style={{ background: v <= 10 ? "#FEF2F2" : v <= 30 ? "#FEF3C7" : v <= 60 ? "#FDE68A" : v <= 80 ? "#86EFAC" : "#059669" }} />
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="text-[9px] font-medium" style={{ color: T.textMuted }}>0%</span>
+            {["#FEE2E2","#FEF3C7","#FDE68A","#86EFAC","#34D399","#059669"].map((c,i) => (
+              <div key={i} className="w-4 h-4 rounded" style={{ background: c }} />
             ))}
-            <span className="text-[9px]" style={{ color: T.textMuted }}>100%</span>
+            <span className="text-[9px] font-medium" style={{ color: T.textMuted }}>100%</span>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[10px]" style={{ minWidth: 400 }}>
-            <thead>
-              <tr>
-                <th className="text-left pr-3 pb-2 font-semibold" style={{ color: T.textMuted, width: 120 }}>Mục tiêu</th>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <th key={i} className="text-center pb-2 font-semibold"
-                    style={{ color: i + 1 === currentWeek ? T.indigo : T.textMuted, width: 32 }}>
+
+        {/* Week header row */}
+        <div className="px-5 pt-3 pb-1">
+          <div className="flex items-center gap-1">
+            <div style={{ width: 140, flexShrink: 0 }} />
+            {Array.from({ length: 12 }, (_, i) => {
+              const isCur = i + 1 === currentWeek;
+              return (
+                <div key={i} className="flex-1 text-center" style={{ minWidth: 0 }}>
+                  <span className="text-[10px] font-bold block"
+                    style={{ color: isCur ? T.indigo : T.textMuted }}>
                     T{i + 1}
-                  </th>
-                ))}
-                <th className="text-center pb-2 pl-2 font-semibold" style={{ color: T.textMuted }}>Tổng</th>
-              </tr>
-            </thead>
-            <tbody>
-              {goalStats.map(({ goal, weeklyPcts, pct }) => {
-                const gc = GOAL_COLORS[goal.color];
-                return (
-                  <tr key={goal.id}>
-                    <td className="pr-3 py-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: gc.text }} />
-                        <span className="truncate font-medium" style={{ color: T.textPrimary, maxWidth: 100 }}>{goal.title}</span>
-                      </div>
-                    </td>
-                    {weeklyPcts.map((p, wi) => {
-                      const isCur = wi + 1 === currentWeek;
-                      const cellBg = p < 0 ? "#F9FAFB"
-                        : p === 0   ? "#FEF2F2"
-                        : p <= 30   ? "#FEF3C7"
-                        : p <= 60   ? "#FDE68A"
-                        : p <= 80   ? "#86EFAC"
-                        : "#059669";
-                      const textColor = p >= 80 ? "#fff" : p >= 60 ? "#065F46" : p >= 30 ? "#92400E" : p >= 0 ? "#991B1B" : T.textMuted;
-                      return (
-                        <td key={wi} className="text-center py-1">
-                          <div className="w-7 h-7 rounded-md flex items-center justify-center mx-auto font-bold transition-all"
-                            style={{
-                              background: cellBg,
-                              color: p < 0 ? T.textMuted : textColor,
-                              border: isCur ? `1.5px solid ${T.indigo}` : "1px solid transparent",
-                              fontSize: 9,
-                            }}>
-                            {p < 0 ? "–" : `${p}%`}
-                          </div>
-                        </td>
-                      );
-                    })}
-                    <td className="text-center py-1 pl-2">
-                      <span className="text-xs font-black" style={{ color: gc.text }}>{pct}%</span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {/* Overall row */}
-              <tr style={{ borderTop: `2px solid ${T.cardBorder}` }}>
-                <td className="pr-3 py-1.5">
-                  <span className="text-[10px] font-black" style={{ color: T.textPrimary }}>Tổng hợp</span>
-                </td>
-                {Array.from({ length: 12 }, (_, wi) => {
-                  const weekAllActive = plan.tasks.filter(t => t.weekNumber === wi + 1 && t.status !== "skipped");
-                  const weekAllDone   = plan.tasks.filter(t => t.weekNumber === wi + 1 && t.status === "done");
-                  const wp = weekAllActive.length > 0 ? Math.round((weekAllDone.length / weekAllActive.length) * 100) : -1;
+                  </span>
+                  {isCur && (
+                    <div className="w-1 h-1 rounded-full mx-auto mt-0.5" style={{ background: T.indigo }} />
+                  )}
+                </div>
+              );
+            })}
+            <div style={{ width: 44, flexShrink: 0 }} />
+          </div>
+        </div>
+
+        {/* Goal rows */}
+        <div className="px-5 pb-3 space-y-1.5">
+          {goalStats.map(({ goal, weeklyPcts, pct }) => {
+            const gc = GOAL_COLORS[goal.color];
+            return (
+              <div key={goal.id} className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 flex-shrink-0" style={{ width: 140 }}>
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: gc.text }} />
+                  <span className="text-[10px] font-semibold truncate" style={{ color: T.textPrimary }}
+                    title={goal.title}>{goal.title}</span>
+                </div>
+                {weeklyPcts.map((p, wi) => {
                   const isCur = wi + 1 === currentWeek;
-                  const cellBg = wp < 0 ? "#F9FAFB" : wp === 0 ? "#FEF2F2" : wp <= 30 ? "#FEF3C7" : wp <= 60 ? "#FDE68A" : wp <= 80 ? "#86EFAC" : "#059669";
-                  const textColor = wp >= 80 ? "#fff" : wp >= 60 ? "#065F46" : wp >= 30 ? "#92400E" : wp >= 0 ? "#991B1B" : T.textMuted;
+                  const isFuture = wi + 1 > currentWeek;
+                  const cellBg = p < 0
+                    ? (isFuture ? "#F3F4F6" : "#F9FAFB")
+                    : p === 0   ? "#FEE2E2"
+                    : p <= 25   ? "#FEF3C7"
+                    : p <= 50   ? "#FDE68A"
+                    : p <= 75   ? "#86EFAC"
+                    : p < 100   ? "#34D399"
+                    : "#059669";
                   return (
-                    <td key={wi} className="text-center py-1.5">
-                      <div className="w-7 h-7 rounded-md flex items-center justify-center mx-auto font-black"
-                        style={{ background: cellBg, color: wp < 0 ? T.textMuted : textColor, border: isCur ? `1.5px solid ${T.indigo}` : "1px solid transparent", fontSize: 9 }}>
-                        {wp < 0 ? "–" : `${wp}%`}
+                    <div key={wi} className="flex-1 group relative" style={{ minWidth: 0 }}>
+                      <div
+                        className="rounded-md transition-all duration-150 group-hover:scale-110 group-hover:shadow-md"
+                        style={{
+                          height: 28,
+                          background: cellBg,
+                          border: isCur
+                            ? `2px solid ${T.indigo}`
+                            : isFuture
+                            ? `1px dashed #E5E7EB`
+                            : `1px solid transparent`,
+                        }}
+                      />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ whiteSpace: "nowrap" }}>
+                        <div className="px-2 py-1 rounded-lg text-[10px] font-bold shadow-lg"
+                          style={{ background: T.textPrimary, color: "#fff" }}>
+                          T{wi + 1}: {p < 0 ? "Chưa có việc" : `${p}%`}
+                        </div>
+                        <div className="w-1.5 h-1.5 mx-auto -mt-0.5 rotate-45" style={{ background: T.textPrimary }} />
                       </div>
-                    </td>
+                    </div>
                   );
                 })}
-                <td className="text-center py-1.5 pl-2">
+                <div className="flex-shrink-0 text-right" style={{ width: 44 }}>
+                  <span className="text-xs font-black" style={{ color: gc.text }}>{pct}%</span>
+                </div>
+              </div>
+            );
+          })}
+
+          <div style={{ height: 1, background: T.cardBorder, margin: "6px 0" }} />
+
+          {/* Overall row */}
+          {(() => {
+            const overallWeekPcts = Array.from({ length: 12 }, (_, wi) => {
+              const wActive = plan.tasks.filter(t => t.weekNumber === wi + 1 && t.status !== "skipped");
+              const wDone   = plan.tasks.filter(t => t.weekNumber === wi + 1 && t.status === "done");
+              return wActive.length > 0 ? Math.round((wDone.length / wActive.length) * 100) : -1;
+            });
+            return (
+              <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 flex-shrink-0" style={{ width: 140 }}>
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: T.indigo }} />
+                  <span className="text-[10px] font-black" style={{ color: T.textPrimary }}>Tổng hợp</span>
+                </div>
+                {overallWeekPcts.map((wp, wi) => {
+                  const isCur = wi + 1 === currentWeek;
+                  const isFuture = wi + 1 > currentWeek;
+                  const cellBg = wp < 0
+                    ? (isFuture ? "#F3F4F6" : "#F9FAFB")
+                    : wp === 0   ? "#FEE2E2"
+                    : wp <= 25   ? "#FEF3C7"
+                    : wp <= 50   ? "#FDE68A"
+                    : wp <= 75   ? "#86EFAC"
+                    : wp < 100   ? "#34D399"
+                    : "#059669";
+                  return (
+                    <div key={wi} className="flex-1 group relative" style={{ minWidth: 0 }}>
+                      <div className="rounded-md transition-all duration-150 group-hover:scale-110 group-hover:shadow-md"
+                        style={{
+                          height: 28,
+                          background: cellBg,
+                          border: isCur ? `2px solid ${T.indigo}` : isFuture ? `1px dashed #E5E7EB` : `1px solid transparent`,
+                        }} />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ whiteSpace: "nowrap" }}>
+                        <div className="px-2 py-1 rounded-lg text-[10px] font-bold shadow-lg"
+                          style={{ background: T.textPrimary, color: "#fff" }}>
+                          T{wi + 1}: {wp < 0 ? "Chưa có việc" : `${wp}%`}
+                        </div>
+                        <div className="w-1.5 h-1.5 mx-auto -mt-0.5 rotate-45" style={{ background: T.textPrimary }} />
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex-shrink-0 text-right" style={{ width: 44 }}>
                   <span className="text-xs font-black" style={{ color: T.indigo }}>{overallPct}%</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Footer legend */}
+        <div className="px-5 py-2.5 flex items-center gap-4 flex-wrap" style={{ borderTop: `1px solid ${T.cardBorder}`, background: T.bg }}>
+          {[
+            { color: "#FEE2E2", label: "0%" },
+            { color: "#FDE68A", label: "25–50%" },
+            { color: "#86EFAC", label: "50–75%" },
+            { color: "#059669", label: "100%" },
+            { color: "#F3F4F6", label: "Chưa đến", dashed: true },
+          ].map(({ color, label, dashed }) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <div className="w-3.5 h-3.5 rounded"
+                style={{ background: color, border: dashed ? "1px dashed #D1D5DB" : `1px solid ${color}` }} />
+              <span className="text-[9px]" style={{ color: T.textMuted }}>{label}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5 ml-auto">
+            <div className="w-3.5 h-3.5 rounded" style={{ background: "transparent", border: `2px solid ${T.indigo}` }} />
+            <span className="text-[9px]" style={{ color: T.textMuted }}>Tuần hiện tại</span>
+          </div>
         </div>
       </div>
 
-      {/* ── 4. Weekly bar chart ── */}
+            {/* ── 4. Weekly bar chart ── */}
       <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
         <div className="flex items-center gap-2 mb-4">
           <BarChart2 size={15} style={{ color: T.indigo }} />
