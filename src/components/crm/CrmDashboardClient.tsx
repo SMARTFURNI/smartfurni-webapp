@@ -290,24 +290,10 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
 }
 
 // ──// ── 12 Week Plan Widget (Dashboard) ─────────────────────────────────────
-function TwelveWeekWidget() {
-  const [plan, setPlan] = useState<null | {
-    id: string; title: string; startDate: string; endDate: string;
-    goals: Array<{ id: string; title: string; color: string }>;
-    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string }>;
-  }>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/crm/twelve-week-plan")
-      .then((r) => r.ok ? r.json() : [])
-      .then((plans) => {
-        const active = plans.find((p: { isActive: boolean }) => p.isActive) ?? plans[0] ?? null;
-        setPlan(active);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+function TwelveWeekWidget({ plan, loadingPlan }: {
+  plan: { id: string; title: string; startDate: string; endDate: string; goals: Array<{ id: string; title: string; color: string }>; tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string }> } | null;
+  loadingPlan: boolean;
+}) {
 
   const GOAL_COLORS_MAP: Record<string, string> = {
     indigo: "#4F46E5", green: "#059669", gold: "#D97706",
@@ -319,7 +305,7 @@ function TwelveWeekWidget() {
     return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
   }
 
-  if (loading) return (
+  if (loadingPlan) return (
     <div className="rounded-2xl p-4 animate-pulse" style={{ background: T.card, border: `1px solid ${T.cardBorder}` }}>
       <div className="h-4 rounded w-1/2 mb-3" style={{ background: `${T.textMuted}20` }} />
       <div className="h-2 rounded w-full mb-2" style={{ background: `${T.textMuted}10` }} />
@@ -460,22 +446,9 @@ function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalVal
   totalValue: number; wonValue: number; stats: CrmStats;
   theme: DashboardTheme; fmtVal: (v: number) => string; darkMode: boolean;
   dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
+  plan: { id: string; startDate: string; endDate: string; tasks: Array<{ weekNumber: number; status: string; goalId: string }>; goals: Array<{ id: string; title: string; color: string }> } | null;
+  loadingPlan: boolean;
 }) {
-  const [plan, setPlan] = useState<null | {
-    id: string; startDate: string; endDate: string;
-    tasks: Array<{ weekNumber: number; status: string; goalId: string }>;
-    goals: Array<{ id: string; title: string; color: string }>;
-  }>(null);
-
-  useEffect(() => {
-    fetch("/api/crm/twelve-week-plan")
-      .then(r => r.ok ? r.json() : [])
-      .then(plans => {
-        const active = plans.find((p: { isActive: boolean }) => p.isActive) ?? plans[0] ?? null;
-        setPlan(active);
-      })
-      .catch(() => {});
-  }, []);
 
   function getCurrentWeek(startDate: string) {
     const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
@@ -569,23 +542,9 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats }: {
   dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
   fmtVal: (v: number) => string;
   leads: Lead[]; wonLeads: Lead[]; stats: CrmStats;
+  plan: { id: string; title: string; startDate: string; endDate: string; goals: Array<{ id: string; title: string; color: string }>; tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string }> } | null;
+  loadingPlan: boolean;
 }) {
-  const [plan, setPlan] = useState<null | {
-    id: string; title: string; startDate: string; endDate: string;
-    goals: Array<{ id: string; title: string; color: string }>;
-    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string }>;
-  }>(null);
-
-  useEffect(() => {
-    fetch("/api/crm/twelve-week-plan")
-      .then(r => r.ok ? r.json() : [])
-      .then(plans => {
-        const active = plans.find((p: { isActive: boolean }) => p.isActive) ?? plans[0] ?? null;
-        setPlan(active);
-      })
-      .catch(() => {});
-  }, []);
-
   const GOAL_COLORS_MAP: Record<string, string> = {
     indigo: "#4F46E5", green: "#059669", gold: "#D97706",
     red: "#DC2626", purple: "#7C3AED", blue: "#2563EB",
@@ -595,6 +554,15 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats }: {
     const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
     return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
   }
+
+  if (loadingPlan) return (
+    <div className="rounded-2xl p-5 animate-pulse" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}` }}>
+      <div className="h-4 rounded w-1/3 mb-3" style={{ background: `${T.textMuted}20` }} />
+      <div className="grid grid-cols-3 gap-3">
+        {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl" style={{ background: `${T.textMuted}10` }} />)}
+      </div>
+    </div>
+  );
 
   if (!plan) return (
     <div className="rounded-2xl p-5 flex items-center justify-between"
@@ -733,24 +701,17 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats }: {
   dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
   fmtVal: (v: number) => string;
   leads: Lead[]; wonLeads: Lead[]; stats: CrmStats;
+  plan: { id: string; title: string; startDate: string; endDate: string; goals: Array<{ id: string; title: string; color: string; description?: string }>; tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string }> } | null;
+  loadingPlan: boolean;
 }) {
-  const [plan, setPlan] = useState<null | {
-    id: string; title: string; startDate: string; endDate: string;
-    goals: Array<{ id: string; title: string; color: string; description?: string }>;
-    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string }>;
-  }>(null);
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
 
+  // Set default selected goal when plan loads
   useEffect(() => {
-    fetch("/api/crm/twelve-week-plan")
-      .then(r => r.ok ? r.json() : [])
-      .then(plans => {
-        const active = plans.find((p: { isActive: boolean }) => p.isActive) ?? plans[0] ?? null;
-        setPlan(active);
-        if (active?.goals?.length > 0) setSelectedGoal(active.goals[0].id);
-      })
-      .catch(() => {});
-  }, []);
+    if (plan?.goals?.length && !selectedGoal) {
+      setSelectedGoal(plan.goals[0].id);
+    }
+  }, [plan, selectedGoal]);
 
   const GOAL_COLORS_MAP: Record<string, string> = {
     indigo: "#4F46E5", green: "#059669", gold: "#D97706",
@@ -761,6 +722,26 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats }: {
     const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
     return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
   }
+
+  if (loadingPlan) return (
+    <div className="rounded-2xl overflow-hidden animate-pulse" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}` }}>
+      <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
+        <div className="w-9 h-9 rounded-xl" style={{ background: `${T.textMuted}15` }} />
+        <div className="flex-1">
+          <div className="h-3.5 rounded w-1/3 mb-1.5" style={{ background: `${T.textMuted}20` }} />
+          <div className="h-2.5 rounded w-1/4" style={{ background: `${T.textMuted}10` }} />
+        </div>
+      </div>
+      <div className="p-5 space-y-3">
+        <div className="flex gap-2">
+          {[1,2,3,4].map(i => <div key={i} className="h-8 rounded-xl flex-1" style={{ background: `${T.textMuted}10` }} />)}
+        </div>
+        <div className="grid grid-cols-6 gap-1.5">
+          {Array.from({length:12}).map((_,i) => <div key={i} className="h-14 rounded-lg" style={{ background: `${T.textMuted}08` }} />)}
+        </div>
+      </div>
+    </div>
+  );
 
   if (!plan) return (
     <div className="rounded-2xl p-8 text-center" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
@@ -1087,6 +1068,28 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const [forecast, setForecast] = useState<{ forecastValue: number; pipelineCount: number; monthlyData: Array<{ label: string; actual: number; isForecast: boolean }> } | null>(null);
   const [heatmap, setHeatmap] = useState<Record<string, number>>({});
   const [loadingExtras, setLoadingExtras] = useState(true);
+  const [twelveWeekPlan, setTwelveWeekPlan] = useState<{
+    id: string; title: string; startDate: string; endDate: string; isActive: boolean;
+    goals: Array<{ id: string; title: string; color: string; description?: string }>;
+    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string }>;
+  } | null>(null);
+  const [loadingTwelveWeek, setLoadingTwelveWeek] = useState(true);
+
+  // Fetch twelve-week plan once at top level (prevents flash in child components)
+  useEffect(() => {
+    let mounted = true;
+    setLoadingTwelveWeek(true);
+    fetch("/api/crm/twelve-week-plan")
+      .then(r => r.ok ? r.json() : [])
+      .then(plans => {
+        if (!mounted) return;
+        const active = plans.find((p: { isActive: boolean }) => p.isActive) ?? plans[0] ?? null;
+        setTwelveWeekPlan(active);
+      })
+      .catch(() => {})
+      .finally(() => { if (mounted) setLoadingTwelveWeek(false); });
+    return () => { mounted = false; };
+  }, []);
 
   // Fetch all extras
   useEffect(() => {
@@ -1326,6 +1329,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           fmtVal={fmtVal}
           darkMode={darkMode}
           dm={dm}
+          plan={twelveWeekPlan}
+          loadingPlan={loadingTwelveWeek}
         />}
 
         {/* ── Personal Rank (staff only) ───────────────────────────────── */}
@@ -1428,7 +1433,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         )}
 
         {/* ── 12-Week Progress Board ────────────────────────────────────────── */}
-        {isVisible("monthSummary") && <TwelveWeekProgressBoard dm={dm} fmtVal={fmtVal} leads={leads} wonLeads={wonLeads} stats={stats} />}
+        {isVisible("monthSummary") && <TwelveWeekProgressBoard dm={dm} fmtVal={fmtVal} leads={leads} wonLeads={wonLeads} stats={stats} plan={twelveWeekPlan} loadingPlan={loadingTwelveWeek} />}
 
         {/* ── Main Grid ─────────────────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-5">
@@ -1437,7 +1442,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           <div className="xl:col-span-2 space-y-4 md:space-y-5">
 
             {/* 12-Week Goals Board */}
-            {isVisible("revenueChart") && <TwelveWeekGoalsBoard dm={dm} fmtVal={fmtVal} leads={leads} wonLeads={wonLeads} stats={stats} />}
+            {isVisible("revenueChart") && <TwelveWeekGoalsBoard dm={dm} fmtVal={fmtVal} leads={leads} wonLeads={wonLeads} stats={stats} plan={twelveWeekPlan} loadingPlan={loadingTwelveWeek} />}
 
             {/* Conversion Funnel */}
             {isVisible("funnel") && <Section title="Conversion Funnel" icon={Filter} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
@@ -1984,7 +1989,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           <div className="space-y-4 md:space-y-5">
 
             {/* 12 Week Plan Widget */}
-            <TwelveWeekWidget />
+            <TwelveWeekWidget plan={twelveWeekPlan} loadingPlan={loadingTwelveWeek} />
 
             {/* Team Online (admin only) */}
             {isVisible("teamOnline") && currentUser?.isAdmin && teamOnline.length > 0 && (
