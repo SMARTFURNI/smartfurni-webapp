@@ -12,6 +12,8 @@ export default function PlansManagementPage() {
   const [editTitle, setEditTitle] = useState('');
   const [defaultPlanId, setDefaultPlanId] = useState<string | null>(null);
   const [staffList, setStaffList] = useState<Array<{ id: string; name: string }>>([]);
+  const [showStaffModal, setShowStaffModal] = useState<string | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<Set<string>>(new Set());
 
   // Load plans
   useEffect(() => {
@@ -47,6 +49,38 @@ export default function PlansManagementPage() {
 
     fetchPlans();
     fetchStaff();
+  }, []);
+
+  // Open staff modal
+  const handleOpenStaffModal = (planId: string, currentStaffIds: string[] = []) => {
+    setShowStaffModal(planId);
+    setSelectedStaff(new Set(currentStaffIds));
+  };
+
+  // Save staff assignment
+  const handleSaveStaffAssignment = async (planId: string) => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/crm/twelve-week-plan', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId,
+          action: 'assign_staff',
+          assignedStaffIds: Array.from(selectedStaff),
+        }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setPlans(plans.map(p => (p.id === planId ? updated : p)));
+        setShowStaffModal(null);
+      }
+    } catch (err) {
+      console.error('Failed to save staff assignment:', err);
+    } finally {
+      setSaving(false);
   }, []);
 
   // Update plan title
@@ -232,9 +266,17 @@ export default function PlansManagementPage() {
 
               {/* Assigned Staff */}
               <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Users className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Nhân viên được gán</span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-700">Nhân viên được gán</span>
+                  </div>
+                  <button
+                    onClick={() => handleOpenStaffModal(plan.id, plan.assignedStaffIds || [])}
+                    className="px-3 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    Chỉnh sửa
+                  </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {plan.assignedStaffIds && plan.assignedStaffIds.length > 0 ? (
@@ -266,6 +308,61 @@ export default function PlansManagementPage() {
           </p>
         </div>
       </div>
+
+      {/* Staff Assignment Modal */}
+      {showStaffModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-96 overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+              <h3 className="text-lg font-semibold text-gray-900">Gán Nhân Viên Vào Kế Hoạch</h3>
+              <p className="text-sm text-gray-600 mt-1">Chọn nhân viên có quyền xem kế hoạch này</p>
+            </div>
+
+            <div className="p-6 space-y-3">
+              {staffList.length > 0 ? (
+                staffList.map(staff => (
+                  <label key={staff.id} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={selectedStaff.has(staff.id)}
+                      onChange={e => {
+                        const newSelected = new Set(selectedStaff);
+                        if (e.target.checked) {
+                          newSelected.add(staff.id);
+                        } else {
+                          newSelected.delete(staff.id);
+                        }
+                        setSelectedStaff(newSelected);
+                      }}
+                      className="w-4 h-4 text-indigo-600 rounded"
+                    />
+                    <span className="text-sm font-medium text-gray-700">{staff.name}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">Không có nhân viên nào</p>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3 sticky bottom-0 bg-white">
+              <button
+                onClick={() => setShowStaffModal(null)}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => handleSaveStaffAssignment(showStaffModal)}
+                disabled={saving}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Lưu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

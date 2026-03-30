@@ -144,6 +144,14 @@ export async function PATCH(req: NextRequest) {
         break;
       }
 
+      case "assign_staff": {
+        if (Array.isArray(body.assignedStaffIds)) {
+          plan.assignedStaffIds = body.assignedStaffIds;
+          plan.updatedAt = now;
+        }
+        break;
+      }
+
       // ── Goal CRUD ──────────────────────────────────────────────────────
       case "add_goal": {
         const goal: Goal = {
