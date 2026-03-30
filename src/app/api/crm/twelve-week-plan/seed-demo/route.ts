@@ -162,12 +162,12 @@ export async function GET(req: NextRequest) {
 
     const tasks: WeeklyTask[] = [];
 
-    function addTask(
+    const addTask = (
       goalId: string,
       week: number,
       title: string,
       status: "pending" | "done" | "skipped" = "pending"
-    ) {
+    ) => {
       const dueDate = addDays(getWeekStart(startDate, week), 5);
       tasks.push({
         id: "task_" + nanoid(),
@@ -181,7 +181,7 @@ export async function GET(req: NextRequest) {
         createdAt: now,
         updatedAt: now,
       });
-    }
+    };
 
     // ── Goal 1: Tăng Doanh Thu (16 tasks) ──────────────────────────────────────
     addTask(g0, 1, "Lập danh sách 30 prospect khách sạn tiềm năng tại TP.HCM", "done");
