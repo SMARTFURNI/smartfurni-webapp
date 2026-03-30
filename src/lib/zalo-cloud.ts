@@ -57,6 +57,7 @@ export function getZaloRefreshToken(): string {
 }
 
 export function getZaloAppId(): string {
+  // App ID (429156857373131074) - dùng để refresh token
   return process.env.ZALO_APP_ID ?? "";
 }
 
@@ -65,6 +66,7 @@ export function getZaloAppSecret(): string {
 }
 
 export function getZaloOaId(): string {
+  // OA ID (4257599883815905691) - dùng để gọi API OA
   return process.env.ZALO_OFFICIAL_ACCOUNT_ID ?? "4257599883815905691";
 }
 
@@ -73,11 +75,12 @@ export function getZaloOaId(): string {
  */
 export async function refreshZaloToken(refreshToken?: string): Promise<ZaloTokenResponse | null> {
   const token = refreshToken ?? getZaloRefreshToken();
-  const appId = getZaloAppId();
+  // Zalo refresh token API dùng OA ID (không phải App ID)
+  const oaId = getZaloOaId();
   const appSecret = getZaloAppSecret();
 
-  if (!token || !appId || !appSecret) {
-    console.warn("[ZaloCloud] Missing refresh token, app_id, or app_secret");
+  if (!token || !oaId || !appSecret) {
+    console.warn("[ZaloCloud] Missing refresh token, oa_id, or app_secret");
     return null;
   }
 
@@ -89,7 +92,7 @@ export async function refreshZaloToken(refreshToken?: string): Promise<ZaloToken
         "secret_key": appSecret,
       },
       body: new URLSearchParams({
-        app_id: appId,
+        app_id: oaId,
         grant_type: "refresh_token",
         refresh_token: token,
       }),
