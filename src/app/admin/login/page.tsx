@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
         setError(data.error || "Tên đăng nhập hoặc mật khẩu không đúng");
       } else {
         // Full page reload để tránh Next.js router cache
-        window.location.href = "/admin";
+        window.location.href = "/admin/choose-module";
       }
     } catch {
       setError("Lỗi kết nối. Vui lòng thử lại.");
