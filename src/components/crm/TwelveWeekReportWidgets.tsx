@@ -90,7 +90,7 @@ function InsightsPanel({
   insightColors: Record<string, string>;
   insightBg: Record<string, string>;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const dangerCount = insights.filter(i => i.type === "danger").length;
   const warningCount = insights.filter(i => i.type === "warning").length;
 
