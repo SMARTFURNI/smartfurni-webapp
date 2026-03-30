@@ -1230,9 +1230,9 @@ function Sparkline({ data, color, height = 28 }: { data: number[]; color: string
 }
 
 // ── Period selector ──────────────────────────────────────────────────────────
-type Period = "month" | "quarter" | "year";
+type Period = "week" | "month" | "quarter" | "year";
 const PERIOD_LABELS: Record<Period, string> = {
-  month: "Tháng này", quarter: "Quý này", year: "Năm nay",
+  week: "Tuần này", month: "Tháng này", quarter: "Quý này", year: "Năm nay",
 };
 
 // ── Notification bell ────────────────────────────────────────────────────────
@@ -1378,7 +1378,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const isVisible = (id: DashboardSectionId) => !hiddenSet.has(id);
   const [tasks, setTasks] = useState(todayTasks);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [period, setPeriod] = useState<Period>("month");
+  const [period, setPeriod] = useState<Period>("week");
   const [darkMode, setDarkMode] = useState(false);
 
   // API data states
@@ -1584,13 +1584,13 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
           {/* Period selector — pill group */}
           <div className="flex items-center rounded-xl overflow-hidden" style={{ border: `1px solid ${dm.cardBorder}`, background: dm.bg }}>
-            {(["month", "quarter", "year"] as Period[]).map((p, i) => (
+            {(["week", "month", "quarter", "year"] as Period[]).map((p, i) => (
               <button key={p} onClick={() => setPeriod(p)}
                 className="px-2.5 md:px-4 py-1.5 md:py-2 text-[11px] md:text-xs font-semibold transition-all"
                 style={{
                   background: period === p ? T.gold : "transparent",
                   color: period === p ? "#fff" : dm.textMuted,
-                  borderRight: i < 2 ? `1px solid ${dm.cardBorder}` : "none",
+                  borderRight: i < 3 ? `1px solid ${dm.cardBorder}` : "none",
                 }}>
                 <span className="md:hidden">{p === "month" ? "Th" : p === "quarter" ? "Quý" : "Năm"}</span>
                 <span className="hidden md:inline">{PERIOD_LABELS[p]}</span>
