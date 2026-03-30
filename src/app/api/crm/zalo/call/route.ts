@@ -7,7 +7,7 @@
  */
 import { getCrmSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { requestZaloCall, checkZaloCallConsent, type ZaloCallType, type ZaloCallReasonCode } from "@/lib/zalo-cloud";
+import { requestZaloCall, checkZaloCallConsent, ZALO_REASON_CODES, type ZaloCallType, type ZaloCallReasonCode } from "@/lib/zalo-cloud";
 import { createCallLog } from "@/lib/crm-store";
 
 export async function POST(req: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       leadId?: string;
       leadName?: string;
       callType?: ZaloCallType;
-      reasonCode?: ZaloCallReasonCode;
+      reasonCode?: ZaloCallReasonCode | string; // có thể nhận string từ frontend
       staffId?: string;
       staffName?: string;
     };
@@ -29,11 +29,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Thiếu số điện thoại" }, { status: 400 });
     }
 
+    // Chuyển reason_code từ string sang số nếu cần
+    let reasonCode: ZaloCallReasonCode = 101;
+    if (typeof body.reasonCode === 'number') {
+      reasonCode = body.reasonCode as ZaloCallReasonCode;
+    } else if (typeof body.reasonCode === 'string' && ZALO_REASON_CODES[body.reasonCode]) {
+      reasonCode = ZALO_REASON_CODES[body.reasonCode];
+    }
+
     // Gửi yêu cầu gọi qua Zalo
     const result = await requestZaloCall({
       phone: body.phone,
       callType: body.callType ?? "audio",
-      reasonCode: body.reasonCode ?? "product_service_consulting",
+      reasonCode,
     });
 
     if (!result.ok) {

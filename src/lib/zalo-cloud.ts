@@ -10,18 +10,25 @@ const ZALO_API_BASE = "https://openapi.zalo.me/v2.0/oa";
 const ZALO_OAUTH_URL = "https://oauth.zaloapp.com/v4/oa/access_token";
 
 export type ZaloCallType = "audio" | "video" | "audio_and_video";
-export type ZaloCallReasonCode =
-  | "product_service_consulting"
-  | "order_appointment_confirmation"
-  | "delivery_notification"
-  | "flight_announcement"
-  | "update_order";
+// reason_code là số nguyên theo Zalo API docs
+// 101 = product_service_consulting, 102 = order_appointment_confirmation
+// 103 = delivery_notification, 104 = flight_announcement, 105 = update_order
+export type ZaloCallReasonCode = 101 | 102 | 103 | 104 | 105;
 
 export interface ZaloCallRequest {
   phone: string;
   callType?: ZaloCallType;
   reasonCode?: ZaloCallReasonCode;
 }
+
+// Map từ tên dễ đọc sang reason_code số
+export const ZALO_REASON_CODES: Record<string, ZaloCallReasonCode> = {
+  product_service_consulting: 101,
+  order_appointment_confirmation: 102,
+  delivery_notification: 103,
+  flight_announcement: 104,
+  update_order: 105,
+};
 
 export interface ZaloCallResponse {
   id: string;
@@ -138,7 +145,8 @@ export async function requestZaloCall(
       body: JSON.stringify({
         phone,
         call_type: req.callType ?? "audio",
-        reason_code: req.reasonCode ?? "product_service_consulting",
+        // reason_code PHẢI là số nguyên (101-105), không phải string
+        reason_code: req.reasonCode ?? 101,
       }),
     });
 
