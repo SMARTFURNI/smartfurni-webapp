@@ -142,7 +142,7 @@ function AddRawLeadModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
     if (!validate()) return;
     setLoading(true); setSubmitError("");
     try {
-      const res = await fetch("/api/crm/raw-leads", {
+      const res = await fetch("/api/crm/raw-leads", { credentials: 'include',
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -497,7 +497,7 @@ function AssignModal({
     if (!selectedStaffId) { setError("Vui lòng chọn nhân viên"); return; }
     setLoading(true); setError("");
     try {
-      const res = await fetch("/api/crm/raw-leads/assign", {
+      const res = await fetch("/api/crm/raw-leads/assign", { credentials: 'include',
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: lead.id, staffId: selectedStaffId }),
@@ -708,8 +708,8 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
       if (search) params.set("search", search);
 
       const [leadsRes, statsRes] = await Promise.all([
-        fetch(`/api/crm/raw-leads?${params}`),
-        fetch("/api/crm/raw-leads/stats"),
+        fetch(`/api/crm/raw-leads?${params}`, { credentials: 'include' }),
+        fetch("/api/crm/raw-leads/stats", { credentials: 'include' }),
       ]);
 
       if (leadsRes.ok) {
@@ -738,7 +738,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
     setClaimingId(lead.id);
     setClaimError(null);
     try {
-      const res = await fetch("/api/crm/raw-leads/claim", {
+      const res = await fetch("/api/crm/raw-leads/claim", { credentials: 'include',
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: lead.id }),
