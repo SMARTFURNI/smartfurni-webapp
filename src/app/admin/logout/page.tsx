@@ -1,21 +1,49 @@
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
-import { SESSION_COOKIE } from "@/lib/admin-auth";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 /**
- * Server component: xóa session cookie admin và redirect về trang đăng nhập.
- * Được gọi khi admin nhấn "Đăng xuất" từ CRM sidebar.
+ * Client component: gọi API logout endpoint để xóa session và redirect về login.
  */
-export default async function AdminLogoutPage() {
-  try {
-    const cookieStore = await cookies();
-    cookieStore.delete(SESSION_COOKIE);
-  } catch (error) {
-    console.error("Error deleting session cookie:", error);
-  }
-  
-  // Return a redirect response instead of using redirect()
-  return NextResponse.redirect(new URL("/admin/login", process.env.NEXTAUTH_URL || "http://localhost:3000"), {
-    status: 302,
-  });
+export default function AdminLogoutPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const logout = async () => {
+      try {
+        // Call API endpoint to delete session and redirect
+        const response = await fetch("/api/admin/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+        
+        if (response.ok) {
+          // API will handle redirect, but we also redirect just in case
+          router.push("/admin/login");
+        }
+      } catch (error) {
+        console.error("Logout error:", error);
+        // Fallback: redirect to login
+        router.push("/admin/login");
+      }
+    };
+
+    logout();
+  }, [router]);
+
+  return (
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "100vh",
+      backgroundColor: "#f5f5f5",
+    }}>
+      <div style={{ textAlign: "center" }}>
+        <h2>Đang đăng xuất...</h2>
+        <p>Vui lòng chờ</p>
+      </div>
+    </div>
+  );
 }
