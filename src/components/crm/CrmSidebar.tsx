@@ -174,7 +174,21 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
   }
 
-  const logoutHref = isAdmin ? "/admin/logout" : "/api/crm/staff/logout-redirect";
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      if (isAdmin) {
+        await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
+        window.location.href = "/admin/login";
+      } else {
+        await fetch("/api/crm/staff/logout", { method: "POST", credentials: "include" });
+        window.location.href = "/crm/login";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = isAdmin ? "/admin/login" : "/crm/login";
+    }
+  };
 
   // Color tokens
   const C = {
@@ -405,12 +419,12 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
             {!collapsed && <span className="text-[13px] font-medium">Quản trị Admin</span>}
           </Link>
         )}
-        <Link
-          href={logoutHref}
-          prefetch={false}
+        <button
+          onClick={handleLogout}
+          type="button"
           title={collapsed ? "Đăng xuất" : undefined}
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all"
-          style={{ color: "#F87171" }}
+          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all w-full"
+          style={{ color: "#F87171", background: "transparent", border: "none", cursor: "pointer" }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLElement).style.background = "#2D1515";
             (e.currentTarget as HTMLElement).style.color = "#FCA5A5";
@@ -422,7 +436,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         >
           <LogOut size={15} style={{ flexShrink: 0 }} />
           {!collapsed && <span className="text-[13px] font-medium">Đăng xuất</span>}
-        </Link>
+        </button>
       </div>
     </aside>
   );
