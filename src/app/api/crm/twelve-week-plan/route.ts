@@ -121,6 +121,29 @@ export async function PATCH(req: NextRequest) {
         break;
       }
 
+      case "update_title": {
+        if (body.title !== undefined) plan.title = body.title;
+        plan.updatedAt = now;
+        break;
+      }
+
+      case "set_default": {
+        if (body.defaultForDashboard !== undefined) {
+          if (body.defaultForDashboard) {
+            const allPlans = await getAllPlans("admin");
+            for (const p of allPlans) {
+              if (p.id !== planId && p.defaultForDashboard) {
+                p.defaultForDashboard = false;
+                await savePlan(p);
+              }
+            }
+          }
+          plan.defaultForDashboard = body.defaultForDashboard;
+          plan.updatedAt = now;
+        }
+        break;
+      }
+
       // ── Goal CRUD ──────────────────────────────────────────────────────
       case "add_goal": {
         const goal: Goal = {

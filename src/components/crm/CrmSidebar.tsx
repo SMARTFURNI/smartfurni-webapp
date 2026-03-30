@@ -62,6 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Dashboard", href: "/crm", icon: LayoutDashboard, exact: true },
       { label: "Bảng Kanban", href: "/crm/kanban", icon: Kanban },
       { label: "Kế hoạch 12 Tuần", href: "/crm/twelve-week-plan", icon: Crosshair },
+      { label: "Quản lý Kế hoạch", href: "/crm/plans-management", icon: Settings, adminOnly: true },
     ],
   },
   {
