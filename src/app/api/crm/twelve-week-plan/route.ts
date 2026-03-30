@@ -46,23 +46,13 @@ export async function GET(req: NextRequest) {
     const shared = searchParams.get("shared");
     if (shared === "1") {
       const adminPlans = await getAllPlans("admin");
-      const staffId = session.staffId ?? "";
-      const accessiblePlans = adminPlans.filter(p => {
-        if (session.isAdmin) return true;
-        if (!p.assignedStaffIds || p.assignedStaffIds.length === 0) return true;
-        return p.assignedStaffIds.includes(staffId);
-      });
-      const defaultPlan = accessiblePlans.find(p => p.defaultForDashboard) ?? accessiblePlans[0] ?? null;
-      return NextResponse.json(defaultPlan ? [defaultPlan] : []);
+      const activePlan = adminPlans.find(p => p.isActive) ?? adminPlans[0] ?? null;
+      return NextResponse.json(activePlan ? [activePlan] : []);
     }
+    // Lấy theo staffId
     const staffId = session.isAdmin && all ? undefined : (session.staffId ?? "admin");
     const plans = await getAllPlans(staffId);
-    const filteredPlans = plans.filter(p => {
-      if (session.isAdmin) return true;
-      if (!p.assignedStaffIds || p.assignedStaffIds.length === 0) return true;
-      return p.assignedStaffIds.includes(session.staffId ?? "");
-    });
-    return NextResponse.json(filteredPlans);
+    return NextResponse.json(plans);
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }

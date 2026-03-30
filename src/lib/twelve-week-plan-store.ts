@@ -71,14 +71,12 @@ export interface Goal {
 
 export interface TwelveWeekPlan {
   id: string;
-  staffId: string; // owner (usually "admin")
+  staffId: string; // owner
   title: string;
   vision: string; // "Tầm nhìn" - long-term vision
   startDate: string; // ISO date - start of week 1
   endDate: string; // ISO date - end of week 12
   isActive: boolean;
-  assignedStaffIds?: string[]; // Nhân viên có quyền truy cập kế hoạch này
-  defaultForDashboard?: boolean; // Hiển thị mặc định trên dashboard
   goals: Goal[];
   tasks: WeeklyTask[];
   createdAt: string;
