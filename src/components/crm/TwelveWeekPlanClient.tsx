@@ -2660,8 +2660,8 @@ export default function TwelveWeekPlanClient() {
   const fetchPlans = useCallback(async () => {
     setLoading(true);
     try {
-      // Lấy kế hoạch chung từ admin (shared plan)
-      const res = await fetch("/api/crm/twelve-week-plan?shared=1");
+      // Lấy kế hoạch được gán cho nhân viên
+      const res = await fetch("/api/crm/twelve-week-plan");
       if (res.ok) {
         const data = await res.json();
         setPlans(data);
