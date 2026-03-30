@@ -126,7 +126,7 @@ export async function refreshZaloToken(refreshToken?: string): Promise<ZaloToken
 export async function requestZaloCall(
   req: ZaloCallRequest,
   accessToken?: string
-): Promise<{ ok: boolean; data?: ZaloCallResponse; error?: string }> {
+): Promise<{ ok: boolean; data?: ZaloCallResponse; error?: string; message?: string }> {
   const token = accessToken ?? getZaloAccessToken();
   if (!token) {
     return { ok: false, error: "Chưa cấu hình Zalo access token" };
@@ -168,28 +168,46 @@ export async function requestZaloCall(
       };
     };
 
-    if (data.error !== 0) {
+    // Zalo API success codes:
+    // error: 0 = Gửi yêu cầu thành công (khách chưa cấp quyền, cần chờ đồng ý)
+    // error: 1 = Người dùng đã đồng ý nhận cuộc gọi (gọi ngay)
+    // Các giá trị âm = lỗi thực sự
+    const isSuccess = data.error === 0 || data.error === 1;
+    if (!isSuccess) {
       return { ok: false, error: `Zalo API lỗi ${data.error}: ${data.message}` };
     }
 
-    if (!data.data) {
-      return { ok: false, error: "Không có dữ liệu phản hồi từ Zalo" };
-    }
+    // Khi error:1, Zalo không trả về data object (gọi ngay không cần consent)
+    // Tạo data giả để flow tiếp tục
+    const callData = data.data ?? {
+      id: `zcc-${Date.now()}`,
+      call_type: 'audio',
+      phone: req.phone,
+      status: 'calling',
+      delivery_status: 'Received',
+      reply_status: 'P',
+      is_charged: false,
+      error_code: 0,
+      error_message: '',
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 30000).toISOString(),
+    };
 
     return {
       ok: true,
+      message: data.message, // 'Người dùng đã đồng ý nhận cuộc gọi' khi error:1
       data: {
-        id: data.data.id,
-        callType: data.data.call_type as ZaloCallType,
-        phone: data.data.phone,
-        status: data.data.status,
-        deliveryStatus: data.data.delivery_status,
-        replyStatus: data.data.reply_status,
-        isCharged: data.data.is_charged,
-        errorCode: data.data.error_code,
-        errorMessage: data.data.error_message,
-        createdAt: data.data.created_at,
-        expiresAt: data.data.expires_at,
+        id: callData.id,
+        callType: callData.call_type as ZaloCallType,
+        phone: callData.phone,
+        status: callData.status,
+        deliveryStatus: callData.delivery_status,
+        replyStatus: callData.reply_status,
+        isCharged: callData.is_charged,
+        errorCode: callData.error_code,
+        errorMessage: callData.error_message,
+        createdAt: callData.created_at,
+        expiresAt: callData.expires_at,
       },
     };
   } catch (e) {

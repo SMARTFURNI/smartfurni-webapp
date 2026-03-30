@@ -73,13 +73,18 @@ export async function POST(req: NextRequest) {
       // Không fail request nếu lưu DB lỗi
     }
 
+    // result.message có thể là 'Người dùng đã đồng ý nhận cuộc gọi' (error:1) hoặc không có (error:0)
+    const successMessage = result.message === 'Người dùng đã đồng ý nhận cuộc gọi'
+      ? 'Đang thực hiện cuộc gọi Zalo đến khách hàng...'
+      : 'Đã gửi yêu cầu gọi Zalo. Khách hàng sẽ nhận thông báo trong ứng dụng Zalo.';
+
     return NextResponse.json({
       ok: true,
       callId: result.data?.id,
       status: result.data?.status,
       deliveryStatus: result.data?.deliveryStatus,
       expiresAt: result.data?.expiresAt,
-      message: "Đã gửi yêu cầu gọi Zalo đến khách hàng. Khách hàng sẽ nhận thông báo trong ứng dụng Zalo.",
+      message: successMessage,
     });
   } catch (e) {
     console.error("[ZaloCall] Error:", e);

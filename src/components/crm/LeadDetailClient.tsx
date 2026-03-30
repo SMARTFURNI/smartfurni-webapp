@@ -87,7 +87,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
           leadId: lead.id,
           leadName: lead.name,
           callType: "audio",
-          reasonCode: "product_service_consulting",
+          reasonCode: 101, // 101 = tư vấn sản phẩm/dịch vụ
         }),
       });
       const data = await res.json() as { ok?: boolean; error?: string; message?: string };
