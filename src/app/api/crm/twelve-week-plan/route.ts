@@ -35,8 +35,12 @@ export async function GET(req: NextRequest) {
     if (id) {
       const plan = await getPlanById(id);
       if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      // Staff chỉ xem plan của mình
-      if (!session.isAdmin && plan.staffId !== (session.staffId ?? "admin")) {
+      // Staff có thể xem plan nếu: (1) plan là của họ, HOẶC (2) họ được gán vào plan
+      const staffId = session.staffId ?? "admin";
+      const canView = session.isAdmin || 
+                      plan.staffId === staffId || 
+                      (Array.isArray((plan as any).assignedStaffIds) && (plan as any).assignedStaffIds.includes(staffId));
+      if (!canView) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       return NextResponse.json(plan);
@@ -49,9 +53,19 @@ export async function GET(req: NextRequest) {
       const activePlan = adminPlans.find(p => p.isActive) ?? adminPlans[0] ?? null;
       return NextResponse.json(activePlan ? [activePlan] : []);
     }
-    // Lấy theo staffId
+    // Lấy theo staffId - nhân viên xem kế hoạch của họ + kế hoạch được gán cho họ
     const staffId = session.isAdmin && all ? undefined : (session.staffId ?? "admin");
     const plans = await getAllPlans(staffId);
+    
+    // Nếu là nhân viên, thêm các kế hoạch admin được gán cho họ
+    if (!session.isAdmin && staffId) {
+      const adminPlans = await getAllPlans("admin");
+      const assignedAdminPlans = adminPlans.filter(p => 
+        Array.isArray((p as any).assignedStaffIds) && (p as any).assignedStaffIds.includes(staffId)
+      );
+      plans.push(...assignedAdminPlans);
+    }
+    
     return NextResponse.json(plans);
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { savePlan } from "@/lib/twelve-week-plan-store";
+import { getAllStaff } from "@/lib/crm-staff-store";
 import type { TwelveWeekPlan, Goal, WeeklyTask, GoalColor, GoalKpi } from "@/lib/twelve-week-plan-store";
 
 export const dynamic = "force-dynamic";
@@ -255,8 +256,12 @@ export async function GET(req: NextRequest) {
     addTask(g3, 8, "Review tỷ lệ chốt 8 tuần — target ≥ 30%");
     addTask(g3, 9, "Tối ưu email sequence nurturing cho lead chưa chốt");
 
+    // ── Lấy danh sách tất cả nhân viên ────────────────────────────────────────────
+    const allStaff = await getAllStaff();
+    const assignedStaffIds = allStaff.map((s) => s.id);
+
     // ── Tạo kế hoạch demo ──────────────────────────────────────────────────────
-    const plan: TwelveWeekPlan = {
+    const plan: any = {
       id: planId,
       staffId: "admin",
       title: "🎓 Demo Mẫu - Kế Hoạch Kinh Doanh Q1 2026",
@@ -267,6 +272,8 @@ export async function GET(req: NextRequest) {
       isActive: true,
       goals,
       tasks,
+      assignedStaffIds,
+      defaultForDashboard: false,
       createdAt: now,
       updatedAt: now,
     };
@@ -281,6 +288,7 @@ export async function GET(req: NextRequest) {
         goals: goals.length,
         tasks: tasks.length,
         doneTasks: tasks.filter((t) => t.status === "done").length,
+        assignedStaffCount: assignedStaffIds.length,
         startDate,
         endDate,
       },
