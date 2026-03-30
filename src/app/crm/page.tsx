@@ -11,13 +11,18 @@ export default async function CrmDashboardPage() {
 
   // Lấy thông tin nhân viên đang đăng nhập
   let currentStaff = null;
-  if (!session.isAdmin && session.staffId) {
+  if (session.isAdmin) {
+    // Admin: lấy thông tin admin từ database
+    const { getStaffByUsername } = await import("@/lib/crm-staff-store");
+    currentStaff = await getStaffByUsername("admin");
+  } else if (session.staffId) {
+    // Nhân viên: lấy thông tin của họ
     currentStaff = await getStaffById(session.staffId);
   }
 
-  const staffName = currentStaff?.fullName ?? (session.isAdmin ? "Quản trị viên" : "");
-  const staffRole = currentStaff?.role ?? (session.isAdmin ? "super_admin" : "sales");
-  const staffUsername = currentStaff?.username ?? (session.isAdmin ? "admin" : "");
+  const staffName = currentStaff?.fullName ?? "";
+  const staffRole = currentStaff?.role ?? "sales";
+  const staffUsername = currentStaff?.username ?? "";
   const staffId = currentStaff?.id ?? null;
 
   // Admin thấy tất cả, nhân viên chỉ thấy leads được giao cho mình
