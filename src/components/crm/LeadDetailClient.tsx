@@ -71,41 +71,8 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
   const [playingCallId, setPlayingCallId] = useState<string | null>(null);
   const [callNotes, setCallNotes] = useState<Record<string, string>>({});
   const [savingNote, setSavingNote] = useState<string | null>(null);
-  // Zalo call state
-  const [zaloCallLoading, setZaloCallLoading] = useState(false);
+  // Zalo call state (giữ lại để hiển thị thông báo nếu cần)
   const [zaloCallResult, setZaloCallResult] = useState<{ ok: boolean; message: string } | null>(null);
-
-  const handleZaloCall = async () => {
-    setZaloCallLoading(true);
-    setZaloCallResult(null);
-    try {
-      const res = await fetch("/api/crm/zalo/call", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: lead.phone,
-          leadId: lead.id,
-          leadName: lead.name,
-          callType: "audio",
-          reasonCode: 101, // 101 = tư vấn sản phẩm/dịch vụ
-        }),
-      });
-      const data = await res.json() as { ok?: boolean; error?: string; message?: string };
-      if (data.ok) {
-        setZaloCallResult({ ok: true, message: data.message ?? "Đã gửi yêu cầu gọi Zalo" });
-        // Reload call logs sau 2s
-        setTimeout(() => { setCallLogsLoaded(false); loadCallLogs(); }, 2000);
-      } else {
-        setZaloCallResult({ ok: false, message: data.error ?? "Gọi thất bại" });
-      }
-    } catch {
-      setZaloCallResult({ ok: false, message: "Lỗi kết nối" });
-    } finally {
-      setZaloCallLoading(false);
-      // Tự xóa thông báo sau 5s
-      setTimeout(() => setZaloCallResult(null), 5000);
-    }
-  };
 
   const loadCallLogs = async () => {
     if (callLogsLoaded) return;
@@ -628,19 +595,33 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                   </div>
                   <span className="text-[10px] font-semibold text-gray-600">Gọi</span>
                 </a>
-                <button
-                  onClick={handleZaloCall}
-                  disabled={zaloCallLoading}
-                  className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-50"
+                <a
+                  href={`https://zalo.me/${lead.phone?.replace(/^0/, '84').replace(/^\+/, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    // Ghi log cuộc gọi Zalo
+                    fetch('/api/crm/zalo/call', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        phone: lead.phone,
+                        leadId: lead.id,
+                        leadName: lead.name,
+                        callType: 'audio',
+                        reasonCode: 101,
+                        source: 'zalo_link',
+                      }),
+                    }).catch(() => {});
+                  }}
+                  className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-blue-50 transition-colors"
                   style={{ border: "1px solid #93c5fd" }}
-                  title="Gọi qua Zalo Cloud Connect">
+                  title="Mở Zalo để gọi cho khách hàng">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "#dbeafe" }}>
-                    {zaloCallLoading
-                      ? <Loader2 size={13} className="text-blue-600 animate-spin" />
-                      : <MessageCircle size={13} className="text-blue-600" />}
+                    <MessageCircle size={13} className="text-blue-600" />
                   </div>
                   <span className="text-[10px] font-semibold text-gray-600">Zalo</span>
-                </button>
+                </a>
                 {lead.email ? (
                   <a href={`mailto:${lead.email}`}
                     className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-blue-50 transition-colors" style={{ border: "1px solid #dbeafe" }}>
