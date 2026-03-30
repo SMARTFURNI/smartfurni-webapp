@@ -441,6 +441,170 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
   );
 }
 
+// ── Shared 12-Week Plan Widget (Kế hoạch chung của team) ─────────────────────
+function SharedPlanWidget({
+  plan, loading, taskUpdating, onToggleTask, isAdmin,
+}: {
+  plan: { id: string; title: string; startDate: string; endDate: string; isActive: boolean;
+    goals: Array<{ id: string; title: string; color: string; description?: string }>;
+    tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; priority?: string; dueDate?: string }>;
+  } | null;
+  loading: boolean;
+  taskUpdating: string | null;
+  onToggleTask: (taskId: string, currentStatus: string) => void;
+  isAdmin: boolean;
+}) {
+  const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
+
+  const GOAL_COLORS_MAP: Record<string, string> = {
+    indigo: "#4F46E5", green: "#059669", gold: "#D97706",
+    red: "#DC2626", purple: "#7C3AED", blue: "#2563EB",
+  };
+
+  function getCurrentWeek(startDate: string) {
+    const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
+  }
+
+  if (loading) return (
+    <div className="rounded-2xl p-4 animate-pulse" style={{ background: T.card, border: `1px solid ${T.cardBorder}` }}>
+      <div className="h-4 rounded w-2/3 mb-3" style={{ background: `${T.textMuted}20` }} />
+      <div className="h-2 rounded w-full mb-2" style={{ background: `${T.textMuted}10` }} />
+      <div className="h-2 rounded w-3/4" style={{ background: `${T.textMuted}10` }} />
+    </div>
+  );
+
+  if (!plan) return null;
+
+  const currentWeek = getCurrentWeek(plan.startDate);
+  const totalTasks = plan.tasks.filter(t => t.status !== "skipped").length;
+  const doneTasks = plan.tasks.filter(t => t.status === "done").length;
+  const overallPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const thisWeekTasks = plan.tasks.filter(t => t.weekNumber === currentWeek && t.status !== "skipped");
+  const thisWeekDone = thisWeekTasks.filter(t => t.status === "done").length;
+  const thisWeekPct = thisWeekTasks.length > 0 ? Math.round((thisWeekDone / thisWeekTasks.length) * 100) : 0;
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: "1px solid #D1FAE5", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+      {/* Header */}
+      <div className="px-4 py-3 flex items-center gap-2" style={{ background: "#ECFDF5", borderBottom: "1px solid #D1FAE5" }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#05966920" }}>
+          <Target size={14} style={{ color: "#059669" }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs font-black truncate" style={{ color: "#059669" }}>Kế hoạch chung</p>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "#059669", color: "#fff" }}>TEAM</span>
+          </div>
+          <p className="text-[10px] truncate" style={{ color: "#065F46" }}>Tuần {currentWeek}/12 • {overallPct}% hoàn thành</p>
+        </div>
+        <Link href="/crm/twelve-week-plan"
+          className="text-[10px] font-semibold px-2 py-1 rounded-lg flex items-center gap-1"
+          style={{ background: "#059669", color: "#fff" }}>
+          Xem <ChevronRight size={10} />
+        </Link>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {/* Overall progress */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Tiến độ tổng thể</span>
+            <span className="text-[10px] font-black" style={{ color: "#059669" }}>{doneTasks}/{totalTasks} việc</span>
+          </div>
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: "#ECFDF5" }}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${overallPct}%`, background: "linear-gradient(90deg, #059669, #34D399)" }} />
+          </div>
+        </div>
+
+        {/* Current week tasks */}
+        <div className="rounded-xl p-3" style={{ background: "#ECFDF5" }}>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-bold" style={{ color: "#059669" }}>★ Tuần {currentWeek} (Hiện tại)</span>
+            <span className="text-[10px] font-black" style={{ color: thisWeekPct === 100 ? "#059669" : "#065F46" }}>{thisWeekPct}%</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.5)" }}>
+            <div className="h-full rounded-full transition-all"
+              style={{ width: `${thisWeekPct}%`, background: thisWeekPct === 100 ? "#059669" : "#34D399" }} />
+          </div>
+          <p className="text-[9px] mt-1" style={{ color: "#065F46" }}>{thisWeekDone}/{thisWeekTasks.length} công việc tuần này</p>
+        </div>
+
+        {/* Goals with tasks */}
+        {plan.goals.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Mục tiêu & Công việc tuần này</p>
+            {plan.goals.map(goal => {
+              const gColor = GOAL_COLORS_MAP[goal.color] ?? "#059669";
+              const gWeekTasks = plan.tasks.filter(t => t.goalId === goal.id && t.weekNumber === currentWeek && t.status !== "skipped");
+              const gDone = gWeekTasks.filter(t => t.status === "done").length;
+              const gPct = gWeekTasks.length > 0 ? Math.round((gDone / gWeekTasks.length) * 100) : 0;
+              const isExpanded = expandedGoal === goal.id;
+              if (gWeekTasks.length === 0) return null;
+              return (
+                <div key={goal.id} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${gColor}20`, background: `${gColor}05` }}>
+                  {/* Goal header */}
+                  <button
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left"
+                    style={{ background: `${gColor}10` }}
+                    onClick={() => setExpandedGoal(isExpanded ? null : goal.id)}
+                  >
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: gColor }} />
+                    <span className="text-[10px] font-bold flex-1 truncate" style={{ color: gColor }}>{goal.title}</span>
+                    <span className="text-[9px] font-black" style={{ color: gColor }}>{gDone}/{gWeekTasks.length}</span>
+                    {isExpanded ? <ChevronUp size={10} style={{ color: gColor }} /> : <ChevronDown size={10} style={{ color: gColor }} />}
+                  </button>
+                  {/* Progress bar */}
+                  <div className="h-1 mx-3" style={{ background: `${gColor}15` }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${gPct}%`, background: gColor }} />
+                  </div>
+                  {/* Tasks list (expanded) */}
+                  {isExpanded && (
+                    <div className="px-3 py-2 space-y-1.5">
+                      {gWeekTasks.map(task => {
+                        const isDone = task.status === "done";
+                        const isUpdating = taskUpdating === task.id;
+                        return (
+                          <div key={task.id} className="flex items-start gap-2">
+                            <button
+                              onClick={() => onToggleTask(task.id, task.status)}
+                              disabled={isUpdating}
+                              className="flex-shrink-0 mt-0.5 rounded-md transition-all flex items-center justify-center"
+                              style={{ width: 16, height: 16, border: `2px solid ${isDone ? gColor : T.cardBorder}`, background: isDone ? gColor : "transparent", opacity: isUpdating ? 0.5 : 1 }}
+                            >
+                              {isDone && (
+                                <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                                  <path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
+                            </button>
+                            <span className="text-[10px] leading-tight flex-1" style={{ color: isDone ? T.textMuted : T.textPrimary, textDecoration: isDone ? "line-through" : "none" }}>
+                              {task.title}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Admin note */}
+        {isAdmin && (
+          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg" style={{ background: "#ECFDF5", border: "1px solid #D1FAE5" }}>
+            <Info size={10} style={{ color: "#059669" }} />
+            <span className="text-[9px]" style={{ color: "#065F46" }}>Nhân viên thấy kế hoạch này trên dashboard của họ</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── 12-Week KPI Row ──────────────────────────────────────────────────────────
 function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalValue, wonValue, stats, theme, fmtVal, darkMode, dm, plan, loadingPlan }: {
   leads: Lead[]; activeLeads: Lead[]; overdueLeads: Lead[]; wonLeads: Lead[];
@@ -1231,6 +1395,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string; assignedDate?: string; dueDate?: string; priority?: string }>;
   } | null>(null);
   const [loadingTwelveWeek, setLoadingTwelveWeek] = useState(true);
+  // Kế hoạch 12 tuần chung của admin (shared) - tất cả nhân viên cùng xem
+  const [sharedPlan, setSharedPlan] = useState<typeof twelveWeekPlan>(null);
+  const [loadingSharedPlan, setLoadingSharedPlan] = useState(true);
+  const [sharedPlanTaskUpdating, setSharedPlanTaskUpdating] = useState<string | null>(null);
 
   // Fetch twelve-week plan once at top level (prevents flash in child components)
   useEffect(() => {
@@ -1247,6 +1415,41 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
       .finally(() => { if (mounted) setLoadingTwelveWeek(false); });
     return () => { mounted = false; };
   }, []);
+
+  // Fetch kế hoạch chung của admin cho tất cả nhân viên
+  useEffect(() => {
+    let mounted = true;
+    setLoadingSharedPlan(true);
+    fetch("/api/crm/twelve-week-plan?shared=1")
+      .then(r => r.ok ? r.json() : [])
+      .then(plans => {
+        if (!mounted) return;
+        setSharedPlan(plans[0] ?? null);
+      })
+      .catch(() => {})
+      .finally(() => { if (mounted) setLoadingSharedPlan(false); });
+    return () => { mounted = false; };
+  }, []);
+
+  // Cập nhật trạng thái task trong kế hoạch chung
+  const toggleSharedPlanTask = useCallback(async (taskId: string, currentStatus: string) => {
+    if (!sharedPlan) return;
+    const newStatus = currentStatus === "done" ? "pending" : "done";
+    setSharedPlanTaskUpdating(taskId);
+    try {
+      const res = await fetch("/api/crm/twelve-week-plan", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: sharedPlan.id, action: "update_task", taskId, status: newStatus }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setSharedPlan(updated);
+      }
+    } finally {
+      setSharedPlanTaskUpdating(null);
+    }
+  }, [sharedPlan]);
 
   // Fetch all extras
   useEffect(() => {
@@ -2213,8 +2416,17 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           {/* Right col (1/3) */}
           <div className="space-y-4 md:space-y-5">
 
-            {/* 12 Week Plan Widget */}
+            {/* 12 Week Plan Widget (của nhân viên) */}
             <TwelveWeekWidget plan={twelveWeekPlan} loadingPlan={loadingTwelveWeek} />
+
+            {/* Kế hoạch 12 tuần chung của team (admin tạo, nhân viên cùng thực hiện) */}
+            <SharedPlanWidget
+              plan={sharedPlan as Parameters<typeof SharedPlanWidget>[0]["plan"]}
+              loading={loadingSharedPlan}
+              taskUpdating={sharedPlanTaskUpdating}
+              onToggleTask={toggleSharedPlanTask}
+              isAdmin={currentUser?.isAdmin ?? false}
+            />
 
             {/* Team Online (admin only) */}
             {isVisible("teamOnline") && currentUser?.isAdmin && teamOnline.length > 0 && (

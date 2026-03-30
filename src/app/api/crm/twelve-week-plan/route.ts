@@ -42,6 +42,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(plan);
     }
 
+    // Lấy kế hoạch chung của admin (shared plan) - nhân viên có thể xem
+    const shared = searchParams.get("shared");
+    if (shared === "1") {
+      const adminPlans = await getAllPlans("admin");
+      const activePlan = adminPlans.find(p => p.isActive) ?? adminPlans[0] ?? null;
+      return NextResponse.json(activePlan ? [activePlan] : []);
+    }
     // Lấy theo staffId
     const staffId = session.isAdmin && all ? undefined : (session.staffId ?? "admin");
     const plans = await getAllPlans(staffId);
