@@ -1,19 +1,11 @@
-import { Suspense } from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { getCallLogs, initCallLogSchema } from "@/lib/crm-store";
+import { requireCrmAccess } from "@/lib/admin-auth";
 import CrmCallLogClient from "@/components/crm/CrmCallLogClient";
-import { Loader2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function CallLogsPage() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) redirect("/auth/signin");
-
-  const isAdmin = (session.user as { role?: string }).role === "admin";
-  const staffId = (session.user as { id?: string }).id;
+  const session = await requireCrmAccess();
 
   // Ensure table exists
   try { await initCallLogSchema(); } catch { /* ignore */ }
@@ -21,20 +13,14 @@ export default async function CallLogsPage() {
   // Fetch initial data — admin sees all, staff sees own
   const callLogs = await getCallLogs({
     limit: 100,
-    staffId: isAdmin ? undefined : staffId,
-  });
+    staffId: session.isAdmin ? undefined : session.staffId,
+  }).catch(() => []);
 
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="animate-spin text-blue-500" size={32} />
-      </div>
-    }>
-      <CrmCallLogClient
-        initialLogs={callLogs}
-        isAdmin={isAdmin}
-        staffId={isAdmin ? undefined : staffId}
-      />
-    </Suspense>
+    <CrmCallLogClient
+      initialLogs={callLogs}
+      isAdmin={session.isAdmin}
+      staffId={session.isAdmin ? undefined : session.staffId}
+    />
   );
 }

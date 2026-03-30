@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Mail, Click, Target, DollarSign, Download, RefreshCw } from 'lucide-react';
+import { TrendingUp, Mail, ExternalLink, Target, DollarSign, Download, RefreshCw } from 'lucide-react';
 
 interface PerformanceData {
   campaignName: string;
@@ -183,7 +183,7 @@ export default function EmailPerformanceDashboard() {
                   <p className="text-2xl font-bold text-[#3B82F6] mt-2">{data.totalClicked.toLocaleString('vi-VN')}</p>
                   <p className="text-xs text-[#9CA3AF] mt-1">{data.clickRate.toFixed(1)}%</p>
                 </div>
-                <Click className="w-8 h-8 text-[#3B82F6]" />
+                <ExternalLink className="w-8 h-8 text-[#3B82F6]" />
               </div>
             </div>
 
