@@ -15,11 +15,24 @@ import { query } from "./db";
 export type TaskStatus = "pending" | "done" | "skipped";
 export type GoalColor = "indigo" | "green" | "gold" | "red" | "purple" | "blue";
 
+export interface DailyAllocation {
+  date: string;       // ISO date "YYYY-MM-DD"
+  target: number;     // Chỉ tiêu ngày đó
+  note?: string;      // Ghi chú
+}
+
+export interface WeeklyAllocation {
+  weekNumber: number;           // 1-12
+  target: number;               // Chỉ tiêu tuần (override targetTotal/12)
+  dailyAllocations?: DailyAllocation[]; // Phân bổ từng ngày trong tuần
+}
+
 export interface GoalKpi {
   label: string;           // e.g. "Doanh thu"
   unit: string;            // e.g. "VNĐ" | "KH" | "đơn" | "%"
   targetTotal: number;     // Mục tiêu 12 tuần (e.g. 1200000000)
-  weeklyTarget: number;    // Mục tiêu mỗi tuần = targetTotal / 12
+  weeklyTarget: number;    // Mục tiêu mỗi tuần = targetTotal / 12 (default)
+  weeklyAllocations?: WeeklyAllocation[]; // Override phân bổ từng tuần
   currentValue?: number;   // Giá trị thực tế hiện tại (lấy từ CRM)
   format: "currency" | "number" | "percent"; // Cách hiển thị
 }
@@ -32,8 +45,12 @@ export interface WeeklyTask {
   title: string;
   description?: string;
   status: TaskStatus;
-  dueDate?: string; // ISO date string
+  priority?: "high" | "medium" | "low"; // Độ ưu tiên
+  assignedDate?: string;  // ISO date "YYYY-MM-DD" - ngày cụ thể được giao
+  dueDate?: string;       // ISO date string - hạn chót
   completedAt?: string;
+  estimatedHours?: number; // Số giờ ước tính
+  tags?: string[];         // Nhãn/tag
   createdAt: string;
   updatedAt: string;
 }
@@ -67,7 +84,6 @@ export interface TwelveWeekPlan {
 }
 
 // ── DB Init ──────────────────────────────────────────────────────────────────
-
 export async function ensureTwelveWeekPlanTables(): Promise<void> {
   await query(`
     CREATE TABLE IF NOT EXISTS twelve_week_plans (
@@ -82,9 +98,7 @@ export async function ensureTwelveWeekPlanTables(): Promise<void> {
     ON twelve_week_plans(staff_id)
   `);
 }
-
 // ── CRUD ─────────────────────────────────────────────────────────────────────
-
 export async function getAllPlans(staffId?: string): Promise<TwelveWeekPlan[]> {
   await ensureTwelveWeekPlanTables();
   let rows;
@@ -100,7 +114,6 @@ export async function getAllPlans(staffId?: string): Promise<TwelveWeekPlan[]> {
   }
   return rows.map((r) => r.data);
 }
-
 export async function getPlanById(id: string): Promise<TwelveWeekPlan | null> {
   await ensureTwelveWeekPlanTables();
   const rows = await query<{ data: TwelveWeekPlan }>(
@@ -109,7 +122,6 @@ export async function getPlanById(id: string): Promise<TwelveWeekPlan | null> {
   );
   return rows[0]?.data ?? null;
 }
-
 export async function savePlan(plan: TwelveWeekPlan): Promise<void> {
   await ensureTwelveWeekPlanTables();
   await query(
@@ -119,14 +131,11 @@ export async function savePlan(plan: TwelveWeekPlan): Promise<void> {
     [plan.id, plan.staffId, JSON.stringify(plan)]
   );
 }
-
 export async function deletePlan(id: string): Promise<void> {
   await ensureTwelveWeekPlanTables();
   await query(`DELETE FROM twelve_week_plans WHERE id = $1`, [id]);
 }
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
 export function calcPlanProgress(plan: TwelveWeekPlan): {
   totalTasks: number;
   doneTasks: number;
@@ -138,21 +147,17 @@ export function calcPlanProgress(plan: TwelveWeekPlan): {
   const start = new Date(plan.startDate);
   const diffDays = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   const currentWeek = Math.min(12, Math.max(1, Math.ceil((diffDays + 1) / 7)));
-
   const totalTasks = plan.tasks.filter((t) => t.status !== "skipped").length;
   const doneTasks = plan.tasks.filter((t) => t.status === "done").length;
   const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-
   const weeklyPcts = Array.from({ length: 12 }, (_, i) => {
     const weekNum = i + 1;
     const weekTasks = plan.tasks.filter((t) => t.weekNumber === weekNum && t.status !== "skipped");
     const weekDone = plan.tasks.filter((t) => t.weekNumber === weekNum && t.status === "done");
     return weekTasks.length > 0 ? Math.round((weekDone.length / weekTasks.length) * 100) : 0;
   });
-
   return { totalTasks, doneTasks, pct, weeklyPcts, currentWeek };
 }
-
 export function getWeekDateRange(startDate: string, weekNumber: number): { start: Date; end: Date } {
   const start = new Date(startDate);
   const weekStart = new Date(start);
@@ -163,10 +168,48 @@ export function getWeekDateRange(startDate: string, weekNumber: number): { start
 }
 
 /**
+ * Lấy chỉ tiêu KPI cho tuần cụ thể (dùng weeklyAllocations nếu có, fallback về targetTotal/12)
+ */
+export function getWeeklyKpiTarget(kpi: GoalKpi, weekNumber: number): number {
+  const alloc = kpi.weeklyAllocations?.find(a => a.weekNumber === weekNumber);
+  if (alloc) return alloc.target;
+  return Math.round(kpi.targetTotal / 12);
+}
+
+/**
+ * Lấy chỉ tiêu KPI cho ngày cụ thể
+ */
+export function getDailyKpiTarget(kpi: GoalKpi, weekNumber: number, date: string): number {
+  const weekAlloc = kpi.weeklyAllocations?.find(a => a.weekNumber === weekNumber);
+  if (weekAlloc?.dailyAllocations) {
+    const dayAlloc = weekAlloc.dailyAllocations.find(d => d.date === date);
+    if (dayAlloc) return dayAlloc.target;
+    // Chia đều cho các ngày trong tuần nếu không có phân bổ ngày
+    return Math.round(weekAlloc.target / 7);
+  }
+  return Math.round(getWeeklyKpiTarget(kpi, weekNumber) / 7);
+}
+
+/**
+ * Tính tổng chỉ tiêu đã phân bổ cho 12 tuần (để kiểm tra có khớp targetTotal không)
+ */
+export function calcAllocatedTotal(kpi: GoalKpi): number {
+  if (!kpi.weeklyAllocations || kpi.weeklyAllocations.length === 0) {
+    return kpi.targetTotal; // Mặc định chia đều
+  }
+  return kpi.weeklyAllocations.reduce((sum, a) => sum + a.target, 0);
+}
+
+/**
  * Tính mục tiêu lũy kế đến tuần N (ideal pace)
- * Ví dụ: mục tiêu 1.2 tỷ / 12 tuần → tuần 3 cần đạt 300 triệu
  */
 export function calcCumulativeTarget(kpi: GoalKpi, weekNumber: number): number {
+  if (kpi.weeklyAllocations && kpi.weeklyAllocations.length > 0) {
+    // Dùng phân bổ thực tế
+    return kpi.weeklyAllocations
+      .filter(a => a.weekNumber <= weekNumber)
+      .reduce((sum, a) => sum + a.target, 0);
+  }
   return Math.round((kpi.targetTotal / 12) * weekNumber);
 }
 
@@ -181,17 +224,18 @@ export function calcKpiProgress(kpi: GoalKpi, currentWeek: number): {
   gap: number;
   isOnTrack: boolean;
 } {
+  const weeklyTarget = getWeeklyKpiTarget(kpi, currentWeek);
   const cumulativeTarget = calcCumulativeTarget(kpi, currentWeek);
   const currentValue = kpi.currentValue ?? 0;
   const pct = cumulativeTarget > 0 ? Math.round((currentValue / cumulativeTarget) * 100) : 0;
   const gap = currentValue - cumulativeTarget;
   return {
-    weeklyTarget: kpi.weeklyTarget,
+    weeklyTarget,
     cumulativeTarget,
     currentValue,
     pct,
     gap,
-    isOnTrack: currentValue >= cumulativeTarget * 0.9, // 90% là "đúng hướng"
+    isOnTrack: currentValue >= cumulativeTarget * 0.9,
   };
 }
 

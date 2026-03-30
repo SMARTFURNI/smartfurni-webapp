@@ -9,6 +9,7 @@ import {
   ChevronDown, AlertCircle, Tag, DollarSign, Home, X,
   ShoppingCart, ExternalLink, Star, TrendingUp, Hash,
   PhoneCall, PhoneMissed, PhoneIncoming, Mic, Play, Pause, Volume2, Save,
+  MessageCircle,
 } from "lucide-react";
 import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog } from "@/lib/crm-types";
 import { formatDuration } from "@/lib/crm-types";
@@ -70,6 +71,41 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
   const [playingCallId, setPlayingCallId] = useState<string | null>(null);
   const [callNotes, setCallNotes] = useState<Record<string, string>>({});
   const [savingNote, setSavingNote] = useState<string | null>(null);
+  // Zalo call state
+  const [zaloCallLoading, setZaloCallLoading] = useState(false);
+  const [zaloCallResult, setZaloCallResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const handleZaloCall = async () => {
+    setZaloCallLoading(true);
+    setZaloCallResult(null);
+    try {
+      const res = await fetch("/api/crm/zalo/call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: lead.phone,
+          leadId: lead.id,
+          leadName: lead.name,
+          callType: "audio",
+          reasonCode: "product_service_consulting",
+        }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string; message?: string };
+      if (data.ok) {
+        setZaloCallResult({ ok: true, message: data.message ?? "Đã gửi yêu cầu gọi Zalo" });
+        // Reload call logs sau 2s
+        setTimeout(() => { setCallLogsLoaded(false); loadCallLogs(); }, 2000);
+      } else {
+        setZaloCallResult({ ok: false, message: data.error ?? "Gọi thất bại" });
+      }
+    } catch {
+      setZaloCallResult({ ok: false, message: "Lỗi kết nối" });
+    } finally {
+      setZaloCallLoading(false);
+      // Tự xóa thông báo sau 5s
+      setTimeout(() => setZaloCallResult(null), 5000);
+    }
+  };
 
   const loadCallLogs = async () => {
     if (callLogsLoaded) return;
@@ -572,8 +608,19 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                   </div>
                 </div>
               </div>
+              {/* Zalo call result toast */}
+              {zaloCallResult && (
+                <div className={`mb-2 p-2.5 rounded-xl text-xs font-medium flex items-start gap-2 ${
+                  zaloCallResult.ok
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-red-50 text-red-700 border border-red-200"
+                }`}>
+                  <span className="flex-shrink-0 mt-0.5">{zaloCallResult.ok ? "✅" : "❌"}</span>
+                  <span>{zaloCallResult.message}</span>
+                </div>
+              )}
               {/* Quick actions */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <a href={`tel:${lead.phone}`}
                   className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-green-50 transition-colors group" style={{ border: "1px solid #dcfce7" }}>
                   <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center">
@@ -581,6 +628,19 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                   </div>
                   <span className="text-[10px] font-semibold text-gray-600">Gọi</span>
                 </a>
+                <button
+                  onClick={handleZaloCall}
+                  disabled={zaloCallLoading}
+                  className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-50"
+                  style={{ border: "1px solid #93c5fd" }}
+                  title="Gọi qua Zalo Cloud Connect">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "#dbeafe" }}>
+                    {zaloCallLoading
+                      ? <Loader2 size={13} className="text-blue-600 animate-spin" />
+                      : <MessageCircle size={13} className="text-blue-600" />}
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">Zalo</span>
+                </button>
                 {lead.email ? (
                   <a href={`mailto:${lead.email}`}
                     className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-blue-50 transition-colors" style={{ border: "1px solid #dbeafe" }}>

@@ -8,6 +8,8 @@ import {
   type TwelveWeekPlan,
   type Goal,
   type WeeklyTask,
+  type WeeklyAllocation,
+  type DailyAllocation,
 } from "@/lib/twelve-week-plan-store";
 
 export const dynamic = "force-dynamic";
@@ -139,7 +141,47 @@ export async function PATCH(req: NextRequest) {
         if (body.color !== undefined) g.color = body.color;
         if (body.targetMetric !== undefined) g.targetMetric = body.targetMetric;
         if (body.currentMetric !== undefined) g.currentMetric = body.currentMetric;
+        if (body.kpis !== undefined) g.kpis = body.kpis;
         g.updatedAt = now;
+        plan.updatedAt = now;
+        break;
+      }
+      // ── KPI Allocation ─────────────────────────────────────────────────
+      case "update_kpi_allocation": {
+        // body: { goalId, kpiIndex, weeklyAllocations: WeeklyAllocation[] }
+        const gIdx = plan.goals.findIndex((g) => g.id === body.goalId);
+        if (gIdx === -1) return NextResponse.json({ error: "Goal not found" }, { status: 404 });
+        const goal = plan.goals[gIdx];
+        if (!goal.kpis || body.kpiIndex === undefined) {
+          return NextResponse.json({ error: "KPI not found" }, { status: 404 });
+        }
+        goal.kpis[body.kpiIndex].weeklyAllocations = body.weeklyAllocations as WeeklyAllocation[];
+        // Cập nhật weeklyTarget = tổng / 12 nếu không có override
+        goal.updatedAt = now;
+        plan.updatedAt = now;
+        break;
+      }
+      case "update_daily_allocation": {
+        // body: { goalId, kpiIndex, weekNumber, dailyAllocations: DailyAllocation[] }
+        const gIdx = plan.goals.findIndex((g) => g.id === body.goalId);
+        if (gIdx === -1) return NextResponse.json({ error: "Goal not found" }, { status: 404 });
+        const goal = plan.goals[gIdx];
+        if (!goal.kpis || body.kpiIndex === undefined) {
+          return NextResponse.json({ error: "KPI not found" }, { status: 404 });
+        }
+        const kpi = goal.kpis[body.kpiIndex];
+        if (!kpi.weeklyAllocations) kpi.weeklyAllocations = [];
+        const wIdx = kpi.weeklyAllocations.findIndex(a => a.weekNumber === body.weekNumber);
+        if (wIdx >= 0) {
+          kpi.weeklyAllocations[wIdx].dailyAllocations = body.dailyAllocations as DailyAllocation[];
+        } else {
+          kpi.weeklyAllocations.push({
+            weekNumber: body.weekNumber,
+            target: Math.round(kpi.targetTotal / 12),
+            dailyAllocations: body.dailyAllocations as DailyAllocation[],
+          });
+        }
+        goal.updatedAt = now;
         plan.updatedAt = now;
         break;
       }
@@ -160,7 +202,11 @@ export async function PATCH(req: NextRequest) {
           title: body.title || "Công việc mới",
           description: body.description,
           status: "pending",
+          priority: body.priority || "medium",
+          assignedDate: body.assignedDate,
           dueDate: body.dueDate,
+          estimatedHours: body.estimatedHours,
+          tags: body.tags,
           createdAt: now,
           updatedAt: now,
         };
@@ -181,6 +227,11 @@ export async function PATCH(req: NextRequest) {
         }
         if (body.weekNumber !== undefined) t.weekNumber = body.weekNumber;
         if (body.dueDate !== undefined) t.dueDate = body.dueDate;
+        if (body.assignedDate !== undefined) t.assignedDate = body.assignedDate;
+        if (body.priority !== undefined) t.priority = body.priority;
+        if (body.estimatedHours !== undefined) t.estimatedHours = body.estimatedHours;
+        if (body.tags !== undefined) t.tags = body.tags;
+        if (body.goalId !== undefined) t.goalId = body.goalId;
         t.updatedAt = now;
         plan.updatedAt = now;
         break;
