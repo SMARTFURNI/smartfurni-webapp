@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 import { SESSION_COOKIE } from "@/lib/admin-auth";
 
 /**
@@ -7,7 +7,15 @@ import { SESSION_COOKIE } from "@/lib/admin-auth";
  * Được gọi khi admin nhấn "Đăng xuất" từ CRM sidebar.
  */
 export default async function AdminLogoutPage() {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE);
-  redirect("/admin/login");
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete(SESSION_COOKIE);
+  } catch (error) {
+    console.error("Error deleting session cookie:", error);
+  }
+  
+  // Return a redirect response instead of using redirect()
+  return NextResponse.redirect(new URL("/admin/login", process.env.NEXTAUTH_URL || "http://localhost:3000"), {
+    status: 302,
+  });
 }
