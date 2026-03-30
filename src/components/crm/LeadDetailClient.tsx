@@ -8,8 +8,10 @@ import {
   Clock, MessageSquare, Users, Send, FileCheck, Loader2,
   ChevronDown, AlertCircle, Tag, DollarSign, Home, X,
   ShoppingCart, ExternalLink, Star, TrendingUp, Hash,
+  PhoneCall, PhoneMissed, PhoneIncoming, Mic, Play, Pause, Volume2, Save,
 } from "lucide-react";
-import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType } from "@/lib/crm-types";
+import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog } from "@/lib/crm-types";
+import { formatDuration } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
   ACTIVITY_LABELS, DISTRICTS, SOURCES, formatVND, isOverdue,
@@ -25,11 +27,12 @@ interface Props {
   staffList?: { id: string; fullName: string }[];
 }
 
-const TABS = ["timeline", "quotes", "tasks", "info"] as const;
+const TABS = ["timeline", "calls", "quotes", "tasks", "info"] as const;
 type Tab = typeof TABS[number];
 
 const TAB_LABELS: Record<Tab, string> = {
   timeline: "Lịch sử",
+  calls: "Cuộc gọi",
   quotes: "Báo giá",
   tasks: "Việc cần làm",
   info: "Thông tin",
@@ -60,6 +63,38 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
   const [tasks, setTasks] = useState(initialTasks);
   const [activeTab, setActiveTab] = useState<Tab>("timeline");
   const [showAddActivity, setShowAddActivity] = useState(false);
+  // Call logs state
+  const [callLogs, setCallLogs] = useState<CallLog[]>([]);
+  const [callLogsLoaded, setCallLogsLoaded] = useState(false);
+  const [callLogsLoading, setCallLogsLoading] = useState(false);
+  const [playingCallId, setPlayingCallId] = useState<string | null>(null);
+  const [callNotes, setCallNotes] = useState<Record<string, string>>({});
+  const [savingNote, setSavingNote] = useState<string | null>(null);
+
+  const loadCallLogs = async () => {
+    if (callLogsLoaded) return;
+    setCallLogsLoading(true);
+    try {
+      const res = await fetch(`/api/crm/call-logs?leadId=${initialLead.id}&limit=50`);
+      if (res.ok) { const data = await res.json(); setCallLogs(data); }
+    } finally { setCallLogsLoading(false); setCallLogsLoaded(true); }
+  };
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    if (tab === "calls") loadCallLogs();
+  };
+
+  const saveCallNote = async (callId: string) => {
+    setSavingNote(callId);
+    try {
+      await fetch("/api/crm/call-logs", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: callId, note: callNotes[callId] ?? "" }),
+      });
+      setCallLogs(prev => prev.map(l => l.id === callId ? { ...l, note: callNotes[callId] ?? l.note } : l));
+    } finally { setSavingNote(null); }
+  };
   const [showAddTask, setShowAddTask] = useState(false);
   const [showEditLead, setShowEditLead] = useState(false);
   const [showStageMenu, setShowStageMenu] = useState(false);
@@ -188,7 +223,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
             style={{ border: "1px solid #e5e7eb" }}>
             <div className="flex border-b border-gray-100">
               {TABS.map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)}
+                <button key={tab} onClick={() => handleTabChange(tab)}
                   className="flex-1 py-3 text-sm font-medium transition-colors"
                   style={{
                     color: activeTab === tab ? "#C9A84C" : "#6b7280",
@@ -196,6 +231,11 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                     background: activeTab === tab ? "#fffbf0" : "transparent",
                   }}>
                   {TAB_LABELS[tab]}
+                  {tab === "calls" && callLogs.length > 0 && (
+                    <span className="ml-1.5 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                      {callLogs.length}
+                    </span>
+                  )}
                   {tab === "timeline" && activities.length > 0 && (
                     <span className="ml-1.5 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
                       {activities.length}
@@ -280,6 +320,123 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                                   ))}
                                 </div>
                               )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Call Logs */}
+              {activeTab === "calls" && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900">Lịch sử cuộc gọi</h3>
+                    <span className="text-xs text-gray-500">{callLogs.length} cuộc gọi</span>
+                  </div>
+                  {callLogsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 size={24} className="animate-spin text-blue-500" />
+                    </div>
+                  ) : callLogs.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <PhoneCall size={32} className="mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">Chưa có cuộc gọi nào được ghi nhận</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {callLogs.map(call => {
+                        const isSuccess = call.status === "answered";
+                        const isMissed = call.status === "missed";
+                        const StatusIcon = isMissed ? PhoneMissed : isSuccess ? PhoneCall : PhoneIncoming;
+                        const statusColor = isMissed ? "#ef4444" : isSuccess ? "#22c55e" : "#f59e0b";
+                        const statusBg = isMissed ? "#fef2f2" : isSuccess ? "#f0fdf4" : "#fffbeb";
+                        const statusLabel = isMissed ? "Nhỡ" : isSuccess ? "Thành công" : "Không trả lời";
+                        const noteKey = call.id;
+                        const currentNote = callNotes[noteKey] !== undefined ? callNotes[noteKey] : (call.note ?? "");
+                        return (
+                          <div key={call.id} className="border border-gray-100 rounded-xl p-4 hover:border-blue-200 transition-colors">
+                            <div className="flex items-start gap-3">
+                              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                                style={{ background: statusBg, border: `1.5px solid ${statusColor}30` }}>
+                                <StatusIcon size={15} style={{ color: statusColor }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                                    style={{ background: statusBg, color: statusColor }}>
+                                    {statusLabel}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(call.callTime).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                  {call.duration > 0 && (
+                                    <span className="text-xs text-gray-500">· {formatDuration(call.duration)}</span>
+                                  )}
+                                  {call.staffName && (
+                                    <span className="text-xs text-gray-500">· {call.staffName}</span>
+                                  )}
+                                </div>
+                                {call.recordingUrl && (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <audio
+                                      id={`audio-${call.id}`}
+                                      src={call.recordingUrl}
+                                      className="hidden"
+                                      onEnded={() => setPlayingCallId(null)}
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        const audio = document.getElementById(`audio-${call.id}`) as HTMLAudioElement;
+                                        if (playingCallId === call.id) {
+                                          audio?.pause();
+                                          setPlayingCallId(null);
+                                        } else {
+                                          if (playingCallId) {
+                                            const prev = document.getElementById(`audio-${playingCallId}`) as HTMLAudioElement;
+                                            prev?.pause();
+                                          }
+                                          audio?.play();
+                                          setPlayingCallId(call.id);
+                                        }
+                                      }}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                                      style={{
+                                        background: playingCallId === call.id ? "#dbeafe" : "#eff6ff",
+                                        color: "#2563eb",
+                                        border: "1px solid #bfdbfe",
+                                      }}>
+                                      {playingCallId === call.id ? <Pause size={12} /> : <Play size={12} />}
+                                      {playingCallId === call.id ? "Dừng" : "Nghe lại"}
+                                    </button>
+                                    <Mic size={13} className="text-blue-400" />
+                                    <span className="text-xs text-gray-400">Ghi âm</span>
+                                  </div>
+                                )}
+                                {/* Quick note */}
+                                <div className="mt-2">
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      placeholder="Ghi chú nhanh sau cuộc gọi..."
+                                      value={currentNote}
+                                      onChange={e => setCallNotes(prev => ({ ...prev, [noteKey]: e.target.value }))}
+                                      className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50"
+                                    />
+                                    {callNotes[noteKey] !== undefined && callNotes[noteKey] !== (call.note ?? "") && (
+                                      <button
+                                        onClick={() => saveCallNote(call.id)}
+                                        disabled={savingNote === call.id}
+                                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50">
+                                        {savingNote === call.id ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
+                                        Lưu
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         );

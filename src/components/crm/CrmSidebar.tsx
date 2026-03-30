@@ -31,6 +31,7 @@ import {
   Zap,
   Lock,
   ChevronDown,
+  PhoneCall,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -70,6 +71,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Danh sách KH", href: "/crm/leads", icon: Users },
       { label: "Phân loại Lead", href: "/crm/lead-segmentation", icon: TrendingUp, adminOnly: true },
       { label: "Báo giá", href: "/crm/quotes", icon: FileText },
+      { label: "Cuộc gọi", href: "/crm/call-logs", icon: PhoneCall },
       { label: "Việc cần làm", href: "/crm/tasks", icon: CheckSquare },
       { label: "Lịch hẹn", href: "/crm/calendar", icon: CalendarDays },
     ],

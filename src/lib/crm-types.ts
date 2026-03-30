@@ -225,7 +225,77 @@ export const SOURCES = [
   "Zalo", "Website", "Triển lãm", "Telesale", "Khác",
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+/// ─── Call Log ────────────────────────────────────────────────────────────────
+
+export type CallStatus = "answered" | "missed" | "busy" | "failed";
+export type CallDirection = "outbound" | "inbound";
+
+export interface CallLog {
+  id: string;
+  callId: string;           // ID từ tổng đài (Stringee, Zalo Cloud...)
+  callerNumber: string;     // Số gọi đi
+  receiverNumber: string;   // Số nhận
+  direction: CallDirection;
+  status: CallStatus;
+  duration: number;         // giây
+  recordingUrl?: string;    // URL file ghi âm
+  staffId?: string;         // ID nhân viên thực hiện
+  staffName?: string;
+  leadId?: string;          // ID khách hàng liên kết
+  leadName?: string;
+  note?: string;            // Ghi chú sau cuộc gọi
+  aiSummary?: string;       // Tóm tắt AI
+  provider?: string;        // Tên tổng đài (stringee, zalo, manual...)
+  startedAt: string;        // ISO datetime
+  endedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CallAnalytics {
+  totalCalls: number;
+  answeredCalls: number;
+  missedCalls: number;
+  totalDuration: number;
+  avgDuration: number;
+  answerRate: number;
+  callsByDay: { date: string; total: number; answered: number }[];
+  callsByStaff: { staffId: string; staffName: string; total: number; answered: number; totalDuration: number }[];
+  callsByHour: { hour: number; total: number }[];
+}
+
+export const CALL_STATUS_LABELS: Record<CallStatus, string> = {
+  answered: "Thành công",
+  missed: "Nhỡ",
+  busy: "Bận",
+  failed: "Thất bại",
+};
+
+export const CALL_STATUS_COLORS: Record<CallStatus, string> = {
+  answered: "#059669",
+  missed: "#DC2626",
+  busy: "#D97706",
+  failed: "#6B7280",
+};
+
+export const CALL_STATUS_BG: Record<CallStatus, string> = {
+  answered: "#ECFDF5",
+  missed: "#FEF2F2",
+  busy: "#FFFBEB",
+  failed: "#F9FAFB",
+};
+
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m < 60) return s > 0 ? `${m}p ${s}s` : `${m}p`;
+  const h = Math.floor(m / 60);
+  const rm = m % 60;
+  return `${h}h ${rm}p`;
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);

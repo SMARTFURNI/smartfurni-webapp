@@ -502,3 +502,190 @@ export async function getCrmStats(staffFilter?: { assignedTo?: string }): Promis
     wonValueThisMonth: wonThisMonth.reduce((s, l) => s + (l.expectedValue || 0), 0),
   };
 }
+
+// ─── Call Log CRUD ────────────────────────────────────────────────────────────
+import type { CallLog, CallAnalytics } from "@/lib/crm-types";
+
+let callSchemaInitialized = false;
+
+export async function initCallLogSchema(): Promise<void> {
+  if (callSchemaInitialized) return;
+  await query(`
+    CREATE TABLE IF NOT EXISTS crm_call_logs (
+      id TEXT PRIMARY KEY,
+      call_id TEXT UNIQUE,
+      staff_id TEXT,
+      lead_id TEXT,
+      caller_number TEXT NOT NULL,
+      receiver_number TEXT NOT NULL,
+      direction TEXT NOT NULL DEFAULT 'outbound',
+      status TEXT NOT NULL DEFAULT 'answered',
+      duration INTEGER DEFAULT 0,
+      recording_url TEXT,
+      provider TEXT DEFAULT 'manual',
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      ended_at TIMESTAMPTZ,
+      data JSONB NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_call_logs_staff ON crm_call_logs(staff_id)`); } catch { /* ok */ }
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_call_logs_lead ON crm_call_logs(lead_id)`); } catch { /* ok */ }
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_call_logs_started ON crm_call_logs(started_at DESC)`); } catch { /* ok */ }
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_call_logs_caller ON crm_call_logs(caller_number)`); } catch { /* ok */ }
+  try { await query(`CREATE INDEX IF NOT EXISTS idx_call_logs_receiver ON crm_call_logs(receiver_number)`); } catch { /* ok */ }
+  callSchemaInitialized = true;
+}
+
+export async function getCallLogs(filters?: {
+  staffId?: string;
+  leadId?: string;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<CallLog[]> {
+  await initCallLogSchema();
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  let idx = 1;
+
+  if (filters?.staffId) { conditions.push(`staff_id = $${idx++}`); params.push(filters.staffId); }
+  if (filters?.leadId) { conditions.push(`lead_id = $${idx++}`); params.push(filters.leadId); }
+  if (filters?.status) { conditions.push(`status = $${idx++}`); params.push(filters.status); }
+  if (filters?.dateFrom) { conditions.push(`started_at >= $${idx++}`); params.push(filters.dateFrom); }
+  if (filters?.dateTo) { conditions.push(`started_at <= $${idx++}`); params.push(filters.dateTo + "T23:59:59Z"); }
+  if (filters?.search) {
+    conditions.push(`(caller_number ILIKE $${idx} OR receiver_number ILIKE $${idx} OR data->>'staffName' ILIKE $${idx} OR data->>'leadName' ILIKE $${idx})`);
+    params.push(`%${filters.search}%`); idx++;
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const limit = filters?.limit ?? 100;
+  const offset = filters?.offset ?? 0;
+  const rows = await query<{ data: CallLog | string }>(
+    `SELECT data FROM crm_call_logs ${where} ORDER BY started_at DESC LIMIT ${limit} OFFSET ${offset}`,
+    params
+  );
+  return rows.map(r => typeof r.data === "string" ? JSON.parse(r.data) : r.data);
+}
+
+export async function getCallLog(id: string): Promise<CallLog | null> {
+  await initCallLogSchema();
+  const rows = await query<{ data: CallLog | string }>(
+    `SELECT data FROM crm_call_logs WHERE id = $1`, [id]
+  );
+  if (!rows[0]) return null;
+  return typeof rows[0].data === "string" ? JSON.parse(rows[0].data) : rows[0].data;
+}
+
+export async function createCallLog(input: Omit<CallLog, "id" | "createdAt" | "updatedAt">): Promise<CallLog> {
+  await initCallLogSchema();
+  const now = new Date().toISOString();
+  const id = `call_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const log: CallLog = { ...input, id, createdAt: now, updatedAt: now };
+
+  // Auto-link lead by phone number if not provided
+  if (!log.leadId) {
+    const phone = log.direction === "outbound" ? log.receiverNumber : log.callerNumber;
+    const matchRows = await query<{ id: string; data: { name: string } | string }>(
+      `SELECT id, data->>'name' as name FROM crm_leads WHERE data->>'phone' = $1 OR data->>'zaloPhone' = $1 LIMIT 1`,
+      [phone]
+    );
+    if (matchRows[0]) {
+      log.leadId = matchRows[0].id;
+      const d = matchRows[0].data;
+      log.leadName = typeof d === "string" ? JSON.parse(d).name : (d as { name: string }).name;
+    }
+  }
+
+  await query(
+    `INSERT INTO crm_call_logs (id, call_id, staff_id, lead_id, caller_number, receiver_number, direction, status, duration, recording_url, provider, started_at, ended_at, data, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW(),NOW())
+     ON CONFLICT (call_id) DO UPDATE SET data = $14, updated_at = NOW()`,
+    [log.id, log.callId, log.staffId ?? null, log.leadId ?? null,
+     log.callerNumber, log.receiverNumber, log.direction, log.status,
+     log.duration, log.recordingUrl ?? null, log.provider ?? "manual",
+     log.startedAt, log.endedAt ?? null, JSON.stringify(log)]
+  );
+  return log;
+}
+
+export async function updateCallLog(id: string, updates: Partial<CallLog>): Promise<CallLog | null> {
+  await initCallLogSchema();
+  const existing = await getCallLog(id);
+  if (!existing) return null;
+  const updated: CallLog = { ...existing, ...updates, id, updatedAt: new Date().toISOString() };
+  await query(
+    `UPDATE crm_call_logs SET data = $1, updated_at = NOW(), note = $2 WHERE id = $3`,
+    [JSON.stringify(updated), updated.note ?? null, id]
+  );
+  return updated;
+}
+
+export async function deleteCallLog(id: string): Promise<void> {
+  await initCallLogSchema();
+  await query(`DELETE FROM crm_call_logs WHERE id = $1`, [id]);
+}
+
+export async function getCallAnalytics(filters?: {
+  staffId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<CallAnalytics> {
+  await initCallLogSchema();
+  const logs = await getCallLogs({ ...filters, limit: 10000 });
+
+  const answered = logs.filter(l => l.status === "answered");
+  const missed   = logs.filter(l => l.status === "missed");
+  const totalDuration = answered.reduce((s, l) => s + l.duration, 0);
+
+  // By day (last 30 days)
+  const dayMap = new Map<string, { total: number; answered: number }>();
+  logs.forEach(l => {
+    const d = l.startedAt.slice(0, 10);
+    const cur = dayMap.get(d) ?? { total: 0, answered: 0 };
+    cur.total++;
+    if (l.status === "answered") cur.answered++;
+    dayMap.set(d, cur);
+  });
+  const callsByDay = Array.from(dayMap.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, v]) => ({ date, ...v }));
+
+  // By staff
+  const staffMap = new Map<string, { staffName: string; total: number; answered: number; totalDuration: number }>();
+  logs.forEach(l => {
+    const key = l.staffId ?? "unknown";
+    const cur = staffMap.get(key) ?? { staffName: l.staffName ?? "Không rõ", total: 0, answered: 0, totalDuration: 0 };
+    cur.total++;
+    if (l.status === "answered") { cur.answered++; cur.totalDuration += l.duration; }
+    staffMap.set(key, cur);
+  });
+  const callsByStaff = Array.from(staffMap.entries())
+    .map(([staffId, v]) => ({ staffId, ...v }))
+    .sort((a, b) => b.total - a.total);
+
+  // By hour
+  const hourMap = new Map<number, number>();
+  logs.forEach(l => {
+    const h = new Date(l.startedAt).getHours();
+    hourMap.set(h, (hourMap.get(h) ?? 0) + 1);
+  });
+  const callsByHour = Array.from({ length: 24 }, (_, h) => ({ hour: h, total: hourMap.get(h) ?? 0 }));
+
+  return {
+    totalCalls: logs.length,
+    answeredCalls: answered.length,
+    missedCalls: missed.length,
+    totalDuration,
+    avgDuration: answered.length > 0 ? Math.round(totalDuration / answered.length) : 0,
+    answerRate: logs.length > 0 ? Math.round((answered.length / logs.length) * 100) : 0,
+    callsByDay,
+    callsByStaff,
+    callsByHour,
+  };
+}
