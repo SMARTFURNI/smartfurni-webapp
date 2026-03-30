@@ -81,7 +81,8 @@ export default function PlansManagementPage() {
       console.error('Failed to save staff assignment:', err);
     } finally {
       setSaving(false);
-  }, []);
+    }
+  };
 
   // Update plan title
   const handleUpdateTitle = async (planId: string, newTitle: string) => {
