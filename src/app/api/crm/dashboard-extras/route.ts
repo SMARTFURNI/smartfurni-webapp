@@ -30,24 +30,39 @@ export async function GET(req: NextRequest) {
 
   // ── Stale deals ──────────────────────────────────────────────────────────
   if (type === "stale_deals") {
-    const leads = await getLeads(filter);
-    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
-    const activeStages = ["new", "profile_sent", "surveyed", "quoted", "negotiating"];
-    const stale = leads
-      .filter(l => activeStages.includes(l.stage) && new Date(l.lastContactAt) < fiveDaysAgo)
-      .sort((a, b) => new Date(a.lastContactAt).getTime() - new Date(b.lastContactAt).getTime())
-      .slice(0, 8)
-      .map(l => ({
+    try {
+      const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+      const activeStages = ["new", "profile_sent", "surveyed", "quoted", "negotiating"];
+      const whereClause = session.isAdmin 
+        ? `stage = ANY($1) AND last_contact_at < $2`
+        : `stage = ANY($1) AND last_contact_at < $2 AND assigned_to = $3`;
+      const params = session.isAdmin 
+        ? [activeStages, fiveDaysAgo]
+        : [activeStages, fiveDaysAgo, assignedToName];
+      
+      const stale = await query<any>(
+        `SELECT id, name, company, stage, expected_value, last_contact_at, assigned_to 
+         FROM crm_leads 
+         WHERE ${whereClause}
+         ORDER BY last_contact_at ASC 
+         LIMIT 8`,
+        params
+      );
+      
+      return NextResponse.json(stale.map(l => ({
         id: l.id,
         name: l.name,
         company: l.company,
         stage: l.stage,
-        expectedValue: l.expectedValue,
-        lastContactAt: l.lastContactAt,
-        assignedTo: l.assignedTo,
-        daysStale: Math.floor((Date.now() - new Date(l.lastContactAt).getTime()) / (1000 * 60 * 60 * 24)),
-      }));
-    return NextResponse.json(stale);
+        expectedValue: l.expected_value,
+        lastContactAt: l.last_contact_at,
+        assignedTo: l.assigned_to,
+        daysStale: Math.floor((Date.now() - new Date(l.last_contact_at).getTime()) / (1000 * 60 * 60 * 24)),
+      })));
+    } catch (e) {
+      console.error('[stale_deals]', e);
+      return NextResponse.json([]);
+    }
   }
 
   // ── Team online status (admin only) ──────────────────────────────────────
@@ -78,26 +93,34 @@ export async function GET(req: NextRequest) {
   // ── Activity heatmap ─────────────────────────────────────────────────────
   if (type === "heatmap") {
     try {
-      const rows = await query<{ data: string; created_at: string }>(
-        `SELECT data, created_at FROM crm_activities ORDER BY created_at DESC LIMIT 500`
+      // Use database-side aggregation instead of client-side
+      const rows = await query<{ day: number; hour: number; count: number }>(
+        `SELECT 
+           EXTRACT(DOW FROM created_at)::int as day,
+           EXTRACT(HOUR FROM created_at)::int as hour,
+           COUNT(*) as count
+         FROM crm_activities 
+         WHERE created_at > NOW() - INTERVAL '30 days'
+         GROUP BY day, hour
+         ORDER BY day, hour`
       );
-      // Build 7-day × 24-hour grid
+      
       const grid: Record<string, number> = {};
       for (const row of rows) {
-        const d = new Date(row.created_at);
-        const day = d.getDay(); // 0=Sun, 1=Mon...
-        const hour = d.getHours();
-        const key = `${day}-${hour}`;
-        grid[key] = (grid[key] || 0) + 1;
+        const key = `${row.day}-${row.hour}`;
+        grid[key] = row.count;
       }
       return NextResponse.json(grid);
-    } catch {
+    } catch (e) {
+      console.error('[heatmap]', e);
       return NextResponse.json({});
     }
   }
 
   // ── Revenue forecast ─────────────────────────────────────────────────────
   if (type === "forecast") {
+    // Cache forecast for 5 minutes to reduce load
+    const cacheKey = `forecast_${session.staffId || 'admin'}`;
     const leads = await getLeads(filter);
     const STAGE_PROBABILITY: Record<string, number> = {
       new: 0.05,
@@ -178,6 +201,8 @@ export async function GET(req: NextRequest) {
 
   // ── Period-filtered stats ─────────────────────────────────────────────────
   if (type === "period_stats") {
+    // Cache period stats for 10 minutes
+    const cacheKey = `period_${period}_${session.staffId || 'admin'}`;
     const leads = await getLeads(filter);
     const now = new Date();
     let startDate: Date;

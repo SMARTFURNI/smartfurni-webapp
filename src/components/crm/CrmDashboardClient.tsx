@@ -1454,33 +1454,69 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   // Fetch all extras
   useEffect(() => {
     let mounted = true;
+    const controller = new AbortController();
+    
     async function fetchAll() {
       setLoadingExtras(true);
       try {
-        const [pool, period_, stale, forecast_, heatmap_] = await Promise.all([
-          fetch("/api/crm/raw-leads/stats").then(r => r.ok ? r.json() : null),
-          fetch(`/api/crm/dashboard-extras?type=period_stats&period=${period}`).then(r => r.ok ? r.json() : null),
-          fetch("/api/crm/dashboard-extras?type=stale_deals").then(r => r.ok ? r.json() : []),
-          fetch("/api/crm/dashboard-extras?type=forecast").then(r => r.ok ? r.json() : null),
-          fetch("/api/crm/dashboard-extras?type=heatmap").then(r => r.ok ? r.json() : {}),
+        // Fetch critical data first (period stats + pool)
+        const [period_, pool] = await Promise.all([
+          fetch(`/api/crm/dashboard-extras?type=period_stats&period=${period}`, { 
+            credentials: 'include',
+            signal: AbortSignal.timeout(8000)
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch("/api/crm/raw-leads/stats", { 
+            credentials: 'include',
+            signal: AbortSignal.timeout(8000)
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
         ]);
+        
         if (!mounted) return;
-        if (pool) setPoolStats(pool);
         if (period_) setPeriodStats(period_);
-        if (stale) setStaleDeals(stale);
-        if (forecast_) setForecast(forecast_);
-        if (heatmap_) setHeatmap(heatmap_);
+        if (pool) setPoolStats(pool);
+        
+        // Fetch non-critical data in background (stale deals, forecast, heatmap)
+        Promise.all([
+          fetch("/api/crm/dashboard-extras?type=stale_deals", { 
+            credentials: 'include',
+            signal: AbortSignal.timeout(8000)
+          }).then(r => r.ok ? r.json() : []).catch(() => []),
+          fetch("/api/crm/dashboard-extras?type=forecast", { 
+            credentials: 'include',
+            signal: AbortSignal.timeout(8000)
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch("/api/crm/dashboard-extras?type=heatmap", { 
+            credentials: 'include',
+            signal: AbortSignal.timeout(8000)
+          }).then(r => r.ok ? r.json() : {}).catch(() => {}),
+        ]).then(([stale, forecast_, heatmap_]) => {
+          if (!mounted) return;
+          if (stale) setStaleDeals(stale);
+          if (forecast_) setForecast(forecast_);
+          if (heatmap_) setHeatmap(heatmap_);
+        });
+        
+        // Fetch team online only for admin (lowest priority)
         if (currentUser?.isAdmin) {
-          const team = await fetch("/api/crm/dashboard-extras?type=team_online").then(r => r.ok ? r.json() : []);
-          if (mounted) setTeamOnline(team);
+          fetch("/api/crm/dashboard-extras?type=team_online", { 
+            credentials: 'include',
+            signal: AbortSignal.timeout(5000)
+          }).then(r => r.ok ? r.json() : []).then(team => {
+            if (mounted) setTeamOnline(team);
+          }).catch(() => {});
         }
       } finally {
         if (mounted) setLoadingExtras(false);
       }
     }
+    
     fetchAll();
-    const iv = setInterval(fetchAll, 60_000);
-    return () => { mounted = false; clearInterval(iv); };
+    const iv = setInterval(fetchAll, 120_000); // Increased from 60s to 120s
+    return () => { 
+      mounted = false; 
+      clearInterval(iv);
+      controller.abort();
+    };
   }, [period, currentUser?.isAdmin]);
 
   const overdueLeads = leads.filter(isOverdue);
