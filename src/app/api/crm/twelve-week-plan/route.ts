@@ -53,20 +53,24 @@ export async function GET(req: NextRequest) {
       const activePlan = adminPlans.find(p => p.isActive) ?? adminPlans[0] ?? null;
       return NextResponse.json(activePlan ? [activePlan] : []);
     }
-    // Lấy theo staffId - nhân viên xem kế hoạch của họ + kế hoạch được gán cho họ
-    const staffId = session.isAdmin && all ? undefined : (session.staffId ?? "admin");
-    const plans = await getAllPlans(staffId);
     
-    // Nếu là nhân viên, thêm các kế hoạch admin được gán cho họ
-    if (!session.isAdmin && staffId) {
-      const adminPlans = await getAllPlans("admin");
-      const assignedAdminPlans = adminPlans.filter(p => 
-        Array.isArray((p as any).assignedStaffIds) && (p as any).assignedStaffIds.includes(staffId)
-      );
-      plans.push(...assignedAdminPlans);
+    // Lấy theo staffId
+    // Admin: xem tất cả plans hoặc plans của họ
+    // Nhân viên: chỉ xem kế hoạch được admin gán cho họ
+    if (session.isAdmin) {
+      const staffId = all ? undefined : "admin";
+      const plans = await getAllPlans(staffId);
+      return NextResponse.json(plans);
     }
     
-    return NextResponse.json(plans);
+    // Nhân viên: chỉ xem kế hoạch được gán
+    const staffId = session.staffId ?? "admin";
+    const adminPlans = await getAllPlans("admin");
+    const assignedPlans = adminPlans.filter(p => 
+      Array.isArray((p as any).assignedStaffIds) && (p as any).assignedStaffIds.includes(staffId)
+    );
+    
+    return NextResponse.json(assignedPlans);
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
