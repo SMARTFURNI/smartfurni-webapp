@@ -124,6 +124,7 @@ export default function GoogleSheetClient() {
 
   const fetchConfig = useCallback(async () => {
     try {
+      console.log("[GoogleSheetClient] Fetching config...");
       const res = await fetch("/api/crm/google-sheet-sync");
       if (res.ok) {
         const data = await res.json();
@@ -131,11 +132,14 @@ export default function GoogleSheetClient() {
         const settingsRes = await fetch("/api/crm/settings");
         if (settingsRes.ok) {
           const settings = await settingsRes.json();
+          console.log("[GoogleSheetClient] Loaded config:", settings.googleSheet);
           setConfig(settings.googleSheet);
+        } else {
+          console.error("[GoogleSheetClient] Failed to fetch settings:", settingsRes.status);
         }
       }
     } catch (e) {
-      console.error(e);
+      console.error("[GoogleSheetClient] Error fetching config:", e);
     } finally {
       setLoading(false);
     }
@@ -148,20 +152,24 @@ export default function GoogleSheetClient() {
     setSaving(true);
     setSaveMsg(null);
     try {
+      console.log("[GoogleSheetClient] Saving config:", config);
       const res = await fetch("/api/crm/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "googleSheet", value: config }),
       });
+      console.log("[GoogleSheetClient] Response status:", res.status);
       if (res.ok) {
         setSaveMsg("✅ Đã lưu cấu hình");
         setTimeout(() => setSaveMsg(null), 3000);
       } else {
         const error = await res.json();
-        setSaveMsg(`❌ Lỗi khi lưu: ${error.error}`);
+        console.error("[GoogleSheetClient] Error response:", error);
+        setSaveMsg(`❌ Lỗi khi lưu: ${error.error || JSON.stringify(error)}`);
       }
-    } catch {
-      setSaveMsg("❌ Lỗi kết nối");
+    } catch (err) {
+      console.error("[GoogleSheetClient] Exception:", err);
+      setSaveMsg(`❌ Lỗi kết nối: ${String(err)}`);
     } finally {
       setSaving(false);
     }
