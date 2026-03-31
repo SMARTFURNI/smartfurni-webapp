@@ -151,13 +151,14 @@ export default function GoogleSheetClient() {
       const res = await fetch("/api/crm/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ googleSheet: config }),
+        body: JSON.stringify({ key: "googleSheet", value: config }),
       });
       if (res.ok) {
         setSaveMsg("✅ Đã lưu cấu hình");
         setTimeout(() => setSaveMsg(null), 3000);
       } else {
-        setSaveMsg("❌ Lỗi khi lưu");
+        const error = await res.json();
+        setSaveMsg(`❌ Lỗi khi lưu: ${error.error}`);
       }
     } catch {
       setSaveMsg("❌ Lỗi kết nối");
