@@ -3,7 +3,7 @@ import {
   loadFacebookSchedulerFromDb,
   getPostsDueNow, getPages,
   updatePost, addPostLog, scheduleNextRepeat,
-  publishToFacebook,
+  publishToFacebook, getSchedulerConfig,
 } from "@/lib/crm-facebook-scheduler-store";
 
 /**
@@ -29,8 +29,11 @@ export async function GET(req: NextRequest) {
 
   try {
     await loadFacebookSchedulerFromDb();
-    console.log("[FB Scheduler Cron] Starting...");
+    const schedulerConfig = getSchedulerConfig();
+    console.log(`[FB Scheduler Cron] Starting... isEnabled=${schedulerConfig.isEnabled}`);
 
+    // Vẫn xử lý bài đăng dù isEnabled=false (isEnabled chỉ ảnh hưởng đến auto-cron trên Railway)
+    // Khi gọi endpoint này trực tiếp thì luôn xử lý
     const duePosts = getPostsDueNow();
     const pages = getPages();
     console.log(`[FB Scheduler Cron] Found ${duePosts.length} posts due`);

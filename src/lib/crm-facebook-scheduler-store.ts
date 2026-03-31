@@ -285,32 +285,75 @@ export async function publishToFacebook(
       body.link = post.linkUrl;
     }
 
-    let endpoint = `https://graph.facebook.com/v19.0/${page.pageId}/feed`;
-
-    // Nếu có ảnh (chỉ 1 ảnh - dùng /photos endpoint)
-    if (post.imageUrls.length === 1) {
-      endpoint = `https://graph.facebook.com/v19.0/${page.pageId}/photos`;
-      body.url = post.imageUrls[0];
-      body.caption = buildPostMessage(post);
-      delete body.message;
+    // Case 1: Không có ảnh → dùng /feed thông thường
+    if (post.imageUrls.length === 0) {
+      const response = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/feed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        return { success: false, error: data.error?.message || `HTTP ${response.status}` };
+      }
+      return { success: true, postId: data.id };
     }
 
-    const response = await fetch(endpoint, {
+    // Case 2: 1 ảnh → dùng /photos với message + published:true
+    if (post.imageUrls.length === 1) {
+      const photoBody = {
+        url: post.imageUrls[0],
+        message: buildPostMessage(post),
+        published: true,
+        access_token: page.pageAccessToken,
+      };
+      if (post.linkUrl) (photoBody as Record<string, unknown>).link = post.linkUrl;
+      const response = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/photos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(photoBody),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        return { success: false, error: data.error?.message || `HTTP ${response.status}` };
+      }
+      return { success: true, postId: data.post_id || data.id };
+    }
+
+    // Case 3: Nhiều ảnh → upload từng ảnh unpublished, rồi post feed với attached_media
+    const photoIds: string[] = [];
+    for (const imgUrl of post.imageUrls) {
+      const photoRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/photos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: imgUrl,
+          published: false,
+          access_token: page.pageAccessToken,
+        }),
+      });
+      const photoData = await photoRes.json();
+      if (photoData.error || !photoData.id) {
+        return { success: false, error: `Photo upload failed: ${photoData.error?.message || "unknown"}` };
+      }
+      photoIds.push(photoData.id);
+    }
+    const feedBody: Record<string, unknown> = {
+      message: buildPostMessage(post),
+      attached_media: photoIds.map(id => ({ media_fbid: id })),
+      access_token: page.pageAccessToken,
+    };
+    if (post.linkUrl) feedBody.link = post.linkUrl;
+    const feedResponse = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/feed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(feedBody),
     });
-
-    const data = await response.json();
-
-    if (!response.ok || data.error) {
-      return {
-        success: false,
-        error: data.error?.message || `HTTP ${response.status}`,
-      };
+    const feedData = await feedResponse.json();
+    if (!feedResponse.ok || feedData.error) {
+      return { success: false, error: feedData.error?.message || `HTTP ${feedResponse.status}` };
     }
-
-    return { success: true, postId: data.id || data.post_id };
+    return { success: true, postId: feedData.id };
   } catch (err) {
     return { success: false, error: (err as Error).message };
   }
