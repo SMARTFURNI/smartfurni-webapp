@@ -646,6 +646,13 @@ function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) 
             </div>
           )}
 
+          {lead.customerRole && (
+            <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Vai trò / Nhu cầu chính</p>
+              <p className="text-sm text-gray-700">{lead.customerRole}</p>
+            </div>
+          )}
+
           {lead.message && (
             <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Ghi chú từ form</p>
