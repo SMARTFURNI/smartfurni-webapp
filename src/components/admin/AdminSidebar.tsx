@@ -156,9 +156,12 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
 
   async function handleLogout() {
     setLoggingOut(true);
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-    router.refresh();
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {
+      // ignore network errors, still redirect
+    }
+    window.location.href = "/admin/login";
   }
 
   function isActive(item: { href: string; exact?: boolean }) {
