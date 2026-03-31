@@ -123,10 +123,10 @@ async function syncOneSheet(
     const rowObj: Record<string, string> = {};
     headers.forEach((h, i) => { rowObj[h] = (row[i] || "").trim(); });
 
-    // Bỏ qua test leads
+    // Bỏ qua test leads - chỉ log warning, không skip
     if (isTestLead(rowObj)) {
-      result.skipped++;
-      continue;
+      console.warn(`[gsheet-sync] Test lead detected in row: ${JSON.stringify(rowObj).substring(0, 100)}`);
+      // Không skip, vẫn xử lý lead này
     }
 
     // Lấy ID để dedup — tạo ID tự động nếu không có
