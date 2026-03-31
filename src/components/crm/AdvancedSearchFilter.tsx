@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X, Filter, Calendar, Tag } from 'lucide-react';
 
 interface AdvancedSearchFilterProps {
