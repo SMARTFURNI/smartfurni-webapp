@@ -26,18 +26,13 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [search, setSearch] = useState("");
   const [filterDistrict, setFilterDistrict] = useState("");
-  const [filterType, setFilterType] = useState<LeadType | "">("")
+  const [filterType, setFilterType] = useState<LeadType | "">("");
   const [filterSource, setFilterSource] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<LeadStage | null>(null);
   const [loading, setLoading] = useState(false);
-  const [leadTypes, setLeadTypes] = useState<Array<{id: string; label: string}>>([
-    { id: "architect", label: "Kiến trúc sư" },
-    { id: "investor", label: "Chủ đầu tư CHDV" },
-    { id: "dealer", label: "Đại lý" },
-  ]);
   const dragLeadId = useRef<string | null>(null);
 
   // Filter leads
@@ -98,15 +93,6 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
     setDragOver(null);
     dragLeadId.current = null;
   }
-
-  React.useEffect(() => {
-    fetch("/api/crm/settings")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.leadTypes) setLeadTypes(data.leadTypes);
-      })
-      .catch(e => console.error("Failed to load lead types:", e));
-  }, []);
 
   async function refresh() {
     setLoading(true);
@@ -199,9 +185,9 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
               style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
               <option value="">Tất cả loại</option>
-              {leadTypes.map(type => (
-                <option key={type.id} value={type.id}>{type.label}</option>
-              ))}
+              <option value="architect">Kiến trúc sư</option>
+              <option value="investor">Chủ đầu tư CHDV</option>
+              <option value="dealer">Đại lý</option>
             </select>
             <select value={filterSource} onChange={e => setFilterSource(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
