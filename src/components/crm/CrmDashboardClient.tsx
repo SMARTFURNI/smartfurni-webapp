@@ -13,7 +13,7 @@ import {
   AlertTriangle, CheckCircle2, Info, X, Filter, Flag,
 } from "lucide-react";
 import type { Lead, CrmTask, Quote, CrmStats } from "@/lib/crm-types";
-import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS, formatVND, isOverdue } from "@/lib/crm-types";
+import { STAGE_LABELS, STAGE_COLORS, formatVND, isOverdue } from "@/lib/crm-types";
 import type { DashboardTheme, DashboardSectionId } from "@/lib/crm-settings-store";
 import { DEFAULT_SETTINGS } from "@/lib/crm-settings-store";
 import AddLeadModal from "./AddLeadModal";
@@ -1381,6 +1381,34 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const [period, setPeriod] = useState<Period>("week");
   const [darkMode, setDarkMode] = useState(false);
 
+  // Dynamic lead types from CRM settings
+  const [leadTypes, setLeadTypes] = useState<{ id: string; label: string; color: string }[]>([
+    { id: "architect", label: "Kiến trúc sư",    color: "#a78bfa" },
+    { id: "investor",  label: "Chủ đầu tư CHDV", color: "#60a5fa" },
+    { id: "dealer",    label: "Đại lý",           color: "#C9A84C" },
+  ]);
+  useEffect(() => {
+    fetch("/api/crm/settings/lead-types")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: { id: string; label: string; color?: string }[]) => {
+        const FALLBACK_COLORS = ["#a78bfa","#60a5fa","#C9A84C","#10b981","#ef4444","#ec4899","#14b8a6","#f97316"];
+        if (Array.isArray(data) && data.length > 0)
+          setLeadTypes(data.map((lt, i) => ({
+            id: lt.id, label: lt.label,
+            color: lt.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+          })));
+      })
+      .catch(() => {});
+  }, []);
+  function getTypeInfo(typeId: string) {
+    const found = leadTypes.find(lt => lt.id === typeId);
+    if (found) return found;
+    if (typeId === "architect") return { id: typeId, label: "Kiến trúc sư",    color: "#a78bfa" };
+    if (typeId === "investor")  return { id: typeId, label: "Chủ đầu tư CHDV", color: "#60a5fa" };
+    if (typeId === "dealer")    return { id: typeId, label: "Đại lý",           color: "#C9A84C" };
+    return { id: typeId, label: typeId || "Không rõ", color: "#6b7280" };
+  }
+
   // API data states
   const [poolStats, setPoolStats] = useState<{ pending: number; claimed: number; converted: number; total: number; bySource: { source: string; count: number }[] } | null>(null);
   const [periodStats, setPeriodStats] = useState<{ newLeads: number; wonLeads: number; wonValue: number; convRate: number; sparkline: number[]; wonSparkline: number[] } | null>(null);
@@ -2030,28 +2058,29 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
               <Section title="Phân loại khách" icon={PieChart} iconColor={T.purple} iconBg={T.purpleBg}>
                 <div className="p-4 space-y-3">
-                  {(["architect", "investor", "dealer"] as const).map(type => {
-                    const typeLeads = leads.filter(l => l.type === type);
+                  {leadTypes.map(lt => {
+                    const typeLeads = leads.filter(l => l.type === lt.id);
                     const count = typeLeads.length;
                     const wonCount = typeLeads.filter(l => l.stage === "won").length;
                     const pct = leads.length > 0 ? Math.round((count / leads.length) * 100) : 0;
                     const typeValue = typeLeads.reduce((s, l) => s + (l.expectedValue || 0), 0);
+                    const color = lt.color;
                     return (
-                      <div key={type} className="p-3 rounded-xl"
-                        style={{ background: `${TYPE_COLORS[type]}08`, border: `1px solid ${TYPE_COLORS[type]}18` }}>
+                      <div key={lt.id} className="p-3 rounded-xl"
+                        style={{ background: `${color}08`, border: `1px solid ${color}18` }}>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: TYPE_COLORS[type] }} />
-                            <span className="text-xs font-semibold" style={{ color: T.textPrimary }}>{TYPE_LABELS[type]}</span>
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+                            <span className="text-xs font-semibold" style={{ color: T.textPrimary }}>{lt.label}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-black" style={{ color: T.textPrimary }}>{count}</span>
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                              style={{ background: `${TYPE_COLORS[type]}18`, color: TYPE_COLORS[type] }}>{pct}%</span>
+                              style={{ background: `${color}18`, color }}>{pct}%</span>
                           </div>
                         </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${TYPE_COLORS[type]}15` }}>
-                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: TYPE_COLORS[type] }} />
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${color}15` }}>
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
                         </div>
                         <div className="text-[10px] mt-1.5" style={{ color: T.textMuted }}>
                           {wonCount} đã chốt · {typeValue >= 1e6 ? `${(typeValue/1e6).toFixed(0)}tr` : formatVND(typeValue)}
