@@ -1,9 +1,16 @@
 "use client";
 
 /**
- * DataPoolNotification
- * Component kết nối SSE và hiển thị toast notification khi có lead mới vào Data Pool.
- * Được mount 1 lần trong CRM layout, hoạt động trên toàn bộ CRM.
+ * DataPoolNotification — Thông báo real-time khi có lead mới vào Data Pool
+ *
+ * Dùng client-side polling (mỗi 5 giây) thay vì SSE vì Railway serverless
+ * không hỗ trợ long-running streaming connections (setInterval bị kill).
+ *
+ * Cơ chế:
+ *   - Mount: lưu sinceTs = now làm mốc thời gian
+ *   - Mỗi 5 giây: gọi /api/crm/raw-leads/latest?since=<sinceTs>
+ *   - Nếu có lead mới → hiển thị toast notification + âm thanh
+ *   - Cập nhật sinceTs = createdAt của lead mới nhất
  */
 
 import { useEffect, useRef, useCallback, useState } from "react";
@@ -11,20 +18,20 @@ import Link from "next/link";
 
 interface LeadNotification {
   id: string;
-  notifId: string; // unique per notification instance
+  notifId: string;
   fullName: string;
   phone: string;
   source: string;
   createdAt: string;
   campaignName?: string | null;
   adName?: string | null;
-  dismissedAt?: number;
 }
 
 const SOURCE_LABELS: Record<string, string> = {
   facebook_lead: "Facebook Lead",
   tiktok_lead: "TikTok Lead",
   manual: "Thủ công",
+  website: "Website",
   other: "Khác",
 };
 
@@ -32,35 +39,39 @@ const SOURCE_COLORS: Record<string, { bg: string; border: string; icon: string }
   facebook_lead: { bg: "#1877F2", border: "#1877F2", icon: "f" },
   tiktok_lead:   { bg: "#010101", border: "#69C9D0", icon: "t" },
   manual:        { bg: "#6366f1", border: "#6366f1", icon: "m" },
+  website:       { bg: "#059669", border: "#059669", icon: "w" },
   other:         { bg: "#64748b", border: "#64748b", icon: "?" },
 };
 
-// Tối đa 5 toast cùng lúc
 const MAX_TOASTS = 5;
-// Auto-dismiss sau 8 giây
 const AUTO_DISMISS_MS = 8000;
+const POLL_INTERVAL_MS = 5000;
 
 export default function DataPoolNotification() {
   const [toasts, setToasts] = useState<LeadNotification[]>([]);
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reconnectDelay = useRef(3000);
+  const sinceRef = useRef<string>(new Date().toISOString());
+  const dismissTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const dismiss = useCallback((notifId: string) => {
     setToasts(prev => prev.filter(t => t.notifId !== notifId));
+    const t = dismissTimers.current.get(notifId);
+    if (t) {
+      clearTimeout(t);
+      dismissTimers.current.delete(notifId);
+    }
   }, []);
 
   const addToast = useCallback((lead: Omit<LeadNotification, "notifId">) => {
     const notifId = `${lead.id}_${Date.now()}`;
-    setToasts(prev => {
-      const next = [{ ...lead, notifId }, ...prev].slice(0, MAX_TOASTS);
-      return next;
-    });
+    setToasts(prev => [{ ...lead, notifId }, ...prev].slice(0, MAX_TOASTS));
+
     // Auto-dismiss
-    setTimeout(() => dismiss(notifId), AUTO_DISMISS_MS);
-    // Âm thanh thông báo nhẹ (nếu browser hỗ trợ)
+    const timer = setTimeout(() => dismiss(notifId), AUTO_DISMISS_MS);
+    dismissTimers.current.set(notifId, timer);
+
+    // Âm thanh thông báo nhẹ
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -71,56 +82,45 @@ export default function DataPoolNotification() {
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.4);
-    } catch { /* ignore nếu browser không hỗ trợ */ }
+    } catch { /* ignore */ }
   }, [dismiss]);
 
-  const connect = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
+  useEffect(() => {
+    let isMounted = true;
 
-    const es = new EventSource("/api/crm/sse");
-    eventSourceRef.current = es;
-
-    es.addEventListener("new_raw_lead", (e: MessageEvent) => {
+    const poll = async () => {
+      if (!isMounted) return;
       try {
-        const data = JSON.parse(e.data);
-        addToast({
-          id: data.payload.id,
-          fullName: data.payload.fullName,
-          phone: data.payload.phone,
-          source: data.payload.source,
-          createdAt: data.payload.createdAt,
-          campaignName: data.payload.campaignName,
-          adName: data.payload.adName,
-        });
-        reconnectDelay.current = 3000; // reset delay khi nhận được event
-      } catch { /* ignore parse error */ }
-    });
+        const res = await fetch(
+          `/api/crm/raw-leads/latest?since=${encodeURIComponent(sinceRef.current)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok || !isMounted) return;
 
-    es.onopen = () => {
-      reconnectDelay.current = 3000;
+        const data = await res.json();
+        const leads: Array<{
+          id: string; fullName: string; phone: string; source: string;
+          createdAt: string; campaignName: string | null; adName: string | null;
+        }> = data.leads || [];
+
+        if (leads.length > 0 && isMounted) {
+          // Cập nhật sinceTs để không nhận lại lead cũ
+          sinceRef.current = leads[leads.length - 1].createdAt;
+          // Hiển thị toast (tối đa 3 cùng lúc từ 1 lần poll)
+          leads.slice(0, 3).forEach(lead => addToast(lead));
+        }
+      } catch { /* bỏ qua lỗi mạng */ }
     };
 
-    es.onerror = () => {
-      es.close();
-      eventSourceRef.current = null;
-      // Exponential backoff reconnect (tối đa 30s)
-      const delay = Math.min(reconnectDelay.current, 30000);
-      reconnectDelay.current = Math.min(delay * 1.5, 30000);
-      reconnectTimer.current = setTimeout(connect, delay);
+    const intervalId = setInterval(poll, POLL_INTERVAL_MS);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+      dismissTimers.current.forEach(t => clearTimeout(t));
+      dismissTimers.current.clear();
     };
   }, [addToast]);
-
-  useEffect(() => {
-    // Chỉ kết nối nếu browser hỗ trợ EventSource
-    if (typeof window === "undefined" || !window.EventSource) return;
-    connect();
-    return () => {
-      if (eventSourceRef.current) eventSourceRef.current.close();
-      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-    };
-  }, [connect]);
 
   if (toasts.length === 0) return null;
 
@@ -175,17 +175,10 @@ export default function DataPoolNotification() {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div
                   style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
+                    width: 22, height: 22, borderRadius: "50%",
                     background: "rgba(255,255,255,0.25)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "#fff",
-                    textTransform: "uppercase",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 700, color: "#fff", textTransform: "uppercase",
                   }}
                 >
                   {srcConfig.icon}
@@ -197,19 +190,10 @@ export default function DataPoolNotification() {
               <button
                 onClick={() => dismiss(toast.notifId)}
                 style={{
-                  background: "rgba(255,255,255,0.2)",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: 20,
-                  height: 20,
-                  cursor: "pointer",
-                  color: "#fff",
-                  fontSize: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  lineHeight: 1,
-                  padding: 0,
+                  background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%",
+                  width: 20, height: 20, cursor: "pointer", color: "#fff", fontSize: 12,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  lineHeight: 1, padding: 0,
                 }}
                 aria-label="Đóng"
               >
@@ -220,53 +204,26 @@ export default function DataPoolNotification() {
             {/* Body */}
             <div style={{ padding: "12px 14px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                {/* Avatar */}
                 <div
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
+                    width: 40, height: 40, borderRadius: "50%",
                     background: `${srcConfig.bg}18`,
                     border: `2px solid ${srcConfig.bg}33`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 16,
-                    fontWeight: 700,
-                    color: srcConfig.bg,
-                    flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 16, fontWeight: 700, color: srcConfig.bg, flexShrink: 0,
                   }}
                 >
                   {toast.fullName.charAt(0).toUpperCase() || "?"}
                 </div>
-
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 14,
-                      color: "#1a1a2e",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a2e", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {toast.fullName || "Không có tên"}
                   </div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                     📞 {toast.phone || "—"}
                   </div>
                   {(toast.campaignName || toast.adName) && (
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "#94a3b8",
-                        marginTop: 3,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       📢 {toast.campaignName || toast.adName}
                     </div>
                   )}
@@ -276,23 +233,13 @@ export default function DataPoolNotification() {
                 </div>
               </div>
 
-              {/* Action buttons */}
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                 <Link
                   href="/crm/data-pool"
                   style={{
-                    flex: 1,
-                    background: srcConfig.bg,
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    padding: "7px 12px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    textDecoration: "none",
-                    textAlign: "center",
-                    display: "block",
+                    flex: 1, background: srcConfig.bg, color: "#fff", border: "none",
+                    borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 600,
+                    cursor: "pointer", textDecoration: "none", textAlign: "center", display: "block",
                   }}
                   onClick={() => dismiss(toast.notifId)}
                 >
@@ -301,14 +248,9 @@ export default function DataPoolNotification() {
                 <button
                   onClick={() => dismiss(toast.notifId)}
                   style={{
-                    background: "#f1f5f9",
-                    color: "#64748b",
-                    border: "none",
-                    borderRadius: 8,
-                    padding: "7px 12px",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    cursor: "pointer",
+                    background: "#f1f5f9", color: "#64748b", border: "none",
+                    borderRadius: 8, padding: "7px 12px", fontSize: 12,
+                    fontWeight: 500, cursor: "pointer",
                   }}
                 >
                   Bỏ qua
@@ -317,20 +259,10 @@ export default function DataPoolNotification() {
             </div>
 
             {/* Progress bar auto-dismiss */}
-            <div
-              style={{
-                height: 3,
-                background: `${srcConfig.bg}22`,
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
+            <div style={{ height: 3, background: `${srcConfig.bg}22`, position: "relative", overflow: "hidden" }}>
               <div
                 style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  height: "100%",
+                  position: "absolute", left: 0, top: 0, height: "100%",
                   background: srcConfig.bg,
                   animation: `shrinkWidth ${AUTO_DISMISS_MS}ms linear forwards`,
                 }}
@@ -340,7 +272,6 @@ export default function DataPoolNotification() {
         );
       })}
 
-      {/* CSS animations */}
       <style>{`
         @keyframes slideInRight {
           from { transform: translateX(110%); opacity: 0; }
