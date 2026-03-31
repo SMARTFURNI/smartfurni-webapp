@@ -183,11 +183,11 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         window.location.href = "/admin/login";
       } else {
         await fetch("/api/crm/staff/logout", { method: "POST", credentials: "include" });
-        window.location.href = "/crm/login";
+        window.location.href = "/crm-login";
       }
     } catch (error) {
       console.error("Logout error:", error);
-      window.location.href = isAdmin ? "/admin/login" : "/crm/login";
+      window.location.href = isAdmin ? "/admin/login" : "/crm-login";
     }
   };
 
