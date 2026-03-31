@@ -43,6 +43,7 @@ export default async function CrmDashboardPage() {
       quotes={quotes}
       stats={stats}
       dashboardTheme={crmSettings.dashboardTheme}
+      initialLeadTypes={crmSettings.leadTypes ?? []}
       currentUser={{
         name: staffName,
         username: staffUsername,

@@ -15,28 +15,34 @@ import {
 import AddLeadModal from "./AddLeadModal";
 import CustomerContactActions from "./high-performance-features/CustomerContactActions";
 
-interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; }
+interface LeadTypeItem { id: string; label: string; color?: string; }
+interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; initialLeadTypes?: LeadTypeItem[]; }
 
 type SortKey = "name" | "expectedValue" | "lastContactAt" | "createdAt";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 20;
 
-export default function LeadsListClient({ initialLeads, isAdmin = false, currentUserName = "" }: Props) {
+const DEFAULT_LEAD_TYPES_FALLBACK: LeadTypeItem[] = [
+  { id: "architect", label: "Kiến trúc sư",    color: "#8b5cf6" },
+  { id: "investor",  label: "Chủ đầu tư CHDV", color: "#3b82f6" },
+  { id: "dealer",    label: "Đại lý",           color: "#f59e0b" },
+];
+
+export default function LeadsListClient({ initialLeads, isAdmin = false, currentUserName = "", initialLeadTypes }: Props) {
   const [leads, setLeads] = useState(initialLeads);
   const [search, setSearch] = useState("");
-  const [filterStage, setFilterStage] = useState<LeadStage | "">("");
-  const [filterType, setFilterType] = useState<LeadType | "">("");
+  const [filterStage, setFilterStage] = useState<LeadStage | "">("")
+  const [filterType, setFilterType] = useState<LeadType | "">("")
   const [showFilters, setShowFilters] = useState(false);
-  const [leadTypes, setLeadTypes] = useState<{ id: string; label: string; color?: string }[]>([
-    { id: "architect", label: "Kiến trúc sư",    color: "#8b5cf6" },
-    { id: "investor",  label: "Chủ đầu tư CHDV", color: "#3b82f6" },
-    { id: "dealer",    label: "Đại lý",           color: "#f59e0b" },
-  ]);
+  const [leadTypes, setLeadTypes] = useState<LeadTypeItem[]>(
+    initialLeadTypes && initialLeadTypes.length > 0 ? initialLeadTypes : DEFAULT_LEAD_TYPES_FALLBACK
+  );
   useEffect(() => {
+    if (initialLeadTypes && initialLeadTypes.length > 0) return; // đã có từ server
     fetch("/api/crm/settings/lead-types")
       .then(r => r.ok ? r.json() : [])
-      .then((data: { id: string; label: string; color?: string }[]) => {
+      .then((data: LeadTypeItem[]) => {
         if (Array.isArray(data) && data.length > 0) setLeadTypes(data);
       })
       .catch(() => {});

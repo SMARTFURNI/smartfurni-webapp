@@ -27,6 +27,7 @@ interface CurrentUser {
   staffId?: string;
 }
 
+interface LeadTypeItem { id: string; label: string; color: string; }
 interface Props {
   leads: Lead[];
   todayTasks: CrmTask[];
@@ -34,6 +35,7 @@ interface Props {
   stats: CrmStats;
   dashboardTheme?: DashboardTheme;
   currentUser?: CurrentUser;
+  initialLeadTypes?: LeadTypeItem[];
 }
 
 const PRIORITY_CONFIG = {
@@ -1357,7 +1359,12 @@ function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen =
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
-export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser }: Props) {
+const DASHBOARD_DEFAULT_LEAD_TYPES: LeadTypeItem[] = [
+  { id: "architect", label: "Kiến trúc sư",    color: "#a78bfa" },
+  { id: "investor",  label: "Chủ đầu tư CHDV", color: "#60a5fa" },
+  { id: "dealer",    label: "Đại lý",           color: "#C9A84C" },
+];
+export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes }: Props) {
   // Merge with defaults so all keys are always defined
   const theme: DashboardTheme = { ...DEFAULT_SETTINGS.dashboardTheme, ...(themeProp ?? {}) };
   // Section ordering & visibility helpers
@@ -1381,13 +1388,12 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const [period, setPeriod] = useState<Period>("week");
   const [darkMode, setDarkMode] = useState(false);
 
-  // Dynamic lead types from CRM settings
-  const [leadTypes, setLeadTypes] = useState<{ id: string; label: string; color: string }[]>([
-    { id: "architect", label: "Kiến trúc sư",    color: "#a78bfa" },
-    { id: "investor",  label: "Chủ đầu tư CHDV", color: "#60a5fa" },
-    { id: "dealer",    label: "Đại lý",           color: "#C9A84C" },
-  ]);
+  // Dynamic lead types from CRM settings (server-side pre-loaded)
+  const [leadTypes, setLeadTypes] = useState<LeadTypeItem[]>(
+    initialLeadTypes && initialLeadTypes.length > 0 ? initialLeadTypes : DASHBOARD_DEFAULT_LEAD_TYPES
+  );
   useEffect(() => {
+    if (initialLeadTypes && initialLeadTypes.length > 0) return; // đã có từ server
     fetch("/api/crm/settings/lead-types")
       .then(r => r.ok ? r.json() : [])
       .then((data: { id: string; label: string; color?: string }[]) => {

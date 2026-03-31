@@ -1,6 +1,7 @@
 import { getLeads, type Lead } from "@/lib/crm-store";
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { getStaffById } from "@/lib/crm-staff-store";
+import { getCrmSettings } from "@/lib/crm-settings-store";
 import LeadsListClient from "@/components/crm/LeadsListClient";
 
 export const dynamic = "force-dynamic";
@@ -24,5 +25,9 @@ export default async function LeadsPage() {
     console.error("[crm/leads] Failed to load leads:", err);
   }
 
-  return <LeadsListClient initialLeads={leads} isAdmin={session.isAdmin} currentUserName={staffName || ""} />;
+  // Pre-load leadTypes server-side để tránh flash khi render
+  const settings = await getCrmSettings().catch(() => null);
+  const leadTypes = settings?.leadTypes ?? [];
+
+  return <LeadsListClient initialLeads={leads} isAdmin={session.isAdmin} currentUserName={staffName || ""} initialLeadTypes={leadTypes} />;
 }
