@@ -65,6 +65,7 @@ async function syncOneSheet(
     campaignNameColumn: string;
     formNameColumn: string;
     messageColumn: string;
+    customerRoleColumn: string;
   },
   sheetsClient: ReturnType<typeof google.sheets>,
   existingIds: Set<string>
@@ -160,12 +161,13 @@ async function syncOneSheet(
     const campaignName = getCol(row, globalCfg.campaignNameColumn) || rowObj["campaign_name"] || "";
     const formName = getCol(row, globalCfg.formNameColumn) || rowObj["form_name"] || "";
     const message = globalCfg.messageColumn ? getCol(row, globalCfg.messageColumn) : "";
+    const customerRole = getCol(row, globalCfg.customerRoleColumn) || rowObj["vai_trò_hoặc_nhu_cầu_chính_của_anh/chị_là_gì_ạ"] || rowObj["customer_role"] || "";
 
     // Sử dụng giá trị mặc định cho name nếu trống
     const fullName = rawName || "Khách hàng từ Sheet";
     const phone = cleanPhone(rawPhone);
 
-    console.debug(`[gsheet-sync] Processing row ${rowNumber}: ID=${rowId}, Name=${fullName}, Phone=${phone || "(empty)"}, Email=${email || "(empty)"}`);
+    console.debug(`[gsheet-sync] Processing row ${rowNumber}: ID=${rowId}, Name=${fullName}, Phone=${phone || "(empty)"}, Email=${email || "(empty)"}, Role=${customerRole || "(empty)"}`);
 
     try {
       await createRawLead({
@@ -177,6 +179,7 @@ async function syncOneSheet(
         campaignName: campaignName || undefined,
         formName: formName || undefined,
         message: message || undefined,
+        customerRole: customerRole || undefined,
         rawData: {
           ...rowObj,
           sheetRowId: dedupKey,
@@ -312,6 +315,7 @@ export async function syncAllGoogleSheets(sheetIdFilter?: string): Promise<SyncA
     campaignNameColumn: cfg.campaignNameColumn,
     formNameColumn: cfg.formNameColumn,
     messageColumn: cfg.messageColumn,
+    customerRoleColumn: cfg.customerRoleColumn || "vai_trò_hoặc_nhu_cầu_chính_của_anh/chị_là_gì_ạ",
   };
 
   // Sync từng sheet tuần tự (tránh rate limit)

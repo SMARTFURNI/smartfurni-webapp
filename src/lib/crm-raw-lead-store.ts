@@ -19,6 +19,7 @@ export interface RawLead {
   campaignName?: string;   // Tên chiến dịch
   formName?: string;       // Tên form lead
   message?: string;        // Nội dung/ghi chú từ form
+  customerRole?: string;   // Vai trò/nhu cầu chính của khách hàng
   rawData?: Record<string, unknown>; // Toàn bộ data gốc từ webhook
   status: RawLeadStatus;
   claimedBy?: string;      // staffId đã nhận
@@ -67,6 +68,7 @@ export async function initRawLeadSchema(): Promise<void> {
       campaign_name TEXT,
       form_name TEXT,
       message TEXT,
+      customer_role TEXT,
       raw_data JSONB,
       status TEXT NOT NULL DEFAULT 'pending',
       claimed_by TEXT,
@@ -76,6 +78,9 @@ export async function initRawLeadSchema(): Promise<void> {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  try {
+    await query(`ALTER TABLE crm_raw_leads ADD COLUMN IF NOT EXISTS customer_role TEXT`);
+  } catch { /* column already exists */ }
   try {
     await query(`CREATE INDEX IF NOT EXISTS idx_crm_raw_leads_status ON crm_raw_leads(status)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_crm_raw_leads_created ON crm_raw_leads(created_at ASC)`);
@@ -97,6 +102,7 @@ function mapRow(row: Record<string, unknown>): RawLead {
     campaignName: (row.campaign_name as string) || undefined,
     formName: (row.form_name as string) || undefined,
     message: (row.message as string) || undefined,
+    customerRole: (row.customer_role as string) || undefined,
     rawData: (row.raw_data as Record<string, unknown>) || undefined,
     status: (row.status as RawLeadStatus) || "pending",
     claimedBy: (row.claimed_by as string) || undefined,
@@ -116,8 +122,8 @@ export async function createRawLead(data: Partial<RawLead>): Promise<RawLead> {
   const now = new Date().toISOString();
   await query(
     `INSERT INTO crm_raw_leads
-      (id, source, full_name, phone, email, ad_name, campaign_name, form_name, message, raw_data, status, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending',$11)
+      (id, source, full_name, phone, email, ad_name, campaign_name, form_name, message, customer_role, raw_data, status, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending',$12)
      ON CONFLICT (id) DO NOTHING`,
     [
       id,
@@ -129,6 +135,7 @@ export async function createRawLead(data: Partial<RawLead>): Promise<RawLead> {
       data.campaignName || null,
       data.formName || null,
       data.message || null,
+      data.customerRole || null,
       data.rawData ? JSON.stringify(data.rawData) : null,
       data.createdAt || now,
     ]
