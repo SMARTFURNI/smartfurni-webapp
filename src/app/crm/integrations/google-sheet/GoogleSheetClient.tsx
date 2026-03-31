@@ -356,7 +356,7 @@ export default function GoogleSheetClient() {
             Cấu hình ánh xạ cột
           </button>
           {showGuide && (
-            <div className="mt-3 grid grid-cols-3 gap-3">
+            <div className="mt-3 grid grid-cols-2 gap-3">
               {[
                 { key: "idColumn", label: "Cột ID (dedup)" },
                 { key: "nameColumn", label: "Cột tên đầy đủ" },
