@@ -49,6 +49,7 @@ interface GoogleSheetConfig {
   campaignNameColumn: string;
   formNameColumn: string;
   messageColumn: string;
+  customerRoleColumn: string;
   totalSynced: number;
 }
 
@@ -364,6 +365,7 @@ export default function GoogleSheetClient() {
                 { key: "campaignNameColumn", label: "Cột tên campaign" },
                 { key: "formNameColumn", label: "Cột tên form" },
                 { key: "messageColumn", label: "Cột ghi chú (tùy chọn)" },
+                { key: "customerRoleColumn", label: "Cột vai trò / nhu cầu (tùy chọn)" },
               ].map(({ key, label }) => (
                 <div key={key}>
                   <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
