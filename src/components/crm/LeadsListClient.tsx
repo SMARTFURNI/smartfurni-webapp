@@ -41,10 +41,10 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   ]);
 
   React.useEffect(() => {
-    fetch("/api/crm/settings")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.leadTypes) setLeadTypes(data.leadTypes);
+    fetch("/api/crm/lead-types")
+      .then(r => r.ok ? r.json() : [])
+      .then(types => {
+        setLeadTypes(types || []);
       })
       .catch(e => console.error("Failed to load lead types:", e));
   }, []);

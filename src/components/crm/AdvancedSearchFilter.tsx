@@ -21,6 +21,14 @@ export default function AdvancedSearchFilter({
   onFilterChange,
   onQuickFilter,
 }: AdvancedSearchFilterProps) {
+  const [leadTypes, setLeadTypes] = React.useState<Array<{id: string; label: string}>>([]);
+
+  React.useEffect(() => {
+    fetch("/api/crm/lead-types")
+      .then(r => r.ok ? r.json() : [])
+      .then(types => setLeadTypes(types || []))
+      .catch(e => console.error("Failed to load lead types:", e));
+  }, []);
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -48,11 +56,7 @@ export default function AdvancedSearchFilter({
     {
       id: 'type',
       label: 'Loại Khách Hàng',
-      options: [
-        { value: 'architect', label: 'Kiến trúc sư' },
-        { value: 'investor', label: 'Nhà đầu tư' },
-        { value: 'dealer', label: 'Đại lý' },
-      ],
+      options: leadTypes,
     },
   ];
 
