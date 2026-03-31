@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Zap, Plus, Trash2, Save, RefreshCw, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Clock, GitBranch, Users, ArrowRight,
@@ -144,9 +144,9 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
           <select value={trigger.leadType ?? ""} onChange={e => onChange({ ...trigger, leadType: e.target.value })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
             style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
-{leadTypes.map(type => (
-              <option key={type.id} value={type.id}>{type.label}</option>
-            ))}
+            <option value="architect">Kiến trúc sư</option>
+            <option value="investor">Chủ đầu tư CHDV</option>
+            <option value="dealer">Đại lý</option>
           </select>
         </div>
       )}
@@ -539,9 +539,9 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
                   style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }}>
                   <option value="">Tất cả</option>
-                  {leadTypes.map(type => (
-                    <option key={type.id} value={type.id}>{type.label}</option>
-                  ))}
+                  <option value="architect">Kiến trúc sư</option>
+                  <option value="investor">Chủ đầu tư</option>
+                  <option value="dealer">Đại lý</option>
                 </select>
               </div>
               <div className="flex items-end">
@@ -564,14 +564,6 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
 type TabId = "rules" | "sla" | "auto_assign" | "run";
 
 export default function AutomationSettingsClient() {
-  const [leadTypes, setLeadTypes] = React.useState<Array<{id: string; label: string}>>([]);
-
-  React.useEffect(() => {
-    fetch("/api/crm/lead-types")
-      .then(r => r.ok ? r.json() : [])
-      .then(types => setLeadTypes(types || []))
-      .catch(e => console.error("Failed to load lead types:", e));
-  }, []);
   const [activeTab, setActiveTab] = useState<TabId>("rules");
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [sla, setSla] = useState<SlaConfig | null>(null);

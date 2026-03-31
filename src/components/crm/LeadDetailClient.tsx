@@ -86,10 +86,10 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
 
   const loadLeadTypes = async () => {
     try {
-      const res = await fetch("/api/crm/lead-types");
+      const res = await fetch("/api/crm/settings");
       if (res.ok) {
-        const types = await res.json();
-        setLeadTypes(types || []);
+        const settings = await res.json();
+        setLeadTypes(settings.leadTypes || []);
       }
     } catch (e) {
       console.error("Failed to load lead types:", e);
