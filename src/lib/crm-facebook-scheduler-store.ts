@@ -72,7 +72,7 @@ let postLogs: PostLog[] = [];
 let config: FacebookSchedulerConfig = {
   isEnabled: false,
   defaultPageIds: [],
-  cronSchedule: "0 * * * *",
+  cronSchedule: "* * * * *",
   maxRetries: 3,
   retryDelayMinutes: 30,
   updatedAt: new Date().toISOString(),

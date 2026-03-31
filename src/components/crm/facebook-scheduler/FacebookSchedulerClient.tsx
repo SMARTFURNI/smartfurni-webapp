@@ -1274,7 +1274,7 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
             <div className="p-3 rounded-xl text-xs" style={{ background: "#fffbeb", border: "1px solid #fde68a" }}>
               <p className="font-semibold mb-1" style={{ color: "#92400e" }}>Cấu hình Cron Job (Railway):</p>
               <p style={{ color: "#78350f" }}>
-                Thêm vào Railway Cron: <code className="bg-amber-100 px-1 rounded">0 * * * *</code> (mỗi giờ)
+                Thêm vào Railway Cron: <code className="bg-amber-100 px-1 rounded">* * * * *</code> (mỗi phút)
               </p>
               <p className="mt-1" style={{ color: "#78350f" }}>
                 URL: <code className="bg-amber-100 px-1 rounded">/api/crm/facebook-scheduler/cron</code>
