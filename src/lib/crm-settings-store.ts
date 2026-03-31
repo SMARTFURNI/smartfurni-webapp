@@ -118,6 +118,8 @@ export interface GoogleSheetConfig {
   formNameColumn: string;
   /** Cột ghi chú/nhu cầu (tùy chọn) */
   messageColumn: string;
+  /** Cột vai trò / nhu cầu chính (tùy chọn) */
+  customerRoleColumn: string;
   /** Tổng số lead đã sync */
   totalSynced: number;
 }
@@ -383,6 +385,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     campaignNameColumn: "campaign_name",
     formNameColumn: "form_name",
     messageColumn: "",
+    customerRoleColumn: "",
     totalSynced: 0,
   },
   webhook: {
