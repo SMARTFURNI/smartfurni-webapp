@@ -64,6 +64,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
   const [tasks, setTasks] = useState(initialTasks);
   const [activeTab, setActiveTab] = useState<Tab>("timeline");
   const [showAddActivity, setShowAddActivity] = useState(false);
+  const [leadTypes, setLeadTypes] = useState<Array<{id: string; label: string}>>([]);
   // Call logs state
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
   const [callLogsLoaded, setCallLogsLoaded] = useState(false);
@@ -83,10 +84,26 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
     } finally { setCallLogsLoading(false); setCallLogsLoaded(true); }
   };
 
+  const loadLeadTypes = async () => {
+    try {
+      const res = await fetch("/api/crm/settings");
+      if (res.ok) {
+        const settings = await res.json();
+        setLeadTypes(settings.leadTypes || []);
+      }
+    } catch (e) {
+      console.error("Failed to load lead types:", e);
+    }
+  };
+
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
     if (tab === "calls") loadCallLogs();
   };
+
+  React.useEffect(() => {
+    loadLeadTypes();
+  }, []);
 
   const saveCallNote = async (callId: string) => {
     setSavingNote(callId);
@@ -1167,9 +1184,9 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Loại khách *</label>
                 <select value={form.type} onChange={e => set("type", e.target.value)}
                   className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
-                  <option value="architect">Kiến trúc sư</option>
-                  <option value="investor">Chủ đầu tư CHDV</option>
-                  <option value="dealer">Đại lý</option>
+                  {leadTypes.map(type => (
+                    <option key={type.id} value={type.id}>{type.label}</option>
+                  ))}
                 </select>
               </div>
               <div>

@@ -25,8 +25,8 @@ const PAGE_SIZE = 20;
 export default function LeadsListClient({ initialLeads, isAdmin = false, currentUserName = "" }: Props) {
   const [leads, setLeads] = useState(initialLeads);
   const [search, setSearch] = useState("");
-  const [filterStage, setFilterStage] = useState<LeadStage | "">("");
-  const [filterType, setFilterType] = useState<LeadType | "">("");
+  const [filterStage, setFilterStage] = useState<LeadStage | "">("")
+  const [filterType, setFilterType] = useState<LeadType | "">("")
   const [showFilters, setShowFilters] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("lastContactAt");
@@ -34,6 +34,20 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [leadTypes, setLeadTypes] = useState<Array<{id: string; label: string}>([
+    { id: "architect", label: "Kiến trúc sư" },
+    { id: "investor", label: "Chủ đầu tư CHDV" },
+    { id: "dealer", label: "Đại lý" },
+  ]);
+
+  React.useEffect(() => {
+    fetch("/api/crm/settings")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.leadTypes) setLeadTypes(data.leadTypes);
+      })
+      .catch(e => console.error("Failed to load lead types:", e));
+  }, []);
 
   const filtered = useMemo(() => {
     let list = leads.filter(l => {
@@ -151,9 +165,9 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
               onChange={e => { setFilterType(e.target.value as LeadType | ""); setPage(1); }}
               className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
               <option value="">Tất cả loại</option>
-              <option value="architect">Kiến trúc sư</option>
-              <option value="investor">Chủ đầu tư CHDV</option>
-              <option value="dealer">Đại lý</option>
+              {leadTypes.map(type => (
+                <option key={type.id} value={type.id}>{type.label}</option>
+              ))}
             </select>
             {activeFilters > 0 && (
               <button
