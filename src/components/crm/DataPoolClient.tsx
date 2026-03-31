@@ -949,15 +949,16 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
         {/* Data List */}
         <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
           {/* Table header */}
-          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-            style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6" }}>
-            <div className="col-span-1">#</div>
-            <div className="col-span-3">Khách hàng</div>
-            <div className="col-span-2">Liên hệ</div>
-            <div className="col-span-2">Kênh / Chiến dịch</div>
-            <div className="col-span-1">Trạng thái</div>
-            <div className="col-span-2">Nhân viên / Thời gian</div>
-            <div className="col-span-1 text-right">Thao tác</div>
+          <div className="hidden sm:grid gap-4 px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
+            style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6", gridTemplateColumns: "0.8fr 1.8fr 1.2fr 1.5fr 1.2fr 1.2fr 1.5fr 0.8fr" }}>
+            <div>#</div>
+            <div>Khách hàng</div>
+            <div>Liên hệ</div>
+            <div>Kênh / Chiến dịch</div>
+            <div>Vai trò / Nhu cầu</div>
+            <div>Trạng thái</div>
+            <div>Nhân viên / Thời gian</div>
+            <div className="text-right">Thao tác</div>
           </div>
 
           {loading ? (
@@ -987,7 +988,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                     }}
                   >
                     {/* # */}
-                    <div className="col-span-1">
+                    <div>
                       <span className="text-xs text-gray-400 font-mono">{rowNum}</span>
                       {isNextFifo && !isAdmin && (
                         <div className="mt-1">
@@ -1000,31 +1001,40 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                     </div>
 
                     {/* Khách hàng */}
-                    <div className="col-span-3">
+                    <div>
                       <p className="text-sm font-semibold text-gray-900 truncate">{lead.fullName}</p>
                       <div className="mt-0.5"><SourceBadge source={lead.source} /></div>
                     </div>
 
                     {/* Liên hệ */}
-                    <div className="col-span-2">
+                    <div>
                       {lead.phone && <p className="text-sm text-gray-700 font-medium">{lead.phone}</p>}
                       {lead.email && <p className="text-xs text-gray-400 truncate">{lead.email}</p>}
                     </div>
 
                     {/* Kênh / Chiến dịch */}
-                    <div className="col-span-2">
+                    <div>
                       {lead.campaignName && <p className="text-xs text-gray-600 truncate font-medium">{lead.campaignName}</p>}
                       {lead.adName && <p className="text-xs text-gray-400 truncate">{lead.adName}</p>}
                       {!lead.campaignName && !lead.adName && <p className="text-xs text-gray-300">—</p>}
                     </div>
 
+                    {/* Vai trò / Nhu cầu */}
+                    <div>
+                      {lead.customerRole ? (
+                        <p className="text-xs text-gray-700 truncate font-medium">{lead.customerRole}</p>
+                      ) : (
+                        <p className="text-xs text-gray-300">—</p>
+                      )}
+                    </div>
+
                     {/* Trạng thái */}
-                    <div className="col-span-1">
+                    <div>
                       <StatusBadge status={lead.status} />
                     </div>
 
                     {/* Nhân viên / Thời gian */}
-                    <div className="col-span-2">
+                    <div>
                       {lead.claimedByName ? (
                         <p className="text-xs font-semibold text-gray-700">{lead.claimedByName}</p>
                       ) : (
@@ -1034,7 +1044,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                     </div>
 
                     {/* Thao tác */}
-                    <div className="col-span-1 flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => setDetailLead(lead)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
