@@ -1,6 +1,7 @@
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { getStaffById } from "@/lib/crm-staff-store";
 import CrmSidebar from "@/components/crm/CrmSidebar";
+import DataPoolNotification from "@/components/crm/DataPoolNotification";
 export const dynamic = "force-dynamic";
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,8 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
       <main className="flex-1 overflow-auto min-w-0">
         {children}
       </main>
+      {/* Real-time notification khi có lead mới vào Data Pool */}
+      <DataPoolNotification />
     </div>
   );
 }

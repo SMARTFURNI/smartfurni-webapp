@@ -143,7 +143,24 @@ export async function createRawLead(data: Partial<RawLead>): Promise<RawLead> {
   const row = await queryOne<Record<string, unknown>>(
     "SELECT * FROM crm_raw_leads WHERE id = $1", [id]
   );
-  return mapRow(row!);
+  const lead = mapRow(row!);
+  // Emit SSE event — thông báo real-time cho tất cả nhân viên đang online
+  try {
+    const { emitSSE } = await import("@/lib/sse-emitter");
+    emitSSE({
+      type: "new_raw_lead",
+      payload: {
+        id: lead.id,
+        fullName: lead.fullName,
+        phone: lead.phone,
+        source: lead.source,
+        createdAt: lead.createdAt,
+        campaignName: lead.campaignName ?? null,
+        adName: lead.adName ?? null,
+      },
+    });
+  } catch { /* ignore — SSE là best-effort, không ảnh hưởng luồng chính */ }
+  return lead;
 }
 
 /** Lấy danh sách raw leads với filter */
