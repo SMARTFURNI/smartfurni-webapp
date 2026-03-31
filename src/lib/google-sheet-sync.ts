@@ -129,9 +129,13 @@ async function syncOneSheet(
       continue;
     }
 
-    // Lấy ID để dedup
-    const rowId = getCol(row, globalCfg.idColumn) || rowObj["id"] || "";
-    if (!rowId) continue;
+    // Lấy ID để dedup — tạo ID tự động nếu không có
+    let rowId = getCol(row, globalCfg.idColumn) || rowObj["id"] || "";
+    if (!rowId) {
+      // Tạo ID từ created_time + row index nếu không có
+      const createdTime = getCol(row, "created_time") || rowObj["created_time"] || new Date().toISOString();
+      rowId = `auto_${createdTime}_${Math.random().toString(36).substr(2, 9)}`;
+    }
 
     const dedupKey = makeDedupKey(sheetCfg.spreadsheetId, rowId);
     if (existingIds.has(dedupKey)) {
