@@ -2,5 +2,15 @@
   "framework": "nextjs",
   "buildCommand": "pnpm build",
   "installCommand": "pnpm install",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/crm/automation/cron",
+      "schedule": "0,30 * * * *"
+    },
+    {
+      "path": "/api/crm/facebook-scheduler/cron",
+      "schedule": "0 * * * *"
+    }
+  ]
 }
