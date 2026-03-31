@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Loader2, User, Building2, Phone, Mail, MapPin, DollarSign, Tag, FileText, Users } from "lucide-react";
 import type { Lead, LeadType, LeadStage } from "@/lib/crm-types";
 import { SOURCES, TYPE_LABELS, STAGE_LABELS } from "@/lib/crm-types";
@@ -14,16 +14,32 @@ interface Props {
   isAdmin?: boolean; // Admin có thể chỉnh sửa assignedTo
 }
 
-const TYPE_CONFIG: Record<LeadType, { label: string; color: string; bg: string }> = {
-  architect:  { label: "Kiến trúc sư",    color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
-  investor:   { label: "Chủ đầu tư CHDV", color: "#60a5fa", bg: "rgba(96,165,250,0.12)" },
-  dealer:     { label: "Đại lý",           color: "#C9A84C", bg: "rgba(201,168,76,0.12)" },
-};
+const DEFAULT_TYPE_CONFIG: { id: string; label: string; color: string; bg: string }[] = [
+  { id: "architect", label: "Kiến trúc sư",    color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
+  { id: "investor",  label: "Chủ đầu tư CHDV", color: "#60a5fa", bg: "rgba(96,165,250,0.12)" },
+  { id: "dealer",    label: "Đại lý",           color: "#C9A84C", bg: "rgba(201,168,76,0.12)" },
+];
 
 export default function AddLeadModal({ onClose, onCreated, defaultStage = "new", currentUserName = "", isAdmin = false }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"basic" | "project" | "notes">("basic");
+  const [typeConfig, setTypeConfig] = useState<{ id: string; label: string; color: string; bg: string }[]>(DEFAULT_TYPE_CONFIG);
+  useEffect(() => {
+    fetch("/api/crm/settings/lead-types")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: { id: string; label: string; color: string }[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setTypeConfig(data.map(lt => ({
+            id: lt.id,
+            label: lt.label,
+            color: lt.color || "#6b7280",
+            bg: lt.color ? lt.color + "20" : "rgba(107,114,128,0.12)",
+          })));
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [form, setForm] = useState({
     name: "",
     company: "",
@@ -134,14 +150,13 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
 
         {/* Lead Type Selector */}
         <div className="px-6 pt-4 flex gap-2">
-          {(Object.keys(TYPE_CONFIG) as LeadType[]).map(type => {
-            const cfg = TYPE_CONFIG[type];
-            const active = form.type === type;
+          {typeConfig.map(cfg => {
+            const active = form.type === cfg.id;
             return (
               <button
-                key={type}
+                key={cfg.id}
                 type="button"
-                onClick={() => set("type", type)}
+                onClick={() => set("type", cfg.id)}
                 className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all"
                 style={{
                   background: active ? cfg.bg : "#f3f4f6",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus, Search, Filter, AlertCircle, Phone, MapPin, X,
@@ -28,6 +28,19 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   const [filterStage, setFilterStage] = useState<LeadStage | "">("");
   const [filterType, setFilterType] = useState<LeadType | "">("");
   const [showFilters, setShowFilters] = useState(false);
+  const [leadTypes, setLeadTypes] = useState<{ id: string; label: string }[]>([
+    { id: "architect", label: "Kiến trúc sư" },
+    { id: "investor",  label: "Chủ đầu tư CHDV" },
+    { id: "dealer",    label: "Đại lý" },
+  ]);
+  useEffect(() => {
+    fetch("/api/crm/settings/lead-types")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: { id: string; label: string }[]) => {
+        if (Array.isArray(data) && data.length > 0) setLeadTypes(data);
+      })
+      .catch(() => {});
+  }, []);
   const [showAddModal, setShowAddModal] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("lastContactAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -151,9 +164,9 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
               onChange={e => { setFilterType(e.target.value as LeadType | ""); setPage(1); }}
               className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
               <option value="">Tất cả loại</option>
-              <option value="architect">Kiến trúc sư</option>
-              <option value="investor">Chủ đầu tư CHDV</option>
-              <option value="dealer">Đại lý</option>
+              {leadTypes.map(lt => (
+                <option key={lt.id} value={lt.id}>{lt.label}</option>
+              ))}
             </select>
             {activeFilters > 0 && (
               <button

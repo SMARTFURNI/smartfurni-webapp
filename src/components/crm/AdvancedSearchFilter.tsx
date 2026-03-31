@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X, Filter, Calendar, Tag } from 'lucide-react';
 
 interface AdvancedSearchFilterProps {
@@ -24,6 +24,20 @@ export default function AdvancedSearchFilter({
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [dynamicLeadTypes, setDynamicLeadTypes] = useState<{ value: string; label: string }[]>([
+    { value: 'architect', label: 'Kiến trúc sư' },
+    { value: 'investor', label: 'Nhà đầu tư' },
+    { value: 'dealer', label: 'Đại lý' },
+  ]);
+  useEffect(() => {
+    fetch('/api/crm/settings/lead-types')
+      .then(r => r.ok ? r.json() : [])
+      .then((data: { id: string; label: string }[]) => {
+        if (Array.isArray(data) && data.length > 0)
+          setDynamicLeadTypes(data.map(lt => ({ value: lt.id, label: lt.label })));
+      })
+      .catch(() => {});
+  }, []);
 
   const quickFilters = [
     { id: 'today', label: '📅 Hôm nay', icon: '📅' },
@@ -48,11 +62,7 @@ export default function AdvancedSearchFilter({
     {
       id: 'type',
       label: 'Loại Khách Hàng',
-      options: [
-        { value: 'architect', label: 'Kiến trúc sư' },
-        { value: 'investor', label: 'Nhà đầu tư' },
-        { value: 'dealer', label: 'Đại lý' },
-      ],
+      options: dynamicLeadTypes,
     },
   ];
 

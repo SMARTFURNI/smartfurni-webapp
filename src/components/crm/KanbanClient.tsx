@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus, Filter, Search, Phone, MapPin, Calendar,
@@ -29,6 +29,19 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   const [filterType, setFilterType] = useState<LeadType | "">("");
   const [filterSource, setFilterSource] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [leadTypes, setLeadTypes] = useState<{ id: string; label: string }[]>([
+    { id: "architect", label: "Kiến trúc sư" },
+    { id: "investor",  label: "Chủ đầu tư CHDV" },
+    { id: "dealer",    label: "Đại lý" },
+  ]);
+  useEffect(() => {
+    fetch("/api/crm/settings/lead-types")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: { id: string; label: string }[]) => {
+        if (Array.isArray(data) && data.length > 0) setLeadTypes(data);
+      })
+      .catch(() => {});
+  }, []);
   const [showAddModal, setShowAddModal] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<LeadStage | null>(null);
@@ -185,9 +198,9 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
               style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
               <option value="">Tất cả loại</option>
-              <option value="architect">Kiến trúc sư</option>
-              <option value="investor">Chủ đầu tư CHDV</option>
-              <option value="dealer">Đại lý</option>
+              {leadTypes.map(lt => (
+                <option key={lt.id} value={lt.id}>{lt.label}</option>
+              ))}
             </select>
             <select value={filterSource} onChange={e => setFilterSource(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"

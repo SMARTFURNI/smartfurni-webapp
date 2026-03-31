@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Phone, Mail, MapPin, Building2, User, Store,
@@ -1082,6 +1082,15 @@ function AddTaskModal({ leadId, leadName, isAdmin = false, currentUserName = "",
 function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () => void; onUpdated: (l: Lead) => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [leadTypes, setLeadTypes] = useState<{ id: string; label: string; color: string }[]>([]);
+  useEffect(() => {
+    fetch("/api/crm/settings/lead-types")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: { id: string; label: string; color: string }[]) => {
+        if (Array.isArray(data) && data.length > 0) setLeadTypes(data);
+      })
+      .catch(() => {});
+  }, []);
   const [form, setForm] = useState({
     name: lead.name,
     company: lead.company || "",
@@ -1167,9 +1176,18 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Loại khách *</label>
                 <select value={form.type} onChange={e => set("type", e.target.value)}
                   className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
-                  <option value="architect">Kiến trúc sư</option>
-                  <option value="investor">Chủ đầu tư CHDV</option>
-                  <option value="dealer">Đại lý</option>
+                  {leadTypes.length > 0
+                    ? leadTypes.map(lt => (
+                        <option key={lt.id} value={lt.id}>{lt.label}</option>
+                      ))
+                    : (
+                        <>
+                          <option value="architect">Kiến trúc sư</option>
+                          <option value="investor">Chủ đầu tư CHDV</option>
+                          <option value="dealer">Đại lý</option>
+                        </>
+                      )
+                  }
                 </select>
               </div>
               <div>
