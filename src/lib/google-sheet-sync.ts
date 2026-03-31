@@ -116,8 +116,15 @@ async function syncOneSheet(
   const source = sheetCfg.source as RawLeadSource;
 
   // Xử lý từng row
-  for (const row of dataRows) {
-    if (row.every(cell => !cell || !cell.trim())) continue;
+  for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex++) {
+    const row = dataRows[rowIndex];
+    const rowNumber = rowIndex + 2; // +2 vì row 0 là headers, +1 vì 1-indexed
+    
+    // Bỏ qua row trống
+    if (row.every(cell => !cell || !cell.trim())) {
+      console.debug(`[gsheet-sync] Skipping empty row ${rowNumber}`);
+      continue;
+    }
 
     // Build rowObj để kiểm tra test lead
     const rowObj: Record<string, string> = {};
@@ -125,7 +132,7 @@ async function syncOneSheet(
 
     // Bỏ qua test leads - chỉ log warning, không skip
     if (isTestLead(rowObj)) {
-      console.warn(`[gsheet-sync] Test lead detected in row: ${JSON.stringify(rowObj).substring(0, 100)}`);
+      console.warn(`[gsheet-sync] Test lead detected in row ${rowNumber}: ${JSON.stringify(rowObj).substring(0, 100)}`);
       // Không skip, vẫn xử lý lead này
     }
 
@@ -135,15 +142,17 @@ async function syncOneSheet(
       // Tạo ID từ created_time + row index nếu không có
       const createdTime = getCol(row, "created_time") || rowObj["created_time"] || new Date().toISOString();
       rowId = `auto_${createdTime}_${Math.random().toString(36).substr(2, 9)}`;
+      console.debug(`[gsheet-sync] Generated ID for row ${rowNumber}: ${rowId}`);
     }
 
     const dedupKey = makeDedupKey(sheetCfg.spreadsheetId, rowId);
     if (existingIds.has(dedupKey)) {
+      console.debug(`[gsheet-sync] Skipping duplicate row ${rowNumber} (ID: ${rowId})`);
       result.skipped++;
       continue;
     }
 
-    // Lấy thông tin lead
+    // Lấy thông tin lead - cho phép các trường tùy chọn trống
     const rawName = getCol(row, globalCfg.nameColumn) || rowObj["tên_đầy_đủ"] || rowObj["full_name"] || rowObj["name"] || "";
     const rawPhone = getCol(row, globalCfg.phoneColumn) || rowObj["số_điện_thoại"] || rowObj["phone_number"] || rowObj["phone"] || "";
     const email = getCol(row, globalCfg.emailColumn) || rowObj["email"] || "";
@@ -152,8 +161,11 @@ async function syncOneSheet(
     const formName = getCol(row, globalCfg.formNameColumn) || rowObj["form_name"] || "";
     const message = globalCfg.messageColumn ? getCol(row, globalCfg.messageColumn) : "";
 
+    // Sử dụng giá trị mặc định cho name nếu trống
     const fullName = rawName || "Khách hàng từ Sheet";
     const phone = cleanPhone(rawPhone);
+
+    console.debug(`[gsheet-sync] Processing row ${rowNumber}: ID=${rowId}, Name=${fullName}, Phone=${phone || "(empty)"}, Email=${email || "(empty)"}`);
 
     try {
       await createRawLead({
@@ -174,10 +186,13 @@ async function syncOneSheet(
           originalId: rowId,
         },
       });
+      console.info(`[gsheet-sync] ✅ Successfully synced row ${rowNumber} (ID: ${rowId})`);
       result.newLeads++;
       existingIds.add(dedupKey);
     } catch (e) {
-      result.errors.push(`Row ${rowId}: ${String(e)}`);
+      const errorMsg = `Row ${rowNumber} (ID: ${rowId}): ${String(e)}`;
+      console.error(`[gsheet-sync] ❌ ${errorMsg}`);
+      result.errors.push(errorMsg);
     }
   }
 
