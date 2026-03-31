@@ -1,9 +1,10 @@
 /**
  * DELETE /api/crm/cleanup-leads
+ * POST /api/crm/cleanup-leads
  * Xóa leads cũ từ Facebook để sync lại với dữ liệu mới (Admin only)
  * 
  * Cách sử dụng:
- * 1. Gọi API này để xóa dữ liệu cũ
+ * 1. Gọi DELETE /api/crm/cleanup-leads để xóa dữ liệu cũ
  * 2. Vào CRM Settings → Google Sheet Sync
  * 3. Nhấp "Sync tất cả" để import lại dữ liệu
  */
@@ -16,7 +17,7 @@ export async function DELETE(req: NextRequest) {
     console.log("[cleanup-leads] Starting cleanup of facebook leads...");
     
     // Xóa tất cả leads từ Facebook Sheet
-    await query(
+    const result = await query<any>(
       "DELETE FROM crm_raw_leads WHERE source = $1",
       ["facebook_lead"]
     );
@@ -26,6 +27,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "✅ Đã xóa tất cả leads từ Facebook. Hãy vào CRM Settings → Google Sheet Sync → Nhấp 'Sync tất cả' để import lại dữ liệu.",
+      deletedCount: result.length || 0
     });
   } catch (error) {
     console.error("[cleanup-leads] Error:", error);
@@ -38,6 +40,11 @@ export async function DELETE(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(req: NextRequest) {
+  // Alias cho DELETE
+  return DELETE(req);
 }
 
 export async function GET(req: NextRequest) {
