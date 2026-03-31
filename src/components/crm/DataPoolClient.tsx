@@ -946,11 +946,11 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
           </div>
         </div>
 
-        {/* Data List */}
-        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+          {/* Data List */}
+        <div className="bg-white rounded-2xl overflow-x-auto" style={{ border: "1px solid #e5e7eb" }}>
           {/* Table header */}
           <div className="hidden sm:grid gap-4 px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-            style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6", gridTemplateColumns: "0.8fr 1.8fr 1.2fr 1.5fr 1.2fr 1.2fr 1.5fr 0.8fr" }}>
+            style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6", gridTemplateColumns: "60px 180px 120px 150px 120px 100px 150px 80px", minWidth: "960px" }}>
             <div>#</div>
             <div>Khách hàng</div>
             <div>Liên hệ</div>
@@ -981,10 +981,12 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                 return (
                   <div
                     key={lead.id}
-                    className="grid grid-cols-12 gap-4 px-4 py-3.5 items-center transition-colors hover:bg-gray-50"
+                    className="grid gap-4 px-4 py-3.5 items-center transition-colors hover:bg-gray-50"
                     style={{
                       borderBottom: "1px solid #f3f4f6",
                       background: isNextFifo ? "rgba(201,168,76,0.04)" : undefined,
+                      gridTemplateColumns: "60px 180px 120px 150px 120px 100px 150px 80px",
+                      minWidth: "960px"
                     }}
                   >
                     {/* # */}
