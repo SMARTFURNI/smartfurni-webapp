@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import {
   Building2, GitBranch, Users, Tag, Percent, Webhook,
   Bell, FileText, Mail, Save, RotateCcw, Plus, Trash2,
   GripVertical, Eye, EyeOff, ChevronRight, CheckCircle2,
-  AlertCircle, Settings, Copy, RefreshCw, Palette,
+  AlertCircle, Settings, Copy, RefreshCw, Palette, Sheet,
 } from "lucide-react";
 import type { CrmSettings, PipelineStage, LeadSource, LeadTypeConfig, DiscountTierConfig, DashboardTheme, DashboardSectionId, KpiCardId, ChartType, FunnelStyle, ChartPalette, DensityMode, FontFamily, KpiSize, KpiColumns, RefreshInterval } from "@/lib/crm-settings-store";
+
+const GoogleSheetClient = dynamic(() => import("@/app/crm/integrations/google-sheet/GoogleSheetClient"), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,7 +18,7 @@ interface Props {
   initialSettings: CrmSettings;
 }
 
-type TabId = "company" | "pipeline" | "sources" | "leadtypes" | "discount" | "webhook" | "notifications" | "quote" | "email" | "dashboardtheme";
+type TabId = "company" | "pipeline" | "sources" | "leadtypes" | "discount" | "webhook" | "notifications" | "quote" | "email" | "dashboardtheme" | "googlesheet";
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; desc: string }[] = [
   { id: "company",       label: "Thông tin công ty",   icon: Building2,  desc: "Tên, địa chỉ, liên hệ, ngân hàng" },
@@ -28,6 +31,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; desc: string }[
   { id: "quote",         label: "Cấu hình Báo giá",   icon: FileText,   desc: "Hiệu lực, điều khoản, ghi chú" },
   { id: "email",         label: "Email & SMTP",        icon: Mail,       desc: "Cấu hình gửi email marketing" },
   { id: "dashboardtheme", label: "Giao diện Dashboard",  icon: Palette,    desc: "Màu sắc các khối trên dashboard" },
+  { id: "googlesheet",   label: "Google Sheet Sync",   icon: Sheet,      desc: "Đồng bộ dữ liệu từ Google Sheet" },
 ];
 
 const PRESET_COLORS = [
@@ -1884,6 +1888,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
           {activeTab === "quote"         && <QuoteTab         data={settings.quote}         onChange={v => updateSection("quote", v)} />}
           {activeTab === "email"         && <EmailTab         data={settings.email}         onChange={v => updateSection("email", v)} />}
           {activeTab === "dashboardtheme" && <DashboardThemeTab data={settings.dashboardTheme} onChange={v => updateSection("dashboardTheme", v)} />}
+          {activeTab === "googlesheet" && <GoogleSheetClient />}
         </div>
       </div>
     </div>
