@@ -28,6 +28,8 @@ interface CurrentUser {
 }
 
 interface LeadTypeItem { id: string; label: string; color: string; }
+interface PoolStats { pending: number; claimed: number; converted: number; total: number; bySource: { source: string; count: number }[]; }
+interface PeriodStats { period: string; newLeads: number; wonLeads: number; wonValue: number; convRate: number; sparkline: number[]; wonSparkline: number[]; }
 interface Props {
   leads: Lead[];
   todayTasks: CrmTask[];
@@ -36,6 +38,10 @@ interface Props {
   dashboardTheme?: DashboardTheme;
   currentUser?: CurrentUser;
   initialLeadTypes?: LeadTypeItem[];
+  initialTwelveWeekPlan?: any | null;
+  initialSharedPlan?: any | null;
+  initialPoolStats?: PoolStats | null;
+  initialPeriodStats?: PeriodStats | null;
 }
 
 const PRIORITY_CONFIG = {
@@ -1364,7 +1370,7 @@ const DASHBOARD_DEFAULT_LEAD_TYPES: LeadTypeItem[] = [
   { id: "investor",  label: "Chủ đầu tư CHDV", color: "#60a5fa" },
   { id: "dealer",    label: "Đại lý",           color: "#C9A84C" },
 ];
-export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes }: Props) {
+export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes, initialTwelveWeekPlan, initialSharedPlan, initialPoolStats, initialPeriodStats }: Props) {
   // Merge with defaults so all keys are always defined
   const theme: DashboardTheme = { ...DEFAULT_SETTINGS.dashboardTheme, ...(themeProp ?? {}) };
   // Section ordering & visibility helpers
@@ -1415,27 +1421,28 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     return { id: typeId, label: typeId || "Không rõ", color: "#6b7280" };
   }
 
-  // API data states
-  const [poolStats, setPoolStats] = useState<{ pending: number; claimed: number; converted: number; total: number; bySource: { source: string; count: number }[] } | null>(null);
-  const [periodStats, setPeriodStats] = useState<{ newLeads: number; wonLeads: number; wonValue: number; convRate: number; sparkline: number[]; wonSparkline: number[] } | null>(null);
+  // API data states — pre-loaded from server when available
+  const [poolStats, setPoolStats] = useState<PoolStats | null>(initialPoolStats ?? null);
+  const [periodStats, setPeriodStats] = useState<PeriodStats | null>(initialPeriodStats ?? null);
   const [staleDeals, setStaleDeals] = useState<Array<{ id: string; name: string; company: string; stage: string; expectedValue: number; lastContactAt: string; assignedTo: string; daysStale: number }>>([]);
   const [teamOnline, setTeamOnline] = useState<Array<{ id: string; name: string; role: string; online: boolean; lastLoginAt: string | null; loginedToday: boolean }>>([]);
   const [forecast, setForecast] = useState<{ forecastValue: number; pipelineCount: number; monthlyData: Array<{ label: string; actual: number; isForecast: boolean }> } | null>(null);
   const [heatmap, setHeatmap] = useState<Record<string, number>>({});
-  const [loadingExtras, setLoadingExtras] = useState(true);
+  const [loadingExtras, setLoadingExtras] = useState(!initialPoolStats && !initialPeriodStats);
   const [twelveWeekPlan, setTwelveWeekPlan] = useState<{
     id: string; title: string; startDate: string; endDate: string; isActive: boolean;
     goals: Array<{ id: string; title: string; color: string; description?: string; kpis?: Array<{ id: string; label: string; unit: string; targetTotal: number; weeklyTarget: number; currentValue?: number; format: string; weeklyAllocations?: Array<{ weekNumber: number; target: number }> }> }>;
     tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string; title: string; scheduledDate?: string; assignedDate?: string; dueDate?: string; priority?: string }>;
-  } | null>(null);
-  const [loadingTwelveWeek, setLoadingTwelveWeek] = useState(true);
+  } | null>(initialTwelveWeekPlan ?? null);
+  const [loadingTwelveWeek, setLoadingTwelveWeek] = useState(!initialTwelveWeekPlan);
   // Kế hoạch 12 tuần chung của admin (shared) - tất cả nhân viên cùng xem
-  const [sharedPlan, setSharedPlan] = useState<typeof twelveWeekPlan>(null);
-  const [loadingSharedPlan, setLoadingSharedPlan] = useState(true);
+  const [sharedPlan, setSharedPlan] = useState<typeof twelveWeekPlan>(initialSharedPlan ?? null);
+  const [loadingSharedPlan, setLoadingSharedPlan] = useState(!initialSharedPlan);
   const [sharedPlanTaskUpdating, setSharedPlanTaskUpdating] = useState<string | null>(null);
 
-  // Fetch twelve-week plan once at top level (prevents flash in child components)
+  // Fetch twelve-week plan — skip nếu đã có từ server
   useEffect(() => {
+    if (initialTwelveWeekPlan !== undefined) { setLoadingTwelveWeek(false); return; }
     let mounted = true;
     setLoadingTwelveWeek(true);
     fetch("/api/crm/twelve-week-plan")
@@ -1449,9 +1456,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
       .finally(() => { if (mounted) setLoadingTwelveWeek(false); });
     return () => { mounted = false; };
   }, []);
-
-  // Fetch kế hoạch chung của admin cho tất cả nhân viên
+  // Fetch kế hoạch chung — skip nếu đã có từ server
   useEffect(() => {
+    if (initialSharedPlan !== undefined) { setLoadingSharedPlan(false); return; }
     let mounted = true;
     setLoadingSharedPlan(true);
     fetch("/api/crm/twelve-week-plan?shared=1")
@@ -1493,16 +1500,22 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     async function fetchAll() {
       setLoadingExtras(true);
       try {
-        // Fetch critical data first (period stats + pool)
+        // Skip period_stats + pool nếu đã có từ server (chỉ re-fetch khi period thay đổi)
+        const needPeriod = !initialPeriodStats || period !== "week";
+        const needPool = !initialPoolStats;
         const [period_, pool] = await Promise.all([
-          fetch(`/api/crm/dashboard-extras?type=period_stats&period=${period}`, { 
-            credentials: 'include',
-            signal: AbortSignal.timeout(8000)
-          }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch("/api/crm/raw-leads/stats", { 
-            credentials: 'include',
-            signal: AbortSignal.timeout(8000)
-          }).then(r => r.ok ? r.json() : null).catch(() => null),
+          needPeriod
+            ? fetch(`/api/crm/dashboard-extras?type=period_stats&period=${period}`, { 
+                credentials: 'include',
+                signal: AbortSignal.timeout(8000)
+              }).then(r => r.ok ? r.json() : null).catch(() => null)
+            : Promise.resolve(null),
+          needPool
+            ? fetch("/api/crm/raw-leads/stats", { 
+                credentials: 'include',
+                signal: AbortSignal.timeout(8000)
+              }).then(r => r.ok ? r.json() : null).catch(() => null)
+            : Promise.resolve(null),
         ]);
         
         if (!mounted) return;
