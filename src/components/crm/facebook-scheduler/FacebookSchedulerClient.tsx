@@ -82,6 +82,8 @@ function PostFormModal({
   const [content, setContent] = useState(post?.content ?? "");
   const [imageUrls, setImageUrls] = useState<string[]>(post?.imageUrls ?? []);
   const [imageInput, setImageInput] = useState("");
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [linkUrl, setLinkUrl] = useState(post?.linkUrl ?? "");
   const [selectedPageIds, setSelectedPageIds] = useState<string[]>(post?.pageIds ?? (pages.length > 0 ? [pages[0].id] : []));
   const [scheduledAt, setScheduledAt] = useState(
@@ -118,6 +120,27 @@ function PostFormModal({
       setImageUrls(prev => [...prev, imageInput.trim()]);
       setImageInput("");
     }
+  };
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingImages(true);
+    setUploadError(null);
+    const uploaded: string[] = [];
+    for (const file of Array.from(files)) {
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/crm/facebook-scheduler/upload-image", { method: "POST", body: fd });
+        const data = await res.json();
+        if (data.url) uploaded.push(data.url);
+        else setUploadError(data.error || "Upload thất bại");
+      } catch {
+        setUploadError("Lỗi kết nối khi upload ảnh");
+      }
+    }
+    if (uploaded.length > 0) setImageUrls(prev => [...prev, ...uploaded]);
+    setUploadingImages(false);
   };
 
   const handleSubmit = async () => {
@@ -252,14 +275,48 @@ function PostFormModal({
           <div>
             <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
               <Image size={12} className="inline mr-1" />
-              URL ảnh đính kèm
+              Ảnh đính kèm
             </label>
-            <div className="flex gap-2">
+            {/* Upload từ máy tính */}
+            <label
+              className="flex flex-col items-center justify-center w-full rounded-lg cursor-pointer transition-colors"
+              style={{
+                border: "2px dashed #d1d5db",
+                background: uploadingImages ? "#f0f9ff" : "#fafafa",
+                padding: "16px 12px",
+                minHeight: 72,
+              }}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                disabled={uploadingImages}
+                onChange={e => handleFileUpload(e.target.files)}
+              />
+              {uploadingImages ? (
+                <div className="flex items-center gap-2 text-xs" style={{ color: "#2563eb" }}>
+                  <RefreshCw size={14} className="animate-spin" />
+                  <span>Đang tải ảnh lên...</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "#374151" }}>
+                    <Image size={16} style={{ color: "#6b7280" }} />
+                    <span>Nhấn để chọn ảnh từ máy tính</span>
+                  </div>
+                  <span className="text-xs" style={{ color: "#9ca3af" }}>JPG, PNG, WEBP, GIF · Tối đa 10MB · Chọn nhiều ảnh cùng lúc</span>
+                </div>
+              )}
+            </label>
+            {/* Hoặc nhập URL */}
+            <div className="flex gap-2 mt-2">
               <input
                 value={imageInput}
                 onChange={e => setImageInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && addImage()}
-                placeholder="https://example.com/image.jpg"
+                placeholder="Hoặc dán URL ảnh: https://example.com/image.jpg"
                 className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: "1px solid #d1d5db", color: "#374151" }}
               />
@@ -269,15 +326,22 @@ function PostFormModal({
                 Thêm
               </button>
             </div>
+            {uploadError && (
+              <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{uploadError}</p>
+            )}
             {imageUrls.length > 0 && (
-              <div className="mt-2 space-y-1">
+              <div className="mt-2 grid grid-cols-3 gap-2">
                 {imageUrls.map((url, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs p-2 rounded-lg"
-                    style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
-                    <Image size={12} style={{ color: "#6b7280", flexShrink: 0 }} />
-                    <span className="flex-1 truncate" style={{ color: "#374151" }}>{url}</span>
-                    <button onClick={() => setImageUrls(prev => prev.filter((_, j) => j !== i))}>
-                      <X size={12} style={{ color: "#9ca3af" }} />
+                  <div key={i} className="relative group rounded-lg overflow-hidden"
+                    style={{ aspectRatio: "1", background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => setImageUrls(prev => prev.filter((_, j) => j !== i))}
+                      className="absolute top-1 right-1 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ background: "rgba(0,0,0,0.6)" }}
+                    >
+                      <X size={10} style={{ color: "#fff" }} />
                     </button>
                   </div>
                 ))}
