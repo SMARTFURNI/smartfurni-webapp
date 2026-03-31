@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
   try {
     await initRawLeadSchema();
 
-    const result = await query<{
+    // query() trả về T[] trực tiếp (không phải {rows: T[]})
+    const rows = await query<{
       id: string;
       full_name: string;
       phone: string;
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
       [since]
     );
 
-    const leads = (result.rows || []).map((row) => ({
+    const leads = (rows || []).map((row) => ({
       id: row.id,
       fullName: row.full_name,
       phone: row.phone,
