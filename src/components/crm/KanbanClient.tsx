@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import type { Lead, LeadStage, LeadType } from "@/lib/crm-types";
 import {
-  STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
+  STAGE_LABELS, STAGE_COLORS,
   SOURCES, formatVND, isOverdue,
 } from "@/lib/crm-types";
 import { VIETNAM_PROVINCES } from "@/lib/crm-locations";
@@ -29,19 +29,29 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   const [filterType, setFilterType] = useState<LeadType | "">("");
   const [filterSource, setFilterSource] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [leadTypes, setLeadTypes] = useState<{ id: string; label: string }[]>([
-    { id: "architect", label: "Kiến trúc sư" },
-    { id: "investor",  label: "Chủ đầu tư CHDV" },
-    { id: "dealer",    label: "Đại lý" },
+  const [leadTypes, setLeadTypes] = useState<{ id: string; label: string; color?: string }[]>([
+    { id: "architect", label: "Kiến trúc sư",    color: "#8b5cf6" },
+    { id: "investor",  label: "Chủ đầu tư CHDV", color: "#3b82f6" },
+    { id: "dealer",    label: "Đại lý",           color: "#f59e0b" },
   ]);
   useEffect(() => {
     fetch("/api/crm/settings/lead-types")
       .then(r => r.ok ? r.json() : [])
-      .then((data: { id: string; label: string }[]) => {
+      .then((data: { id: string; label: string; color?: string }[]) => {
         if (Array.isArray(data) && data.length > 0) setLeadTypes(data);
       })
       .catch(() => {});
   }, []);
+
+  const DEFAULT_COLORS = ["#8b5cf6","#3b82f6","#f59e0b","#10b981","#ef4444","#ec4899","#14b8a6","#f97316"];
+  function getTypeInfo(typeId: string) {
+    const found = leadTypes.find(lt => lt.id === typeId);
+    if (found) return { label: found.label, color: found.color || DEFAULT_COLORS[leadTypes.indexOf(found) % DEFAULT_COLORS.length] };
+    if (typeId === "architect") return { label: "Kiến trúc sư", color: "#8b5cf6" };
+    if (typeId === "investor")  return { label: "Chủ đầu tư CHDV", color: "#3b82f6" };
+    if (typeId === "dealer")    return { label: "Đại lý", color: "#f59e0b" };
+    return { label: typeId || "Không rõ", color: "#6b7280" };
+  }
   const [showAddModal, setShowAddModal] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<LeadStage | null>(null);
@@ -285,6 +295,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                       isDragging={dragging === lead.id}
                       onDragStart={onDragStart}
                       onDragEnd={onDragEnd}
+                      getTypeInfo={getTypeInfo}
                     />
                   ))}
                 </div>
@@ -327,15 +338,16 @@ function LeadCard({
   isDragging,
   onDragStart,
   onDragEnd,
+  getTypeInfo,
 }: {
   lead: Lead;
   isDragging: boolean;
   onDragStart: (e: React.DragEvent, id: string) => void;
   onDragEnd: () => void;
+  getTypeInfo: (typeId: string) => { label: string; color: string };
 }) {
   const overdue = isOverdue(lead);
   const daysAgo = Math.floor((Date.now() - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
-
   const TypeIcon = lead.type === "architect" ? User : lead.type === "investor" ? Building2 : Store;
 
   return (
@@ -369,8 +381,8 @@ function LeadCard({
                 </div>
               )}
               <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                style={{ background: `${TYPE_COLORS[lead.type]}15`, color: TYPE_COLORS[lead.type] }}>
-                {TYPE_LABELS[lead.type]}
+                style={{ background: `${getTypeInfo(lead.type).color}15`, color: getTypeInfo(lead.type).color }}>
+                {getTypeInfo(lead.type).label}
               </span>
             </div>
           </div>
