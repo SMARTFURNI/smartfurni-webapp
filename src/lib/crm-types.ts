@@ -110,6 +110,8 @@ export interface Quote {
   items: QuoteItem[];
   subtotal: number;
   extraDiscountPct: number;
+  includeVat?: boolean;
+  vatAmount?: number;
   total: number;
   validUntil: string;
   status: "draft" | "sent" | "accepted" | "rejected";

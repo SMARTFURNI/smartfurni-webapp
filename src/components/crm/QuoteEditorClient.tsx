@@ -29,6 +29,8 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
   const [selectedLead, setSelectedLead] = useState<Lead | null>(defaultLead || null);
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [extraDiscountPct, setExtraDiscountPct] = useState(0);
+  const [includeVat, setIncludeVat] = useState(false);
+  const VAT_RATE = 0.08;
   const [validUntil, setValidUntil] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() + 30);
     return d.toISOString().split("T")[0];
@@ -38,8 +40,16 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
   const [loading, setLoading] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
 
+  // subtotalBeforeDiscount: tổng chưa áp chiết khấu theo số lượng (unitPrice * qty)
+  const subtotalBeforeDiscount = items.reduce((sum, item) => sum + item.unitPrice * item.qty, 0);
+  // subtotal: tổng sau chiết khấu theo số lượng (finalPrice * qty)
   const subtotal = items.reduce((sum, item) => sum + item.finalPrice * item.qty, 0);
-  const total = subtotal * (1 - extraDiscountPct / 100);
+  // afterExtraDiscount: sau khi trừ thêm chiết khấu bổ sung
+  const afterExtraDiscount = subtotal * (1 - extraDiscountPct / 100);
+  // vatAmount: tiền VAT (chỉ tính khi tích)
+  const vatAmount = includeVat ? afterExtraDiscount * VAT_RATE : 0;
+  // total: tổng cộng cuối cùng
+  const total = afterExtraDiscount + vatAmount;
 
   function addProduct(product: CrmProduct) {
     const qty = 1;
@@ -110,6 +120,8 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
           items,
           subtotal,
           extraDiscountPct,
+          includeVat,
+          vatAmount,
           total,
           validUntil,
           status: "draft",
@@ -256,10 +268,19 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
 
                 {/* Totals */}
                 <div className="pt-3 space-y-2" style={{ borderTop: "2px solid #f3f4f6" }}>
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>Tạm tính</span>
-                    <span className="font-medium">{formatVND(subtotal)}</span>
+                  {/* Tổng chưa chiết khấu */}
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>Tổng chưa chiết khấu</span>
+                    <span>{formatVND(subtotalBeforeDiscount)}</span>
                   </div>
+                  {/* Tổng sau chiết khấu SL */}
+                  {subtotalBeforeDiscount !== subtotal && (
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Tổng sau chiết khấu số lượng</span>
+                      <span className="font-medium text-green-600">{formatVND(subtotal)}</span>
+                    </div>
+                  )}
+                  {/* Chiết khấu bổ sung */}
                   <div className="flex items-center justify-between text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                       <span>Chiết khấu thêm</span>
@@ -272,8 +293,32 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
                       {extraDiscountPct > 0 ? `-${formatVND(subtotal * extraDiscountPct / 100)}` : "—"}
                     </span>
                   </div>
-                  <div className="flex justify-between text-base font-bold pt-2" style={{ borderTop: "1px solid #e5e7eb" }}>
-                    <span className="text-gray-900">Tổng cộng</span>
+                  {/* Tổng sau chiết khấu bổ sung */}
+                  <div className="flex justify-between text-sm font-semibold text-gray-700 pt-1" style={{ borderTop: "1px solid #f3f4f6" }}>
+                    <span>Tổng sau chiết khấu</span>
+                    <span>{formatVND(afterExtraDiscount)}</span>
+                  </div>
+                  {/* VAT */}
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={includeVat}
+                        onChange={e => setIncludeVat(e.target.checked)}
+                        className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
+                      />
+                      <span>VAT 8%</span>
+                    </label>
+                    <span className={includeVat ? "font-medium text-gray-700" : "text-gray-400"}>
+                      {includeVat ? `+${formatVND(vatAmount)}` : "—"}
+                    </span>
+                  </div>
+                  {/* Tổng cộng */}
+                  <div className="flex justify-between text-base font-bold pt-2" style={{ borderTop: "2px solid #e5e7eb" }}>
+                    <div>
+                      <div className="text-gray-900">Tổng cộng</div>
+                      {includeVat && <div className="text-[10px] font-normal text-gray-500">(bao gồm VAT 8%)</div>}
+                    </div>
                     <span style={{ color: "#C9A84C" }}>{formatVND(total)}</span>
                   </div>
                 </div>
