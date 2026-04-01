@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Send, Check, X, Printer } from "lucide-react";
+import { ArrowLeft, Send, Check, X, FileDown, MessageCircle, Building2, User, Phone, Mail, MapPin, CreditCard, Globe } from "lucide-react";
 import type { Quote, Lead } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
+import type { CompanyInfo } from "@/lib/crm-settings-store";
 
-interface Props { quote: Quote; lead: Lead | null }
+interface Props {
+  quote: Quote;
+  lead: Lead | null;
+  company: CompanyInfo;
+}
 
 const STATUS_MAP = {
   draft: { label: "Nháp", color: "#6b7280" },
@@ -15,9 +20,14 @@ const STATUS_MAP = {
   rejected: { label: "Từ chối", color: "#ef4444" },
 };
 
-export default function QuoteDetailClient({ quote: initialQuote, lead }: Props) {
+export default function QuoteDetailClient({ quote: initialQuote, lead, company }: Props) {
   const [quote, setQuote] = useState(initialQuote);
   const [updating, setUpdating] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [sendingZalo, setSendingZalo] = useState(false);
+  const [zaloMsg, setZaloMsg] = useState("");
+  const [showZaloModal, setShowZaloModal] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
   async function updateStatus(status: Quote["status"]) {
     setUpdating(true);
@@ -31,10 +41,49 @@ export default function QuoteDetailClient({ quote: initialQuote, lead }: Props) 
     } finally { setUpdating(false); }
   }
 
+  async function exportPdf() {
+    setExportingPdf(true);
+    try {
+      // Mở tab mới với HTML có auto-print → người dùng chọn "Save as PDF"
+      window.open(`/api/crm/quotes/${quote.id}/pdf`, "_blank");
+    } catch {
+      alert("Không thể xuất PDF. Vui lòng thử lại.");
+    } finally { setExportingPdf(false); }
+  }
+
+  async function sendZalo() {
+    if (!zaloMsg.trim()) return;
+    setSendingZalo(true);
+    try {
+      const res = await fetch("/api/crm/quotes/send-zalo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quoteId: quote.id, leadId: lead?.id, message: zaloMsg }),
+      });
+      if (res.ok) {
+        setShowZaloModal(false);
+        setZaloMsg("");
+        alert("Đã gửi Zalo thành công!");
+      } else {
+        alert("Gửi Zalo thất bại. Kiểm tra cấu hình Zalo OA.");
+      }
+    } finally { setSendingZalo(false); }
+  }
+
+  // Tính toán tổng
+  const subtotalBeforeDiscount = quote.items.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+  const subtotalAfterQtyDiscount = quote.items.reduce((s, i) => s + i.finalPrice * i.qty, 0);
+  const afterExtraDiscount = subtotalAfterQtyDiscount * (1 - (quote.extraDiscountPct || 0) / 100);
+  const vatAmount = quote.includeVat ? afterExtraDiscount * 0.08 : 0;
+  const hasQtyDiscount = subtotalBeforeDiscount !== subtotalAfterQtyDiscount;
+
   const s = STATUS_MAP[quote.status];
+
+  const defaultZaloMsg = `Kính gửi Quý khách ${quote.leadName},\n\n${company.name} xin gửi báo giá ${quote.quoteNumber} với tổng giá trị ${formatVND(quote.total)}.\n\nHiệu lực đến: ${new Date(quote.validUntil).toLocaleDateString("vi-VN")}\n\nVui lòng liên hệ ${company.phone} để được tư vấn thêm.\n\nTrân trọng,\n${company.name}`;
 
   return (
     <div className="flex flex-col h-full" style={{ background: "#f0f2f5" }}>
+      {/* Header */}
       <div className="flex-shrink-0 bg-white px-6 py-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
@@ -45,10 +94,24 @@ export default function QuoteDetailClient({ quote: initialQuote, lead }: Props) 
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
               style={{ background: `${s.color}15`, color: s.color }}>{s.label}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Xuất PDF */}
+            <button onClick={exportPdf} disabled={exportingPdf}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              <FileDown size={14} /> {exportingPdf ? "Đang xuất..." : "Xuất PDF"}
+            </button>
+            {/* Gửi Zalo */}
+            {lead && (
+              <button onClick={() => { setZaloMsg(defaultZaloMsg); setShowZaloModal(true); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
+                style={{ background: "#0068FF" }}>
+                <MessageCircle size={14} /> Gửi Zalo
+              </button>
+            )}
+            {/* Status actions */}
             {quote.status === "draft" && (
               <button onClick={() => updateStatus("sent")} disabled={updating}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-gray-900"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
                 style={{ background: "#3b82f6" }}>
                 <Send size={14} /> Đánh dấu đã gửi
               </button>
@@ -56,7 +119,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead }: Props) 
             {quote.status === "sent" && (
               <>
                 <button onClick={() => updateStatus("accepted")} disabled={updating}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-gray-900"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
                   style={{ background: "#22c55e" }}>
                   <Check size={14} /> Chấp nhận
                 </button>
@@ -71,54 +134,138 @@ export default function QuoteDetailClient({ quote: initialQuote, lead }: Props) 
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          {/* Quote header */}
+        <div ref={printRef} className="max-w-3xl mx-auto space-y-4">
+
+          {/* ── Phần in / PDF ── */}
+          {/* Header công ty + số báo giá */}
           <div className="bg-white rounded-2xl p-6 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="text-2xl font-black" style={{ color: "#C9A84C" }}>SmartFurni</div>
-                <div className="text-xs text-gray-500 mt-0.5">Giải pháp nội thất thông minh B2B</div>
+            <div className="flex items-start justify-between gap-4 mb-5">
+              {/* Thông tin công ty */}
+              <div className="flex-1">
+                {company.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={company.logoUrl} alt={company.name} className="h-12 object-contain mb-2" />
+                ) : (
+                  <div className="text-2xl font-black mb-1" style={{ color: "#C9A84C" }}>{company.name}</div>
+                )}
+                <div className="space-y-0.5 mt-1">
+                  {company.address && (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <MapPin size={11} className="flex-shrink-0" /> {company.address}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {company.phone && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Phone size={11} /> {company.phone}
+                      </div>
+                    )}
+                    {company.email && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Mail size={11} /> {company.email}
+                      </div>
+                    )}
+                    {company.website && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Globe size={11} /> {company.website}
+                      </div>
+                    )}
+                  </div>
+                  {company.taxCode && (
+                    <div className="text-xs text-gray-500">MST: {company.taxCode}</div>
+                  )}
+                </div>
               </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-gray-900">{quote.quoteNumber}</div>
-                <div className="text-xs text-gray-500">Ngày: {new Date(quote.createdAt).toLocaleDateString("vi-VN")}</div>
-                <div className="text-xs text-gray-500">Hiệu lực: {new Date(quote.validUntil).toLocaleDateString("vi-VN")}</div>
+              {/* Số báo giá */}
+              <div className="text-right flex-shrink-0">
+                <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Báo giá</div>
+                <div className="text-xl font-black text-gray-900">{quote.quoteNumber}</div>
+                <div className="text-xs text-gray-500 mt-1">Ngày lập: {new Date(quote.createdAt).toLocaleDateString("vi-VN")}</div>
+                <div className="text-xs text-gray-500">Hiệu lực đến: <span className="font-semibold text-amber-600">{new Date(quote.validUntil).toLocaleDateString("vi-VN")}</span></div>
+                {quote.createdBy && <div className="text-xs text-gray-500 mt-1">Người lập: {quote.createdBy}</div>}
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-gray-50">
-              <div className="text-xs text-gray-500 mb-1">Khách hàng</div>
-              <div className="font-semibold text-gray-900">{quote.leadName}</div>
-              {lead && (
-                <div className="text-sm text-gray-600 mt-0.5">{lead.phone} {lead.company ? `· ${lead.company}` : ""}</div>
+
+            {/* Divider */}
+            <div style={{ borderTop: "1px solid #e5e7eb" }} className="my-4" />
+
+            {/* Thông tin khách hàng */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  <User size={12} /> Thông tin khách hàng
+                </div>
+                <div className="font-bold text-gray-900 text-base">{quote.leadName}</div>
+                {lead && (
+                  <div className="space-y-0.5 mt-1.5">
+                    {lead.company && (
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                        <Building2 size={12} className="flex-shrink-0 text-gray-400" /> {lead.company}
+                      </div>
+                    )}
+                    {lead.phone && (
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                        <Phone size={12} className="flex-shrink-0 text-gray-400" /> {lead.phone}
+                      </div>
+                    )}
+                    {lead.email && (
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                        <Mail size={12} className="flex-shrink-0 text-gray-400" /> {lead.email}
+                      </div>
+                    )}
+                    {lead.projectAddress && (
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                        <MapPin size={12} className="flex-shrink-0 text-gray-400" /> {lead.projectAddress}
+                      </div>
+                    )}
+                    {lead.projectName && (
+                      <div className="text-xs text-gray-500 mt-1">Dự án: {lead.projectName}{lead.unitCount ? ` · ${lead.unitCount} căn` : ""}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* Thông tin thanh toán */}
+              {(company.bankAccount || company.bankName) && (
+                <div className="p-3 rounded-xl" style={{ background: "#fffbf0", border: "1px solid #f3e8c0" }}>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">
+                    <CreditCard size={12} /> Thông tin thanh toán
+                  </div>
+                  <div className="space-y-0.5">
+                    {company.bankName && <div className="text-sm font-semibold text-gray-800">{company.bankName}</div>}
+                    {company.bankAccount && <div className="text-sm text-gray-700">STK: <span className="font-bold">{company.bankAccount}</span></div>}
+                    {company.bankBranch && <div className="text-xs text-gray-500">{company.bankBranch}</div>}
+                    <div className="text-xs text-gray-500 mt-1">Chủ TK: {company.name}</div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Items */}
+          {/* Bảng sản phẩm */}
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+                <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Sản phẩm</th>
-                  <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase">SL</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Đơn giá</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">CK</th>
+                  <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500 uppercase w-16">SL</th>
+                  <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 uppercase">Đơn giá</th>
+                  <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 uppercase w-20">CK</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Thành tiền</th>
                 </tr>
               </thead>
               <tbody>
                 {quote.items.map((item, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #f9fafb" }}>
+                  <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">{item.productName}</div>
-                      <div className="text-xs text-gray-500">{item.sku}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{item.sku}{item.selectedSizeLabel ? ` · ${item.selectedSizeLabel}` : ""}</div>
                     </td>
-                    <td className="px-4 py-3 text-center text-gray-700">{item.qty}</td>
-                    <td className="px-4 py-3 text-right text-gray-600">{formatVND(item.unitPrice)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-3 py-3 text-center text-gray-700 font-medium">{item.qty}</td>
+                    <td className="px-3 py-3 text-right text-gray-600">{formatVND(item.unitPrice)}</td>
+                    <td className="px-3 py-3 text-right">
                       {item.discountPct > 0 ? (
-                        <span className="text-xs font-bold text-green-600">-{item.discountPct}%</span>
-                      ) : "—"}
+                        <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">-{item.discountPct}%</span>
+                      ) : <span className="text-gray-300">—</span>}
                     </td>
                     <td className="px-4 py-3 text-right font-bold" style={{ color: "#C9A84C" }}>
                       {formatVND(item.finalPrice * item.qty)}
@@ -127,21 +274,56 @@ export default function QuoteDetailClient({ quote: initialQuote, lead }: Props) 
                 ))}
               </tbody>
               <tfoot>
+                {/* Tổng chưa chiết khấu */}
                 <tr style={{ borderTop: "2px solid #e5e7eb" }}>
-                  <td colSpan={4} className="px-4 py-3 text-right text-sm text-gray-600">Tạm tính</td>
-                  <td className="px-4 py-3 text-right font-medium">{formatVND(quote.subtotal)}</td>
+                  <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-500">Tổng chưa chiết khấu</td>
+                  <td className="px-4 py-2 text-right text-sm text-gray-600">{formatVND(subtotalBeforeDiscount)}</td>
                 </tr>
-                {quote.extraDiscountPct > 0 && (
+                {/* Chiết khấu số lượng */}
+                {hasQtyDiscount && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">Chiết khấu thêm ({quote.extraDiscountPct}%)</td>
+                    <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-500">Chiết khấu theo số lượng</td>
                     <td className="px-4 py-2 text-right text-sm text-green-600 font-medium">
-                      -{formatVND(quote.subtotal * quote.extraDiscountPct / 100)}
+                      -{formatVND(subtotalBeforeDiscount - subtotalAfterQtyDiscount)}
                     </td>
                   </tr>
                 )}
-                <tr style={{ background: "#fffbf0" }}>
-                  <td colSpan={4} className="px-4 py-3 text-right font-bold text-gray-900">Tổng cộng</td>
-                  <td className="px-4 py-3 text-right text-xl font-black" style={{ color: "#C9A84C" }}>
+                {/* Tổng sau CK SL */}
+                {hasQtyDiscount && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600 font-medium">Tổng sau chiết khấu số lượng</td>
+                    <td className="px-4 py-2 text-right text-sm font-semibold text-gray-700">{formatVND(subtotalAfterQtyDiscount)}</td>
+                  </tr>
+                )}
+                {/* Chiết khấu bổ sung */}
+                {quote.extraDiscountPct > 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-500">Chiết khấu thêm ({quote.extraDiscountPct}%)</td>
+                    <td className="px-4 py-2 text-right text-sm text-green-600 font-medium">
+                      -{formatVND(subtotalAfterQtyDiscount * (quote.extraDiscountPct / 100))}
+                    </td>
+                  </tr>
+                )}
+                {/* Tổng sau chiết khấu */}
+                {(hasQtyDiscount || quote.extraDiscountPct > 0) && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600 font-semibold">Tổng sau chiết khấu</td>
+                    <td className="px-4 py-2 text-right text-sm font-bold text-gray-800">{formatVND(afterExtraDiscount)}</td>
+                  </tr>
+                )}
+                {/* VAT */}
+                {quote.includeVat && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-500">VAT 8%</td>
+                    <td className="px-4 py-2 text-right text-sm text-gray-600 font-medium">+{formatVND(vatAmount)}</td>
+                  </tr>
+                )}
+                {/* Tổng cộng */}
+                <tr style={{ background: "#fffbf0", borderTop: "2px solid #C9A84C" }}>
+                  <td colSpan={4} className="px-4 py-4 text-right font-bold text-gray-900">
+                    Tổng cộng {quote.includeVat && <span className="text-xs font-normal text-gray-500">(đã gồm VAT 8%)</span>}
+                  </td>
+                  <td className="px-4 py-4 text-right text-xl font-black" style={{ color: "#C9A84C" }}>
                     {formatVND(quote.total)}
                   </td>
                 </tr>
@@ -149,14 +331,73 @@ export default function QuoteDetailClient({ quote: initialQuote, lead }: Props) 
             </table>
           </div>
 
-          {quote.notes && (
+          {/* Ghi chú + Chữ ký */}
+          <div className="grid grid-cols-2 gap-4">
+            {quote.notes && (
+              <div className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
+                <h3 className="font-semibold text-gray-900 mb-2 text-sm">Điều khoản & Ghi chú</h3>
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{quote.notes}</p>
+              </div>
+            )}
+            {/* Chữ ký */}
             <div className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
-              <h3 className="font-semibold text-gray-900 mb-2">Ghi chú</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">{quote.notes}</p>
+              <div className="flex justify-between gap-4">
+                <div className="text-center flex-1">
+                  <div className="text-xs font-semibold text-gray-500 uppercase mb-8">Đại diện bên bán</div>
+                  <div className="border-t border-gray-300 pt-2">
+                    <div className="text-xs font-semibold text-gray-700">{company.representativeName || company.name}</div>
+                    <div className="text-xs text-gray-500">{company.representativeTitle || "Đại diện"}</div>
+                  </div>
+                </div>
+                <div className="text-center flex-1">
+                  <div className="text-xs font-semibold text-gray-500 uppercase mb-8">Đại diện bên mua</div>
+                  <div className="border-t border-gray-300 pt-2">
+                    <div className="text-xs font-semibold text-gray-700">{quote.leadName}</div>
+                    <div className="text-xs text-gray-500">{lead?.company || ""}</div>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+
         </div>
       </div>
+
+      {/* Zalo Modal */}
+      {showZaloModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <MessageCircle size={20} style={{ color: "#0068FF" }} />
+              <h2 className="font-bold text-gray-900">Gửi báo giá qua Zalo</h2>
+            </div>
+            {lead && (
+              <div className="flex items-center gap-2 mb-3 p-2 rounded-lg" style={{ background: "#f0f7ff" }}>
+                <Phone size={14} className="text-blue-500" />
+                <span className="text-sm text-gray-700">Gửi đến: <strong>{lead.name}</strong> · {lead.zaloPhone || lead.phone}</span>
+              </div>
+            )}
+            <textarea
+              value={zaloMsg}
+              onChange={e => setZaloMsg(e.target.value)}
+              rows={8}
+              className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+              placeholder="Nội dung tin nhắn Zalo..."
+            />
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setShowZaloModal(false)}
+                className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
+                Huỷ
+              </button>
+              <button onClick={sendZalo} disabled={sendingZalo || !zaloMsg.trim()}
+                className="flex-1 px-4 py-2 text-sm rounded-xl font-semibold text-white disabled:opacity-50"
+                style={{ background: "#0068FF" }}>
+                {sendingZalo ? "Đang gửi..." : "Gửi Zalo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
