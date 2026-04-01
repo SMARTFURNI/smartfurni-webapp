@@ -67,7 +67,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       <td colspan="4" style="padding:6px 12px; text-align:right; font-size:13px; color:#6b7280;">VAT 8%</td>
       <td style="padding:6px 12px; text-align:right; font-size:13px; color:#374151; font-weight:600;">+${formatVND(vatAmount)}</td>
     </tr>` : ""}
-    <tr style="background:#fffbf0; border-top: 2px solid #C9A84C;">
+    <tr class="total-row">
       <td colspan="4" style="padding:14px 12px; text-align:right; font-weight:700; font-size:15px; color:#111;">
         TỔNG CỘNG ${quote.includeVat ? '<span style="font-size:11px; font-weight:400; color:#6b7280;">(đã gồm VAT 8%)</span>' : ''}
       </td>
@@ -82,60 +82,70 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Báo giá ${quote.quoteNumber}</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #374151; background: #fff; padding: 32px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #374151; background: #fff; padding: 0; }
     @media print {
-      body { padding: 20px; }
-      @page { margin: 15mm; size: A4; }
+      body { padding: 0; }
+      @page { margin: 0; size: A4; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     }
+    .page-wrap { padding: 24px 28px; }
     table { width: 100%; border-collapse: collapse; }
-    .header-section { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-    .company-name { font-size: 24px; font-weight: 900; color: #C9A84C; margin-bottom: 6px; }
-    .info-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; margin-bottom: 3px; }
+    /* Dark header */
+    .dark-header { background: #1c1c1e !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; border-radius: 10px 10px 0 0; padding: 20px 24px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .company-name { font-size: 22px; font-weight: 900; color: #C9A84C; margin-bottom: 6px; }
+    .info-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #9ca3af; margin-bottom: 3px; }
+    .info-icon { color: #C9A84C; }
     .quote-badge { text-align: right; }
-    .quote-number { font-size: 20px; font-weight: 900; color: #111; }
+    .quote-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #C9A84C; margin-bottom: 4px; }
+    .quote-number { font-size: 20px; font-weight: 900; color: #ffffff; }
+    .quote-meta { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+    .quote-valid { font-weight: 700; color: #C9A84C; }
+    /* White section below header */
+    .white-section { background: #fff; border: 1px solid #2a2a2a; border-top: none; border-radius: 0 0 10px 10px; padding: 16px 24px 20px; margin-bottom: 20px; }
     .divider { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
-    .customer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-    .info-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; }
-    .info-box-gold { background: #fffbf0; border: 1px solid #f3e8c0; border-radius: 10px; padding: 14px; }
+    .customer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .info-box { background: #f9fafb !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+    .info-box-gold { background: #fffbf0 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; border: 1px solid #f3e8c0; border-radius: 8px; padding: 12px; }
     .box-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 8px; }
     .box-title-gold { color: #92400e; }
-    .customer-name { font-size: 16px; font-weight: 700; color: #111; margin-bottom: 6px; }
-    .sig-section { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px; }
+    .customer-name { font-size: 15px; font-weight: 700; color: #111; margin-bottom: 5px; }
+    .sig-section { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 28px; }
     .sig-box { text-align: center; }
-    .sig-line { border-top: 1px solid #d1d5db; margin-top: 48px; padding-top: 8px; }
-    .notes-section { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-top: 20px; }
-    thead tr { background: #f9fafb; border-bottom: 2px solid #e5e7eb; }
+    .sig-line { border-top: 1px solid #d1d5db; margin-top: 44px; padding-top: 8px; }
+    .notes-section { background: #f9fafb !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-top: 16px; }
+    thead tr { background: #f9fafb !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; border-bottom: 2px solid #e5e7eb; }
     th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
     th.right { text-align: right; }
     th.center { text-align: center; }
+    .total-row { background: #fffbf0 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; border-top: 2px solid #C9A84C !important; }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <div class="header-section">
+<div class="page-wrap">
+  <!-- Dark Header -->
+  <div class="dark-header">
     <div>
-      ${company.logoUrl ? `<img src="${company.logoUrl}" alt="${company.name}" style="height:48px; object-fit:contain; margin-bottom:8px;">` : `<div class="company-name">${company.name}</div>`}
-      ${company.address ? `<div class="info-row">📍 ${company.address}</div>` : ""}
+      ${company.logoUrl ? `<img src="${company.logoUrl}" alt="${company.name}" style="height:52px; object-fit:contain; margin-bottom:10px; filter:brightness(1.05);">` : `<div class="company-name">${company.name}</div>`}
+      ${company.address ? `<div class="info-row"><span class="info-icon">◎</span> ${company.address}</div>` : ""}
       <div style="display:flex; gap:16px; flex-wrap:wrap;">
-        ${company.phone ? `<div class="info-row">📞 ${company.phone}</div>` : ""}
-        ${company.email ? `<div class="info-row">✉️ ${company.email}</div>` : ""}
-        ${company.website ? `<div class="info-row">🌐 ${company.website}</div>` : ""}
+        ${company.phone ? `<div class="info-row"><span class="info-icon">★</span> ${company.phone}</div>` : ""}
+        ${company.email ? `<div class="info-row"><span class="info-icon">■</span> ${company.email}</div>` : ""}
+        ${company.website ? `<div class="info-row"><span class="info-icon">▶</span> ${company.website}</div>` : ""}
       </div>
-      ${company.taxCode ? `<div class="info-row">MST: ${company.taxCode}</div>` : ""}
+      ${company.taxCode ? `<div style="font-size:11px; color:#6b7280; margin-top:3px;">MST: ${company.taxCode}</div>` : ""}
     </div>
     <div class="quote-badge">
-      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#9ca3af; margin-bottom:4px;">Báo giá</div>
+      <div class="quote-label">Báo giá</div>
       <div class="quote-number">${quote.quoteNumber}</div>
-      <div style="font-size:12px; color:#6b7280; margin-top:4px;">Ngày lập: ${new Date(quote.createdAt).toLocaleDateString("vi-VN")}</div>
-      <div style="font-size:12px; color:#6b7280;">Hiệu lực: <strong style="color:#d97706;">${new Date(quote.validUntil).toLocaleDateString("vi-VN")}</strong></div>
-      ${quote.createdBy ? `<div style="font-size:12px; color:#6b7280; margin-top:2px;">Người lập: ${quote.createdBy}</div>` : ""}
+      <div class="quote-meta">Ngày lập: ${new Date(quote.createdAt).toLocaleDateString("vi-VN")}</div>
+      <div class="quote-meta">Hiệu lực: <span class="quote-valid">${new Date(quote.validUntil).toLocaleDateString("vi-VN")}</span></div>
+      ${quote.createdBy ? `<div class="quote-meta" style="margin-top:2px;">Người lập: ${quote.createdBy}</div>` : ""}
     </div>
   </div>
 
-  <hr class="divider">
-
-  <!-- Thông tin khách hàng + thanh toán -->
+  <!-- White section: customer + payment -->
+  <div class="white-section">
   <div class="customer-grid">
     <div class="info-box">
       <div class="box-title">Thông tin khách hàng</div>
@@ -155,6 +165,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       <div style="font-size:11px; color:#9ca3af; margin-top:4px;">Chủ TK: ${company.name}</div>
     </div>` : ""}
   </div>
+  </div>{/* end white-section */}
 
   <!-- Bảng sản phẩm -->
   <table>
@@ -198,6 +209,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   <script>
     window.onload = function() { window.print(); }
   </script>
+</div>{/* end page-wrap */}
 </body>
 </html>`;
 
