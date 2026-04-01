@@ -2078,7 +2078,12 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
               </div>
             )}
             <button
-              onClick={() => saveSection(activeTab === "leadtypes" ? "leadTypes" : activeTab === "dashboardtheme" ? "dashboardTheme" : activeTab as keyof CrmSettings)}
+              onClick={() => saveSection(
+                activeTab === "leadtypes" ? "leadTypes" :
+                activeTab === "dashboardtheme" ? "dashboardTheme" :
+                activeTab === "discount" ? "discountTiers" :
+                activeTab as keyof CrmSettings
+              )}
               disabled={saving}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
               style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }}
