@@ -882,7 +882,7 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
                     </div>
                   )}
                 </div>
-              )}
+              ))}
               </>
               )}
             </div>
