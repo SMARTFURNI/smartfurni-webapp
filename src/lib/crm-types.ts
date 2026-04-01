@@ -98,6 +98,8 @@ export interface QuoteItem {
   discountPct: number;
   finalPrice: number;
   notes: string;
+  selectedSize?: string;       // size key, e.g. "1m2x2m"
+  selectedSizeLabel?: string;  // display label, e.g. "1.2m x 2m"
 }
 
 export interface Quote {

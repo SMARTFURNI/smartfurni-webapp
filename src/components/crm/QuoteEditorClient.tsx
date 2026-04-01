@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, ArrowLeft, Loader2, Package, ChevronDown } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Loader2, Package, Ruler } from "lucide-react";
 import type { CrmProduct, Lead, QuoteItem } from "@/lib/crm-types";
 import { formatVND, getDiscountForQty } from "@/lib/crm-types";
 
@@ -31,19 +31,44 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
 
   function addProduct(product: CrmProduct) {
     const qty = 1;
+    // Nếu có sizePricings, dùng kích thước đầu tiên làm mặc định
+    const firstSize = product.sizePricings && product.sizePricings.length > 0 ? product.sizePricings[0] : null;
+    const unitPrice = firstSize ? firstSize.price : product.basePrice;
     const discountPct = getDiscountForQty(product, qty);
-    const finalPrice = product.basePrice * (1 - discountPct / 100);
+    const finalPrice = unitPrice * (1 - discountPct / 100);
     setItems(prev => [...prev, {
       productId: product.id,
       productName: product.name,
       sku: product.sku,
       qty,
-      unitPrice: product.basePrice,
+      unitPrice,
       discountPct,
       finalPrice,
       notes: "",
+      selectedSize: firstSize?.size,
+      selectedSizeLabel: firstSize?.label || firstSize?.size,
     }]);
     setShowProductPicker(false);
+  }
+
+  function updateSize(idx: number, sizeKey: string) {
+    setItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item;
+      const product = products.find(p => p.id === item.productId);
+      if (!product) return item;
+      const sizePricing = product.sizePricings?.find(s => s.size === sizeKey);
+      const unitPrice = sizePricing ? sizePricing.price : product.basePrice;
+      const discountPct = getDiscountForQty(product, item.qty);
+      const finalPrice = unitPrice * (1 - discountPct / 100);
+      return {
+        ...item,
+        unitPrice,
+        discountPct,
+        finalPrice,
+        selectedSize: sizeKey,
+        selectedSizeLabel: sizePricing?.label || sizeKey,
+      };
+    }));
   }
 
   function updateQty(idx: number, qty: number) {
@@ -148,38 +173,74 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
                   <div className="col-span-2 text-right">CK</div>
                   <div className="col-span-2 text-right">Thành tiền</div>
                 </div>
-                {items.map((item, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-center p-3 rounded-xl"
-                    style={{ background: "#f9fafb", border: "1px solid #f3f4f6" }}>
-                    <div className="col-span-4">
-                      <div className="text-sm font-medium text-gray-900 truncate">{item.productName}</div>
-                      <div className="text-xs text-gray-500">{item.sku}</div>
-                    </div>
-                    <div className="col-span-2 flex items-center justify-center">
-                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-                        <button onClick={() => updateQty(idx, Math.max(1, item.qty - 1))}
-                          className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600">−</button>
-                        <span className="w-8 text-center text-sm font-medium">{item.qty}</span>
-                        <button onClick={() => updateQty(idx, item.qty + 1)}
-                          className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600">+</button>
+                {items.map((item, idx) => {
+                  const product = products.find(p => p.id === item.productId);
+                  const hasSizes = product?.sizePricings && product.sizePricings.length > 0;
+                  return (
+                    <div key={idx} className="p-3 rounded-xl space-y-2"
+                      style={{ background: "#f9fafb", border: "1px solid #f3f4f6" }}>
+                      {/* Main row */}
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4">
+                          <div className="text-sm font-medium text-gray-900 truncate">{item.productName}</div>
+                          <div className="text-xs text-gray-500">{item.sku}</div>
+                          {item.selectedSizeLabel && (
+                            <div className="text-[10px] font-medium mt-0.5" style={{ color: "#C9A84C" }}>{item.selectedSizeLabel}</div>
+                          )}
+                        </div>
+                        <div className="col-span-2 flex items-center justify-center">
+                          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                            <button onClick={() => updateQty(idx, Math.max(1, item.qty - 1))}
+                              className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600">−</button>
+                            <span className="w-8 text-center text-sm font-medium">{item.qty}</span>
+                            <button onClick={() => updateQty(idx, item.qty + 1)}
+                              className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600">+</button>
+                          </div>
+                        </div>
+                        <div className="col-span-2 text-right text-xs text-gray-600">{formatVND(item.unitPrice)}</div>
+                        <div className="col-span-2 text-right">
+                          {item.discountPct > 0 ? (
+                            <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">-{item.discountPct}%</span>
+                          ) : <span className="text-xs text-gray-500">—</span>}
+                        </div>
+                        <div className="col-span-1 text-right text-sm font-bold" style={{ color: "#C9A84C" }}>
+                          {formatVND(item.finalPrice * item.qty)}
+                        </div>
+                        <div className="col-span-1 flex justify-end">
+                          <button onClick={() => removeItem(idx)} className="text-gray-400 hover:text-red-400 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Size selector — chỉ hiện nếu sản phẩm có kích thước */}
+                      {hasSizes && (
+                        <div className="flex items-start gap-2 pt-2" style={{ borderTop: "1px dashed #e5e7eb" }}>
+                          <div className="flex items-center gap-1 flex-shrink-0 mt-1">
+                            <Ruler size={11} className="text-gray-400" />
+                            <span className="text-xs text-gray-500">Kích thước:</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {product!.sizePricings!.map(s => (
+                              <button
+                                key={s.size}
+                                onClick={() => updateSize(idx, s.size)}
+                                className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all"
+                                style={{
+                                  background: item.selectedSize === s.size ? "#C9A84C" : "#fff",
+                                  color: item.selectedSize === s.size ? "#fff" : "#374151",
+                                  border: `1.5px solid ${item.selectedSize === s.size ? "#C9A84C" : "#d1d5db"}`,
+                                }}>
+                                {s.label || s.size}
+                                <span className="ml-1.5 opacity-80">{formatVND(s.price)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="col-span-2 text-right text-xs text-gray-600">{formatVND(item.unitPrice)}</div>
-                    <div className="col-span-2 text-right">
-                      {item.discountPct > 0 ? (
-                        <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">-{item.discountPct}%</span>
-                      ) : <span className="text-xs text-gray-500">—</span>}
-                    </div>
-                    <div className="col-span-1 text-right text-sm font-bold" style={{ color: "#C9A84C" }}>
-                      {formatVND(item.finalPrice * item.qty)}
-                    </div>
-                    <div className="col-span-1 flex justify-end">
-                      <button onClick={() => removeItem(idx)} className="text-gray-600 hover:text-red-400 transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Totals */}
                 <div className="pt-3 space-y-2" style={{ borderTop: "2px solid #f3f4f6" }}>
@@ -261,21 +322,41 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
                 className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center">×</button>
             </div>
             <div className="p-3 space-y-2">
-              {products.map(p => (
-                <button key={p.id} onClick={() => addProduct(p)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-amber-50 transition-colors"
-                  style={{ border: "1px solid #f3f4f6" }}>
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                    {p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" /> :
-                      <div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-gray-600" /></div>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-gray-900 truncate">{p.name}</div>
-                    <div className="text-xs text-gray-500">{p.sku}</div>
-                  </div>
-                  <div className="text-sm font-bold flex-shrink-0" style={{ color: "#C9A84C" }}>{formatVND(p.basePrice)}</div>
-                </button>
-              ))}
+              {products.filter(p => p.isActive).map(p => {
+                const hasSizes = p.sizePricings && p.sizePricings.length > 0;
+                const minPrice = hasSizes ? Math.min(...p.sizePricings!.map(s => s.price)) : p.basePrice;
+                const maxPrice = hasSizes ? Math.max(...p.sizePricings!.map(s => s.price)) : p.basePrice;
+                return (
+                  <button key={p.id} onClick={() => addProduct(p)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-amber-50 transition-colors"
+                    style={{ border: "1px solid #f3f4f6" }}>
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                      {p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" /> :
+                        <div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-gray-400" /></div>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm text-gray-900 truncate">{p.name}</div>
+                      <div className="text-xs text-gray-500">{p.sku}</div>
+                      {hasSizes && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Ruler size={10} className="text-gray-400" />
+                          <span className="text-[10px] text-gray-400">{p.sizePricings!.length} kích thước</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {hasSizes && minPrice !== maxPrice ? (
+                        <div>
+                          <div className="text-[10px] text-gray-400">từ</div>
+                          <div className="text-sm font-bold" style={{ color: "#C9A84C" }}>{formatVND(minPrice)}</div>
+                        </div>
+                      ) : (
+                        <div className="text-sm font-bold" style={{ color: "#C9A84C" }}>{formatVND(minPrice)}</div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

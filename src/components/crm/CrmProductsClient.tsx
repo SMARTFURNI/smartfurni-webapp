@@ -328,13 +328,35 @@ function ProductCard({ product: p, isSelected, onSelect, onEdit, onToggleActive,
         <div className="font-bold text-sm truncate mb-0.5" style={{ color: T.textPrimary }}>{p.name}</div>
         <div className="text-[11px] font-mono mb-2" style={{ color: T.textMuted }}>{p.sku}</div>
         <div className="flex items-center justify-between">
-          <div className="font-black text-base" style={{ color: T.gold }}>{formatVND(p.basePrice)}</div>
-          {p.discountTiers.length > 0 && (
-            <div className="flex items-center gap-0.5 text-[10px]" style={{ color: T.textMuted }}>
-              <Percent size={10} />
-              <span>{p.discountTiers.length} mức CK</span>
+          {p.sizePricings && p.sizePricings.length > 0 ? (
+            <div>
+              <div className="text-[10px]" style={{ color: T.textMuted }}>từ</div>
+              <div className="font-black text-base" style={{ color: T.gold }}>
+                {formatVND(Math.min(...p.sizePricings.map(s => s.price)))}
+              </div>
+              {Math.min(...p.sizePricings.map(s => s.price)) !== Math.max(...p.sizePricings.map(s => s.price)) && (
+                <div className="text-[10px]" style={{ color: T.textMuted }}>
+                  đến {formatVND(Math.max(...p.sizePricings.map(s => s.price)))}
+                </div>
+              )}
             </div>
+          ) : (
+            <div className="font-black text-base" style={{ color: T.gold }}>{formatVND(p.basePrice)}</div>
           )}
+          <div className="flex flex-col items-end gap-0.5">
+            {p.sizePricings && p.sizePricings.length > 0 && (
+              <div className="flex items-center gap-0.5 text-[10px]" style={{ color: T.textMuted }}>
+                <Ruler size={10} />
+                <span>{p.sizePricings.length} kích thước</span>
+              </div>
+            )}
+            {p.discountTiers.length > 0 && (
+              <div className="flex items-center gap-0.5 text-[10px]" style={{ color: T.textMuted }}>
+                <Percent size={10} />
+                <span>{p.discountTiers.length} mức CK</span>
+              </div>
+            )}
+          </div>
         </div>
         {/* Specs preview */}
         {Object.keys(p.specs).length > 0 && (
@@ -386,13 +408,29 @@ function ProductRow({ product: p, isSelected, onSelect, onEdit, onToggleActive, 
             style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
           {!p.isActive && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: "#F1F5F9", color: T.textMuted }}>Ẩn</span>}
         </div>
-        <div className="text-xs mt-0.5" style={{ color: T.textMuted }}>{p.sku} · {Object.keys(p.specs).length} thông số · {p.discountTiers.length} mức chiết khấu</div>
+        <div className="text-xs mt-0.5" style={{ color: T.textMuted }}>
+          {p.sku} · {Object.keys(p.specs).length} thông số · {p.discountTiers.length} mức CK
+          {p.sizePricings && p.sizePricings.length > 0 && ` · ${p.sizePricings.length} kích thước`}
+        </div>
       </div>
       <div className="text-right flex-shrink-0">
-        <div className="font-black text-sm" style={{ color: T.gold }}>{formatVND(p.basePrice)}</div>
-        {p.discountTiers.length > 0 && (
-          <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>
-            CK -{Math.min(...p.discountTiers.map(t => t.discountPct))}~{Math.max(...p.discountTiers.map(t => t.discountPct))}%
+        {p.sizePricings && p.sizePricings.length > 0 ? (
+          <div>
+            <div className="font-black text-sm" style={{ color: T.gold }}>
+              {formatVND(Math.min(...p.sizePricings.map(s => s.price)))}
+              {Math.min(...p.sizePricings.map(s => s.price)) !== Math.max(...p.sizePricings.map(s => s.price)) &&
+                ` – ${formatVND(Math.max(...p.sizePricings.map(s => s.price)))}`}
+            </div>
+            <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>theo kích thước</div>
+          </div>
+        ) : (
+          <div>
+            <div className="font-black text-sm" style={{ color: T.gold }}>{formatVND(p.basePrice)}</div>
+            {p.discountTiers.length > 0 && (
+              <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>
+                CK -{Math.min(...p.discountTiers.map(t => t.discountPct))}~{Math.max(...p.discountTiers.map(t => t.discountPct))}%
+              </div>
+            )}
           </div>
         )}
       </div>
