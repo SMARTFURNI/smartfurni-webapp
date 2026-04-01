@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Send, Check, X, FileDown, MessageCircle, Building2, User, Phone, Mail, MapPin, CreditCard, Globe } from "lucide-react";
+import { ArrowLeft, Send, Check, X, FileDown, MessageCircle, Building2, User, Phone, Mail, MapPin, CreditCard, Globe, AtSign } from "lucide-react";
 import type { Quote, Lead } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
 import type { CompanyInfo } from "@/lib/crm-settings-store";
@@ -27,6 +27,12 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
   const [sendingZalo, setSendingZalo] = useState(false);
   const [zaloMsg, setZaloMsg] = useState("");
   const [showZaloModal, setShowZaloModal] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailTo, setEmailTo] = useState(lead?.email || "");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailResult, setEmailResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   async function updateStatus(status: Quote["status"]) {
@@ -81,6 +87,40 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
 
   const defaultZaloMsg = `Kính gửi Quý khách ${quote.leadName},\n\n${company.name} xin gửi báo giá ${quote.quoteNumber} với tổng giá trị ${formatVND(quote.total)}.\n\nHiệu lực đến: ${new Date(quote.validUntil).toLocaleDateString("vi-VN")}\n\nVui lòng liên hệ ${company.phone} để được tư vấn thêm.\n\nTrân trọng,\n${company.name}`;
 
+  const defaultEmailSubject = `Báo giá ${quote.quoteNumber} từ ${company.name}`;
+  const defaultEmailMessage = `Kính gửi Quý khách ${quote.leadName},\n\nCảm ơn bạn đã quan tâm đến sản phẩm của ${company.name}.\n\nVui lòng xem báo giá đính kèm và liên hệ chúng tôi nếu cần tư vấn thêm.\n\nTrân trọng,\n${company.representativeName || company.name}`;
+
+  async function sendEmail() {
+    if (!emailTo.trim()) return;
+    setSendingEmail(true);
+    setEmailResult(null);
+    try {
+      const res = await fetch("/api/crm/quotes/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quoteId: quote.id,
+          toEmail: emailTo.trim(),
+          toName: quote.leadName,
+          subject: emailSubject || defaultEmailSubject,
+          message: emailMessage,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailResult({ ok: true, msg: data.mock ? `[Xem trước] ${data.message}` : data.message });
+        if (!data.mock) {
+          // Auto-mark as sent if still draft
+          if (quote.status === "draft") updateStatus("sent");
+        }
+      } else {
+        setEmailResult({ ok: false, msg: data.error || "Gửi email thất bại" });
+      }
+    } catch {
+      setEmailResult({ ok: false, msg: "Lỗi kết nối, vui lòng thử lại" });
+    } finally { setSendingEmail(false); }
+  }
+
   return (
     <div className="flex flex-col h-full" style={{ background: "#f0f2f5" }}>
       {/* Header */}
@@ -99,6 +139,11 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
             <button onClick={exportPdf} disabled={exportingPdf}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
               <FileDown size={14} /> {exportingPdf ? "Đang xuất..." : "Xuất PDF"}
+            </button>
+            {/* Gửi Email */}
+            <button onClick={() => { setEmailTo(lead?.email || ""); setEmailSubject(defaultEmailSubject); setEmailMessage(defaultEmailMessage); setEmailResult(null); setShowEmailModal(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+              <AtSign size={14} /> Gửi Email
             </button>
             {/* Gửi Zalo */}
             {lead && (
@@ -363,6 +408,83 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
 
         </div>
       </div>
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <AtSign size={20} className="text-blue-600" />
+              <h2 className="font-bold text-gray-900">Gửi báo giá qua Email</h2>
+            </div>
+
+            {/* Email To */}
+            <div className="mb-3">
+              <label className="block text-xs font-semibold text-gray-500 mb-1">Gửi đến (Email)</label>
+              <input
+                type="email"
+                value={emailTo}
+                onChange={e => setEmailTo(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="email@example.com"
+              />
+              {lead?.email && emailTo !== lead.email && (
+                <button onClick={() => setEmailTo(lead.email!)} className="text-xs text-blue-500 mt-1 hover:underline">
+                  Dùng email khách hàng: {lead.email}
+                </button>
+              )}
+            </div>
+
+            {/* Subject */}
+            <div className="mb-3">
+              <label className="block text-xs font-semibold text-gray-500 mb-1">Tiêu đề</label>
+              <input
+                type="text"
+                value={emailSubject}
+                onChange={e => setEmailSubject(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder={defaultEmailSubject}
+              />
+            </div>
+
+            {/* Personal message */}
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-gray-500 mb-1">Lời nhắn (hiển thị trong email)</label>
+              <textarea
+                value={emailMessage}
+                onChange={e => setEmailMessage(e.target.value)}
+                rows={5}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                placeholder="Lời nhắn cá nhân gửi kèm báo giá..."
+              />
+            </div>
+
+            {/* Result */}
+            {emailResult && (
+              <div className={`mb-3 px-3 py-2 rounded-xl text-sm ${emailResult.ok ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                {emailResult.msg}
+              </div>
+            )}
+
+            <div className="text-xs text-gray-400 mb-3">
+              Email sẽ được gửi kèm nội dung báo giá đầy đủ (sản phẩm, giá, chiết khấu, thông tin công ty).
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => { setShowEmailModal(false); setEmailResult(null); }}
+                className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
+                {emailResult?.ok ? "Đóng" : "Huỷ"}
+              </button>
+              {!emailResult?.ok && (
+                <button onClick={sendEmail} disabled={sendingEmail || !emailTo.trim()}
+                  className="flex-1 px-4 py-2 text-sm rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+                  {sendingEmail ? "Đang gửi..." : "✉️ Gửi Email"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Zalo Modal */}
       {showZaloModal && (
