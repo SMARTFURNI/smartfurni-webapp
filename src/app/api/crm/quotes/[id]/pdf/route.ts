@@ -165,7 +165,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       <div style="font-size:11px; color:#9ca3af; margin-top:4px;">Chủ TK: ${company.name}</div>
     </div>` : ""}
   </div>
-  </div>{/* end white-section */}
+  </div>
 
   <!-- Bảng sản phẩm -->
   <table>
@@ -209,7 +209,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   <script>
     window.onload = function() { window.print(); }
   </script>
-</div>{/* end page-wrap */}
+</div>
 </body>
 </html>`;
 
