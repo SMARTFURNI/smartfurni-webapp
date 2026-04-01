@@ -138,57 +138,57 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
 
           {/* ── Phần in / PDF ── */}
           {/* Header công ty + số báo giá */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
-            <div className="flex items-start justify-between gap-4 mb-5">
+          <div className="rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid #2a2a2a" }}>
+            {/* Nền đen chì cho phần header công ty */}
+            <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ background: "#1c1c1e" }}>
               {/* Thông tin công ty */}
               <div className="flex-1">
                 {company.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={company.logoUrl} alt={company.name} className="h-12 object-contain mb-2" />
+                  <img src={company.logoUrl} alt={company.name} className="h-14 object-contain mb-3" style={{ filter: "brightness(1.05) drop-shadow(0 0 8px rgba(201,168,76,0.3))" }} />
                 ) : (
                   <div className="text-2xl font-black mb-1" style={{ color: "#C9A84C" }}>{company.name}</div>
                 )}
-                <div className="space-y-0.5 mt-1">
+                <div className="space-y-1 mt-1">
                   {company.address && (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <MapPin size={11} className="flex-shrink-0" /> {company.address}
+                    <div className="flex items-center gap-1.5 text-xs" style={{ color: "#9ca3af" }}>
+                      <MapPin size={11} className="flex-shrink-0" style={{ color: "#C9A84C" }} /> {company.address}
                     </div>
                   )}
                   <div className="flex items-center gap-3 flex-wrap">
                     {company.phone && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Phone size={11} /> {company.phone}
+                      <div className="flex items-center gap-1 text-xs" style={{ color: "#9ca3af" }}>
+                        <Phone size={11} style={{ color: "#C9A84C" }} /> {company.phone}
                       </div>
                     )}
                     {company.email && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Mail size={11} /> {company.email}
+                      <div className="flex items-center gap-1 text-xs" style={{ color: "#9ca3af" }}>
+                        <Mail size={11} style={{ color: "#C9A84C" }} /> {company.email}
                       </div>
                     )}
                     {company.website && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Globe size={11} /> {company.website}
+                      <div className="flex items-center gap-1 text-xs" style={{ color: "#9ca3af" }}>
+                        <Globe size={11} style={{ color: "#C9A84C" }} /> {company.website}
                       </div>
                     )}
                   </div>
                   {company.taxCode && (
-                    <div className="text-xs text-gray-500">MST: {company.taxCode}</div>
+                    <div className="text-xs" style={{ color: "#6b7280" }}>MST: {company.taxCode}</div>
                   )}
                 </div>
               </div>
               {/* Số báo giá */}
               <div className="text-right flex-shrink-0">
-                <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Báo giá</div>
-                <div className="text-xl font-black text-gray-900">{quote.quoteNumber}</div>
-                <div className="text-xs text-gray-500 mt-1">Ngày lập: {new Date(quote.createdAt).toLocaleDateString("vi-VN")}</div>
-                <div className="text-xs text-gray-500">Hiệu lực đến: <span className="font-semibold text-amber-600">{new Date(quote.validUntil).toLocaleDateString("vi-VN")}</span></div>
-                {quote.createdBy && <div className="text-xs text-gray-500 mt-1">Người lập: {quote.createdBy}</div>}
+                <div className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#C9A84C", letterSpacing: "0.12em" }}>Báo giá</div>
+                <div className="text-xl font-black" style={{ color: "#ffffff" }}>{quote.quoteNumber}</div>
+                <div className="text-xs mt-1" style={{ color: "#9ca3af" }}>Ngày lập: {new Date(quote.createdAt).toLocaleDateString("vi-VN")}</div>
+                <div className="text-xs" style={{ color: "#9ca3af" }}>Hiệu lực đến: <span className="font-semibold" style={{ color: "#C9A84C" }}>{new Date(quote.validUntil).toLocaleDateString("vi-VN")}</span></div>
+                {quote.createdBy && <div className="text-xs mt-1" style={{ color: "#9ca3af" }}>Người lập: {quote.createdBy}</div>}
               </div>
             </div>
 
-            {/* Divider */}
-            <div style={{ borderTop: "1px solid #e5e7eb" }} className="my-4" />
-
+            {/* Phần dưới: nền trắng cho thông tin khách hàng */}
+            <div className="bg-white px-6 py-5">
             {/* Thông tin khách hàng */}
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
@@ -239,7 +239,8 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
                 </div>
               )}
             </div>
-          </div>
+            </div>{/* end bg-white */}
+          </div>{/* end card */}
 
           {/* Bảng sản phẩm */}
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
