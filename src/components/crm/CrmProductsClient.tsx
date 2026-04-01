@@ -6,9 +6,9 @@ import {
   Plus, Package, Tag, Edit3, X, Loader2, Check,
   Search, Grid3X3, List, Star, TrendingUp, ShieldCheck,
   ChevronDown, Trash2, Eye, EyeOff, Copy, BarChart2,
-  Layers, DollarSign, Percent, AlertCircle,
+  Layers, DollarSign, Percent, AlertCircle, Upload, ImageIcon, Ruler,
 } from "lucide-react";
-import type { CrmProduct, DiscountTier } from "@/lib/crm-types";
+import type { CrmProduct, DiscountTier, SizePricing } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
@@ -41,9 +41,9 @@ const CATEGORY_MAP: Record<CrmProduct["category"], { label: string; color: strin
   sofa_bed: { label: "Sofa giường", color: T.blue, bg: T.blueLight, icon: "🛋️" },
 };
 
-interface Props { initialProducts: CrmProduct[] }
+interface Props { initialProducts: CrmProduct[]; defaultTiers?: DiscountTier[] }
 
-export default function CrmProductsClient({ initialProducts }: Props) {
+export default function CrmProductsClient({ initialProducts, defaultTiers = [] }: Props) {
   const [products, setProducts] = useState(initialProducts);
   const [selected, setSelected] = useState<CrmProduct | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -233,7 +233,8 @@ export default function CrmProductsClient({ initialProducts }: Props) {
       {/* Modal */}
       {showModal && (
         <ProductModal
-          product={editProduct}
+          product={editProduct ?? undefined}
+          defaultTiers={defaultTiers}
           onClose={() => setShowModal(false)}
           onSaved={p => {
             setProducts(prev => {
@@ -530,12 +531,15 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
 }
 
 // ─── Product Modal (Add/Edit) ─────────────────────────────────────────────────
-function ProductModal({ product, onClose, onSaved }: {
-  product: CrmProduct | null; onClose: () => void; onSaved: (p: CrmProduct) => void;
+function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
+  product?: CrmProduct;
+  onClose: () => void;
+  onSaved: (p: CrmProduct) => void;
+  defaultTiers?: DiscountTier[];
 }) {
   const isEdit = !!product;
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"basic" | "specs" | "discount">("basic");
+  const [activeTab, setActiveTab] = useState<"basic" | "specs" | "discount" | "size">("basic");
   const [form, setForm] = useState({
     name: product?.name || "",
     sku: product?.sku || "",
@@ -545,18 +549,30 @@ function ProductModal({ product, onClose, onSaved }: {
     basePrice: product?.basePrice?.toString() || "",
     isActive: product?.isActive ?? true,
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [specs, setSpecs] = useState<{ key: string; value: string }[]>(
     product ? Object.entries(product.specs).map(([key, value]) => ({ key, value })) : [{ key: "", value: "" }]
   );
-  const [tiers, setTiers] = useState<DiscountTier[]>(
-    product?.discountTiers.length ? product.discountTiers : [
-      { minQty: 5, discountPct: 10, label: "≥5 bộ: -10%" },
-      { minQty: 10, discountPct: 15, label: "≥10 bộ: -15%" },
-      { minQty: 20, discountPct: 20, label: "≥20 bộ: -20%" },
-    ]
-  );
+  // If product has no custom tiers, use empty array (will fall back to default)
+  const hasCustomTiers = !!(product?.discountTiers?.length);
+  const [tiers, setTiers] = useState<DiscountTier[]>(product?.discountTiers || []);
+  const [usingDefaultTiers, setUsingDefaultTiers] = useState(!hasCustomTiers);
+  const [sizePricings, setSizePricings] = useState<SizePricing[]>(product?.sizePricings || []);
 
   function setF(k: string, v: string | boolean) { setForm(prev => ({ ...prev, [k]: v })); }
+
+  async function handleImageUpload(file: File) {
+    setUploadingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/crm/facebook-scheduler/upload-image", { method: "POST", body: fd });
+      if (res.ok) {
+        const { url } = await res.json();
+        setF("imageUrl", url);
+      }
+    } finally { setUploadingImage(false); }
+  }
 
   function addSpec() { setSpecs(prev => [...prev, { key: "", value: "" }]); }
   function removeSpec(i: number) { setSpecs(prev => prev.filter((_, idx) => idx !== i)); }
@@ -570,12 +586,21 @@ function ProductModal({ product, onClose, onSaved }: {
     setTiers(prev => prev.map((t, idx) => idx === i ? { ...t, [field]: field === "label" ? val : parseInt(val) || 0 } : t));
   }
 
+  function addSizePricing() { setSizePricings(prev => [...prev, { size: "", price: 0, label: "" }]); }
+  function removeSizePricing(i: number) { setSizePricings(prev => prev.filter((_, idx) => idx !== i)); }
+  function updateSizePricing(i: number, field: keyof SizePricing, val: string) {
+    setSizePricings(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: field === "price" ? parseFloat(val) || 0 : val } : s));
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       const specsObj: Record<string, string> = {};
       specs.filter(s => s.key.trim()).forEach(s => { specsObj[s.key.trim()] = s.value.trim(); });
+
+      // If using default tiers, save empty array (will fall back to global setting)
+      const finalTiers = usingDefaultTiers ? [] : tiers.filter(t => t.minQty > 0);
 
       const body: CrmProduct = {
         id: product?.id || crypto.randomUUID(),
@@ -587,7 +612,8 @@ function ProductModal({ product, onClose, onSaved }: {
         basePrice: parseFloat(form.basePrice) || 0,
         isActive: form.isActive,
         specs: specsObj,
-        discountTiers: tiers.filter(t => t.minQty > 0),
+        discountTiers: finalTiers,
+        sizePricings: sizePricings.filter(s => s.size.trim() && s.price > 0),
         createdAt: product?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -632,11 +658,12 @@ function ProductModal({ product, onClose, onSaved }: {
         </div>
 
         {/* Tabs */}
-        <div className="flex px-6 pt-3 gap-1 flex-shrink-0">
+        <div className="flex px-6 pt-3 gap-1 flex-shrink-0 flex-wrap">
           {([
             ["basic", "Thông tin cơ bản"],
             ["specs", `Thông số (${specs.filter(s => s.key).length})`],
-            ["discount", `Chiết khấu (${tiers.filter(t => t.minQty > 0).length})`],
+            ["discount", usingDefaultTiers ? "Chiết khấu (mặc định)" : `Chiết khấu (${tiers.filter(t => t.minQty > 0).length})`],
+            ["size", `Kích thước (${sizePricings.filter(s => s.size.trim()).length})`],
           ] as const).map(([tab, label]) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className="px-4 py-2 text-xs font-semibold rounded-xl transition-all"
@@ -681,13 +708,35 @@ function ProductModal({ product, onClose, onSaved }: {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: T.textSecondary }}>URL ảnh sản phẩm</label>
-                <input value={form.imageUrl} onChange={e => setF("imageUrl", e.target.value)}
-                  className={inputCls} style={inputStyle} placeholder="https://..." />
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: T.textSecondary }}>Ảnh sản phẩm</label>
+                {/* Upload zone */}
+                <label className="flex flex-col items-center justify-center gap-2 w-full h-28 rounded-xl border-2 border-dashed cursor-pointer transition-all hover:opacity-80"
+                  style={{ borderColor: T.goldBorder, background: T.goldLight }}>
+                  {uploadingImage ? (
+                    <Loader2 size={20} className="animate-spin" style={{ color: T.gold }} />
+                  ) : form.imageUrl ? (
+                    <img src={form.imageUrl} alt="" className="h-full w-full object-cover rounded-xl" />
+                  ) : (
+                    <>
+                      <Upload size={20} style={{ color: T.gold }} />
+                      <span className="text-xs font-semibold" style={{ color: T.gold }}>Nhấn để chọn ảnh từ máy tính</span>
+                      <span className="text-[10px]" style={{ color: T.textMuted }}>JPG, PNG, WEBP · Tối đa 10MB</span>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} />
+                </label>
+                {/* URL fallback */}
+                <div className="mt-2">
+                  <input value={form.imageUrl} onChange={e => setF("imageUrl", e.target.value)}
+                    className={inputCls} style={inputStyle} placeholder="Hoặc dán URL ảnh..." />
+                </div>
                 {form.imageUrl && (
-                  <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden" style={{ border: `1px solid ${T.cardBorder}` }}>
-                    <img src={form.imageUrl} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = "none")} />
-                  </div>
+                  <button type="button" onClick={() => setF("imageUrl", "")}
+                    className="mt-1 text-xs flex items-center gap-1 hover:opacity-70"
+                    style={{ color: T.red }}>
+                    <X size={11} /> Xóa ảnh
+                  </button>
                 )}
               </div>
               <div>
@@ -754,7 +803,45 @@ function ProductModal({ product, onClose, onSaved }: {
 
           {activeTab === "discount" && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between mb-1">
+              {/* Default tiers banner */}
+              <div className="p-3 rounded-xl flex items-start gap-3" style={{ background: usingDefaultTiers ? "#F0FDF4" : T.goldLight, border: `1px solid ${usingDefaultTiers ? "#86EFAC" : T.goldBorder}` }}>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold" style={{ color: usingDefaultTiers ? "#16A34A" : T.gold }}>
+                    {usingDefaultTiers ? "✅ Đang dùng chiết khấu chung" : "⚡ Chiết khấu riêng cho sản phẩm này"}
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: usingDefaultTiers ? "#15803D" : T.textSecondary }}>
+                    {usingDefaultTiers
+                      ? `Áp dụng ${defaultTiers.length} bậc từ Cài đặt CRM. Xóa để tùy chỉnh riêng.`
+                      : "Chiết khấu này sẽ ghi đè lên cài đặt chung."}
+                  </p>
+                  {usingDefaultTiers && defaultTiers.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {defaultTiers.map((t, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "#DCFCE7", color: "#16A34A" }}>
+                          ≥{t.minQty} bộ: -{t.discountPct}%
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button type="button"
+                  onClick={() => {
+                    if (usingDefaultTiers) {
+                      setUsingDefaultTiers(false);
+                      if (tiers.length === 0) setTiers(defaultTiers.length ? [...defaultTiers] : [{ minQty: 5, discountPct: 10, label: "≥5 bộ: -10%" }]);
+                    } else {
+                      setUsingDefaultTiers(true);
+                    }
+                  }}
+                  className="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg flex-shrink-0"
+                  style={{ background: usingDefaultTiers ? "#DCFCE7" : T.bg, color: usingDefaultTiers ? "#16A34A" : T.textSecondary, border: `1px solid ${usingDefaultTiers ? "#86EFAC" : T.cardBorder}` }}>
+                  {usingDefaultTiers ? "Tùy chỉnh riêng" : "Dùng mặc định"}
+                </button>
+              </div>
+
+              {!usingDefaultTiers && (
+              <>
+              <div className="flex items-center justify-between">
                 <p className="text-xs" style={{ color: T.textMuted }}>Chính sách chiết khấu theo số lượng (B2B)</p>
                 <button type="button" onClick={addTier}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold"
@@ -795,7 +882,79 @@ function ProductModal({ product, onClose, onSaved }: {
                     </div>
                   )}
                 </div>
+              )}
+              </>
+              )}
+            </div>
+          )}
+
+          {activeTab === "size" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: T.textSecondary }}>Giá theo kích thước</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>Mỗi kích thước có giá riêng. Khi tạo báo giá, nhân viên có thể chọn kích thước phù hợp.</p>
+                </div>
+                <button type="button" onClick={addSizePricing}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0"
+                  style={{ background: T.goldLight, color: T.gold }}>
+                  <Plus size={12} /> Thêm kích thước
+                </button>
+              </div>
+              {sizePricings.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-8 gap-2" style={{ color: T.textMuted }}>
+                  <Ruler size={28} style={{ opacity: 0.4 }} />
+                  <p className="text-xs">Chưa có kích thước nào. Nhấn "Thêm kích thước" để bắt đầu.</p>
+                </div>
+              )}
+              {sizePricings.map((sp, i) => (
+                <div key={i} className="p-3 rounded-xl space-y-2" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <label className="block text-[10px] font-semibold mb-1" style={{ color: T.textMuted }}>Kích thước</label>
+                      <input value={sp.size} onChange={e => updateSizePricing(i, "size", e.target.value)}
+                        className={inputCls} style={inputStyle} placeholder="VD: 1.2x2m" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-[10px] font-semibold mb-1" style={{ color: T.textMuted }}>Giá (VND)</label>
+                      <input type="number" value={sp.price || ""} onChange={e => updateSizePricing(i, "price", e.target.value)}
+                        className={inputCls} style={inputStyle} placeholder="28900000" />
+                    </div>
+                    <button type="button" onClick={() => removeSizePricing(i)}
+                      className="p-2 rounded-lg hover:bg-red-50 mt-5 flex-shrink-0"
+                      style={{ color: T.red }}>
+                      <X size={13} />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold mb-1" style={{ color: T.textMuted }}>Nhãn hiển thị (tùy chọn)</label>
+                    <input value={sp.label} onChange={e => updateSizePricing(i, "label", e.target.value)}
+                      className={inputCls} style={inputStyle} placeholder="VD: 1.2m x 2m (Standard)" />
+                  </div>
+                  {sp.price > 0 && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[10px]" style={{ color: T.textMuted }}>Giá:</span>
+                      <span className="text-xs font-bold" style={{ color: T.gold }}>{formatVND(sp.price)}</span>
+                    </div>
+                  )}
+                </div>
               ))}
+              {/* Preset sizes */}
+              {sizePricings.length === 0 && (
+                <div className="pt-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: T.textMuted }}>Gợi ý nhanh</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["1.2x2m", "1.4x2m", "1.6x2m", "1.8x2m", "2x2m", "1.2x2.2m", "1.6x2.2m", "1.8x2.2m"].map(size => (
+                      <button key={size} type="button"
+                        onClick={() => setSizePricings(prev => [...prev, { size, price: 0, label: size }])}
+                        className="px-2.5 py-1 rounded-lg text-xs transition-all hover:opacity-80"
+                        style={{ background: T.blueLight, color: T.blue }}>
+                        + {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </form>

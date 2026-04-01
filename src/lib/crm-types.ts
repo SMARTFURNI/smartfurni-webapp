@@ -61,6 +61,12 @@ export interface ActivityAttachment {
   size: number;
 }
 
+export interface SizePricing {
+  size: string;   // e.g. "1m2x2m"
+  price: number;  // VND
+  label: string;  // e.g. "1.2m x 2m"
+}
+
 export interface CrmProduct {
   id: string;
   name: string;
@@ -71,6 +77,7 @@ export interface CrmProduct {
   specs: Record<string, string>;
   basePrice: number;
   discountTiers: DiscountTier[];
+  sizePricings?: SizePricing[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
