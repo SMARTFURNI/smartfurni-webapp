@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getCrmSession } from "@/lib/admin-auth";
 import { getCrmSettings, updateCrmSetting, resetCrmSetting, CrmSettings } from "@/lib/crm-settings-store";
 
 export async function GET() {
-  if (!await getAdminSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const settings = await getCrmSettings();
   return NextResponse.json(settings);
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!await getAdminSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json();
   const { key, value } = body as { key: keyof CrmSettings; value: CrmSettings[keyof CrmSettings] };
   if (!key || value === undefined) {
@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!await getAdminSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { key } = await req.json() as { key: keyof CrmSettings };
   await resetCrmSetting(key);
   return NextResponse.json({ ok: true });

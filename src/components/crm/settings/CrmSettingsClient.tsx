@@ -369,7 +369,7 @@ function LeadTypesTab({ data, onChange }: { data: LeadTypeConfig[]; onChange: (d
   );
 }
 
-function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange: (d: DiscountTierConfig[]) => void }) {
+function DiscountTierTable({ data, onChange }: { data: DiscountTierConfig[]; onChange: (d: DiscountTierConfig[]) => void }) {
   const add = () => onChange([...data, { minQty: 100, discountPct: 30, label: "Từ 100 bộ" }]);
   const update = (idx: number, field: keyof DiscountTierConfig, value: string | number) => {
     const updated = [...data];
@@ -377,19 +377,14 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
     onChange(updated);
   };
   const remove = (idx: number) => onChange(data.filter((_, i) => i !== idx));
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "#6b7280" }}>
-          Chiết khấu tự động áp dụng khi tạo báo giá dựa trên số lượng sản phẩm.
-        </p>
+    <div className="space-y-3">
+      <div className="flex justify-end">
         <button onClick={add} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
           style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }}>
           <Plus size={14} /> Thêm bậc
         </button>
       </div>
-
       <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
         <table className="w-full text-sm">
           <thead>
@@ -432,18 +427,236 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
           </tbody>
         </table>
       </div>
-
-      <div className="p-4 rounded-xl" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
-        <p className="text-xs font-semibold mb-2" style={{ color: "#C9A84C" }}>Xem trước áp dụng:</p>
-        <div className="flex flex-wrap gap-2">
-          {data.sort((a, b) => a.minQty - b.minQty).map((tier, idx) => (
-            <div key={idx} className="px-3 py-1 rounded-full text-xs"
-              style={{ background: "rgba(201,168,76,0.1)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.2)" }}>
-              ≥{tier.minQty} bộ → -{tier.discountPct}%
-            </div>
-          ))}
+      {data.length > 0 && (
+        <div className="p-3 rounded-xl" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
+          <p className="text-xs font-semibold mb-2" style={{ color: "#C9A84C" }}>Xem trước:</p>
+          <div className="flex flex-wrap gap-2">
+            {[...data].sort((a, b) => a.minQty - b.minQty).map((tier, idx) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-xs"
+                style={{ background: "rgba(201,168,76,0.1)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.2)" }}>
+                ≥{tier.minQty} bộ → -{tier.discountPct}%
+              </div>
+            ))}
+          </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+interface ProductDiscountOverride {
+  productId: string;
+  productName: string;
+  tiers: DiscountTierConfig[];
+}
+
+function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange: (d: DiscountTierConfig[]) => void }) {
+  const [subTab, setSubTab] = useState<"default" | "product">("default");
+  const [products, setProducts] = useState<{ id: string; name: string; sku: string; discountTiers: DiscountTierConfig[] }[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [productOverrides, setProductOverrides] = useState<ProductDiscountOverride[]>([]);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [savedProduct, setSavedProduct] = useState(false);
+
+  const loadProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const res = await fetch("/api/crm/products");
+      if (res.ok) {
+        const list = await res.json();
+        setProducts(list);
+        // Build overrides from products that have custom tiers
+        const overrides: ProductDiscountOverride[] = list
+          .filter((p: { id: string; name: string; sku: string; discountTiers: DiscountTierConfig[] }) => p.discountTiers && p.discountTiers.length > 0)
+          .map((p: { id: string; name: string; sku: string; discountTiers: DiscountTierConfig[] }) => ({ productId: p.id, productName: p.name, tiers: p.discountTiers }));
+        setProductOverrides(overrides);
+      }
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  const handleSubTabChange = (tab: "default" | "product") => {
+    setSubTab(tab);
+    if (tab === "product" && products.length === 0) loadProducts();
+  };
+
+  const selectedProduct = products.find(p => p.id === selectedProductId);
+  const selectedOverride = productOverrides.find(o => o.productId === selectedProductId);
+  const currentTiers: DiscountTierConfig[] = selectedOverride?.tiers ?? [];
+
+  const updateProductTiers = (tiers: DiscountTierConfig[]) => {
+    setProductOverrides(prev => {
+      const exists = prev.find(o => o.productId === selectedProductId);
+      if (exists) return prev.map(o => o.productId === selectedProductId ? { ...o, tiers } : o);
+      return [...prev, { productId: selectedProductId!, productName: selectedProduct?.name ?? "", tiers }];
+    });
+  };
+
+  const saveProductTiers = async () => {
+    if (!selectedProduct) return;
+    setSavingProduct(true);
+    try {
+      const tiers = productOverrides.find(o => o.productId === selectedProductId)?.tiers ?? [];
+      await fetch("/api/crm/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...selectedProduct, discountTiers: tiers }),
+      });
+      setSavedProduct(true);
+      setTimeout(() => setSavedProduct(false), 2500);
+    } finally {
+      setSavingProduct(false);
+    }
+  };
+
+  const removeProductOverride = async (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    await fetch("/api/crm/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...product, discountTiers: [] }),
+    });
+    setProductOverrides(prev => prev.filter(o => o.productId !== productId));
+    if (selectedProductId === productId) setSelectedProductId(null);
+    // Refresh products
+    loadProducts();
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Sub-tab switcher */}
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f3f4f6", width: "fit-content" }}>
+        <button onClick={() => handleSubTabChange("default")}
+          className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
+          style={subTab === "default" ? { background: "#fff", color: "#C9A84C", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" } : { color: "#6b7280" }}>
+          Mặc định
+        </button>
+        <button onClick={() => handleSubTabChange("product")}
+          className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
+          style={subTab === "product" ? { background: "#fff", color: "#C9A84C", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" } : { color: "#6b7280" }}>
+          Theo sản phẩm
+        </button>
       </div>
+
+      {subTab === "default" && (
+        <div className="space-y-3">
+          <p className="text-sm" style={{ color: "#6b7280" }}>
+            Chiết khấu mặc định áp dụng cho tất cả sản phẩm khi tạo báo giá (trừ sản phẩm đã cài riêng).
+          </p>
+          <DiscountTierTable data={data} onChange={onChange} />
+        </div>
+      )}
+
+      {subTab === "product" && (
+        <div className="space-y-4">
+          <p className="text-sm" style={{ color: "#6b7280" }}>
+            Cài chiết khấu riêng cho từng sản phẩm. Sản phẩm có chiết khấu riêng sẽ không áp dụng chiết khấu mặc định.
+          </p>
+
+          {loadingProducts ? (
+            <div className="flex items-center gap-2 py-8 justify-center" style={{ color: "#9ca3af" }}>
+              <RefreshCw size={16} className="animate-spin" /> Đang tải sản phẩm...
+            </div>
+          ) : (
+            <div className="flex gap-4">
+              {/* Left: product list */}
+              <div className="w-56 flex-shrink-0 space-y-1">
+                <div className="text-xs font-semibold mb-2" style={{ color: "#6b7280" }}>CHỌN SẢN PHẨM</div>
+                {products.length === 0 ? (
+                  <div className="text-sm py-4 text-center" style={{ color: "#9ca3af" }}>Chưa có sản phẩm</div>
+                ) : (
+                  products.map(p => {
+                    const hasOverride = productOverrides.some(o => o.productId === p.id);
+                    return (
+                      <button key={p.id} onClick={() => setSelectedProductId(p.id)}
+                        className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between gap-2"
+                        style={selectedProductId === p.id
+                          ? { background: "rgba(201,168,76,0.12)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }
+                          : { background: "#f9fafb", color: "#374151", border: "1px solid #e5e7eb" }}>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{p.name}</div>
+                          <div className="text-xs" style={{ color: "#9ca3af" }}>{p.sku}</div>
+                        </div>
+                        {hasOverride && (
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#C9A84C" }} />
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Right: tier editor */}
+              <div className="flex-1 min-w-0">
+                {!selectedProductId ? (
+                  <div className="flex items-center justify-center h-40 rounded-xl text-sm" style={{ color: "#9ca3af", border: "2px dashed #e5e7eb" }}>
+                    ← Chọn sản phẩm để cài chiết khấu riêng
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-sm" style={{ color: "#111827" }}>{selectedProduct?.name}</div>
+                        <div className="text-xs" style={{ color: "#9ca3af" }}>{selectedProduct?.sku}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {selectedOverride && (
+                          <button onClick={() => removeProductOverride(selectedProductId)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                            style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
+                            Xoá chiết khấu riêng
+                          </button>
+                        )}
+                        <button onClick={saveProductTiers} disabled={savingProduct}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                          style={{ background: savedProduct ? "rgba(34,197,94,0.15)" : "rgba(201,168,76,0.15)", color: savedProduct ? "#16a34a" : "#C9A84C", border: `1px solid ${savedProduct ? "rgba(34,197,94,0.3)" : "rgba(201,168,76,0.3)"}` }}>
+                          {savingProduct ? <RefreshCw size={12} className="animate-spin" /> : savedProduct ? <CheckCircle2 size={12} /> : <Save size={12} />}
+                          {savedProduct ? "Đã lưu" : "Lưu sản phẩm này"}
+                        </button>
+                      </div>
+                    </div>
+                    {currentTiers.length === 0 && (
+                      <div className="p-3 rounded-lg text-xs" style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e" }}>
+                        Chưa có bậc chiết khấu riêng — đang dùng chiết khấu mặc định. Thêm bậc để ghi đè.
+                      </div>
+                    )}
+                    <DiscountTierTable data={currentTiers} onChange={updateProductTiers} />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Summary of all product overrides */}
+          {productOverrides.length > 0 && (
+            <div className="mt-4 p-4 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>SẢN PHẨM CÓ CHIẾT KHẤU RIÊNG ({productOverrides.length})</div>
+              <div className="space-y-2">
+                {productOverrides.map(o => (
+                  <div key={o.productId} className="flex items-center justify-between p-2 rounded-lg" style={{ background: "#fff", border: "1px solid #e5e7eb" }}>
+                    <div>
+                      <span className="text-sm font-medium" style={{ color: "#374151" }}>{o.productName}</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {[...o.tiers].sort((a, b) => a.minQty - b.minQty).map((t, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded-full text-xs"
+                            style={{ background: "rgba(201,168,76,0.1)", color: "#C9A84C" }}>
+                            ≥{t.minQty} bộ → -{t.discountPct}%
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <button onClick={() => { setSelectedProductId(o.productId); }}
+                      className="text-xs px-2 py-1 rounded" style={{ color: "#C9A84C" }}>Sửa</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
