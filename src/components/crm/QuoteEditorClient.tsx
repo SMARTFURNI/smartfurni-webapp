@@ -3,16 +3,28 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ArrowLeft, Loader2, Package, Ruler } from "lucide-react";
-import type { CrmProduct, Lead, QuoteItem } from "@/lib/crm-types";
-import { formatVND, getDiscountForQty } from "@/lib/crm-types";
+import type { CrmProduct, DiscountTier, Lead, QuoteItem } from "@/lib/crm-types";
+import { formatVND } from "@/lib/crm-types";
 
 interface Props {
   products: CrmProduct[];
   leads: Lead[];
   defaultLead?: Lead;
+  defaultTiers?: DiscountTier[];
 }
 
-export default function QuoteEditorClient({ products, leads, defaultLead }: Props) {
+export default function QuoteEditorClient({ products, leads, defaultLead, defaultTiers = [] }: Props) {
+  // Helper: get discount using product-specific tiers first, fallback to global defaultTiers
+  function getDiscount(product: CrmProduct, qty: number): number {
+    const tiers = product.discountTiers && product.discountTiers.length > 0
+      ? product.discountTiers
+      : defaultTiers;
+    const sorted = [...tiers].sort((a, b) => b.minQty - a.minQty);
+    for (const tier of sorted) {
+      if (qty >= tier.minQty) return tier.discountPct;
+    }
+    return 0;
+  }
   const router = useRouter();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(defaultLead || null);
   const [items, setItems] = useState<QuoteItem[]>([]);
@@ -34,7 +46,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
     // Nếu có sizePricings, dùng kích thước đầu tiên làm mặc định
     const firstSize = product.sizePricings && product.sizePricings.length > 0 ? product.sizePricings[0] : null;
     const unitPrice = firstSize ? firstSize.price : product.basePrice;
-    const discountPct = getDiscountForQty(product, qty);
+    const discountPct = getDiscount(product, qty);
     const finalPrice = unitPrice * (1 - discountPct / 100);
     setItems(prev => [...prev, {
       productId: product.id,
@@ -58,7 +70,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
       if (!product) return item;
       const sizePricing = product.sizePricings?.find(s => s.size === sizeKey);
       const unitPrice = sizePricing ? sizePricing.price : product.basePrice;
-      const discountPct = getDiscountForQty(product, item.qty);
+      const discountPct = getDiscount(product, item.qty);
       const finalPrice = unitPrice * (1 - discountPct / 100);
       return {
         ...item,
@@ -75,7 +87,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead }: Prop
     setItems(prev => prev.map((item, i) => {
       if (i !== idx) return item;
       const product = products.find(p => p.id === item.productId);
-      const discountPct = product ? getDiscountForQty(product, qty) : item.discountPct;
+      const discountPct = product ? getDiscount(product, qty) : item.discountPct;
       const finalPrice = item.unitPrice * (1 - discountPct / 100);
       return { ...item, qty, discountPct, finalPrice };
     }));
