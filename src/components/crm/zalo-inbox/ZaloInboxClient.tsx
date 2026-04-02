@@ -774,27 +774,38 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
                   style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                 />
               </div>
-              {/* Page Access Token */}
+              {/* Page Access Token - dùng textarea để tránh browser autofill */}
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Page Access Token <span style={{color:"#EF4444"}}>*</span></label>
                 <div style={{ position: "relative" }}>
-                  <input
+                  <textarea
                     value={pageAccessToken}
                     onChange={(e) => setPageAccessToken(e.target.value)}
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    type={showToken ? "text" : "password"}
-                    autoComplete="new-password"
-                    style={{ width: "100%", padding: "8px 40px 8px 12px", borderRadius: 8, border: pageAccessToken ? "1px solid #10B981" : "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                    placeholder="Dán token vào đây (eyJhbGciOi...)"
+                    autoComplete="off"
+                    spellCheck={false}
+                    rows={showToken ? 3 : 1}
+                    style={{
+                      width: "100%", padding: "8px 12px", borderRadius: 8,
+                      border: pageAccessToken ? "1px solid #10B981" : "1px solid #E5E7EB",
+                      fontSize: 12, outline: "none", boxSizing: "border-box",
+                      resize: "none", fontFamily: "monospace",
+                      filter: showToken ? "none" : "blur(3px)",
+                      transition: "filter 0.2s",
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowToken(v => !v)}
-                    style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#6B7280" }}
+                    style={{ position: "absolute", right: 8, top: 8, background: "#F3F4F6", border: "1px solid #E5E7EB", borderRadius: 4, cursor: "pointer", fontSize: 11, color: "#374151", padding: "2px 6px" }}
                   >
                     {showToken ? "🙈 Ẩn" : "👁️ Hiện"}
                   </button>
                 </div>
-                {pageAccessToken && <div style={{ fontSize: 11, color: "#10B981", marginTop: 2 }}>✅ Đã nhập {pageAccessToken.length} ký tự</div>}
+                {pageAccessToken
+                  ? <div style={{ fontSize: 11, color: "#10B981", marginTop: 2 }}>✅ Đã nhập {pageAccessToken.length} ký tự</div>
+                  : <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>Copy token từ Pancake và dán vào ô trên</div>
+                }
               </div>
               {/* User API Token */}
               <div>
