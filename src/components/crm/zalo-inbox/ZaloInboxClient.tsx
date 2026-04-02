@@ -630,7 +630,24 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
         body: JSON.stringify(pancakeCreds),
       });
       const data = await res.json();
-      setMessage(data.message || (data.success ? "Đã lưu thành công!" : "Lỗi"));
+      if (data.success) {
+        setMessage(data.message || "Đã lưu thành công!");
+        // Reload credentials sau khi lưu thành công
+        const reloadRes = await fetch("/api/crm/zalo-inbox/credentials");
+        const reloadData = await reloadRes.json();
+        if (reloadData) {
+          setPancakeCreds({
+            pageId: reloadData.page_id || "",
+            pageName: reloadData.page_name || "",
+            pageAccessToken: "",  // không hiển thị token cũ
+            userApiToken: "",
+          });
+        }
+        // Reload conversations list (trigger parent reload)
+        window.location.reload();
+      } else {
+        setMessage(data.error || "Lỗi");
+      }
     } catch { setMessage("Lỗi kết nối"); }
     finally { setSaving(false); }
   };
