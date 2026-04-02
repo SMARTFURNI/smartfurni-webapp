@@ -1,29 +1,52 @@
 /**
  * POST /api/crm/zalo-inbox/conversations/[id]/read
- * Đánh dấu hội thoại đã đọc
+ * Đánh dấu conversation đã đọc qua Pancake API
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { hasInboxAccess, markConversationAsRead, markMessagesAsRead } from "@/lib/zalo-inbox-store";
+import { getDb } from "@/lib/db";
+import { markConversationAsRead } from "@/lib/pancake-service";
 
-async function checkAccess(session: { isAdmin: boolean; staffId?: string } | null): Promise<boolean> {
-  if (!session) return false;
-  if (session.isAdmin) return true;
-  if (session.staffId) return await hasInboxAccess(session.staffId);
-  return false;
+async function getActivePancakeCredentials() {
+  const db = getDb();
+  try {
+    const result = await db.query(
+      `SELECT page_id, page_access_token FROM pancake_credentials WHERE is_active = TRUE LIMIT 1`
+    );
+    return result.rows[0] || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await getCrmSession();
-  if (!await checkAccess(session)) {
-    return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
-  await markConversationAsRead(id);
-  await markMessagesAsRead(id);
-  return NextResponse.json({ success: true });
+  const creds = await getActivePancakeCredentials();
+  if (!creds) {
+    return NextResponse.json({ error: "Chưa cấu hình Pancake API" }, { status: 400 });
+  }
+
+  const conversationId = params.id;
+
+  try {
+    await markConversationAsRead(
+      creds.page_id,
+      conversationId,
+      creds.page_access_token
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Pancake API error:', error);
+    return NextResponse.json({
+      error: error.message || 'Lỗi đánh dấu đã đọc',
+    }, { status: 500 });
+  }
 }

@@ -40,9 +40,10 @@ interface ZaloConversation {
 }
 
 interface GatewayStatus {
-  isConnected: boolean;
-  status: "disconnected" | "connecting" | "connected" | "error";
-  phone: string;
+  connected: boolean;
+  pageName: string | null;
+  pageId: string | null;
+  message?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -87,7 +88,7 @@ export default function ZaloInboxClient() {
   const [messages, setMessages] = useState<ZaloMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({ isConnected: false, status: "disconnected", phone: "" });
+  const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({ connected: false, pageName: null, pageId: null });
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -102,7 +103,7 @@ export default function ZaloInboxClient() {
       if (!res.ok) return;
       const data = await res.json();
       setConversations(data.conversations || []);
-      setGatewayStatus(data.gatewayStatus || { isConnected: false, status: "disconnected", phone: "" });
+      setGatewayStatus({ connected: data.connected || false, pageName: data.pageName || null, pageId: null });
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }, []);
@@ -131,32 +132,20 @@ export default function ZaloInboxClient() {
 
     es.addEventListener("new_message", (e) => {
       const data = JSON.parse(e.data);
-      const { conversationId, message } = data;
+      const { conversationId, text, senderName, createdAt } = data;
 
-      // Thêm tin nhắn vào conversation đang xem
-      if (selectedConv?.id === conversationId) {
-        setMessages((prev) => [...prev, message]);
-      } else {
-        // Tăng unread count
+      // Tăng unread count nếu không đang xem conversation này
+      if (selectedConv?.id !== conversationId) {
         setConversations((prev) =>
           prev.map((c) => c.id === conversationId
-            ? { ...c, unreadCount: c.unreadCount + 1, lastMessage: message.content, lastMessageAt: message.createdAt }
+            ? { ...c, unreadCount: c.unreadCount + 1, lastMessage: text, lastMessageAt: createdAt }
             : c
           )
         );
       }
 
-      // Reload conversations để cập nhật lastMessage
+      // Reload conversations để cập nhật danh sách
       loadConversations();
-    });
-
-    es.addEventListener("status", (e) => {
-      const data = JSON.parse(e.data);
-      setGatewayStatus({
-        isConnected: data.status === "connected",
-        status: data.status,
-        phone: data.phone || "",
-      });
     });
 
     return () => { es.close(); };
@@ -192,7 +181,7 @@ export default function ZaloInboxClient() {
       const res = await fetch("/api/crm/zalo-inbox/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId: selectedConv.id, content: text }),
+        body: JSON.stringify({ conversationId: selectedConv.id, message: text }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -209,12 +198,8 @@ export default function ZaloInboxClient() {
   // ─── Connect Zalo ────────────────────────────────────────────────────────
 
   const handleConnect = async () => {
-    setGatewayStatus((prev) => ({ ...prev, status: "connecting" }));
-    try {
-      const res = await fetch("/api/crm/zalo-inbox/connect", { method: "POST" });
-      const data = await res.json();
-      if (!data.success) alert(data.message);
-    } catch { /* ignore */ }
+    // Với Pancake API, không cần kết nối persistent - chỉ cần reload conversations
+    await loadConversations();
   };
 
   // ─── Filter conversations ────────────────────────────────────────────────
@@ -243,9 +228,9 @@ export default function ZaloInboxClient() {
               </div>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Zalo Inbox</div>
-                <div style={{ fontSize: 11, color: gatewayStatus.isConnected ? "#10B981" : "#9CA3AF", display: "flex", alignItems: "center", gap: 4 }}>
-                  {gatewayStatus.isConnected ? <Wifi size={10} /> : <WifiOff size={10} />}
-                  {gatewayStatus.isConnected ? `Đang kết nối: ${gatewayStatus.phone}` : "Chưa kết nối"}
+                <div style={{ fontSize: 11, color: gatewayStatus.connected ? "#10B981" : "#9CA3AF", display: "flex", alignItems: "center", gap: 4 }}>
+                  {gatewayStatus.connected ? <Wifi size={10} /> : <WifiOff size={10} />}
+                  {gatewayStatus.connected ? `Pancake: ${gatewayStatus.pageName || "Đã kết nối"}` : "Chưa cấu hình Pancake"}
                 </div>
               </div>
             </div>
@@ -260,17 +245,16 @@ export default function ZaloInboxClient() {
           </div>
 
           {/* Connect button nếu chưa kết nối */}
-          {!gatewayStatus.isConnected && (
+          {!gatewayStatus.connected && (
             <button
-              onClick={handleConnect}
-              disabled={gatewayStatus.status === "connecting"}
+              onClick={() => setShowSettings(true)}
               style={{
                 width: "100%", padding: "8px 12px", borderRadius: 8, border: "none",
-                background: gatewayStatus.status === "connecting" ? "#93C5FD" : "#0068FF",
+                background: "#0068FF",
                 color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", marginBottom: 8,
               }}
             >
-              {gatewayStatus.status === "connecting" ? "Đang kết nối..." : "Kết nối Zalo"}
+              Cấu hình Pancake API
             </button>
           )}
 
@@ -599,12 +583,26 @@ function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: stri
 
 function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<"credentials" | "access">("credentials");
-  const [creds, setCreds] = useState({ phone: "", imei: "", cookies: "", userAgent: "" });
+  const [pancakeCreds, setPancakeCreds] = useState({ pageId: "", pageName: "", pageAccessToken: "", userApiToken: "" });
   const [saving, setSaving] = useState(false);
   const [staffList, setStaffList] = useState<any[]>([]);
   const [accessList, setAccessList] = useState<any[]>([]);
   const [loadingAccess, setLoadingAccess] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    // Load existing credentials
+    fetch("/api/crm/zalo-inbox/credentials").then(r => r.json()).then(data => {
+      if (data) {
+        setPancakeCreds({
+          pageId: data.page_id || "",
+          pageName: data.page_name || "",
+          pageAccessToken: "",  // không hiển thị token cũ
+          userApiToken: "",
+        });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (tab === "access") {
@@ -620,8 +618,8 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
   }, [tab]);
 
   const handleSaveCreds = async () => {
-    if (!creds.phone || !creds.imei || !creds.cookies) {
-      setMessage("Vui lòng điền đầy đủ thông tin");
+    if (!pancakeCreds.pageId || !pancakeCreds.pageAccessToken) {
+      setMessage("Vui lòng điền Page ID và Page Access Token");
       return;
     }
     setSaving(true);
@@ -629,10 +627,10 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
       const res = await fetch("/api/crm/zalo-inbox/credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(creds),
+        body: JSON.stringify(pancakeCreds),
       });
       const data = await res.json();
-      setMessage(data.message || (data.success ? "Đã lưu!" : "Lỗi"));
+      setMessage(data.message || (data.success ? "Đã lưu thành công!" : "Lỗi"));
     } catch { setMessage("Lỗi kết nối"); }
     finally { setSaving(false); }
   };
@@ -667,7 +665,7 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
       }}>
         {/* Modal header */}
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>Cài đặt Zalo Inbox</div>
+          <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>Cài đặt Zalo Inbox (Pancake)</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280" }}>
             <X size={20} />
           </button>
@@ -687,7 +685,7 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
                 cursor: "pointer",
               }}
             >
-              {t === "credentials" ? "Thông tin đăng nhập" : "Phân quyền nhân viên"}
+              {t === "credentials" ? "Kết nối Pancake" : "Phân quyền nhân viên"}
             </button>
           ))}
         </div>
@@ -697,42 +695,33 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
           {tab === "credentials" ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{
-                padding: 12, background: "#FEF3C7", borderRadius: 8, fontSize: 12, color: "#92400E",
-                border: "1px solid #FDE68A",
+                padding: 12, background: "#DBEAFE", borderRadius: 8, fontSize: 12, color: "#1E40AF",
+                border: "1px solid #93C5FD",
               }}>
-                <strong>Hướng dẫn lấy thông tin:</strong><br />
-                1. Cài extension <strong>ZaloDataExtractor</strong> trên Chrome<br />
-                2. Mở <a href="https://chat.zalo.me" target="_blank" style={{ color: "#0068FF" }}>chat.zalo.me</a> và đăng nhập<br />
-                3. Click extension → Copy IMEI, Cookies, User Agent<br />
+                <strong>Hướng dẫn lấy thông tin từ Pancake:</strong><br />
+                1. Đăng nhập vào <a href="https://pancake.vn" target="_blank" style={{ color: "#0068FF" }}>Pancake</a><br />
+                2. Vào <strong>Cài đặt → Công cụ → Public API access token</strong><br />
+                3. Copy <strong>Page ID</strong> (từ URL: pancake.vn/p2i_...) và <strong>Page Access Token</strong><br />
                 4. Dán vào các ô bên dưới
               </div>
 
               {[
-                { key: "phone", label: "Số điện thoại Zalo", placeholder: "0912345678" },
-                { key: "imei", label: "IMEI", placeholder: "Lấy từ ZaloDataExtractor" },
-                { key: "userAgent", label: "User Agent", placeholder: "Mozilla/5.0..." },
+                { key: "pageId", label: "Page ID", placeholder: "tt_6711731671916708866" },
+                { key: "pageName", label: "Tên Page (tùy chọn)", placeholder: "Zalo Personal - SmartFurni" },
+                { key: "pageAccessToken", label: "Page Access Token", placeholder: "eyJhbGciOi..." },
+                { key: "userApiToken", label: "User API Token (tùy chọn)", placeholder: "Để trống nếu không có" },
               ].map(({ key, label, placeholder }) => (
                 <div key={key}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>{label}</label>
                   <input
-                    value={(creds as any)[key]}
-                    onChange={(e) => setCreds((prev) => ({ ...prev, [key]: e.target.value }))}
+                    value={(pancakeCreds as any)[key]}
+                    onChange={(e) => setPancakeCreds((prev) => ({ ...prev, [key]: e.target.value }))}
                     placeholder={placeholder}
+                    type={key.includes("Token") ? "password" : "text"}
                     style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
               ))}
-
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Cookies (JSON)</label>
-                <textarea
-                  value={creds.cookies}
-                  onChange={(e) => setCreds((prev) => ({ ...prev, cookies: e.target.value }))}
-                  placeholder='{"_zlang":"vn","zpsid":"...","zpw_sek":"..."}'
-                  rows={4}
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12, outline: "none", resize: "vertical", fontFamily: "monospace", boxSizing: "border-box" }}
-                />
-              </div>
 
               {message && (
                 <div style={{ padding: "8px 12px", borderRadius: 8, background: message.includes("Lỗi") ? "#FEE2E2" : "#D1FAE5", color: message.includes("Lỗi") ? "#991B1B" : "#065F46", fontSize: 13 }}>

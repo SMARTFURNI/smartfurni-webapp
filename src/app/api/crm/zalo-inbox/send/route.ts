@@ -1,45 +1,59 @@
 /**
  * POST /api/crm/zalo-inbox/send
- * Gửi tin nhắn Zalo
+ * Gửi tin nhắn qua Pancake API
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { hasInboxAccess } from "@/lib/zalo-inbox-store";
-import { sendZaloMessage } from "@/lib/zalo-gateway";
+import { getDb } from "@/lib/db";
+import { sendPancakeMessage } from "@/lib/pancake-service";
 
-async function checkAccess(session: { isAdmin: boolean; staffId?: string; fullName?: string } | null): Promise<boolean> {
-  if (!session) return false;
-  if (session.isAdmin) return true;
-  if (session.staffId) return await hasInboxAccess(session.staffId);
-  return false;
+async function getActivePancakeCredentials() {
+  const db = getDb();
+  try {
+    const result = await db.query(
+      `SELECT page_id, page_access_token FROM pancake_credentials WHERE is_active = TRUE LIMIT 1`
+    );
+    return result.rows[0] || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getCrmSession() as any;
-  if (!await checkAccess(session)) {
-    return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
+  const session = await getCrmSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const creds = await getActivePancakeCredentials();
+  if (!creds) {
+    return NextResponse.json({ error: "Chưa cấu hình Pancake API" }, { status: 400 });
   }
 
   const body = await req.json();
-  const { conversationId, content } = body;
+  const { conversationId, message } = body;
 
-  if (!conversationId || !content?.trim()) {
-    return NextResponse.json({ error: "Thiếu conversationId hoặc content" }, { status: 400 });
+  if (!conversationId || !message) {
+    return NextResponse.json({ error: "Thiếu conversationId hoặc message" }, { status: 400 });
   }
 
-  const senderName = session?.fullName || session?.username || "Nhân viên";
-  const senderId = session?.staffId || "admin";
+  try {
+    const result = await sendPancakeMessage(
+      creds.page_id,
+      conversationId,
+      creds.page_access_token,
+      message
+    );
 
-  const result = await sendZaloMessage({
-    conversationId,
-    content: content.trim(),
-    senderName,
-    senderId,
-  });
-
-  if (!result.success) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      message: "Đã gửi tin nhắn",
+      data: result,
+    });
+  } catch (error: any) {
+    console.error('Pancake send error:', error);
+    return NextResponse.json({
+      error: error.message || 'Lỗi gửi tin nhắn',
+    }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true, messageId: result.messageId });
 }

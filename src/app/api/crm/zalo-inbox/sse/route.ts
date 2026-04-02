@@ -1,15 +1,33 @@
 /**
  * GET /api/crm/zalo-inbox/sse
  * Server-Sent Events cho Zalo Inbox real-time
- * Nhận: new_message, status events từ ZaloGateway
+ * Nhận events từ Pancake webhook
  */
 import { NextRequest } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { hasInboxAccess } from "@/lib/zalo-inbox-store";
-import { registerZaloSSEListener, unregisterZaloSSEListener } from "@/lib/zalo-gateway";
+import { getDb } from "@/lib/db";
+import { addSseClient } from "../webhook/route";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+async function checkAccess(session: any): Promise<boolean> {
+  if (!session) return false;
+  if (session.isAdmin) return true;
+  if (session.staffId) {
+    const db = getDb();
+    try {
+      const result = await db.query(
+        `SELECT 1 FROM zalo_inbox_access WHERE staff_id = $1 LIMIT 1`,
+        [session.staffId]
+      );
+      return result.rows.length > 0;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
 
 export async function GET(req: NextRequest) {
   const session = await getCrmSession() as any;
@@ -17,13 +35,12 @@ export async function GET(req: NextRequest) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // Kiểm tra quyền truy cập
-  const hasAccess = session.isAdmin || (session.staffId && await hasInboxAccess(session.staffId));
+  const hasAccess = await checkAccess(session);
   if (!hasAccess) {
     return new Response("Forbidden", { status: 403 });
   }
 
-  const clientId = `zalo_sse_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const clientId = `pancake_sse_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -43,9 +60,9 @@ export async function GET(req: NextRequest) {
       send(": connected\n\n");
       send(`data: ${JSON.stringify({ type: "connected", clientId })}\n\n`);
 
-      // Đăng ký listener với ZaloGateway
-      registerZaloSSEListener(clientId, (event, data) => {
-        send(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      // Đăng ký nhận events từ Pancake webhook
+      const unsubscribe = addSseClient((data: string) => {
+        send(data);
       });
 
       // Heartbeat mỗi 20 giây
@@ -57,7 +74,7 @@ export async function GET(req: NextRequest) {
       req.signal.addEventListener("abort", () => {
         closed = true;
         clearInterval(heartbeat);
-        unregisterZaloSSEListener(clientId);
+        unsubscribe();
         try { controller.close(); } catch { /* already closed */ }
       });
     },
