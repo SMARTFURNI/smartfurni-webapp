@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateStaff } from "@/lib/crm-staff-store";
 import { createStaffJwt, STAFF_SESSION_COOKIE } from "@/lib/admin-auth";
+import { logAudit, getClientIp } from "@/lib/audit-helper";
 
 const ADMIN_SESSION_COOKIE = "sf_admin_session";
 
@@ -16,6 +17,17 @@ export async function POST(req: NextRequest) {
 
     const staff = await authenticateStaff(username, password);
     if (!staff) {
+      // Ghi log đăng nhập thất bại
+      await logAudit({
+        action: "auth.failed",
+        entityType: "auth",
+        entityId: null,
+        entityName: username,
+        actorId: null,
+        actorName: username,
+        ipAddress: getClientIp(req),
+        metadata: { reason: "Sai mật khẩu hoặc tài khoản bị khóa" },
+      });
       return NextResponse.json(
         { error: "Tên đăng nhập hoặc mật khẩu không đúng, hoặc tài khoản đã bị khóa" },
         { status: 401 }
@@ -24,6 +36,18 @@ export async function POST(req: NextRequest) {
 
     // Tạo JWT token (stateless — không cần DB)
     const token = createStaffJwt(staff.id, staff.role);
+
+    // Ghi log đăng nhập thành công
+    await logAudit({
+      action: "auth.login",
+      entityType: "auth",
+      entityId: staff.id,
+      entityName: staff.fullName,
+      actorId: staff.id,
+      actorName: staff.fullName,
+      ipAddress: getClientIp(req),
+      metadata: { role: staff.role, username: staff.username },
+    });
 
     const response = NextResponse.json({
       success: true,
