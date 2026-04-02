@@ -2,6 +2,9 @@
  * POST /api/crm/zalo-inbox/credentials — lưu Pancake API credentials
  * GET  /api/crm/zalo-inbox/credentials — lấy credentials hiện tại
  * DELETE /api/crm/zalo-inbox/credentials — xóa credentials
+ * 
+ * Quyền: Bất kỳ ai đã đăng nhập CRM (admin hoặc nhân viên) đều có thể xem/lưu.
+ * Lý do: Đây là cài đặt chung của hệ thống, không phải dữ liệu cá nhân.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
@@ -25,9 +28,9 @@ async function ensureTable() {
 }
 
 export async function GET() {
-  const session = await getCrmSession() as any;
-  if (!session?.isAdmin) {
-    return NextResponse.json({ error: "Chỉ Admin mới có thể xem thông tin này" }, { status: 403 });
+  const session = await getCrmSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   await ensureTable();
@@ -49,9 +52,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getCrmSession() as any;
-  if (!session?.isAdmin) {
-    return NextResponse.json({ error: "Chỉ Admin mới có thể cấu hình Pancake" }, { status: 403 });
+  const session = await getCrmSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await req.json();
@@ -86,9 +89,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE() {
-  const session = await getCrmSession() as any;
-  if (!session?.isAdmin) {
-    return NextResponse.json({ error: "Chỉ Admin" }, { status: 403 });
+  const session = await getCrmSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   await ensureTable();
