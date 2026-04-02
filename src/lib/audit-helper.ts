@@ -3,7 +3,7 @@
  * Helper functions để ghi audit log dễ dàng từ API routes
  */
 import { NextRequest } from "next/server";
-import { writeAuditLog, type AuditAction } from "./crm-audit-store";
+import { addAuditLog, type AuditAction } from "./crm-audit-store";
 
 /**
  * Lấy IP address từ request
@@ -31,7 +31,7 @@ export async function logAudit(params: {
   metadata?: Record<string, unknown> | null;
 }) {
   try {
-    await writeAuditLog({
+    await addAuditLog({
       action: params.action,
       entityType: params.entityType,
       entityId: params.entityId ?? null,

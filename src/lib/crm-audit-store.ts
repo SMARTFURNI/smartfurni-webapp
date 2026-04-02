@@ -181,7 +181,7 @@ export const PERMISSION_GROUPS: { label: string; keys: (keyof PermissionSet["per
 
 // ─── Store Functions ──────────────────────────────────────────────────────────
 
-async function ensureTables(db: Awaited<ReturnType<typeof getDb>>) {
+async function ensureTables(db: ReturnType<typeof getDb>) {
   await db.query(`
     CREATE TABLE IF NOT EXISTS crm_audit_logs (
       id TEXT PRIMARY KEY,
@@ -223,7 +223,7 @@ async function ensureTables(db: Awaited<ReturnType<typeof getDb>>) {
 // Audit Log CRUD
 export async function addAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Promise<void> {
   try {
-    const db = await getDb();
+    const db = getDb();
     await ensureTables(db);
     const id = `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await db.query(
@@ -242,7 +242,7 @@ export async function addAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Prom
 
 export async function getAuditLogs(filter: AuditLogFilter = {}): Promise<{ logs: AuditLog[]; total: number }> {
   try {
-    const db = await getDb();
+    const db = getDb();
     await ensureTables(db);
     const conditions: string[] = [];
     const params: unknown[] = [];
@@ -276,7 +276,7 @@ export async function getAuditLogs(filter: AuditLogFilter = {}): Promise<{ logs:
 // API Keys CRUD
 export async function getApiKeys(): Promise<ApiKey[]> {
   try {
-    const db = await getDb();
+    const db = getDb();
     await ensureTables(db);
     const res = await db.query(`SELECT * FROM crm_api_keys ORDER BY created_at DESC`);
     return res.rows.map(r => ({
@@ -290,7 +290,7 @@ export async function getApiKeys(): Promise<ApiKey[]> {
 }
 
 export async function createApiKey(name: string, permissions: ApiKeyPermission[], expiresAt: string | null, createdBy: string): Promise<{ key: ApiKey; rawKey: string }> {
-  const db = await getDb();
+  const db = getDb();
   await ensureTables(db);
   const id = `ak_${Date.now()}`;
   const raw = `sf_${Array.from({ length: 40 }, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 62)]).join("")}`;
@@ -310,19 +310,19 @@ export async function createApiKey(name: string, permissions: ApiKeyPermission[]
 }
 
 export async function revokeApiKey(id: string): Promise<void> {
-  const db = await getDb();
+  const db = getDb();
   await db.query(`UPDATE crm_api_keys SET enabled = FALSE WHERE id = $1`, [id]);
 }
 
 export async function deleteApiKey(id: string): Promise<void> {
-  const db = await getDb();
+  const db = getDb();
   await db.query(`DELETE FROM crm_api_keys WHERE id = $1`, [id]);
 }
 
 // Permission Matrix
 export async function getPermissionMatrix(): Promise<PermissionSet[]> {
   try {
-    const db = await getDb();
+    const db = getDb();
     await ensureTables(db);
     const res = await db.query(`SELECT * FROM crm_permission_matrix ORDER BY role`);
     if (res.rows.length === 0) return DEFAULT_PERMISSION_MATRIX;
@@ -333,7 +333,7 @@ export async function getPermissionMatrix(): Promise<PermissionSet[]> {
 }
 
 export async function savePermissionMatrix(matrix: PermissionSet[]): Promise<void> {
-  const db = await getDb();
+  const db = getDb();
   await ensureTables(db);
   for (const ps of matrix) {
     await db.query(
