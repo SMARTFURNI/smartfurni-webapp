@@ -110,15 +110,15 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
             { icon: Layers, label: "Danh mục", value: stats.categories, color: T.purple, bg: T.purpleLight },
             { icon: DollarSign, label: "Giá TB", value: formatVND(stats.avgPrice), color: T.gold, bg: T.goldLight },
           ].map(({ icon: Icon, label, value, color, bg }) => (
-            <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl"
-              style={{ background: bg, border: `1px solid ${color}22` }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: `${color}22` }}>
-                <Icon size={16} style={{ color }} />
+            <div key={label} className="flex items-center gap-3 px-4 py-3.5 rounded-xl"
+              style={{ background: bg, border: `1px solid ${color}30` }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${color}18` }}>
+                <Icon size={17} style={{ color }} />
               </div>
               <div>
-                <div className="text-xs font-medium" style={{ color: T.textMuted }}>{label}</div>
-                <div className="text-sm font-bold" style={{ color: T.textPrimary }}>{value}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color }}>{label}</div>
+                <div className="text-lg font-black leading-tight" style={{ color: T.textPrimary }}>{value}</div>
               </div>
             </div>
           ))}
@@ -137,31 +137,35 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
           </div>
 
           {/* Category filter */}
-          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
-            {([["all", "Tất cả"], ["ergonomic_bed", "Giường CT"], ["sofa_bed", "Sofa"]] as const).map(([val, label]) => (
-              <button key={val} onClick={() => setFilterCat(val)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                style={{
-                  background: filterCat === val ? T.gold : "transparent",
-                  color: filterCat === val ? "#fff" : T.textSecondary,
-                }}>
-                {label}
-              </button>
-            ))}
+          <div className="flex items-center gap-0.5 p-1 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+            {(["all", "ergonomic_bed", "sofa_bed"] as const).map(val => {
+              const labels: Record<string, string> = { all: "Tất cả", ergonomic_bed: "Giường CT", sofa_bed: "Sofa" };
+              const colors: Record<string, string> = { all: T.gold, ergonomic_bed: T.purple, sofa_bed: T.blue };
+              const active = filterCat === val;
+              return (
+                <button key={val} onClick={() => setFilterCat(val)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={{ background: active ? colors[val] : "transparent", color: active ? "#fff" : T.textSecondary }}>
+                  {labels[val]}
+                </button>
+              );
+            })}
           </div>
 
           {/* Active filter */}
-          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
-            {([["all", "Tất cả"], ["active", "Đang bán"], ["inactive", "Ẩn"]] as const).map(([val, label]) => (
-              <button key={val} onClick={() => setFilterActive(val)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                style={{
-                  background: filterActive === val ? T.textPrimary : "transparent",
-                  color: filterActive === val ? "#fff" : T.textSecondary,
-                }}>
-                {label}
-              </button>
-            ))}
+          <div className="flex items-center gap-0.5 p-1 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+            {(["all", "active", "inactive"] as const).map(val => {
+              const labels: Record<string, string> = { all: "Tất cả", active: "Đang bán", inactive: "Ẩn" };
+              const colors: Record<string, string> = { all: T.textPrimary, active: T.green, inactive: T.textMuted };
+              const active = filterActive === val;
+              return (
+                <button key={val} onClick={() => setFilterActive(val)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={{ background: active ? colors[val] : "transparent", color: active ? "#fff" : T.textSecondary }}>
+                  {labels[val]}
+                </button>
+              );
+            })}
           </div>
 
           {/* View toggle */}
@@ -260,120 +264,114 @@ function ProductCard({ product: p, isSelected, onSelect, onEdit, onToggleActive,
   const cat = CATEGORY_MAP[p.category];
   const minDiscount = p.discountTiers.length > 0 ? Math.min(...p.discountTiers.map(t => t.discountPct)) : 0;
   const maxDiscount = p.discountTiers.length > 0 ? Math.max(...p.discountTiers.map(t => t.discountPct)) : 0;
+  const hasSizes = !!(p.sizePricings && p.sizePricings.length > 0);
+  const minPrice = hasSizes ? Math.min(...p.sizePricings!.map(s => s.price)) : p.basePrice;
+  const maxPrice = hasSizes ? Math.max(...p.sizePricings!.map(s => s.price)) : p.basePrice;
 
   return (
     <div
-      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200"
+      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 flex flex-col"
       style={{
         background: T.card,
         border: `1.5px solid ${isSelected ? T.gold : T.cardBorder}`,
-        boxShadow: hovered || isSelected ? T.cardHover : T.cardShadow,
-        transform: hovered ? "translateY(-2px)" : "none",
+        boxShadow: hovered || isSelected ? "0 8px 24px rgba(0,0,0,0.12)" : T.cardShadow,
+        transform: hovered ? "translateY(-3px)" : "none",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onSelect}
     >
-      {/* Image */}
-      <div className="relative" style={{ aspectRatio: "1/1", background: "#F8FAFC" }}>
+      {/* Image - 4:3 ratio */}
+      <div className="relative overflow-hidden" style={{ aspectRatio: "4/3", background: cat.bg, flexShrink: 0 }}>
         {p.imageUrl ? (
-          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover"
+            style={{ transition: "transform 0.35s ease", transform: hovered ? "scale(1.06)" : "scale(1)" }} />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-            <span className="text-4xl">{cat.icon}</span>
-            <span className="text-xs font-medium" style={{ color: T.textMuted }}>{cat.label}</span>
+            <span className="text-5xl opacity-60">{cat.icon}</span>
           </div>
         )}
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
-          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-            style={{ background: cat.bg, color: cat.color }}>
+        {/* Gradient overlay */}
+        {p.imageUrl && (
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%)" }} />
+        )}
+        {/* Category badge top-left */}
+        <div className="absolute top-2.5 left-2.5">
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+            style={{ background: `${cat.color}22`, color: cat.color, border: `1px solid ${cat.color}55`, backdropFilter: "blur(4px)" }}>
             {cat.label}
           </span>
-          {!p.isActive && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-              style={{ background: "#F1F5F9", color: T.textMuted }}>
-              Ẩn
-            </span>
-          )}
         </div>
-        {/* Actions overlay */}
-        {hovered && (
-          <div className="absolute top-2 right-2 flex flex-col gap-1" onClick={e => e.stopPropagation()}>
-            <button onClick={onEdit} className="w-7 h-7 rounded-lg flex items-center justify-center shadow-md transition-all hover:scale-110"
-              style={{ background: T.card, color: T.textSecondary }}>
-              <Edit3 size={12} />
-            </button>
-            <button onClick={onToggleActive} className="w-7 h-7 rounded-lg flex items-center justify-center shadow-md transition-all hover:scale-110"
-              style={{ background: T.card, color: p.isActive ? T.textMuted : T.green }}>
-              {p.isActive ? <EyeOff size={12} /> : <Eye size={12} />}
-            </button>
-            <button onClick={onDelete} className="w-7 h-7 rounded-lg flex items-center justify-center shadow-md transition-all hover:scale-110"
-              style={{ background: T.card, color: T.red }}>
-              <Trash2 size={12} />
-            </button>
+        {/* Status badge */}
+        {!p.isActive && (
+          <div className="absolute top-2.5 right-2.5">
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+              style={{ background: "rgba(0,0,0,0.55)", color: "#fff" }}>Ẩn</span>
           </div>
         )}
-        {/* Discount badge */}
+        {/* Discount badge bottom-left on image */}
         {maxDiscount > 0 && (
-          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-lg text-[10px] font-black"
-            style={{ background: T.gold, color: "#fff" }}>
+          <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-lg text-[10px] font-black"
+            style={{ background: T.gold, color: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)" }}>
             -{minDiscount}~{maxDiscount}%
           </div>
         )}
+        {/* Actions - appear on hover */}
+        <div className="absolute top-2.5 right-2.5 flex gap-1"
+          style={{ opacity: hovered && p.isActive ? 1 : (hovered && !p.isActive ? 1 : 0), transition: "opacity 0.15s, transform 0.15s", transform: hovered ? "translateY(0)" : "translateY(-4px)" }}
+          onClick={e => e.stopPropagation()}>
+          <button onClick={onEdit} className="w-7 h-7 rounded-lg flex items-center justify-center shadow-md"
+            style={{ background: "rgba(255,255,255,0.93)", color: T.textSecondary }}>
+            <Edit3 size={12} />
+          </button>
+          <button onClick={onToggleActive} className="w-7 h-7 rounded-lg flex items-center justify-center shadow-md"
+            style={{ background: "rgba(255,255,255,0.93)", color: p.isActive ? T.textMuted : T.green }}>
+            {p.isActive ? <EyeOff size={12} /> : <Eye size={12} />}
+          </button>
+          <button onClick={onDelete} className="w-7 h-7 rounded-lg flex items-center justify-center shadow-md"
+            style={{ background: "rgba(255,255,255,0.93)", color: T.red }}>
+            <Trash2 size={12} />
+          </button>
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="p-3">
-        <div className="font-bold text-sm truncate mb-0.5" style={{ color: T.textPrimary }}>{p.name}</div>
-        <div className="text-[11px] font-mono mb-2" style={{ color: T.textMuted }}>{p.sku}</div>
-        <div className="flex items-center justify-between">
-          {p.sizePricings && p.sizePricings.length > 0 ? (
-            <div>
-              <div className="text-[10px]" style={{ color: T.textMuted }}>từ</div>
-              <div className="font-black text-base" style={{ color: T.gold }}>
-                {formatVND(Math.min(...p.sizePricings.map(s => s.price)))}
-              </div>
-              {Math.min(...p.sizePricings.map(s => s.price)) !== Math.max(...p.sizePricings.map(s => s.price)) && (
-                <div className="text-[10px]" style={{ color: T.textMuted }}>
-                  đến {formatVND(Math.max(...p.sizePricings.map(s => s.price)))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="font-black text-base" style={{ color: T.gold }}>{formatVND(p.basePrice)}</div>
-          )}
-          <div className="flex flex-col items-end gap-0.5">
-            {p.sizePricings && p.sizePricings.length > 0 && (
-              <div className="flex items-center gap-0.5 text-[10px]" style={{ color: T.textMuted }}>
-                <Ruler size={10} />
-                <span>{p.sizePricings.length} kích thước</span>
-              </div>
+      {/* Info section */}
+      <div className="p-3.5 flex flex-col gap-2 flex-1">
+        {/* Name + SKU */}
+        <div>
+          <div className="font-bold text-sm leading-snug line-clamp-2" style={{ color: T.textPrimary }}>{p.name}</div>
+          <div className="text-[10px] font-mono mt-0.5" style={{ color: T.textMuted }}>{p.sku}</div>
+        </div>
+        {/* Price row */}
+        <div className="flex items-end justify-between mt-auto pt-2" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
+          <div>
+            {hasSizes ? (
+              <>
+                <div className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: T.textMuted }}>Từ</div>
+                <div className="font-black text-base leading-none" style={{ color: T.gold }}>{formatVND(minPrice)}</div>
+                {minPrice !== maxPrice && (
+                  <div className="text-[9px] mt-0.5" style={{ color: T.textMuted }}>đến {formatVND(maxPrice)}</div>
+                )}
+              </>
+            ) : (
+              <div className="font-black text-base leading-none" style={{ color: T.gold }}>{formatVND(p.basePrice)}</div>
+            )}
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            {hasSizes && (
+              <span className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-md font-semibold"
+                style={{ background: T.indigoLight, color: T.indigo }}>
+                <Ruler size={9} />{p.sizePricings!.length} kích thước
+              </span>
             )}
             {p.discountTiers.length > 0 && (
-              <div className="flex items-center gap-0.5 text-[10px]" style={{ color: T.textMuted }}>
-                <Percent size={10} />
-                <span>{p.discountTiers.length} mức CK</span>
-              </div>
+              <span className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-md font-semibold"
+                style={{ background: T.greenLight, color: T.green }}>
+                <Percent size={9} />{p.discountTiers.length} mức CK
+              </span>
             )}
           </div>
         </div>
-        {/* Specs preview */}
-        {Object.keys(p.specs).length > 0 && (
-          <div className="mt-2 pt-2 flex flex-wrap gap-1" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
-            {Object.entries(p.specs).slice(0, 2).map(([k, v]) => (
-              <span key={k} className="text-[10px] px-1.5 py-0.5 rounded-md"
-                style={{ background: T.bg, color: T.textSecondary }}>
-                {k}: <strong>{v}</strong>
-              </span>
-            ))}
-            {Object.keys(p.specs).length > 2 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md" style={{ background: T.bg, color: T.textMuted }}>
-                +{Object.keys(p.specs).length - 2}
-              </span>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -493,10 +491,24 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
         <div>
           <h2 className="text-lg font-bold leading-tight" style={{ color: T.textPrimary }}>{p.name}</h2>
           <p className="text-xs mt-0.5 font-mono" style={{ color: T.textMuted }}>SKU: {p.sku}</p>
-          <div className="flex items-end gap-2 mt-2">
-            <span className="text-2xl font-black" style={{ color: T.gold }}>{formatVND(p.basePrice)}</span>
-            <span className="text-xs mb-1" style={{ color: T.textMuted }}>/ bộ</span>
-          </div>
+          {p.sizePricings && p.sizePricings.length > 0 ? (
+            <div className="mt-2">
+              <div className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: T.textMuted }}>Giá theo kích thước</div>
+              <div className="flex flex-wrap gap-1.5">
+                {p.sizePricings.map((s, i) => (
+                  <div key={i} className="px-2.5 py-1.5 rounded-xl text-xs" style={{ background: T.goldLight, border: `1px solid ${T.goldBorder}` }}>
+                    <div className="font-semibold" style={{ color: T.textSecondary }}>{s.label}</div>
+                    <div className="font-black" style={{ color: T.gold }}>{formatVND(s.price)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-end gap-2 mt-2">
+              <span className="text-2xl font-black" style={{ color: T.gold }}>{formatVND(p.basePrice)}</span>
+              <span className="text-xs mb-1" style={{ color: T.textMuted }}>/ bộ</span>
+            </div>
+          )}
         </div>
 
         {/* Action buttons */}
