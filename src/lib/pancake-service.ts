@@ -111,9 +111,8 @@ export async function getPancakeConversations(
   if (options?.lastConversationId) {
     params.append('last_conversation_id', options.lastConversationId);
   }
-  if (options?.type && options.type.length > 0) {
-    params.append('type', JSON.stringify(options.type));
-  }
+  // Note: Pancake API không hỗ trợ filter type qua query param dạng JSON array
+  // Bỏ qua filter này, lấy tất cả conversations
   if (options?.unreadFirst) {
     params.append('unread_first', 'true');
   }
@@ -127,11 +126,10 @@ export async function getPancakeConversations(
     }
   );
 
-  if (!response.ok) {
-    throw new Error(`Pancake API error: ${response.statusText}`);
-  }
-
   const data = await response.json();
+  if (!data.success) {
+    throw new Error(`Pancake API error: ${data.message || 'Unknown error'}`);
+  }
   return data.conversations || [];
 }
 
