@@ -261,7 +261,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
             style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
             onClick={() => setSelected(null)}>
             <div className="w-full max-w-3xl rounded-2xl shadow-2xl"
-              style={{ background: "#1a1a1e", boxShadow: "0 25px 60px rgba(0,0,0,0.6)" }}
+              style={{ background: "#FFFFFF", boxShadow: "0 25px 60px rgba(0,0,0,0.3)" }}
               onClick={e => e.stopPropagation()}>
               <ProductDetail
                 product={selected}
@@ -497,10 +497,10 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
   const hasSpecs = Object.keys(p.specs).length > 0;
 
   return (
-    <div style={{ background: "#1a1a1e", borderRadius: 20, overflow: "hidden", width: "100%" }}>
+    <div style={{ background: "#FFFFFF", borderRadius: 20, overflow: "hidden", width: "100%" }}>
       {/* Dark header */}
       <div className="flex items-center justify-between px-5 py-3.5"
-        style={{ background: "#111113", borderBottom: "1px solid #2a2a2e" }}>
+        style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
         <div className="flex items-center gap-2">
           <span className="text-[11px] px-2.5 py-1 rounded-full font-bold"
             style={{ background: `${cat.color}30`, color: cat.color, border: `1px solid ${cat.color}50` }}>
@@ -508,16 +508,16 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
           </span>
           {!p.isActive && (
             <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
-              style={{ background: "rgba(255,255,255,0.1)", color: "#9BA1A6" }}>Ẩn</span>
+              style={{ background: "#F1F5F9", color: "#64748B" }}>Ẩn</span>
           )}
           <span className="text-[11px] font-mono px-2 py-0.5 rounded-md"
-            style={{ background: "rgba(255,255,255,0.08)", color: "#9BA1A6" }}>{p.sku}</span>
+            style={{ background: "#F1F5F9", color: "#64748B" }}>{p.sku}</span>
         </div>
         <button onClick={onClose}
           className="w-7 h-7 rounded-full flex items-center justify-center"
-          style={{ background: "rgba(255,255,255,0.1)", color: "#9BA1A6" }}
-          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.2)")}
-          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}>
+          style={{ background: "#F1F5F9", color: "#64748B" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "#E2E8F0")}
+          onMouseLeave={e => (e.currentTarget.style.background = "#F1F5F9")}>
           <X size={13} />
         </button>
       </div>
@@ -550,17 +550,17 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
         <div className="flex-1 flex flex-col overflow-y-auto" style={{ minWidth: 0, maxHeight: 500 }}>
 
           {/* Product name + description */}
-          <div className="px-5 pt-4 pb-4" style={{ borderBottom: "1px solid #2a2a2e" }}>
-            <h2 className="text-base font-black leading-snug" style={{ color: "#ECEDEE" }}>{p.name}</h2>
+          <div className="px-5 pt-4 pb-4" style={{ borderBottom: "1px solid #E2E8F0" }}>
+            <h2 className="text-base font-black leading-snug" style={{ color: "#0F172A" }}>{p.name}</h2>
             {p.description && (
-              <p className="text-xs leading-relaxed mt-2" style={{ color: "#9BA1A6" }}>{p.description}</p>
+              <p className="text-xs leading-relaxed mt-2" style={{ color: "#64748B" }}>{p.description}</p>
             )}
           </div>
 
           {/* Size selector with price */}
           {hasSizes && (
-            <div className="px-5 py-4" style={{ borderBottom: "1px solid #2a2a2e" }}>
-              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#687076" }}>Kích thước &amp; Giá</div>
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid #E2E8F0" }}>
+              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#94A3B8" }}>Kích thước &amp; Giá</div>
               <div className="grid grid-cols-2 gap-2">
                 {p.sizePricings!.map((s, i) => {
                   const active = selectedSizeIdx === i;
@@ -568,11 +568,11 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
                     <button key={i} onClick={() => setSelectedSizeIdx(i)}
                       className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left"
                       style={{
-                        background: active ? "#111113" : "#28282c",
-                        border: `1.5px solid ${active ? "#C9A84C" : "#333337"}`,
+                        background: active ? "#FEF3C7" : "#F8FAFC",
+                        border: `1.5px solid ${active ? "#C9A84C" : "#E2E8F0"}`,
                         boxShadow: active ? "0 2px 10px rgba(201,168,76,0.25)" : "none",
                       }}>
-                      <div className="text-[11px] font-bold" style={{ color: active ? "#fff" : "#ECEDEE" }}>{s.label}</div>
+                      <div className="text-[11px] font-bold" style={{ color: active ? "#0F172A" : "#475569" }}>{s.label}</div>
                       <div className="text-xs font-black" style={{ color: "#C9A84C" }}>{formatVND(s.price)}</div>
                     </button>
                   );
@@ -583,13 +583,13 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
 
           {/* Discount tiers */}
           {p.discountTiers.length > 0 && (
-            <div className="px-5 py-4" style={{ borderBottom: "1px solid #2a2a2e" }}>
-              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#687076" }}>Chiết khấu số lượng</div>
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid #E2E8F0" }}>
+              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#94A3B8" }}>Chiết khấu số lượng</div>
               <div className="grid grid-cols-3 gap-2">
                 {p.discountTiers.map((tier, i) => (
                   <div key={i} className="flex flex-col items-center py-2.5 px-2 rounded-xl"
                     style={{ background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)" }}>
-                    <div className="text-[10px]" style={{ color: "#9BA1A6" }}>≥{tier.minQty} bộ</div>
+                    <div className="text-[10px]" style={{ color: "#64748B" }}>≥{tier.minQty} bộ</div>
                     <div className="text-sm font-black mt-0.5" style={{ color: "#C9A84C" }}>-{tier.discountPct}%</div>
                   </div>
                 ))}
@@ -599,14 +599,14 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
 
           {/* Specs */}
           {hasSpecs && (
-            <div className="px-5 py-4" style={{ borderBottom: "1px solid #2a2a2e" }}>
-              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#687076" }}>Thông số kỹ thuật</div>
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid #E2E8F0" }}>
+              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#94A3B8" }}>Thông số kỹ thuật</div>
               <div className="space-y-1.5">
                 {Object.entries(p.specs).map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between py-1.5 px-3 rounded-lg"
-                    style={{ background: "#28282c" }}>
-                    <span className="text-xs" style={{ color: "#9BA1A6" }}>{k}</span>
-                    <span className="text-xs font-bold" style={{ color: "#ECEDEE" }}>{v}</span>
+                    style={{ background: "#F8FAFC" }}>
+                    <span className="text-xs" style={{ color: "#64748B" }}>{k}</span>
+                    <span className="text-xs font-bold" style={{ color: "#0F172A" }}>{v}</span>
                   </div>
                 ))}
               </div>
@@ -617,12 +617,12 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
           <div className="flex-1" />
 
           {/* Action buttons */}
-          <div className="px-5 py-4 flex gap-2.5" style={{ borderTop: "1px solid #2a2a2e" }}>
+          <div className="px-5 py-4 flex gap-2.5" style={{ borderTop: "1px solid #E2E8F0" }}>
             <button onClick={onEdit}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={{ border: "1.5px solid #333337", color: "#9BA1A6", background: "#28282c" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#333337")}
-              onMouseLeave={e => (e.currentTarget.style.background = "#28282c")}>
+              style={{ border: "1.5px solid #E2E8F0", color: "#64748B", background: "#F8FAFC" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#E2E8F0")}
+              onMouseLeave={e => (e.currentTarget.style.background = "#F8FAFC")}>
               <Edit3 size={14} /> Chỉnh sửa
             </button>
             <Link href="/crm/quotes/new"
