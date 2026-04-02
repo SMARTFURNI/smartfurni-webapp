@@ -2,7 +2,7 @@ import { getCrmSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getLead, updateLead, deleteLead } from "@/lib/crm-store";
 import { triggerStageChangeAutomation } from "@/lib/crm-automation-engine";
-import { logAudit, getClientIp } from "@/lib/audit-helper";
+import { logAudit, getClientIp, resolveActorName } from "@/lib/audit-helper";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getCrmSession();
@@ -26,8 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const lead = await updateLead(id, updates);
   if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const actorName = session.isAdmin ? "Admin" : (session.staffId || "System");
-  const actorId = session.staffId || null;
+  const { actorId, actorName } = await resolveActorName(session);
   const ip = getClientIp(req);
 
   // Trigger stage_changed automation neu stage thay doi
@@ -66,13 +65,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   const existing = await getLead(id);
   await deleteLead(id);
+  const { actorId, actorName } = await resolveActorName(session);
   await logAudit({
     action: "lead.deleted",
     entityType: "lead",
     entityId: id,
     entityName: existing?.name || existing?.phone || id,
-    actorId: session.staffId || null,
-    actorName: session.isAdmin ? "Admin" : (session.staffId || "System"),
+    actorId,
+    actorName,
     ipAddress: getClientIp(req),
   });
   return NextResponse.json({ ok: true });

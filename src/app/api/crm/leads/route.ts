@@ -2,7 +2,7 @@ import { getCrmSession } from "@/lib/admin-auth";
 import { getStaffById } from "@/lib/crm-staff-store";
 import { NextRequest, NextResponse } from "next/server";
 import { getLeads, createLead } from "@/lib/crm-store";
-import { logAudit, getClientIp } from "@/lib/audit-helper";
+import { logAudit, getClientIp, resolveActorName } from "@/lib/audit-helper";
 
 export async function GET(req: NextRequest) {
   if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,13 +33,14 @@ export async function POST(req: NextRequest) {
       }
     }
     const lead = await createLead(body);
+    const { actorId, actorName } = await resolveActorName(session);
     await logAudit({
       action: "lead.created",
       entityType: "lead",
       entityId: lead.id,
       entityName: lead.name || lead.phone || "Khách hàng mới",
-      actorId: session.staffId || null,
-      actorName: session.isAdmin ? "Admin" : (session.staffId || "System"),
+      actorId,
+      actorName,
       ipAddress: getClientIp(req),
       metadata: { stage: lead.stage, type: lead.type },
     });

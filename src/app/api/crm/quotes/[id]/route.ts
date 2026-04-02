@@ -1,7 +1,7 @@
 import { getCrmSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getQuote, updateQuote } from "@/lib/crm-store";
-import { logAudit, getClientIp } from "@/lib/audit-helper";
+import { logAudit, getClientIp, resolveActorName } from "@/lib/audit-helper";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getCrmSession();
@@ -25,13 +25,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     : updates.status === "approved" ? "quote.approved"
     : "quote.updated";
 
+  const { actorId, actorName } = await resolveActorName(session);
   await logAudit({
     action,
     entityType: "quote",
     entityId: quote.id,
     entityName: `Báo giá - ${quote.customerName || id}`,
-    actorId: session.staffId || null,
-    actorName: session.isAdmin ? "Admin" : (session.staffId || "System"),
+    actorId,
+    actorName,
     ipAddress: getClientIp(req),
     metadata: { status: quote.status, totalAmount: quote.totalAmount },
   });
