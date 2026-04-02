@@ -594,29 +594,34 @@ function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: stri
   );
 }
 
-// ─── Settings Modal ───────────────────────────────────────────────────────────
+//// ─── Settings Modal ──────────────────────────────────────────────────
 
 function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<"credentials" | "access">("credentials");
-  const [pancakeCreds, setPancakeCreds] = useState({ pageId: "", pageName: "", pageAccessToken: "", userApiToken: "" });
+  const [pageId, setPageId] = useState("");
+  const [pageName, setPageName] = useState("");
+  const [pageAccessToken, setPageAccessToken] = useState("");
+  const [userApiToken, setUserApiToken] = useState("");
+  const [showToken, setShowToken] = useState(false);
   const [saving, setSaving] = useState(false);
   const [staffList, setStaffList] = useState<any[]>([]);
   const [accessList, setAccessList] = useState<any[]>([]);
   const [loadingAccess, setLoadingAccess] = useState(false);
   const [message, setMessage] = useState("");
+  const [msgType, setMsgType] = useState<"success" | "error" | "info">("info");
 
   useEffect(() => {
     // Load existing credentials
-    fetch("/api/crm/zalo-inbox/credentials", { credentials: "include" }).then(r => r.json()).then(data => {
-      if (data && data.page_id) {
-        setPancakeCreds({
-          pageId: data.page_id || "",
-          pageName: data.page_name || "",
-          pageAccessToken: "",  // không hiển thị token cũ vì lý do bảo mật
-          userApiToken: "",
-        });
-      }
-    }).catch(() => {/* ignore */});
+    fetch("/api/crm/zalo-inbox/credentials", { credentials: "include" })
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.page_id) {
+          setPageId(data.page_id || "");
+          setPageName(data.page_name || "");
+          // Không load token cũ - user phải nhập lại
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -633,44 +638,45 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
   }, [tab]);
 
   const handleSaveCreds = async () => {
-    if (!pancakeCreds.pageId || !pancakeCreds.pageAccessToken) {
-      setMessage("Vui lòng điền Page ID và Page Access Token");
-      return;
+    const trimmedPageId = pageId.trim();
+    const trimmedToken = pageAccessToken.trim();
+    if (!trimmedPageId) {
+      setMessage("❌ Vui lòng nhập Page ID"); setMsgType("error"); return;
+    }
+    if (!trimmedToken) {
+      setMessage("❌ Vui lòng nhập Page Access Token"); setMsgType("error"); return;
     }
     setSaving(true);
+    setMessage("⏳ Đang lưu..."); setMsgType("info");
     try {
+      const payload = {
+        pageId: trimmedPageId,
+        pageName: pageName.trim() || "Zalo SmartFurni",
+        pageAccessToken: trimmedToken,
+        userApiToken: userApiToken.trim() || undefined,
+      };
+      console.log("[SaveCreds] sending payload:", { ...payload, pageAccessToken: payload.pageAccessToken.slice(0, 20) + "..." });
       const res = await fetch("/api/crm/zalo-inbox/credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(pancakeCreds),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
-      console.log("[SaveCreds] status:", res.status, "data:", data);
+      console.log("[SaveCreds] response status:", res.status, "body:", data);
       if (res.status === 401) {
-        setMessage("⚠️ Phiên đăng nhập hết hạn. Vui lòng tải lại trang và đăng nhập lại.");
-        return;
+        setMessage("⚠️ Phiên đăng nhập hết hạn. Vui lòng tải lại trang."); setMsgType("error"); return;
       }
       if (data.success) {
-        setMessage(data.message || "Đã lưu thành công!");
-        // Reload credentials sau khi lưu thành công
-        const reloadRes = await fetch("/api/crm/zalo-inbox/credentials", { credentials: "include" });
-        const reloadData = await reloadRes.json();
-        if (reloadData) {
-          setPancakeCreds({
-            pageId: reloadData.page_id || "",
-            pageName: reloadData.page_name || "",
-            pageAccessToken: "",  // không hiển thị token cũ
-            userApiToken: "",
-          });
-        }
-        // Reload conversations list (trigger parent reload)
+        setMessage("✅ Đã lưu thành công! Trang sẽ tải lại..."); setMsgType("success");
         setTimeout(() => window.location.reload(), 1500);
       } else {
-        setMessage(data.error || `Lỗi (HTTP ${res.status})`);
+        setMessage("❌ " + (data.error || `Lỗi HTTP ${res.status}`)); setMsgType("error");
       }
-    } catch (err: any) { setMessage("Lỗi kết nối: " + (err?.message || "unknown")); }
-    finally { setSaving(false); }
+    } catch (err: any) {
+      console.error("[SaveCreds] exception:", err);
+      setMessage("❌ Lỗi kết nối: " + (err?.message || "unknown")); setMsgType("error");
+    } finally { setSaving(false); }
   };
 
   const handleGrantAccess = async (staffId: string) => {
@@ -744,40 +750,86 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
                 4. Dán vào các ô bên dưới
               </div>
 
-              {[
-                { key: "pageId", label: "Page ID", placeholder: "tt_6711731671916708866" },
-                { key: "pageName", label: "Tên Page (tùy chọn)", placeholder: "Zalo Personal - SmartFurni" },
-                { key: "pageAccessToken", label: "Page Access Token", placeholder: "eyJhbGciOi..." },
-                { key: "userApiToken", label: "User API Token (tùy chọn)", placeholder: "Để trống nếu không có" },
-              ].map(({ key, label, placeholder }) => (
-                <div key={key}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>{label}</label>
+               {/* Page ID */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Page ID <span style={{color:"#EF4444"}}>*</span></label>
+                <input
+                  value={pageId}
+                  onChange={(e) => setPageId(e.target.value)}
+                  placeholder="pzl_84918326552"
+                  type="text"
+                  autoComplete="off"
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              {/* Page Name */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Tên Page (tùy chọn)</label>
+                <input
+                  value={pageName}
+                  onChange={(e) => setPageName(e.target.value)}
+                  placeholder="Nội Thất SmartFurni"
+                  type="text"
+                  autoComplete="off"
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              {/* Page Access Token */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Page Access Token <span style={{color:"#EF4444"}}>*</span></label>
+                <div style={{ position: "relative" }}>
                   <input
-                    value={(pancakeCreds as any)[key]}
-                    onChange={(e) => setPancakeCreds((prev) => ({ ...prev, [key]: e.target.value }))}
-                    placeholder={placeholder}
-                    type={key.includes("Token") ? "password" : "text"}
-                    style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                    value={pageAccessToken}
+                    onChange={(e) => setPageAccessToken(e.target.value)}
+                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    type={showToken ? "text" : "password"}
+                    autoComplete="new-password"
+                    style={{ width: "100%", padding: "8px 40px 8px 12px", borderRadius: 8, border: pageAccessToken ? "1px solid #10B981" : "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowToken(v => !v)}
+                    style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#6B7280" }}
+                  >
+                    {showToken ? "🙈 Ẩn" : "👁️ Hiện"}
+                  </button>
                 </div>
-              ))}
-
+                {pageAccessToken && <div style={{ fontSize: 11, color: "#10B981", marginTop: 2 }}>✅ Đã nhập {pageAccessToken.length} ký tự</div>}
+              </div>
+              {/* User API Token */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>User API Token (tùy chọn)</label>
+                <input
+                  value={userApiToken}
+                  onChange={(e) => setUserApiToken(e.target.value)}
+                  placeholder="Để trống nếu không có"
+                  type="text"
+                  autoComplete="off"
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              {/* Message */}
               {message && (
-                <div style={{ padding: "8px 12px", borderRadius: 8, background: message.includes("Lỗi") ? "#FEE2E2" : "#D1FAE5", color: message.includes("Lỗi") ? "#991B1B" : "#065F46", fontSize: 13 }}>
+                <div style={{
+                  padding: "10px 14px", borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  background: msgType === "success" ? "#D1FAE5" : msgType === "error" ? "#FEE2E2" : "#EFF6FF",
+                  color: msgType === "success" ? "#065F46" : msgType === "error" ? "#991B1B" : "#1E40AF",
+                  border: `1px solid ${msgType === "success" ? "#6EE7B7" : msgType === "error" ? "#FCA5A5" : "#BFDBFE"}`
+                }}>
                   {message}
                 </div>
               )}
-
               <button
                 onClick={handleSaveCreds}
                 disabled={saving}
                 style={{
-                  padding: "10px", borderRadius: 8, border: "none",
+                  padding: "12px", borderRadius: 8, border: "none",
                   background: saving ? "#93C5FD" : "#0068FF", color: "#fff",
-                  fontWeight: 600, fontSize: 14, cursor: saving ? "not-allowed" : "pointer",
+                  fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer",
+                  letterSpacing: 0.3,
                 }}
               >
-                {saving ? "Đang lưu..." : "Lưu thông tin"}
+                {saving ? "⏳ Đang lưu..." : "💾 Lưu thông tin"}
               </button>
             </div>
           ) : (
