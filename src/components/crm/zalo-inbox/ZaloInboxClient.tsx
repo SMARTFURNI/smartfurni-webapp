@@ -99,7 +99,7 @@ export default function ZaloInboxClient() {
 
   const loadConversations = useCallback(async () => {
     try {
-      const res = await fetch("/api/crm/zalo-inbox/conversations");
+      const res = await fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" });
       if (!res.ok) return;
       const data = await res.json();
       setConversations(data.conversations || []);
@@ -112,12 +112,12 @@ export default function ZaloInboxClient() {
 
   const loadMessages = useCallback(async (convId: string) => {
     try {
-      const res = await fetch(`/api/crm/zalo-inbox/conversations/${convId}/messages`);
+      const res = await fetch(`/api/crm/zalo-inbox/conversations/${convId}/messages`, { credentials: "include" });
       if (!res.ok) return;
       const data = await res.json();
       setMessages(data.messages || []);
       // Đánh dấu đã đọc
-      await fetch(`/api/crm/zalo-inbox/conversations/${convId}/read`, { method: "POST" });
+      await fetch(`/api/crm/zalo-inbox/conversations/${convId}/read`, { method: "POST", credentials: "include" });
       setConversations((prev) =>
         prev.map((c) => c.id === convId ? { ...c, unreadCount: 0 } : c)
       );
@@ -181,6 +181,7 @@ export default function ZaloInboxClient() {
       const res = await fetch("/api/crm/zalo-inbox/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ conversationId: selectedConv.id, message: text }),
       });
       if (!res.ok) {
@@ -627,13 +628,14 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
       const res = await fetch("/api/crm/zalo-inbox/credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(pancakeCreds),
       });
       const data = await res.json();
       if (data.success) {
         setMessage(data.message || "Đã lưu thành công!");
         // Reload credentials sau khi lưu thành công
-        const reloadRes = await fetch("/api/crm/zalo-inbox/credentials");
+        const reloadRes = await fetch("/api/crm/zalo-inbox/credentials", { credentials: "include" });
         const reloadData = await reloadRes.json();
         if (reloadData) {
           setPancakeCreds({
@@ -656,15 +658,16 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
     await fetch("/api/crm/zalo-inbox/access", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ staffId }),
     });
-    const res = await fetch("/api/crm/zalo-inbox/access");
+    const res = await fetch("/api/crm/zalo-inbox/access", { credentials: "include" });
     const data = await res.json();
     setAccessList(data?.accessList || []);
   };
 
   const handleRevokeAccess = async (staffId: string) => {
-    await fetch(`/api/crm/zalo-inbox/access?staffId=${staffId}`, { method: "DELETE" });
+    await fetch(`/api/crm/zalo-inbox/access?staffId=${staffId}`, { method: "DELETE", credentials: "include" });
     setAccessList((prev) => prev.filter((a) => a.staffId !== staffId));
   };
 
