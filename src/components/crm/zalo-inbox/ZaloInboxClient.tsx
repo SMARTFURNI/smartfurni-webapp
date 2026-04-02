@@ -646,6 +646,11 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
         body: JSON.stringify(pancakeCreds),
       });
       const data = await res.json();
+      console.log("[SaveCreds] status:", res.status, "data:", data);
+      if (res.status === 401) {
+        setMessage("⚠️ Phiên đăng nhập hết hạn. Vui lòng tải lại trang và đăng nhập lại.");
+        return;
+      }
       if (data.success) {
         setMessage(data.message || "Đã lưu thành công!");
         // Reload credentials sau khi lưu thành công
@@ -660,11 +665,11 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
           });
         }
         // Reload conversations list (trigger parent reload)
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        setMessage(data.error || "Lỗi");
+        setMessage(data.error || `Lỗi (HTTP ${res.status})`);
       }
-    } catch { setMessage("Lỗi kết nối"); }
+    } catch (err: any) { setMessage("Lỗi kết nối: " + (err?.message || "unknown")); }
     finally { setSaving(false); }
   };
 
