@@ -87,104 +87,137 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
   }), [products]);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: T.bg }}>
-      {/* ── Top header ── */}
-      <div className="flex-shrink-0 px-6 py-4" style={{ background: T.card, borderBottom: `1px solid ${T.cardBorder}` }}>
-        <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col h-full" style={{ background: "#F0F2F5" }}>
+
+      {/* ── Dark hero header ── */}
+      <div className="flex-shrink-0 px-6 pt-5 pb-0" style={{ background: "#1c1c1e" }}>
+        {/* Title row */}
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: T.textPrimary }}>Danh mục sản phẩm</h1>
-            <p className="text-sm mt-0.5" style={{ color: T.textMuted }}>{stats.total} sản phẩm · {stats.active} đang bán</p>
+            <h1 className="text-2xl font-black tracking-tight" style={{ color: "#FFFFFF" }}>Danh mục sản phẩm</h1>
+            <p className="text-sm mt-0.5" style={{ color: "#9BA1A6" }}>{stats.total} sản phẩm · {stats.active} đang bán</p>
           </div>
           <button onClick={openAdd}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-            style={{ background: T.gold, color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+            style={{ background: T.gold, color: "#fff", boxShadow: "0 4px 14px rgba(201,168,76,0.45)" }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
+            onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
             <Plus size={15} /> Thêm sản phẩm
           </button>
         </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-4 gap-3 mb-4">
+        {/* Stats row — dark cards */}
+        <div className="grid grid-cols-4 gap-3 mb-5">
           {[
-            { icon: Package, label: "Tổng SP", value: stats.total, color: T.indigo, bg: T.indigoLight },
-            { icon: ShieldCheck, label: "Đang bán", value: stats.active, color: T.green, bg: T.greenLight },
-            { icon: Layers, label: "Danh mục", value: stats.categories, color: T.purple, bg: T.purpleLight },
-            { icon: DollarSign, label: "Giá TB", value: formatVND(stats.avgPrice), color: T.gold, bg: T.goldLight },
-          ].map(({ icon: Icon, label, value, color, bg }) => (
-            <div key={label} className="flex items-center gap-3 px-4 py-3.5 rounded-xl"
-              style={{ background: bg, border: `1px solid ${color}30` }}>
+            { icon: Package, label: "Tổng sản phẩm", value: stats.total, accent: T.indigo },
+            { icon: ShieldCheck, label: "Đang bán", value: stats.active, accent: T.green },
+            { icon: Layers, label: "Danh mục", value: stats.categories, accent: T.purple },
+            { icon: DollarSign, label: "Giá trung bình", value: formatVND(stats.avgPrice), accent: T.gold },
+          ].map(({ icon: Icon, label, value, accent }) => (
+            <div key={label} className="flex items-center gap-3 px-4 py-3.5 rounded-t-xl"
+              style={{ background: "#28282c", borderTop: `3px solid ${accent}` }}>
               <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: `${color}18` }}>
-                <Icon size={17} style={{ color }} />
+                style={{ background: `${accent}22` }}>
+                <Icon size={17} style={{ color: accent }} />
               </div>
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color }}>{label}</div>
-                <div className="text-lg font-black leading-tight" style={{ color: T.textPrimary }}>{value}</div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-semibold uppercase tracking-wide truncate" style={{ color: "#6B7280" }}>{label}</div>
+                <div className="text-lg font-black leading-tight truncate" style={{ color: "#FFFFFF" }}>{value}</div>
               </div>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Search + filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-xs">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: T.textMuted }} />
-            <input
-              value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Tìm theo tên, SKU..."
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2"
-              style={{ borderColor: T.cardBorder, color: T.textPrimary, background: T.bg }}
-            />
-          </div>
-
-          {/* Category filter */}
-          <div className="flex items-center gap-0.5 p-1 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
-            {(["all", "ergonomic_bed", "sofa_bed"] as const).map(val => {
-              const labels: Record<string, string> = { all: "Tất cả", ergonomic_bed: "Giường CT", sofa_bed: "Sofa" };
-              const colors: Record<string, string> = { all: T.gold, ergonomic_bed: T.purple, sofa_bed: T.blue };
-              const active = filterCat === val;
-              return (
-                <button key={val} onClick={() => setFilterCat(val)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                  style={{ background: active ? colors[val] : "transparent", color: active ? "#fff" : T.textSecondary }}>
-                  {labels[val]}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Active filter */}
-          <div className="flex items-center gap-0.5 p-1 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
-            {(["all", "active", "inactive"] as const).map(val => {
-              const labels: Record<string, string> = { all: "Tất cả", active: "Đang bán", inactive: "Ẩn" };
-              const colors: Record<string, string> = { all: T.textPrimary, active: T.green, inactive: T.textMuted };
-              const active = filterActive === val;
-              return (
-                <button key={val} onClick={() => setFilterActive(val)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                  style={{ background: active ? colors[val] : "transparent", color: active ? "#fff" : T.textSecondary }}>
-                  {labels[val]}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* View toggle */}
-          <div className="flex items-center gap-1 p-1 rounded-xl ml-auto" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
-            {([["grid", Grid3X3], ["list", List]] as const).map(([mode, Icon]) => (
-              <button key={mode} onClick={() => setViewMode(mode)}
-                className="p-1.5 rounded-lg transition-all"
-                style={{ background: viewMode === mode ? T.card : "transparent", color: viewMode === mode ? T.textPrimary : T.textMuted, boxShadow: viewMode === mode ? T.cardShadow : "none" }}>
-                <Icon size={14} />
-              </button>
-            ))}
-          </div>
+      {/* ── Filter bar ── */}
+      <div className="flex-shrink-0 px-6 py-3 flex items-center gap-3"
+        style={{ background: T.card, borderBottom: `1px solid ${T.cardBorder}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+        {/* Search */}
+        <div className="relative flex-1 max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: T.textMuted }} />
+          <input
+            value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Tìm theo tên, SKU..."
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border focus:outline-none"
+            style={{ borderColor: T.cardBorder, color: T.textPrimary, background: "#F8FAFC" }}
+          />
         </div>
+
+        {/* Divider */}
+        <div className="w-px h-5" style={{ background: T.cardBorder }} />
+
+        {/* Category + status filters merged */}
+        <div className="flex items-center gap-1">
+          {([
+            { val: "all", label: "Tất cả", type: "cat" },
+            { val: "ergonomic_bed", label: "Giường CT", type: "cat" },
+            { val: "sofa_bed", label: "Sofa giường", type: "cat" },
+          ] as const).map(({ val, label }) => {
+            const colors: Record<string, string> = { all: T.textPrimary, ergonomic_bed: T.purple, sofa_bed: T.blue };
+            const active = filterCat === val;
+            return (
+              <button key={val} onClick={() => setFilterCat(val)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={{
+                  background: active ? colors[val] : "transparent",
+                  color: active ? "#fff" : T.textSecondary,
+                  boxShadow: active ? `0 2px 6px ${colors[val]}40` : "none",
+                }}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="w-px h-5" style={{ background: T.cardBorder }} />
+
+        <div className="flex items-center gap-1">
+          {([
+            { val: "all", label: "Tất cả" },
+            { val: "active", label: "Đang bán" },
+            { val: "inactive", label: "Ẩn" },
+          ] as const).map(({ val, label }) => {
+            const colors: Record<string, string> = { all: T.textPrimary, active: T.green, inactive: T.red };
+            const active = filterActive === val;
+            return (
+              <button key={val} onClick={() => setFilterActive(val)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={{
+                  background: active ? colors[val] : "transparent",
+                  color: active ? "#fff" : T.textSecondary,
+                  boxShadow: active ? `0 2px 6px ${colors[val]}40` : "none",
+                }}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* View toggle right */}
+        <div className="flex items-center gap-1 ml-auto p-1 rounded-xl" style={{ background: "#F8FAFC", border: `1px solid ${T.cardBorder}` }}>
+          {([["grid", Grid3X3], ["list", List]] as const).map(([mode, Icon]) => (
+            <button key={mode} onClick={() => setViewMode(mode)}
+              className="p-1.5 rounded-lg transition-all"
+              style={{
+                background: viewMode === mode ? "#1c1c1e" : "transparent",
+                color: viewMode === mode ? "#fff" : T.textMuted,
+              }}>
+              <Icon size={14} />
+            </button>
+          ))}
+        </div>
+
+        {/* Count badge */}
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+          style={{ background: T.goldLight, color: T.gold, border: `1px solid ${T.goldBorder}` }}>
+          {filtered.length} sản phẩm
+        </span>
       </div>
 
       {/* ── Content ── */}
       <div className="flex flex-1 overflow-hidden">
         {/* Product grid/list */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-5">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <Package size={40} className="mb-3 opacity-20" style={{ color: T.textMuted }} />
@@ -196,7 +229,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
               </button>
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               {filtered.map(p => (
                 <ProductCard key={p.id} product={p}
                   isSelected={selected?.id === p.id}
