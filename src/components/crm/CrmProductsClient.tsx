@@ -184,7 +184,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
       {/* ── Content ── */}
       <div className="flex flex-1 overflow-hidden">
         {/* Product grid/list */}
-        <div className={`flex-1 overflow-y-auto p-6 ${selected ? "max-w-2xl" : ""}`}>
+        <div className="flex-1 overflow-y-auto p-6">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <Package size={40} className="mb-3 opacity-20" style={{ color: T.textMuted }} />
@@ -222,14 +222,20 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
           )}
         </div>
 
-        {/* Detail panel */}
+        {/* Detail modal popup */}
         {selected && (
-          <div className="w-96 flex-shrink-0 overflow-y-auto border-l" style={{ borderColor: T.cardBorder, background: T.card }}>
-            <ProductDetail
-              product={selected}
-              onEdit={() => openEdit(selected)}
-              onClose={() => setSelected(null)}
-            />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            onClick={() => setSelected(null)}>
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
+              style={{ background: T.card }}
+              onClick={e => e.stopPropagation()}>
+              <ProductDetail
+                product={selected}
+                onEdit={() => openEdit(selected)}
+                onClose={() => setSelected(null)}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -453,128 +459,124 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
   const cat = CATEGORY_MAP[p.category];
   return (
     <div>
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3"
+      {/* Modal Header */}
+      <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-3.5 rounded-t-2xl"
         style={{ background: T.card, borderBottom: `1px solid ${T.cardBorder}` }}>
-        <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Chi tiết sản phẩm</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold" style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
+          {!p.isActive && <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: "#F1F5F9", color: T.textMuted }}>Ẩn</span>}
+        </div>
         <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-          <X size={14} style={{ color: T.textMuted }} />
+          <X size={15} style={{ color: T.textMuted }} />
         </button>
       </div>
 
-      {/* Image */}
-      <div className="relative" style={{ aspectRatio: "1/1", background: "#F8FAFC" }}>
-        {p.imageUrl ? (
-          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-            <span className="text-6xl">{cat.icon}</span>
-            <span className="text-sm font-medium" style={{ color: T.textMuted }}>{cat.label}</span>
-          </div>
-        )}
-        <div className="absolute top-3 left-3">
-          <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
-            style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
+      {/* 2-column layout */}
+      <div className="flex gap-0">
+        {/* Left: Image */}
+        <div className="w-64 flex-shrink-0 relative" style={{ background: cat.bg }}>
+          {p.imageUrl ? (
+            <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" style={{ minHeight: 240 }} />
+          ) : (
+            <div className="w-full flex flex-col items-center justify-center gap-3 py-16">
+              <span className="text-7xl opacity-50">{cat.icon}</span>
+            </div>
+          )}
+          {p.imageUrl && (
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to right, transparent 60%, rgba(0,0,0,0.08))" }} />
+          )}
         </div>
-        {!p.isActive && (
-          <div className="absolute inset-0 flex items-center justify-center"
-            style={{ background: "rgba(0,0,0,0.4)" }}>
-            <span className="px-3 py-1.5 rounded-full text-sm font-bold text-white" style={{ background: "rgba(0,0,0,0.6)" }}>
-              Đang ẩn
-            </span>
-          </div>
-        )}
-      </div>
 
-      <div className="p-4 space-y-4">
-        {/* Name + price */}
-        <div>
-          <h2 className="text-lg font-bold leading-tight" style={{ color: T.textPrimary }}>{p.name}</h2>
-          <p className="text-xs mt-0.5 font-mono" style={{ color: T.textMuted }}>SKU: {p.sku}</p>
-          {p.sizePricings && p.sizePricings.length > 0 ? (
-            <div className="mt-2">
-              <div className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: T.textMuted }}>Giá theo kích thước</div>
-              <div className="flex flex-wrap gap-1.5">
-                {p.sizePricings.map((s, i) => (
-                  <div key={i} className="px-2.5 py-1.5 rounded-xl text-xs" style={{ background: T.goldLight, border: `1px solid ${T.goldBorder}` }}>
-                    <div className="font-semibold" style={{ color: T.textSecondary }}>{s.label}</div>
-                    <div className="font-black" style={{ color: T.gold }}>{formatVND(s.price)}</div>
+        {/* Right: Info */}
+        <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+          {/* Name + SKU + price */}
+          <div>
+            <h2 className="text-lg font-bold leading-snug" style={{ color: T.textPrimary }}>{p.name}</h2>
+            <p className="text-xs font-mono mt-0.5" style={{ color: T.textMuted }}>SKU: {p.sku}</p>
+            {p.sizePricings && p.sizePricings.length > 0 ? (
+              <div className="mt-3">
+                <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: T.textMuted }}>Giá theo kích thước</div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {p.sizePricings.map((s, i) => (
+                    <div key={i} className="px-3 py-2 rounded-xl" style={{ background: T.goldLight, border: `1px solid ${T.goldBorder}` }}>
+                      <div className="text-[10px] font-semibold" style={{ color: T.textSecondary }}>{s.label}</div>
+                      <div className="text-sm font-black" style={{ color: T.gold }}>{formatVND(s.price)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-end gap-1.5 mt-2">
+                <span className="text-2xl font-black" style={{ color: T.gold }}>{formatVND(p.basePrice)}</span>
+                <span className="text-xs mb-1" style={{ color: T.textMuted }}>/ bộ</span>
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <button onClick={onEdit}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold border transition-all hover:bg-gray-50"
+              style={{ borderColor: T.cardBorder, color: T.textSecondary }}>
+              <Edit3 size={13} /> Chỉnh sửa
+            </button>
+            <Link href="/crm/quotes/new"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+              style={{ background: T.gold, color: "#fff" }}>
+              <Tag size={13} /> Tạo báo giá
+            </Link>
+          </div>
+
+          {/* Description */}
+          {p.description && (
+            <div className="p-3 rounded-xl" style={{ background: T.bg }}>
+              <p className="text-sm leading-relaxed" style={{ color: T.textSecondary }}>{p.description}</p>
+            </div>
+          )}
+
+          {/* Specs */}
+          {Object.keys(p.specs).length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <BarChart2 size={12} style={{ color: T.indigo }} />
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.textMuted }}>Thông số kỹ thuật</span>
+              </div>
+              <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${T.cardBorder}` }}>
+                {Object.entries(p.specs).map(([k, v], i) => (
+                  <div key={k} className="flex items-center justify-between px-3 py-2"
+                    style={{ background: i % 2 === 0 ? T.card : T.bg, borderBottom: i < Object.keys(p.specs).length - 1 ? `1px solid ${T.cardBorder}` : "none" }}>
+                    <span className="text-xs" style={{ color: T.textSecondary }}>{k}</span>
+                    <span className="text-xs font-semibold" style={{ color: T.textPrimary }}>{v}</span>
                   </div>
                 ))}
               </div>
             </div>
-          ) : (
-            <div className="flex items-end gap-2 mt-2">
-              <span className="text-2xl font-black" style={{ color: T.gold }}>{formatVND(p.basePrice)}</span>
-              <span className="text-xs mb-1" style={{ color: T.textMuted }}>/ bộ</span>
+          )}
+
+          {/* Discount tiers */}
+          {p.discountTiers.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Percent size={12} style={{ color: T.green }} />
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.textMuted }}>Chính sách chiết khấu B2B</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {p.discountTiers.map((tier, i) => (
+                  <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl"
+                    style={{ background: T.goldLight, border: `1px solid ${T.goldBorder}` }}>
+                    <div>
+                      <div className="text-xs font-semibold" style={{ color: T.textPrimary }}>{tier.label}</div>
+                      <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>≥ {tier.minQty} bộ</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-black" style={{ color: T.gold }}>-{tier.discountPct}%</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
-
-        {/* Action buttons */}
-        <div className="flex gap-2">
-          <button onClick={onEdit}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold border transition-all hover:bg-gray-50"
-            style={{ borderColor: T.cardBorder, color: T.textSecondary }}>
-            <Edit3 size={13} /> Chỉnh sửa
-          </button>
-          <Link href="/crm/quotes/new"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-            style={{ background: T.gold, color: "#fff" }}>
-            <Tag size={13} /> Tạo báo giá
-          </Link>
-        </div>
-
-        {/* Description */}
-        {p.description && (
-          <div className="p-3 rounded-xl" style={{ background: T.bg }}>
-            <p className="text-sm leading-relaxed" style={{ color: T.textSecondary }}>{p.description}</p>
-          </div>
-        )}
-
-        {/* Specs */}
-        {Object.keys(p.specs).length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <BarChart2 size={13} style={{ color: T.indigo }} />
-              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textMuted }}>Thông số kỹ thuật</span>
-            </div>
-            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${T.cardBorder}` }}>
-              {Object.entries(p.specs).map(([k, v], i) => (
-                <div key={k} className="flex items-center justify-between px-3 py-2.5"
-                  style={{ background: i % 2 === 0 ? T.card : T.bg, borderBottom: i < Object.keys(p.specs).length - 1 ? `1px solid ${T.cardBorder}` : "none" }}>
-                  <span className="text-xs" style={{ color: T.textSecondary }}>{k}</span>
-                  <span className="text-xs font-semibold" style={{ color: T.textPrimary }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Discount tiers */}
-        {p.discountTiers.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Percent size={13} style={{ color: T.green }} />
-              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textMuted }}>Chính sách chiết khấu B2B</span>
-            </div>
-            <div className="space-y-2">
-              {p.discountTiers.map((tier, i) => (
-                <div key={i} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
-                  style={{ background: T.goldLight, border: `1px solid ${T.goldBorder}` }}>
-                  <div>
-                    <div className="text-xs font-semibold" style={{ color: T.textPrimary }}>{tier.label}</div>
-                    <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>≥ {tier.minQty} bộ</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-base font-black" style={{ color: T.gold }}>-{tier.discountPct}%</div>
-                    <div className="text-[10px]" style={{ color: T.textMuted }}>{formatVND(p.basePrice * (1 - tier.discountPct / 100))}/bộ</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
