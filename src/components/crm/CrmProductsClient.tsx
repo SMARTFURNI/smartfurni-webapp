@@ -196,7 +196,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
               </button>
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
               {filtered.map(p => (
                 <ProductCard key={p.id} product={p}
                   isSelected={selected?.id === p.id}
