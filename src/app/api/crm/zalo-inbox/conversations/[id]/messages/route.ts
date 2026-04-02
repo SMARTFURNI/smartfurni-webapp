@@ -1,11 +1,12 @@
 /**
  * GET /api/crm/zalo-inbox/conversations/[id]/messages
- * Lấy tin nhắn của conversation từ Pancake API
+ * Lấy tin nhắn của conversation từ Pancake API (hoặc mock data)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getDb } from "@/lib/db";
 import { getPancakeMessages } from "@/lib/pancake-service";
+import { getMessagesMock } from "@/lib/pancake-service-mock";
 
 async function getActivePancakeCredentials() {
   const db = getDb();
@@ -28,12 +29,28 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const creds = await getActivePancakeCredentials();
-  if (!creds) {
-    return NextResponse.json({ error: "Chưa cấu hình Pancake API" }, { status: 400 });
-  }
-
   const conversationId = params.id;
+  const creds = await getActivePancakeCredentials();
+
+  // Dùng mock data nếu chưa có credentials
+  if (!creds) {
+    const mockMessages = await getMessagesMock(conversationId);
+    const transformed = mockMessages.map((msg) => ({
+      id: msg.id,
+      conversationId,
+      content: msg.text,
+      senderName: msg.sender === 'page' ? 'Nội Thất SmartFurni' : msg.sender,
+      isSelf: msg.sender === 'page',
+      createdAt: msg.created_at,
+      attachments: msg.attachments || [],
+    }));
+
+    return NextResponse.json({
+      messages: transformed,
+      total: transformed.length,
+      isMock: true,
+    });
+  }
 
   try {
     const messages = await getPancakeMessages(
@@ -43,16 +60,14 @@ export async function GET(
     );
 
     // Transform to frontend format
-    const transformed = messages.map((msg) => ({
+    const transformed = messages.map((msg: any) => ({
       id: msg.id,
       conversationId: msg.conversation_id,
-      content: msg.original_message || msg.message,
-      senderId: msg.from.id,
-      senderName: msg.from.name,
-      isSelf: msg.from.id === creds.page_id,
-      createdAt: msg.inserted_at,
+      content: msg.original_message || msg.message || msg.text || '',
+      senderName: msg.from?.name || msg.sender || 'Khách hàng',
+      isSelf: msg.from?.id === creds.page_id || msg.sender === 'page',
+      createdAt: msg.inserted_at || msg.created_at,
       attachments: msg.attachments || [],
-      type: msg.type,
     }));
 
     return NextResponse.json({

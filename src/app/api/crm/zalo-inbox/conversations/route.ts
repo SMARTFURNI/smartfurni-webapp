@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getDb } from "@/lib/db";
 import { getPancakeConversations } from "@/lib/pancake-service";
+import { getConversationsMock } from "@/lib/pancake-service-mock";
 
 async function getActivePancakeCredentials() {
   const db = getDb();
@@ -44,12 +45,57 @@ export async function GET(req: NextRequest) {
   }
 
   const creds = await getActivePancakeCredentials();
-  if (!creds) {
+  const useMock = !creds; // Dùng mock data nếu chưa có credentials
+
+  if (useMock) {
+    // Dùng mock data để test giao diện
+    const mockConvs = await getConversationsMock();
+    const db = getDb();
+    const enriched = await Promise.all(
+      mockConvs.map(async (conv) => {
+        let lead = null;
+        const phone = conv.participants?.[0]?.phone;
+        if (phone) {
+          try {
+            const cleanPhone = phone.replace(/\D/g, '').replace(/^84/, '0');
+            const res = await db.query(
+              `SELECT id, name, phone, stage, type, assigned_to,
+                      (SELECT json_agg(json_build_object(
+                        'id', id, 'name', name, 'status', status, 'total_amount', total_amount
+                      ) ORDER BY created_at DESC)
+                       FROM crm_quotes WHERE lead_id = crm_leads.id LIMIT 3) as recent_quotes
+               FROM crm_leads 
+               WHERE REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $1
+                  OR REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $2
+               LIMIT 1`,
+              [cleanPhone, phone.replace(/\D/g, '')]
+            );
+            lead = res.rows[0] || null;
+          } catch { /* ignore */ }
+        }
+
+        return {
+          id: conv.id,
+          displayName: conv.participants?.[0]?.name || 'Khách hàng',
+          phone: conv.participants?.[0]?.phone || '',
+          lastMessage: conv.last_message?.text || '',
+          lastMessageAt: conv.last_message?.created_at || conv.updated_at,
+          unreadCount: 0,
+          tags: conv.tags || [],
+          type: conv.type,
+          lead,
+          pancakeConversationId: conv.id,
+          pageId: 'mock_page',
+        };
+      })
+    );
+
     return NextResponse.json({
-      conversations: [],
-      total: 0,
-      connected: false,
-      message: "Chưa cấu hình Pancake API. Vui lòng vào Cài đặt để nhập thông tin kết nối.",
+      conversations: enriched,
+      total: enriched.length,
+      connected: true,
+      pageName: 'Mock Data (Test)',
+      isMock: true,
     });
   }
 

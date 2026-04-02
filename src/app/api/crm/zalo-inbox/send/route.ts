@@ -1,11 +1,12 @@
 /**
  * POST /api/crm/zalo-inbox/send
- * Gửi tin nhắn qua Pancake API
+ * Gửi tin nhắn qua Pancake API (hoặc mock)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getDb } from "@/lib/db";
 import { sendPancakeMessage } from "@/lib/pancake-service";
+import { sendMessageMock } from "@/lib/pancake-service-mock";
 
 async function getActivePancakeCredentials() {
   const db = getDb();
@@ -25,16 +26,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const creds = await getActivePancakeCredentials();
-  if (!creds) {
-    return NextResponse.json({ error: "Chưa cấu hình Pancake API" }, { status: 400 });
-  }
-
   const body = await req.json();
   const { conversationId, message } = body;
 
   if (!conversationId || !message) {
     return NextResponse.json({ error: "Thiếu conversationId hoặc message" }, { status: 400 });
+  }
+
+  const creds = await getActivePancakeCredentials();
+
+  // Dùng mock nếu chưa có credentials
+  if (!creds) {
+    const mockMsg = await sendMessageMock(conversationId, message);
+    return NextResponse.json({
+      success: true,
+      message: "Đã gửi tin nhắn (mock)",
+      data: mockMsg,
+      isMock: true,
+    });
   }
 
   try {
