@@ -86,6 +86,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Khảo sát NPS", href: "/crm/nps", icon: TrendingUp, adminOnly: true },
       { label: "Nhắc nhở Zalo/SMS", href: "/crm/notifications", icon: Bell },
       { label: "Zalo OA", href: "/crm/zalo", icon: MessageSquare, superAdminOnly: true },
+      { label: "Zalo Shared Inbox", href: "/crm/zalo-inbox", icon: MessageSquare },
     ],
     adminOnly: true,
   },

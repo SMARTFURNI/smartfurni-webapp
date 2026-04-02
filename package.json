@@ -26,7 +26,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^6.9.4",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "zca-js": "^2.1.2"
   },
   "devDependencies": {
     "@types/node": "^22",

@@ -1,0 +1,798 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { MessageCircle, Search, Send, Wifi, WifiOff, User, Phone, ShoppingBag, ChevronRight, Settings, RefreshCw, X } from "lucide-react";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ZaloMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  contentType: string;
+  isSelf: boolean;
+  isRead: boolean;
+  createdAt: string;
+}
+
+interface LeadInfo {
+  id: string;
+  name: string;
+  phone: string;
+  stage: string;
+  type: string;
+  assignedTo: string | null;
+  recent_quotes: Array<{ id: string; name: string; status: string; total_amount: number }> | null;
+}
+
+interface ZaloConversation {
+  id: string;
+  phone: string;
+  displayName: string;
+  avatarUrl: string | null;
+  lastMessage: string | null;
+  lastMessageAt: string;
+  unreadCount: number;
+  leadId: string | null;
+  lead: LeadInfo | null;
+}
+
+interface GatewayStatus {
+  isConnected: boolean;
+  status: "disconnected" | "connecting" | "connected" | "error";
+  phone: string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Vừa xong";
+  if (diffMins < 60) return `${diffMins} phút`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} giờ`;
+  return d.toLocaleDateString("vi-VN");
+}
+
+function getInitials(name: string): string {
+  return name.split(" ").slice(-2).map((w) => w[0]).join("").toUpperCase();
+}
+
+function getStageLabel(stage: string): string {
+  const map: Record<string, string> = {
+    new: "Mới", contacted: "Đã liên hệ", qualified: "Tiềm năng",
+    proposal: "Báo giá", negotiation: "Đàm phán", won: "Thành công", lost: "Thất bại",
+  };
+  return map[stage] || stage;
+}
+
+function getStageColor(stage: string): string {
+  const map: Record<string, string> = {
+    new: "#6B7280", contacted: "#3B82F6", qualified: "#8B5CF6",
+    proposal: "#F59E0B", negotiation: "#EF4444", won: "#10B981", lost: "#9CA3AF",
+  };
+  return map[stage] || "#6B7280";
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function ZaloInboxClient() {
+  const [conversations, setConversations] = useState<ZaloConversation[]>([]);
+  const [selectedConv, setSelectedConv] = useState<ZaloConversation | null>(null);
+  const [messages, setMessages] = useState<ZaloMessage[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({ isConnected: false, status: "disconnected", phone: "" });
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  // ─── Load conversations ──────────────────────────────────────────────────
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/crm/zalo-inbox/conversations");
+      if (!res.ok) return;
+      const data = await res.json();
+      setConversations(data.conversations || []);
+      setGatewayStatus(data.gatewayStatus || { isConnected: false, status: "disconnected", phone: "" });
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, []);
+
+  // ─── Load messages ───────────────────────────────────────────────────────
+
+  const loadMessages = useCallback(async (convId: string) => {
+    try {
+      const res = await fetch(`/api/crm/zalo-inbox/conversations/${convId}/messages`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setMessages(data.messages || []);
+      // Đánh dấu đã đọc
+      await fetch(`/api/crm/zalo-inbox/conversations/${convId}/read`, { method: "POST" });
+      setConversations((prev) =>
+        prev.map((c) => c.id === convId ? { ...c, unreadCount: 0 } : c)
+      );
+    } catch { /* ignore */ }
+  }, []);
+
+  // ─── SSE Connection ──────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const es = new EventSource("/api/crm/zalo-inbox/sse");
+    eventSourceRef.current = es;
+
+    es.addEventListener("new_message", (e) => {
+      const data = JSON.parse(e.data);
+      const { conversationId, message } = data;
+
+      // Thêm tin nhắn vào conversation đang xem
+      if (selectedConv?.id === conversationId) {
+        setMessages((prev) => [...prev, message]);
+      } else {
+        // Tăng unread count
+        setConversations((prev) =>
+          prev.map((c) => c.id === conversationId
+            ? { ...c, unreadCount: c.unreadCount + 1, lastMessage: message.content, lastMessageAt: message.createdAt }
+            : c
+          )
+        );
+      }
+
+      // Reload conversations để cập nhật lastMessage
+      loadConversations();
+    });
+
+    es.addEventListener("status", (e) => {
+      const data = JSON.parse(e.data);
+      setGatewayStatus({
+        isConnected: data.status === "connected",
+        status: data.status,
+        phone: data.phone || "",
+      });
+    });
+
+    return () => { es.close(); };
+  }, [selectedConv?.id, loadConversations]);
+
+  // ─── Initial load ────────────────────────────────────────────────────────
+
+  useEffect(() => { loadConversations(); }, [loadConversations]);
+
+  // ─── Auto scroll ─────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // ─── Select conversation ─────────────────────────────────────────────────
+
+  const handleSelectConv = (conv: ZaloConversation) => {
+    setSelectedConv(conv);
+    setMessages([]);
+    loadMessages(conv.id);
+  };
+
+  // ─── Send message ────────────────────────────────────────────────────────
+
+  const handleSend = async () => {
+    if (!inputText.trim() || !selectedConv || sending) return;
+    const text = inputText.trim();
+    setInputText("");
+    setSending(true);
+
+    try {
+      const res = await fetch("/api/crm/zalo-inbox/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: selectedConv.id, content: text }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Lỗi gửi tin nhắn");
+        setInputText(text);
+      }
+    } catch {
+      setInputText(text);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // ─── Connect Zalo ────────────────────────────────────────────────────────
+
+  const handleConnect = async () => {
+    setGatewayStatus((prev) => ({ ...prev, status: "connecting" }));
+    try {
+      const res = await fetch("/api/crm/zalo-inbox/connect", { method: "POST" });
+      const data = await res.json();
+      if (!data.success) alert(data.message);
+    } catch { /* ignore */ }
+  };
+
+  // ─── Filter conversations ────────────────────────────────────────────────
+
+  const filteredConvs = conversations.filter((c) =>
+    c.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.phone.includes(searchQuery) ||
+    c.lead?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // ─── Render ──────────────────────────────────────────────────────────────
+
+  return (
+    <div style={{ display: "flex", height: "100vh", background: "#F0F2F5", fontFamily: "system-ui, sans-serif" }}>
+      {/* ── Sidebar: Danh sách hội thoại ── */}
+      <div style={{
+        width: 340, background: "#fff", borderRight: "1px solid #E5E7EB",
+        display: "flex", flexDirection: "column", flexShrink: 0,
+      }}>
+        {/* Header */}
+        <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #F3F4F6" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#0068FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <MessageCircle size={18} color="#fff" />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Zalo Inbox</div>
+                <div style={{ fontSize: 11, color: gatewayStatus.isConnected ? "#10B981" : "#9CA3AF", display: "flex", alignItems: "center", gap: 4 }}>
+                  {gatewayStatus.isConnected ? <Wifi size={10} /> : <WifiOff size={10} />}
+                  {gatewayStatus.isConnected ? `Đang kết nối: ${gatewayStatus.phone}` : "Chưa kết nối"}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={loadConversations} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#6B7280" }} title="Làm mới">
+                <RefreshCw size={16} />
+              </button>
+              <button onClick={() => setShowSettings(true)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#6B7280" }} title="Cài đặt">
+                <Settings size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Connect button nếu chưa kết nối */}
+          {!gatewayStatus.isConnected && (
+            <button
+              onClick={handleConnect}
+              disabled={gatewayStatus.status === "connecting"}
+              style={{
+                width: "100%", padding: "8px 12px", borderRadius: 8, border: "none",
+                background: gatewayStatus.status === "connecting" ? "#93C5FD" : "#0068FF",
+                color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", marginBottom: 8,
+              }}
+            >
+              {gatewayStatus.status === "connecting" ? "Đang kết nối..." : "Kết nối Zalo"}
+            </button>
+          )}
+
+          {/* Search */}
+          <div style={{ position: "relative" }}>
+            <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF" }} />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm hội thoại, tên, SĐT..."
+              style={{
+                width: "100%", padding: "8px 12px 8px 32px", borderRadius: 20,
+                border: "1px solid #E5E7EB", background: "#F9FAFB", fontSize: 13,
+                outline: "none", boxSizing: "border-box",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Conversation list */}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {loading ? (
+            <div style={{ padding: 24, textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>Đang tải...</div>
+          ) : filteredConvs.length === 0 ? (
+            <div style={{ padding: 32, textAlign: "center" }}>
+              <MessageCircle size={40} color="#D1D5DB" style={{ margin: "0 auto 12px" }} />
+              <div style={{ color: "#9CA3AF", fontSize: 13 }}>
+                {conversations.length === 0 ? "Chưa có hội thoại nào" : "Không tìm thấy kết quả"}
+              </div>
+            </div>
+          ) : (
+            filteredConvs.map((conv) => (
+              <ConversationItem
+                key={conv.id}
+                conv={conv}
+                isSelected={selectedConv?.id === conv.id}
+                onClick={() => handleSelectConv(conv)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── Main: Chat area ── */}
+      {selectedConv ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          {/* Chat header */}
+          <div style={{
+            padding: "12px 20px", background: "#fff", borderBottom: "1px solid #E5E7EB",
+            display: "flex", alignItems: "center", gap: 12,
+          }}>
+            <Avatar name={selectedConv.displayName} size={40} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: "#111827" }}>{selectedConv.displayName}</div>
+              <div style={{ fontSize: 12, color: "#6B7280" }}>{selectedConv.phone}</div>
+            </div>
+            {selectedConv.lead && (
+              <a
+                href={`/crm/leads?id=${selectedConv.lead.id}`}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
+                  background: "#EFF6FF", borderRadius: 20, textDecoration: "none",
+                  color: "#3B82F6", fontSize: 12, fontWeight: 500,
+                }}
+              >
+                <User size={12} />
+                Xem hồ sơ KH
+                <ChevronRight size={12} />
+              </a>
+            )}
+          </div>
+
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+            {messages.length === 0 ? (
+              <div style={{ textAlign: "center", color: "#9CA3AF", fontSize: 13, marginTop: 40 }}>
+                Chưa có tin nhắn nào
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <MessageBubble key={msg.id} message={msg} />
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div style={{
+            padding: "12px 20px", background: "#fff", borderTop: "1px solid #E5E7EB",
+            display: "flex", gap: 10, alignItems: "flex-end",
+          }}>
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+              }}
+              placeholder="Nhập tin nhắn... (Enter để gửi)"
+              rows={1}
+              style={{
+                flex: 1, padding: "10px 14px", borderRadius: 20, border: "1px solid #E5E7EB",
+                fontSize: 14, outline: "none", resize: "none", fontFamily: "inherit",
+                maxHeight: 120, overflowY: "auto",
+              }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!inputText.trim() || sending || !gatewayStatus.isConnected}
+              style={{
+                width: 40, height: 40, borderRadius: "50%", border: "none",
+                background: inputText.trim() && gatewayStatus.isConnected ? "#0068FF" : "#D1D5DB",
+                color: "#fff", cursor: inputText.trim() && gatewayStatus.isConnected ? "pointer" : "not-allowed",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}
+            >
+              <Send size={16} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+          <MessageCircle size={60} color="#D1D5DB" />
+          <div style={{ color: "#9CA3AF", fontSize: 15 }}>Chọn một hội thoại để bắt đầu</div>
+        </div>
+      )}
+
+      {/* ── Right panel: Lead info ── */}
+      {selectedConv?.lead && (
+        <LeadInfoPanel lead={selectedConv.lead} />
+      )}
+
+      {/* ── Settings Modal ── */}
+      {showSettings && (
+        <ZaloSettingsModal onClose={() => setShowSettings(false)} />
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function Avatar({ name, size = 40 }: { name: string; size?: number }) {
+  const colors = ["#0068FF", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
+  const color = colors[name.charCodeAt(0) % colors.length];
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", background: color,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      color: "#fff", fontWeight: 700, fontSize: size * 0.35, flexShrink: 0,
+    }}>
+      {getInitials(name)}
+    </div>
+  );
+}
+
+function ConversationItem({
+  conv, isSelected, onClick,
+}: {
+  conv: ZaloConversation;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
+        cursor: "pointer", background: isSelected ? "#EFF6FF" : "transparent",
+        borderLeft: isSelected ? "3px solid #0068FF" : "3px solid transparent",
+        transition: "background 0.15s",
+      }}
+    >
+      <div style={{ position: "relative" }}>
+        <Avatar name={conv.displayName} size={44} />
+        {conv.unreadCount > 0 && (
+          <div style={{
+            position: "absolute", top: -2, right: -2, width: 18, height: 18,
+            borderRadius: "50%", background: "#EF4444", color: "#fff",
+            fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
+          </div>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <div style={{
+            fontWeight: conv.unreadCount > 0 ? 700 : 500,
+            fontSize: 14, color: "#111827",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160,
+          }}>
+            {conv.displayName}
+          </div>
+          <div style={{ fontSize: 11, color: "#9CA3AF", flexShrink: 0 }}>
+            {formatTime(conv.lastMessageAt)}
+          </div>
+        </div>
+        <div style={{ fontSize: 12, color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {conv.lastMessage || "Bắt đầu hội thoại"}
+        </div>
+        {conv.lead && (
+          <div style={{ fontSize: 11, color: "#3B82F6", marginTop: 2 }}>
+            KH: {conv.lead.name}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MessageBubble({ message }: { message: ZaloMessage }) {
+  const isSelf = message.isSelf;
+  return (
+    <div style={{ display: "flex", justifyContent: isSelf ? "flex-end" : "flex-start", gap: 8 }}>
+      {!isSelf && <Avatar name={message.senderName} size={28} />}
+      <div style={{ maxWidth: "65%" }}>
+        {!isSelf && (
+          <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2, paddingLeft: 4 }}>
+            {message.senderName}
+          </div>
+        )}
+        <div style={{
+          padding: "8px 12px", borderRadius: isSelf ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+          background: isSelf ? "#0068FF" : "#fff",
+          color: isSelf ? "#fff" : "#111827",
+          fontSize: 14, lineHeight: 1.5,
+          boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+        }}>
+          {message.content}
+        </div>
+        <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isSelf ? "right" : "left", paddingLeft: 4 }}>
+          {new Date(message.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeadInfoPanel({ lead }: { lead: LeadInfo }) {
+  return (
+    <div style={{
+      width: 280, background: "#fff", borderLeft: "1px solid #E5E7EB",
+      display: "flex", flexDirection: "column", overflowY: "auto",
+    }}>
+      <div style={{ padding: "16px", borderBottom: "1px solid #F3F4F6" }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: "#374151", marginBottom: 12 }}>
+          Thông tin khách hàng
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <Avatar name={lead.name} size={44} />
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{lead.name}</div>
+            <div style={{ fontSize: 12, color: "#6B7280" }}>{lead.phone}</div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <InfoRow icon={<User size={13} />} label="Giai đoạn">
+            <span style={{
+              padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 600,
+              background: getStageColor(lead.stage) + "20", color: getStageColor(lead.stage),
+            }}>
+              {getStageLabel(lead.stage)}
+            </span>
+          </InfoRow>
+          <InfoRow icon={<Phone size={13} />} label="Loại KH">
+            <span style={{ fontSize: 12, color: "#374151" }}>{lead.type || "—"}</span>
+          </InfoRow>
+          {lead.assignedTo && (
+            <InfoRow icon={<User size={13} />} label="Phụ trách">
+              <span style={{ fontSize: 12, color: "#374151" }}>{lead.assignedTo}</span>
+            </InfoRow>
+          )}
+        </div>
+
+        <a
+          href={`/crm/leads?id=${lead.id}`}
+          style={{
+            display: "block", marginTop: 12, padding: "8px", textAlign: "center",
+            background: "#EFF6FF", borderRadius: 8, color: "#3B82F6",
+            fontSize: 12, fontWeight: 600, textDecoration: "none",
+          }}
+        >
+          Xem hồ sơ đầy đủ →
+        </a>
+      </div>
+
+      {/* Báo giá gần đây */}
+      {lead.recent_quotes && lead.recent_quotes.length > 0 && (
+        <div style={{ padding: "12px 16px" }}>
+          <div style={{ fontWeight: 600, fontSize: 12, color: "#374151", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <ShoppingBag size={13} />
+            Báo giá gần đây
+          </div>
+          {lead.recent_quotes.map((q) => (
+            <div key={q.id} style={{
+              padding: "8px 10px", background: "#F9FAFB", borderRadius: 8, marginBottom: 6,
+              border: "1px solid #F3F4F6",
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: "#111827" }}>{q.name || `Báo giá #${q.id.slice(-6)}`}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                <span style={{ fontSize: 11, color: "#6B7280" }}>{q.status}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C" }}>
+                  {q.total_amount ? q.total_amount.toLocaleString("vi-VN") + "đ" : "—"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <span style={{ color: "#9CA3AF" }}>{icon}</span>
+      <span style={{ fontSize: 12, color: "#6B7280", minWidth: 70 }}>{label}:</span>
+      {children}
+    </div>
+  );
+}
+
+// ─── Settings Modal ───────────────────────────────────────────────────────────
+
+function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
+  const [tab, setTab] = useState<"credentials" | "access">("credentials");
+  const [creds, setCreds] = useState({ phone: "", imei: "", cookies: "", userAgent: "" });
+  const [saving, setSaving] = useState(false);
+  const [staffList, setStaffList] = useState<any[]>([]);
+  const [accessList, setAccessList] = useState<any[]>([]);
+  const [loadingAccess, setLoadingAccess] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (tab === "access") {
+      setLoadingAccess(true);
+      Promise.all([
+        fetch("/api/crm/staff").then((r) => r.json()),
+        fetch("/api/crm/zalo-inbox/access").then((r) => r.json()),
+      ]).then(([staffData, accessData]) => {
+        setStaffList(staffData?.staff || []);
+        setAccessList(accessData?.accessList || []);
+      }).finally(() => setLoadingAccess(false));
+    }
+  }, [tab]);
+
+  const handleSaveCreds = async () => {
+    if (!creds.phone || !creds.imei || !creds.cookies) {
+      setMessage("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/crm/zalo-inbox/credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(creds),
+      });
+      const data = await res.json();
+      setMessage(data.message || (data.success ? "Đã lưu!" : "Lỗi"));
+    } catch { setMessage("Lỗi kết nối"); }
+    finally { setSaving(false); }
+  };
+
+  const handleGrantAccess = async (staffId: string) => {
+    await fetch("/api/crm/zalo-inbox/access", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ staffId }),
+    });
+    const res = await fetch("/api/crm/zalo-inbox/access");
+    const data = await res.json();
+    setAccessList(data?.accessList || []);
+  };
+
+  const handleRevokeAccess = async (staffId: string) => {
+    await fetch(`/api/crm/zalo-inbox/access?staffId=${staffId}`, { method: "DELETE" });
+    setAccessList((prev) => prev.filter((a) => a.staffId !== staffId));
+  };
+
+  const hasAccess = (staffId: string) => accessList.some((a) => a.staffId === staffId);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000,
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 16, width: 560, maxHeight: "85vh",
+        display: "flex", flexDirection: "column", overflow: "hidden",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+      }}>
+        {/* Modal header */}
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>Cài đặt Zalo Inbox</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280" }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", borderBottom: "1px solid #F3F4F6" }}>
+          {(["credentials", "access"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                flex: 1, padding: "10px", border: "none", background: "none",
+                fontWeight: tab === t ? 600 : 400, fontSize: 13,
+                color: tab === t ? "#0068FF" : "#6B7280",
+                borderBottom: tab === t ? "2px solid #0068FF" : "2px solid transparent",
+                cursor: "pointer",
+              }}
+            >
+              {t === "credentials" ? "Thông tin đăng nhập" : "Phân quyền nhân viên"}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+          {tab === "credentials" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{
+                padding: 12, background: "#FEF3C7", borderRadius: 8, fontSize: 12, color: "#92400E",
+                border: "1px solid #FDE68A",
+              }}>
+                <strong>Hướng dẫn lấy thông tin:</strong><br />
+                1. Cài extension <strong>ZaloDataExtractor</strong> trên Chrome<br />
+                2. Mở <a href="https://chat.zalo.me" target="_blank" style={{ color: "#0068FF" }}>chat.zalo.me</a> và đăng nhập<br />
+                3. Click extension → Copy IMEI, Cookies, User Agent<br />
+                4. Dán vào các ô bên dưới
+              </div>
+
+              {[
+                { key: "phone", label: "Số điện thoại Zalo", placeholder: "0912345678" },
+                { key: "imei", label: "IMEI", placeholder: "Lấy từ ZaloDataExtractor" },
+                { key: "userAgent", label: "User Agent", placeholder: "Mozilla/5.0..." },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>{label}</label>
+                  <input
+                    value={(creds as any)[key]}
+                    onChange={(e) => setCreds((prev) => ({ ...prev, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+              ))}
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Cookies (JSON)</label>
+                <textarea
+                  value={creds.cookies}
+                  onChange={(e) => setCreds((prev) => ({ ...prev, cookies: e.target.value }))}
+                  placeholder='{"_zlang":"vn","zpsid":"...","zpw_sek":"..."}'
+                  rows={4}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12, outline: "none", resize: "vertical", fontFamily: "monospace", boxSizing: "border-box" }}
+                />
+              </div>
+
+              {message && (
+                <div style={{ padding: "8px 12px", borderRadius: 8, background: message.includes("Lỗi") ? "#FEE2E2" : "#D1FAE5", color: message.includes("Lỗi") ? "#991B1B" : "#065F46", fontSize: 13 }}>
+                  {message}
+                </div>
+              )}
+
+              <button
+                onClick={handleSaveCreds}
+                disabled={saving}
+                style={{
+                  padding: "10px", borderRadius: 8, border: "none",
+                  background: saving ? "#93C5FD" : "#0068FF", color: "#fff",
+                  fontWeight: 600, fontSize: 14, cursor: saving ? "not-allowed" : "pointer",
+                }}
+              >
+                {saving ? "Đang lưu..." : "Lưu thông tin"}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 16 }}>
+                Chọn nhân viên được phép truy cập Zalo Shared Inbox. Admin luôn có quyền truy cập.
+              </div>
+              {loadingAccess ? (
+                <div style={{ textAlign: "center", color: "#9CA3AF", padding: 20 }}>Đang tải...</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {staffList.map((staff) => (
+                    <div key={staff.id} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "10px 12px", borderRadius: 8, border: "1px solid #E5E7EB",
+                      background: hasAccess(staff.id) ? "#F0FDF4" : "#fff",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Avatar name={staff.full_name || staff.fullName} size={32} />
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: "#111827" }}>{staff.full_name || staff.fullName}</div>
+                          <div style={{ fontSize: 11, color: "#6B7280" }}>{staff.email} · {staff.role}</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => hasAccess(staff.id) ? handleRevokeAccess(staff.id) : handleGrantAccess(staff.id)}
+                        style={{
+                          padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+                          background: hasAccess(staff.id) ? "#FEE2E2" : "#DBEAFE",
+                          color: hasAccess(staff.id) ? "#991B1B" : "#1D4ED8",
+                          fontSize: 12, fontWeight: 600,
+                        }}
+                      >
+                        {hasAccess(staff.id) ? "Thu hồi" : "Cấp quyền"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
