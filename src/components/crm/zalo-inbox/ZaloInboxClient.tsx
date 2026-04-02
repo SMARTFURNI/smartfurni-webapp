@@ -100,10 +100,18 @@ export default function ZaloInboxClient() {
   const loadConversations = useCallback(async () => {
     try {
       const res = await fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" });
+      if (res.status === 401) {
+        setGatewayStatus({ connected: false, pageName: null, pageId: null, message: "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại" });
+        return;
+      }
+      if (res.status === 403) {
+        setGatewayStatus({ connected: false, pageName: null, pageId: null, message: "Bạn chưa được cấp quyền truy cập Zalo Inbox" });
+        return;
+      }
       if (!res.ok) return;
       const data = await res.json();
       setConversations(data.conversations || []);
-      setGatewayStatus({ connected: data.connected || false, pageName: data.pageName || null, pageId: null });
+      setGatewayStatus({ connected: data.connected || false, pageName: data.pageName || null, pageId: null, message: data.error });
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }, []);
@@ -245,8 +253,14 @@ export default function ZaloInboxClient() {
             </div>
           </div>
 
+          {/* Thông báo lỗi */}
+          {gatewayStatus.message && (
+            <div style={{ padding: "6px 10px", background: "#FEF3C7", borderRadius: 6, fontSize: 11, color: "#92400E", marginBottom: 8, border: "1px solid #FDE68A" }}>
+              ⚠️ {gatewayStatus.message}
+            </div>
+          )}
           {/* Connect button nếu chưa kết nối */}
-          {!gatewayStatus.connected && (
+          {!gatewayStatus.connected && !gatewayStatus.message?.includes("quyền") && (
             <button
               onClick={() => setShowSettings(true)}
               style={{
@@ -593,24 +607,24 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     // Load existing credentials
-    fetch("/api/crm/zalo-inbox/credentials").then(r => r.json()).then(data => {
-      if (data) {
+    fetch("/api/crm/zalo-inbox/credentials", { credentials: "include" }).then(r => r.json()).then(data => {
+      if (data && data.page_id) {
         setPancakeCreds({
           pageId: data.page_id || "",
           pageName: data.page_name || "",
-          pageAccessToken: "",  // không hiển thị token cũ
+          pageAccessToken: "",  // không hiển thị token cũ vì lý do bảo mật
           userApiToken: "",
         });
       }
-    });
+    }).catch(() => {/* ignore */});
   }, []);
 
   useEffect(() => {
     if (tab === "access") {
       setLoadingAccess(true);
       Promise.all([
-        fetch("/api/crm/staff").then((r) => r.json()),
-        fetch("/api/crm/zalo-inbox/access").then((r) => r.json()),
+        fetch("/api/crm/staff", { credentials: "include" }).then((r) => r.json()),
+        fetch("/api/crm/zalo-inbox/access", { credentials: "include" }).then((r) => r.json()),
       ]).then(([staffData, accessData]) => {
         setStaffList(staffData?.staff || []);
         setAccessList(accessData?.accessList || []);

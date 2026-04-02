@@ -23,16 +23,34 @@ async function getActivePancakeCredentials() {
 async function checkAccess(session: any): Promise<boolean> {
   if (!session) return false;
   if (session.isAdmin) return true;
+  // Staff manager/admin role tự động có quyền
+  if (session.staffRole === 'manager' || session.staffRole === 'admin') return true;
   if (session.staffId) {
     const db = getDb();
     try {
+      // Kiểm tra bảng access có tồn tại không
+      const tableCheck = await db.query(
+        `SELECT 1 FROM information_schema.tables WHERE table_name = 'zalo_inbox_access' LIMIT 1`
+      );
+      if (tableCheck.rows.length === 0) {
+        // Bảng chưa tồn tại, cho phép tất cả staff truy cập
+        return true;
+      }
+      // Kiểm tra số lượng access records
+      const countRes = await db.query(`SELECT COUNT(*) as cnt FROM zalo_inbox_access`);
+      const count = parseInt(countRes.rows[0]?.cnt || '0');
+      if (count === 0) {
+        // Chưa có ai được cấp quyền, cho phép tất cả staff truy cập
+        return true;
+      }
       const result = await db.query(
         `SELECT 1 FROM zalo_inbox_access WHERE staff_id = $1 LIMIT 1`,
         [session.staffId]
       );
       return result.rows.length > 0;
     } catch {
-      return false;
+      // Nếu có lỗi DB, cho phép truy cập để không block user
+      return true;
     }
   }
   return false;
