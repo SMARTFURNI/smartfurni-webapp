@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAllStaff, createStaff } from "@/lib/crm-staff-store";
 import type { StaffRole } from "@/lib/crm-staff-store";
+import { logAudit, getClientIp } from "@/lib/audit-helper";
 
 export async function GET() {
   try {
@@ -32,6 +33,16 @@ export async function POST(req: NextRequest) {
     role: body.role as StaffRole,
     assignedDistricts: body.assignedDistricts || [],
     targetRevenue: body.targetRevenue || 0,
+  });
+  await logAudit({
+    action: "staff.created",
+    entityType: "staff",
+    entityId: staff.id,
+    entityName: staff.fullName,
+    actorId: "admin",
+    actorName: "Admin",
+    ipAddress: getClientIp(req),
+    metadata: { role: staff.role, username: staff.username },
   });
   return NextResponse.json(staff, { status: 201 });
 }
