@@ -260,8 +260,8 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
             onClick={() => setSelected(null)}>
-            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
-              style={{ background: T.card }}
+            <div className="w-full max-w-3xl rounded-2xl shadow-2xl"
+              style={{ background: "#1a1a1e", boxShadow: "0 25px 60px rgba(0,0,0,0.6)" }}
               onClick={e => e.stopPropagation()}>
               <ProductDetail
                 product={selected}
@@ -497,10 +497,10 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
   const hasSpecs = Object.keys(p.specs).length > 0;
 
   return (
-    <div style={{ background: T.card, borderRadius: 20, overflow: "hidden", width: "100%" }}>
+    <div style={{ background: "#1a1a1e", borderRadius: 20, overflow: "hidden", width: "100%" }}>
       {/* Dark header */}
       <div className="flex items-center justify-between px-5 py-3.5"
-        style={{ background: "#1c1c1e" }}>
+        style={{ background: "#111113", borderBottom: "1px solid #2a2a2e" }}>
         <div className="flex items-center gap-2">
           <span className="text-[11px] px-2.5 py-1 rounded-full font-bold"
             style={{ background: `${cat.color}30`, color: cat.color, border: `1px solid ${cat.color}50` }}>
@@ -523,47 +523,44 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
       </div>
 
       {/* Body: Left image | Right info */}
-      <div className="flex" style={{ maxHeight: "75vh" }}>
+      <div className="flex">
 
-        {/* Left: tall image with price overlay */}
-        <div className="flex-shrink-0 relative" style={{ width: 320, background: cat.bg }}>
+        {/* Left: square image 1:1 */}
+        <div className="flex-shrink-0 relative" style={{ width: 340, height: 340, background: cat.bg }}>
           {p.imageUrl ? (
-            <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" style={{ display: "block", minHeight: 420 }} />
+            <img src={p.imageUrl} alt={p.name}
+              style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", padding: "12px" }} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 420 }}>
+            <div className="w-full h-full flex items-center justify-center">
               <span className="text-8xl opacity-30">{cat.icon}</span>
             </div>
           )}
           {/* Price overlay bottom */}
-          <div className="absolute bottom-0 left-0 right-0 px-4 py-5"
-            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)" }}>
-            <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+          <div className="absolute bottom-0 left-0 right-0 px-4 py-4"
+            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)" }}>
+            <div className="text-[10px] font-semibold uppercase tracking-widest mb-0.5"
+              style={{ color: "rgba(255,255,255,0.5)" }}>
               {hasSizes && selectedSize ? selectedSize.label : "Giá bán"}
             </div>
-            <div className="text-3xl font-black" style={{ color: T.gold }}>{formatVND(displayPrice)}</div>
-            {hasSizes && (
-              <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.45)" }}>
-                {p.sizePricings!.length} kích thước · chọn để xem giá
-              </div>
-            )}
+            <div className="text-2xl font-black" style={{ color: "#C9A84C" }}>{formatVND(displayPrice)}</div>
           </div>
         </div>
 
         {/* Right: scrollable info */}
-        <div className="flex-1 flex flex-col overflow-y-auto" style={{ minWidth: 0 }}>
+        <div className="flex-1 flex flex-col overflow-y-auto" style={{ minWidth: 0, maxHeight: 500 }}>
 
           {/* Product name + description */}
-          <div className="px-5 pt-5 pb-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
-            <h2 className="text-lg font-black leading-snug" style={{ color: T.textPrimary }}>{p.name}</h2>
+          <div className="px-5 pt-4 pb-4" style={{ borderBottom: "1px solid #2a2a2e" }}>
+            <h2 className="text-base font-black leading-snug" style={{ color: "#ECEDEE" }}>{p.name}</h2>
             {p.description && (
-              <p className="text-xs leading-relaxed mt-2" style={{ color: T.textSecondary }}>{p.description}</p>
+              <p className="text-xs leading-relaxed mt-2" style={{ color: "#9BA1A6" }}>{p.description}</p>
             )}
           </div>
 
           {/* Size selector with price */}
           {hasSizes && (
-            <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
-              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: T.textMuted }}>Kích thước &amp; Giá</div>
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid #2a2a2e" }}>
+              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#687076" }}>Kích thước &amp; Giá</div>
               <div className="grid grid-cols-2 gap-2">
                 {p.sizePricings!.map((s, i) => {
                   const active = selectedSizeIdx === i;
@@ -571,12 +568,12 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
                     <button key={i} onClick={() => setSelectedSizeIdx(i)}
                       className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left"
                       style={{
-                        background: active ? "#1c1c1e" : T.bg,
-                        border: `1.5px solid ${active ? T.gold : T.cardBorder}`,
-                        boxShadow: active ? `0 2px 10px rgba(201,168,76,0.3)` : "none",
+                        background: active ? "#111113" : "#28282c",
+                        border: `1.5px solid ${active ? "#C9A84C" : "#333337"}`,
+                        boxShadow: active ? "0 2px 10px rgba(201,168,76,0.25)" : "none",
                       }}>
-                      <div className="text-[11px] font-bold" style={{ color: active ? "#fff" : T.textPrimary }}>{s.label}</div>
-                      <div className="text-xs font-black" style={{ color: T.gold }}>{formatVND(s.price)}</div>
+                      <div className="text-[11px] font-bold" style={{ color: active ? "#fff" : "#ECEDEE" }}>{s.label}</div>
+                      <div className="text-xs font-black" style={{ color: "#C9A84C" }}>{formatVND(s.price)}</div>
                     </button>
                   );
                 })}
@@ -586,14 +583,14 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
 
           {/* Discount tiers */}
           {p.discountTiers.length > 0 && (
-            <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
-              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: T.textMuted }}>Chiết khấu số lượng</div>
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid #2a2a2e" }}>
+              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#687076" }}>Chiết khấu số lượng</div>
               <div className="grid grid-cols-3 gap-2">
                 {p.discountTiers.map((tier, i) => (
                   <div key={i} className="flex flex-col items-center py-2.5 px-2 rounded-xl"
-                    style={{ background: T.goldLight, border: `1px solid ${T.goldBorder}` }}>
-                    <div className="text-[10px]" style={{ color: T.textMuted }}>≥{tier.minQty} bộ</div>
-                    <div className="text-sm font-black mt-0.5" style={{ color: T.gold }}>-{tier.discountPct}%</div>
+                    style={{ background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)" }}>
+                    <div className="text-[10px]" style={{ color: "#9BA1A6" }}>≥{tier.minQty} bộ</div>
+                    <div className="text-sm font-black mt-0.5" style={{ color: "#C9A84C" }}>-{tier.discountPct}%</div>
                   </div>
                 ))}
               </div>
@@ -602,14 +599,14 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
 
           {/* Specs */}
           {hasSpecs && (
-            <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
-              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: T.textMuted }}>Thông số kỹ thuật</div>
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid #2a2a2e" }}>
+              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#687076" }}>Thông số kỹ thuật</div>
               <div className="space-y-1.5">
                 {Object.entries(p.specs).map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between py-1.5 px-3 rounded-lg"
-                    style={{ background: T.bg }}>
-                    <span className="text-xs" style={{ color: T.textMuted }}>{k}</span>
-                    <span className="text-xs font-bold" style={{ color: T.textPrimary }}>{v}</span>
+                    style={{ background: "#28282c" }}>
+                    <span className="text-xs" style={{ color: "#9BA1A6" }}>{k}</span>
+                    <span className="text-xs font-bold" style={{ color: "#ECEDEE" }}>{v}</span>
                   </div>
                 ))}
               </div>
@@ -620,17 +617,17 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
           <div className="flex-1" />
 
           {/* Action buttons */}
-          <div className="px-5 py-4 flex gap-2.5" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
+          <div className="px-5 py-4 flex gap-2.5" style={{ borderTop: "1px solid #2a2a2e" }}>
             <button onClick={onEdit}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-all"
-              style={{ borderColor: T.cardBorder, color: T.textSecondary, background: T.card }}
-              onMouseEnter={e => (e.currentTarget.style.background = T.bg)}
-              onMouseLeave={e => (e.currentTarget.style.background = T.card)}>
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all"
+              style={{ border: "1.5px solid #333337", color: "#9BA1A6", background: "#28282c" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#333337")}
+              onMouseLeave={e => (e.currentTarget.style.background = "#28282c")}>
               <Edit3 size={14} /> Chỉnh sửa
             </button>
             <Link href="/crm/quotes/new"
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold"
-              style={{ background: T.gold, color: "#fff", boxShadow: "0 4px 14px rgba(201,168,76,0.4)" }}
+              style={{ background: "#C9A84C", color: "#fff", boxShadow: "0 4px 14px rgba(201,168,76,0.35)" }}
               onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
               onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
               <Tag size={14} /> Tạo báo giá
