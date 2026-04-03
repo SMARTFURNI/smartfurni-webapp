@@ -14,7 +14,7 @@ const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "noreply@smartfurni.vn";
 const FROM_NAME = "SmartFurni CRM";
 
 // Thay thế biến động trong HTML content
-function replaceVariables(html: string, lead: { name: string; company: string; email: string; phone: string; [key: string]: string | number | string[] }) {
+function replaceVariables(html: string, lead: { name?: string; company?: string; email?: string; phone?: string; [key: string]: any }) {
   return html
     .replace(/\{\{name\}\}/g, lead.name || "Quý khách")
     .replace(/\{\{company\}\}/g, lead.company || "Quý công ty")
