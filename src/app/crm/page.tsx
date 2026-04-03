@@ -5,6 +5,8 @@ import { getCrmSettings } from "@/lib/crm-settings-store";
 import { getAllPlans } from "@/lib/twelve-week-plan-store";
 import { getRawLeadStats } from "@/lib/crm-raw-lead-store";
 import CrmDashboardClient from "@/components/crm/CrmDashboardClient";
+import { cookies } from "next/headers";
+import { queryOne } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +26,27 @@ export default async function CrmDashboardPage() {
   const staffRole = currentStaff?.role ?? "sales";
   const staffUsername = currentStaff?.username ?? "";
   const staffId = currentStaff?.id ?? null;
+
+  // Đọc darkMode preference theo tài khoản
+  let initialDarkMode = false;
+  try {
+    if (session.isAdmin) {
+      // Admin: đọc từ cookie sf_admin_theme
+      const cookieStore = await cookies();
+      initialDarkMode = cookieStore.get("sf_admin_theme")?.value === "dark";
+    } else if (session.staffId) {
+      // Nhân viên: đọc từ data JSONB của crm_staff
+      const row = await queryOne<{ data: string }>(
+        "SELECT data FROM crm_staff WHERE id = $1",
+        [session.staffId]
+      );
+      if (row) {
+        const data = typeof row.data === "string" ? JSON.parse(row.data) : row.data as Record<string, unknown>;
+        const prefs = (data?.preferences as Record<string, unknown>) ?? {};
+        initialDarkMode = prefs.darkMode === true;
+      }
+    }
+  } catch { /* ignore, default to light */ }
 
   // Admin thấy tất cả, nhân viên chỉ thấy leads được giao cho mình
   const staffFilter = (!session.isAdmin && staffName) ? { assignedTo: staffName } : undefined;
@@ -106,6 +129,7 @@ export default async function CrmDashboardPage() {
         isAdmin: session.isAdmin,
         staffId: staffId ?? undefined,
       }}
+      initialDarkMode={initialDarkMode}
     />
   );
 }

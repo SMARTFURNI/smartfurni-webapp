@@ -42,6 +42,7 @@ interface Props {
   initialSharedPlan?: any | null;
   initialPoolStats?: PoolStats | null;
   initialPeriodStats?: PeriodStats | null;
+  initialDarkMode?: boolean;
 }
 
 const PRIORITY_CONFIG = {
@@ -1370,7 +1371,7 @@ const DASHBOARD_DEFAULT_LEAD_TYPES: LeadTypeItem[] = [
   { id: "investor",  label: "Chủ đầu tư CHDV", color: "#60a5fa" },
   { id: "dealer",    label: "Đại lý",           color: "#C9A84C" },
 ];
-export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes, initialTwelveWeekPlan, initialSharedPlan, initialPoolStats, initialPeriodStats }: Props) {
+export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes, initialTwelveWeekPlan, initialSharedPlan, initialPoolStats, initialPeriodStats, initialDarkMode }: Props) {
   // Merge with defaults so all keys are always defined
   const theme: DashboardTheme = { ...DEFAULT_SETTINGS.dashboardTheme, ...(themeProp ?? {}) };
   // Section ordering & visibility helpers
@@ -1392,7 +1393,23 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const [tasks, setTasks] = useState(todayTasks);
   const [showAddModal, setShowAddModal] = useState(false);
   const [period, setPeriod] = useState<Period>("week");
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(initialDarkMode ?? false);
+
+  // Lưu theme preference khi toggle (debounce 500ms để tránh gọi API quá nhiều)
+  const darkModeRef = useRef(initialDarkMode ?? false);
+  useEffect(() => {
+    if (darkMode === darkModeRef.current) return;
+    darkModeRef.current = darkMode;
+    const timer = setTimeout(() => {
+      fetch("/api/crm/me/theme", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ darkMode }),
+      }).catch(() => {/* ignore */});
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [darkMode]);
 
   // Dynamic lead types from CRM settings (server-side pre-loaded)
   const [leadTypes, setLeadTypes] = useState<LeadTypeItem[]>(
