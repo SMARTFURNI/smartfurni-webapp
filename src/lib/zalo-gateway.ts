@@ -10,6 +10,7 @@
 const { Zalo, ThreadType, LoginQRCallbackEventType } = require("zca-js");
 
 import { query, queryOne } from "./db";
+import { upsertConversation, incrementUnreadCount } from "./zalo-inbox-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -341,17 +342,32 @@ function setupListeners(api: unknown) {
     getOwnId: () => Promise<string>;
   };
 
-  apiObj.listener.on("message", async (message: Record<string, unknown>) => {
+    apiObj.listener.on("message", async (message: Record<string, unknown>) => {
     const processed = processIncomingMessage(message);
     if (!processed) return;
-
-    // Save to DB
+    // Save to DB (zalo_inbox_messages)
     await saveMessage(processed);
-
+    // Upsert conversation vào zalo_conversations (để conversations API đọc được)
+    const threadId = processed.isSelf ? processed.toId : processed.fromId;
+    const msgData = (message.data || {}) as Record<string, unknown>;
+    const senderName = (msgData.dName as string) || (msgData.displayName as string) || threadId;
+    try {
+      await upsertConversation({
+        id: threadId,
+        phone: threadId,
+        displayName: senderName,
+        lastMessage: processed.content || "[Hình ảnh]",
+      });
+      if (!processed.isSelf) {
+        await incrementUnreadCount(threadId);
+      }
+    } catch (err) {
+      console.error("[ZaloGateway] upsertConversation error:", err);
+    }
     // Broadcast via SSE
     broadcastSSE("message", {
       ...processed,
-      threadId: processed.isSelf ? processed.toId : processed.fromId,
+      threadId,
     });
   });
 
@@ -513,5 +529,59 @@ export async function initZaloGateway() {
     }
   } else {
     console.log("[ZaloGateway] No saved credentials found");
+  }
+}
+
+// ─── Send Message ─────────────────────────────────────────────────────────────
+
+/**
+ * Gửi tin nhắn Zalo cá nhân đến một user (threadId = userId của người nhận)
+ * Sau khi gửi thành công, lưu vào zalo_inbox_messages và upsert conversation
+ */
+export async function sendZaloMessage(params: {
+  conversationId: string;
+  content: string;
+  senderName?: string;
+  senderId?: string;
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  if (!isConnected || !zaloApi) {
+    return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
+  }
+  try {
+    const api = zaloApi as {
+      sendMessage: (msg: { msg: string }, threadId: string, type: number) => Promise<{ msgId?: string }>;
+    };
+    // ThreadType.USER = 0 (tin nhắn cá nhân)
+    const result = await api.sendMessage(
+      { msg: params.content },
+      params.conversationId,
+      ThreadType?.USER ?? 0
+    );
+    const msgId = result?.msgId || `sent_${Date.now()}`;
+    // Lưu tin nhắn gửi đi vào DB
+    await saveMessage({
+      msgId,
+      fromId: currentUserId,
+      toId: params.conversationId,
+      content: params.content,
+      timestamp: Date.now(),
+      isSelf: true,
+      attachments: [],
+      type: "text",
+    });
+    // Upsert conversation
+    try {
+      await upsertConversation({
+        id: params.conversationId,
+        phone: params.conversationId,
+        displayName: params.conversationId,
+        lastMessage: params.content,
+      });
+    } catch { /* ignore */ }
+    return { success: true, messageId: msgId };
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[ZaloGateway] sendZaloMessage error:", error);
+    return { success: false, error: error.message || "Lỗi gửi tin nhắn" };
   }
 }

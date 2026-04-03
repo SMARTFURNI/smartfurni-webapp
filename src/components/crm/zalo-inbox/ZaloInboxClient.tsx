@@ -57,8 +57,10 @@ interface GatewayStatus {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatTime(iso: string): string {
+function formatTime(iso: string | null | undefined): string {
+  if (!iso) return "";
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -147,22 +149,33 @@ export default function ZaloInboxClient() {
     const es = new EventSource("/api/crm/zalo-inbox/sse");
     eventSourceRef.current = es;
 
-    es.addEventListener("new_message", (e) => {
-      const data = JSON.parse(e.data);
-      const { conversationId, text, senderName, createdAt } = data;
-
-      // Tăng unread count nếu không đang xem conversation này
-      if (selectedConv?.id !== conversationId) {
+    // Lắng nghe event "message" (đúng tên gateway gửi qua broadcastSSE)
+    es.addEventListener("message", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        // data có dạng: { msgId, fromId, toId, content, timestamp, isSelf, attachments, type, threadId }
+        const conversationId = data.threadId || (data.isSelf ? data.toId : data.fromId);
+        if (!conversationId) return;
+        const text = data.content || "";
+        const createdAt = new Date(data.timestamp || Date.now()).toISOString();
+        // Reload conversations để cập nhật lastMessage và unreadCount
+        loadConversations();
+        // Nếu đang xem đúng conversation này → reload messages
+        setSelectedConv((prev) => {
+          if (prev && prev.id === conversationId) {
+            loadMessages(conversationId);
+          }
+          return prev;
+        });
+        // Tăng unread count nếu không đang xem conversation này
         setConversations((prev) =>
-          prev.map((c) => c.id === conversationId
-            ? { ...c, unreadCount: c.unreadCount + 1, lastMessage: text, lastMessageAt: createdAt }
-            : c
+          prev.map((c) =>
+            c.id === conversationId
+              ? { ...c, lastMessage: text, lastMessageAt: createdAt }
+              : c
           )
         );
-      }
-
-      // Reload conversations để cập nhật danh sách
-      loadConversations();
+      } catch { /* ignore parse errors */ }
     });
 
     return () => { es.close(); };
@@ -205,6 +218,11 @@ export default function ZaloInboxClient() {
         const err = await res.json();
         alert(err.error || "Lỗi gửi tin nhắn");
         setInputText(text);
+      } else {
+        // Reload messages để hiển thị tin nhắn vừa gửi
+        if (selectedConv) {
+          loadMessages(selectedConv.id);
+        }
       }
     } catch {
       setInputText(text);
@@ -776,6 +794,7 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
       setLoginStatus("idle");
       setLoginMessage("");
       setQrImage(null);
+      // Thông báo parent cập nhật gatewayStatus và xóa conversations
       onDisconnect?.();
     } finally { setDisconnecting(false); }
   };
