@@ -2,8 +2,6 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <html lang="vi">
-      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif", background: "#f9fafb" }}>
         <div style={{
           minHeight: "100vh",
           display: "flex",
@@ -39,7 +37,5 @@ export default function NotFound() {
             </Link>
           </div>
         </div>
-      </body>
-    </html>
   );
 }
