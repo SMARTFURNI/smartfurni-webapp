@@ -381,7 +381,7 @@ export default function GoogleSheetClient() {
                   <input
                     type="text"
                     className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
-                    value={(config as Record<string, unknown>)[key] as string || ""}
+                    value={(config as unknown as Record<string, unknown>)[key] as string || ""}
                     onChange={e => setConfig({ ...config, [key]: e.target.value })}
                   />
                 </div>

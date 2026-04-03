@@ -1,1 +1,75 @@
-import { Router, Request, Response } from 'express';\nimport { logger } from '../utils/logger';\n\nconst router = Router();\n\n/**\n * GET /api/ai-agent/stats\n * Get overall AI Agent statistics\n */\nrouter.get('/', async (req: Request, res: Response) => {\n  try {\n    const { dateRange = 'today' } = req.query;\n\n    logger.info('AI Agent stats requested', { dateRange });\n\n    // TODO: Implement stats logic\n    res.json({\n      success: true,\n      message: 'AI Agent stats endpoint - to be implemented in Phase 6',\n      data: {\n        period: dateRange,\n        stats: {\n          emailsSent: 0,\n          chatbotResponses: 0,\n          leadsScored: 0,\n          tasksSuggested: 0,\n          successRate: 0,\n          averageResponseTime: 0,\n        },\n      },\n    });\n  } catch (error) {\n    logger.error('AI Agent stats retrieval failed', {\n      error: error instanceof Error ? error.message : String(error),\n    });\n    res.status(500).json({\n      success: false,\n      error: 'Stats retrieval failed',\n    });\n  }\n});\n\n/**\n * GET /api/ai-agent/recent-tasks\n * Get recent AI Agent tasks\n */\nrouter.get('/recent-tasks', async (req: Request, res: Response) => {\n  try {\n    const { limit = 10 } = req.query;\n\n    logger.info('Recent tasks requested', { limit });\n\n    // TODO: Implement recent tasks logic\n    res.json({\n      success: true,\n      message: 'Recent tasks endpoint - to be implemented in Phase 6',\n      data: {\n        tasks: [],\n        total: 0,\n        limit: parseInt(limit as string),\n      },\n    });\n  } catch (error) {\n    logger.error('Recent tasks retrieval failed', {\n      error: error instanceof Error ? error.message : String(error),\n    });\n    res.status(500).json({\n      success: false,\n      error: 'Recent tasks retrieval failed',\n    });\n  }\n});\n\nexport default router;\n
+import { Router, Request, Response } from 'express';
+import { logger } from '../utils/logger';
+
+const router = Router();
+
+/**
+ * GET /api/ai-agent/stats
+ * Get overall AI Agent statistics
+ */
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const { dateRange = 'today' } = req.query;
+
+    logger.info('AI Agent stats requested', { dateRange });
+
+    // TODO: Implement stats logic
+    res.json({
+      success: true,
+      message: 'AI Agent stats endpoint - to be implemented in Phase 6',
+      data: {
+        period: dateRange,
+        stats: {
+          emailsSent: 0,
+          chatbotResponses: 0,
+          leadsScored: 0,
+          tasksSuggested: 0,
+          successRate: 0,
+          averageResponseTime: 0,
+        },
+      },
+    });
+  } catch (error) {
+    logger.error('AI Agent stats retrieval failed', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Stats retrieval failed',
+    });
+  }
+});
+
+/**
+ * GET /api/ai-agent/recent-tasks
+ * Get recent AI Agent tasks
+ */
+router.get('/recent-tasks', async (req: Request, res: Response) => {
+  try {
+    const { limit = 10 } = req.query;
+
+    logger.info('Recent tasks requested', { limit });
+
+    // TODO: Implement recent tasks logic
+    res.json({
+      success: true,
+      message: 'Recent tasks endpoint - to be implemented in Phase 6',
+      data: {
+        tasks: [],
+        total: 0,
+        limit: parseInt(limit as string),
+      },
+    });
+  } catch (error) {
+    logger.error('Recent tasks retrieval failed', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Recent tasks retrieval failed',
+    });
+  }
+});
+
+export default router;
+

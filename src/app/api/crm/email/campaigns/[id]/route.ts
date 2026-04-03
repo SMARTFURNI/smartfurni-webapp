@@ -63,7 +63,7 @@ function wrapLinksForTracking(html: string, campaignId: string, logId: string): 
 }
 
 // Lọc leads theo segment
-function filterLeadsBySegment(leads: { email: string; type: string; stage: string }[], segment: string) {
+function filterLeadsBySegment(leads: { id?: string; name?: string; email: string; type: string; stage: string }[], segment: string) {
   return leads.filter((l) => {
     if (!l.email) return false;
     if (segment === "all") return true;
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Bước 1: Tạo log trước để lấy logId nhúng vào tracking pixel
       const logId = await createEmailLog({
         campaignId: id,
-        leadId: lead.id,
+        leadId: lead.id ?? "",
         leadName: lead.name || "",
         email: lead.email,
         status: "sent",
@@ -153,7 +153,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Bước 2: Personalize HTML
       const rawHtml = replaceVariables(
         campaign.htmlContent || `<p>Kính gửi ${lead.name || "Quý khách"},</p><p>${campaign.subject}</p>`,
-        lead
+        lead as unknown as { [key: string]: string | number | string[]; name: string; company: string; email: string; phone: string }
       );
 
       // Bước 3: Wrap links để tracking click

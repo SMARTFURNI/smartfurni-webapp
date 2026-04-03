@@ -1,1 +1,215 @@
-import { emailGenerator, EmailGenerationRequest } from './EmailGenerator';\nimport { EmailTracker } from './EmailTracker';\nimport { logger } from '../../utils/logger';\nimport { PerformanceTimer } from '../../utils/monitoring';\n\nexport interface SendEmailRequest {\n  leadId: string;\n  recipientEmail: string;\n  subject: string;\n  body: string;\n  htmlBody?: string;\n  scheduling?: {\n    type: 'immediate' | 'delay' | 'scheduled';\n    delayMinutes?: number;\n    scheduledTime?: Date;\n  };\n}\n\nexport interface SendEmailResponse {\n  success: boolean;\n  messageId?: string;\n  leadId: string;\n  status: 'sent' | 'scheduled' | 'failed';\n  sentAt?: Date;\n  error?: string;\n}\n\n/**\n * Email Service\n * Orchestrates email generation and sending\n */\nexport class EmailService {\n  private emailTracker: EmailTracker;\n\n  constructor() {\n    this.emailTracker = new EmailTracker();\n  }\n\n  /**\n   * Generate and send email in one operation\n   */\n  async generateAndSendEmail(\n    generateRequest: EmailGenerationRequest,\n    sendRequest: Partial<SendEmailRequest> = {}\n  ): Promise<SendEmailResponse> {\n    const timer = new PerformanceTimer('generate_and_send_email');\n\n    try {\n      logger.info('Starting generate and send email', {\n        leadId: generateRequest.leadId,\n        emailType: generateRequest.emailType,\n      });\n\n      // Step 1: Generate email\n      const generatedEmail = await emailGenerator.generateEmail(generateRequest);\n\n      // Step 2: Send email\n      const sendResponse = await this.sendEmail({\n        leadId: generateRequest.leadId,\n        recipientEmail: generateRequest.email,\n        subject: generatedEmail.subject,\n        body: generatedEmail.body,\n        htmlBody: generatedEmail.htmlBody,\n        scheduling: sendRequest.scheduling,\n      });\n\n      // Step 3: Track email\n      if (sendResponse.success && sendResponse.messageId) {\n        await this.emailTracker.trackEmailSent({\n          leadId: generateRequest.leadId,\n          emailId: sendResponse.messageId,\n          subject: generatedEmail.subject,\n          emailType: generateRequest.emailType,\n          tokensUsed: generatedEmail.tokensUsed.input + generatedEmail.tokensUsed.output,\n        });\n      }\n\n      const duration = timer.end();\n\n      logger.info('Generate and send email completed', {\n        leadId: generateRequest.leadId,\n        status: sendResponse.status,\n        duration,\n      });\n\n      return sendResponse;\n    } catch (error) {\n      const duration = timer.end();\n\n      logger.error('Generate and send email failed', {\n        leadId: generateRequest.leadId,\n        error: error instanceof Error ? error.message : String(error),\n        duration,\n      });\n\n      return {\n        success: false,\n        leadId: generateRequest.leadId,\n        status: 'failed',\n        error: error instanceof Error ? error.message : 'Unknown error',\n      };\n    }\n  }\n\n  /**\n   * Send email\n   */\n  async sendEmail(request: SendEmailRequest): Promise<SendEmailResponse> {\n    try {\n      logger.info('Sending email', {\n        leadId: request.leadId,\n        recipientEmail: request.recipientEmail,\n      });\n\n      // TODO: Implement actual email sending via Email Provider\n      // For now, return mock response\n\n      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n      // Simulate scheduling\n      if (request.scheduling?.type === 'scheduled' || request.scheduling?.type === 'delay') {\n        logger.info('Email scheduled for later sending', {\n          leadId: request.leadId,\n          messageId,\n          scheduledTime: request.scheduling.scheduledTime,\n        });\n\n        return {\n          success: true,\n          messageId,\n          leadId: request.leadId,\n          status: 'scheduled',\n        };\n      }\n\n      // Immediate send\n      logger.info('Email sent successfully', {\n        leadId: request.leadId,\n        messageId,\n      });\n\n      return {\n        success: true,\n        messageId,\n        leadId: request.leadId,\n        status: 'sent',\n        sentAt: new Date(),\n      };\n    } catch (error) {\n      logger.error('Email sending failed', {\n        leadId: request.leadId,\n        error: error instanceof Error ? error.message : String(error),\n      });\n\n      return {\n        success: false,\n        leadId: request.leadId,\n        status: 'failed',\n        error: error instanceof Error ? error.message : 'Unknown error',\n      };\n    }\n  }\n\n  /**\n   * Get email analytics\n   */\n  async getEmailAnalytics(\n    leadId?: string,\n    startDate?: Date,\n    endDate?: Date\n  ): Promise<{\n    sent: number;\n    delivered: number;\n    opened: number;\n    clicked: number;\n    converted: number;\n    openRate: number;\n    clickRate: number;\n    conversionRate: number;\n  }> {\n    try {\n      logger.info('Retrieving email analytics', { leadId, startDate, endDate });\n\n      // TODO: Implement actual analytics retrieval from database\n      // For now, return mock data\n\n      return {\n        sent: 42,\n        delivered: 42,\n        opened: 28,\n        clicked: 18,\n        converted: 5,\n        openRate: 0.67,\n        clickRate: 0.43,\n        conversionRate: 0.12,\n      };\n    } catch (error) {\n      logger.error('Failed to retrieve email analytics', {\n        error: error instanceof Error ? error.message : String(error),\n      });\n\n      throw error;\n    }\n  }\n\n  /**\n   * Get email tracker instance\n   */\n  getTracker(): EmailTracker {\n    return this.emailTracker;\n  }\n}\n\nexport const emailService = new EmailService();\n
+import { emailGenerator, EmailGenerationRequest } from './EmailGenerator';
+import { EmailTracker } from './EmailTracker';
+import { logger } from '../../utils/logger';
+import { PerformanceTimer } from '../../utils/monitoring';
+
+export interface SendEmailRequest {
+  leadId: string;
+  recipientEmail: string;
+  subject: string;
+  body: string;
+  htmlBody?: string;
+  scheduling?: {
+    type: 'immediate' | 'delay' | 'scheduled';
+    delayMinutes?: number;
+    scheduledTime?: Date;
+  };
+}
+
+export interface SendEmailResponse {
+  success: boolean;
+  messageId?: string;
+  leadId: string;
+  status: 'sent' | 'scheduled' | 'failed';
+  sentAt?: Date;
+  error?: string;
+}
+
+/**
+ * Email Service
+ * Orchestrates email generation and sending
+ */
+export class EmailService {
+  private emailTracker: EmailTracker;
+
+  constructor() {
+    this.emailTracker = new EmailTracker();
+  }
+
+  /**
+   * Generate and send email in one operation
+   */
+  async generateAndSendEmail(
+    generateRequest: EmailGenerationRequest,
+    sendRequest: Partial<SendEmailRequest> = {}
+  ): Promise<SendEmailResponse> {
+    const timer = new PerformanceTimer('generate_and_send_email');
+
+    try {
+      logger.info('Starting generate and send email', {
+        leadId: generateRequest.leadId,
+        emailType: generateRequest.emailType,
+      });
+
+      // Step 1: Generate email
+      const generatedEmail = await emailGenerator.generateEmail(generateRequest);
+
+      // Step 2: Send email
+      const sendResponse = await this.sendEmail({
+        leadId: generateRequest.leadId,
+        recipientEmail: generateRequest.email,
+        subject: generatedEmail.subject,
+        body: generatedEmail.body,
+        htmlBody: generatedEmail.htmlBody,
+        scheduling: sendRequest.scheduling,
+      });
+
+      // Step 3: Track email
+      if (sendResponse.success && sendResponse.messageId) {
+        await this.emailTracker.trackEmailSent({
+          leadId: generateRequest.leadId,
+          emailId: sendResponse.messageId,
+          subject: generatedEmail.subject,
+          emailType: generateRequest.emailType,
+          tokensUsed: generatedEmail.tokensUsed.input + generatedEmail.tokensUsed.output,
+        });
+      }
+
+      const duration = timer.end();
+
+      logger.info('Generate and send email completed', {
+        leadId: generateRequest.leadId,
+        status: sendResponse.status,
+        duration,
+      });
+
+      return sendResponse;
+    } catch (error) {
+      const duration = timer.end();
+
+      logger.error('Generate and send email failed', {
+        leadId: generateRequest.leadId,
+        error: error instanceof Error ? error.message : String(error),
+        duration,
+      });
+
+      return {
+        success: false,
+        leadId: generateRequest.leadId,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Send email
+   */
+  async sendEmail(request: SendEmailRequest): Promise<SendEmailResponse> {
+    try {
+      logger.info('Sending email', {
+        leadId: request.leadId,
+        recipientEmail: request.recipientEmail,
+      });
+
+      // TODO: Implement actual email sending via Email Provider
+      // For now, return mock response
+
+      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Simulate scheduling
+      if (request.scheduling?.type === 'scheduled' || request.scheduling?.type === 'delay') {
+        logger.info('Email scheduled for later sending', {
+          leadId: request.leadId,
+          messageId,
+          scheduledTime: request.scheduling.scheduledTime,
+        });
+
+        return {
+          success: true,
+          messageId,
+          leadId: request.leadId,
+          status: 'scheduled',
+        };
+      }
+
+      // Immediate send
+      logger.info('Email sent successfully', {
+        leadId: request.leadId,
+        messageId,
+      });
+
+      return {
+        success: true,
+        messageId,
+        leadId: request.leadId,
+        status: 'sent',
+        sentAt: new Date(),
+      };
+    } catch (error) {
+      logger.error('Email sending failed', {
+        leadId: request.leadId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      return {
+        success: false,
+        leadId: request.leadId,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Get email analytics
+   */
+  async getEmailAnalytics(
+    leadId?: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    sent: number;
+    delivered: number;
+    opened: number;
+    clicked: number;
+    converted: number;
+    openRate: number;
+    clickRate: number;
+    conversionRate: number;
+  }> {
+    try {
+      logger.info('Retrieving email analytics', { leadId, startDate, endDate });
+
+      // TODO: Implement actual analytics retrieval from database
+      // For now, return mock data
+
+      return {
+        sent: 42,
+        delivered: 42,
+        opened: 28,
+        clicked: 18,
+        converted: 5,
+        openRate: 0.67,
+        clickRate: 0.43,
+        conversionRate: 0.12,
+      };
+    } catch (error) {
+      logger.error('Failed to retrieve email analytics', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Get email tracker instance
+   */
+  getTracker(): EmailTracker {
+    return this.emailTracker;
+  }
+}
+
+export const emailService = new EmailService();
+

@@ -190,7 +190,7 @@ export default function QuickInteractionPanel({ lead, onClose }: QuickInteractio
         formData.append("leadId", lead.id);
         formData.append("duration", callDuration.toString());
         formData.append("notes", callNotes);
-        formData.append("audio", audioBlob);
+        formData.append("audio", audioBlob as Blob);
 
         const response = await fetch("/api/crm/interactions/save-call", {
           method: "POST",

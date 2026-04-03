@@ -251,7 +251,7 @@ export async function runDailyEmailAutomation(): Promise<EmailAutomationLog> {
     },
   ];
 
-  const results = [];
+  const results: Array<{ leadId: string; leadName: string; email: string; status: "success" | "failed"; messageId?: string; error?: string }> = [];
   let successful = 0;
   let failed = 0;
 

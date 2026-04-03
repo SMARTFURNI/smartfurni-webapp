@@ -373,7 +373,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                                     {statusLabel}
                                   </span>
                                   <span className="text-xs text-gray-500">
-                                    {new Date(call.callTime).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                    {new Date(call.startedAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                                   </span>
                                   {call.duration > 0 && (
                                     <span className="text-xs text-gray-500">· {formatDuration(call.duration)}</span>

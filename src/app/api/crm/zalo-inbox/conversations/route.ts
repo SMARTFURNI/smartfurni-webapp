@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
           id: conv.id,
           displayName: conv.displayName,
           phone: conv.phone,
-          avatar: conv.avatarUrl,
+          avatarUrl: conv.avatarUrl,
           lastMessage: conv.lastMessage,
           lastMessageAt: conv.lastMessageAt,
           unreadCount: conv.unreadCount,

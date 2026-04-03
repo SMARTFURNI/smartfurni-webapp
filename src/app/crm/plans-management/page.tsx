@@ -288,7 +288,7 @@ export default function PlansManagementPage() {
                           key={staffId}
                           className="px-3 py-1 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full text-sm font-medium"
                         >
-                          {staff?.fullName || staffId}
+                          {staff?.name || staffId}
                         </span>
                       );
                     })
@@ -337,7 +337,7 @@ export default function PlansManagementPage() {
                       }}
                       className="w-4 h-4 text-indigo-600 rounded"
                     />
-                    <span className="text-sm font-medium text-gray-700">{staff.fullName}</span>
+                    <span className="text-sm font-medium text-gray-700">{staff.name}</span>
                   </label>
                 ))
               ) : (

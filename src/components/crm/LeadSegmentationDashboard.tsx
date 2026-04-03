@@ -11,7 +11,7 @@ export default function LeadSegmentationDashboard() {
     name: '',
     description: '',
     criteria: { requiredTags: [] },
-    tags: [],
+    tags: [] as string[],
   });
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function LeadSegmentationDashboard() {
       const data = await res.json();
       if (data.success) {
         setSegments([data.data, ...segments]);
-        setFormData({ name: '', description: '', criteria: { requiredTags: [] }, tags: [] });
+        setFormData({ name: '', description: '', criteria: { requiredTags: [] }, tags: [] as string[] });
         setShowNewForm(false);
       }
     } catch (error) {

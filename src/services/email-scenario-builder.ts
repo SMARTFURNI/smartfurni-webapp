@@ -292,7 +292,7 @@ export async function executeScenario(
     error?: string;
   }>;
 }> {
-  const executedSteps = [];
+  const executedSteps: Array<{ stepId: string; templateId: string; status: "failed" | "pending" | "sent"; scheduledFor?: Date; error?: string }> = [];
 
   console.log(`[EMAIL-SCENARIO] Thực thi kịch bản ${scenario.id} cho lead ${leadData.name}`);
 

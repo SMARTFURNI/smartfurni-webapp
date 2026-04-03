@@ -9,7 +9,7 @@ import { syncAllGoogleSheets } from "@/lib/google-sheet-sync";
 import { getCrmSettings } from "@/lib/crm-settings-store";
 
 export async function POST(req: NextRequest) {
-  const session = await getAdminSession(req);
+  const session = await getAdminSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getAdminSession(req);
+  const session = await getAdminSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

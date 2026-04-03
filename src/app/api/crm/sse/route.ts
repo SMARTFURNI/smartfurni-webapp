@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
              LIMIT 10`,
             [sinceTs]
           );
-          const rows = result.rows;
+          const rows = result;
 
           if (rows && rows.length > 0) {
             for (const row of rows) {

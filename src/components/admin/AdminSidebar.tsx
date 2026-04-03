@@ -183,26 +183,22 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
     >
       {/* Logo */}
       <div className={`h-14 border-b border-[#C9A84C]/8 flex items-center ${collapsed ? "justify-center px-2" : "px-4"} gap-3`}>
-        {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
-        <img src="/smartfurni-icon.png" alt="" style={{ display: "none" }} />
-        <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
         {!collapsed && (
           <Link href="/admin" className="flex items-center gap-2.5 flex-1 min-w-0">
-            <img
-              src="/smartfurni-logo.png"
-              alt="SmartFurni"
-              className="h-8 w-auto object-contain flex-shrink-0"
-              style={{ maxWidth: 160 }}
-            />
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] flex items-center justify-center flex-shrink-0">
+              <span className="text-[#0D0B00] font-black text-[10px] tracking-tight">SF</span>
+            </div>
+            <div className="min-w-0">
+              <div className="text-[#E2C97E] font-bold text-[11px] tracking-widest truncate leading-tight">SMARTFURNI</div>
+              <div className="text-gray-700 text-[10px] leading-tight">Admin</div>
+            </div>
           </Link>
         )}
         {collapsed && (
           <Link href="/admin" className="relative">
-            <img
-              src="/smartfurni-icon.png"
-              alt="SF"
-              style={{ width: 36, height: 36, objectFit: "contain" }}
-            />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] flex items-center justify-center">
+              <span className="text-[#0D0B00] font-black text-[10px]">SF</span>
+            </div>
             {totalAlerts > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold">
                 {totalAlerts > 9 ? "9+" : totalAlerts}

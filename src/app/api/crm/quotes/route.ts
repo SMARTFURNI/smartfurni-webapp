@@ -20,11 +20,11 @@ export async function POST(req: NextRequest) {
     action: "quote.created",
     entityType: "quote",
     entityId: quote.id,
-    entityName: `Báo giá - ${quote.customerName || "Khách hàng"}`,
+    entityName: `Báo giá - ${quote.leadName || "Khách hàng"}`,
     actorId,
     actorName,
     ipAddress: getClientIp(req),
-    metadata: { leadId: quote.leadId, totalAmount: quote.totalAmount, status: quote.status },
+    metadata: { leadId: quote.leadId, totalAmount: quote.total, status: quote.status },
   });
   return NextResponse.json(quote, { status: 201 });
 }

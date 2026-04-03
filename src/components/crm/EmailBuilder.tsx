@@ -96,7 +96,7 @@ export default function EmailBuilder() {
                 placeholder="Ví dụ: Giải Pháp Giường Điều Khiển Thông Minh Cho {{company}}"
                 className="w-full bg-[#080600] border border-[#2D2500] rounded px-4 py-2 text-white placeholder-gray-500"
               />
-              <p className="text-gray-400 text-xs mt-2">Hỗ trợ biến: {{name}}, {{company}}</p>
+              <p className="text-gray-400 text-xs mt-2">Hỗ trợ biến: {"{{name}}"}, {"{{company}}"}</p>
             </div>
 
             {/* Editor Toolbar */}

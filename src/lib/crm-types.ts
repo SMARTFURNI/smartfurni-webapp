@@ -24,6 +24,7 @@ export interface Lead {
   company: string;
   phone: string;
   zaloPhone?: string;        // Số Zalo của khách hàng
+  zaloId?: string;           // Zalo user ID của khách hàng
   email: string;
   type: LeadType;
   stage: LeadStage;

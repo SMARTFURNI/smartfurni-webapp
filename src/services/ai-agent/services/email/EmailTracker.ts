@@ -1,1 +1,172 @@
-import { logger } from '../../utils/logger';\n\nexport interface EmailTrackingData {\n  leadId: string;\n  emailId: string;\n  subject: string;\n  emailType: string;\n  tokensUsed: number;\n  sentAt?: Date;\n  openedAt?: Date;\n  clickedAt?: Date;\n  convertedAt?: Date;\n}\n\n/**\n * Email Tracker Service\n * Tracks email metrics and engagement\n */\nexport class EmailTracker {\n  private trackingData: Map<string, EmailTrackingData> = new Map();\n\n  /**\n   * Track email sent\n   */\n  async trackEmailSent(data: Omit<EmailTrackingData, 'sentAt'>): Promise<void> {\n    try {\n      const trackingData: EmailTrackingData = {\n        ...data,\n        sentAt: new Date(),\n      };\n\n      this.trackingData.set(data.emailId, trackingData);\n\n      logger.info('Email tracked as sent', {\n        leadId: data.leadId,\n        emailId: data.emailId,\n        emailType: data.emailType,\n      });\n\n      // TODO: Save to database\n      // await db.emailTracking.create(trackingData);\n    } catch (error) {\n      logger.error('Failed to track email sent', {\n        error: error instanceof Error ? error.message : String(error),\n      });\n      throw error;\n    }\n  }\n\n  /**\n   * Track email opened\n   */\n  async trackEmailOpened(emailId: string): Promise<void> {\n    try {\n      const tracking = this.trackingData.get(emailId);\n      if (tracking) {\n        tracking.openedAt = new Date();\n      }\n\n      logger.info('Email tracked as opened', { emailId });\n\n      // TODO: Update database\n      // await db.emailTracking.update({ emailId }, { openedAt: new Date() });\n    } catch (error) {\n      logger.error('Failed to track email opened', {\n        emailId,\n        error: error instanceof Error ? error.message : String(error),\n      });\n    }\n  }\n\n  /**\n   * Track email clicked\n   */\n  async trackEmailClicked(emailId: string, linkUrl?: string): Promise<void> {\n    try {\n      const tracking = this.trackingData.get(emailId);\n      if (tracking) {\n        tracking.clickedAt = new Date();\n      }\n\n      logger.info('Email tracked as clicked', { emailId, linkUrl });\n\n      // TODO: Update database\n      // await db.emailTracking.update({ emailId }, { clickedAt: new Date() });\n    } catch (error) {\n      logger.error('Failed to track email clicked', {\n        emailId,\n        error: error instanceof Error ? error.message : String(error),\n      });\n    }\n  }\n\n  /**\n   * Track email converted (lead took action)\n   */\n  async trackEmailConverted(emailId: string, action: string): Promise<void> {\n    try {\n      const tracking = this.trackingData.get(emailId);\n      if (tracking) {\n        tracking.convertedAt = new Date();\n      }\n\n      logger.info('Email tracked as converted', { emailId, action });\n\n      // TODO: Update database\n      // await db.emailTracking.update({ emailId }, { convertedAt: new Date() });\n    } catch (error) {\n      logger.error('Failed to track email converted', {\n        emailId,\n        error: error instanceof Error ? error.message : String(error),\n      });\n    }\n  }\n\n  /**\n   * Get tracking data for email\n   */\n  getTrackingData(emailId: string): EmailTrackingData | undefined {\n    return this.trackingData.get(emailId);\n  }\n\n  /**\n   * Get tracking data for lead\n   */\n  getLeadTrackingData(leadId: string): EmailTrackingData[] {\n    const data: EmailTrackingData[] = [];\n    for (const tracking of this.trackingData.values()) {\n      if (tracking.leadId === leadId) {\n        data.push(tracking);\n      }\n    }\n    return data;\n  }\n\n  /**\n   * Calculate email metrics\n   */\n  calculateMetrics(leadId?: string): {\n    totalSent: number;\n    totalOpened: number;\n    totalClicked: number;\n    totalConverted: number;\n    openRate: number;\n    clickRate: number;\n    conversionRate: number;\n  } {\n    let emails: EmailTrackingData[] = [];\n\n    if (leadId) {\n      emails = this.getLeadTrackingData(leadId);\n    } else {\n      emails = Array.from(this.trackingData.values());\n    }\n\n    const totalSent = emails.length;\n    const totalOpened = emails.filter((e) => e.openedAt).length;\n    const totalClicked = emails.filter((e) => e.clickedAt).length;\n    const totalConverted = emails.filter((e) => e.convertedAt).length;\n\n    return {\n      totalSent,\n      totalOpened,\n      totalClicked,\n      totalConverted,\n      openRate: totalSent > 0 ? totalOpened / totalSent : 0,\n      clickRate: totalSent > 0 ? totalClicked / totalSent : 0,\n      conversionRate: totalSent > 0 ? totalConverted / totalSent : 0,\n    };\n  }\n}\n
+import { logger } from '../../utils/logger';
+
+export interface EmailTrackingData {
+  leadId: string;
+  emailId: string;
+  subject: string;
+  emailType: string;
+  tokensUsed: number;
+  sentAt?: Date;
+  openedAt?: Date;
+  clickedAt?: Date;
+  convertedAt?: Date;
+}
+
+/**
+ * Email Tracker Service
+ * Tracks email metrics and engagement
+ */
+export class EmailTracker {
+  private trackingData: Map<string, EmailTrackingData> = new Map();
+
+  /**
+   * Track email sent
+   */
+  async trackEmailSent(data: Omit<EmailTrackingData, 'sentAt'>): Promise<void> {
+    try {
+      const trackingData: EmailTrackingData = {
+        ...data,
+        sentAt: new Date(),
+      };
+
+      this.trackingData.set(data.emailId, trackingData);
+
+      logger.info('Email tracked as sent', {
+        leadId: data.leadId,
+        emailId: data.emailId,
+        emailType: data.emailType,
+      });
+
+      // TODO: Save to database
+      // await db.emailTracking.create(trackingData);
+    } catch (error) {
+      logger.error('Failed to track email sent', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Track email opened
+   */
+  async trackEmailOpened(emailId: string): Promise<void> {
+    try {
+      const tracking = this.trackingData.get(emailId);
+      if (tracking) {
+        tracking.openedAt = new Date();
+      }
+
+      logger.info('Email tracked as opened', { emailId });
+
+      // TODO: Update database
+      // await db.emailTracking.update({ emailId }, { openedAt: new Date() });
+    } catch (error) {
+      logger.error('Failed to track email opened', {
+        emailId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Track email clicked
+   */
+  async trackEmailClicked(emailId: string, linkUrl?: string): Promise<void> {
+    try {
+      const tracking = this.trackingData.get(emailId);
+      if (tracking) {
+        tracking.clickedAt = new Date();
+      }
+
+      logger.info('Email tracked as clicked', { emailId, linkUrl });
+
+      // TODO: Update database
+      // await db.emailTracking.update({ emailId }, { clickedAt: new Date() });
+    } catch (error) {
+      logger.error('Failed to track email clicked', {
+        emailId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Track email converted (lead took action)
+   */
+  async trackEmailConverted(emailId: string, action: string): Promise<void> {
+    try {
+      const tracking = this.trackingData.get(emailId);
+      if (tracking) {
+        tracking.convertedAt = new Date();
+      }
+
+      logger.info('Email tracked as converted', { emailId, action });
+
+      // TODO: Update database
+      // await db.emailTracking.update({ emailId }, { convertedAt: new Date() });
+    } catch (error) {
+      logger.error('Failed to track email converted', {
+        emailId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Get tracking data for email
+   */
+  getTrackingData(emailId: string): EmailTrackingData | undefined {
+    return this.trackingData.get(emailId);
+  }
+
+  /**
+   * Get tracking data for lead
+   */
+  getLeadTrackingData(leadId: string): EmailTrackingData[] {
+    const data: EmailTrackingData[] = [];
+    for (const tracking of this.trackingData.values()) {
+      if (tracking.leadId === leadId) {
+        data.push(tracking);
+      }
+    }
+    return data;
+  }
+
+  /**
+   * Calculate email metrics
+   */
+  calculateMetrics(leadId?: string): {
+    totalSent: number;
+    totalOpened: number;
+    totalClicked: number;
+    totalConverted: number;
+    openRate: number;
+    clickRate: number;
+    conversionRate: number;
+  } {
+    let emails: EmailTrackingData[] = [];
+
+    if (leadId) {
+      emails = this.getLeadTrackingData(leadId);
+    } else {
+      emails = Array.from(this.trackingData.values());
+    }
+
+    const totalSent = emails.length;
+    const totalOpened = emails.filter((e) => e.openedAt).length;
+    const totalClicked = emails.filter((e) => e.clickedAt).length;
+    const totalConverted = emails.filter((e) => e.convertedAt).length;
+
+    return {
+      totalSent,
+      totalOpened,
+      totalClicked,
+      totalConverted,
+      openRate: totalSent > 0 ? totalOpened / totalSent : 0,
+      clickRate: totalSent > 0 ? totalClicked / totalSent : 0,
+      conversionRate: totalSent > 0 ? totalConverted / totalSent : 0,
+    };
+  }
+}
+

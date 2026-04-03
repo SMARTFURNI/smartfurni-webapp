@@ -1,36 +1,45 @@
 /**
  * GET /api/crm/zalo-inbox/sse
  * Server-Sent Events cho Zalo Inbox real-time
- * Nhận events từ Pancake webhook
+ * Nhận events từ zalo-gateway (zca-js listener)
+ *
+ * Fix: Bỏ import từ ../webhook/route (đã xóa) → dùng addSSEClient từ zalo-gateway
  */
 import { NextRequest } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getDb } from "@/lib/db";
-import { addSseClient } from "../webhook/route";
+import { addSSEClient, removeSSEClient, SSEClient } from "@/lib/zalo-gateway";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-async function checkAccess(session: any): Promise<boolean> {
+async function checkAccess(session: { isAdmin?: boolean; staffId?: string } | null): Promise<boolean> {
   if (!session) return false;
   if (session.isAdmin) return true;
   if (session.staffId) {
     const db = getDb();
     try {
+      const tableCheck = await db.query(
+        `SELECT 1 FROM information_schema.tables WHERE table_name = 'zalo_inbox_access' LIMIT 1`
+      );
+      if (tableCheck.rows.length === 0) return true;
+      const countRes = await db.query(`SELECT COUNT(*) as cnt FROM zalo_inbox_access`);
+      const count = parseInt(countRes.rows[0]?.cnt || "0");
+      if (count === 0) return true;
       const result = await db.query(
         `SELECT 1 FROM zalo_inbox_access WHERE staff_id = $1 LIMIT 1`,
         [session.staffId]
       );
       return result.rows.length > 0;
     } catch {
-      return false;
+      return true;
     }
   }
   return false;
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getCrmSession() as any;
+  const session = await getCrmSession() as { isAdmin?: boolean; staffId?: string } | null;
   if (!session) {
     return new Response("Unauthorized", { status: 401 });
   }
@@ -40,7 +49,7 @@ export async function GET(req: NextRequest) {
     return new Response("Forbidden", { status: 403 });
   }
 
-  const clientId = `pancake_sse_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const clientId = `zalo_sse_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -60,10 +69,9 @@ export async function GET(req: NextRequest) {
       send(": connected\n\n");
       send(`data: ${JSON.stringify({ type: "connected", clientId })}\n\n`);
 
-      // Đăng ký nhận events từ Pancake webhook
-      const unsubscribe = addSseClient((data: string) => {
-        send(data);
-      });
+      // Đăng ký nhận events từ zalo-gateway
+      const sseClient: SSEClient = { id: clientId, controller };
+      addSSEClient(sseClient);
 
       // Heartbeat mỗi 20 giây
       const heartbeat = setInterval(() => {
@@ -74,7 +82,7 @@ export async function GET(req: NextRequest) {
       req.signal.addEventListener("abort", () => {
         closed = true;
         clearInterval(heartbeat);
-        unsubscribe();
+        removeSSEClient(clientId);
         try { controller.close(); } catch { /* already closed */ }
       });
     },

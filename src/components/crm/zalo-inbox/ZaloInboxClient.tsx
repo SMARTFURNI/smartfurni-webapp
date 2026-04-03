@@ -357,7 +357,8 @@ export default function ZaloInboxClient() {
                 <div style={{ fontSize: 32, marginBottom: 8 }}>📬</div>
                 <div style={{ fontWeight: 600, color: "#6B7280", marginBottom: 4 }}>Chưa có tin nhắn nào</div>
                 <div style={{ fontSize: 12, lineHeight: 1.5 }}>
-                  Tin nhắn sẽ xuất hiện ở đây sau khi bạn đăng nhập Zalo.<br/>\n                  Nhấn biểu tượng ⚙️ → <strong>Đăng nhập Zalo</strong> để quét QR.                </div>
+                  Tin nhắn sẽ xuất hiện ở đây sau khi bạn đăng nhập Zalo.<br/>Nhấn biểu tượng ⚙️ → <strong>Đăng nhập Zalo</strong> để quét QR.
+                </div>
               </div>
             ) : (
               messages.map((msg) => (
@@ -692,7 +693,7 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
         fetch("/api/crm/staff", { credentials: "include" }).then((r) => r.json()),
         fetch("/api/crm/zalo-inbox/access", { credentials: "include" }).then((r) => r.json()),
       ]).then(([staffData, accessData]) => {
-        setStaffList(staffData?.staff || []);
+        setStaffList(Array.isArray(staffData) ? staffData : (staffData?.staff || []));
         setAccessList(accessData?.accessList || []);
       }).finally(() => setLoadingAccess(false));
     }

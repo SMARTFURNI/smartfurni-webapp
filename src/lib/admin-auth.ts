@@ -149,9 +149,9 @@ export async function requireSuperAdminCrm(): Promise<void> {
 /**
  * Dùng trong API routes — trả về session hoặc null (không redirect).
  */
-export async function getCrmSession(): Promise<{ isAdmin: boolean; staffId?: string; staffRole?: string } | null> {
+export async function getCrmSession(): Promise<{ isAdmin: boolean; staffId?: string } | null> {
   const staffPayload = await getStaffSession();
-  if (staffPayload) return { isAdmin: false, staffId: staffPayload.staffId, staffRole: staffPayload.role };
+  if (staffPayload) return { isAdmin: false, staffId: staffPayload.staffId };
   const isAdmin = await getAdminSession();
   if (isAdmin) return { isAdmin: true };
   return null;

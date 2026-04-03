@@ -43,7 +43,7 @@ function addEmailFooter(html: string, campaignId: string, leadEmail: string): st
 }
 
 // Lọc leads theo segment
-function filterLeadsBySegment(leads: { email: string; type: string; stage: string }[], segment: string) {
+function filterLeadsBySegment(leads: { id?: string; name?: string; email: string; type: string; stage: string }[], segment: string) {
   return leads.filter((l) => {
     if (!l.email) return false;
     if (segment === "all") return true;
@@ -118,7 +118,7 @@ export async function POST(
 
     try {
       const personalizedHtml = addEmailFooter(
-        replaceVariables(campaign.htmlContent || `<p>Kính gửi ${lead.name || "Quý khách"},</p><p>${campaign.subject}</p>`, lead),
+        replaceVariables(campaign.htmlContent || `<p>Kính gửi ${lead.name || "Quý khách"},</p><p>${campaign.subject}</p>`, lead as unknown as { [key: string]: string | number | string[]; name: string; company: string; email: string; phone: string }),
         id,
         lead.email
       );
@@ -141,7 +141,7 @@ export async function POST(
       // Ghi log thành công
       await createEmailLog({
         campaignId: id,
-        leadId: lead.id,
+        leadId: lead.id ?? "",
         email: lead.email,
         status: "sent",
         messageId: result.data?.id,
@@ -155,7 +155,7 @@ export async function POST(
       // Ghi log thất bại
       await createEmailLog({
         campaignId: id,
-        leadId: lead.id,
+        leadId: lead.id ?? "",
         email: lead.email,
         status: "failed",
         error: errMsg,

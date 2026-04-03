@@ -1,1 +1,219 @@
-import axios, { AxiosInstance } from 'axios';\nimport { logger } from '../utils/logger';\n\nexport interface FacebookLead {\n  id: string;\n  createdTime: string;\n  adId: string;\n  adName: string;\n  adsetId: string;\n  adsetName: string;\n  campaignId: string;\n  campaignName: string;\n  fieldData: Array<{\n    name: string;\n    values: string[];\n  }>;\n}\n\nexport interface ParsedFacebookLead {\n  leadId: string;\n  name: string;\n  email: string;\n  phone: string;\n  company?: string;\n  source: string;\n  createdAt: Date;\n}\n\n/**\n * Facebook Lead Ads Integration Service\n * Handles webhook events from Facebook Lead Ads\n */\nexport class FacebookLeadIntegration {\n  private client: AxiosInstance;\n  private appId: string;\n  private appSecret: string;\n  private accessToken: string;\n  private pageId: string;\n  private baseUrl = 'https://graph.facebook.com/v18.0';\n\n  constructor() {\n    this.appId = process.env.FACEBOOK_APP_ID || '';\n    this.appSecret = process.env.FACEBOOK_APP_SECRET || '';\n    this.accessToken = process.env.FACEBOOK_ACCESS_TOKEN || '';\n    this.pageId = process.env.FACEBOOK_PAGE_ID || '';\n\n    this.client = axios.create({\n      baseURL: this.baseUrl,\n      params: {\n        access_token: this.accessToken,\n      },\n    });\n\n    if (!this.appId || !this.accessToken) {\n      logger.warn('Facebook API credentials not fully configured');\n    } else {\n      logger.info('Facebook Lead Integration initialized', { pageId: this.pageId });\n    }\n  }\n\n  /**\n   * Verify webhook signature\n   */\n  verifyWebhookSignature(body: string, signature: string): boolean {\n    try {\n      const crypto = require('crypto');\n      const hash = crypto\n        .createHmac('sha1', this.appSecret)\n        .update(body)\n        .digest('hex');\n\n      return hash === signature;\n    } catch (error) {\n      logger.error('Failed to verify Facebook webhook signature', {\n        error: error instanceof Error ? error.message : String(error),\n      });\n      return false;\n    }\n  }\n\n  /**\n   * Parse lead from webhook event\n   */\n  async parseLead(leadId: string): Promise<{\n    success: boolean;\n    lead?: ParsedFacebookLead;\n    error?: string;\n  }> {\n    try {\n      const response = await this.client.get(`/${leadId}`);\n      const data = response.data;\n\n      // Extract field data\n      const fieldDataMap: Record<string, string> = {};\n      if (data.field_data) {\n        for (const field of data.field_data) {\n          fieldDataMap[field.name] = field.values[0] || '';\n        }\n      }\n\n      const lead: ParsedFacebookLead = {\n        leadId: data.id,\n        name: fieldDataMap['full_name'] || fieldDataMap['name'] || '',\n        email: fieldDataMap['email'] || '',\n        phone: fieldDataMap['phone_number'] || fieldDataMap['phone'] || '',\n        company: fieldDataMap['company'] || fieldDataMap['business_name'] || undefined,\n        source: 'facebook_lead_ads',\n        createdAt: new Date(data.created_time),\n      };\n\n      logger.info('Facebook lead parsed successfully', {\n        leadId: lead.leadId,\n        name: lead.name,\n      });\n\n      return {\n        success: true,\n        lead,\n      };\n    } catch (error) {\n      const errorMessage = error instanceof Error ? error.message : String(error);\n      logger.error('Failed to parse Facebook lead', {\n        leadId,\n        error: errorMessage,\n      });\n\n      return {\n        success: false,\n        error: errorMessage,\n      };\n    }\n  }\n\n  /**\n   * Get leads from form\n   */\n  async getLeadsFromForm(\n    formId: string,\n    limit: number = 100\n  ): Promise<{\n    success: boolean;\n    leads?: ParsedFacebookLead[];\n    error?: string;\n  }> {\n    try {\n      const response = await this.client.get(`/${formId}/leads`, {\n        params: {\n          limit,\n          fields: 'id,created_time,field_data,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name',\n        },\n      });\n\n      const leads: ParsedFacebookLead[] = [];\n\n      for (const lead of response.data.data) {\n        const fieldDataMap: Record<string, string> = {};\n        if (lead.field_data) {\n          for (const field of lead.field_data) {\n            fieldDataMap[field.name] = field.values[0] || '';\n          }\n        }\n\n        leads.push({\n          leadId: lead.id,\n          name: fieldDataMap['full_name'] || fieldDataMap['name'] || '',\n          email: fieldDataMap['email'] || '',\n          phone: fieldDataMap['phone_number'] || fieldDataMap['phone'] || '',\n          company: fieldDataMap['company'] || fieldDataMap['business_name'] || undefined,\n          source: 'facebook_lead_ads',\n          createdAt: new Date(lead.created_time),\n        });\n      }\n\n      logger.info('Fetched leads from Facebook form', {\n        formId,\n        count: leads.length,\n      });\n\n      return {\n        success: true,\n        leads,\n      };\n    } catch (error) {\n      const errorMessage = error instanceof Error ? error.message : String(error);\n      logger.error('Failed to get leads from Facebook form', {\n        formId,\n        error: errorMessage,\n      });\n\n      return {\n        success: false,\n        error: errorMessage,\n      };\n    }\n  }\n\n  /**\n   * Health check\n   */\n  async healthCheck(): Promise<boolean> {\n    try {\n      if (!this.accessToken) {\n        return false;\n      }\n\n      // Try to get page info\n      const response = await this.client.get(`/${this.pageId}`);\n      return response.status === 200;\n    } catch (error) {\n      logger.error('Facebook health check failed', {\n        error: error instanceof Error ? error.message : String(error),\n      });\n      return false;\n    }\n  }\n}\n\nexport const facebookLeadIntegration = new FacebookLeadIntegration();\n
+import axios, { AxiosInstance } from 'axios';
+import { logger } from '../utils/logger';
+
+export interface FacebookLead {
+  id: string;
+  createdTime: string;
+  adId: string;
+  adName: string;
+  adsetId: string;
+  adsetName: string;
+  campaignId: string;
+  campaignName: string;
+  fieldData: Array<{
+    name: string;
+    values: string[];
+  }>;
+}
+
+export interface ParsedFacebookLead {
+  leadId: string;
+  name: string;
+  email: string;
+  phone: string;
+  company?: string;
+  source: string;
+  createdAt: Date;
+}
+
+/**
+ * Facebook Lead Ads Integration Service
+ * Handles webhook events from Facebook Lead Ads
+ */
+export class FacebookLeadIntegration {
+  private client: AxiosInstance;
+  private appId: string;
+  private appSecret: string;
+  private accessToken: string;
+  private pageId: string;
+  private baseUrl = 'https://graph.facebook.com/v18.0';
+
+  constructor() {
+    this.appId = process.env.FACEBOOK_APP_ID || '';
+    this.appSecret = process.env.FACEBOOK_APP_SECRET || '';
+    this.accessToken = process.env.FACEBOOK_ACCESS_TOKEN || '';
+    this.pageId = process.env.FACEBOOK_PAGE_ID || '';
+
+    this.client = axios.create({
+      baseURL: this.baseUrl,
+      params: {
+        access_token: this.accessToken,
+      },
+    });
+
+    if (!this.appId || !this.accessToken) {
+      logger.warn('Facebook API credentials not fully configured');
+    } else {
+      logger.info('Facebook Lead Integration initialized', { pageId: this.pageId });
+    }
+  }
+
+  /**
+   * Verify webhook signature
+   */
+  verifyWebhookSignature(body: string, signature: string): boolean {
+    try {
+      const crypto = require('crypto');
+      const hash = crypto
+        .createHmac('sha1', this.appSecret)
+        .update(body)
+        .digest('hex');
+
+      return hash === signature;
+    } catch (error) {
+      logger.error('Failed to verify Facebook webhook signature', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Parse lead from webhook event
+   */
+  async parseLead(leadId: string): Promise<{
+    success: boolean;
+    lead?: ParsedFacebookLead;
+    error?: string;
+  }> {
+    try {
+      const response = await this.client.get(`/${leadId}`);
+      const data = response.data;
+
+      // Extract field data
+      const fieldDataMap: Record<string, string> = {};
+      if (data.field_data) {
+        for (const field of data.field_data) {
+          fieldDataMap[field.name] = field.values[0] || '';
+        }
+      }
+
+      const lead: ParsedFacebookLead = {
+        leadId: data.id,
+        name: fieldDataMap['full_name'] || fieldDataMap['name'] || '',
+        email: fieldDataMap['email'] || '',
+        phone: fieldDataMap['phone_number'] || fieldDataMap['phone'] || '',
+        company: fieldDataMap['company'] || fieldDataMap['business_name'] || undefined,
+        source: 'facebook_lead_ads',
+        createdAt: new Date(data.created_time),
+      };
+
+      logger.info('Facebook lead parsed successfully', {
+        leadId: lead.leadId,
+        name: lead.name,
+      });
+
+      return {
+        success: true,
+        lead,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to parse Facebook lead', {
+        leadId,
+        error: errorMessage,
+      });
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * Get leads from form
+   */
+  async getLeadsFromForm(
+    formId: string,
+    limit: number = 100
+  ): Promise<{
+    success: boolean;
+    leads?: ParsedFacebookLead[];
+    error?: string;
+  }> {
+    try {
+      const response = await this.client.get(`/${formId}/leads`, {
+        params: {
+          limit,
+          fields: 'id,created_time,field_data,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name',
+        },
+      });
+
+      const leads: ParsedFacebookLead[] = [];
+
+      for (const lead of response.data.data) {
+        const fieldDataMap: Record<string, string> = {};
+        if (lead.field_data) {
+          for (const field of lead.field_data) {
+            fieldDataMap[field.name] = field.values[0] || '';
+          }
+        }
+
+        leads.push({
+          leadId: lead.id,
+          name: fieldDataMap['full_name'] || fieldDataMap['name'] || '',
+          email: fieldDataMap['email'] || '',
+          phone: fieldDataMap['phone_number'] || fieldDataMap['phone'] || '',
+          company: fieldDataMap['company'] || fieldDataMap['business_name'] || undefined,
+          source: 'facebook_lead_ads',
+          createdAt: new Date(lead.created_time),
+        });
+      }
+
+      logger.info('Fetched leads from Facebook form', {
+        formId,
+        count: leads.length,
+      });
+
+      return {
+        success: true,
+        leads,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to get leads from Facebook form', {
+        formId,
+        error: errorMessage,
+      });
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * Health check
+   */
+  async healthCheck(): Promise<boolean> {
+    try {
+      if (!this.accessToken) {
+        return false;
+      }
+
+      // Try to get page info
+      const response = await this.client.get(`/${this.pageId}`);
+      return response.status === 200;
+    } catch (error) {
+      logger.error('Facebook health check failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return false;
+    }
+  }
+}
+
+export const facebookLeadIntegration = new FacebookLeadIntegration();
+

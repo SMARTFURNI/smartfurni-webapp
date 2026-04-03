@@ -1,1 +1,275 @@
-import { AutomatedTask } from './TaskCreatorEngine';\nimport { logger } from '../../utils/logger';\n\nexport interface SalesRepProfile {\n  userId: string;\n  name: string;\n  email: string;\n  department: string;\n  specialization?: string; // e.g., 'hospitality', 'healthcare'\n  currentWorkload: number; // Number of assigned tasks\n  maxCapacity: number; // Maximum tasks per day\n  performanceScore: number; // 0-100 based on task completion rate\n  successRate: number; // Percentage of successful conversions\n  isActive: boolean;\n}\n\nexport interface AssignmentResult {\n  taskId: string;\n  assignedTo: string;\n  reason: string;\n}\n\n/**\n * Task Assignment Engine\n * Intelligently assigns tasks to sales representatives\n */\nexport class TaskAssignmentEngine {\n  private salesReps: Map<string, SalesRepProfile> = new Map();\n\n  /**\n   * Register sales representative\n   */\n  registerSalesRep(profile: SalesRepProfile): void {\n    this.salesReps.set(profile.userId, profile);\n    logger.info('Sales rep registered', {\n      userId: profile.userId,\n      name: profile.name,\n      maxCapacity: profile.maxCapacity,\n    });\n  }\n\n  /**\n   * Assign tasks to sales representatives\n   */\n  assignTasks(tasks: AutomatedTask[]): AssignmentResult[] {\n    const results: AssignmentResult[] = [];\n\n    // Sort tasks by priority (critical first)\n    const sortedTasks = [...tasks].sort((a, b) => {\n      const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };\n      return priorityOrder[a.priority] - priorityOrder[b.priority];\n    });\n\n    for (const task of sortedTasks) {\n      const assignedTo = this.findBestAssignee(task);\n      if (assignedTo) {\n        const result: AssignmentResult = {\n          taskId: task.taskId,\n          assignedTo,\n          reason: this.getAssignmentReason(task, assignedTo),\n        };\n        results.push(result);\n\n        // Update sales rep workload\n        const rep = this.salesReps.get(assignedTo);\n        if (rep) {\n          rep.currentWorkload++;\n        }\n\n        logger.info('Task assigned', {\n          taskId: task.taskId,\n          assignedTo,\n          priority: task.priority,\n        });\n      } else {\n        logger.warn('No available sales rep for task assignment', {\n          taskId: task.taskId,\n          priority: task.priority,\n        });\n      }\n    }\n\n    return results;\n  }\n\n  /**\n   * Find best assignee for a task\n   */\n  private findBestAssignee(task: AutomatedTask): string | null {\n    const activeSalesReps = Array.from(this.salesReps.values()).filter(\n      (rep) => rep.isActive && rep.currentWorkload < rep.maxCapacity\n    );\n\n    if (activeSalesReps.length === 0) {\n      return null;\n    }\n\n    // Calculate assignment score for each rep\n    const scores = activeSalesReps.map((rep) => ({\n      userId: rep.userId,\n      score: this.calculateAssignmentScore(task, rep),\n    }));\n\n    // Sort by score (highest first)\n    scores.sort((a, b) => b.score - a.score);\n\n    return scores[0].userId;\n  }\n\n  /**\n   * Calculate assignment score for a sales rep\n   */\n  private calculateAssignmentScore(\n    task: AutomatedTask,\n    rep: SalesRepProfile\n  ): number {\n    let score = 100;\n\n    // Factor 1: Workload balance (30%)\n    const workloadRatio = rep.currentWorkload / rep.maxCapacity;\n    const workloadScore = (1 - workloadRatio) * 100;\n    score += workloadScore * 0.3;\n\n    // Factor 2: Performance score (40%)\n    score += rep.performanceScore * 0.4;\n\n    // Factor 3: Specialization match (20%)\n    if (rep.specialization) {\n      // Bonus if specialization matches task type\n      if (\n        (rep.specialization === 'hospitality' &&\n          task.type === 'schedule_demo') ||\n        (rep.specialization === 'healthcare' && task.type === 'send_proposal')\n      ) {\n        score += 20;\n      }\n    }\n\n    // Factor 4: Success rate (10%)\n    score += rep.successRate * 0.1;\n\n    return score;\n  }\n\n  /**\n   * Get assignment reason\n   */\n  private getAssignmentReason(task: AutomatedTask, assignedTo: string): string {\n    const rep = this.salesReps.get(assignedTo);\n    if (!rep) {\n      return 'Assigned to available sales rep';\n    }\n\n    const reasons: string[] = [];\n\n    if (rep.performanceScore >= 90) {\n      reasons.push('High performance score');\n    }\n\n    if (rep.successRate >= 80) {\n      reasons.push('Excellent conversion rate');\n    }\n\n    if (\n      rep.currentWorkload < rep.maxCapacity * 0.5\n    ) {\n      reasons.push('Low current workload');\n    }\n\n    return reasons.length > 0\n      ? reasons.join(', ')\n      : 'Assigned based on availability';\n  }\n\n  /**\n   * Get sales rep workload\n   */\n  getSalesRepWorkload(userId: string): {\n    current: number;\n    max: number;\n    utilization: number;\n  } | null {\n    const rep = this.salesReps.get(userId);\n    if (!rep) {\n      return null;\n    }\n\n    return {\n      current: rep.currentWorkload,\n      max: rep.maxCapacity,\n      utilization: (rep.currentWorkload / rep.maxCapacity) * 100,\n    };\n  }\n\n  /**\n   * Get all sales reps\n   */\n  getAllSalesReps(): SalesRepProfile[] {\n    return Array.from(this.salesReps.values());\n  }\n\n  /**\n   * Get available sales reps\n   */\n  getAvailableSalesReps(): SalesRepProfile[] {\n    return Array.from(this.salesReps.values()).filter(\n      (rep) => rep.isActive && rep.currentWorkload < rep.maxCapacity\n    );\n  }\n\n  /**\n   * Update sales rep performance\n   */\n  updateSalesRepPerformance(\n    userId: string,\n    completedTasks: number,\n    successfulTasks: number\n  ): void {\n    const rep = this.salesReps.get(userId);\n    if (!rep) {\n      logger.warn('Sales rep not found', { userId });\n      return;\n    }\n\n    // Update performance score\n    const completionRate = completedTasks > 0 ? (successfulTasks / completedTasks) * 100 : 0;\n    rep.performanceScore = Math.min(100, rep.performanceScore + completionRate * 0.1);\n    rep.successRate = completionRate;\n\n    logger.info('Sales rep performance updated', {\n      userId,\n      performanceScore: rep.performanceScore,\n      successRate: rep.successRate,\n    });\n  }\n\n  /**\n   * Reassign task\n   */\n  reassignTask(task: AutomatedTask, newAssignee: string): boolean {\n    const rep = this.salesReps.get(newAssignee);\n    if (!rep) {\n      logger.warn('Sales rep not found', { userId: newAssignee });\n      return false;\n    }\n\n    if (rep.currentWorkload >= rep.maxCapacity) {\n      logger.warn('Sales rep at capacity', { userId: newAssignee });\n      return false;\n    }\n\n    // Decrease old assignee workload\n    if (task.assignedTo) {\n      const oldRep = this.salesReps.get(task.assignedTo);\n      if (oldRep) {\n        oldRep.currentWorkload--;\n      }\n    }\n\n    // Increase new assignee workload\n    rep.currentWorkload++;\n    task.assignedTo = newAssignee;\n\n    logger.info('Task reassigned', {\n      taskId: task.taskId,\n      from: task.assignedTo,\n      to: newAssignee,\n    });\n\n    return true;\n  }\n}\n\nexport const taskAssignmentEngine = new TaskAssignmentEngine();\n
+import { AutomatedTask } from './TaskCreatorEngine';
+import { logger } from '../../utils/logger';
+
+export interface SalesRepProfile {
+  userId: string;
+  name: string;
+  email: string;
+  department: string;
+  specialization?: string; // e.g., 'hospitality', 'healthcare'
+  currentWorkload: number; // Number of assigned tasks
+  maxCapacity: number; // Maximum tasks per day
+  performanceScore: number; // 0-100 based on task completion rate
+  successRate: number; // Percentage of successful conversions
+  isActive: boolean;
+}
+
+export interface AssignmentResult {
+  taskId: string;
+  assignedTo: string;
+  reason: string;
+}
+
+/**
+ * Task Assignment Engine
+ * Intelligently assigns tasks to sales representatives
+ */
+export class TaskAssignmentEngine {
+  private salesReps: Map<string, SalesRepProfile> = new Map();
+
+  /**
+   * Register sales representative
+   */
+  registerSalesRep(profile: SalesRepProfile): void {
+    this.salesReps.set(profile.userId, profile);
+    logger.info('Sales rep registered', {
+      userId: profile.userId,
+      name: profile.name,
+      maxCapacity: profile.maxCapacity,
+    });
+  }
+
+  /**
+   * Assign tasks to sales representatives
+   */
+  assignTasks(tasks: AutomatedTask[]): AssignmentResult[] {
+    const results: AssignmentResult[] = [];
+
+    // Sort tasks by priority (critical first)
+    const sortedTasks = [...tasks].sort((a, b) => {
+      const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
+
+    for (const task of sortedTasks) {
+      const assignedTo = this.findBestAssignee(task);
+      if (assignedTo) {
+        const result: AssignmentResult = {
+          taskId: task.taskId,
+          assignedTo,
+          reason: this.getAssignmentReason(task, assignedTo),
+        };
+        results.push(result);
+
+        // Update sales rep workload
+        const rep = this.salesReps.get(assignedTo);
+        if (rep) {
+          rep.currentWorkload++;
+        }
+
+        logger.info('Task assigned', {
+          taskId: task.taskId,
+          assignedTo,
+          priority: task.priority,
+        });
+      } else {
+        logger.warn('No available sales rep for task assignment', {
+          taskId: task.taskId,
+          priority: task.priority,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Find best assignee for a task
+   */
+  private findBestAssignee(task: AutomatedTask): string | null {
+    const activeSalesReps = Array.from(this.salesReps.values()).filter(
+      (rep) => rep.isActive && rep.currentWorkload < rep.maxCapacity
+    );
+
+    if (activeSalesReps.length === 0) {
+      return null;
+    }
+
+    // Calculate assignment score for each rep
+    const scores = activeSalesReps.map((rep) => ({
+      userId: rep.userId,
+      score: this.calculateAssignmentScore(task, rep),
+    }));
+
+    // Sort by score (highest first)
+    scores.sort((a, b) => b.score - a.score);
+
+    return scores[0].userId;
+  }
+
+  /**
+   * Calculate assignment score for a sales rep
+   */
+  private calculateAssignmentScore(
+    task: AutomatedTask,
+    rep: SalesRepProfile
+  ): number {
+    let score = 100;
+
+    // Factor 1: Workload balance (30%)
+    const workloadRatio = rep.currentWorkload / rep.maxCapacity;
+    const workloadScore = (1 - workloadRatio) * 100;
+    score += workloadScore * 0.3;
+
+    // Factor 2: Performance score (40%)
+    score += rep.performanceScore * 0.4;
+
+    // Factor 3: Specialization match (20%)
+    if (rep.specialization) {
+      // Bonus if specialization matches task type
+      if (
+        (rep.specialization === 'hospitality' &&
+          task.type === 'schedule_demo') ||
+        (rep.specialization === 'healthcare' && task.type === 'send_proposal')
+      ) {
+        score += 20;
+      }
+    }
+
+    // Factor 4: Success rate (10%)
+    score += rep.successRate * 0.1;
+
+    return score;
+  }
+
+  /**
+   * Get assignment reason
+   */
+  private getAssignmentReason(task: AutomatedTask, assignedTo: string): string {
+    const rep = this.salesReps.get(assignedTo);
+    if (!rep) {
+      return 'Assigned to available sales rep';
+    }
+
+    const reasons: string[] = [];
+
+    if (rep.performanceScore >= 90) {
+      reasons.push('High performance score');
+    }
+
+    if (rep.successRate >= 80) {
+      reasons.push('Excellent conversion rate');
+    }
+
+    if (
+      rep.currentWorkload < rep.maxCapacity * 0.5
+    ) {
+      reasons.push('Low current workload');
+    }
+
+    return reasons.length > 0
+      ? reasons.join(', ')
+      : 'Assigned based on availability';
+  }
+
+  /**
+   * Get sales rep workload
+   */
+  getSalesRepWorkload(userId: string): {
+    current: number;
+    max: number;
+    utilization: number;
+  } | null {
+    const rep = this.salesReps.get(userId);
+    if (!rep) {
+      return null;
+    }
+
+    return {
+      current: rep.currentWorkload,
+      max: rep.maxCapacity,
+      utilization: (rep.currentWorkload / rep.maxCapacity) * 100,
+    };
+  }
+
+  /**
+   * Get all sales reps
+   */
+  getAllSalesReps(): SalesRepProfile[] {
+    return Array.from(this.salesReps.values());
+  }
+
+  /**
+   * Get available sales reps
+   */
+  getAvailableSalesReps(): SalesRepProfile[] {
+    return Array.from(this.salesReps.values()).filter(
+      (rep) => rep.isActive && rep.currentWorkload < rep.maxCapacity
+    );
+  }
+
+  /**
+   * Update sales rep performance
+   */
+  updateSalesRepPerformance(
+    userId: string,
+    completedTasks: number,
+    successfulTasks: number
+  ): void {
+    const rep = this.salesReps.get(userId);
+    if (!rep) {
+      logger.warn('Sales rep not found', { userId });
+      return;
+    }
+
+    // Update performance score
+    const completionRate = completedTasks > 0 ? (successfulTasks / completedTasks) * 100 : 0;
+    rep.performanceScore = Math.min(100, rep.performanceScore + completionRate * 0.1);
+    rep.successRate = completionRate;
+
+    logger.info('Sales rep performance updated', {
+      userId,
+      performanceScore: rep.performanceScore,
+      successRate: rep.successRate,
+    });
+  }
+
+  /**
+   * Reassign task
+   */
+  reassignTask(task: AutomatedTask, newAssignee: string): boolean {
+    const rep = this.salesReps.get(newAssignee);
+    if (!rep) {
+      logger.warn('Sales rep not found', { userId: newAssignee });
+      return false;
+    }
+
+    if (rep.currentWorkload >= rep.maxCapacity) {
+      logger.warn('Sales rep at capacity', { userId: newAssignee });
+      return false;
+    }
+
+    // Decrease old assignee workload
+    if (task.assignedTo) {
+      const oldRep = this.salesReps.get(task.assignedTo);
+      if (oldRep) {
+        oldRep.currentWorkload--;
+      }
+    }
+
+    // Increase new assignee workload
+    rep.currentWorkload++;
+    task.assignedTo = newAssignee;
+
+    logger.info('Task reassigned', {
+      taskId: task.taskId,
+      from: task.assignedTo,
+      to: newAssignee,
+    });
+
+    return true;
+  }
+}
+
+export const taskAssignmentEngine = new TaskAssignmentEngine();
+

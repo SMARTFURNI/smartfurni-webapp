@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     // Lưu cuộc gọi vào call_logs
     const staffId = body.staffId ?? session.staffId ?? "system";
-    const staffName = body.staffName ?? session.name ?? "Hệ thống";
+    const staffName = body.staffName ?? (session as unknown as { name?: string }).name ?? "Hệ thống";
 
     try {
       await createCallLog({

@@ -1,1 +1,259 @@
-import { leadScoringEngine, LeadScore } from './LeadScoringEngine';\nimport { logger } from '../../utils/logger';\nimport { PerformanceTimer } from '../../utils/monitoring';\n\nexport interface BatchScoringJob {\n  jobId: string;\n  status: 'pending' | 'processing' | 'completed' | 'failed';\n  totalLeads: number;\n  processedLeads: number;\n  failedLeads: number;\n  startedAt: Date;\n  completedAt?: Date;\n  results: LeadScore[];\n  errors: Array<{ leadId: string; error: string }>;\n}\n\n/**\n * Batch Scoring Service\n * Processes multiple leads for scoring\n */\nexport class BatchScoringService {\n  private jobs: Map<string, BatchScoringJob> = new Map();\n\n  /**\n   * Start batch scoring job\n   */\n  async startBatchScoringJob(leadIds: string[]): Promise<BatchScoringJob> {\n    const jobId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n    const timer = new PerformanceTimer('batch_scoring');\n\n    const job: BatchScoringJob = {\n      jobId,\n      status: 'processing',\n      totalLeads: leadIds.length,\n      processedLeads: 0,\n      failedLeads: 0,\n      startedAt: new Date(),\n      results: [],\n      errors: [],\n    };\n\n    this.jobs.set(jobId, job);\n\n    logger.info('Starting batch scoring job', {\n      jobId,\n      totalLeads: leadIds.length,\n    });\n\n    // Process leads asynchronously\n    this.processBatch(jobId, leadIds, job, timer);\n\n    return job;\n  }\n\n  /**\n   * Process batch of leads\n   */\n  private async processBatch(\n    jobId: string,\n    leadIds: string[],\n    job: BatchScoringJob,\n    timer: PerformanceTimer\n  ): Promise<void> {\n    try {\n      for (const leadId of leadIds) {\n        try {\n          logger.debug('Scoring lead', { jobId, leadId });\n\n          const score = await leadScoringEngine.scoreLead(leadId);\n\n          if (score) {\n            job.results.push(score);\n          } else {\n            job.failedLeads++;\n            job.errors.push({\n              leadId,\n              error: 'Failed to score lead',\n            });\n          }\n\n          job.processedLeads++;\n        } catch (error) {\n          job.failedLeads++;\n          job.errors.push({\n            leadId,\n            error: error instanceof Error ? error.message : String(error),\n          });\n          job.processedLeads++;\n        }\n      }\n\n      job.status = 'completed';\n      job.completedAt = new Date();\n\n      const duration = timer.end();\n\n      logger.info('Batch scoring job completed', {\n        jobId,\n        totalLeads: job.totalLeads,\n        processedLeads: job.processedLeads,\n        failedLeads: job.failedLeads,\n        duration,\n      });\n    } catch (error) {\n      job.status = 'failed';\n      job.completedAt = new Date();\n\n      const duration = timer.end();\n\n      logger.error('Batch scoring job failed', {\n        jobId,\n        error: error instanceof Error ? error.message : String(error),\n        duration,\n      });\n    }\n  }\n\n  /**\n   * Get job status\n   */\n  getJobStatus(jobId: string): BatchScoringJob | undefined {\n    return this.jobs.get(jobId);\n  }\n\n  /**\n   * Get all jobs\n   */\n  getAllJobs(): BatchScoringJob[] {\n    return Array.from(this.jobs.values());\n  }\n\n  /**\n   * Get jobs by status\n   */\n  getJobsByStatus(status: string): BatchScoringJob[] {\n    return Array.from(this.jobs.values()).filter((job) => job.status === status);\n  }\n\n  /**\n   * Get batch results\n   */\n  getBatchResults(\n    jobId: string,\n    classification?: 'hot' | 'warm' | 'cold'\n  ): LeadScore[] {\n    const job = this.jobs.get(jobId);\n    if (!job) {\n      return [];\n    }\n\n    if (classification) {\n      return job.results.filter((r) => r.classification === classification);\n    }\n\n    return job.results;\n  }\n\n  /**\n   * Get batch statistics\n   */\n  getBatchStatistics(jobId: string): {\n    totalLeads: number;\n    processedLeads: number;\n    failedLeads: number;\n    hotLeads: number;\n    warmLeads: number;\n    coldLeads: number;\n    averageScore: number;\n    processingTime?: number;\n  } | null {\n    const job = this.jobs.get(jobId);\n    if (!job) {\n      return null;\n    }\n\n    const hotLeads = job.results.filter((r) => r.classification === 'hot').length;\n    const warmLeads = job.results.filter((r) => r.classification === 'warm').length;\n    const coldLeads = job.results.filter((r) => r.classification === 'cold').length;\n    const averageScore =\n      job.results.length > 0\n        ? Math.round(\n            job.results.reduce((sum, r) => sum + r.score, 0) / job.results.length\n          )\n        : 0;\n\n    const processingTime = job.completedAt\n      ? job.completedAt.getTime() - job.startedAt.getTime()\n      : undefined;\n\n    return {\n      totalLeads: job.totalLeads,\n      processedLeads: job.processedLeads,\n      failedLeads: job.failedLeads,\n      hotLeads,\n      warmLeads,\n      coldLeads,\n      averageScore,\n      processingTime,\n    };\n  }\n\n  /**\n   * Export batch results to CSV\n   */\n  exportBatchResultsToCSV(jobId: string): string | null {\n    const job = this.jobs.get(jobId);\n    if (!job) {\n      return null;\n    }\n\n    const headers = [\n      'Lead ID',\n      'Score',\n      'Classification',\n      'Conversion Probability',\n      'Next Action',\n      'Scored At',\n    ];\n\n    const rows = job.results.map((r) => [\n      r.leadId,\n      r.score,\n      r.classification,\n      (r.conversionProbability * 100).toFixed(1) + '%',\n      r.nextBestAction,\n      r.scoredAt.toISOString(),\n    ]);\n\n    const csv = [\n      headers.join(','),\n      ...rows.map((row) => row.map((cell) => `\"${cell}\"`).join(',')),\n    ].join('\\n');\n\n    return csv;\n  }\n\n  /**\n   * Cancel job\n   */\n  cancelJob(jobId: string): boolean {\n    const job = this.jobs.get(jobId);\n    if (!job) {\n      return false;\n    }\n\n    if (job.status === 'pending' || job.status === 'processing') {\n      job.status = 'failed';\n      job.completedAt = new Date();\n      logger.info('Batch scoring job cancelled', { jobId });\n      return true;\n    }\n\n    return false;\n  }\n}\n\nexport const batchScoringService = new BatchScoringService();\n
+import { leadScoringEngine, LeadScore } from './LeadScoringEngine';
+import { logger } from '../../utils/logger';
+import { PerformanceTimer } from '../../utils/monitoring';
+
+export interface BatchScoringJob {
+  jobId: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  totalLeads: number;
+  processedLeads: number;
+  failedLeads: number;
+  startedAt: Date;
+  completedAt?: Date;
+  results: LeadScore[];
+  errors: Array<{ leadId: string; error: string }>;
+}
+
+/**
+ * Batch Scoring Service
+ * Processes multiple leads for scoring
+ */
+export class BatchScoringService {
+  private jobs: Map<string, BatchScoringJob> = new Map();
+
+  /**
+   * Start batch scoring job
+   */
+  async startBatchScoringJob(leadIds: string[]): Promise<BatchScoringJob> {
+    const jobId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const timer = new PerformanceTimer('batch_scoring');
+
+    const job: BatchScoringJob = {
+      jobId,
+      status: 'processing',
+      totalLeads: leadIds.length,
+      processedLeads: 0,
+      failedLeads: 0,
+      startedAt: new Date(),
+      results: [],
+      errors: [],
+    };
+
+    this.jobs.set(jobId, job);
+
+    logger.info('Starting batch scoring job', {
+      jobId,
+      totalLeads: leadIds.length,
+    });
+
+    // Process leads asynchronously
+    this.processBatch(jobId, leadIds, job, timer);
+
+    return job;
+  }
+
+  /**
+   * Process batch of leads
+   */
+  private async processBatch(
+    jobId: string,
+    leadIds: string[],
+    job: BatchScoringJob,
+    timer: PerformanceTimer
+  ): Promise<void> {
+    try {
+      for (const leadId of leadIds) {
+        try {
+          logger.debug('Scoring lead', { jobId, leadId });
+
+          const score = await leadScoringEngine.scoreLead(leadId);
+
+          if (score) {
+            job.results.push(score);
+          } else {
+            job.failedLeads++;
+            job.errors.push({
+              leadId,
+              error: 'Failed to score lead',
+            });
+          }
+
+          job.processedLeads++;
+        } catch (error) {
+          job.failedLeads++;
+          job.errors.push({
+            leadId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          job.processedLeads++;
+        }
+      }
+
+      job.status = 'completed';
+      job.completedAt = new Date();
+
+      const duration = timer.end();
+
+      logger.info('Batch scoring job completed', {
+        jobId,
+        totalLeads: job.totalLeads,
+        processedLeads: job.processedLeads,
+        failedLeads: job.failedLeads,
+        duration,
+      });
+    } catch (error) {
+      job.status = 'failed';
+      job.completedAt = new Date();
+
+      const duration = timer.end();
+
+      logger.error('Batch scoring job failed', {
+        jobId,
+        error: error instanceof Error ? error.message : String(error),
+        duration,
+      });
+    }
+  }
+
+  /**
+   * Get job status
+   */
+  getJobStatus(jobId: string): BatchScoringJob | undefined {
+    return this.jobs.get(jobId);
+  }
+
+  /**
+   * Get all jobs
+   */
+  getAllJobs(): BatchScoringJob[] {
+    return Array.from(this.jobs.values());
+  }
+
+  /**
+   * Get jobs by status
+   */
+  getJobsByStatus(status: string): BatchScoringJob[] {
+    return Array.from(this.jobs.values()).filter((job) => job.status === status);
+  }
+
+  /**
+   * Get batch results
+   */
+  getBatchResults(
+    jobId: string,
+    classification?: 'hot' | 'warm' | 'cold'
+  ): LeadScore[] {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      return [];
+    }
+
+    if (classification) {
+      return job.results.filter((r) => r.classification === classification);
+    }
+
+    return job.results;
+  }
+
+  /**
+   * Get batch statistics
+   */
+  getBatchStatistics(jobId: string): {
+    totalLeads: number;
+    processedLeads: number;
+    failedLeads: number;
+    hotLeads: number;
+    warmLeads: number;
+    coldLeads: number;
+    averageScore: number;
+    processingTime?: number;
+  } | null {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      return null;
+    }
+
+    const hotLeads = job.results.filter((r) => r.classification === 'hot').length;
+    const warmLeads = job.results.filter((r) => r.classification === 'warm').length;
+    const coldLeads = job.results.filter((r) => r.classification === 'cold').length;
+    const averageScore =
+      job.results.length > 0
+        ? Math.round(
+            job.results.reduce((sum, r) => sum + r.score, 0) / job.results.length
+          )
+        : 0;
+
+    const processingTime = job.completedAt
+      ? job.completedAt.getTime() - job.startedAt.getTime()
+      : undefined;
+
+    return {
+      totalLeads: job.totalLeads,
+      processedLeads: job.processedLeads,
+      failedLeads: job.failedLeads,
+      hotLeads,
+      warmLeads,
+      coldLeads,
+      averageScore,
+      processingTime,
+    };
+  }
+
+  /**
+   * Export batch results to CSV
+   */
+  exportBatchResultsToCSV(jobId: string): string | null {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      return null;
+    }
+
+    const headers = [
+      'Lead ID',
+      'Score',
+      'Classification',
+      'Conversion Probability',
+      'Next Action',
+      'Scored At',
+    ];
+
+    const rows = job.results.map((r) => [
+      r.leadId,
+      r.score,
+      r.classification,
+      (r.conversionProbability * 100).toFixed(1) + '%',
+      r.nextBestAction,
+      r.scoredAt.toISOString(),
+    ]);
+
+    const csv = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `\"${cell}\"`).join(',')),
+    ].join('\
+');
+
+    return csv;
+  }
+
+  /**
+   * Cancel job
+   */
+  cancelJob(jobId: string): boolean {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      return false;
+    }
+
+    if (job.status === 'pending' || job.status === 'processing') {
+      job.status = 'failed';
+      job.completedAt = new Date();
+      logger.info('Batch scoring job cancelled', { jobId });
+      return true;
+    }
+
+    return false;
+  }
+}
+
+export const batchScoringService = new BatchScoringService();
+

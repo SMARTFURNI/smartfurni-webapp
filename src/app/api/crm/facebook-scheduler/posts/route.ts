@@ -12,7 +12,7 @@ async function ensureLoaded() {
 
 async function getSession() {
   const admin = await getAdminSession();
-  if (admin) return { id: "admin", name: (admin as { username?: string }).username || "Admin", isAdmin: true };
+  if (admin) return { id: "admin", name: (admin as unknown as { username?: string }).username || "Admin", isAdmin: true };
   const staff = await getStaffSession();
   if (staff) return { id: staff.staffId, name: staff.staffId, isAdmin: false };
   return null;

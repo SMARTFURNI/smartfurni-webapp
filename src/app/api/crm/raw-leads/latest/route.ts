@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   // Xác thực session
-  const session = await getCrmSession(req);
+  const session = await getCrmSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

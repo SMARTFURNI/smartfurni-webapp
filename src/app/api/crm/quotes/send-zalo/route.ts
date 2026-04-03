@@ -18,13 +18,13 @@ export async function POST(req: NextRequest) {
   const lead = leadId ? await getLead(leadId) : null;
 
   // Lấy Zalo access token từ settings hoặc env
-  const zaloToken = process.env.ZALO_ACCESS_TOKEN || (settings as Record<string, unknown>).zaloAccessToken as string;
+  const zaloToken = process.env.ZALO_ACCESS_TOKEN || (settings as unknown as Record<string, unknown>)?.zaloAccessToken as string;
   if (!zaloToken) {
     return NextResponse.json({ error: "Zalo access token chưa được cấu hình" }, { status: 400 });
   }
 
   // Lấy zaloId hoặc phone của khách
-  const zaloUserId = (lead as Record<string, unknown>)?.zaloId as string;
+  const zaloUserId = (lead as unknown as Record<string, unknown>)?.zaloId as string;
   if (!zaloUserId) {
     return NextResponse.json({ error: "Khách hàng chưa có Zalo ID. Vui lòng kết nối Zalo trước." }, { status: 400 });
   }

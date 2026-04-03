@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -18,7 +19,7 @@ const nextConfig: NextConfig = {
     },
   },
   // Externalize server-only packages (mysql2, pg, googleapis) from server bundle
-  serverExternalPackages: ["mysql2", "pg", "pg-native", "googleapis", "google-auth-library"],
+  serverExternalPackages: ["mysql2", "pg", "pg-native", "googleapis", "google-auth-library", "zca-js", "sharp"],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Prevent bundling Node.js-only modules into the client bundle.
@@ -62,7 +63,9 @@ const nextConfig: NextConfig = {
               request === "pg-native" ||
               request === "pg-pool" ||
               request === "googleapis" ||
-              request === "google-auth-library")
+              request === "google-auth-library" ||
+              request === "zca-js" ||
+              request === "sharp")
           ) {
             return callback(null, `commonjs ${request}`);
           }

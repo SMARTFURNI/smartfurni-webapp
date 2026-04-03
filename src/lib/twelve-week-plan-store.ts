@@ -77,6 +77,8 @@ export interface TwelveWeekPlan {
   startDate: string; // ISO date - start of week 1
   endDate: string; // ISO date - end of week 12
   isActive: boolean;
+  defaultForDashboard?: boolean;
+  assignedStaffIds?: string[];
   goals: Goal[];
   tasks: WeeklyTask[];
   createdAt: string;

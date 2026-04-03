@@ -381,7 +381,7 @@ function AddCallModal({ onClose, onSave }: { onClose: () => void; onSave: (data:
             </div>
             <div>
               <label className="text-[11px] font-semibold block mb-1" style={{ color: T.textMuted }}>Hướng</label>
-              <select value={form.direction} onChange={e => setForm(f => ({ ...f, direction: e.target.value as "outbound" | "inbound" }))}
+              <select value={form.direction} onChange={e => setForm(f => ({ ...f, direction: e.target.value as "outbound" }))}
                 className="w-full rounded-lg px-3 py-2 text-sm outline-none"
                 style={{ background: T.grayBg, border: `1px solid ${T.divider}`, color: T.textPrimary }}>
                 <option value="outbound">Gọi ra</option>

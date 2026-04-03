@@ -30,11 +30,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     action,
     entityType: "quote",
     entityId: quote.id,
-    entityName: `Báo giá - ${quote.customerName || id}`,
+    entityName: `Báo giá - ${quote.leadName || id}`,
     actorId,
     actorName,
     ipAddress: getClientIp(req),
-    metadata: { status: quote.status, totalAmount: quote.totalAmount },
+    metadata: { status: quote.status, totalAmount: quote.total },
   });
 
   return NextResponse.json(quote);
