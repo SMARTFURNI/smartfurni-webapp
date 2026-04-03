@@ -9,7 +9,7 @@ import { refreshZaloToken } from "@/lib/zalo-cloud";
 
 export async function POST(req: NextRequest) {
   const session = await getCrmSession();
-  if (!session || session.role !== "admin") {
+  if (!session || !session.isAdmin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
