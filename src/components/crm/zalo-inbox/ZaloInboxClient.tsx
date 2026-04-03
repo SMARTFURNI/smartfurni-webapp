@@ -391,11 +391,11 @@ export default function ZaloInboxClient() {
             />
             <button
               onClick={handleSend}
-              disabled={!inputText.trim() || sending || !gatewayStatus.isConnected}
+              disabled={!inputText.trim() || sending}
               style={{
                 width: 40, height: 40, borderRadius: "50%", border: "none",
-                background: inputText.trim() && gatewayStatus.isConnected ? "#0068FF" : "#D1D5DB",
-                color: "#fff", cursor: inputText.trim() && gatewayStatus.isConnected ? "pointer" : "not-allowed",
+                background: inputText.trim() ? "#0068FF" : "#D1D5DB",
+                color: "#fff", cursor: inputText.trim() ? "pointer" : "not-allowed",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}
             >
