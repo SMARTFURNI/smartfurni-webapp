@@ -358,6 +358,13 @@ function setupListeners(api: unknown) {
       || (msgData.senderName as string)
       || ((message.data as any)?.params?.fromName as string)
       || "";
+    // Lấy avatar URL của người gửi từ các field có thể có
+    const senderAvatar = (msgData.avt as string)
+      || (msgData.avatar as string)
+      || (msgData.avatarUrl as string)
+      || ((message.data as any)?.params?.avt as string)
+      || ((message.data as any)?.params?.avatar as string)
+      || null;
     // Save to DB (zalo_inbox_messages) kèm sender_name
     await saveMessage({ ...processed, senderName: senderName || undefined });
     try {
@@ -368,6 +375,7 @@ function setupListeners(api: unknown) {
         id: threadId,
         phone: threadId,
         displayName: displayNameToSave,
+        avatarUrl: senderAvatar,
         lastMessage: processed.content || "[Hình ảnh]",
       });
       if (!processed.isSelf) {

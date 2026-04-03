@@ -61,6 +61,16 @@ export async function GET(
 
     const resolvedSenderName = leadName || fallbackName;
 
+    // Lấy tên thật của tài khoản Zalo (để hiển thị cho tin nhắn tự gửi)
+    let selfDisplayName = "Bạn";
+    try {
+      const credRows = await query<{ display_name: string; user_id: string }>(
+        `SELECT display_name, user_id FROM zalo_inbox_credentials LIMIT 1`
+      );
+      if (credRows[0]?.display_name) selfDisplayName = credRows[0].display_name;
+      else if (credRows[0]?.user_id) selfDisplayName = credRows[0].user_id;
+    } catch { /* ignore */ }
+
     // ✅ Fix Bug 2: Đọc từ zalo_inbox_messages kèm sender_name
     const rows = await query<{
       msg_id: string;
@@ -88,7 +98,7 @@ export async function GET(
       const rawSenderName = row.sender_name || "";
       const isRawNumericId = /^\d{8,}$/.test(rawSenderName);
       const senderName = row.is_self
-        ? "Bạn"
+        ? selfDisplayName
         : ((!isRawNumericId && rawSenderName) ? rawSenderName : resolvedSenderName);
 
       return {

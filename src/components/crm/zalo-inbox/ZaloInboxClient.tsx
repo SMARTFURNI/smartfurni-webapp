@@ -226,8 +226,10 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 }
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
-function Avatar({ name, size = 40, online = false }: { name: string; size?: number; online?: boolean }) {
-  const initials = name.split(" ").slice(-2).map(w => w[0]).join("").toUpperCase().slice(0, 2);
+function Avatar({ name, avatarUrl, size = 40, online = false }: { name: string; avatarUrl?: string | null; size?: number; online?: boolean }) {
+  const initials = (name || "?").split(" ").slice(-2).map(w => w[0]).join("").toUpperCase().slice(0, 2);
+  const proxyUrl = avatarUrl ? getZaloImageUrl(avatarUrl) : null;
+  const [imgError, setImgError] = useState(false);
   return (
     <div style={{ position: "relative", flexShrink: 0 }}>
       <div style={{
@@ -237,8 +239,18 @@ function Avatar({ name, size = 40, online = false }: { name: string; size?: numb
         color: "#fff", fontWeight: 700, fontSize: size * 0.36,
         letterSpacing: "-0.5px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+        overflow: "hidden", position: "relative",
       }}>
-        {initials}
+        {proxyUrl && !imgError ? (
+          <img
+            src={proxyUrl}
+            alt={name}
+            onError={() => setImgError(true)}
+            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+          />
+        ) : (
+          <span>{initials}</span>
+        )}
       </div>
       {online && (
         <div style={{
@@ -354,7 +366,7 @@ function ConversationItem({ conv, isSelected, onClick }: {
         borderLeft: isSelected ? `3px solid ${T.accent}` : "3px solid transparent",
         transition: "all 0.15s ease",
       }}>
-      <Avatar name={conv.displayName} size={44} />
+      <Avatar name={conv.displayName} avatarUrl={conv.avatarUrl} size={44} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
           <span style={{
@@ -390,11 +402,12 @@ function ConversationItem({ conv, isSelected, onClick }: {
 }
 
 // ─── MessageBubble ────────────────────────────────────────────────────────────
-function MessageBubble({ message, searchQuery, onOpenLightbox, onReply }: {
+function MessageBubble({ message, searchQuery, onOpenLightbox, onReply, convAvatarUrl }: {
   message: ZaloMessage;
   searchQuery: string;
   onOpenLightbox: (images: string[], startIdx: number) => void;
   onReply: (ctx: ReplyContext) => void;
+  convAvatarUrl?: string | null;
 }) {
   const [hovered, setHovered] = useState(false);
   const isSelf = message.isSelf;
@@ -421,10 +434,10 @@ function MessageBubble({ message, searchQuery, onOpenLightbox, onReply }: {
         display: "flex", flexDirection: isSelf ? "row-reverse" : "row",
         alignItems: "flex-end", gap: 8, marginBottom: 2,
       }}>
-      {/* Avatar (chỉ hiện khi không phải isSelf) */}
+         {/* Avatar (chỉ hiện khi không phải isSelf) */}
       {!isSelf && (
         <div style={{ flexShrink: 0, marginBottom: 4 }}>
-          <Avatar name={message.senderName} size={30} />
+          <Avatar name={message.senderName} avatarUrl={convAvatarUrl} size={30} />
         </div>
       )}
 
@@ -1141,7 +1154,7 @@ export default function ZaloInboxClient() {
             display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
             backdropFilter: "blur(12px)",
           }}>
-            <Avatar name={selectedConv.displayName} size={40} />
+            <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatarUrl} size={40} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary }}>{selectedConv.displayName}</div>
               <div style={{ fontSize: 12, color: T.textMuted }}>{selectedConv.phone}</div>
@@ -1193,6 +1206,7 @@ export default function ZaloInboxClient() {
                       message={msg} searchQuery={msgSearchQuery}
                       onOpenLightbox={(images, startIdx) => setLightbox({ images, currentIndex: startIdx })}
                       onReply={ctx => setReplyContext(ctx)}
+                      convAvatarUrl={selectedConv?.avatarUrl}
                     />
                   </div>
                 );

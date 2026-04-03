@@ -185,7 +185,9 @@ export async function upsertConversation(conv: {
      (id, phone, display_name, avatar_url, last_message, last_message_at, lead_id, updated_at)
      VALUES ($1, $2, $3, $4, $5, NOW(), $6, NOW())
      ON CONFLICT (id) DO UPDATE SET
-       display_name = $3, avatar_url = $4, last_message = $5, 
+       display_name = $3,
+       avatar_url = COALESCE($4, zalo_conversations.avatar_url),
+       last_message = $5, 
        last_message_at = NOW(), lead_id = $6, updated_at = NOW()`,
     [conv.id, conv.phone, conv.displayName, conv.avatarUrl || null, conv.lastMessage || null, conv.leadId || null]
   );
