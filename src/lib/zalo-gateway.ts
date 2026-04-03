@@ -168,22 +168,32 @@ export async function connectZaloGateway(): Promise<{ success: boolean; message:
   try {
     // Dynamic import zca-js (chỉ chạy server-side)
     const { Zalo } = await import("zca-js");
-    const zalo = new Zalo();
+    // Dùng zalo.login() - tự tạo ctx đúng với createContext() bên trong
+    // KHÔNG dùng loginCookie(ctx, ...) với ctx = {} rỗng vì ctx.options.polyfill sẽ undefined
+    const zalo = new Zalo({ checkUpdate: false, logging: false });
 
     // Parse cookies từ JSON string
-    let cookiesObj: Record<string, string> = {};
+    // zca-js chấp nhận: Array<{name, value, domain, ...}> hoặc {cookies: Array<...>}
+    let cookieData: any;
     try {
-      cookiesObj = JSON.parse(creds.cookies);
+      const parsed = JSON.parse(creds.cookies);
+      // Nếu là object có key 'cookies' thì lấy array bên trong
+      if (parsed && !Array.isArray(parsed) && parsed.cookies) {
+        cookieData = parsed.cookies;
+      } else if (Array.isArray(parsed)) {
+        cookieData = parsed;
+      } else {
+        // Fallback: wrap thành array
+        cookieData = Object.entries(parsed).map(([name, value]) => ({ name, value, domain: ".zalo.me" }));
+      }
     } catch {
-      return { success: false, message: "Cookies không hợp lệ. Vui lòng cập nhật lại." };
+      return { success: false, message: "Cookies không hợp lệ. Vui lòng đăng nhập lại bằng QR." };
     }
 
-    // Login bằng cookies (không cần QR)
-    // zca-js v2: dùng loginCookie(ctx, credentials)
-    const ctx = {};
-    zcaApi = await zalo.loginCookie(ctx, {
+    // Login bằng cookies - dùng zalo.login() để ctx được tạo đúng
+    zcaApi = await zalo.login({
       imei: creds.imei,
-      cookie: cookiesObj,
+      cookie: cookieData,
       userAgent: creds.userAgent,
     });
 
