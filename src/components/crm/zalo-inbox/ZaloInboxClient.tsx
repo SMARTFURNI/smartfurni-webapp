@@ -5,16 +5,25 @@ import { MessageCircle, Search, Send, Wifi, WifiOff, User, Phone, ShoppingBag, C
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface ZaloAttachment {
+  type: string; // 'photo', 'video', 'file', 'zalo_system_message', etc.
+  url?: string;
+  origin_url?: string;
+  image_data?: { width: number; height: number };
+  data?: Record<string, unknown>;
+}
+
 interface ZaloMessage {
   id: string;
   conversationId: string;
-  senderId: string;
+  senderId?: string;
   senderName: string;
   content: string;
-  contentType: string;
+  contentType?: string;
   isSelf: boolean;
-  isRead: boolean;
+  isRead?: boolean;
   createdAt: string;
+  attachments?: ZaloAttachment[];
 }
 
 interface LeadInfo {
@@ -487,26 +496,84 @@ function ConversationItem({
 
 function MessageBubble({ message }: { message: ZaloMessage }) {
   const isSelf = message.isSelf;
+  const attachments = message.attachments || [];
+
+  // Ẩn system messages (zalo_system_message)
+  const isSystemMsg = attachments.some(a => a.type === 'zalo_system_message');
+
+  // Lấy tất cả ảnh từ attachments
+  const photoAttachments = attachments.filter(a => a.type === 'photo' && (a.url || a.origin_url));
+
+  // Kiểm tra content có phải HTML rỗng không (<div></div>, <div/>, etc.)
+  const isEmptyHtml = /^\s*(<div>\s*<\/div>|<div\s*\/>|<br\s*\/?>|\s*)\s*$/.test(message.content || '');
+  const hasTextContent = message.content && !isEmptyHtml;
+
+  // Nếu không có nội dung gì cả thì ẩn
+  if (isSystemMsg && !hasTextContent && photoAttachments.length === 0) return null;
+
+  const timeStr = new Date(message.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+
   return (
-    <div style={{ display: "flex", justifyContent: isSelf ? "flex-end" : "flex-start", gap: 8 }}>
+    <div style={{ display: "flex", justifyContent: isSelf ? "flex-end" : "flex-start", gap: 8, marginBottom: 2 }}>
       {!isSelf && <Avatar name={message.senderName} size={28} />}
-      <div style={{ maxWidth: "65%" }}>
+      <div style={{ maxWidth: "70%" }}>
         {!isSelf && (
           <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2, paddingLeft: 4 }}>
             {message.senderName}
           </div>
         )}
-        <div style={{
-          padding: "8px 12px", borderRadius: isSelf ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-          background: isSelf ? "#0068FF" : "#fff",
-          color: isSelf ? "#fff" : "#111827",
-          fontSize: 14, lineHeight: 1.5,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-        }}>
-          {message.content}
-        </div>
+
+        {/* Hiển thị hình ảnh */}
+        {photoAttachments.length > 0 && (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: photoAttachments.length === 1 ? "1fr" : "repeat(2, 1fr)",
+            gap: 2, marginBottom: hasTextContent ? 4 : 0,
+          }}>
+            {photoAttachments.map((att, idx) => (
+              <a key={idx} href={att.origin_url || att.url} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={att.url || att.origin_url}
+                  alt="Ảnh"
+                  style={{
+                    width: "100%", maxWidth: 240,
+                    height: photoAttachments.length === 1 ? "auto" : 120,
+                    objectFit: "cover",
+                    borderRadius: 8,
+                    display: "block",
+                    cursor: "pointer",
+                  }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Hiển thị text content */}
+        {hasTextContent && (
+          <div style={{
+            padding: "8px 12px",
+            borderRadius: isSelf ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+            background: isSelf ? "#0068FF" : "#fff",
+            color: isSelf ? "#fff" : "#111827",
+            fontSize: 14, lineHeight: 1.5,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+            whiteSpace: "pre-wrap", wordBreak: "break-word",
+          }}>
+            {message.content}
+          </div>
+        )}
+
+        {/* System message đơn giản */}
+        {isSystemMsg && hasTextContent && (
+          <div style={{ fontSize: 11, color: "#9CA3AF", textAlign: "center", fontStyle: "italic", padding: "2px 4px" }}>
+            {message.content}
+          </div>
+        )}
+
         <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isSelf ? "right" : "left", paddingLeft: 4 }}>
-          {new Date(message.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+          {timeStr}
         </div>
       </div>
     </div>
