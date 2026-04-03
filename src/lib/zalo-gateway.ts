@@ -585,3 +585,40 @@ export async function sendZaloMessage(params: {
     return { success: false, error: error.message || "Lỗi gửi tin nhắn" };
   }
 }
+
+// ─── Auto-Reconnect on Server Start ──────────────────────────────────────────
+// Khi Railway deploy lại, process restart → zaloApi = null → cần tự kết nối lại
+// Dùng flag để chỉ chạy 1 lần dù nhiều request cùng lúc
+
+let autoReconnectDone = false;
+let autoReconnectPromise: Promise<void> | null = null;
+
+/**
+ * Tự động kết nối lại Zalo nếu server vừa restart (Railway deploy).
+ * Gọi từ SSE route và conversations route — chỉ chạy 1 lần per process.
+ */
+export async function ensureZaloConnected(): Promise<void> {
+  if (isConnected || autoReconnectDone) return;
+  if (autoReconnectPromise) return autoReconnectPromise;
+
+  autoReconnectPromise = (async () => {
+    autoReconnectDone = true;
+    try {
+      await initZaloGateway();
+      if (isConnected) {
+        console.log("[ZaloGateway] ensureZaloConnected: auto-reconnect success");
+      } else {
+        console.warn("[ZaloGateway] ensureZaloConnected: no saved credentials or connect failed");
+        // Cho phép thử lại lần sau nếu thất bại
+        autoReconnectDone = false;
+      }
+    } catch (err) {
+      console.error("[ZaloGateway] ensureZaloConnected error:", err);
+      autoReconnectDone = false;
+    } finally {
+      autoReconnectPromise = null;
+    }
+  })();
+
+  return autoReconnectPromise;
+}

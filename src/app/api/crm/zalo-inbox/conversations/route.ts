@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getConversations } from "@/lib/zalo-inbox-store";
-import { getGatewayStatus } from "@/lib/zalo-gateway";
+import { getGatewayStatus, ensureZaloConnected } from "@/lib/zalo-gateway";
 import { getDb } from "@/lib/db";
 
 async function checkAccess(session: any): Promise<boolean> {
@@ -36,6 +36,9 @@ export async function GET(req: NextRequest) {
   if (!await checkAccess(session)) {
     return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   }
+
+  // Tự động kết nối lại Zalo nếu server vừa restart (Railway deploy)
+  ensureZaloConnected().catch(() => {/* ignore */});
 
   try {
     const { searchParams } = new URL(req.url);

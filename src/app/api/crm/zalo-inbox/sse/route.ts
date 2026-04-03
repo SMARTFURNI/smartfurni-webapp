@@ -8,7 +8,7 @@
 import { NextRequest } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getDb } from "@/lib/db";
-import { addSSEClient, removeSSEClient, SSEClient } from "@/lib/zalo-gateway";
+import { addSSEClient, removeSSEClient, SSEClient, ensureZaloConnected } from "@/lib/zalo-gateway";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -48,6 +48,9 @@ export async function GET(req: NextRequest) {
   if (!hasAccess) {
     return new Response("Forbidden", { status: 403 });
   }
+
+  // Tự động kết nối lại Zalo nếu server vừa restart (Railway deploy)
+  ensureZaloConnected().catch((e) => console.error("[SSE] ensureZaloConnected error:", e));
 
   const clientId = `zalo_sse_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const encoder = new TextEncoder();
