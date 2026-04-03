@@ -9,6 +9,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { sendZaloAttachment } from "@/lib/zalo-gateway";
+import { upsertConversation } from "@/lib/zalo-inbox-store";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const session = await getCrmSession() as any;
@@ -28,11 +32,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Kiểm tra kích thước file (tối đa 25MB)
-    const MAX_SIZE = 25 * 1024 * 1024;
+    // Kiểm tra kích thước file (tối đa 50MB)
+    const MAX_SIZE = 50 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
-        { error: "File quá lớn. Tối đa 25MB." },
+        { error: "File quá lớn. Tối đa 50MB." },
         { status: 400 }
       );
     }
@@ -41,16 +45,12 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const fileBuffer = Buffer.from(arrayBuffer);
 
-    const senderName = session.name || session.staffName || "Nhân viên";
-    const senderId = session.id || session.staffId || "staff";
-
     const result = await sendZaloAttachment({
       conversationId,
       fileBuffer,
       fileName: file.name,
       mimeType: file.type || "application/octet-stream",
-      senderName,
-      senderId,
+      fileSize: file.size,
     });
 
     if (!result.success) {
@@ -60,10 +60,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      messageId: result.messageId,
-    });
+    // Upsert conversation với last message là tên file
+    const mimeType = file.type || "";
+    const fileLabel = mimeType.startsWith("image/") ? "[Hình ảnh]"
+      : mimeType.startsWith("video/") ? "[Video]"
+      : `[File: ${file.name}]`;
+    try {
+      await upsertConversation({
+        id: conversationId,
+        phone: conversationId,
+        displayName: conversationId,
+        lastMessage: fileLabel,
+      });
+    } catch { /* ignore */ }
+
+    return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("[zalo-inbox/send-attachment] Error:", err);
     return NextResponse.json(

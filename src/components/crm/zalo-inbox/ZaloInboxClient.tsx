@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageCircle, Search, Send, Wifi, WifiOff, User, Phone, ShoppingBag, ChevronRight, Settings, RefreshCw, X } from "lucide-react";
+import { MessageCircle, Search, Send, Wifi, WifiOff, User, Phone, ShoppingBag, ChevronRight, Settings, RefreshCw, X, Paperclip, Image as ImageIcon, FileText, Video } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,6 +105,9 @@ export default function ZaloInboxClient() {
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // ─── Load conversations ──────────────────────────────────────────────────
 
@@ -230,9 +233,38 @@ export default function ZaloInboxClient() {
       setSending(false);
     }
   };
+  // ─── Upload file (attachment) ────────────────────────────────────────────────────────────────────────────────
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedConv) return;
+    // Reset input để có thể chọn lại cùng file
+    e.target.value = "";
+    setUploadError(null);
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("conversationId", selectedConv.id);
+      const res = await fetch("/api/crm/zalo-inbox/send-attachment", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setUploadError(data.error || "Lỗi gửi file");
+      } else {
+        // Reload messages để hiển thị file vừa gửi
+        setTimeout(() => loadMessages(selectedConv.id), 1000);
+      }
+    } catch {
+      setUploadError("Lỗi kết nối khi gửi file");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
 
-  // ─── Connect Zalo ────────────────────────────────────────────────────────
-
+  // ─── Connect Zalo ────────────────────────────────────────────────────────────────────────────────
   const handleConnect = async () => {
     setShowSettings(true);
   };
@@ -387,36 +419,73 @@ export default function ZaloInboxClient() {
           </div>
 
           {/* Input */}
-          <div style={{
-            padding: "12px 20px", background: "#fff", borderTop: "1px solid #E5E7EB",
-            display: "flex", gap: 10, alignItems: "flex-end",
-          }}>
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
-              }}
-              placeholder="Nhập tin nhắn... (Enter để gửi)"
-              rows={1}
-              style={{
-                flex: 1, padding: "10px 14px", borderRadius: 20, border: "1px solid #E5E7EB",
-                fontSize: 14, outline: "none", resize: "none", fontFamily: "inherit",
-                maxHeight: 120, overflowY: "auto",
-              }}
-            />
-            <button
-              onClick={handleSend}
-              disabled={!inputText.trim() || sending}
-              style={{
-                width: 40, height: 40, borderRadius: "50%", border: "none",
-                background: inputText.trim() ? "#0068FF" : "#D1D5DB",
-                color: "#fff", cursor: inputText.trim() ? "pointer" : "not-allowed",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}
-            >
-              <Send size={16} />
-            </button>
+          <div style={{ flexDirection: "column", background: "#fff", borderTop: "1px solid #E5E7EB" }}>
+            {/* Upload error */}
+            {uploadError && (
+              <div style={{ padding: "6px 20px", background: "#FEF2F2", color: "#EF4444", fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>{uploadError}</span>
+                <button onClick={() => setUploadError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#EF4444" }}><X size={14} /></button>
+              </div>
+            )}
+            {/* Upload progress */}
+            {uploadingFile && (
+              <div style={{ padding: "6px 20px", background: "#EFF6FF", color: "#3B82F6", fontSize: 13 }}>
+                ⏳ Đang gửi file...
+              </div>
+            )}
+            <div style={{
+              padding: "12px 20px", display: "flex", gap: 8, alignItems: "flex-end",
+            }}>
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar"
+                style={{ display: "none" }}
+                onChange={handleFileUpload}
+              />
+              {/* Attach button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingFile || !selectedConv}
+                title="Gửi ảnh, video, file"
+                style={{
+                  width: 36, height: 36, borderRadius: "50%", border: "1px solid #E5E7EB",
+                  background: "#F9FAFB", color: "#6B7280",
+                  cursor: uploadingFile ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  opacity: uploadingFile ? 0.5 : 1,
+                }}
+              >
+                <Paperclip size={16} />
+              </button>
+              <textarea
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                }}
+                placeholder="Nhập tin nhắn... (Enter để gửi)"
+                rows={1}
+                style={{
+                  flex: 1, padding: "10px 14px", borderRadius: 20, border: "1px solid #E5E7EB",
+                  fontSize: 14, outline: "none", resize: "none", fontFamily: "inherit",
+                  maxHeight: 120, overflowY: "auto",
+                }}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!inputText.trim() || sending}
+                style={{
+                  width: 40, height: 40, borderRadius: "50%", border: "none",
+                  background: inputText.trim() ? "#0068FF" : "#D1D5DB",
+                  color: "#fff", cursor: inputText.trim() ? "pointer" : "not-allowed",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}
+              >
+                <Send size={16} />
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -590,6 +659,39 @@ function MessageBubble({ message }: { message: ZaloMessage }) {
           </div>
         )}
 
+        {/* Hiển thị video attachments */}
+        {attachments.filter(a => a.type === 'video' && a.url).map((att, idx) => (
+          <div key={idx} style={{ marginBottom: hasTextContent ? 4 : 0 }}>
+            <video
+              src={att.url}
+              controls
+              style={{
+                maxWidth: 280, width: "100%", borderRadius: 8,
+                display: "block", background: "#000",
+              }}
+            />
+          </div>
+        ))}
+        {/* Hiển thị file attachments (không phải ảnh/video) */}
+        {attachments.filter(a => a.type === 'file' && a.url).map((att, idx) => (
+          <a
+            key={idx}
+            href={att.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "8px 12px", borderRadius: 8,
+              background: isSelf ? "#0068FF" : "#F3F4F6",
+              color: isSelf ? "#fff" : "#374151",
+              textDecoration: "none", fontSize: 13,
+              marginBottom: hasTextContent ? 4 : 0,
+            }}
+          >
+            <FileText size={18} />
+            <span style={{ wordBreak: "break-all" }}>{(att as any).fileName || "File đính kèm"}</span>
+          </a>
+        ))}
         {/* Hiển thị text content */}
         {hasTextContent && (
           <div style={{

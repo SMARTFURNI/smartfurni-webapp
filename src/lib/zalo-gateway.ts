@@ -622,3 +622,68 @@ export async function ensureZaloConnected(): Promise<void> {
 
   return autoReconnectPromise;
 }
+
+// ─── Send Attachment ──────────────────────────────────────────────────────────
+/**
+ * Gửi ảnh/file/video qua Zalo cá nhân
+ * @param conversationId - threadId của người nhận
+ * @param fileBuffer - Buffer của file cần gửi
+ * @param fileName - Tên file (bao gồm extension, ví dụ: "photo.jpg", "document.pdf")
+ * @param mimeType - MIME type của file
+ */
+export async function sendZaloAttachment(params: {
+  conversationId: string;
+  fileBuffer: Buffer;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  width?: number;
+  height?: number;
+}): Promise<{ success: boolean; error?: string }> {
+  if (!zcaApi) {
+    return { success: false, error: "Zalo chưa được kết nối" };
+  }
+  try {
+    const { ThreadType } = await import("zca-js");
+
+    const attachmentSource = {
+      data: params.fileBuffer,
+      filename: params.fileName as `${string}.${string}`,
+      metadata: {
+        totalSize: params.fileSize,
+        width: params.width,
+        height: params.height,
+      },
+    };
+
+    // Upload attachment trước
+    const uploadResults = await zcaApi.uploadAttachment(
+      [attachmentSource],
+      params.conversationId,
+      ThreadType.User
+    );
+
+    if (!uploadResults || uploadResults.length === 0) {
+      return { success: false, error: "Upload attachment thất bại" };
+    }
+
+    const uploaded = uploadResults[0];
+
+    // Gửi message với attachment đã upload
+    await zcaApi.sendMessage(
+      {
+        msg: "",
+        attachments: attachmentSource,
+      },
+      params.conversationId,
+      ThreadType.User
+    );
+
+    console.log(`[ZaloGateway] Sent attachment to ${params.conversationId}:`, uploaded);
+    return { success: true };
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[ZaloGateway] sendZaloAttachment error:", error);
+    return { success: false, error: error.message || "Lỗi gửi attachment" };
+  }
+}
