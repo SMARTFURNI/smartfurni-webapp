@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
           },
           body: JSON.stringify({
             recipient: {
-              user_id: (lead as any).zaloId || (lead as any).zalo_id,
+              user_id: lead.zaloId,
             },
             message: {
               text: message,

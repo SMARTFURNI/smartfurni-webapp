@@ -1,5 +1,1 @@
-export { GeminiClient, geminiClient } from './GeminiClient';
-export { PromptManager } from './PromptManager';
-export type { GeminiResponse, GeminiRequestOptions } from './GeminiClient';
-export type { PromptContext } from './PromptManager';
-
+export { GeminiClient, geminiClient } from './GeminiClient';\nexport { PromptManager } from './PromptManager';\nexport type { GeminiResponse, GeminiRequestOptions } from './GeminiClient';\nexport type { PromptContext } from './PromptManager';\n

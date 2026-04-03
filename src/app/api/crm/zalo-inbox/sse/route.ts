@@ -1,12 +1,12 @@
 /**
  * GET /api/crm/zalo-inbox/sse
  * Server-Sent Events cho Zalo Inbox real-time
- * Nhận events từ Pancake webhook
+ * Nhận events từ zca-js gateway (không phải Pancake webhook)
  */
 import { NextRequest } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getDb } from "@/lib/db";
-import { addSseClient } from "../webhook/route";
+import { registerZaloSSEListener, unregisterZaloSSEListener, ensureZaloConnected } from "@/lib/zalo-gateway";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -14,16 +14,25 @@ export const runtime = "nodejs";
 async function checkAccess(session: any): Promise<boolean> {
   if (!session) return false;
   if (session.isAdmin) return true;
+  if (session.staffRole === "manager" || session.staffRole === "admin") return true;
   if (session.staffId) {
     const db = getDb();
     try {
+      // Nếu bảng chưa tồn tại hoặc chưa có ai trong danh sách → cho phép tất cả
+      const tableCheck = await db.query(
+        `SELECT 1 FROM information_schema.tables WHERE table_name = 'zalo_inbox_access' LIMIT 1`
+      );
+      if (tableCheck.rows.length === 0) return true;
+      const countRes = await db.query(`SELECT COUNT(*) as cnt FROM zalo_inbox_access`);
+      const count = parseInt(countRes.rows[0]?.cnt || "0");
+      if (count === 0) return true;
       const result = await db.query(
         `SELECT 1 FROM zalo_inbox_access WHERE staff_id = $1 LIMIT 1`,
-        [session.staffId]
+        [session.staffId || session.id]
       );
       return result.rows.length > 0;
     } catch {
-      return false;
+      return true;
     }
   }
   return false;
@@ -40,7 +49,10 @@ export async function GET(req: NextRequest) {
     return new Response("Forbidden", { status: 403 });
   }
 
-  const clientId = `pancake_sse_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  // Tự động kết nối lại Zalo nếu server vừa restart (Railway deploy)
+  ensureZaloConnected().catch((e) => console.error("[SSE] ensureZaloConnected error:", e));
+
+  const clientId = `zalo_sse_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -60,9 +72,9 @@ export async function GET(req: NextRequest) {
       send(": connected\n\n");
       send(`data: ${JSON.stringify({ type: "connected", clientId })}\n\n`);
 
-      // Đăng ký nhận events từ Pancake webhook
-      const unsubscribe = addSseClient((data: string) => {
-        send(data);
+      // Đăng ký nhận events từ zalo-gateway
+      registerZaloSSEListener(clientId, (event: string, data: unknown) => {
+        send(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
       });
 
       // Heartbeat mỗi 20 giây
@@ -74,7 +86,7 @@ export async function GET(req: NextRequest) {
       req.signal.addEventListener("abort", () => {
         closed = true;
         clearInterval(heartbeat);
-        unsubscribe();
+        unregisterZaloSSEListener(clientId);
         try { controller.close(); } catch { /* already closed */ }
       });
     },

@@ -13,10 +13,10 @@ import {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const template = getTemplateById((await params).id);
+    const template = getTemplateById(params.id);
 
     if (!template) {
       return NextResponse.json(
@@ -50,13 +50,13 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const body = await request.json();
     const { name, description, subject, bodyText, bodyHtml, variables, isActive } = body;
 
-    const template = updateTemplate((await params).id, {
+    const template = updateTemplate(params.id, {
       name,
       description,
       subject,
@@ -98,10 +98,10 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const success = deleteTemplate((await params).id);
+    const success = deleteTemplate(params.id);
 
     if (!success) {
       return NextResponse.json(
@@ -135,10 +135,10 @@ export async function DELETE(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const template = getTemplateById((await params).id);
+    const template = getTemplateById(params.id);
 
     if (!template) {
       return NextResponse.json(

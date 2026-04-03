@@ -14,7 +14,7 @@ const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "noreply@smartfurni.vn";
 const FROM_NAME = "SmartFurni CRM";
 
 // Thay thế biến động trong HTML content
-function replaceVariables(html: string, lead: { name?: string; company?: string; email?: string; phone?: string; [key: string]: any }) {
+function replaceVariables(html: string, lead: { name: string; company: string; email: string; phone: string; [key: string]: string | number | string[] }) {
   return html
     .replace(/\{\{name\}\}/g, lead.name || "Quý khách")
     .replace(/\{\{company\}\}/g, lead.company || "Quý công ty")
@@ -43,7 +43,7 @@ function addEmailFooter(html: string, campaignId: string, leadEmail: string): st
 }
 
 // Lọc leads theo segment
-function filterLeadsBySegment(leads: { email: string; type: string; stage: string; name?: string; [key: string]: any }[], segment: string) {
+function filterLeadsBySegment(leads: { email: string; type: string; stage: string }[], segment: string) {
   return leads.filter((l) => {
     if (!l.email) return false;
     if (segment === "all") return true;
