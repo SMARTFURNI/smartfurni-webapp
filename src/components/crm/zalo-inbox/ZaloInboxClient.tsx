@@ -717,7 +717,9 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
 
     es.addEventListener("qr", (e) => {
       const data = JSON.parse(e.data);
-      setQrImage(data.image);
+      // Thêm prefix data URI nếu chưa có
+      const imgData = data.image?.startsWith('data:') ? data.image : `data:image/png;base64,${data.image}`;
+      setQrImage(imgData);
       setLoginStatus("scanning");
       setLoginMessage("Mở Zalo trên điện thoại → Quét mã QR này");
     });
