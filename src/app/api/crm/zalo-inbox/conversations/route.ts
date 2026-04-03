@@ -72,9 +72,14 @@ export async function GET(req: NextRequest) {
           } catch { /* ignore */ }
         }
 
+        // Nếu displayName trông giống ID số Zalo (chỉ chứa số, dài > 8), ưu tiên dùng tên từ CRM lead
+        const isNumericId = /^\d{8,}$/.test(conv.displayName?.trim() ?? "");
+        const resolvedName = (isNumericId && lead?.name)
+          ? lead.name
+          : (conv.displayName && !isNumericId ? conv.displayName : (lead?.name || conv.phone));
         return {
           id: conv.id,
-          displayName: conv.displayName,
+          displayName: resolvedName,
           phone: conv.phone,
           avatarUrl: conv.avatarUrl,
           lastMessage: conv.lastMessage,

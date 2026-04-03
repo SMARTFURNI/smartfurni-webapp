@@ -340,31 +340,66 @@ export default function ZaloInboxClient() {
     } catch { /* ignore */ }
   }, []);
 
-  // ─── SSE ─────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const es = new EventSource("/api/crm/zalo-inbox/sse");
-    eventSourceRef.current = es;
-    es.addEventListener("message", (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        const conversationId = data.threadId || (data.isSelf ? data.toId : data.fromId);
-        if (!conversationId) return;
-        const text = data.content || "";
-        const createdAt = new Date(data.timestamp || Date.now()).toISOString();
-        loadConversations();
-        setSelectedConv((prev) => {
-          if (prev && prev.id === conversationId) loadMessages(conversationId);
-          return prev;
-        });
-        setConversations((prev) =>
-          prev.map((c) => c.id === conversationId ? { ...c, lastMessage: text, lastMessageAt: createdAt } : c)
-        );
-      } catch { /* ignore */ }
-    });
-    return () => { es.close(); };
-  }, [selectedConv?.id, loadConversations]);
+  // ─── Smart Polling (3s khi active, 10s khi tab ẩn) ──────────────────────────────────────
+  const lastConvTimestampRef = useRef<string>("");
+  const lastMsgTimestampRef = useRef<string>("");
+  const selectedConvRef = useRef<ZaloConversation | null>(null);
+  selectedConvRef.current = selectedConv;
 
-  useEffect(() => { loadConversations(); }, [loadConversations]);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    const poll = async () => {
+      // Poll conversations để phát hiện tin mới
+      try {
+        const res = await fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          const convs: ZaloConversation[] = data.conversations || [];
+          setGatewayStatus({ connected: data.connected || false, phone: data.phone || null, status: data.status });
+
+          // Kiểm tra có tin nhắn mới không (so sánh lastMessageAt của conversation đầu tiên)
+          const latestTs = convs[0]?.lastMessageAt || "";
+          const hasNewConvMsg = latestTs && latestTs !== lastConvTimestampRef.current;
+          if (hasNewConvMsg) {
+            lastConvTimestampRef.current = latestTs;
+            setConversations(convs);
+          } else {
+            // Cập nhật silent (unread count, etc.) không trigger re-render nếu không có thay đổi
+            setConversations((prev) => {
+              const changed = convs.some((c, i) =>
+                c.unreadCount !== prev[i]?.unreadCount ||
+                c.lastMessage !== prev[i]?.lastMessage
+              );
+              return changed ? convs : prev;
+            });
+          }
+
+          // Nếu đang mở hội thoại, kiểm tra có tin nhắn mới không
+          const currentConv = selectedConvRef.current;
+          if (currentConv) {
+            const convData = convs.find((c) => c.id === currentConv.id);
+            const convLatestTs = convData?.lastMessageAt || "";
+            if (convLatestTs && convLatestTs !== lastMsgTimestampRef.current) {
+              lastMsgTimestampRef.current = convLatestTs;
+              loadMessages(currentConv.id);
+            }
+          }
+        }
+      } catch { /* ignore network errors */ }
+
+      // Poll nhanh hơn khi tab đang active
+      const interval = document.hidden ? 10000 : 3000;
+      timer = setTimeout(poll, interval);
+    };
+
+    // Bắt đầu poll ngay
+    loadConversations().then(() => {
+      timer = setTimeout(poll, 3000);
+    });
+
+    return () => clearTimeout(timer);
+  }, [loadConversations, loadMessages]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   // ─── Message search ───────────────────────────────────────────────────────

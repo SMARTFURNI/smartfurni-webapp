@@ -137,6 +137,7 @@ async function ensureZaloTables() {
       thread_id TEXT NOT NULL,
       from_id TEXT NOT NULL,
       to_id TEXT NOT NULL,
+      sender_name TEXT,
       content TEXT,
       attachments TEXT DEFAULT '[]',
       msg_type TEXT DEFAULT 'text',
@@ -148,6 +149,8 @@ async function ensureZaloTables() {
 
   await query(`CREATE INDEX IF NOT EXISTS idx_zalo_msgs_thread ON zalo_inbox_messages(thread_id)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_zalo_msgs_ts ON zalo_inbox_messages(timestamp DESC)`);
+  // Migrate: thêm cột sender_name nếu chưa có
+  await query(`ALTER TABLE zalo_inbox_messages ADD COLUMN IF NOT EXISTS sender_name TEXT`).catch(() => {});
 }
 
 export async function saveCredentials(creds: ZaloCredentials, userId?: string, displayName?: string, avatar?: string) {
@@ -188,18 +191,19 @@ export async function loadCredentials(): Promise<ZaloCredentials | null> {
   }
 }
 
-export async function saveMessage(msg: ZaloMessage) {
+export async function saveMessage(msg: ZaloMessage & { senderName?: string }) {
   try {
     await ensureZaloTables();
     await query(
-      `INSERT INTO zalo_inbox_messages (msg_id, thread_id, from_id, to_id, content, attachments, msg_type, is_self, timestamp)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO zalo_inbox_messages (msg_id, thread_id, from_id, to_id, sender_name, content, attachments, msg_type, is_self, timestamp)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        ON CONFLICT (msg_id) DO NOTHING`,
       [
         msg.msgId,
         msg.isSelf ? msg.toId : msg.fromId,
         msg.fromId,
         msg.toId,
+        msg.senderName || null,
         msg.content || "",
         JSON.stringify(msg.attachments),
         msg.type,
@@ -345,17 +349,25 @@ function setupListeners(api: unknown) {
     apiObj.listener.on("message", async (message: Record<string, unknown>) => {
     const processed = processIncomingMessage(message);
     if (!processed) return;
-    // Save to DB (zalo_inbox_messages)
-    await saveMessage(processed);
-    // Upsert conversation vào zalo_conversations (để conversations API đọc được)
+    // Lấy tên người gửi từ nhiều field có thể có trong message data
     const threadId = processed.isSelf ? processed.toId : processed.fromId;
     const msgData = (message.data || {}) as Record<string, unknown>;
-    const senderName = (msgData.dName as string) || (msgData.displayName as string) || threadId;
+    const senderName = (msgData.dName as string)
+      || (msgData.displayName as string)
+      || (msgData.fromName as string)
+      || (msgData.senderName as string)
+      || ((message.data as any)?.params?.fromName as string)
+      || "";
+    // Save to DB (zalo_inbox_messages) kèm sender_name
+    await saveMessage({ ...processed, senderName: senderName || undefined });
     try {
+      // Chỉ cập nhật displayName khi có tên thật (không phải ID số thuần)
+      const isNumericId = /^\d{8,}$/.test(senderName);
+      const displayNameToSave = (!isNumericId && senderName) ? senderName : threadId;
       await upsertConversation({
         id: threadId,
         phone: threadId,
-        displayName: senderName,
+        displayName: displayNameToSave,
         lastMessage: processed.content || "[Hình ảnh]",
       });
       if (!processed.isSelf) {

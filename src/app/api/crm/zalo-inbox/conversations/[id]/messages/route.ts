@@ -6,6 +6,7 @@
  * thay vì zalo_messages (bảng của zalo-inbox-store, không được gateway dùng)
  *
  * Bug fix: Next.js 15 — params là Promise, phải await trước khi dùng
+ * Bug fix 2: Lấy sender_name từ DB, fallback về display_name từ zalo_conversations
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
@@ -28,13 +29,45 @@ export async function GET(
   const offset = parseInt(searchParams.get("offset") || "0");
 
   try {
-    // ✅ Fix Bug 2: Đọc từ zalo_inbox_messages (bảng gateway thực sự lưu)
-    // Schema: msg_id, thread_id, from_id, to_id, content, attachments, msg_type, is_self, timestamp
+    // Lấy display_name của conversation để dùng làm fallback tên người gửi
+    let conversationDisplayName = "";
+    try {
+      const convRows = await query<{ display_name: string }>(
+        `SELECT display_name FROM zalo_conversations WHERE id = $1 LIMIT 1`,
+        [conversationId]
+      );
+      conversationDisplayName = convRows[0]?.display_name || "";
+    } catch { /* ignore nếu bảng chưa có */ }
+
+    // Kiểm tra tên có phải ID số không
+    const isNumericId = /^\d{8,}$/.test(conversationDisplayName);
+    const fallbackName = (!isNumericId && conversationDisplayName) ? conversationDisplayName : "Khách";
+
+    // Lấy tên từ CRM lead nếu display_name là ID số
+    let leadName = "";
+    if (isNumericId || !conversationDisplayName) {
+      try {
+        const cleanPhone = conversationId.replace(/\D/g, "").replace(/^84/, "0");
+        const leadRows = await query<{ name: string }>(
+          `SELECT name FROM crm_leads 
+           WHERE REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $1
+              OR REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $2
+           LIMIT 1`,
+          [cleanPhone, conversationId.replace(/\D/g, "")]
+        );
+        leadName = leadRows[0]?.name || "";
+      } catch { /* ignore */ }
+    }
+
+    const resolvedSenderName = leadName || fallbackName;
+
+    // ✅ Fix Bug 2: Đọc từ zalo_inbox_messages kèm sender_name
     const rows = await query<{
       msg_id: string;
       thread_id: string;
       from_id: string;
       to_id: string;
+      sender_name: string | null;
       content: string;
       attachments: string;
       msg_type: string;
@@ -42,7 +75,7 @@ export async function GET(
       timestamp: string;
       created_at: string;
     }>(
-      `SELECT msg_id, thread_id, from_id, to_id, content, attachments, msg_type, is_self, timestamp, created_at
+      `SELECT msg_id, thread_id, from_id, to_id, sender_name, content, attachments, msg_type, is_self, timestamp, created_at
        FROM zalo_inbox_messages
        WHERE thread_id = $1
        ORDER BY timestamp ASC
@@ -50,24 +83,33 @@ export async function GET(
       [conversationId, limit, offset]
     );
 
-    const messages = rows.map((row) => ({
-      id: row.msg_id,
-      conversationId: row.thread_id,
-      senderId: row.from_id,
-      senderName: row.from_id || "Khách",
-      content: row.content || "",
-      contentType: row.msg_type || "text",
-      isSelf: row.is_self,
-      isRead: true,
-      createdAt: row.created_at || new Date(parseInt(row.timestamp) || Date.now()).toISOString(),
-      attachments: (() => {
-        try {
-          return JSON.parse(row.attachments || "[]");
-        } catch {
-          return [];
-        }
-      })(),
-    }));
+    const messages = rows.map((row) => {
+      // Ưu tiên: sender_name từ DB > tên từ conversation/lead > "Khách"
+      const rawSenderName = row.sender_name || "";
+      const isRawNumericId = /^\d{8,}$/.test(rawSenderName);
+      const senderName = row.is_self
+        ? "Bạn"
+        : ((!isRawNumericId && rawSenderName) ? rawSenderName : resolvedSenderName);
+
+      return {
+        id: row.msg_id,
+        conversationId: row.thread_id,
+        senderId: row.from_id,
+        senderName,
+        content: row.content || "",
+        contentType: row.msg_type || "text",
+        isSelf: row.is_self,
+        isRead: true,
+        createdAt: row.created_at || new Date(parseInt(row.timestamp) || Date.now()).toISOString(),
+        attachments: (() => {
+          try {
+            return JSON.parse(row.attachments || "[]");
+          } catch {
+            return [];
+          }
+        })(),
+      };
+    });
 
     return NextResponse.json({ messages });
   } catch (err: unknown) {
