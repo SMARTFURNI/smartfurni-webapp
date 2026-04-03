@@ -73,8 +73,10 @@ export async function startQRLogin(callbacks: QRLoginCallbacks): Promise<void> {
     const userAgent =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
-    const result = await zalo.loginQR(
-      {},
+    // Lưu credentials khi GotLoginInfo callback được gọi
+    let savedCredentials: { cookie: any; imei: string; userAgent: string } | null = null;
+
+    const api = await zalo.loginQR(
       { userAgent },
       async (event) => {
         switch (event.type) {
@@ -92,32 +94,54 @@ export async function startQRLogin(callbacks: QRLoginCallbacks): Promise<void> {
             callbacks.onError("Người dùng từ chối đăng nhập. Vui lòng thử lại.");
             break;
           case LoginQRCallbackEventType.GotLoginInfo:
-            // Credentials sẽ được lưu sau khi loginQR resolve
+            // Lưu credentials để dùng sau khi loginQR resolve
+            savedCredentials = {
+              cookie: event.data.cookie,
+              imei: event.data.imei,
+              userAgent: event.data.userAgent,
+            };
             break;
         }
       }
     );
 
-    if (result) {
-      const { userInfo, cookies } = result;
-      const cookieStr = JSON.stringify(cookies);
-      const imeiCookie = (cookies as any[]).find((c: any) => c.key === "_imei" || c.key === "imei");
-      const imei = imeiCookie?.value || `imei_${Date.now()}`;
+    if (api) {
+      // api là API object từ zca-js sau khi đăng nhập thành công
+      // Lưu credentials vào DB
+      const cookieData = savedCredentials?.cookie || [];
+      const cookieStr = JSON.stringify(cookieData);
+      const imei = savedCredentials?.imei || `imei_${Date.now()}`;
+      // Lấy tên người dùng từ loginInfo
+      const loginInfo = (api as any).ctx?.loginInfo;
+      const displayName = loginInfo?.display_name || loginInfo?.name || imei;
+      const phone = loginInfo?.phone || displayName;
 
       await saveZaloCredentials({
-        phone: userInfo.name,
+        phone: displayName,
         imei,
         cookies: cookieStr,
         userAgent,
       });
 
-      // Kết nối gateway với credentials mới
-      const connectResult = await connectZaloGateway();
-      if (connectResult.success) {
-        callbacks.onSuccess(userInfo.name, userInfo.name);
-      } else {
-        callbacks.onError(connectResult.message);
+      // Kết nối gateway với credentials mới (dùng api đã có)
+      zcaApi = api;
+      isConnected = true;
+      connectionStatus = "connected";
+      connectedPhone = displayName;
+      connectedName = displayName;
+
+      // Setup listener
+      try {
+        api.listener.on("message", async (msg: any) => {
+          await handleIncomingMessage(msg, displayName);
+        });
+        api.listener.start();
+      } catch (e) {
+        console.warn("[ZaloGateway] Could not start listener:", e);
       }
+
+      broadcastZaloEvent("status", { status: "connected", phone: displayName });
+      callbacks.onSuccess(displayName, displayName);
     } else {
       callbacks.onError("Đăng nhập thất bại. Vui lòng thử lại.");
     }
