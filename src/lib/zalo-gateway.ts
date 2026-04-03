@@ -5,7 +5,7 @@
  * Kiến trúc:
  * - Singleton ZaloGateway chạy trong Next.js server process
  * - Nhận tin nhắn từ Zalo Web (WebSocket) → lưu DB → broadcast SSE
- * - Gửi tin nhắn qua zca-js API
+ * - Gửi tin nhắn (text + ảnh/video) qua zca-js API
  * 
  * Lưu ý: zca-js là unofficial API, chỉ 1 web listener/account tại một thời điểm
  */
@@ -229,14 +229,109 @@ async function handleIncomingMessage(message: any, myPhone: string): Promise<voi
   try {
     const isSelf = message.isSelf === true;
     const threadId = message.threadId as string;
-    const content = typeof message.data?.content === "string" ? message.data.content : "[Tin nhắn đặc biệt]";
-    const senderId = message.data?.uidFrom as string || threadId;
-    const senderName = message.data?.dName as string || "Người dùng";
-    const msgId = message.data?.msgId as string || `msg_${Date.now()}`;
+    const msgData = message.data;
+    const msgId = msgData?.msgId as string || `msg_${Date.now()}`;
+    const senderId = msgData?.uidFrom as string || threadId;
+    const senderName = msgData?.dName as string || "Người dùng";
+    const msgType = msgData?.msgType as string || "webchat";
+
+    // Parse content dựa theo msgType
+    let content = "";
+    let contentType: "text" | "image" | "sticker" | "file" | "link" = "text";
+    let attachmentsJson: string | null = null;
+
+    if (typeof msgData?.content === "string") {
+      // Text message
+      content = msgData.content;
+      contentType = "text";
+    } else if (typeof msgData?.content === "object" && msgData.content !== null) {
+      // Non-text message (ảnh, video, sticker, file, ...)
+      const contentObj = msgData.content as Record<string, any>;
+      
+      if (msgType === "chat.photo" || contentObj.hdUrl || contentObj.normalUrl || contentObj.thumbUrl) {
+        // Ảnh
+        contentType = "image";
+        const imageUrl = contentObj.hdUrl || contentObj.normalUrl || contentObj.thumbUrl || "";
+        const thumbUrl = contentObj.thumbUrl || contentObj.normalUrl || "";
+        content = "[Hình ảnh]";
+        attachmentsJson = JSON.stringify([{
+          type: "photo",
+          url: imageUrl,
+          origin_url: contentObj.hdUrl || contentObj.normalUrl || imageUrl,
+          thumb_url: thumbUrl,
+          width: contentObj.width,
+          height: contentObj.height,
+        }]);
+      } else if (msgType === "chat.video.msg" || contentObj.fileUrl?.includes("video") || contentObj.fileName?.match(/\.(mp4|mov|avi|mkv|webm)$/i)) {
+        // Video
+        contentType = "file";
+        content = "[Video]";
+        attachmentsJson = JSON.stringify([{
+          type: "video",
+          url: contentObj.fileUrl || contentObj.url || "",
+          file_name: contentObj.fileName || "video",
+          file_size: contentObj.fileSize || contentObj.totalSize,
+        }]);
+      } else if (msgType === "chat.sticker") {
+        // Sticker
+        contentType = "sticker";
+        content = "[Sticker]";
+        attachmentsJson = JSON.stringify([{
+          type: "sticker",
+          url: contentObj.hdUrl || contentObj.thumbUrl || contentObj.url || "",
+        }]);
+      } else if (msgType === "share.file" || contentObj.fileUrl) {
+        // File
+        contentType = "file";
+        content = `[File: ${contentObj.fileName || "file"}]`;
+        attachmentsJson = JSON.stringify([{
+          type: "file",
+          url: contentObj.fileUrl || contentObj.url || "",
+          file_name: contentObj.fileName || "file",
+          file_size: contentObj.fileSize || contentObj.totalSize,
+        }]);
+      } else if (msgType === "chat.gif") {
+        // GIF
+        contentType = "image";
+        content = "[GIF]";
+        attachmentsJson = JSON.stringify([{
+          type: "photo",
+          url: contentObj.url || contentObj.hdUrl || "",
+          origin_url: contentObj.url || contentObj.hdUrl || "",
+          thumb_url: contentObj.thumbUrl || "",
+        }]);
+      } else if (msgType === "chat.voice") {
+        // Voice message
+        contentType = "file";
+        content = "[Tin nhắn thoại]";
+        attachmentsJson = JSON.stringify([{
+          type: "voice",
+          url: contentObj.fileUrl || contentObj.url || "",
+          duration: contentObj.duration,
+        }]);
+      } else if (contentObj.href || contentObj.title) {
+        // Link/card
+        contentType = "link";
+        content = contentObj.title || contentObj.href || "[Link]";
+        attachmentsJson = JSON.stringify([{
+          type: "link",
+          url: contentObj.href || "",
+          title: contentObj.title || "",
+          thumb: contentObj.thumb || "",
+        }]);
+      } else {
+        // Unknown object content
+        content = "[Tin nhắn đặc biệt]";
+        contentType = "text";
+      }
+    } else {
+      content = "[Tin nhắn đặc biệt]";
+      contentType = "text";
+    }
 
     // Tìm số điện thoại từ threadId (Zalo personal dùng userId = phone)
     const phone = isSelf ? threadId : senderId;
-    const displayName = isSelf ? "Bạn → " + senderName : senderName;
+    const displayName = isSelf ? senderName : senderName;
 
     // Tìm lead trong CRM theo số điện thoại
     const leadId = await findLeadByPhone(phone);
@@ -245,7 +340,7 @@ async function handleIncomingMessage(message: any, myPhone: string): Promise<voi
     await upsertConversation({
       id: threadId,
       phone,
-      displayName: isSelf ? senderName : displayName,
+      displayName: displayName,
       lastMessage: content,
       leadId,
     });
@@ -257,7 +352,8 @@ async function handleIncomingMessage(message: any, myPhone: string): Promise<voi
       senderId,
       senderName,
       content,
-      contentType: "text",
+      contentType,
+      attachments: attachmentsJson,
       isSelf,
     });
 
@@ -275,7 +371,8 @@ async function handleIncomingMessage(message: any, myPhone: string): Promise<voi
         senderId,
         senderName,
         content,
-        contentType: "text",
+        contentType,
+        attachments: attachmentsJson ? JSON.parse(attachmentsJson) : null,
         isSelf,
         createdAt: new Date().toISOString(),
       },
@@ -286,7 +383,7 @@ async function handleIncomingMessage(message: any, myPhone: string): Promise<voi
   }
 }
 
-// ─── Send Message ─────────────────────────────────────────────────────────────
+// ─── Send Text Message ────────────────────────────────────────────────────────
 
 export async function sendZaloMessage(params: {
   conversationId: string;
@@ -300,7 +397,7 @@ export async function sendZaloMessage(params: {
 
   try {
     const { ThreadType } = await import("zca-js");
-    const result = await zcaApi.sendMessage(
+    await zcaApi.sendMessage(
       { msg: params.content },
       params.conversationId,
       ThreadType.User
@@ -345,6 +442,105 @@ export async function sendZaloMessage(params: {
     return { success: true, messageId: msgId };
   } catch (err: any) {
     return { success: false, error: err?.message || "Lỗi gửi tin nhắn" };
+  }
+}
+
+// ─── Send Image/File ──────────────────────────────────────────────────────────
+
+export async function sendZaloAttachment(params: {
+  conversationId: string;
+  fileBuffer: Buffer;
+  fileName: string;
+  mimeType: string;
+  senderName: string;
+  senderId: string;
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  if (!zcaApi || !isConnected) {
+    return { success: false, error: "Zalo chưa được kết nối. Vui lòng kết nối trong Cài đặt." };
+  }
+
+  try {
+    const { ThreadType } = await import("zca-js");
+    
+    // Xác định loại file
+    const isImage = params.mimeType.startsWith("image/");
+    const isVideo = params.mimeType.startsWith("video/");
+    
+    let width: number | undefined;
+    let height: number | undefined;
+    
+    // Lấy metadata ảnh nếu là image
+    if (isImage) {
+      try {
+        const sharp = (await import("sharp")).default;
+        const metadata = await sharp(params.fileBuffer).metadata();
+        width = metadata.width;
+        height = metadata.height;
+      } catch {
+        // Nếu không lấy được metadata, dùng giá trị mặc định
+        width = 800;
+        height = 600;
+      }
+    }
+
+    // Tạo AttachmentSource
+    const attachmentSource = {
+      data: params.fileBuffer,
+      filename: params.fileName as `${string}.${string}`,
+      metadata: {
+        totalSize: params.fileBuffer.length,
+        width,
+        height,
+      },
+    };
+
+    // Gửi qua zca-js
+    await zcaApi.sendMessage(
+      { msg: "", attachments: attachmentSource },
+      params.conversationId,
+      ThreadType.User
+    );
+
+    const msgId = `sent_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const content = isImage ? "[Hình ảnh]" : isVideo ? "[Video]" : `[File: ${params.fileName}]`;
+    const contentType = isImage ? "image" : "file";
+
+    // Lưu vào DB
+    await saveMessage({
+      id: msgId,
+      conversationId: params.conversationId,
+      senderId: params.senderId,
+      senderName: params.senderName,
+      content,
+      contentType,
+      isSelf: true,
+    });
+
+    await upsertConversation({
+      id: params.conversationId,
+      phone: params.conversationId,
+      displayName: "",
+      lastMessage: content,
+    });
+
+    broadcastZaloEvent("new_message", {
+      conversationId: params.conversationId,
+      message: {
+        id: msgId,
+        conversationId: params.conversationId,
+        senderId: params.senderId,
+        senderName: params.senderName,
+        content,
+        contentType,
+        isSelf: true,
+        createdAt: new Date().toISOString(),
+      },
+    });
+
+    return { success: true, messageId: msgId };
+  } catch (err: any) {
+    console.error("[ZaloGateway] sendZaloAttachment error:", err);
+    return { success: false, error: err?.message || "Lỗi gửi file" };
   }
 }
 
