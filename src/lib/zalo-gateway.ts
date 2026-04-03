@@ -1,604 +1,517 @@
 /**
- * zalo-gateway.ts
- * Quản lý kết nối Zalo Personal Account qua zca-js
- * 
- * Kiến trúc:
- * - Singleton ZaloGateway chạy trong Next.js server process
- * - Nhận tin nhắn từ Zalo Web (WebSocket) → lưu DB → broadcast SSE
- * - Gửi tin nhắn (text + ảnh/video) qua zca-js API
- * 
- * Lưu ý: zca-js là unofficial API, chỉ 1 web listener/account tại một thời điểm
+ * Zalo Personal Account Gateway
+ * Handles Zalo personal account login via QR code, message sending/receiving,
+ * and SSE broadcasting for real-time updates.
+ *
+ * Uses zca-js library to interact with Zalo Web API.
  */
 
-import {
-  upsertConversation,
-  saveMessage,
-  incrementUnreadCount,
-  getActiveZaloCredentials,
-  updateZaloLastConnected,
-  saveZaloCredentials,
-} from "./zalo-inbox-store";
-import { query } from "./db";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Zalo, ThreadType, LoginQRCallbackEventType } = require("zca-js");
 
-// ─── SSE Broadcast ────────────────────────────────────────────────────────────
+import { query, queryOne } from "./db";
 
-type SSEListener = (event: string, data: unknown) => void;
-const sseListeners = new Map<string, SSEListener>();
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-export function registerZaloSSEListener(clientId: string, fn: SSEListener): void {
-  sseListeners.set(clientId, fn);
+export interface ZaloCredentials {
+  cookie: unknown; // tough-cookie JSON array
+  imei: string;
+  userAgent: string;
 }
 
-export function unregisterZaloSSEListener(clientId: string): void {
-  sseListeners.delete(clientId);
+export interface ZaloConversation {
+  userId: string;
+  displayName: string;
+  avatar: string;
+  lastMessage: string;
+  lastMessageTime: number;
+  unreadCount: number;
+  isGroup: boolean;
 }
 
-export function broadcastZaloEvent(event: string, data: unknown): void {
-  sseListeners.forEach((fn) => {
-    try { fn(event, data); } catch { /* ignore */ }
-  });
+export interface ZaloMessage {
+  msgId: string;
+  fromId: string;
+  toId: string;
+  content: string;
+  timestamp: number;
+  isSelf: boolean;
+  attachments: ZaloAttachment[];
+  type: "text" | "image" | "video" | "file" | "sticker" | "other";
+}
+
+export interface ZaloAttachment {
+  type: "image" | "video" | "file";
+  url: string;
+  thumb?: string;
+  width?: number;
+  height?: number;
+  fileSize?: number;
+  fileName?: string;
+}
+
+export interface SSEClient {
+  id: string;
+  controller: ReadableStreamDefaultController;
+}
+
+// ─── SSE Event Broadcasting ───────────────────────────────────────────────────
+
+const sseClients: SSEClient[] = [];
+
+export function addSSEClient(client: SSEClient) {
+  sseClients.push(client);
+}
+
+export function removeSSEClient(clientId: string) {
+  const idx = sseClients.findIndex((c) => c.id === clientId);
+  if (idx !== -1) sseClients.splice(idx, 1);
+}
+
+export function broadcastSSE(event: string, data: unknown) {
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  const encoder = new TextEncoder();
+  for (const client of [...sseClients]) {
+    try {
+      client.controller.enqueue(encoder.encode(payload));
+    } catch {
+      removeSSEClient(client.id);
+    }
+  }
 }
 
 // ─── Gateway State ────────────────────────────────────────────────────────────
 
+let zaloApi: unknown = null;
 let isConnected = false;
-let connectionStatus: "disconnected" | "connecting" | "connected" | "error" = "disconnected";
-let connectedPhone = "";
-let zcaApi: any = null;
-let connectedName = "";
+let isConnecting = false;
+let currentUserId = "";
+let qrCallbackFn: ((qrBase64: string) => void) | null = null;
+let loginResolve: ((api: unknown) => void) | null = null;
+let loginReject: ((err: Error) => void) | null = null;
+
+export function getZaloApi() {
+  return zaloApi;
+}
+
+export function isZaloConnected() {
+  return isConnected && zaloApi !== null;
+}
+
+export function getZaloUserId() {
+  return currentUserId;
+}
 
 export function getGatewayStatus() {
-  return { isConnected, status: connectionStatus, phone: connectedPhone, name: connectedName };
+  return {
+    isConnected: isConnected && zaloApi !== null,
+    isConnecting,
+    userId: currentUserId || null,
+    phone: currentUserId || null,
+    status: isConnected ? "connected" : isConnecting ? "connecting" : "disconnected",
+  };
 }
 
-// ─── QR Login ─────────────────────────────────────────────────────────────────
+// ─── Database Helpers ─────────────────────────────────────────────────────────
 
-export interface QRLoginCallbacks {
-  onQRCode: (image: string, token: string) => void;
-  onQRExpired: () => void;
-  onScanned: (displayName: string, avatar: string) => void;
-  onSuccess: (phone: string, displayName: string) => void;
-  onError: (error: string) => void;
+async function ensureZaloTables() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS zalo_inbox_credentials (
+      id SERIAL PRIMARY KEY,
+      cookie TEXT NOT NULL,
+      imei TEXT NOT NULL,
+      user_agent TEXT NOT NULL,
+      user_id TEXT,
+      display_name TEXT,
+      avatar TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS zalo_inbox_messages (
+      id SERIAL PRIMARY KEY,
+      msg_id TEXT UNIQUE NOT NULL,
+      thread_id TEXT NOT NULL,
+      from_id TEXT NOT NULL,
+      to_id TEXT NOT NULL,
+      content TEXT,
+      attachments TEXT DEFAULT '[]',
+      msg_type TEXT DEFAULT 'text',
+      is_self BOOLEAN DEFAULT FALSE,
+      timestamp BIGINT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await query(`CREATE INDEX IF NOT EXISTS idx_zalo_msgs_thread ON zalo_inbox_messages(thread_id)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_zalo_msgs_ts ON zalo_inbox_messages(timestamp DESC)`);
 }
 
-export async function startQRLogin(callbacks: QRLoginCallbacks): Promise<void> {
-  // Ngắt kết nối cũ nếu đang kết nối
-  if (isConnected) {
-    await disconnectZaloGateway();
-  }
+export async function saveCredentials(creds: ZaloCredentials, userId?: string, displayName?: string, avatar?: string) {
+  await ensureZaloTables();
+  const cookieStr = typeof creds.cookie === "string" ? creds.cookie : JSON.stringify(creds.cookie);
 
-  try {
-    const { Zalo, LoginQRCallbackEventType } = await import("zca-js");
-    const zalo = new Zalo();
-    const userAgent =
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
-
-    // Lưu credentials khi GotLoginInfo callback được gọi
-    let savedCredentials: { cookie: any; imei: string; userAgent: string } | null = null;
-
-    const api = await zalo.loginQR(
-      { userAgent },
-      async (event) => {
-        switch (event.type) {
-          case LoginQRCallbackEventType.QRCodeGenerated:
-            callbacks.onQRCode(event.data.image, event.data.token);
-            break;
-          case LoginQRCallbackEventType.QRCodeExpired:
-            callbacks.onQRExpired();
-            event.actions.retry();
-            break;
-          case LoginQRCallbackEventType.QRCodeScanned:
-            callbacks.onScanned(event.data.display_name, event.data.avatar);
-            break;
-          case LoginQRCallbackEventType.QRCodeDeclined:
-            callbacks.onError("Người dùng từ chối đăng nhập. Vui lòng thử lại.");
-            break;
-          case LoginQRCallbackEventType.GotLoginInfo:
-            // Lưu credentials để dùng sau khi loginQR resolve
-            savedCredentials = {
-              cookie: event.data.cookie,
-              imei: event.data.imei,
-              userAgent: event.data.userAgent,
-            };
-            break;
-        }
-      }
+  // Check if credentials exist
+  const existing = await queryOne<{ id: number }>("SELECT id FROM zalo_inbox_credentials LIMIT 1");
+  if (existing) {
+    await query(
+      `UPDATE zalo_inbox_credentials SET cookie=$1, imei=$2, user_agent=$3, user_id=$4, display_name=$5, avatar=$6, updated_at=NOW() WHERE id=$7`,
+      [cookieStr, creds.imei, creds.userAgent, userId || null, displayName || null, avatar || null, existing.id]
     );
-
-    if (api) {
-      // api là API object từ zca-js sau khi đăng nhập thành công
-      // Lưu credentials vào DB
-      const cookieData = savedCredentials?.cookie || [];
-      const cookieStr = JSON.stringify(cookieData);
-      const imei = savedCredentials?.imei || `imei_${Date.now()}`;
-      // Lấy tên người dùng từ loginInfo
-      const loginInfo = (api as any).ctx?.loginInfo;
-      const displayName = loginInfo?.display_name || loginInfo?.name || imei;
-      const phone = loginInfo?.phone || displayName;
-
-      await saveZaloCredentials({
-        phone: displayName,
-        imei,
-        cookies: cookieStr,
-        userAgent,
-      });
-
-      // Kết nối gateway với credentials mới (dùng api đã có)
-      zcaApi = api;
-      isConnected = true;
-      connectionStatus = "connected";
-      connectedPhone = displayName;
-      connectedName = displayName;
-
-      // Setup listener
-      try {
-        api.listener.on("message", async (msg: any) => {
-          await handleIncomingMessage(msg, displayName);
-        });
-        api.listener.start();
-      } catch (e) {
-        console.warn("[ZaloGateway] Could not start listener:", e);
-      }
-
-      broadcastZaloEvent("status", { status: "connected", phone: displayName });
-      callbacks.onSuccess(displayName, displayName);
-    } else {
-      callbacks.onError("Đăng nhập thất bại. Vui lòng thử lại.");
-    }
-  } catch (err: any) {
-    callbacks.onError(err?.message || "Lỗi không xác định khi đăng nhập QR");
+  } else {
+    await query(
+      `INSERT INTO zalo_inbox_credentials (cookie, imei, user_agent, user_id, display_name, avatar) VALUES ($1, $2, $3, $4, $5, $6)`,
+      [cookieStr, creds.imei, creds.userAgent, userId || null, displayName || null, avatar || null]
+    );
   }
 }
 
-// ─── Connect via zca-js ───────────────────────────────────────────────────────
-
-export async function connectZaloGateway(): Promise<{ success: boolean; message: string }> {
-  if (isConnected) {
-    return { success: true, message: `Đã kết nối: ${connectedPhone}` };
-  }
-
-  const creds = await getActiveZaloCredentials();
-  if (!creds) {
-    return { success: false, message: "Chưa có thông tin đăng nhập Zalo. Vui lòng cấu hình trong Cài đặt." };
-  }
-
-  connectionStatus = "connecting";
-  broadcastZaloEvent("status", { status: "connecting", phone: creds.phone });
-
+export async function loadCredentials(): Promise<ZaloCredentials | null> {
   try {
-    // Dynamic import zca-js (chỉ chạy server-side)
-    const { Zalo } = await import("zca-js");
-    // Dùng zalo.login() - tự tạo ctx đúng với createContext() bên trong
-    // KHÔNG dùng loginCookie(ctx, ...) với ctx = {} rỗng vì ctx.options.polyfill sẽ undefined
-    const zalo = new Zalo({ checkUpdate: false, logging: false });
-
-    // Parse cookies từ JSON string
-    // zca-js chấp nhận: Array<{name, value, domain, ...}> hoặc {cookies: Array<...>}
-    let cookieData: any;
+    await ensureZaloTables();
+    const row = await queryOne<{ cookie: string; imei: string; user_agent: string }>(
+      "SELECT cookie, imei, user_agent FROM zalo_inbox_credentials LIMIT 1"
+    );
+    if (!row) return null;
+    let cookie: unknown;
     try {
-      const parsed = JSON.parse(creds.cookies);
-      // Nếu là object có key 'cookies' thì lấy array bên trong
-      if (parsed && !Array.isArray(parsed) && parsed.cookies) {
-        cookieData = parsed.cookies;
-      } else if (Array.isArray(parsed)) {
-        cookieData = parsed;
-      } else {
-        // Fallback: wrap thành array
-        cookieData = Object.entries(parsed).map(([name, value]) => ({ name, value, domain: ".zalo.me" }));
-      }
+      cookie = JSON.parse(row.cookie);
     } catch {
-      return { success: false, message: "Cookies không hợp lệ. Vui lòng đăng nhập lại bằng QR." };
+      cookie = row.cookie;
     }
-
-    // Login bằng cookies - dùng zalo.login() để ctx được tạo đúng
-    zcaApi = await zalo.login({
-      imei: creds.imei,
-      cookie: cookieData,
-      userAgent: creds.userAgent,
-    });
-
-    // Lắng nghe tin nhắn mới
-    zcaApi.listener.on("message", async (message: any) => {
-      await handleIncomingMessage(message, creds.phone);
-    });
-
-    zcaApi.listener.start();
-
-    isConnected = true;
-    connectionStatus = "connected";
-    connectedPhone = creds.phone;
-    connectedName = creds.phone;
-
-    await updateZaloLastConnected(creds.phone);
-    broadcastZaloEvent("status", { status: "connected", phone: creds.phone });
-
-    return { success: true, message: `Đã kết nối Zalo: ${creds.phone}` };
-  } catch (err: any) {
-    isConnected = false;
-    connectionStatus = "error";
-    broadcastZaloEvent("status", { status: "error", message: err?.message || "Lỗi kết nối" });
-    return { success: false, message: `Lỗi kết nối: ${err?.message || "Unknown error"}` };
-  }
-}
-
-export async function disconnectZaloGateway(): Promise<void> {
-  if (zcaApi) {
-    try { zcaApi.listener.stop(); } catch { /* ignore */ }
-    zcaApi = null;
-  }
-  isConnected = false;
-  connectionStatus = "disconnected";
-  connectedPhone = "";
-  connectedName = "";
-  broadcastZaloEvent("status", { status: "disconnected" });
-}
-
-// ─── Handle Incoming Message ──────────────────────────────────────────────────
-
-async function handleIncomingMessage(message: any, myPhone: string): Promise<void> {
-  try {
-    const isSelf = message.isSelf === true;
-    const threadId = message.threadId as string;
-    const msgData = message.data;
-    const msgId = msgData?.msgId as string || `msg_${Date.now()}`;
-    const senderId = msgData?.uidFrom as string || threadId;
-    const senderName = msgData?.dName as string || "Người dùng";
-    const msgType = msgData?.msgType as string || "webchat";
-
-    // Parse content dựa theo msgType
-    let content = "";
-    let contentType: "text" | "image" | "sticker" | "file" | "link" = "text";
-    let attachmentsJson: string | null = null;
-
-    if (typeof msgData?.content === "string") {
-      // Text message
-      content = msgData.content;
-      contentType = "text";
-    } else if (typeof msgData?.content === "object" && msgData.content !== null) {
-      // Non-text message (ảnh, video, sticker, file, ...)
-      const contentObj = msgData.content as Record<string, any>;
-      
-      if (msgType === "chat.photo" || contentObj.hdUrl || contentObj.normalUrl || contentObj.thumbUrl) {
-        // Ảnh
-        contentType = "image";
-        const imageUrl = contentObj.hdUrl || contentObj.normalUrl || contentObj.thumbUrl || "";
-        const thumbUrl = contentObj.thumbUrl || contentObj.normalUrl || "";
-        content = "[Hình ảnh]";
-        attachmentsJson = JSON.stringify([{
-          type: "photo",
-          url: imageUrl,
-          origin_url: contentObj.hdUrl || contentObj.normalUrl || imageUrl,
-          thumb_url: thumbUrl,
-          width: contentObj.width,
-          height: contentObj.height,
-        }]);
-      } else if (msgType === "chat.video.msg" || contentObj.fileUrl?.includes("video") || contentObj.fileName?.match(/\.(mp4|mov|avi|mkv|webm)$/i)) {
-        // Video
-        contentType = "file";
-        content = "[Video]";
-        attachmentsJson = JSON.stringify([{
-          type: "video",
-          url: contentObj.fileUrl || contentObj.url || "",
-          file_name: contentObj.fileName || "video",
-          file_size: contentObj.fileSize || contentObj.totalSize,
-        }]);
-      } else if (msgType === "chat.sticker") {
-        // Sticker
-        contentType = "sticker";
-        content = "[Sticker]";
-        attachmentsJson = JSON.stringify([{
-          type: "sticker",
-          url: contentObj.hdUrl || contentObj.thumbUrl || contentObj.url || "",
-        }]);
-      } else if (msgType === "share.file" || contentObj.fileUrl) {
-        // File
-        contentType = "file";
-        content = `[File: ${contentObj.fileName || "file"}]`;
-        attachmentsJson = JSON.stringify([{
-          type: "file",
-          url: contentObj.fileUrl || contentObj.url || "",
-          file_name: contentObj.fileName || "file",
-          file_size: contentObj.fileSize || contentObj.totalSize,
-        }]);
-      } else if (msgType === "chat.gif") {
-        // GIF
-        contentType = "image";
-        content = "[GIF]";
-        attachmentsJson = JSON.stringify([{
-          type: "photo",
-          url: contentObj.url || contentObj.hdUrl || "",
-          origin_url: contentObj.url || contentObj.hdUrl || "",
-          thumb_url: contentObj.thumbUrl || "",
-        }]);
-      } else if (msgType === "chat.voice") {
-        // Voice message
-        contentType = "file";
-        content = "[Tin nhắn thoại]";
-        attachmentsJson = JSON.stringify([{
-          type: "voice",
-          url: contentObj.fileUrl || contentObj.url || "",
-          duration: contentObj.duration,
-        }]);
-      } else if (contentObj.href || contentObj.title) {
-        // Link/card
-        contentType = "link";
-        content = contentObj.title || contentObj.href || "[Link]";
-        attachmentsJson = JSON.stringify([{
-          type: "link",
-          url: contentObj.href || "",
-          title: contentObj.title || "",
-          thumb: contentObj.thumb || "",
-        }]);
-      } else {
-        // Unknown object content
-        content = "[Tin nhắn đặc biệt]";
-        contentType = "text";
-      }
-    } else {
-      content = "[Tin nhắn đặc biệt]";
-      contentType = "text";
-    }
-
-    // Tìm số điện thoại từ threadId (Zalo personal dùng userId = phone)
-    const phone = isSelf ? threadId : senderId;
-    const displayName = isSelf ? senderName : senderName;
-
-    // Tìm lead trong CRM theo số điện thoại
-    const leadId = await findLeadByPhone(phone);
-
-    // Upsert conversation
-    await upsertConversation({
-      id: threadId,
-      phone,
-      displayName: displayName,
-      lastMessage: content,
-      leadId,
-    });
-
-    // Lưu tin nhắn
-    await saveMessage({
-      id: msgId,
-      conversationId: threadId,
-      senderId,
-      senderName,
-      content,
-      contentType,
-      attachments: attachmentsJson,
-      isSelf,
-    });
-
-    // Tăng unread nếu tin nhắn từ khách (không phải mình gửi)
-    if (!isSelf) {
-      await incrementUnreadCount(threadId);
-    }
-
-    // Broadcast SSE cho tất cả nhân viên đang xem inbox
-    broadcastZaloEvent("new_message", {
-      conversationId: threadId,
-      message: {
-        id: msgId,
-        conversationId: threadId,
-        senderId,
-        senderName,
-        content,
-        contentType,
-        attachments: attachmentsJson ? JSON.parse(attachmentsJson) : null,
-        isSelf,
-        createdAt: new Date().toISOString(),
-      },
-      leadId,
-    });
-  } catch (err) {
-    console.error("[ZaloGateway] Error handling message:", err);
-  }
-}
-
-// ─── Send Text Message ────────────────────────────────────────────────────────
-
-export async function sendZaloMessage(params: {
-  conversationId: string;
-  content: string;
-  senderName: string;
-  senderId: string;
-}): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  if (!zcaApi || !isConnected) {
-    return { success: false, error: "Zalo chưa được kết nối. Vui lòng kết nối trong Cài đặt." };
-  }
-
-  try {
-    const { ThreadType } = await import("zca-js");
-    await zcaApi.sendMessage(
-      { msg: params.content },
-      params.conversationId,
-      ThreadType.User
-    );
-
-    const msgId = `sent_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-
-    // Lưu tin nhắn đã gửi vào DB
-    await saveMessage({
-      id: msgId,
-      conversationId: params.conversationId,
-      senderId: params.senderId,
-      senderName: params.senderName,
-      content: params.content,
-      contentType: "text",
-      isSelf: true,
-    });
-
-    // Cập nhật last message của conversation
-    await upsertConversation({
-      id: params.conversationId,
-      phone: params.conversationId,
-      displayName: "",
-      lastMessage: params.content,
-    });
-
-    // Broadcast tin nhắn đã gửi
-    broadcastZaloEvent("new_message", {
-      conversationId: params.conversationId,
-      message: {
-        id: msgId,
-        conversationId: params.conversationId,
-        senderId: params.senderId,
-        senderName: params.senderName,
-        content: params.content,
-        contentType: "text",
-        isSelf: true,
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    return { success: true, messageId: msgId };
-  } catch (err: any) {
-    return { success: false, error: err?.message || "Lỗi gửi tin nhắn" };
-  }
-}
-
-// ─── Send Image/File ──────────────────────────────────────────────────────────
-
-export async function sendZaloAttachment(params: {
-  conversationId: string;
-  fileBuffer: Buffer;
-  fileName: string;
-  mimeType: string;
-  senderName: string;
-  senderId: string;
-}): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  if (!zcaApi || !isConnected) {
-    return { success: false, error: "Zalo chưa được kết nối. Vui lòng kết nối trong Cài đặt." };
-  }
-
-  try {
-    const { ThreadType } = await import("zca-js");
-    
-    // Xác định loại file
-    const isImage = params.mimeType.startsWith("image/");
-    const isVideo = params.mimeType.startsWith("video/");
-    
-    let width: number | undefined;
-    let height: number | undefined;
-    
-    // Lấy metadata ảnh nếu là image
-    if (isImage) {
-      try {
-        const sharp = (await import("sharp")).default;
-        const metadata = await sharp(params.fileBuffer).metadata();
-        width = metadata.width;
-        height = metadata.height;
-      } catch {
-        // Nếu không lấy được metadata, dùng giá trị mặc định
-        width = 800;
-        height = 600;
-      }
-    }
-
-    // Tạo AttachmentSource
-    const attachmentSource = {
-      data: params.fileBuffer,
-      filename: params.fileName as `${string}.${string}`,
-      metadata: {
-        totalSize: params.fileBuffer.length,
-        width,
-        height,
-      },
-    };
-
-    // Gửi qua zca-js
-    await zcaApi.sendMessage(
-      { msg: "", attachments: attachmentSource },
-      params.conversationId,
-      ThreadType.User
-    );
-
-    const msgId = `sent_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    const content = isImage ? "[Hình ảnh]" : isVideo ? "[Video]" : `[File: ${params.fileName}]`;
-    const contentType = isImage ? "image" : "file";
-
-    // Lưu vào DB
-    await saveMessage({
-      id: msgId,
-      conversationId: params.conversationId,
-      senderId: params.senderId,
-      senderName: params.senderName,
-      content,
-      contentType,
-      isSelf: true,
-    });
-
-    await upsertConversation({
-      id: params.conversationId,
-      phone: params.conversationId,
-      displayName: "",
-      lastMessage: content,
-    });
-
-    broadcastZaloEvent("new_message", {
-      conversationId: params.conversationId,
-      message: {
-        id: msgId,
-        conversationId: params.conversationId,
-        senderId: params.senderId,
-        senderName: params.senderName,
-        content,
-        contentType,
-        isSelf: true,
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    return { success: true, messageId: msgId };
-  } catch (err: any) {
-    console.error("[ZaloGateway] sendZaloAttachment error:", err);
-    return { success: false, error: err?.message || "Lỗi gửi file" };
-  }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async function findLeadByPhone(phone: string): Promise<string | null> {
-  try {
-    // Chuẩn hóa số điện thoại
-    const normalized = phone.replace(/^\+84/, "0").replace(/\D/g, "");
-    const res = await query(
-      `SELECT id FROM crm_leads WHERE REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $1 LIMIT 1`,
-      [normalized]
-    );
-    return res.rows[0]?.id || null;
+    return { cookie, imei: row.imei, userAgent: row.user_agent };
   } catch {
     return null;
   }
 }
 
-// ─── Auto-Reconnect on Server Start ──────────────────────────────────────────
-// Khi Railway deploy lại, process restart → zcaApi = null → cần tự kết nối lại
-// Dùng flag để chỉ chạy 1 lần dù nhiều request cùng lúc
+export async function saveMessage(msg: ZaloMessage) {
+  try {
+    await ensureZaloTables();
+    await query(
+      `INSERT INTO zalo_inbox_messages (msg_id, thread_id, from_id, to_id, content, attachments, msg_type, is_self, timestamp)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (msg_id) DO NOTHING`,
+      [
+        msg.msgId,
+        msg.isSelf ? msg.toId : msg.fromId,
+        msg.fromId,
+        msg.toId,
+        msg.content || "",
+        JSON.stringify(msg.attachments),
+        msg.type,
+        msg.isSelf,
+        msg.timestamp,
+      ]
+    );
+  } catch (err) {
+    console.error("[ZaloGateway] saveMessage error:", err);
+  }
+}
 
-let autoReconnectDone = false;
-let autoReconnectPromise: Promise<void> | null = null;
+// ─── Message Processing ───────────────────────────────────────────────────────
 
-export async function ensureZaloConnected(): Promise<void> {
-  if (isConnected || autoReconnectDone) return;
-  if (autoReconnectPromise) return autoReconnectPromise;
+function parseAttachments(data: Record<string, unknown>): ZaloAttachment[] {
+  const attachments: ZaloAttachment[] = [];
 
-  autoReconnectPromise = (async () => {
-    autoReconnectDone = true;
-    try {
-      const result = await connectZaloGateway();
-      if (!result.success) {
-        console.warn("[ZaloGateway] Auto-reconnect failed:", result.message);
-        // Cho phép thử lại lần sau nếu thất bại
-        autoReconnectDone = false;
-      } else {
-        console.log("[ZaloGateway] Auto-reconnect success:", result.message);
-      }
-    } catch (err) {
-      console.error("[ZaloGateway] Auto-reconnect error:", err);
-      autoReconnectDone = false;
-    } finally {
-      autoReconnectPromise = null;
+  // Handle image attachments
+  if (data.params && typeof data.params === "object") {
+    const params = data.params as Record<string, unknown>;
+
+    // Single image
+    if (params.url && typeof params.url === "string") {
+      attachments.push({
+        type: "image",
+        url: params.url as string,
+        thumb: (params.thumb as string) || (params.url as string),
+        width: (params.width as number) || 0,
+        height: (params.height as number) || 0,
+      });
     }
-  })();
 
-  return autoReconnectPromise;
+    // Multiple images (album)
+    if (Array.isArray(params.media)) {
+      for (const item of params.media as Record<string, unknown>[]) {
+        if (item.url) {
+          attachments.push({
+            type: (item.type as string) === "video" ? "video" : "image",
+            url: item.url as string,
+            thumb: (item.thumb as string) || (item.url as string),
+            width: (item.width as number) || 0,
+            height: (item.height as number) || 0,
+          });
+        }
+      }
+    }
+
+    // Video
+    if (params.video && typeof params.video === "object") {
+      const video = params.video as Record<string, unknown>;
+      if (video.url) {
+        attachments.push({
+          type: "video",
+          url: video.url as string,
+          thumb: (video.thumb as string) || "",
+          fileSize: (video.fileSize as number) || 0,
+        });
+      }
+    }
+
+    // File
+    if (params.fileUrl && typeof params.fileUrl === "string") {
+      attachments.push({
+        type: "file",
+        url: params.fileUrl as string,
+        fileName: (params.fileName as string) || "file",
+        fileSize: (params.fileSize as number) || 0,
+      });
+    }
+  }
+
+  // Handle content as object (new format)
+  if (data.content && typeof data.content === "object") {
+    const content = data.content as Record<string, unknown>;
+    if (content.href && typeof content.href === "string") {
+      const isVideo = (content.type as string) === "video";
+      attachments.push({
+        type: isVideo ? "video" : "image",
+        url: content.href as string,
+        thumb: (content.thumb as string) || (content.href as string),
+        width: (content.width as number) || 0,
+        height: (content.height as number) || 0,
+      });
+    }
+  }
+
+  return attachments;
+}
+
+function processIncomingMessage(message: Record<string, unknown>): ZaloMessage | null {
+  try {
+    const data = message.data as Record<string, unknown>;
+    if (!data) return null;
+
+    const isPlainText = typeof data.content === "string";
+    const attachments = parseAttachments(data);
+    let msgType: ZaloMessage["type"] = "other";
+
+    if (isPlainText && attachments.length === 0) {
+      msgType = "text";
+    } else if (attachments.some((a) => a.type === "video")) {
+      msgType = "video";
+    } else if (attachments.some((a) => a.type === "image")) {
+      msgType = "image";
+    } else if (attachments.some((a) => a.type === "file")) {
+      msgType = "file";
+    }
+
+    const msgId = (data.msgId as string) || (data.clientId as string) || `${Date.now()}`;
+    const fromId = (data.uidFrom as string) || "";
+    const toId = (data.idTo as string) || "";
+    const isSelf = (message.isSelf as boolean) || false;
+    const timestamp = (data.ts as number) || Date.now();
+    const content = isPlainText ? (data.content as string) : "";
+
+    return {
+      msgId,
+      fromId,
+      toId,
+      content,
+      timestamp,
+      isSelf,
+      attachments,
+      type: msgType,
+    };
+  } catch (err) {
+    console.error("[ZaloGateway] processIncomingMessage error:", err);
+    return null;
+  }
+}
+
+// ─── Connection Management ────────────────────────────────────────────────────
+
+function setupListeners(api: unknown) {
+  const apiObj = api as {
+    listener: {
+      on: (event: string, cb: (msg: Record<string, unknown>) => void) => void;
+      start: () => void;
+    };
+    getOwnId: () => Promise<string>;
+  };
+
+  apiObj.listener.on("message", async (message: Record<string, unknown>) => {
+    const processed = processIncomingMessage(message);
+    if (!processed) return;
+
+    // Save to DB
+    await saveMessage(processed);
+
+    // Broadcast via SSE
+    broadcastSSE("message", {
+      ...processed,
+      threadId: processed.isSelf ? processed.toId : processed.fromId,
+    });
+  });
+
+  apiObj.listener.on("close", (reason: unknown) => {
+    console.log("[ZaloGateway] Connection closed:", reason);
+    isConnected = false;
+    zaloApi = null;
+    broadcastSSE("disconnected", { reason });
+
+    // Auto-reconnect after 5 seconds
+    setTimeout(() => {
+      autoReconnect();
+    }, 5000);
+  });
+
+  apiObj.listener.start();
+  console.log("[ZaloGateway] Listener started");
+}
+
+async function autoReconnect() {
+  if (isConnected || isConnecting) return;
+  console.log("[ZaloGateway] Attempting auto-reconnect...");
+
+  const creds = await loadCredentials();
+  if (!creds) {
+    console.log("[ZaloGateway] No credentials found, skipping auto-reconnect");
+    return;
+  }
+
+  try {
+    await connectWithCredentials(creds);
+    console.log("[ZaloGateway] Auto-reconnect successful");
+  } catch (err) {
+    console.error("[ZaloGateway] Auto-reconnect failed:", err);
+    // Retry after 30 seconds
+    setTimeout(() => autoReconnect(), 30000);
+  }
+}
+
+export async function connectWithCredentials(creds: ZaloCredentials): Promise<void> {
+  if (isConnecting) throw new Error("Already connecting");
+  isConnecting = true;
+
+  try {
+    const zalo = new Zalo({
+      logging: false,
+    });
+
+    const api = await zalo.login({
+      cookie: creds.cookie,
+      imei: creds.imei,
+      userAgent: creds.userAgent,
+    });
+
+    zaloApi = api;
+    isConnected = true;
+    isConnecting = false;
+
+    // Get own user ID
+    try {
+      const apiObj = api as { getOwnId: () => Promise<string> };
+      currentUserId = await apiObj.getOwnId();
+    } catch {
+      currentUserId = "";
+    }
+
+    setupListeners(api);
+    broadcastSSE("connected", { userId: currentUserId });
+    console.log("[ZaloGateway] Connected as", currentUserId);
+  } catch (err) {
+    isConnecting = false;
+    isConnected = false;
+    zaloApi = null;
+    throw err;
+  }
+}
+
+// ─── QR Login ─────────────────────────────────────────────────────────────────
+
+export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<void> {
+  if (isConnecting) throw new Error("Already connecting");
+  isConnecting = true;
+  qrCallbackFn = onQR;
+
+  return new Promise<void>((resolve, reject) => {
+    loginResolve = (api: unknown) => {
+      zaloApi = api;
+      isConnected = true;
+      isConnecting = false;
+      setupListeners(api);
+      broadcastSSE("connected", { userId: currentUserId });
+      resolve();
+    };
+    loginReject = (err: Error) => {
+      isConnecting = false;
+      reject(err);
+    };
+
+    const zalo = new Zalo({ logging: false });
+
+    zalo
+      .loginQR(
+        { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0" },
+        async (event: { type: number; data: Record<string, unknown> | null }) => {
+          if (event.type === LoginQRCallbackEventType.QRCodeGenerated) {
+            const qrData = event.data as { image?: string } | null;
+            if (qrData?.image) {
+              onQR(qrData.image);
+            }
+          } else if (event.type === LoginQRCallbackEventType.GotLoginInfo) {
+            // Save credentials
+            const loginData = event.data as { cookie: unknown; imei: string; userAgent: string } | null;
+            if (loginData) {
+              const creds: ZaloCredentials = {
+                cookie: loginData.cookie,
+                imei: loginData.imei,
+                userAgent: loginData.userAgent,
+              };
+              await saveCredentials(creds);
+            }
+          }
+        }
+      )
+      .then(async (api: unknown) => {
+        // Get user info
+        try {
+          const apiObj = api as { getOwnId: () => Promise<string>; getCookie: () => unknown };
+          currentUserId = await apiObj.getOwnId();
+        } catch {
+          currentUserId = "";
+        }
+
+        if (loginResolve) loginResolve(api);
+      })
+      .catch((err: Error) => {
+        if (loginReject) loginReject(err);
+      });
+  });
+}
+
+export async function disconnectZalo() {
+  isConnected = false;
+  zaloApi = null;
+  currentUserId = "";
+  broadcastSSE("disconnected", { reason: "manual" });
+}
+
+// ─── Initialize on startup ────────────────────────────────────────────────────
+
+export async function initZaloGateway() {
+  console.log("[ZaloGateway] Initializing...");
+  const creds = await loadCredentials();
+  if (creds) {
+    console.log("[ZaloGateway] Found saved credentials, attempting auto-connect...");
+    try {
+      await connectWithCredentials(creds);
+    } catch (err) {
+      console.error("[ZaloGateway] Auto-connect failed:", err);
+    }
+  } else {
+    console.log("[ZaloGateway] No saved credentials found");
+  }
 }

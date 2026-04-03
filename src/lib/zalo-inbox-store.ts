@@ -346,9 +346,6 @@ function mapZaloConversation(row: any): ZaloConversation {
 }
 
 function mapZaloMessage(row: any): ZaloMessage {
-  // Parse attachments từ JSON string thành array
-  let attachments: string | null = row.attachments;
-  // Giữ nguyên string để client parse (tương thích với ZaloInboxClient)
   return {
     id: row.id,
     conversationId: row.conversation_id,
@@ -356,7 +353,7 @@ function mapZaloMessage(row: any): ZaloMessage {
     senderName: row.sender_name,
     content: row.content,
     contentType: row.content_type,
-    attachments,
+    attachments: row.attachments,
     isSelf: row.is_self,
     isRead: row.is_read,
     createdAt: row.created_at,
