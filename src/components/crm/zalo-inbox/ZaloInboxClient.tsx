@@ -5,16 +5,52 @@ import {
   ChevronRight, Settings, RefreshCw, X, Paperclip, FileText, Video,
   Download, ZoomIn, Reply, ChevronLeft,
   Image as ImageIcon, Bell, BellOff, Volume2, VolumeX, Smile,
-  ChevronDown, Check, CheckCheck,
+  ChevronDown, CheckCheck, MoreVertical, Hash,
 } from "lucide-react";
+
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+const T = {
+  // Sidebar
+  sidebarBg: "#111827",
+  sidebarBorder: "#1F2937",
+  sidebarHover: "#1F2937",
+  sidebarActive: "#1D4ED8",
+  sidebarActiveBg: "#1E3A5F",
+  // Chat
+  chatBg: "#0F172A",
+  chatBgPattern: "radial-gradient(circle at 20% 50%, rgba(59,130,246,0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,92,246,0.03) 0%, transparent 50%)",
+  headerBg: "rgba(15,23,42,0.95)",
+  headerBorder: "#1E293B",
+  // Bubbles
+  bubbleSelf: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+  bubbleOther: "#1E293B",
+  bubbleOtherText: "#E2E8F0",
+  bubbleSelfText: "#FFFFFF",
+  // Input
+  inputBg: "#1E293B",
+  inputBorder: "#334155",
+  inputFocus: "#3B82F6",
+  // Text
+  textPrimary: "#F1F5F9",
+  textSecondary: "#94A3B8",
+  textMuted: "#64748B",
+  // Accent
+  accent: "#3B82F6",
+  accentHover: "#2563EB",
+  success: "#10B981",
+  warning: "#F59E0B",
+  error: "#EF4444",
+  // Unread badge
+  badge: "#EF4444",
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ZaloAttachment {
   type: string;
   url?: string;
-  origin_url?: string;
-  image_data?: { width: number; height: number };
-  data?: Record<string, unknown>;
+  thumb?: string;
+  fileName?: string;
+  fileSize?: number;
 }
 interface ZaloMessage {
   id: string;
@@ -81,7 +117,9 @@ function formatTime(iso: string | null | undefined): string {
   if (diffMins < 60) return `${diffMins} phút`;
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours} giờ`;
-  return d.toLocaleDateString("vi-VN");
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays} ngày`;
+  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 }
 function getStageLabel(stage: string): string {
   const map: Record<string, string> = {
@@ -92,22 +130,33 @@ function getStageLabel(stage: string): string {
 }
 function getStageColor(stage: string): string {
   const map: Record<string, string> = {
-    new: "#6B7280", contacted: "#3B82F6", qualified: "#8B5CF6",
-    proposal: "#F59E0B", negotiation: "#EF4444", won: "#10B981", lost: "#9CA3AF",
+    new: "#64748B", contacted: "#3B82F6", qualified: "#8B5CF6",
+    proposal: "#F59E0B", negotiation: "#EF4444", won: "#10B981", lost: "#475569",
   };
-  return map[stage] || "#6B7280";
+  return map[stage] || "#64748B";
 }
 function getZaloImageUrl(url: string | undefined): string {
   if (!url) return '';
   return `/api/crm/zalo-inbox/image-proxy?url=${encodeURIComponent(url)}`;
+}
+function getAvatarColor(name: string): string {
+  const colors = [
+    "linear-gradient(135deg,#667eea,#764ba2)",
+    "linear-gradient(135deg,#f093fb,#f5576c)",
+    "linear-gradient(135deg,#4facfe,#00f2fe)",
+    "linear-gradient(135deg,#43e97b,#38f9d7)",
+    "linear-gradient(135deg,#fa709a,#fee140)",
+    "linear-gradient(135deg,#a18cd1,#fbc2eb)",
+    "linear-gradient(135deg,#ffecd2,#fcb69f)",
+    "linear-gradient(135deg,#a1c4fd,#c2e9fb)",
+  ];
+  return colors[name.charCodeAt(0) % colors.length];
 }
 
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
 function Lightbox({ state, onClose }: { state: LightboxState; onClose: () => void }) {
   const [idx, setIdx] = useState(state.currentIndex);
   const proxyUrl = getZaloImageUrl(state.images[idx]);
-  const rawUrl = state.images[idx];
-
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -117,155 +166,50 @@ function Lightbox({ state, onClose }: { state: LightboxState; onClose: () => voi
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose, state.images.length]);
-
   return (
     <div onClick={onClose} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 9999,
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 9999,
       display: "flex", alignItems: "center", justifyContent: "center",
+      backdropFilter: "blur(8px)",
     }}>
-      <button onClick={onClose} style={{
-        position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)",
-        border: "none", borderRadius: "50%", width: 40, height: 40, cursor: "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
-      }}><X size={20} /></button>
-      <a href={proxyUrl} download onClick={e => e.stopPropagation()} style={{
-        position: "absolute", top: 16, right: 64, background: "rgba(255,255,255,0.15)",
-        border: "none", borderRadius: "50%", width: 40, height: 40, cursor: "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none",
-      }} title="Tải xuống"><Download size={18} /></a>
+      {/* Controls */}
+      <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: 8 }}>
+        <a href={proxyUrl} download onClick={e => e.stopPropagation()}
+          style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none", backdropFilter: "blur(4px)" }}
+          title="Tải xuống"><Download size={16} /></a>
+        <button onClick={onClose}
+          style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)" }}>
+          <X size={16} />
+        </button>
+      </div>
+      {/* Counter */}
+      {state.images.length > 1 && (
+        <div style={{ position: "absolute", top: 20, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 13, padding: "6px 14px", borderRadius: 20, backdropFilter: "blur(4px)" }}>
+          {idx + 1} / {state.images.length}
+        </div>
+      )}
+      {/* Nav buttons */}
       {idx > 0 && (
-        <button onClick={e => { e.stopPropagation(); setIdx(i => i - 1); }} style={{
-          position: "absolute", left: 16, background: "rgba(255,255,255,0.15)",
-          border: "none", borderRadius: "50%", width: 44, height: 44, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
-        }}><ChevronLeft size={24} /></button>
+        <button onClick={e => { e.stopPropagation(); setIdx(i => i - 1); }}
+          style={{ position: "absolute", left: 20, width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)" }}>
+          <ChevronLeft size={22} />
+        </button>
       )}
       {idx < state.images.length - 1 && (
-        <button onClick={e => { e.stopPropagation(); setIdx(i => i + 1); }} style={{
-          position: "absolute", right: 16, background: "rgba(255,255,255,0.15)",
-          border: "none", borderRadius: "50%", width: 44, height: 44, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
-        }}><ChevronRight size={24} /></button>
+        <button onClick={e => { e.stopPropagation(); setIdx(i => i + 1); }}
+          style={{ position: "absolute", right: 20, width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)" }}>
+          <ChevronRight size={22} />
+        </button>
       )}
-      <img src={proxyUrl} alt="Ảnh" onClick={e => e.stopPropagation()} style={{
-        maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain",
-        borderRadius: 8, boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
-      }} onError={(e) => {
-        const img = e.target as HTMLImageElement;
-        if (img.src !== rawUrl) img.src = rawUrl;
-      }} />
-      {state.images.length > 1 && (
-        <div style={{
-          position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)",
-          background: "rgba(0,0,0,0.6)", color: "#fff", padding: "4px 14px",
-          borderRadius: 20, fontSize: 13,
-        }}>{idx + 1} / {state.images.length}</div>
-      )}
-    </div>
-  );
-}
-
-// ─── Image Preview Bar ────────────────────────────────────────────────────────
-function ImagePreviewBar({ files, onRemove, onSend, sending }: {
-  files: PendingFile[];
-  onRemove: (idx: number) => void;
-  onSend: () => void;
-  sending: boolean;
-}) {
-  return (
-    <div style={{
-      padding: "10px 16px", background: "#F0F9FF", borderTop: "1px solid #BAE6FD",
-      display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
-    }}>
-      {files.map((f, idx) => (
-        <div key={idx} style={{ position: "relative" }}>
-          <img src={f.previewUrl} alt={f.file.name} style={{
-            width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: "2px solid #0068FF",
-          }} />
-          <button onClick={() => onRemove(idx)} style={{
-            position: "absolute", top: -6, right: -6, width: 18, height: 18,
-            borderRadius: "50%", background: "#EF4444", border: "none",
-            color: "#fff", fontSize: 10, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}><X size={10} /></button>
-        </div>
-      ))}
-      <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-        <span style={{ fontSize: 12, color: "#0369A1" }}>{files.length} ảnh</span>
-        <button onClick={onSend} disabled={sending} style={{
-          padding: "6px 16px", borderRadius: 20, border: "none",
-          background: sending ? "#93C5FD" : "#0068FF", color: "#fff",
-          fontSize: 13, fontWeight: 600, cursor: sending ? "not-allowed" : "pointer",
-        }}>{sending ? "Đang gửi..." : "Gửi tất cả"}</button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Reply Bar ────────────────────────────────────────────────────────────────
-function ReplyBar({ reply, onCancel }: { reply: ReplyContext; onCancel: () => void }) {
-  return (
-    <div style={{
-      padding: "8px 16px", background: "#F0F9FF", borderTop: "1px solid #BAE6FD",
-      display: "flex", alignItems: "center", gap: 8,
-    }}>
-      <div style={{ width: 3, height: 36, background: "#0068FF", borderRadius: 2, flexShrink: 0 }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#0068FF", marginBottom: 2 }}>
-          Trả lời {reply.senderName}
-        </div>
-        <div style={{ fontSize: 12, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {reply.isPhoto ? "🖼️ Hình ảnh" : reply.content}
-        </div>
-      </div>
-      <button onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", padding: 4 }}>
-        <X size={16} />
-      </button>
-    </div>
-  );
-}
-
-// ─── Message Search Bar ───────────────────────────────────────────────────────
-function MessageSearchBar({ query, onChange, resultCount, currentResult, onPrev, onNext, onClose }: {
-  query: string;
-  onChange: (q: string) => void;
-  resultCount: number;
-  currentResult: number;
-  onPrev: () => void;
-  onNext: () => void;
-  onClose: () => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { inputRef.current?.focus(); }, []);
-  return (
-    <div style={{
-      padding: "8px 16px", background: "#fff", borderBottom: "1px solid #E5E7EB",
-      display: "flex", alignItems: "center", gap: 8,
-    }}>
-      <Search size={14} style={{ color: "#9CA3AF", flexShrink: 0 }} />
-      <input ref={inputRef} value={query} onChange={e => onChange(e.target.value)}
-        placeholder="Tìm kiếm trong hội thoại..."
-        style={{ flex: 1, border: "none", outline: "none", fontSize: 13, background: "transparent", color: "#111827" }}
+      <img src={proxyUrl} alt="Ảnh" onClick={e => e.stopPropagation()}
+        style={{ maxWidth: "88vw", maxHeight: "88vh", objectFit: "contain", borderRadius: 12, boxShadow: "0 25px 80px rgba(0,0,0,0.6)" }}
+        onError={(e) => { (e.target as HTMLImageElement).src = state.images[idx]; }}
       />
-      {query && (
-        <span style={{ fontSize: 12, color: "#6B7280", whiteSpace: "nowrap" }}>
-          {resultCount > 0 ? `${currentResult + 1}/${resultCount}` : "Không tìm thấy"}
-        </span>
-      )}
-      <button onClick={onPrev} disabled={resultCount === 0} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", padding: 2 }}>
-        <ChevronLeft size={16} />
-      </button>
-      <button onClick={onNext} disabled={resultCount === 0} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", padding: 2 }}>
-        <ChevronRight size={16} />
-      </button>
-      <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", padding: 2 }}>
-        <X size={16} />
-      </button>
     </div>
   );
 }
 
-// ─── Highlight Text ───────────────────────────────────────────────────────────
+// ─── HighlightText ────────────────────────────────────────────────────────────
 function HighlightText({ text, query }: { text: string; query: string }) {
   if (!query.trim()) return <>{text}</>;
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -274,10 +218,509 @@ function HighlightText({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, i) =>
         part.toLowerCase() === query.toLowerCase()
-          ? <mark key={i} style={{ background: "#FEF08A", borderRadius: 2, padding: "0 1px" }}>{part}</mark>
+          ? <mark key={i} style={{ background: "#FDE68A", color: "#92400E", borderRadius: 3, padding: "0 2px" }}>{part}</mark>
           : part
       )}
     </>
+  );
+}
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+function Avatar({ name, size = 40, online = false }: { name: string; size?: number; online?: boolean }) {
+  const initials = name.split(" ").slice(-2).map(w => w[0]).join("").toUpperCase().slice(0, 2);
+  return (
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <div style={{
+        width: size, height: size, borderRadius: "50%",
+        background: getAvatarColor(name),
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: "#fff", fontWeight: 700, fontSize: size * 0.36,
+        letterSpacing: "-0.5px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+      }}>
+        {initials}
+      </div>
+      {online && (
+        <div style={{
+          position: "absolute", bottom: 1, right: 1,
+          width: size * 0.28, height: size * 0.28,
+          borderRadius: "50%", background: T.success,
+          border: `2px solid ${T.sidebarBg}`,
+        }} />
+      )}
+    </div>
+  );
+}
+
+// ─── MsgSearchBar ─────────────────────────────────────────────────────────────
+function MsgSearchBar({ query, setQuery, results, current, onPrev, onNext, onClose }: {
+  query: string; setQuery: (q: string) => void;
+  results: number[]; current: number;
+  onPrev: () => void; onNext: () => void; onClose: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+  return (
+    <div style={{
+      padding: "10px 16px", background: T.headerBg, borderBottom: `1px solid ${T.headerBorder}`,
+      display: "flex", alignItems: "center", gap: 10,
+    }}>
+      <Search size={15} color={T.textMuted} />
+      <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
+        placeholder="Tìm kiếm trong hội thoại..."
+        style={{ flex: 1, background: "none", border: "none", outline: "none", fontSize: 14, color: T.textPrimary }}
+      />
+      {query && (
+        <span style={{ fontSize: 12, color: T.textMuted, whiteSpace: "nowrap" }}>
+          {results.length > 0 ? `${current + 1}/${results.length}` : "0 kết quả"}
+        </span>
+      )}
+      {results.length > 1 && (
+        <>
+          <button onClick={onPrev} style={{ background: "none", border: "none", cursor: "pointer", color: T.textSecondary, padding: 4 }}><ChevronLeft size={16} /></button>
+          <button onClick={onNext} style={{ background: "none", border: "none", cursor: "pointer", color: T.textSecondary, padding: 4 }}><ChevronRight size={16} /></button>
+        </>
+      )}
+      <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 4 }}><X size={16} /></button>
+    </div>
+  );
+}
+
+// ─── ReplyBar ─────────────────────────────────────────────────────────────────
+function ReplyBar({ reply, onCancel }: { reply: ReplyContext; onCancel: () => void }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "8px 16px", background: "rgba(59,130,246,0.08)",
+      borderTop: `2px solid ${T.accent}`, borderBottom: `1px solid ${T.headerBorder}`,
+    }}>
+      <div style={{ width: 3, height: 36, borderRadius: 2, background: T.accent, flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: T.accent, marginBottom: 2 }}>
+          Trả lời {reply.senderName}
+        </div>
+        <div style={{ fontSize: 12, color: T.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {reply.isPhoto ? "🖼️ Hình ảnh" : reply.content.slice(0, 80)}
+        </div>
+      </div>
+      <button onClick={onCancel}
+        style={{ background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 6, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
+// ─── ImagePreviewBar ──────────────────────────────────────────────────────────
+function ImagePreviewBar({ files, onRemove, onSend, sending }: {
+  files: PendingFile[]; onRemove: (idx: number) => void; onSend: () => void; sending: boolean;
+}) {
+  return (
+    <div style={{
+      padding: "10px 16px", background: T.inputBg, borderTop: `1px solid ${T.inputBorder}`,
+      display: "flex", alignItems: "center", gap: 8, overflowX: "auto",
+    }}>
+      {files.map((f, i) => (
+        <div key={i} style={{ position: "relative", flexShrink: 0 }}>
+          <img src={f.previewUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: `2px solid ${T.accent}` }} />
+          <button onClick={() => onRemove(i)}
+            style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: T.error, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+            <X size={10} />
+          </button>
+        </div>
+      ))}
+      <button onClick={onSend} disabled={sending}
+        style={{ flexShrink: 0, padding: "8px 16px", background: T.accent, color: "#fff", border: "none", borderRadius: 8, cursor: sending ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, opacity: sending ? 0.6 : 1 }}>
+        {sending ? "Đang gửi..." : `Gửi ${files.length} ảnh`}
+      </button>
+    </div>
+  );
+}
+
+// ─── ConversationItem ─────────────────────────────────────────────────────────
+function ConversationItem({ conv, isSelected, onClick }: {
+  conv: ZaloConversation; isSelected: boolean; onClick: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const hasUnread = conv.unreadCount > 0;
+  return (
+    <div onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 11, padding: "10px 14px",
+        cursor: "pointer",
+        background: isSelected ? T.sidebarActiveBg : hovered ? T.sidebarHover : "transparent",
+        borderLeft: isSelected ? `3px solid ${T.accent}` : "3px solid transparent",
+        transition: "all 0.15s ease",
+      }}>
+      <Avatar name={conv.displayName} size={44} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+          <span style={{
+            fontWeight: hasUnread ? 700 : 500, fontSize: 14,
+            color: isSelected ? "#fff" : T.textPrimary,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160,
+          }}>{conv.displayName}</span>
+          <span style={{ fontSize: 11, color: hasUnread ? T.accent : T.textMuted, flexShrink: 0, fontWeight: hasUnread ? 600 : 400 }}>
+            {formatTime(conv.lastMessageAt)}
+          </span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{
+            fontSize: 12, color: hasUnread ? T.textSecondary : T.textMuted,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 175,
+            fontWeight: hasUnread ? 500 : 400,
+          }}>
+            {conv.lastMessage || "Chưa có tin nhắn"}
+          </span>
+          {hasUnread && (
+            <span style={{
+              flexShrink: 0, minWidth: 20, height: 20, borderRadius: 10,
+              background: T.badge, color: "#fff", fontSize: 11, fontWeight: 700,
+              display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px",
+            }}>
+              {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MessageBubble ────────────────────────────────────────────────────────────
+function MessageBubble({ message, searchQuery, onOpenLightbox, onReply }: {
+  message: ZaloMessage;
+  searchQuery: string;
+  onOpenLightbox: (images: string[], startIdx: number) => void;
+  onReply: (ctx: ReplyContext) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const isSelf = message.isSelf;
+  const timeStr = new Date(message.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+
+  const attachments = message.attachments || [];
+  const photoAttachments = attachments.filter(a => a.type === "image" && (a.url || a.thumb));
+  const videoAttachments = attachments.filter(a => a.type === "video");
+  const fileAttachments = attachments.filter(a => a.type === "others" || a.type === "file");
+  const allPhotoUrls = photoAttachments.map(a => a.url || a.thumb || "").filter(Boolean);
+  const hasTextContent = !!message.content?.trim();
+
+  // Parse reply quote
+  const replyMatch = message.content?.match(/^\[Trả lời (.+?): "(.+?)"\]\n([\s\S]*)/);
+  const replyAuthor = replyMatch?.[1];
+  const replyContent = replyMatch?.[2];
+  const mainContent = replyMatch?.[3] ?? message.content;
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", flexDirection: isSelf ? "row-reverse" : "row",
+        alignItems: "flex-end", gap: 8, marginBottom: 2,
+      }}>
+      {/* Avatar (chỉ hiện khi không phải isSelf) */}
+      {!isSelf && (
+        <div style={{ flexShrink: 0, marginBottom: 4 }}>
+          <Avatar name={message.senderName} size={30} />
+        </div>
+      )}
+
+      {/* Bubble */}
+      <div style={{ maxWidth: "68%", display: "flex", flexDirection: "column", alignItems: isSelf ? "flex-end" : "flex-start" }}>
+        {/* Sender name (chỉ hiện khi không phải isSelf) */}
+        {!isSelf && (
+          <span style={{ fontSize: 11, color: T.textMuted, marginBottom: 3, paddingLeft: 4, fontWeight: 500 }}>
+            {message.senderName}
+          </span>
+        )}
+
+        {/* Reply quote */}
+        {replyAuthor && (
+          <div style={{
+            padding: "6px 10px", borderRadius: 8, marginBottom: 4,
+            background: isSelf ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
+            borderLeft: `3px solid ${isSelf ? "rgba(255,255,255,0.5)" : T.accent}`,
+            maxWidth: "100%",
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: isSelf ? "rgba(255,255,255,0.8)" : T.accent, marginBottom: 2 }}>{replyAuthor}</div>
+            <div style={{ fontSize: 12, color: isSelf ? "rgba(255,255,255,0.6)" : T.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{replyContent}</div>
+          </div>
+        )}
+
+        {/* Photos */}
+        {photoAttachments.length > 0 && (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: photoAttachments.length === 1 ? "1fr" : "repeat(2, 1fr)",
+            gap: 3, marginBottom: hasTextContent ? 4 : 0,
+            borderRadius: 12, overflow: "hidden",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+          }}>
+            {photoAttachments.map((att, idx) => {
+              const rawUrl = att.url || att.thumb || "";
+              const proxyUrl = getZaloImageUrl(rawUrl);
+              if (!rawUrl) return (
+                <div key={idx} style={{ width: 200, height: 140, background: T.bubbleOther, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted, fontSize: 12 }}>
+                  🖼️ Ảnh đã gửi
+                </div>
+              );
+              return (
+                <div key={idx} style={{ position: "relative", cursor: "pointer", overflow: "hidden" }}
+                  onClick={() => onOpenLightbox(allPhotoUrls, idx)}>
+                  <img src={proxyUrl} alt="Ảnh"
+                    style={{ width: "100%", height: photoAttachments.length === 1 ? "auto" : 130, maxWidth: photoAttachments.length === 1 ? 280 : "none", objectFit: "cover", display: "block", background: T.bubbleOther }}
+                    onError={(e) => { const img = e.target as HTMLImageElement; if (img.src !== rawUrl) img.src = rawUrl; }}
+                  />
+                  <div style={{
+                    position: "absolute", inset: 0, background: "rgba(0,0,0,0)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "background 0.15s",
+                  }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.3)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0)")}>
+                    <ZoomIn size={22} color="#fff" style={{ opacity: 0, transition: "opacity 0.15s" }}
+                      onMouseEnter={e => { (e.currentTarget as SVGElement).style.opacity = "1"; }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Videos */}
+        {videoAttachments.map((att, idx) => (
+          <div key={idx} style={{ marginBottom: hasTextContent ? 4 : 0, borderRadius: 12, overflow: "hidden" }}>
+            {att.url
+              ? <video src={att.url} controls style={{ maxWidth: 300, width: "100%", display: "block", background: "#000" }} />
+              : <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 12, background: isSelf ? "rgba(255,255,255,0.15)" : T.bubbleOther, color: isSelf ? "#fff" : T.bubbleOtherText, fontSize: 13 }}>
+                  <Video size={18} /><span>{(att as any).fileName || "Video"}</span>
+                </div>
+            }
+          </div>
+        ))}
+
+        {/* Files */}
+        {fileAttachments.map((att, idx) => (
+          att.url
+            ? <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer"
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: isSelf ? "rgba(255,255,255,0.15)" : T.bubbleOther, color: isSelf ? "#fff" : T.bubbleOtherText, textDecoration: "none", fontSize: 13, marginBottom: hasTextContent ? 4 : 0, border: `1px solid ${isSelf ? "rgba(255,255,255,0.2)" : T.inputBorder}` }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: isSelf ? "rgba(255,255,255,0.15)" : "rgba(59,130,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <FileText size={18} color={isSelf ? "#fff" : T.accent} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>{(att as any).fileName || "File đính kèm"}</div>
+                  <div style={{ fontSize: 11, opacity: 0.7 }}>Nhấn để tải xuống</div>
+                </div>
+              </a>
+            : <div key={idx} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: isSelf ? "rgba(255,255,255,0.15)" : T.bubbleOther, color: isSelf ? "#fff" : T.bubbleOtherText, fontSize: 13, marginBottom: hasTextContent ? 4 : 0 }}>
+                <FileText size={18} /><span>{(att as any).fileName || "File đính kèm"}</span>
+              </div>
+        ))}
+
+        {/* Text bubble */}
+        {hasTextContent && (
+          <div style={{
+            padding: "9px 13px",
+            borderRadius: isSelf ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+            background: isSelf ? T.bubbleSelf : T.bubbleOther,
+            color: isSelf ? T.bubbleSelfText : T.bubbleOtherText,
+            fontSize: 14, lineHeight: 1.55,
+            boxShadow: isSelf ? "0 2px 12px rgba(37,99,235,0.3)" : "0 1px 4px rgba(0,0,0,0.2)",
+            whiteSpace: "pre-wrap", wordBreak: "break-word",
+          }}>
+            {searchQuery ? <HighlightText text={mainContent} query={searchQuery} /> : mainContent}
+          </div>
+        )}
+
+        {/* Timestamp + status */}
+        <div style={{
+          fontSize: 10, color: T.textMuted, marginTop: 3,
+          display: "flex", alignItems: "center", gap: 4,
+          justifyContent: isSelf ? "flex-end" : "flex-start",
+          paddingLeft: isSelf ? 0 : 4, paddingRight: isSelf ? 4 : 0,
+        }}>
+          {timeStr}
+          {isSelf && <CheckCheck size={12} color="#60A5FA" title="Đã gửi" />}
+        </div>
+      </div>
+
+      {/* Reply button */}
+      <div style={{
+        opacity: hovered ? 1 : 0, transition: "opacity 0.15s",
+        display: "flex", alignItems: "center", alignSelf: "center",
+      }}>
+        <button onClick={() => onReply({ messageId: message.id, senderName: message.senderName, content: message.content || "", isPhoto: photoAttachments.length > 0 })}
+          title="Trả lời"
+          style={{
+            background: T.sidebarHover, border: `1px solid ${T.inputBorder}`, borderRadius: 8,
+            width: 30, height: 30, cursor: "pointer", display: "flex", alignItems: "center",
+            justifyContent: "center", color: T.textSecondary,
+          }}>
+          <Reply size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── LeadInfoPanel ────────────────────────────────────────────────────────────
+function LeadInfoPanel({ lead }: { lead: LeadInfo }) {
+  return (
+    <div style={{
+      width: 260, background: T.sidebarBg, borderLeft: `1px solid ${T.sidebarBorder}`,
+      display: "flex", flexDirection: "column", overflowY: "auto",
+    }}>
+      {/* Header */}
+      <div style={{ padding: "16px 16px 12px", borderBottom: `1px solid ${T.sidebarBorder}` }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+          Thông tin khách hàng
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <Avatar name={lead.name} size={42} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: T.textPrimary }}>{lead.name}</div>
+            <div style={{ fontSize: 12, color: T.textMuted }}>{lead.phone}</div>
+          </div>
+        </div>
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px",
+          borderRadius: 20, background: `${getStageColor(lead.stage)}20`,
+          border: `1px solid ${getStageColor(lead.stage)}40`,
+        }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: getStageColor(lead.stage) }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: getStageColor(lead.stage) }}>
+            {getStageLabel(lead.stage)}
+          </span>
+        </div>
+      </div>
+
+      {/* Info rows */}
+      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {[
+          { icon: <Phone size={13} />, label: "SĐT", value: lead.phone },
+          { icon: <User size={13} />, label: "Loại", value: lead.type },
+          { icon: <User size={13} />, label: "Phụ trách", value: lead.assignedTo || "Chưa phân công" },
+        ].map(row => (
+          <div key={row.label} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, flexShrink: 0 }}>
+              {row.icon}
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 1 }}>{row.label}</div>
+              <div style={{ fontSize: 13, color: T.textPrimary, fontWeight: 500 }}>{row.value}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quotes */}
+      {lead.recent_quotes && lead.recent_quotes.length > 0 && (
+        <div style={{ padding: "0 16px 16px" }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+            Báo giá gần đây
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {lead.recent_quotes.slice(0, 3).map(q => (
+              <div key={q.id} style={{ padding: "8px 10px", background: T.sidebarHover, borderRadius: 8, border: `1px solid ${T.sidebarBorder}` }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: T.textPrimary, marginBottom: 3 }}>{q.name}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: T.accent, fontWeight: 600 }}>
+                    {q.total_amount?.toLocaleString("vi-VN")}đ
+                  </span>
+                  <span style={{ fontSize: 10, color: T.textMuted }}>{q.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* CTA */}
+      <div style={{ padding: "0 16px 16px", marginTop: "auto" }}>
+        <a href={`/crm/leads?id=${lead.id}`}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            padding: "9px 14px", background: T.accent, color: "#fff",
+            borderRadius: 10, textDecoration: "none", fontSize: 13, fontWeight: 600,
+            boxShadow: "0 2px 8px rgba(59,130,246,0.35)",
+          }}>
+          <ShoppingBag size={14} /> Xem hồ sơ đầy đủ
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ─── ZaloSettingsModal ────────────────────────────────────────────────────────
+function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onDisconnect: () => void }) {
+  const [qrData, setQrData] = useState<{ qr: string; status: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{ connected: boolean; phone: string | null } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/crm/zalo-inbox/status", { credentials: "include" })
+      .then(r => r.json()).then(d => setStatus({ connected: d.connected, phone: d.phone }))
+      .catch(() => { });
+  }, []);
+
+  const getQR = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/crm/zalo-inbox/login", { method: "POST", credentials: "include" });
+      const data = await res.json();
+      setQrData(data);
+    } catch { }
+    finally { setLoading(false); }
+  };
+
+  const disconnect = async () => {
+    await fetch("/api/crm/zalo-inbox/disconnect", { method: "POST", credentials: "include" });
+    onDisconnect();
+    onClose();
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+      <div style={{ background: "#1E293B", borderRadius: 16, padding: 28, width: 380, border: `1px solid ${T.sidebarBorder}`, boxShadow: "0 25px 60px rgba(0,0,0,0.5)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: T.textPrimary }}>Cài đặt Zalo</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 4 }}><X size={18} /></button>
+        </div>
+
+        {status && (
+          <div style={{ padding: "12px 14px", borderRadius: 10, background: status.connected ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${status.connected ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: status.connected ? T.success : T.error }} />
+            <span style={{ fontSize: 13, color: status.connected ? T.success : T.error, fontWeight: 500 }}>
+              {status.connected ? `Đã kết nối: ${status.phone}` : "Chưa đăng nhập"}
+            </span>
+          </div>
+        )}
+
+        {qrData?.qr && (
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <img src={qrData.qr} alt="QR Code" style={{ width: 200, height: 200, borderRadius: 12, border: `2px solid ${T.accent}` }} />
+            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 8 }}>Quét bằng Zalo để đăng nhập</div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <button onClick={getQR} disabled={loading}
+            style={{ padding: "10px 16px", background: T.accent, color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 600, opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Đang tải..." : "Đăng nhập bằng QR"}
+          </button>
+          {status?.connected && (
+            <button onClick={disconnect}
+              style={{ padding: "10px 16px", background: "rgba(239,68,68,0.1)", color: T.error, border: `1px solid rgba(239,68,68,0.3)`, borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+              Đăng xuất Zalo
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -293,13 +736,10 @@ export default function ZaloInboxClient() {
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const multiFileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-
-  // Tính năng mới
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [replyContext, setReplyContext] = useState<ReplyContext | null>(null);
@@ -308,42 +748,31 @@ export default function ZaloInboxClient() {
   const [msgSearchResults, setMsgSearchResults] = useState<number[]>([]);
   const [msgSearchCurrent, setMsgSearchCurrent] = useState(0);
   const msgRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  // ─── Nhóm A: Trải nghiệm nhắn tin ─────────────────────────────────────────────────────────────────
-  // 1. Thông báo trình duyệt + âm thanh
+  // Nhóm A
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window !== "undefined") return localStorage.getItem("zalo_sound") !== "false";
     return true;
   });
   const audioCtxRef = useRef<AudioContext | null>(null);
-  // 2. Đánh dấu chưa đọc thủ công
   const [contextMenu, setContextMenu] = useState<{ convId: string; x: number; y: number } | null>(null);
-  // 3. Emoji picker
   const [showEmoji, setShowEmoji] = useState(false);
   const emojiRef = useRef<HTMLDivElement>(null);
-  // 4. Cuộn xuống nhanh
   const [showScrollDown, setShowScrollDown] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  // 5. Trạng thái gửi (tracked bằng lastSentMsgId)
-  const lastSentMsgIdRef = useRef<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // ─── Load conversations ──────────────────────────────────────────────────
   const loadConversations = useCallback(async () => {
     try {
       const res = await fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" });
-      if (res.status === 401) {
-        setGatewayStatus({ connected: false, phone: null, message: "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại" });
-        return;
-      }
-      if (res.status === 403) {
-        setGatewayStatus({ connected: false, phone: null, message: "Bạn chưa được cấp quyền truy cập Zalo Inbox" });
-        return;
-      }
+      if (res.status === 401) { setGatewayStatus({ connected: false, phone: null, message: "Phiên đăng nhập hết hạn" }); return; }
+      if (res.status === 403) { setGatewayStatus({ connected: false, phone: null, message: "Bạn chưa được cấp quyền truy cập" }); return; }
       if (!res.ok) return;
       const data = await res.json();
       setConversations(data.conversations || []);
       setGatewayStatus({ connected: data.connected || false, phone: data.phone || null, status: data.status, message: data.error });
-    } catch { /* ignore */ }
+    } catch { }
     finally { setLoading(false); }
   }, []);
 
@@ -355,129 +784,15 @@ export default function ZaloInboxClient() {
       const data = await res.json();
       setMessages(data.messages || []);
       await fetch(`/api/crm/zalo-inbox/conversations/${convId}/read`, { method: "POST", credentials: "include" });
-      setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, unreadCount: 0 } : c));
-    } catch { /* ignore */ }
+      setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: 0 } : c));
+    } catch { }
   }, []);
 
-  // ─── Smart Polling (3s khi active, 10s khi tab ẩn) ──────────────────────────────────────
+  // ─── Smart Polling ───────────────────────────────────────────────────────
   const lastConvTimestampRef = useRef<string>("");
-  const lastMsgTimestampRef = useRef<string>("");
   const selectedConvRef = useRef<ZaloConversation | null>(null);
   selectedConvRef.current = selectedConv;
 
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-
-    const poll = async () => {
-      // Poll conversations để phát hiện tin mới
-      try {
-        const res = await fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          const convs: ZaloConversation[] = data.conversations || [];
-          setGatewayStatus({ connected: data.connected || false, phone: data.phone || null, status: data.status });
-
-          // Kiểm tra có tin nhắn mới không (so sánh lastMessageAt của conversation đầu tiên)
-          const latestTs = convs[0]?.lastMessageAt || "";
-          const hasNewConvMsg = latestTs && latestTs !== lastConvTimestampRef.current;
-          if (hasNewConvMsg) {
-            lastConvTimestampRef.current = latestTs;
-            setConversations(convs);
-            // Phát âm thanh và thông báo khi có tin mới từ người khác
-            const newestConv = convs[0];
-            const currentConvId = selectedConvRef.current?.id;
-            if (newestConv && !newestConv.lastMessage?.startsWith("[Trả lời")) {
-              playNotifSound();
-              if (newestConv.id !== currentConvId || document.hidden) {
-                sendBrowserNotif(
-                  newestConv.displayName || "Tin nhắn Zalo mới",
-                  newestConv.lastMessage || "Bạn có tin nhắn mới",
-                  newestConv.id
-                );
-              }
-            }
-          } else {
-            // Cập nhật silent (unread count, etc.) không trigger re-render nếu không có thay đổi
-            setConversations((prev) => {
-              const changed = convs.some((c, i) =>
-                c.unreadCount !== prev[i]?.unreadCount ||
-                c.lastMessage !== prev[i]?.lastMessage
-              );
-              return changed ? convs : prev;
-            });
-          }
-
-          // Nếu đang mở hội thoại, kiểm tra có tin nhắn mới không
-          const currentConv = selectedConvRef.current;
-          if (currentConv) {
-            const convData = convs.find((c) => c.id === currentConv.id);
-            const convLatestTs = convData?.lastMessageAt || "";
-            if (convLatestTs && convLatestTs !== lastMsgTimestampRef.current) {
-              lastMsgTimestampRef.current = convLatestTs;
-              loadMessages(currentConv.id);
-            }
-          }
-        }
-      } catch { /* ignore network errors */ }
-
-      // Poll nhanh hơn khi tab đang active
-      const interval = document.hidden ? 10000 : 3000;
-      timer = setTimeout(poll, interval);
-    };
-
-    // Bắt đầu poll ngay
-    loadConversations().then(() => {
-      timer = setTimeout(poll, 3000);
-    });
-
-    return () => clearTimeout(timer);
-  }, [loadConversations, loadMessages]);
-  // Auto scroll xuống khi có tin mới, chỉ nếu đang ở gần đáy
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); return; }
-    const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-    if (distFromBottom < 200) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Phát hiện cuộn để hiện/ẩn nút scroll down
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-    const onScroll = () => {
-      const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-      setShowScrollDown(distFromBottom > 300);
-    };
-    container.addEventListener("scroll", onScroll);
-    return () => container.removeEventListener("scroll", onScroll);
-  }, [selectedConv]);
-
-  // Đóng emoji picker khi click ra ngoài
-  useEffect(() => {
-    if (!showEmoji) return;
-    const handler = (e: MouseEvent) => {
-      if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) setShowEmoji(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showEmoji]);
-
-  // Đóng context menu khi click ra ngoài
-  useEffect(() => {
-    if (!contextMenu) return;
-    const handler = () => setContextMenu(null);
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, [contextMenu]);
-
-  // Xin quyền thông báo khi mời vào trang
-  useEffect(() => {
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      setNotifEnabled(true);
-    }
-  }, []);
-
-  // Hàm phát âm thanh ting nhẹ
   const playNotifSound = useCallback(() => {
     if (!soundEnabled) return;
     try {
@@ -485,71 +800,131 @@ export default function ZaloInboxClient() {
       const ctx = audioCtxRef.current;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      osc.connect(gain); gain.connect(ctx.destination);
       osc.frequency.setValueAtTime(880, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.3);
-    } catch { /* ignore */ }
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
+    } catch { }
   }, [soundEnabled]);
 
-  // Hàm gửi thông báo trình duyệt
   const sendBrowserNotif = useCallback((title: string, body: string, convId: string) => {
     if (!notifEnabled || !document.hidden) return;
     try {
       const n = new Notification(title, { body, icon: "/favicon.ico", tag: convId });
       n.onclick = () => { window.focus(); n.close(); };
-    } catch { /* ignore */ }
+    } catch { }
   }, [notifEnabled]);
 
-  // Hàm toggle thông báo
-  const toggleNotif = useCallback(async () => {
-    if (notifEnabled) {
-      setNotifEnabled(false);
-      return;
-    }
-    if (typeof Notification === "undefined") return;
-    const perm = await Notification.requestPermission();
-    setNotifEnabled(perm === "granted");
-  }, [notifEnabled]);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          const convs: ZaloConversation[] = data.conversations || [];
+          setGatewayStatus({ connected: data.connected || false, phone: data.phone || null, status: data.status });
+          const latestTs = convs[0]?.lastMessageAt || "";
+          const hasNew = latestTs && latestTs !== lastConvTimestampRef.current;
+          if (hasNew) {
+            lastConvTimestampRef.current = latestTs;
+            setConversations(convs);
+            const newestConv = convs[0];
+            const currentConvId = selectedConvRef.current?.id;
+            if (newestConv) {
+              playNotifSound();
+              if (newestConv.id !== currentConvId || document.hidden) {
+                sendBrowserNotif(newestConv.displayName || "Tin nhắn Zalo mới", newestConv.lastMessage || "Bạn có tin nhắn mới", newestConv.id);
+              }
+            }
+          } else {
+            setConversations(prev => {
+              const changed = convs.some((c, i) => c.unreadCount !== prev[i]?.unreadCount || c.lastMessage !== prev[i]?.lastMessage);
+              return changed ? convs : prev;
+            });
+          }
+          // Poll messages nếu đang mở hội thoại
+          const currentConv = selectedConvRef.current;
+          if (currentConv) {
+            const msgRes = await fetch(`/api/crm/zalo-inbox/conversations/${currentConv.id}/messages`, { credentials: "include" });
+            if (msgRes.ok) {
+              const msgData = await msgRes.json();
+              const newMsgs: ZaloMessage[] = msgData.messages || [];
+              setMessages(prev => {
+                if (newMsgs.length !== prev.length || newMsgs[newMsgs.length - 1]?.id !== prev[prev.length - 1]?.id) return newMsgs;
+                return prev;
+              });
+            }
+          }
+        }
+      } catch { }
+      const interval = document.hidden ? 10000 : 3000;
+      timer = setTimeout(poll, interval);
+    };
+    loadConversations().then(() => { timer = setTimeout(poll, 3000); });
+    return () => clearTimeout(timer);
+  }, [loadConversations, loadMessages, playNotifSound, sendBrowserNotif]);
 
-  // Hàm toggle âm thanh
-  const toggleSound = useCallback(() => {
-    setSoundEnabled(prev => {
-      const next = !prev;
-      localStorage.setItem("zalo_sound", next ? "true" : "false");
-      return next;
-    });
-  }, []);
+  // ─── Auto scroll ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); return; }
+    const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distFromBottom < 200) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  // Hàm đánh dấu chưa đọc thủ công
-  const markUnread = useCallback(async (convId: string) => {
-    setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c));
-    try {
-      await fetch(`/api/crm/zalo-inbox/conversations/${convId}/unread`, { method: "POST", credentials: "include" });
-    } catch { /* ignore */ }
-  }, []);
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const dist = container.scrollHeight - container.scrollTop - container.clientHeight;
+      setShowScrollDown(dist > 300);
+    };
+    container.addEventListener("scroll", onScroll);
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [selectedConv]);
 
   // ─── Message search ───────────────────────────────────────────────────────
   useEffect(() => {
-    if (!msgSearchQuery.trim()) { setMsgSearchResults([]); setMsgSearchCurrent(0); return; }
+    if (!msgSearchQuery.trim()) { setMsgSearchResults([]); return; }
     const q = msgSearchQuery.toLowerCase();
-    const results: number[] = [];
-    messages.forEach((msg, idx) => { if (msg.content?.toLowerCase().includes(q)) results.push(idx); });
+    const results = messages.reduce<number[]>((acc, msg, idx) => {
+      if (msg.content?.toLowerCase().includes(q)) acc.push(idx);
+      return acc;
+    }, []);
     setMsgSearchResults(results);
     setMsgSearchCurrent(0);
   }, [msgSearchQuery, messages]);
 
   useEffect(() => {
     if (msgSearchResults.length === 0) return;
-    const msgId = messages[msgSearchResults[msgSearchCurrent]]?.id;
+    const idx = msgSearchResults[msgSearchCurrent];
+    const msgId = messages[idx]?.id;
     if (msgId && msgRefs.current[msgId]) {
       msgRefs.current[msgId]?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [msgSearchCurrent, msgSearchResults, messages]);
+
+  // ─── Close overlays ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!showEmoji) return;
+    const h = (e: MouseEvent) => { if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) setShowEmoji(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [showEmoji]);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const h = () => setContextMenu(null);
+    document.addEventListener("click", h);
+    return () => document.removeEventListener("click", h);
+  }, [contextMenu]);
+
+  useEffect(() => {
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") setNotifEnabled(true);
+  }, []);
 
   // ─── Handlers ────────────────────────────────────────────────────────────
   const handleSelectConv = (conv: ZaloConversation) => {
@@ -568,23 +943,19 @@ export default function ZaloInboxClient() {
     setInputText("");
     setReplyContext(null);
     setSending(true);
+    // Auto resize textarea
+    if (textareaRef.current) textareaRef.current.style.height = "40px";
     try {
       const fullText = reply
         ? `[Trả lời ${reply.senderName}: "${reply.isPhoto ? "🖼️ Hình ảnh" : reply.content.slice(0, 60)}${reply.content.length > 60 ? "..." : ""}"]\n${text}`
         : text;
       const res = await fetch("/api/crm/zalo-inbox/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ conversationId: selectedConv.id, content: fullText }),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Lỗi gửi tin nhắn");
-        setInputText(text);
-      } else {
-        if (selectedConv) loadMessages(selectedConv.id);
-      }
+      if (!res.ok) { const err = await res.json(); alert(err.error || "Lỗi gửi tin nhắn"); setInputText(text); }
+      else { loadMessages(selectedConv.id); }
     } catch { setInputText(text); }
     finally { setSending(false); }
   };
@@ -593,17 +964,15 @@ export default function ZaloInboxClient() {
     const file = e.target.files?.[0];
     if (!file || !selectedConv) return;
     e.target.value = "";
-    setUploadError(null);
-    setUploadingFile(true);
+    setUploadError(null); setUploadingFile(true);
     try {
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("conversationId", selectedConv.id);
+      formData.append("file", file); formData.append("conversationId", selectedConv.id);
       const res = await fetch("/api/crm/zalo-inbox/send-attachment", { method: "POST", credentials: "include", body: formData });
       const data = await res.json();
       if (!res.ok) setUploadError(data.error || "Lỗi gửi file");
       else setTimeout(() => loadMessages(selectedConv.id), 1000);
-    } catch { setUploadError("Lỗi kết nối khi gửi file"); }
+    } catch { setUploadError("Lỗi kết nối"); }
     finally { setUploadingFile(false); }
   };
 
@@ -611,110 +980,151 @@ export default function ZaloInboxClient() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     e.target.value = "";
-    const newPending: PendingFile[] = files.map(file => ({ file, previewUrl: URL.createObjectURL(file) }));
-    setPendingFiles(prev => [...prev, ...newPending]);
+    setPendingFiles(prev => [...prev, ...files.map(f => ({ file: f, previewUrl: URL.createObjectURL(f) }))]);
   };
 
   const handleSendPendingImages = async () => {
-    if (!selectedConv || pendingFiles.length === 0 || uploadingFile) return;
-    setUploadingFile(true);
-    setUploadError(null);
-    const filesToSend = [...pendingFiles];
+    if (!selectedConv || !pendingFiles.length || uploadingFile) return;
+    setUploadingFile(true); setUploadError(null);
+    const toSend = [...pendingFiles];
     setPendingFiles([]);
-    filesToSend.forEach(f => URL.revokeObjectURL(f.previewUrl));
+    toSend.forEach(f => URL.revokeObjectURL(f.previewUrl));
     try {
-      for (const pf of filesToSend) {
-        const formData = new FormData();
-        formData.append("file", pf.file);
-        formData.append("conversationId", selectedConv.id);
-        await fetch("/api/crm/zalo-inbox/send-attachment", { method: "POST", credentials: "include", body: formData });
+      for (const pf of toSend) {
+        const fd = new FormData();
+        fd.append("file", pf.file); fd.append("conversationId", selectedConv.id);
+        await fetch("/api/crm/zalo-inbox/send-attachment", { method: "POST", credentials: "include", body: fd });
       }
       setTimeout(() => loadMessages(selectedConv.id), 1000);
     } catch { setUploadError("Lỗi gửi ảnh"); }
     finally { setUploadingFile(false); }
   };
 
-  const filteredConvs = conversations.filter((c) =>
+  const markUnread = useCallback(async (convId: string) => {
+    setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c));
+    try { await fetch(`/api/crm/zalo-inbox/conversations/${convId}/unread`, { method: "POST", credentials: "include" }); } catch { }
+  }, []);
+
+  const toggleNotif = useCallback(async () => {
+    if (notifEnabled) { setNotifEnabled(false); return; }
+    if (typeof Notification === "undefined") return;
+    const perm = await Notification.requestPermission();
+    setNotifEnabled(perm === "granted");
+  }, [notifEnabled]);
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled(prev => { const next = !prev; localStorage.setItem("zalo_sound", next ? "true" : "false"); return next; });
+  }, []);
+
+  const filteredConvs = conversations.filter(c =>
     c.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.phone.includes(searchQuery) ||
     c.lead?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+
   // ─── Render ──────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#F0F2F5", fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ display: "flex", height: "100vh", background: T.chatBg, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", overflow: "hidden" }}>
       {lightbox && <Lightbox state={lightbox} onClose={() => setLightbox(null)} />}
-      {/* Context menu chuột phải */}
+
+      {/* Context menu */}
       {contextMenu && (
-        <div style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 9999, background: "#fff", borderRadius: 8, boxShadow: "0 4px 20px rgba(0,0,0,0.15)", border: "1px solid #E5E7EB", minWidth: 180, overflow: "hidden" }}
+        <div style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 9999, background: "#1E293B", borderRadius: 10, boxShadow: "0 8px 30px rgba(0,0,0,0.4)", border: `1px solid ${T.sidebarBorder}`, minWidth: 180, overflow: "hidden" }}
           onClick={e => e.stopPropagation()}>
           <button onClick={() => { markUnread(contextMenu.convId); setContextMenu(null); }}
-            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: 13, color: "#374151", display: "flex", alignItems: "center", gap: 8 }}>
-            <Bell size={14} color="#6B7280" /> Đánh dấu chưa đọc
+            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: 13, color: T.textPrimary, display: "flex", alignItems: "center", gap: 8 }}
+            onMouseEnter={e => (e.currentTarget.style.background = T.sidebarHover)}
+            onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+            <Bell size={14} color={T.textMuted} /> Đánh dấu chưa đọc
           </button>
         </div>
       )}
 
-      {/* Sidebar */}
-      <div style={{ width: 340, background: "#fff", borderRight: "1px solid #E5E7EB", display: "flex", flexDirection: "column", flexShrink: 0 }}>
-        <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #F3F4F6" }}>
+      {/* ─── Sidebar ─────────────────────────────────────────────────────── */}
+      <div style={{ width: 320, background: T.sidebarBg, borderRight: `1px solid ${T.sidebarBorder}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        {/* Sidebar header */}
+        <div style={{ padding: "16px 14px 12px", borderBottom: `1px solid ${T.sidebarBorder}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#0068FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <MessageCircle size={18} color="#fff" />
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#3B82F6,#1D4ED8)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(59,130,246,0.4)" }}>
+                <MessageCircle size={17} color="#fff" />
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Zalo Inbox</div>
-                <div style={{ fontSize: 11, color: gatewayStatus.connected ? "#10B981" : "#9CA3AF", display: "flex", alignItems: "center", gap: 4 }}>
-                  {loading ? (
-                    <span style={{ color: "#9CA3AF" }}>Đang kết nối...</span>
-                  ) : gatewayStatus.connected ? (
-                    <><Wifi size={10} /> {`Zalo: ${gatewayStatus.phone || "Đã kết nối"}`}</>
-                  ) : (
-                    <><WifiOff size={10} /> Chưa đăng nhập Zalo</>
+                <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary, display: "flex", alignItems: "center", gap: 6 }}>
+                  Zalo Inbox
+                  {totalUnread > 0 && (
+                    <span style={{ fontSize: 10, fontWeight: 700, background: T.badge, color: "#fff", borderRadius: 10, padding: "1px 6px" }}>{totalUnread}</span>
                   )}
+                </div>
+                <div style={{ fontSize: 11, color: loading ? T.textMuted : gatewayStatus.connected ? T.success : T.textMuted, display: "flex", alignItems: "center", gap: 4 }}>
+                  {loading ? "Đang kết nối..." : gatewayStatus.connected
+                    ? <><Wifi size={9} /> {gatewayStatus.phone}</>
+                    : <><WifiOff size={9} /> Chưa đăng nhập</>}
                 </div>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 4 }}>
-              <button onClick={toggleSound} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: soundEnabled ? "#0068FF" : "#9CA3AF" }} title={soundEnabled ? "Đang bật âm thanh" : "Đã tắt âm thanh"}>
-                {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            <div style={{ display: "flex", gap: 2 }}>
+              <button onClick={toggleSound} title={soundEnabled ? "Tắt âm thanh" : "Bật âm thanh"}
+                style={{ width: 30, height: 30, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: soundEnabled ? T.accent : T.textMuted }}>
+                {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
               </button>
-              <button onClick={toggleNotif} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: notifEnabled ? "#0068FF" : "#9CA3AF" }} title={notifEnabled ? "Đang bật thông báo" : "Bật thông báo trình duyệt"}>
-                {notifEnabled ? <Bell size={15} /> : <BellOff size={15} />}
+              <button onClick={toggleNotif} title={notifEnabled ? "Tắt thông báo" : "Bật thông báo"}
+                style={{ width: 30, height: 30, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: notifEnabled ? T.accent : T.textMuted }}>
+                {notifEnabled ? <Bell size={14} /> : <BellOff size={14} />}
               </button>
-              <button onClick={loadConversations} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#6B7280" }} title="Làm mới"><RefreshCw size={15} /></button>
-              <button onClick={() => setShowSettings(true)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#6B7280" }} title="Cài đặt"><Settings size={15} /></button>
+              <button onClick={loadConversations} title="Làm mới"
+                style={{ width: 30, height: 30, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
+                <RefreshCw size={14} />
+              </button>
+              <button onClick={() => setShowSettings(true)} title="Cài đặt"
+                style={{ width: 30, height: 30, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
+                <Settings size={14} />
+              </button>
             </div>
           </div>
+
+          {/* Warning */}
           {!loading && gatewayStatus.message && (
-            <div style={{ padding: "6px 10px", background: "#FEF3C7", borderRadius: 6, fontSize: 11, color: "#92400E", marginBottom: 8, border: "1px solid #FDE68A" }}>
+            <div style={{ padding: "7px 10px", background: "rgba(245,158,11,0.1)", borderRadius: 8, fontSize: 11, color: T.warning, marginBottom: 8, border: `1px solid rgba(245,158,11,0.2)` }}>
               ⚠️ {gatewayStatus.message}
             </div>
           )}
           {!loading && !gatewayStatus.connected && !gatewayStatus.message?.includes("quyền") && (
-            <button onClick={() => setShowSettings(true)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "none", background: "#0068FF", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", marginBottom: 8 }}>
+            <button onClick={() => setShowSettings(true)}
+              style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "none", background: T.accent, color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", marginBottom: 10, boxShadow: "0 2px 8px rgba(59,130,246,0.3)" }}>
               Đăng nhập Zalo
             </button>
           )}
+
+          {/* Search */}
           <div style={{ position: "relative" }}>
-            <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF" }} />
-            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Tìm hội thoại, tên, SĐT..."
-              style={{ width: "100%", padding: "8px 12px 8px 32px", borderRadius: 20, border: "1px solid #E5E7EB", background: "#F9FAFB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+            <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} />
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Tìm hội thoại, tên, SĐT..."
+              style={{ width: "100%", padding: "8px 12px 8px 30px", borderRadius: 10, border: `1px solid ${T.sidebarBorder}`, background: T.sidebarHover, fontSize: 13, outline: "none", color: T.textPrimary, boxSizing: "border-box" }}
             />
           </div>
         </div>
+
+        {/* Conversation list */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {loading ? (
-            <div style={{ padding: 24, textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>Đang tải...</div>
+            <div style={{ padding: 32, textAlign: "center" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", border: `3px solid ${T.sidebarBorder}`, borderTopColor: T.accent, margin: "0 auto 12px", animation: "spin 0.8s linear infinite" }} />
+              <div style={{ color: T.textMuted, fontSize: 13 }}>Đang tải...</div>
+            </div>
           ) : filteredConvs.length === 0 ? (
             <div style={{ padding: 32, textAlign: "center" }}>
-              <MessageCircle size={40} color="#D1D5DB" style={{ margin: "0 auto 12px" }} />
-              <div style={{ color: "#9CA3AF", fontSize: 13 }}>{conversations.length === 0 ? "Chưa có hội thoại nào" : "Không tìm thấy kết quả"}</div>
+              <MessageCircle size={36} color={T.textMuted} style={{ margin: "0 auto 10px" }} />
+              <div style={{ color: T.textMuted, fontSize: 13 }}>
+                {conversations.length === 0 ? "Chưa có hội thoại nào" : "Không tìm thấy kết quả"}
+              </div>
             </div>
           ) : (
-            filteredConvs.map((conv) => (
-              <div key={conv.id} onContextMenu={(e) => { e.preventDefault(); setContextMenu({ convId: conv.id, x: e.clientX, y: e.clientY }); }}>
+            filteredConvs.map(conv => (
+              <div key={conv.id} onContextMenu={e => { e.preventDefault(); setContextMenu({ convId: conv.id, x: e.clientX, y: e.clientY }); }}>
                 <ConversationItem conv={conv} isSelected={selectedConv?.id === conv.id} onClick={() => handleSelectConv(conv)} />
               </div>
             ))
@@ -722,32 +1132,40 @@ export default function ZaloInboxClient() {
         </div>
       </div>
 
-      {/* Chat area */}
+      {/* ─── Chat area ───────────────────────────────────────────────────── */}
       {selectedConv ? (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          {/* Header */}
-          <div style={{ padding: "12px 20px", background: "#fff", borderBottom: "1px solid #E5E7EB", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: T.chatBg, backgroundImage: T.chatBgPattern }}>
+          {/* Chat header */}
+          <div style={{
+            padding: "12px 20px", background: T.headerBg, borderBottom: `1px solid ${T.headerBorder}`,
+            display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
+            backdropFilter: "blur(12px)",
+          }}>
             <Avatar name={selectedConv.displayName} size={40} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 15, color: "#111827" }}>{selectedConv.displayName}</div>
-              <div style={{ fontSize: 12, color: "#6B7280" }}>{selectedConv.phone}</div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary }}>{selectedConv.displayName}</div>
+              <div style={{ fontSize: 12, color: T.textMuted }}>{selectedConv.phone}</div>
             </div>
-            <button onClick={() => { setShowMsgSearch(s => !s); setMsgSearchQuery(""); }} title="Tìm kiếm trong hội thoại"
-              style={{ background: showMsgSearch ? "#EFF6FF" : "none", border: showMsgSearch ? "1px solid #BFDBFE" : "none", cursor: "pointer", padding: 7, borderRadius: 8, color: showMsgSearch ? "#0068FF" : "#6B7280" }}>
-              <Search size={16} />
-            </button>
-            {selectedConv.lead && (
-              <a href={`/crm/leads?id=${selectedConv.lead.id}`} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "#EFF6FF", borderRadius: 20, textDecoration: "none", color: "#3B82F6", fontSize: 12, fontWeight: 500 }}>
-                <User size={12} />Xem hồ sơ KH<ChevronRight size={12} />
-              </a>
-            )}
+            <div style={{ display: "flex", gap: 4 }}>
+              <button onClick={() => { setShowMsgSearch(s => !s); setMsgSearchQuery(""); }}
+                title="Tìm kiếm trong hội thoại"
+                style={{ width: 34, height: 34, borderRadius: 8, background: showMsgSearch ? "rgba(59,130,246,0.15)" : "none", border: showMsgSearch ? `1px solid rgba(59,130,246,0.3)` : "1px solid transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showMsgSearch ? T.accent : T.textMuted }}>
+                <Search size={15} />
+              </button>
+              {selectedConv.lead && (
+                <a href={`/crm/leads?id=${selectedConv.lead.id}`}
+                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(59,130,246,0.1)", borderRadius: 8, textDecoration: "none", color: T.accent, fontSize: 12, fontWeight: 600, border: `1px solid rgba(59,130,246,0.2)` }}>
+                  <User size={12} /> Hồ sơ KH
+                </a>
+              )}
+            </div>
           </div>
 
-          {/* Message search bar */}
+          {/* Search bar */}
           {showMsgSearch && (
-            <MessageSearchBar
-              query={msgSearchQuery} onChange={setMsgSearchQuery}
-              resultCount={msgSearchResults.length} currentResult={msgSearchCurrent}
+            <MsgSearchBar
+              query={msgSearchQuery} setQuery={setMsgSearchQuery}
+              results={msgSearchResults} current={msgSearchCurrent}
               onPrev={() => setMsgSearchCurrent(i => (i - 1 + msgSearchResults.length) % msgSearchResults.length)}
               onNext={() => setMsgSearchCurrent(i => (i + 1) % msgSearchResults.length)}
               onClose={() => { setShowMsgSearch(false); setMsgSearchQuery(""); }}
@@ -755,79 +1173,78 @@ export default function ZaloInboxClient() {
           )}
 
           {/* Messages */}
-          <div ref={messagesContainerRef} style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 8, position: "relative" }}>
+          <div ref={messagesContainerRef} style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 6 }}>
             {messages.length === 0 ? (
-              <div style={{ textAlign: "center", color: "#9CA3AF", fontSize: 13, marginTop: 40, padding: "0 20px" }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>📬</div>
-                <div style={{ fontWeight: 600, color: "#6B7280", marginBottom: 4 }}>Chưa có tin nhắn nào</div>
-                <div style={{ fontSize: 12, lineHeight: 1.5 }}>Tin nhắn sẽ xuất hiện ở đây sau khi bạn đăng nhập Zalo.<br />Nhấn biểu tượng ⚙️ → <strong>Đăng nhập Zalo</strong> để quét QR.</div>
+              <div style={{ textAlign: "center", marginTop: 60 }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+                <div style={{ fontWeight: 600, color: T.textSecondary, marginBottom: 6 }}>Chưa có tin nhắn nào</div>
+                <div style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.6 }}>
+                  Tin nhắn sẽ xuất hiện ở đây.<br />Nhấn ⚙️ → <strong>Đăng nhập Zalo</strong> để bắt đầu.
+                </div>
               </div>
             ) : (
               messages.map((msg, idx) => {
                 const isHighlighted = msgSearchResults.includes(idx) && !!msgSearchQuery;
                 const isCurrentResult = msgSearchResults[msgSearchCurrent] === idx && !!msgSearchQuery;
                 return (
-                  <div key={msg.id} ref={el => { msgRefs.current[msg.id] = el; }} style={{
-                    borderRadius: 8,
-                    outline: isCurrentResult ? "2px solid #0068FF" : isHighlighted ? "2px solid #93C5FD" : "none",
-                    outlineOffset: 2,
-                  }}>
+                  <div key={msg.id} ref={el => { msgRefs.current[msg.id] = el; }}
+                    style={{ borderRadius: 12, outline: isCurrentResult ? `2px solid ${T.accent}` : isHighlighted ? `2px solid rgba(59,130,246,0.4)` : "none", outlineOffset: 3 }}>
                     <MessageBubble
-                      message={msg}
-                      searchQuery={msgSearchQuery}
+                      message={msg} searchQuery={msgSearchQuery}
                       onOpenLightbox={(images, startIdx) => setLightbox({ images, currentIndex: startIdx })}
-                      onReply={(ctx) => setReplyContext(ctx)}
+                      onReply={ctx => setReplyContext(ctx)}
                     />
                   </div>
                 );
               })
             )}
             <div ref={messagesEndRef} />
-            {/* Nút cuộn xuống nhanh */}
             {showScrollDown && (
               <button onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
-                style={{ position: "sticky", bottom: 8, alignSelf: "center", background: "#0068FF", color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 2px 8px rgba(0,104,255,0.4)", zIndex: 10 }}>
+                style={{ position: "sticky", bottom: 8, alignSelf: "center", background: T.accent, color: "#fff", border: "none", borderRadius: 20, padding: "7px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 16px rgba(59,130,246,0.4)", zIndex: 10 }}>
                 <ChevronDown size={14} /> Tin mới nhất
               </button>
             )}
           </div>
 
           {/* Input area */}
-          <div style={{ flexShrink: 0, background: "#fff", borderTop: "1px solid #E5E7EB" }}>
+          <div style={{ flexShrink: 0, background: T.headerBg, borderTop: `1px solid ${T.headerBorder}`, backdropFilter: "blur(12px)" }}>
             {replyContext && <ReplyBar reply={replyContext} onCancel={() => setReplyContext(null)} />}
             {pendingFiles.length > 0 && (
-              <ImagePreviewBar
-                files={pendingFiles}
-                onRemove={(idx) => { URL.revokeObjectURL(pendingFiles[idx].previewUrl); setPendingFiles(prev => prev.filter((_, i) => i !== idx)); }}
-                onSend={handleSendPendingImages}
-                sending={uploadingFile}
+              <ImagePreviewBar files={pendingFiles}
+                onRemove={idx => { URL.revokeObjectURL(pendingFiles[idx].previewUrl); setPendingFiles(prev => prev.filter((_, i) => i !== idx)); }}
+                onSend={handleSendPendingImages} sending={uploadingFile}
               />
             )}
             {uploadError && (
-              <div style={{ padding: "6px 20px", background: "#FEF2F2", color: "#EF4444", fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ padding: "7px 16px", background: "rgba(239,68,68,0.1)", color: T.error, fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid rgba(239,68,68,0.2)` }}>
                 <span>{uploadError}</span>
-                <button onClick={() => setUploadError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#EF4444" }}><X size={14} /></button>
+                <button onClick={() => setUploadError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: T.error }}><X size={13} /></button>
               </div>
             )}
             {uploadingFile && (
-              <div style={{ padding: "6px 20px", background: "#EFF6FF", color: "#3B82F6", fontSize: 13 }}>⏳ Đang gửi...</div>
+              <div style={{ padding: "7px 16px", background: "rgba(59,130,246,0.08)", color: T.accent, fontSize: 12, borderTop: `1px solid rgba(59,130,246,0.15)` }}>
+                ⏳ Đang gửi...
+              </div>
             )}
-            <div style={{ padding: "12px 20px", display: "flex", gap: 8, alignItems: "flex-end" }}>
+
+            <div style={{ padding: "12px 16px", display: "flex", gap: 8, alignItems: "flex-end" }}>
               <input ref={fileInputRef} type="file" accept="video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar" style={{ display: "none" }} onChange={handleFileUpload} />
               <input ref={multiFileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleMultiImageSelect} />
-              {/* Emoji picker */}
+
+              {/* Emoji */}
               <div ref={emojiRef} style={{ position: "relative" }}>
-                <button onClick={() => setShowEmoji(s => !s)} disabled={!selectedConv} title="Chọn emoji"
-                  style={{ width: 36, height: 36, borderRadius: "50%", border: showEmoji ? "1px solid #0068FF" : "1px solid #E5E7EB", background: showEmoji ? "#EFF6FF" : "#F9FAFB", color: showEmoji ? "#0068FF" : "#6B7280", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <button onClick={() => setShowEmoji(s => !s)} disabled={!selectedConv} title="Emoji"
+                  style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${showEmoji ? T.accent : T.inputBorder}`, background: showEmoji ? "rgba(59,130,246,0.1)" : T.inputBg, color: showEmoji ? T.accent : T.textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Smile size={16} />
                 </button>
                 {showEmoji && (
-                  <div style={{ position: "absolute", bottom: 44, left: 0, background: "#fff", borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.15)", border: "1px solid #E5E7EB", padding: 8, zIndex: 100, width: 280 }}>
+                  <div style={{ position: "absolute", bottom: 44, left: 0, background: "#1E293B", borderRadius: 14, boxShadow: "0 8px 30px rgba(0,0,0,0.4)", border: `1px solid ${T.sidebarBorder}`, padding: 10, zIndex: 100, width: 288 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 2 }}>
                       {["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘","😗","😚","😙","😋","🤫","🤔","😐","😑","😶","🙄","😬","😮","😯","😲","😳","😕","😟","🙁","☹️","😢","😭","😤","😠","😡","🤬","🤯","😈","👍","👎","❤️","💔","👏","🙏","🔥","💯","🎉","🎁","💰","💪","🚀","✅","❌","⚠️","🔔","📞","📱"].map(em => (
-                        <button key={em} onClick={() => { setInputText(t => t + em); setShowEmoji(false); }}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, padding: 4, borderRadius: 6, lineHeight: 1 }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "#F3F4F6")}
+                        <button key={em} onClick={() => { setInputText(t => t + em); setShowEmoji(false); textareaRef.current?.focus(); }}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, padding: 5, borderRadius: 8, lineHeight: 1 }}
+                          onMouseEnter={e => (e.currentTarget.style.background = T.sidebarHover)}
                           onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                           {em}
                         </button>
@@ -836,398 +1253,87 @@ export default function ZaloInboxClient() {
                   </div>
                 )}
               </div>
-              <button onClick={() => multiFileInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi ảnh (có thể chọn nhiều)"
-                style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid #E5E7EB", background: "#F9FAFB", color: "#0068FF", cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
+
+              {/* Image */}
+              <button onClick={() => multiFileInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi ảnh"
+                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.accent, cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
                 <ImageIcon size={16} />
               </button>
-              <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi video, file"
-                style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid #E5E7EB", background: "#F9FAFB", color: "#6B7280", cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
+
+              {/* File */}
+              <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi file, video"
+                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.textMuted, cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
                 <Paperclip size={16} />
               </button>
-              <textarea value={inputText} onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+
+              {/* Textarea */}
+              <textarea ref={textareaRef} value={inputText}
+                onChange={e => {
+                  setInputText(e.target.value);
+                  e.target.style.height = "40px";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                }}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 placeholder={replyContext ? `Trả lời ${replyContext.senderName}...` : "Nhập tin nhắn... (Enter để gửi)"}
                 rows={1}
-                style={{ flex: 1, padding: "10px 14px", borderRadius: 20, border: "1px solid #E5E7EB", fontSize: 14, outline: "none", resize: "none", fontFamily: "inherit", maxHeight: 120, overflowY: "auto" }}
+                style={{
+                  flex: 1, padding: "10px 14px", borderRadius: 12,
+                  border: `1px solid ${T.inputBorder}`, background: T.inputBg,
+                  fontSize: 14, outline: "none", resize: "none",
+                  fontFamily: "inherit", maxHeight: 120, overflowY: "auto",
+                  color: T.textPrimary, lineHeight: 1.5, height: 40,
+                  transition: "border-color 0.15s",
+                }}
+                onFocus={e => (e.target.style.borderColor = T.accent)}
+                onBlur={e => (e.target.style.borderColor = T.inputBorder)}
               />
+
+              {/* Send */}
               <button onClick={handleSend} disabled={!inputText.trim() || sending}
-                style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: inputText.trim() ? "#0068FF" : "#D1D5DB", color: "#fff", cursor: inputText.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                style={{
+                  width: 40, height: 40, borderRadius: 12, border: "none",
+                  background: inputText.trim() ? T.accent : T.sidebarHover,
+                  color: inputText.trim() ? "#fff" : T.textMuted,
+                  cursor: inputText.trim() ? "pointer" : "not-allowed",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  boxShadow: inputText.trim() ? "0 2px 8px rgba(59,130,246,0.35)" : "none",
+                  transition: "all 0.15s",
+                }}>
                 <Send size={16} />
               </button>
             </div>
           </div>
         </div>
       ) : (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
-          <MessageCircle size={60} color="#D1D5DB" />
-          <div style={{ color: "#9CA3AF", fontSize: 15 }}>Chọn một hội thoại để bắt đầu</div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, background: T.chatBg, backgroundImage: T.chatBgPattern }}>
+          <div style={{ width: 72, height: 72, borderRadius: 20, background: "linear-gradient(135deg,rgba(59,130,246,0.15),rgba(139,92,246,0.15))", border: `1px solid rgba(59,130,246,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <MessageCircle size={32} color={T.accent} />
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontWeight: 700, fontSize: 16, color: T.textPrimary, marginBottom: 6 }}>Zalo Inbox</div>
+            <div style={{ color: T.textMuted, fontSize: 14 }}>Chọn một hội thoại để bắt đầu nhắn tin</div>
+          </div>
         </div>
       )}
 
+      {/* Lead info panel */}
       {selectedConv?.lead && <LeadInfoPanel lead={selectedConv.lead} />}
+
+      {/* Settings modal */}
       {showSettings && (
         <ZaloSettingsModal onClose={() => setShowSettings(false)} onDisconnect={() => {
-          setGatewayStatus({ connected: false, phone: null, status: "disconnected" });
+          setGatewayStatus({ connected: false, phone: null });
           setConversations([]);
         }} />
       )}
-    </div>
-  );
-}
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-function Avatar({ name, size = 40 }: { name: string; size?: number }) {
-  const colors = ["#0068FF", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
-  const color = colors[name.charCodeAt(0) % colors.length];
-  return (
-    <div style={{ width: size, height: size, borderRadius: "50%", background: color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: size * 0.35, flexShrink: 0 }}>
-      {name.split(" ").slice(-2).map(w => w[0]).join("").toUpperCase()}
-    </div>
-  );
-}
-
-function ConversationItem({ conv, isSelected, onClick }: { conv: ZaloConversation; isSelected: boolean; onClick: () => void }) {
-  return (
-    <div onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", background: isSelected ? "#EFF6FF" : "transparent", borderLeft: isSelected ? "3px solid #0068FF" : "3px solid transparent", transition: "background 0.15s" }}>
-      <div style={{ position: "relative" }}>
-        <Avatar name={conv.displayName} size={44} />
-        {conv.unreadCount > 0 && (
-          <div style={{ position: "absolute", top: -2, right: -2, width: 18, height: 18, borderRadius: "50%", background: "#EF4444", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
-          </div>
-        )}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <div style={{ fontWeight: conv.unreadCount > 0 ? 700 : 500, fontSize: 14, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
-            {conv.displayName}
-          </div>
-          <div style={{ fontSize: 11, color: "#9CA3AF", flexShrink: 0 }}>{formatTime(conv.lastMessageAt)}</div>
-        </div>
-        <div style={{ fontSize: 12, color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {conv.lastMessage || "Bắt đầu hội thoại"}
-        </div>
-        {conv.lead && <div style={{ fontSize: 11, color: "#3B82F6", marginTop: 2 }}>KH: {conv.lead.name}</div>}
-      </div>
-    </div>
-  );
-}
-
-function MessageBubble({ message, searchQuery, onOpenLightbox, onReply }: {
-  message: ZaloMessage;
-  searchQuery?: string;
-  onOpenLightbox: (images: string[], startIdx: number) => void;
-  onReply: (ctx: ReplyContext) => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-  const isSelf = message.isSelf;
-  const attachments = message.attachments || [];
-  const isSystemMsg = attachments.some(a => a.type === 'zalo_system_message');
-  const photoAttachments = attachments.filter(a => a.type === 'photo' || a.type === 'image');
-  const videoAttachments = attachments.filter(a => a.type === 'video');
-  const fileAttachments = attachments.filter(a => a.type === 'file');
-  const isEmptyHtml = /^\s*(<div>\s*<\/div>|<div\s*\/>|<br\s*\/?>|\s*)\s*$/.test(message.content || '');
-  const hasTextContent = message.content && !isEmptyHtml && message.content !== '[Hình ảnh]';
-  const allPhotoUrls = photoAttachments.map(a => a.origin_url || a.url || '').filter(Boolean);
-  const timeStr = new Date(message.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-
-  if (isSystemMsg && !hasTextContent && photoAttachments.length === 0 && videoAttachments.length === 0 && fileAttachments.length === 0) return null;
-
-  return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ display: "flex", justifyContent: isSelf ? "flex-end" : "flex-start", gap: 8, marginBottom: 2, alignItems: "flex-end" }}>
-      {!isSelf && <Avatar name={message.senderName} size={28} />}
-      <div style={{ maxWidth: "70%", position: "relative" }}>
-        {!isSelf && <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2, paddingLeft: 4 }}>{message.senderName}</div>}
-
-        {/* Photos */}
-        {photoAttachments.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: photoAttachments.length === 1 ? "1fr" : "repeat(2, 1fr)", gap: 2, marginBottom: hasTextContent ? 4 : 0 }}>
-            {photoAttachments.map((att, idx) => {
-              const rawUrl = att.origin_url || att.url || '';
-              const proxyUrl = rawUrl ? getZaloImageUrl(att.url || att.origin_url) : '';
-              if (!rawUrl) {
-                return (
-                  <div key={idx} style={{ width: "100%", maxWidth: 240, height: 120, borderRadius: 8, background: isSelf ? "#005CE6" : "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", color: isSelf ? "rgba(255,255,255,0.7)" : "#9ca3af", fontSize: 12 }}>
-                    🖼️ Ảnh đã gửi
-                  </div>
-                );
-              }
-              return (
-                <div key={idx} style={{ position: "relative", cursor: "pointer" }} onClick={() => onOpenLightbox(allPhotoUrls, idx)}>
-                  <img src={proxyUrl} alt="Ảnh" style={{ width: "100%", maxWidth: 240, height: photoAttachments.length === 1 ? "auto" : 120, objectFit: "cover", borderRadius: 8, display: "block", background: "#f3f4f6" }}
-                    onError={(e) => { const img = e.target as HTMLImageElement; if (img.src !== rawUrl) img.src = rawUrl; else img.style.display = 'none'; }}
-                  />
-                  <div style={{ position: "absolute", inset: 0, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0)", transition: "background 0.15s" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.25)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0)")}>
-                    <ZoomIn size={20} color="#fff" style={{ opacity: 0.8 }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Videos */}
-        {videoAttachments.map((att, idx) => (
-          <div key={idx} style={{ marginBottom: hasTextContent ? 4 : 0 }}>
-            {att.url
-              ? <video src={att.url} controls style={{ maxWidth: 280, width: "100%", borderRadius: 8, display: "block", background: "#000" }} />
-              : <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 8, background: isSelf ? "#0068FF" : "#F3F4F6", color: isSelf ? "#fff" : "#374151", fontSize: 13 }}><Video size={18} /><span>{(att as any).fileName || "Video"}</span></div>
-            }
-          </div>
-        ))}
-
-        {/* Files */}
-        {fileAttachments.map((att, idx) => (
-          att.url
-            ? <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 8, background: isSelf ? "#0068FF" : "#F3F4F6", color: isSelf ? "#fff" : "#374151", textDecoration: "none", fontSize: 13, marginBottom: hasTextContent ? 4 : 0 }}>
-                <FileText size={18} /><span style={{ wordBreak: "break-all" }}>{(att as any).fileName || "File đính kèm"}</span>
-              </a>
-            : <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 8, background: isSelf ? "#0068FF" : "#F3F4F6", color: isSelf ? "#fff" : "#374151", fontSize: 13, marginBottom: hasTextContent ? 4 : 0 }}>
-                <FileText size={18} /><span style={{ wordBreak: "break-all" }}>{(att as any).fileName || "File đính kèm"}</span>
-              </div>
-        ))}
-
-        {/* Text */}
-        {hasTextContent && (
-          <div style={{ padding: "8px 12px", borderRadius: isSelf ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: isSelf ? "#0068FF" : "#fff", color: isSelf ? "#fff" : "#111827", fontSize: 14, lineHeight: 1.5, boxShadow: "0 1px 2px rgba(0,0,0,0.08)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-            {searchQuery ? <HighlightText text={message.content} query={searchQuery} /> : message.content}
-          </div>
-        )}
-
-        <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isSelf ? "right" : "left", paddingLeft: 4, display: "flex", alignItems: "center", gap: 3, justifyContent: isSelf ? "flex-end" : "flex-start" }}>
-          {timeStr}
-          {isSelf && <CheckCheck size={12} color="#93C5FD" title="Đã gửi" />}
-        </div>
-      </div>
-
-      {/* Reply button */}
-      {hovered && (
-        <button onClick={() => onReply({ messageId: message.id, senderName: message.senderName, content: message.content || "", isPhoto: photoAttachments.length > 0 })} title="Trả lời"
-          style={{ background: "#F3F4F6", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B7280", flexShrink: 0, alignSelf: "center" }}>
-          <Reply size={14} />
-        </button>
-      )}
-    </div>
-  );
-}
-
-function LeadInfoPanel({ lead }: { lead: LeadInfo }) {
-  return (
-    <div style={{ width: 280, background: "#fff", borderLeft: "1px solid #E5E7EB", display: "flex", flexDirection: "column", overflowY: "auto" }}>
-      <div style={{ padding: "16px", borderBottom: "1px solid #F3F4F6" }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: "#374151", marginBottom: 12 }}>Thông tin khách hàng</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <Avatar name={lead.name} size={44} />
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{lead.name}</div>
-            <div style={{ fontSize: 12, color: "#6B7280" }}>{lead.phone}</div>
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <InfoRow icon={<User size={13} />} label="Giai đoạn">
-            <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 600, background: getStageColor(lead.stage) + "20", color: getStageColor(lead.stage) }}>{getStageLabel(lead.stage)}</span>
-          </InfoRow>
-          <InfoRow icon={<Phone size={13} />} label="Loại KH"><span style={{ fontSize: 12, color: "#374151" }}>{lead.type || "—"}</span></InfoRow>
-          {lead.assignedTo && <InfoRow icon={<User size={13} />} label="Phụ trách"><span style={{ fontSize: 12, color: "#374151" }}>{lead.assignedTo}</span></InfoRow>}
-        </div>
-        <a href={`/crm/leads?id=${lead.id}`} style={{ display: "block", marginTop: 12, padding: "8px", textAlign: "center", background: "#EFF6FF", borderRadius: 8, color: "#3B82F6", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
-          Xem hồ sơ đầy đủ →
-        </a>
-      </div>
-      {lead.recent_quotes && lead.recent_quotes.length > 0 && (
-        <div style={{ padding: "12px 16px" }}>
-          <div style={{ fontWeight: 600, fontSize: 12, color: "#374151", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-            <ShoppingBag size={13} />Báo giá gần đây
-          </div>
-          {lead.recent_quotes.map((q) => (
-            <div key={q.id} style={{ padding: "8px 10px", background: "#F9FAFB", borderRadius: 8, marginBottom: 6, border: "1px solid #F3F4F6" }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: "#111827" }}>{q.name || `Báo giá #${q.id.slice(-6)}`}</div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                <span style={{ fontSize: 11, color: "#6B7280" }}>{q.status}</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C" }}>{q.total_amount ? q.total_amount.toLocaleString("vi-VN") + "đ" : "—"}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <span style={{ color: "#9CA3AF" }}>{icon}</span>
-      <span style={{ fontSize: 12, color: "#6B7280", minWidth: 70 }}>{label}:</span>
-      {children}
-    </div>
-  );
-}
-
-function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onDisconnect?: () => void }) {
-  const [tab, setTab] = useState<"login" | "access">("login");
-  const [qrImage, setQrImage] = useState<string | null>(null);
-  const [loginStatus, setLoginStatus] = useState<"idle" | "loading" | "scanning" | "success" | "error">("idle");
-  const [loginMessage, setLoginMessage] = useState("");
-  const [currentCreds, setCurrentCreds] = useState<any>(null);
-  const [staffList, setStaffList] = useState<any[]>([]);
-  const [accessList, setAccessList] = useState<any[]>([]);
-  const [loadingAccess, setLoadingAccess] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
-
-  useEffect(() => {
-    fetch("/api/crm/zalo-inbox/credentials", { credentials: "include" })
-      .then(r => r.json()).then(data => { if (data && data.phone) setCurrentCreds(data); }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (tab === "access") {
-      setLoadingAccess(true);
-      Promise.all([
-        fetch("/api/crm/staff", { credentials: "include" }).then((r) => r.json()),
-        fetch("/api/crm/zalo-inbox/access", { credentials: "include" }).then((r) => r.json()),
-      ]).then(([staffData, accessData]) => {
-        setStaffList(Array.isArray(staffData) ? staffData : (staffData?.staff || []));
-        setAccessList(accessData?.accessList || []);
-      }).finally(() => setLoadingAccess(false));
-    }
-  }, [tab]);
-
-  useEffect(() => { return () => { eventSourceRef.current?.close(); }; }, []);
-
-  const handleStartQR = () => {
-    setLoginStatus("loading"); setQrImage(null); setLoginMessage("Đang tạo mã QR...");
-    eventSourceRef.current?.close();
-    const es = new EventSource("/api/crm/zalo-inbox/qr-login");
-    eventSourceRef.current = es;
-    es.addEventListener("qr", (e) => {
-      const data = JSON.parse(e.data);
-      const imgData = data.image?.startsWith('data:') ? data.image : `data:image/png;base64,${data.image}`;
-      setQrImage(imgData); setLoginStatus("scanning"); setLoginMessage("Mở Zalo trên điện thoại → Quét mã QR này");
-    });
-    es.addEventListener("scanned", () => { setLoginMessage("✅ Đã quét! Đang xác nhận đăng nhập..."); });
-    es.addEventListener("success", (e) => {
-      const data = JSON.parse(e.data);
-      setLoginStatus("success"); setQrImage(null);
-      setLoginMessage(`✅ Đăng nhập thành công! Zalo: ${data.phone || "Đã kết nối"}`);
-      setCurrentCreds({ phone: data.phone, hasCredentials: true }); es.close();
-      setTimeout(() => window.location.reload(), 2000);
-    });
-    es.addEventListener("error", (e) => {
-      try { const data = JSON.parse((e as any).data || "{}"); setLoginMessage("❌ " + (data.message || "Lỗi đăng nhập")); }
-      catch { setLoginMessage("❌ Lỗi kết nối"); }
-      setLoginStatus("error"); setQrImage(null); es.close();
-    });
-    es.onerror = () => { if (loginStatus !== "success") { setLoginStatus("error"); setLoginMessage("❌ Mất kết nối. Vui lòng thử lại."); } es.close(); };
-  };
-
-  const handleDisconnect = async () => {
-    if (!confirm("Bạn có chắc muốn đăng xuất Zalo?")) return;
-    setDisconnecting(true);
-    try {
-      await fetch("/api/crm/zalo-inbox/credentials", { method: "DELETE", credentials: "include" });
-      setCurrentCreds(null); setLoginStatus("idle"); setLoginMessage(""); setQrImage(null); onDisconnect?.();
-    } finally { setDisconnecting(false); }
-  };
-
-  const handleGrantAccess = async (staffId: string) => {
-    await fetch("/api/crm/zalo-inbox/access", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ staffId }) });
-    const res = await fetch("/api/crm/zalo-inbox/access", { credentials: "include" });
-    const data = await res.json(); setAccessList(data?.accessList || []);
-  };
-  const handleRevokeAccess = async (staffId: string) => {
-    await fetch(`/api/crm/zalo-inbox/access?staffId=${staffId}`, { method: "DELETE", credentials: "include" });
-    setAccessList((prev) => prev.filter((a) => a.staffId !== staffId));
-  };
-  const hasAccess = (staffId: string) => accessList.some((a) => a.staffId === staffId);
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", borderRadius: 16, width: 480, maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>Cài đặt Zalo Inbox</div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280" }}><X size={20} /></button>
-        </div>
-        <div style={{ display: "flex", borderBottom: "1px solid #F3F4F6" }}>
-          {(["login", "access"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: "10px", border: "none", cursor: "pointer", background: tab === t ? "#EFF6FF" : "transparent", color: tab === t ? "#0068FF" : "#6B7280", fontWeight: tab === t ? 600 : 400, fontSize: 13, borderBottom: tab === t ? "2px solid #0068FF" : "2px solid transparent" }}>
-              {t === "login" ? "Đăng nhập Zalo" : "Phân quyền truy cập"}
-            </button>
-          ))}
-        </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
-          {tab === "login" ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-              {currentCreds?.phone && (
-                <div style={{ width: "100%", padding: "12px 16px", background: "#F0FDF4", borderRadius: 10, border: "1px solid #BBF7D0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#065F46" }}>✅ Đang kết nối</div>
-                    <div style={{ fontSize: 12, color: "#047857" }}>Zalo: {currentCreds.phone}</div>
-                  </div>
-                  <button onClick={handleDisconnect} disabled={disconnecting} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #FCA5A5", background: "#FEF2F2", color: "#DC2626", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                    {disconnecting ? "Đang đăng xuất..." : "Đăng xuất"}
-                  </button>
-                </div>
-              )}
-              {qrImage ? (
-                <div style={{ textAlign: "center" }}>
-                  <img src={qrImage} alt="QR Code" style={{ width: 220, height: 220, borderRadius: 12, border: "3px solid #0068FF" }} />
-                  <div style={{ fontSize: 12, color: "#6B7280", marginTop: 8 }}>Mở Zalo → Quét mã QR</div>
-                </div>
-              ) : (
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ width: 80, height: 80, borderRadius: "50%", background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 36 }}>📱</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 6 }}>{currentCreds?.phone ? "Đăng nhập lại Zalo" : "Đăng nhập Zalo cá nhân"}</div>
-                  <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.6, marginBottom: 16 }}>Nhấn nút bên dưới để tạo mã QR.<br />Mở Zalo trên điện thoại và quét mã để đăng nhập.</div>
-                </div>
-              )}
-              {loginMessage && (
-                <div style={{ width: "100%", padding: "10px 14px", borderRadius: 8, fontSize: 13, background: loginStatus === "success" ? "#D1FAE5" : loginStatus === "error" ? "#FEE2E2" : "#EFF6FF", color: loginStatus === "success" ? "#065F46" : loginStatus === "error" ? "#991B1B" : "#1E40AF", border: `1px solid ${loginStatus === "success" ? "#6EE7B7" : loginStatus === "error" ? "#FCA5A5" : "#BFDBFE"}`, textAlign: "center" }}>
-                  {loginMessage}
-                </div>
-              )}
-              {loginStatus !== "scanning" && loginStatus !== "success" && (
-                <button onClick={handleStartQR} disabled={loginStatus === "loading"} style={{ padding: "12px 32px", borderRadius: 10, border: "none", background: loginStatus === "loading" ? "#93C5FD" : "#0068FF", color: "#fff", fontWeight: 700, fontSize: 14, cursor: loginStatus === "loading" ? "not-allowed" : "pointer", width: "100%" }}>
-                  {loginStatus === "loading" ? "⏳ Đang tạo mã QR..." : "📱 Tạo mã QR đăng nhập"}
-                </button>
-              )}
-              {loginStatus === "scanning" && (
-                <button onClick={() => { eventSourceRef.current?.close(); setLoginStatus("idle"); setQrImage(null); setLoginMessage(""); }} style={{ padding: "8px 20px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#F9FAFB", color: "#374151", fontSize: 13, cursor: "pointer" }}>
-                  Hủy
-                </button>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 16 }}>Chọn nhân viên được phép truy cập Zalo Shared Inbox. Admin luôn có quyền truy cập.</div>
-              {loadingAccess ? (
-                <div style={{ textAlign: "center", color: "#9CA3AF", padding: 20 }}>Đang tải...</div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {staffList.map((staff) => (
-                    <div key={staff.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 8, border: "1px solid #E5E7EB", background: hasAccess(staff.id) ? "#F0FDF4" : "#fff" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <Avatar name={staff.full_name || staff.fullName} size={32} />
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 500, color: "#111827" }}>{staff.full_name || staff.fullName}</div>
-                          <div style={{ fontSize: 11, color: "#6B7280" }}>{staff.email} · {staff.role}</div>
-                        </div>
-                      </div>
-                      <button onClick={() => hasAccess(staff.id) ? handleRevokeAccess(staff.id) : handleGrantAccess(staff.id)} style={{ padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer", background: hasAccess(staff.id) ? "#FEE2E2" : "#DBEAFE", color: hasAccess(staff.id) ? "#991B1B" : "#1D4ED8", fontSize: 12, fontWeight: 600 }}>
-                        {hasAccess(staff.id) ? "Thu hồi" : "Cấp quyền"}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+      `}</style>
     </div>
   );
 }
