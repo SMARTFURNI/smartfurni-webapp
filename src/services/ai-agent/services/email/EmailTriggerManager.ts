@@ -1,1 +1,282 @@
-import { logger } from '../../utils/logger';\nimport { EmailGenerationRequest } from './EmailGenerator';\n\nexport type EmailTriggerType =\n  | 'new_lead'\n  | 'no_interaction_3days'\n  | 'quote_sent'\n  | 'successful_close'\n  | 'manual';\n\nexport interface EmailTrigger {\n  type: EmailTriggerType;\n  leadId: string;\n  emailType: string;\n  conditions?: Record<string, any>;\n  priority?: 'high' | 'medium' | 'low';\n  scheduledFor?: Date;\n}\n\nexport interface TriggerConfig {\n  enabled: boolean;\n  emailType: string;\n  delayMinutes?: number;\n  conditions?: Record<string, any>;\n}\n\n/**\n * Email Trigger Manager\n * Manages email sending triggers based on lead events\n */\nexport class EmailTriggerManager {\n  private triggerConfigs: Map<EmailTriggerType, TriggerConfig> = new Map([\n    [\n      'new_lead',\n      {\n        enabled: true,\n        emailType: 'chao_hang',\n        delayMinutes: 5,\n      },\n    ],\n    [\n      'no_interaction_3days',\n      {\n        enabled: true,\n        emailType: 'follow_up',\n        delayMinutes: 0,\n      },\n    ],\n    [\n      'quote_sent',\n      {\n        enabled: true,\n        emailType: 'follow_up',\n        delayMinutes: 1440, // 24 hours\n      },\n    ],\n    [\n      'successful_close',\n      {\n        enabled: true,\n        emailType: 'thank_you',\n        delayMinutes: 0,\n      },\n    ],\n  ]);\n\n  private activeTriggers: Map<string, EmailTrigger[]> = new Map();\n\n  /**\n   * Register trigger configuration\n   */\n  registerTrigger(\n    type: EmailTriggerType,\n    config: TriggerConfig\n  ): void {\n    this.triggerConfigs.set(type, config);\n    logger.info('Email trigger registered', { type, config });\n  }\n\n  /**\n   * Get trigger configuration\n   */\n  getTriggerConfig(type: EmailTriggerType): TriggerConfig | undefined {\n    return this.triggerConfigs.get(type);\n  }\n\n  /**\n   * Check if trigger should fire\n   */\n  shouldFireTrigger(\n    trigger: EmailTrigger\n  ): boolean {\n    const config = this.triggerConfigs.get(trigger.type);\n\n    if (!config || !config.enabled) {\n      return false;\n    }\n\n    // Check conditions if any\n    if (config.conditions && trigger.conditions) {\n      for (const [key, value] of Object.entries(config.conditions)) {\n        if (trigger.conditions[key] !== value) {\n          return false;\n        }\n      }\n    }\n\n    return true;\n  }\n\n  /**\n   * Create trigger for new lead\n   */\n  createNewLeadTrigger(leadId: string, leadData: any): EmailTrigger | null {\n    const config = this.triggerConfigs.get('new_lead');\n    if (!config || !config.enabled) {\n      return null;\n    }\n\n    const trigger: EmailTrigger = {\n      type: 'new_lead',\n      leadId,\n      emailType: config.emailType,\n      priority: 'high',\n      scheduledFor: new Date(\n        Date.now() + (config.delayMinutes || 0) * 60000\n      ),\n    };\n\n    this.addTrigger(trigger);\n    logger.info('New lead trigger created', { leadId });\n\n    return trigger;\n  }\n\n  /**\n   * Create trigger for inactive lead\n   */\n  createInactivityTrigger(\n    leadId: string,\n    daysSinceInteraction: number\n  ): EmailTrigger | null {\n    if (daysSinceInteraction < 3) {\n      return null;\n    }\n\n    const config = this.triggerConfigs.get('no_interaction_3days');\n    if (!config || !config.enabled) {\n      return null;\n    }\n\n    const trigger: EmailTrigger = {\n      type: 'no_interaction_3days',\n      leadId,\n      emailType: config.emailType,\n      priority: 'medium',\n      conditions: { daysSinceInteraction },\n      scheduledFor: new Date(\n        Date.now() + (config.delayMinutes || 0) * 60000\n      ),\n    };\n\n    this.addTrigger(trigger);\n    logger.info('Inactivity trigger created', { leadId, daysSinceInteraction });\n\n    return trigger;\n  }\n\n  /**\n   * Create trigger for quote sent\n   */\n  createQuoteSentTrigger(leadId: string, quoteId: string): EmailTrigger | null {\n    const config = this.triggerConfigs.get('quote_sent');\n    if (!config || !config.enabled) {\n      return null;\n    }\n\n    const trigger: EmailTrigger = {\n      type: 'quote_sent',\n      leadId,\n      emailType: config.emailType,\n      priority: 'high',\n      conditions: { quoteId },\n      scheduledFor: new Date(\n        Date.now() + (config.delayMinutes || 0) * 60000\n      ),\n    };\n\n    this.addTrigger(trigger);\n    logger.info('Quote sent trigger created', { leadId, quoteId });\n\n    return trigger;\n  }\n\n  /**\n   * Create trigger for successful close\n   */\n  createSuccessfulCloseTrigger(\n    leadId: string,\n    orderId: string\n  ): EmailTrigger | null {\n    const config = this.triggerConfigs.get('successful_close');\n    if (!config || !config.enabled) {\n      return null;\n    }\n\n    const trigger: EmailTrigger = {\n      type: 'successful_close',\n      leadId,\n      emailType: config.emailType,\n      priority: 'high',\n      conditions: { orderId },\n      scheduledFor: new Date(\n        Date.now() + (config.delayMinutes || 0) * 60000\n      ),\n    };\n\n    this.addTrigger(trigger);\n    logger.info('Successful close trigger created', { leadId, orderId });\n\n    return trigger;\n  }\n\n  /**\n   * Add trigger to active triggers\n   */\n  private addTrigger(trigger: EmailTrigger): void {\n    if (!this.activeTriggers.has(trigger.leadId)) {\n      this.activeTriggers.set(trigger.leadId, []);\n    }\n    this.activeTriggers.get(trigger.leadId)!.push(trigger);\n  }\n\n  /**\n   * Get pending triggers\n   */\n  getPendingTriggers(): EmailTrigger[] {\n    const now = new Date();\n    const pending: EmailTrigger[] = [];\n\n    for (const triggers of this.activeTriggers.values()) {\n      for (const trigger of triggers) {\n        if (\n          trigger.scheduledFor &&\n          trigger.scheduledFor <= now &&\n          this.shouldFireTrigger(trigger)\n        ) {\n          pending.push(trigger);\n        }\n      }\n    }\n\n    return pending;\n  }\n\n  /**\n   * Remove trigger after processing\n   */\n  removeTrigger(trigger: EmailTrigger): void {\n    const triggers = this.activeTriggers.get(trigger.leadId);\n    if (triggers) {\n      const index = triggers.indexOf(trigger);\n      if (index > -1) {\n        triggers.splice(index, 1);\n      }\n    }\n  }\n\n  /**\n   * Get all active triggers\n   */\n  getAllActiveTriggers(): EmailTrigger[] {\n    const all: EmailTrigger[] = [];\n    for (const triggers of this.activeTriggers.values()) {\n      all.push(...triggers);\n    }\n    return all;\n  }\n}\n\nexport const emailTriggerManager = new EmailTriggerManager();\n
+import { logger } from '../../utils/logger';
+import { EmailGenerationRequest } from './EmailGenerator';
+
+export type EmailTriggerType =
+  | 'new_lead'
+  | 'no_interaction_3days'
+  | 'quote_sent'
+  | 'successful_close'
+  | 'manual';
+
+export interface EmailTrigger {
+  type: EmailTriggerType;
+  leadId: string;
+  emailType: string;
+  conditions?: Record<string, any>;
+  priority?: 'high' | 'medium' | 'low';
+  scheduledFor?: Date;
+}
+
+export interface TriggerConfig {
+  enabled: boolean;
+  emailType: string;
+  delayMinutes?: number;
+  conditions?: Record<string, any>;
+}
+
+/**
+ * Email Trigger Manager
+ * Manages email sending triggers based on lead events
+ */
+export class EmailTriggerManager {
+  private triggerConfigs: Map<EmailTriggerType, TriggerConfig> = new Map([
+    [
+      'new_lead',
+      {
+        enabled: true,
+        emailType: 'chao_hang',
+        delayMinutes: 5,
+      },
+    ],
+    [
+      'no_interaction_3days',
+      {
+        enabled: true,
+        emailType: 'follow_up',
+        delayMinutes: 0,
+      },
+    ],
+    [
+      'quote_sent',
+      {
+        enabled: true,
+        emailType: 'follow_up',
+        delayMinutes: 1440, // 24 hours
+      },
+    ],
+    [
+      'successful_close',
+      {
+        enabled: true,
+        emailType: 'thank_you',
+        delayMinutes: 0,
+      },
+    ],
+  ]);
+
+  private activeTriggers: Map<string, EmailTrigger[]> = new Map();
+
+  /**
+   * Register trigger configuration
+   */
+  registerTrigger(
+    type: EmailTriggerType,
+    config: TriggerConfig
+  ): void {
+    this.triggerConfigs.set(type, config);
+    logger.info('Email trigger registered', { type, config });
+  }
+
+  /**
+   * Get trigger configuration
+   */
+  getTriggerConfig(type: EmailTriggerType): TriggerConfig | undefined {
+    return this.triggerConfigs.get(type);
+  }
+
+  /**
+   * Check if trigger should fire
+   */
+  shouldFireTrigger(
+    trigger: EmailTrigger
+  ): boolean {
+    const config = this.triggerConfigs.get(trigger.type);
+
+    if (!config || !config.enabled) {
+      return false;
+    }
+
+    // Check conditions if any
+    if (config.conditions && trigger.conditions) {
+      for (const [key, value] of Object.entries(config.conditions)) {
+        if (trigger.conditions[key] !== value) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Create trigger for new lead
+   */
+  createNewLeadTrigger(leadId: string, leadData: any): EmailTrigger | null {
+    const config = this.triggerConfigs.get('new_lead');
+    if (!config || !config.enabled) {
+      return null;
+    }
+
+    const trigger: EmailTrigger = {
+      type: 'new_lead',
+      leadId,
+      emailType: config.emailType,
+      priority: 'high',
+      scheduledFor: new Date(
+        Date.now() + (config.delayMinutes || 0) * 60000
+      ),
+    };
+
+    this.addTrigger(trigger);
+    logger.info('New lead trigger created', { leadId });
+
+    return trigger;
+  }
+
+  /**
+   * Create trigger for inactive lead
+   */
+  createInactivityTrigger(
+    leadId: string,
+    daysSinceInteraction: number
+  ): EmailTrigger | null {
+    if (daysSinceInteraction < 3) {
+      return null;
+    }
+
+    const config = this.triggerConfigs.get('no_interaction_3days');
+    if (!config || !config.enabled) {
+      return null;
+    }
+
+    const trigger: EmailTrigger = {
+      type: 'no_interaction_3days',
+      leadId,
+      emailType: config.emailType,
+      priority: 'medium',
+      conditions: { daysSinceInteraction },
+      scheduledFor: new Date(
+        Date.now() + (config.delayMinutes || 0) * 60000
+      ),
+    };
+
+    this.addTrigger(trigger);
+    logger.info('Inactivity trigger created', { leadId, daysSinceInteraction });
+
+    return trigger;
+  }
+
+  /**
+   * Create trigger for quote sent
+   */
+  createQuoteSentTrigger(leadId: string, quoteId: string): EmailTrigger | null {
+    const config = this.triggerConfigs.get('quote_sent');
+    if (!config || !config.enabled) {
+      return null;
+    }
+
+    const trigger: EmailTrigger = {
+      type: 'quote_sent',
+      leadId,
+      emailType: config.emailType,
+      priority: 'high',
+      conditions: { quoteId },
+      scheduledFor: new Date(
+        Date.now() + (config.delayMinutes || 0) * 60000
+      ),
+    };
+
+    this.addTrigger(trigger);
+    logger.info('Quote sent trigger created', { leadId, quoteId });
+
+    return trigger;
+  }
+
+  /**
+   * Create trigger for successful close
+   */
+  createSuccessfulCloseTrigger(
+    leadId: string,
+    orderId: string
+  ): EmailTrigger | null {
+    const config = this.triggerConfigs.get('successful_close');
+    if (!config || !config.enabled) {
+      return null;
+    }
+
+    const trigger: EmailTrigger = {
+      type: 'successful_close',
+      leadId,
+      emailType: config.emailType,
+      priority: 'high',
+      conditions: { orderId },
+      scheduledFor: new Date(
+        Date.now() + (config.delayMinutes || 0) * 60000
+      ),
+    };
+
+    this.addTrigger(trigger);
+    logger.info('Successful close trigger created', { leadId, orderId });
+
+    return trigger;
+  }
+
+  /**
+   * Add trigger to active triggers
+   */
+  private addTrigger(trigger: EmailTrigger): void {
+    if (!this.activeTriggers.has(trigger.leadId)) {
+      this.activeTriggers.set(trigger.leadId, []);
+    }
+    this.activeTriggers.get(trigger.leadId)!.push(trigger);
+  }
+
+  /**
+   * Get pending triggers
+   */
+  getPendingTriggers(): EmailTrigger[] {
+    const now = new Date();
+    const pending: EmailTrigger[] = [];
+
+    for (const triggers of this.activeTriggers.values()) {
+      for (const trigger of triggers) {
+        if (
+          trigger.scheduledFor &&
+          trigger.scheduledFor <= now &&
+          this.shouldFireTrigger(trigger)
+        ) {
+          pending.push(trigger);
+        }
+      }
+    }
+
+    return pending;
+  }
+
+  /**
+   * Remove trigger after processing
+   */
+  removeTrigger(trigger: EmailTrigger): void {
+    const triggers = this.activeTriggers.get(trigger.leadId);
+    if (triggers) {
+      const index = triggers.indexOf(trigger);
+      if (index > -1) {
+        triggers.splice(index, 1);
+      }
+    }
+  }
+
+  /**
+   * Get all active triggers
+   */
+  getAllActiveTriggers(): EmailTrigger[] {
+    const all: EmailTrigger[] = [];
+    for (const triggers of this.activeTriggers.values()) {
+      all.push(...triggers);
+    }
+    return all;
+  }
+}
+
+export const emailTriggerManager = new EmailTriggerManager();
+

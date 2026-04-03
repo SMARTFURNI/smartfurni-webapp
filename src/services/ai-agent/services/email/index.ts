@@ -1,1 +1,16 @@
-export { EmailService, emailService } from './EmailService';\nexport { EmailGenerator, emailGenerator } from './EmailGenerator';\nexport { EmailTracker } from './EmailTracker';\n\nexport type {\n  SendEmailRequest,\n  SendEmailResponse,\n} from './EmailService';\n\nexport type {\n  EmailGenerationRequest,\n  GeneratedEmail,\n} from './EmailGenerator';\n\nexport type { EmailTrackingData } from './EmailTracker';\n
+export { EmailService, emailService } from './EmailService';
+export { EmailGenerator, emailGenerator } from './EmailGenerator';
+export { EmailTracker } from './EmailTracker';
+
+export type {
+  SendEmailRequest,
+  SendEmailResponse,
+} from './EmailService';
+
+export type {
+  EmailGenerationRequest,
+  GeneratedEmail,
+} from './EmailGenerator';
+
+export type { EmailTrackingData } from './EmailTracker';
+

@@ -1,1 +1,139 @@
-import { Request, Response, NextFunction } from 'express';\nimport { logger } from '../utils/logger';\n\ninterface RateLimitStore {\n  [key: string]: {\n    count: number;\n    resetTime: number;\n  };\n}\n\n/**\n * Simple In-Memory Rate Limiter\n * For production, use Redis or a dedicated rate limiting service\n */\nclass RateLimiter {\n  private store: RateLimitStore = {};\n  private windowMs: number;\n  private maxRequests: number;\n\n  constructor(windowMs: number = 3600000, maxRequests: number = 1000) {\n    this.windowMs = windowMs;\n    this.maxRequests = maxRequests;\n\n    // Clean up expired entries every minute\n    setInterval(() => this.cleanup(), 60000);\n  }\n\n  private getKey(req: Request): string {\n    // Use user ID if available, otherwise use IP address\n    const userId = (req as any).user?.id;\n    return userId || req.ip || 'unknown';\n  }\n\n  private cleanup(): void {\n    const now = Date.now();\n    for (const key in this.store) {\n      if (this.store[key].resetTime < now) {\n        delete this.store[key];\n      }\n    }\n  }\n\n  isAllowed(req: Request): boolean {\n    const key = this.getKey(req);\n    const now = Date.now();\n\n    if (!this.store[key]) {\n      this.store[key] = {\n        count: 1,\n        resetTime: now + this.windowMs,\n      };\n      return true;\n    }\n\n    const entry = this.store[key];\n\n    if (now > entry.resetTime) {\n      // Reset window\n      entry.count = 1;\n      entry.resetTime = now + this.windowMs;\n      return true;\n    }\n\n    entry.count++;\n    return entry.count <= this.maxRequests;\n  }\n\n  getRemaining(req: Request): number {\n    const key = this.getKey(req);\n    if (!this.store[key]) {\n      return this.maxRequests;\n    }\n    return Math.max(0, this.maxRequests - this.store[key].count);\n  }\n}\n\n// Create rate limiter instance\nconst limiter = new RateLimiter(\n  parseInt(process.env.RATE_LIMIT_WINDOW_MS || '3600000'),\n  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000')\n);\n\n/**\n * Rate Limiting Middleware\n */\nexport const rateLimitMiddleware = (\n  req: Request,\n  res: Response,\n  next: NextFunction\n) => {\n  if (!limiter.isAllowed(req)) {\n    logger.warn('Rate limit exceeded', {\n      userId: (req as any).user?.id,\n      ip: req.ip,\n      path: req.path,\n    });\n\n    res.status(429).json({\n      success: false,\n      error: 'Too many requests. Please try again later.',\n    });\n    return;\n  }\n\n  // Add rate limit info to response headers\n  res.setHeader('X-RateLimit-Remaining', limiter.getRemaining(req));\n  res.setHeader('X-RateLimit-Limit', 1000);\n\n  next();\n};\n\n/**\n * Endpoint-specific Rate Limiter\n */\nexport const createEndpointRateLimiter = (\n  windowMs: number,\n  maxRequests: number\n) => {\n  const endpointLimiter = new RateLimiter(windowMs, maxRequests);\n\n  return (req: Request, res: Response, next: NextFunction) => {\n    if (!endpointLimiter.isAllowed(req)) {\n      logger.warn('Endpoint rate limit exceeded', {\n        endpoint: req.path,\n        userId: (req as any).user?.id,\n      });\n\n      res.status(429).json({\n        success: false,\n        error: 'Too many requests to this endpoint',\n      });\n      return;\n    }\n\n    res.setHeader('X-RateLimit-Remaining', endpointLimiter.getRemaining(req));\n    next();\n  };\n};\n
+import { Request, Response, NextFunction } from 'express';
+import { logger } from '../utils/logger';
+
+interface RateLimitStore {
+  [key: string]: {
+    count: number;
+    resetTime: number;
+  };
+}
+
+/**
+ * Simple In-Memory Rate Limiter
+ * For production, use Redis or a dedicated rate limiting service
+ */
+class RateLimiter {
+  private store: RateLimitStore = {};
+  private windowMs: number;
+  private maxRequests: number;
+
+  constructor(windowMs: number = 3600000, maxRequests: number = 1000) {
+    this.windowMs = windowMs;
+    this.maxRequests = maxRequests;
+
+    // Clean up expired entries every minute
+    setInterval(() => this.cleanup(), 60000);
+  }
+
+  private getKey(req: Request): string {
+    // Use user ID if available, otherwise use IP address
+    const userId = (req as any).user?.id;
+    return userId || req.ip || 'unknown';
+  }
+
+  private cleanup(): void {
+    const now = Date.now();
+    for (const key in this.store) {
+      if (this.store[key].resetTime < now) {
+        delete this.store[key];
+      }
+    }
+  }
+
+  isAllowed(req: Request): boolean {
+    const key = this.getKey(req);
+    const now = Date.now();
+
+    if (!this.store[key]) {
+      this.store[key] = {
+        count: 1,
+        resetTime: now + this.windowMs,
+      };
+      return true;
+    }
+
+    const entry = this.store[key];
+
+    if (now > entry.resetTime) {
+      // Reset window
+      entry.count = 1;
+      entry.resetTime = now + this.windowMs;
+      return true;
+    }
+
+    entry.count++;
+    return entry.count <= this.maxRequests;
+  }
+
+  getRemaining(req: Request): number {
+    const key = this.getKey(req);
+    if (!this.store[key]) {
+      return this.maxRequests;
+    }
+    return Math.max(0, this.maxRequests - this.store[key].count);
+  }
+}
+
+// Create rate limiter instance
+const limiter = new RateLimiter(
+  parseInt(process.env.RATE_LIMIT_WINDOW_MS || '3600000'),
+  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000')
+);
+
+/**
+ * Rate Limiting Middleware
+ */
+export const rateLimitMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!limiter.isAllowed(req)) {
+    logger.warn('Rate limit exceeded', {
+      userId: (req as any).user?.id,
+      ip: req.ip,
+      path: req.path,
+    });
+
+    res.status(429).json({
+      success: false,
+      error: 'Too many requests. Please try again later.',
+    });
+    return;
+  }
+
+  // Add rate limit info to response headers
+  res.setHeader('X-RateLimit-Remaining', limiter.getRemaining(req));
+  res.setHeader('X-RateLimit-Limit', 1000);
+
+  next();
+};
+
+/**
+ * Endpoint-specific Rate Limiter
+ */
+export const createEndpointRateLimiter = (
+  windowMs: number,
+  maxRequests: number
+) => {
+  const endpointLimiter = new RateLimiter(windowMs, maxRequests);
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!endpointLimiter.isAllowed(req)) {
+      logger.warn('Endpoint rate limit exceeded', {
+        endpoint: req.path,
+        userId: (req as any).user?.id,
+      });
+
+      res.status(429).json({
+        success: false,
+        error: 'Too many requests to this endpoint',
+      });
+      return;
+    }
+
+    res.setHeader('X-RateLimit-Remaining', endpointLimiter.getRemaining(req));
+    next();
+  };
+};
+

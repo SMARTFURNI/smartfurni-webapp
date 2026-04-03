@@ -1,1 +1,198 @@
-/**\n * Health Check Utility\n * Monitors the health of AI Agent services\n */\n\nimport { logger } from './logger';\n\ninterface ServiceHealth {\n  name: string;\n  status: 'healthy' | 'degraded' | 'unhealthy';\n  lastCheck: Date;\n  message: string;\n  responseTime?: number;\n}\n\nclass HealthChecker {\n  private services: Map<string, ServiceHealth> = new Map();\n\n  /**\n   * Check Gemini API health\n   */\n  async checkGeminiHealth(): Promise<ServiceHealth> {\n    const startTime = Date.now();\n    try {\n      // TODO: Implement actual Gemini API health check\n      const responseTime = Date.now() - startTime;\n\n      const health: ServiceHealth = {\n        name: 'Gemini API',\n        status: responseTime < 5000 ? 'healthy' : 'degraded',\n        lastCheck: new Date(),\n        message: `Response time: ${responseTime}ms`,\n        responseTime,\n      };\n\n      this.services.set('gemini', health);\n      return health;\n    } catch (error) {\n      const health: ServiceHealth = {\n        name: 'Gemini API',\n        status: 'unhealthy',\n        lastCheck: new Date(),\n        message: error instanceof Error ? error.message : 'Unknown error',\n      };\n\n      this.services.set('gemini', health);\n      logger.error('Gemini health check failed', { error });\n      return health;\n    }\n  }\n\n  /**\n   * Check Database health\n   */\n  async checkDatabaseHealth(): Promise<ServiceHealth> {\n    const startTime = Date.now();\n    try {\n      // TODO: Implement actual database health check\n      const responseTime = Date.now() - startTime;\n\n      const health: ServiceHealth = {\n        name: 'Database',\n        status: responseTime < 1000 ? 'healthy' : 'degraded',\n        lastCheck: new Date(),\n        message: `Response time: ${responseTime}ms`,\n        responseTime,\n      };\n\n      this.services.set('database', health);\n      return health;\n    } catch (error) {\n      const health: ServiceHealth = {\n        name: 'Database',\n        status: 'unhealthy',\n        lastCheck: new Date(),\n        message: error instanceof Error ? error.message : 'Unknown error',\n      };\n\n      this.services.set('database', health);\n      logger.error('Database health check failed', { error });\n      return health;\n    }\n  }\n\n  /**\n   * Check Email Service health\n   */\n  async checkEmailServiceHealth(): Promise<ServiceHealth> {\n    const startTime = Date.now();\n    try {\n      // TODO: Implement actual email service health check\n      const responseTime = Date.now() - startTime;\n\n      const health: ServiceHealth = {\n        name: 'Email Service',\n        status: responseTime < 2000 ? 'healthy' : 'degraded',\n        lastCheck: new Date(),\n        message: `Response time: ${responseTime}ms`,\n        responseTime,\n      };\n\n      this.services.set('email', health);\n      return health;\n    } catch (error) {\n      const health: ServiceHealth = {\n        name: 'Email Service',\n        status: 'unhealthy',\n        lastCheck: new Date(),\n        message: error instanceof Error ? error.message : 'Unknown error',\n      };\n\n      this.services.set('email', health);\n      logger.error('Email service health check failed', { error });\n      return health;\n    }\n  }\n\n  /**\n   * Check Zalo API health\n   */\n  async checkZaloHealth(): Promise<ServiceHealth> {\n    const startTime = Date.now();\n    try {\n      // TODO: Implement actual Zalo API health check\n      const responseTime = Date.now() - startTime;\n\n      const health: ServiceHealth = {\n        name: 'Zalo API',\n        status: responseTime < 3000 ? 'healthy' : 'degraded',\n        lastCheck: new Date(),\n        message: `Response time: ${responseTime}ms`,\n        responseTime,\n      };\n\n      this.services.set('zalo', health);\n      return health;\n    } catch (error) {\n      const health: ServiceHealth = {\n        name: 'Zalo API',\n        status: 'unhealthy',\n        lastCheck: new Date(),\n        message: error instanceof Error ? error.message : 'Unknown error',\n      };\n\n      this.services.set('zalo', health);\n      logger.error('Zalo health check failed', { error });\n      return health;\n    }\n  }\n\n  /**\n   * Check all services\n   */\n  async checkAllServices(): Promise<ServiceHealth[]> {\n    const results = await Promise.all([\n      this.checkGeminiHealth(),\n      this.checkDatabaseHealth(),\n      this.checkEmailServiceHealth(),\n      this.checkZaloHealth(),\n    ]);\n\n    return results;\n  }\n\n  /**\n   * Get overall health status\n   */\n  getOverallStatus(): 'healthy' | 'degraded' | 'unhealthy' {\n    const statuses = Array.from(this.services.values()).map(\n      (s) => s.status\n    );\n\n    if (statuses.includes('unhealthy')) {\n      return 'unhealthy';\n    }\n    if (statuses.includes('degraded')) {\n      return 'degraded';\n    }\n    return 'healthy';\n  }\n\n  /**\n   * Get service health\n   */\n  getServiceHealth(name: string): ServiceHealth | undefined {\n    return this.services.get(name);\n  }\n\n  /**\n   * Get all services health\n   */\n  getAllServicesHealth(): ServiceHealth[] {\n    return Array.from(this.services.values());\n  }\n}\n\nexport const healthChecker = new HealthChecker();\n
+/**
+ * Health Check Utility
+ * Monitors the health of AI Agent services
+ */
+
+import { logger } from './logger';
+
+interface ServiceHealth {
+  name: string;
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  lastCheck: Date;
+  message: string;
+  responseTime?: number;
+}
+
+class HealthChecker {
+  private services: Map<string, ServiceHealth> = new Map();
+
+  /**
+   * Check Gemini API health
+   */
+  async checkGeminiHealth(): Promise<ServiceHealth> {
+    const startTime = Date.now();
+    try {
+      // TODO: Implement actual Gemini API health check
+      const responseTime = Date.now() - startTime;
+
+      const health: ServiceHealth = {
+        name: 'Gemini API',
+        status: responseTime < 5000 ? 'healthy' : 'degraded',
+        lastCheck: new Date(),
+        message: `Response time: ${responseTime}ms`,
+        responseTime,
+      };
+
+      this.services.set('gemini', health);
+      return health;
+    } catch (error) {
+      const health: ServiceHealth = {
+        name: 'Gemini API',
+        status: 'unhealthy',
+        lastCheck: new Date(),
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+
+      this.services.set('gemini', health);
+      logger.error('Gemini health check failed', { error });
+      return health;
+    }
+  }
+
+  /**
+   * Check Database health
+   */
+  async checkDatabaseHealth(): Promise<ServiceHealth> {
+    const startTime = Date.now();
+    try {
+      // TODO: Implement actual database health check
+      const responseTime = Date.now() - startTime;
+
+      const health: ServiceHealth = {
+        name: 'Database',
+        status: responseTime < 1000 ? 'healthy' : 'degraded',
+        lastCheck: new Date(),
+        message: `Response time: ${responseTime}ms`,
+        responseTime,
+      };
+
+      this.services.set('database', health);
+      return health;
+    } catch (error) {
+      const health: ServiceHealth = {
+        name: 'Database',
+        status: 'unhealthy',
+        lastCheck: new Date(),
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+
+      this.services.set('database', health);
+      logger.error('Database health check failed', { error });
+      return health;
+    }
+  }
+
+  /**
+   * Check Email Service health
+   */
+  async checkEmailServiceHealth(): Promise<ServiceHealth> {
+    const startTime = Date.now();
+    try {
+      // TODO: Implement actual email service health check
+      const responseTime = Date.now() - startTime;
+
+      const health: ServiceHealth = {
+        name: 'Email Service',
+        status: responseTime < 2000 ? 'healthy' : 'degraded',
+        lastCheck: new Date(),
+        message: `Response time: ${responseTime}ms`,
+        responseTime,
+      };
+
+      this.services.set('email', health);
+      return health;
+    } catch (error) {
+      const health: ServiceHealth = {
+        name: 'Email Service',
+        status: 'unhealthy',
+        lastCheck: new Date(),
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+
+      this.services.set('email', health);
+      logger.error('Email service health check failed', { error });
+      return health;
+    }
+  }
+
+  /**
+   * Check Zalo API health
+   */
+  async checkZaloHealth(): Promise<ServiceHealth> {
+    const startTime = Date.now();
+    try {
+      // TODO: Implement actual Zalo API health check
+      const responseTime = Date.now() - startTime;
+
+      const health: ServiceHealth = {
+        name: 'Zalo API',
+        status: responseTime < 3000 ? 'healthy' : 'degraded',
+        lastCheck: new Date(),
+        message: `Response time: ${responseTime}ms`,
+        responseTime,
+      };
+
+      this.services.set('zalo', health);
+      return health;
+    } catch (error) {
+      const health: ServiceHealth = {
+        name: 'Zalo API',
+        status: 'unhealthy',
+        lastCheck: new Date(),
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+
+      this.services.set('zalo', health);
+      logger.error('Zalo health check failed', { error });
+      return health;
+    }
+  }
+
+  /**
+   * Check all services
+   */
+  async checkAllServices(): Promise<ServiceHealth[]> {
+    const results = await Promise.all([
+      this.checkGeminiHealth(),
+      this.checkDatabaseHealth(),
+      this.checkEmailServiceHealth(),
+      this.checkZaloHealth(),
+    ]);
+
+    return results;
+  }
+
+  /**
+   * Get overall health status
+   */
+  getOverallStatus(): 'healthy' | 'degraded' | 'unhealthy' {
+    const statuses = Array.from(this.services.values()).map(
+      (s) => s.status
+    );
+
+    if (statuses.includes('unhealthy')) {
+      return 'unhealthy';
+    }
+    if (statuses.includes('degraded')) {
+      return 'degraded';
+    }
+    return 'healthy';
+  }
+
+  /**
+   * Get service health
+   */
+  getServiceHealth(name: string): ServiceHealth | undefined {
+    return this.services.get(name);
+  }
+
+  /**
+   * Get all services health
+   */
+  getAllServicesHealth(): ServiceHealth[] {
+    return Array.from(this.services.values());
+  }
+}
+
+export const healthChecker = new HealthChecker();
+

@@ -1,1 +1,232 @@
-import nodemailer from 'nodemailer';\nimport { logger } from '../../../utils/logger';\n\nexport interface EmailProviderConfig {\n  provider: 'gmail' | 'sendgrid' | 'smtp';\n  from: string;\n  auth?: {\n    user?: string;\n    pass?: string;\n    clientId?: string;\n    clientSecret?: string;\n    refreshToken?: string;\n    apiKey?: string;\n  };\n}\n\n/**\n * Nodemailer Email Provider\n * Handles actual email sending\n */\nexport class NodemailerProvider {\n  private transporter: nodemailer.Transporter;\n  private config: EmailProviderConfig;\n\n  constructor(config: EmailProviderConfig) {\n    this.config = config;\n    this.transporter = this.createTransporter(config);\n  }\n\n  /**\n   * Create transporter based on provider type\n   */\n  private createTransporter(\n    config: EmailProviderConfig\n  ): nodemailer.Transporter {\n    switch (config.provider) {\n      case 'gmail':\n        return nodemailer.createTransport({\n          service: 'gmail',\n          auth: {\n            user: config.auth?.user,\n            pass: config.auth?.pass,\n            clientId: config.auth?.clientId,\n            clientSecret: config.auth?.clientSecret,\n            refreshToken: config.auth?.refreshToken,\n          },\n        });\n\n      case 'sendgrid':\n        return nodemailer.createTransport({\n          host: 'smtp.sendgrid.net',\n          port: 587,\n          auth: {\n            user: 'apikey',\n            pass: config.auth?.apiKey,\n          },\n        });\n\n      case 'smtp':\n        return nodemailer.createTransport({\n          host: process.env.SMTP_HOST,\n          port: parseInt(process.env.SMTP_PORT || '587'),\n          secure: process.env.SMTP_SECURE === 'true',\n          auth: {\n            user: config.auth?.user || process.env.SMTP_USER,\n            pass: config.auth?.pass || process.env.SMTP_PASSWORD,\n          },\n        });\n\n      default:\n        throw new Error(`Unsupported email provider: ${config.provider}`);\n    }\n  }\n\n  /**\n   * Send email\n   */\n  async sendEmail(options: {\n    to: string;\n    subject: string;\n    text?: string;\n    html?: string;\n    cc?: string[];\n    bcc?: string[];\n    replyTo?: string;\n  }): Promise<{\n    success: boolean;\n    messageId?: string;\n    error?: string;\n  }> {\n    try {\n      logger.info('Sending email via Nodemailer', {\n        to: options.to,\n        subject: options.subject,\n        provider: this.config.provider,\n      });\n\n      const result = await this.transporter.sendMail({\n        from: this.config.from,\n        to: options.to,\n        subject: options.subject,\n        text: options.text,\n        html: options.html,\n        cc: options.cc,\n        bcc: options.bcc,\n        replyTo: options.replyTo,\n      });\n\n      logger.info('Email sent successfully', {\n        messageId: result.messageId,\n        to: options.to,\n      });\n\n      return {\n        success: true,\n        messageId: result.messageId,\n      };\n    } catch (error) {\n      logger.error('Failed to send email', {\n        to: options.to,\n        error: error instanceof Error ? error.message : String(error),\n      });\n\n      return {\n        success: false,\n        error: error instanceof Error ? error.message : 'Unknown error',\n      };\n    }\n  }\n\n  /**\n   * Send bulk emails\n   */\n  async sendBulkEmails(\n    emails: Array<{\n      to: string;\n      subject: string;\n      text?: string;\n      html?: string;\n    }>\n  ): Promise<\n    Array<{\n      to: string;\n      success: boolean;\n      messageId?: string;\n      error?: string;\n    }>\n  > {\n    logger.info('Sending bulk emails', { count: emails.length });\n\n    const results = await Promise.all(\n      emails.map((email) =>\n        this.sendEmail(email).then((result) => ({\n          to: email.to,\n          ...result,\n        }))\n      )\n    );\n\n    const successful = results.filter((r) => r.success).length;\n    logger.info('Bulk email sending completed', {\n      total: emails.length,\n      successful,\n      failed: emails.length - successful,\n    });\n\n    return results;\n  }\n\n  /**\n   * Verify connection\n   */\n  async verifyConnection(): Promise<boolean> {\n    try {\n      await this.transporter.verify();\n      logger.info('Email provider connection verified', {\n        provider: this.config.provider,\n      });\n      return true;\n    } catch (error) {\n      logger.error('Email provider connection failed', {\n        provider: this.config.provider,\n        error: error instanceof Error ? error.message : String(error),\n      });\n      return false;\n    }\n  }\n}\n\n/**\n * Factory function to create provider\n */\nexport function createEmailProvider(\n  config: EmailProviderConfig\n): NodemailerProvider {\n  return new NodemailerProvider(config);\n}\n\n/**\n * Create provider from environment variables\n */\nexport function createEmailProviderFromEnv(): NodemailerProvider {\n  const provider = (process.env.EMAIL_PROVIDER || 'smtp') as\n    | 'gmail'\n    | 'sendgrid'\n    | 'smtp';\n\n  const config: EmailProviderConfig = {\n    provider,\n    from: process.env.SMTP_FROM_EMAIL || 'noreply@smartfurni.com',\n  };\n\n  if (provider === 'gmail') {\n    config.auth = {\n      user: process.env.GMAIL_CLIENT_ID,\n      pass: process.env.GMAIL_CLIENT_SECRET,\n      refreshToken: process.env.GMAIL_REFRESH_TOKEN,\n    };\n  } else if (provider === 'sendgrid') {\n    config.auth = {\n      apiKey: process.env.SENDGRID_API_KEY,\n    };\n  } else {\n    config.auth = {\n      user: process.env.SMTP_USER,\n      pass: process.env.SMTP_PASSWORD,\n    };\n  }\n\n  return new NodemailerProvider(config);\n}\n
+import nodemailer from 'nodemailer';
+import { logger } from '../../../utils/logger';
+
+export interface EmailProviderConfig {
+  provider: 'gmail' | 'sendgrid' | 'smtp';
+  from: string;
+  auth?: {
+    user?: string;
+    pass?: string;
+    clientId?: string;
+    clientSecret?: string;
+    refreshToken?: string;
+    apiKey?: string;
+  };
+}
+
+/**
+ * Nodemailer Email Provider
+ * Handles actual email sending
+ */
+export class NodemailerProvider {
+  private transporter: nodemailer.Transporter;
+  private config: EmailProviderConfig;
+
+  constructor(config: EmailProviderConfig) {
+    this.config = config;
+    this.transporter = this.createTransporter(config);
+  }
+
+  /**
+   * Create transporter based on provider type
+   */
+  private createTransporter(
+    config: EmailProviderConfig
+  ): nodemailer.Transporter {
+    switch (config.provider) {
+      case 'gmail':
+        return nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: config.auth?.user,
+            pass: config.auth?.pass,
+            clientId: config.auth?.clientId,
+            clientSecret: config.auth?.clientSecret,
+            refreshToken: config.auth?.refreshToken,
+          },
+        });
+
+      case 'sendgrid':
+        return nodemailer.createTransport({
+          host: 'smtp.sendgrid.net',
+          port: 587,
+          auth: {
+            user: 'apikey',
+            pass: config.auth?.apiKey,
+          },
+        });
+
+      case 'smtp':
+        return nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: {
+            user: config.auth?.user || process.env.SMTP_USER,
+            pass: config.auth?.pass || process.env.SMTP_PASSWORD,
+          },
+        });
+
+      default:
+        throw new Error(`Unsupported email provider: ${config.provider}`);
+    }
+  }
+
+  /**
+   * Send email
+   */
+  async sendEmail(options: {
+    to: string;
+    subject: string;
+    text?: string;
+    html?: string;
+    cc?: string[];
+    bcc?: string[];
+    replyTo?: string;
+  }): Promise<{
+    success: boolean;
+    messageId?: string;
+    error?: string;
+  }> {
+    try {
+      logger.info('Sending email via Nodemailer', {
+        to: options.to,
+        subject: options.subject,
+        provider: this.config.provider,
+      });
+
+      const result = await this.transporter.sendMail({
+        from: this.config.from,
+        to: options.to,
+        subject: options.subject,
+        text: options.text,
+        html: options.html,
+        cc: options.cc,
+        bcc: options.bcc,
+        replyTo: options.replyTo,
+      });
+
+      logger.info('Email sent successfully', {
+        messageId: result.messageId,
+        to: options.to,
+      });
+
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      logger.error('Failed to send email', {
+        to: options.to,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Send bulk emails
+   */
+  async sendBulkEmails(
+    emails: Array<{
+      to: string;
+      subject: string;
+      text?: string;
+      html?: string;
+    }>
+  ): Promise<
+    Array<{
+      to: string;
+      success: boolean;
+      messageId?: string;
+      error?: string;
+    }>
+  > {
+    logger.info('Sending bulk emails', { count: emails.length });
+
+    const results = await Promise.all(
+      emails.map((email) =>
+        this.sendEmail(email).then((result) => ({
+          to: email.to,
+          ...result,
+        }))
+      )
+    );
+
+    const successful = results.filter((r) => r.success).length;
+    logger.info('Bulk email sending completed', {
+      total: emails.length,
+      successful,
+      failed: emails.length - successful,
+    });
+
+    return results;
+  }
+
+  /**
+   * Verify connection
+   */
+  async verifyConnection(): Promise<boolean> {
+    try {
+      await this.transporter.verify();
+      logger.info('Email provider connection verified', {
+        provider: this.config.provider,
+      });
+      return true;
+    } catch (error) {
+      logger.error('Email provider connection failed', {
+        provider: this.config.provider,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return false;
+    }
+  }
+}
+
+/**
+ * Factory function to create provider
+ */
+export function createEmailProvider(
+  config: EmailProviderConfig
+): NodemailerProvider {
+  return new NodemailerProvider(config);
+}
+
+/**
+ * Create provider from environment variables
+ */
+export function createEmailProviderFromEnv(): NodemailerProvider {
+  const provider = (process.env.EMAIL_PROVIDER || 'smtp') as
+    | 'gmail'
+    | 'sendgrid'
+    | 'smtp';
+
+  const config: EmailProviderConfig = {
+    provider,
+    from: process.env.SMTP_FROM_EMAIL || 'noreply@smartfurni.com',
+  };
+
+  if (provider === 'gmail') {
+    config.auth = {
+      user: process.env.GMAIL_CLIENT_ID,
+      pass: process.env.GMAIL_CLIENT_SECRET,
+      refreshToken: process.env.GMAIL_REFRESH_TOKEN,
+    };
+  } else if (provider === 'sendgrid') {
+    config.auth = {
+      apiKey: process.env.SENDGRID_API_KEY,
+    };
+  } else {
+    config.auth = {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    };
+  }
+
+  return new NodemailerProvider(config);
+}
+
