@@ -224,12 +224,15 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         className="flex items-center gap-3 px-3 flex-shrink-0"
         style={{ borderBottom: `1px solid ${C.border}`, height: 60 }}
       >
+        {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
+        <img src="/smartfurni-icon.png" alt="" style={{ display: "none" }} />
+        <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
         {collapsed ? (
-          <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center justify-center flex-shrink-0" style={{ width: 36, height: 36 }}>
             <img
               src="/smartfurni-icon.png"
               alt="SF"
-              style={{ width: 32, height: 32, objectFit: "contain" }}
+              style={{ width: 36, height: 36, objectFit: "contain" }}
             />
           </div>
         ) : (
