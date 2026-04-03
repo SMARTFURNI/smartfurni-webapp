@@ -138,8 +138,14 @@ export async function GET(req: NextRequest) {
       conversations.map(async (conv) => {
         let lead = null;
 
-        // Tìm lead theo số điện thoại của participant
-        const phone = conv.participants?.[0]?.phone;
+        // Pancake API trả về tên trong from.name và số điện thoại trong from.phone_number
+        const convAny = conv as any;
+        const customerName = convAny.from?.name || convAny.customers?.[0]?.name || 'Khách hàng';
+        const customerPhone = convAny.from?.phone_number || convAny.customers?.[0]?.phone || '';
+        const customerAvatar = convAny.from?.avatar_url || convAny.customers?.[0]?.avatar_url || '';
+        const lastMessageText = convAny.snippet || conv.last_message?.text || '';
+
+        const phone = customerPhone;
         if (phone) {
           try {
             const cleanPhone = phone.replace(/\D/g, '').replace(/^84/, '0');
@@ -161,11 +167,12 @@ export async function GET(req: NextRequest) {
 
         return {
           id: conv.id,
-          displayName: conv.participants?.[0]?.name || 'Khách hàng',
-          phone: conv.participants?.[0]?.phone || '',
-          lastMessage: conv.last_message?.text || '',
-          lastMessageAt: conv.last_message?.created_at || conv.updated_at,
-          unreadCount: conv.type === 'INBOX' && !conv.last_message ? 0 : 0,
+          displayName: customerName,
+          phone: customerPhone,
+          avatar: customerAvatar,
+          lastMessage: lastMessageText,
+          lastMessageAt: conv.updated_at || conv.last_message?.created_at,
+          unreadCount: convAny.seen === false ? 1 : 0,
           tags: conv.tags || [],
           type: conv.type,
           lead,

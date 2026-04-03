@@ -345,8 +345,13 @@ export default function ZaloInboxClient() {
           {/* Messages */}
           <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
             {messages.length === 0 ? (
-              <div style={{ textAlign: "center", color: "#9CA3AF", fontSize: 13, marginTop: 40 }}>
-                Chưa có tin nhắn nào
+              <div style={{ textAlign: "center", color: "#9CA3AF", fontSize: 13, marginTop: 40, padding: "0 20px" }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>📬</div>
+                <div style={{ fontWeight: 600, color: "#6B7280", marginBottom: 4 }}>Chưa có tin nhắn nào</div>
+                <div style={{ fontSize: 12, lineHeight: 1.5 }}>
+                  Tin nhắn sẽ xuất hiận ở đây sau khi bạn cài Webhook trong Pancake.<br/>
+                  Nhấn biểu tượng ⚙️ → tab <strong>Kết nối Pancake</strong> để xem hướng dẫn.
+                </div>
               </div>
             ) : (
               messages.map((msg) => (
@@ -842,6 +847,27 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
               >
                 {saving ? "⏳ Đang lưu..." : "💾 Lưu thông tin"}
               </button>
+
+              {/* Hướng dẫn cài Webhook */}
+              <div style={{
+                padding: 12, background: "#F0FDF4", borderRadius: 8, fontSize: 12, color: "#065F46",
+                border: "1px solid #6EE7B7", marginTop: 4,
+              }}>
+                <strong>🔗 Bước 2: Cài Webhook trong Pancake để nhận tin nhắn</strong><br />
+                <div style={{ marginTop: 6, lineHeight: 1.7 }}>
+                  1. Trong Pancake, vào <strong>Cài đặt → Công cụ → Webhook</strong><br />
+                  2. Nhấn <strong>Thêm webhook</strong>, dán URL sau:<br />
+                  <code style={{
+                    display: "block", background: "#fff", padding: "6px 8px", borderRadius: 4,
+                    fontSize: 11, fontFamily: "monospace", margin: "4px 0", wordBreak: "break-all",
+                    border: "1px solid #6EE7B7", color: "#065F46",
+                  }}>
+                    https://smartfurni-webapp-production.up.railway.app/api/crm/zalo-inbox/webhook
+                  </code>
+                  3. Chọn sự kiện: <strong>messaging</strong> (tin nhắn mới)<br />
+                  4. Lưu lại → Tin nhắn sẽ tự động hiển thị ở đây
+                </div>
+              </div>
             </div>
           ) : (
             <div>
