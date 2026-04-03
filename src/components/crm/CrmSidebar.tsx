@@ -227,7 +227,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         {collapsed ? (
           <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
             <img
-              src="/smartfurni-logo.png"
+              src="/smartfurni-icon.png"
               alt="SF"
               style={{ width: 32, height: 32, objectFit: "contain" }}
             />
