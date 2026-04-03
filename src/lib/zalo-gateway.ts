@@ -16,6 +16,7 @@ import {
   incrementUnreadCount,
   getActiveZaloCredentials,
   updateZaloLastConnected,
+  saveZaloCredentials,
 } from "./zalo-inbox-store";
 import { query } from "./db";
 
@@ -44,9 +45,85 @@ let isConnected = false;
 let connectionStatus: "disconnected" | "connecting" | "connected" | "error" = "disconnected";
 let connectedPhone = "";
 let zcaApi: any = null;
+let connectedName = "";
 
 export function getGatewayStatus() {
-  return { isConnected, status: connectionStatus, phone: connectedPhone };
+  return { isConnected, status: connectionStatus, phone: connectedPhone, name: connectedName };
+}
+
+// ─── QR Login ─────────────────────────────────────────────────────────────────
+
+export interface QRLoginCallbacks {
+  onQRCode: (image: string, token: string) => void;
+  onQRExpired: () => void;
+  onScanned: (displayName: string, avatar: string) => void;
+  onSuccess: (phone: string, displayName: string) => void;
+  onError: (error: string) => void;
+}
+
+export async function startQRLogin(callbacks: QRLoginCallbacks): Promise<void> {
+  // Ngắt kết nối cũ nếu đang kết nối
+  if (isConnected) {
+    await disconnectZaloGateway();
+  }
+
+  try {
+    const { Zalo, LoginQRCallbackEventType } = await import("zca-js");
+    const zalo = new Zalo();
+    const userAgent =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+
+    const result = await zalo.loginQR(
+      {},
+      { userAgent },
+      async (event) => {
+        switch (event.type) {
+          case LoginQRCallbackEventType.QRCodeGenerated:
+            callbacks.onQRCode(event.data.image, event.data.token);
+            break;
+          case LoginQRCallbackEventType.QRCodeExpired:
+            callbacks.onQRExpired();
+            event.actions.retry();
+            break;
+          case LoginQRCallbackEventType.QRCodeScanned:
+            callbacks.onScanned(event.data.display_name, event.data.avatar);
+            break;
+          case LoginQRCallbackEventType.QRCodeDeclined:
+            callbacks.onError("Người dùng từ chối đăng nhập. Vui lòng thử lại.");
+            break;
+          case LoginQRCallbackEventType.GotLoginInfo:
+            // Credentials sẽ được lưu sau khi loginQR resolve
+            break;
+        }
+      }
+    );
+
+    if (result) {
+      const { userInfo, cookies } = result;
+      const cookieStr = JSON.stringify(cookies);
+      const imeiCookie = (cookies as any[]).find((c: any) => c.key === "_imei" || c.key === "imei");
+      const imei = imeiCookie?.value || `imei_${Date.now()}`;
+
+      await saveZaloCredentials({
+        phone: userInfo.name,
+        imei,
+        cookies: cookieStr,
+        userAgent,
+      });
+
+      // Kết nối gateway với credentials mới
+      const connectResult = await connectZaloGateway();
+      if (connectResult.success) {
+        callbacks.onSuccess(userInfo.name, userInfo.name);
+      } else {
+        callbacks.onError(connectResult.message);
+      }
+    } else {
+      callbacks.onError("Đăng nhập thất bại. Vui lòng thử lại.");
+    }
+  } catch (err: any) {
+    callbacks.onError(err?.message || "Lỗi không xác định khi đăng nhập QR");
+  }
 }
 
 // ─── Connect via zca-js ───────────────────────────────────────────────────────
@@ -96,6 +173,7 @@ export async function connectZaloGateway(): Promise<{ success: boolean; message:
     isConnected = true;
     connectionStatus = "connected";
     connectedPhone = creds.phone;
+    connectedName = creds.phone;
 
     await updateZaloLastConnected(creds.phone);
     broadcastZaloEvent("status", { status: "connected", phone: creds.phone });
@@ -117,6 +195,7 @@ export async function disconnectZaloGateway(): Promise<void> {
   isConnected = false;
   connectionStatus = "disconnected";
   connectedPhone = "";
+  connectedName = "";
   broadcastZaloEvent("status", { status: "disconnected" });
 }
 

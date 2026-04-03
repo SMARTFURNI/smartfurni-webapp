@@ -50,8 +50,8 @@ interface ZaloConversation {
 
 interface GatewayStatus {
   connected: boolean;
-  pageName: string | null;
-  pageId: string | null;
+  phone: string | null;
+  status?: string;
   message?: string;
 }
 
@@ -97,7 +97,7 @@ export default function ZaloInboxClient() {
   const [messages, setMessages] = useState<ZaloMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({ connected: false, pageName: null, pageId: null });
+  const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({ connected: false, phone: null });
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -110,17 +110,17 @@ export default function ZaloInboxClient() {
     try {
       const res = await fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" });
       if (res.status === 401) {
-        setGatewayStatus({ connected: false, pageName: null, pageId: null, message: "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại" });
+        setGatewayStatus({ connected: false, phone: null, message: "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại" });
         return;
       }
       if (res.status === 403) {
-        setGatewayStatus({ connected: false, pageName: null, pageId: null, message: "Bạn chưa được cấp quyền truy cập Zalo Inbox" });
+        setGatewayStatus({ connected: false, phone: null, message: "Bạn chưa được cấp quyền truy cập Zalo Inbox" });
         return;
       }
       if (!res.ok) return;
       const data = await res.json();
       setConversations(data.conversations || []);
-      setGatewayStatus({ connected: data.connected || false, pageName: data.pageName || null, pageId: null, message: data.error });
+      setGatewayStatus({ connected: data.connected || false, phone: data.phone || null, status: data.status, message: data.error });
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }, []);
@@ -199,7 +199,7 @@ export default function ZaloInboxClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ conversationId: selectedConv.id, message: text }),
+        body: JSON.stringify({ conversationId: selectedConv.id, content: text }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -216,8 +216,7 @@ export default function ZaloInboxClient() {
   // ─── Connect Zalo ────────────────────────────────────────────────────────
 
   const handleConnect = async () => {
-    // Với Pancake API, không cần kết nối persistent - chỉ cần reload conversations
-    await loadConversations();
+    setShowSettings(true);
   };
 
   // ─── Filter conversations ────────────────────────────────────────────────
@@ -248,7 +247,7 @@ export default function ZaloInboxClient() {
                 <div style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Zalo Inbox</div>
                 <div style={{ fontSize: 11, color: gatewayStatus.connected ? "#10B981" : "#9CA3AF", display: "flex", alignItems: "center", gap: 4 }}>
                   {gatewayStatus.connected ? <Wifi size={10} /> : <WifiOff size={10} />}
-                  {gatewayStatus.connected ? `Pancake: ${gatewayStatus.pageName || "Đã kết nối"}` : "Chưa cấu hình Pancake"}
+                  {gatewayStatus.connected ? `Zalo: ${gatewayStatus.phone || "Đã kết nối"}` : "Chưa đăng nhập Zalo"}
                 </div>
               </div>
             </div>
@@ -278,7 +277,7 @@ export default function ZaloInboxClient() {
                 color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", marginBottom: 8,
               }}
             >
-              Cấu hình Pancake API
+              Đăng nhập Zalo
             </button>
           )}
 
@@ -358,9 +357,7 @@ export default function ZaloInboxClient() {
                 <div style={{ fontSize: 32, marginBottom: 8 }}>📬</div>
                 <div style={{ fontWeight: 600, color: "#6B7280", marginBottom: 4 }}>Chưa có tin nhắn nào</div>
                 <div style={{ fontSize: 12, lineHeight: 1.5 }}>
-                  Tin nhắn sẽ xuất hiận ở đây sau khi bạn cài Webhook trong Pancake.<br/>
-                  Nhấn biểu tượng ⚙️ → tab <strong>Kết nối Pancake</strong> để xem hướng dẫn.
-                </div>
+                  Tin nhắn sẽ xuất hiện ở đây sau khi bạn đăng nhập Zalo.<br/>\n                  Nhấn biểu tượng ⚙️ → <strong>Đăng nhập Zalo</strong> để quét QR.                </div>
               </div>
             ) : (
               messages.map((msg) => (
@@ -669,30 +666,22 @@ function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: stri
 //// ─── Settings Modal ──────────────────────────────────────────────────
 
 function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
-  const [tab, setTab] = useState<"credentials" | "access">("credentials");
-  const [pageId, setPageId] = useState("");
-  const [pageName, setPageName] = useState("");
-  const [pageAccessToken, setPageAccessToken] = useState("");
-  const [userApiToken, setUserApiToken] = useState("");
-  const [showToken, setShowToken] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<"login" | "access">("login");
+  const [qrImage, setQrImage] = useState<string | null>(null);
+  const [loginStatus, setLoginStatus] = useState<"idle" | "loading" | "scanning" | "success" | "error">("idle");
+  const [loginMessage, setLoginMessage] = useState("");
+  const [currentCreds, setCurrentCreds] = useState<any>(null);
   const [staffList, setStaffList] = useState<any[]>([]);
   const [accessList, setAccessList] = useState<any[]>([]);
   const [loadingAccess, setLoadingAccess] = useState(false);
-  const [message, setMessage] = useState("");
-  const [msgType, setMsgType] = useState<"success" | "error" | "info">("info");
+  const [disconnecting, setDisconnecting] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     // Load existing credentials
     fetch("/api/crm/zalo-inbox/credentials", { credentials: "include" })
       .then(r => r.json())
-      .then(data => {
-        if (data && data.page_id) {
-          setPageId(data.page_id || "");
-          setPageName(data.page_name || "");
-          // Không load token cũ - user phải nhập lại
-        }
-      })
+      .then(data => { if (data && data.phone) setCurrentCreds(data); })
       .catch(() => {});
   }, []);
 
@@ -709,46 +698,76 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
     }
   }, [tab]);
 
-  const handleSaveCreds = async () => {
-    const trimmedPageId = pageId.trim();
-    const trimmedToken = pageAccessToken.trim();
-    if (!trimmedPageId) {
-      setMessage("❌ Vui lòng nhập Page ID"); setMsgType("error"); return;
-    }
-    if (!trimmedToken) {
-      setMessage("❌ Vui lòng nhập Page Access Token"); setMsgType("error"); return;
-    }
-    setSaving(true);
-    setMessage("⏳ Đang lưu..."); setMsgType("info");
+  // Cleanup SSE on unmount
+  useEffect(() => {
+    return () => { eventSourceRef.current?.close(); };
+  }, []);
+
+  const handleStartQR = () => {
+    setLoginStatus("loading");
+    setQrImage(null);
+    setLoginMessage("Đang tạo mã QR...");
+
+    // Close existing SSE
+    eventSourceRef.current?.close();
+
+    // Open SSE stream for QR login
+    const es = new EventSource("/api/crm/zalo-inbox/qr-login");
+    eventSourceRef.current = es;
+
+    es.addEventListener("qr", (e) => {
+      const data = JSON.parse(e.data);
+      setQrImage(data.image);
+      setLoginStatus("scanning");
+      setLoginMessage("Mở Zalo trên điện thoại → Quét mã QR này");
+    });
+
+    es.addEventListener("scanned", () => {
+      setLoginMessage("✅ Đã quét! Đang xác nhận đăng nhập...");
+    });
+
+    es.addEventListener("success", (e) => {
+      const data = JSON.parse(e.data);
+      setLoginStatus("success");
+      setQrImage(null);
+      setLoginMessage(`✅ Đăng nhập thành công! Zalo: ${data.phone || "Đã kết nối"}`);
+      setCurrentCreds({ phone: data.phone, hasCredentials: true });
+      es.close();
+      // Reload page sau 2s
+      setTimeout(() => window.location.reload(), 2000);
+    });
+
+    es.addEventListener("error", (e) => {
+      try {
+        const data = JSON.parse((e as any).data || "{}");
+        setLoginMessage("❌ " + (data.message || "Lỗi đăng nhập"));
+      } catch {
+        setLoginMessage("❌ Lỗi kết nối");
+      }
+      setLoginStatus("error");
+      setQrImage(null);
+      es.close();
+    });
+
+    es.onerror = () => {
+      if (loginStatus !== "success") {
+        setLoginStatus("error");
+        setLoginMessage("❌ Mất kết nối. Vui lòng thử lại.");
+      }
+      es.close();
+    };
+  };
+
+  const handleDisconnect = async () => {
+    if (!confirm("Bạn có chắc muốn đăng xuất Zalo?")) return;
+    setDisconnecting(true);
     try {
-      const payload = {
-        pageId: trimmedPageId,
-        pageName: pageName.trim() || "Zalo SmartFurni",
-        pageAccessToken: trimmedToken,
-        userApiToken: userApiToken.trim() || undefined,
-      };
-      console.log("[SaveCreds] sending payload:", { ...payload, pageAccessToken: payload.pageAccessToken.slice(0, 20) + "..." });
-      const res = await fetch("/api/crm/zalo-inbox/credentials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      console.log("[SaveCreds] response status:", res.status, "body:", data);
-      if (res.status === 401) {
-        setMessage("⚠️ Phiên đăng nhập hết hạn. Vui lòng tải lại trang."); setMsgType("error"); return;
-      }
-      if (data.success) {
-        setMessage("✅ Đã lưu thành công! Trang sẽ tải lại..."); setMsgType("success");
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        setMessage("❌ " + (data.error || `Lỗi HTTP ${res.status}`)); setMsgType("error");
-      }
-    } catch (err: any) {
-      console.error("[SaveCreds] exception:", err);
-      setMessage("❌ Lỗi kết nối: " + (err?.message || "unknown")); setMsgType("error");
-    } finally { setSaving(false); }
+      await fetch("/api/crm/zalo-inbox/credentials", { method: "DELETE", credentials: "include" });
+      setCurrentCreds(null);
+      setLoginStatus("idle");
+      setLoginMessage("");
+      setQrImage(null);
+    } finally { setDisconnecting(false); }
   };
 
   const handleGrantAccess = async (staffId: string) => {
@@ -776,13 +795,13 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
       <div style={{
-        background: "#fff", borderRadius: 16, width: 560, maxHeight: "85vh",
+        background: "#fff", borderRadius: 16, width: 480, maxHeight: "85vh",
         display: "flex", flexDirection: "column", overflow: "hidden",
         boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
       }}>
         {/* Modal header */}
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>Cài đặt Zalo Inbox (Pancake)</div>
+          <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>Cài đặt Zalo Inbox</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280" }}>
             <X size={20} />
           </button>
@@ -790,7 +809,7 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
 
         {/* Tabs */}
         <div style={{ display: "flex", borderBottom: "1px solid #F3F4F6" }}>
-          {(["credentials", "access"] as const).map((t) => (
+          {(["login", "access"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -802,139 +821,109 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
                 cursor: "pointer",
               }}
             >
-              {t === "credentials" ? "Kết nối Pancake" : "Phân quyền nhân viên"}
+              {t === "login" ? "Đăng nhập Zalo" : "Phân quyền nhân viên"}
             </button>
           ))}
         </div>
 
         {/* Tab content */}
         <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
-          {tab === "credentials" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{
-                padding: 12, background: "#DBEAFE", borderRadius: 8, fontSize: 12, color: "#1E40AF",
-                border: "1px solid #93C5FD",
-              }}>
-                <strong>Hướng dẫn lấy thông tin từ Pancake:</strong><br />
-                1. Đăng nhập vào <a href="https://pancake.vn" target="_blank" style={{ color: "#0068FF" }}>Pancake</a><br />
-                2. Vào <strong>Cài đặt → Công cụ → Public API access token</strong><br />
-                3. Copy <strong>Page ID</strong> (từ URL: pancake.vn/p2i_...) và <strong>Page Access Token</strong><br />
-                4. Dán vào các ô bên dưới
-              </div>
-
-               {/* Page ID */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Page ID <span style={{color:"#EF4444"}}>*</span></label>
-                <input
-                  value={pageId}
-                  onChange={(e) => setPageId(e.target.value)}
-                  placeholder="pzl_84918326552"
-                  type="text"
-                  autoComplete="off"
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
-                />
-              </div>
-              {/* Page Name */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Tên Page (tùy chọn)</label>
-                <input
-                  value={pageName}
-                  onChange={(e) => setPageName(e.target.value)}
-                  placeholder="Nội Thất SmartFurni"
-                  type="text"
-                  autoComplete="off"
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
-                />
-              </div>
-              {/* Page Access Token - dùng textarea để tránh browser autofill */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Page Access Token <span style={{color:"#EF4444"}}>*</span></label>
-                <div style={{ position: "relative" }}>
-                  <textarea
-                    value={pageAccessToken}
-                    onChange={(e) => setPageAccessToken(e.target.value)}
-                    placeholder="Dán token vào đây (eyJhbGciOi...)"
-                    autoComplete="off"
-                    spellCheck={false}
-                    rows={showToken ? 3 : 1}
-                    style={{
-                      width: "100%", padding: "8px 12px", borderRadius: 8,
-                      border: pageAccessToken ? "1px solid #10B981" : "1px solid #E5E7EB",
-                      fontSize: 12, outline: "none", boxSizing: "border-box",
-                      resize: "none", fontFamily: "monospace",
-                      filter: showToken ? "none" : "blur(3px)",
-                      transition: "filter 0.2s",
-                    }}
-                  />
+          {tab === "login" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
+              {/* Current status */}
+              {currentCreds?.phone && (
+                <div style={{
+                  width: "100%", padding: "12px 16px", background: "#D1FAE5", borderRadius: 10,
+                  border: "1px solid #6EE7B7", display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "#065F46" }}>✅ Đã đăng nhập</div>
+                    <div style={{ fontSize: 12, color: "#047857", marginTop: 2 }}>Zalo: {currentCreds.phone}</div>
+                  </div>
                   <button
-                    type="button"
-                    onClick={() => setShowToken(v => !v)}
-                    style={{ position: "absolute", right: 8, top: 8, background: "#F3F4F6", border: "1px solid #E5E7EB", borderRadius: 4, cursor: "pointer", fontSize: 11, color: "#374151", padding: "2px 6px" }}
+                    onClick={handleDisconnect}
+                    disabled={disconnecting}
+                    style={{
+                      padding: "6px 12px", borderRadius: 6, border: "1px solid #FCA5A5",
+                      background: "#FEE2E2", color: "#991B1B", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    }}
                   >
-                    {showToken ? "🙈 Ẩn" : "👁️ Hiện"}
+                    {disconnecting ? "Đang xử lý..." : "Đăng xuất"}
                   </button>
                 </div>
-                {pageAccessToken
-                  ? <div style={{ fontSize: 11, color: "#10B981", marginTop: 2 }}>✅ Đã nhập {pageAccessToken.length} ký tự</div>
-                  : <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>Copy token từ Pancake và dán vào ô trên</div>
-                }
-              </div>
-              {/* User API Token */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>User API Token (tùy chọn)</label>
-                <input
-                  value={userApiToken}
-                  onChange={(e) => setUserApiToken(e.target.value)}
-                  placeholder="Để trống nếu không có"
-                  type="text"
-                  autoComplete="off"
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, outline: "none", boxSizing: "border-box" }}
-                />
-              </div>
-              {/* Message */}
-              {message && (
-                <div style={{
-                  padding: "10px 14px", borderRadius: 8, fontSize: 13, fontWeight: 500,
-                  background: msgType === "success" ? "#D1FAE5" : msgType === "error" ? "#FEE2E2" : "#EFF6FF",
-                  color: msgType === "success" ? "#065F46" : msgType === "error" ? "#991B1B" : "#1E40AF",
-                  border: `1px solid ${msgType === "success" ? "#6EE7B7" : msgType === "error" ? "#FCA5A5" : "#BFDBFE"}`
-                }}>
-                  {message}
+              )}
+
+              {/* QR Code area */}
+              {qrImage ? (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", marginBottom: 12 }}>
+                    📱 Mở Zalo → Quét mã QR bên dưới
+                  </div>
+                  <img
+                    src={qrImage}
+                    alt="Zalo QR Code"
+                    style={{ width: 240, height: 240, borderRadius: 12, border: "2px solid #E5E7EB" }}
+                  />
+                  <div style={{ fontSize: 12, color: "#6B7280", marginTop: 8 }}>Mã QR có hiệu lực trong 3 phút</div>
+                </div>
+              ) : (
+                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                  <div style={{
+                    width: 80, height: 80, borderRadius: "50%", background: "#EFF6FF",
+                    display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px",
+                    fontSize: 36,
+                  }}>📱</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 6 }}>
+                    {currentCreds?.phone ? "Đăng nhập lại Zalo" : "Đăng nhập Zalo cá nhân"}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.6, marginBottom: 16 }}>
+                    Nhấn nút bên dưới để tạo mã QR.<br />
+                    Mở Zalo trên điện thoại và quét mã để đăng nhập.
+                  </div>
                 </div>
               )}
-              <button
-                onClick={handleSaveCreds}
-                disabled={saving}
-                style={{
-                  padding: "12px", borderRadius: 8, border: "none",
-                  background: saving ? "#93C5FD" : "#0068FF", color: "#fff",
-                  fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer",
-                  letterSpacing: 0.3,
-                }}
-              >
-                {saving ? "⏳ Đang lưu..." : "💾 Lưu thông tin"}
-              </button>
 
-              {/* Hướng dẫn cài Webhook */}
-              <div style={{
-                padding: 12, background: "#F0FDF4", borderRadius: 8, fontSize: 12, color: "#065F46",
-                border: "1px solid #6EE7B7", marginTop: 4,
-              }}>
-                <strong>🔗 Bước 2: Cài Webhook trong Pancake để nhận tin nhắn</strong><br />
-                <div style={{ marginTop: 6, lineHeight: 1.7 }}>
-                  1. Trong Pancake, vào <strong>Cài đặt → Công cụ → Webhook</strong><br />
-                  2. Nhấn <strong>Thêm webhook</strong>, dán URL sau:<br />
-                  <code style={{
-                    display: "block", background: "#fff", padding: "6px 8px", borderRadius: 4,
-                    fontSize: 11, fontFamily: "monospace", margin: "4px 0", wordBreak: "break-all",
-                    border: "1px solid #6EE7B7", color: "#065F46",
-                  }}>
-                    https://smartfurni-webapp-production.up.railway.app/api/crm/zalo-inbox/webhook
-                  </code>
-                  3. Chọn sự kiện: <strong>messaging</strong> (tin nhắn mới)<br />
-                  4. Lưu lại → Tin nhắn sẽ tự động hiển thị ở đây
+              {/* Status message */}
+              {loginMessage && (
+                <div style={{
+                  width: "100%", padding: "10px 14px", borderRadius: 8, fontSize: 13,
+                  background: loginStatus === "success" ? "#D1FAE5" : loginStatus === "error" ? "#FEE2E2" : "#EFF6FF",
+                  color: loginStatus === "success" ? "#065F46" : loginStatus === "error" ? "#991B1B" : "#1E40AF",
+                  border: `1px solid ${loginStatus === "success" ? "#6EE7B7" : loginStatus === "error" ? "#FCA5A5" : "#BFDBFE"}`,
+                  textAlign: "center",
+                }}>
+                  {loginMessage}
                 </div>
-              </div>
+              )}
+
+              {/* Action button */}
+              {loginStatus !== "scanning" && loginStatus !== "success" && (
+                <button
+                  onClick={handleStartQR}
+                  disabled={loginStatus === "loading"}
+                  style={{
+                    padding: "12px 32px", borderRadius: 10, border: "none",
+                    background: loginStatus === "loading" ? "#93C5FD" : "#0068FF",
+                    color: "#fff", fontWeight: 700, fontSize: 14,
+                    cursor: loginStatus === "loading" ? "not-allowed" : "pointer",
+                    width: "100%",
+                  }}
+                >
+                  {loginStatus === "loading" ? "⏳ Đang tạo mã QR..." : "📱 Tạo mã QR đăng nhập"}
+                </button>
+              )}
+
+              {loginStatus === "scanning" && (
+                <button
+                  onClick={() => { eventSourceRef.current?.close(); setLoginStatus("idle"); setQrImage(null); setLoginMessage(""); }}
+                  style={{
+                    padding: "8px 20px", borderRadius: 8, border: "1px solid #E5E7EB",
+                    background: "#F9FAFB", color: "#374151", fontSize: 13, cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
+              )}
             </div>
           ) : (
             <div>
