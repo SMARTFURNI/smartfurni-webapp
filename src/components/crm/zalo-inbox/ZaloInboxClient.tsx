@@ -4,7 +4,8 @@ import {
   MessageCircle, Search, Send, Wifi, WifiOff, User, Phone, ShoppingBag,
   ChevronRight, Settings, RefreshCw, X, Paperclip, FileText, Video,
   Download, ZoomIn, Reply, ChevronLeft,
-  Image as ImageIcon,
+  Image as ImageIcon, Bell, BellOff, Volume2, VolumeX, Smile,
+  ChevronDown, Check, CheckCheck,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -307,6 +308,24 @@ export default function ZaloInboxClient() {
   const [msgSearchResults, setMsgSearchResults] = useState<number[]>([]);
   const [msgSearchCurrent, setMsgSearchCurrent] = useState(0);
   const msgRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // ─── Nhóm A: Trải nghiệm nhắn tin ─────────────────────────────────────────────────────────────────
+  // 1. Thông báo trình duyệt + âm thanh
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("zalo_sound") !== "false";
+    return true;
+  });
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  // 2. Đánh dấu chưa đọc thủ công
+  const [contextMenu, setContextMenu] = useState<{ convId: string; x: number; y: number } | null>(null);
+  // 3. Emoji picker
+  const [showEmoji, setShowEmoji] = useState(false);
+  const emojiRef = useRef<HTMLDivElement>(null);
+  // 4. Cuộn xuống nhanh
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  // 5. Trạng thái gửi (tracked bằng lastSentMsgId)
+  const lastSentMsgIdRef = useRef<string | null>(null);
 
   // ─── Load conversations ──────────────────────────────────────────────────
   const loadConversations = useCallback(async () => {
@@ -364,6 +383,19 @@ export default function ZaloInboxClient() {
           if (hasNewConvMsg) {
             lastConvTimestampRef.current = latestTs;
             setConversations(convs);
+            // Phát âm thanh và thông báo khi có tin mới từ người khác
+            const newestConv = convs[0];
+            const currentConvId = selectedConvRef.current?.id;
+            if (newestConv && !newestConv.lastMessage?.startsWith("[Trả lời")) {
+              playNotifSound();
+              if (newestConv.id !== currentConvId || document.hidden) {
+                sendBrowserNotif(
+                  newestConv.displayName || "Tin nhắn Zalo mới",
+                  newestConv.lastMessage || "Bạn có tin nhắn mới",
+                  newestConv.id
+                );
+              }
+            }
           } else {
             // Cập nhật silent (unread count, etc.) không trigger re-render nếu không có thay đổi
             setConversations((prev) => {
@@ -400,7 +432,106 @@ export default function ZaloInboxClient() {
 
     return () => clearTimeout(timer);
   }, [loadConversations, loadMessages]);
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  // Auto scroll xuống khi có tin mới, chỉ nếu đang ở gần đáy
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); return; }
+    const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distFromBottom < 200) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Phát hiện cuộn để hiện/ẩn nút scroll down
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      setShowScrollDown(distFromBottom > 300);
+    };
+    container.addEventListener("scroll", onScroll);
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [selectedConv]);
+
+  // Đóng emoji picker khi click ra ngoài
+  useEffect(() => {
+    if (!showEmoji) return;
+    const handler = (e: MouseEvent) => {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) setShowEmoji(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showEmoji]);
+
+  // Đóng context menu khi click ra ngoài
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handler = () => setContextMenu(null);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [contextMenu]);
+
+  // Xin quyền thông báo khi mời vào trang
+  useEffect(() => {
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      setNotifEnabled(true);
+    }
+  }, []);
+
+  // Hàm phát âm thanh ting nhẹ
+  const playNotifSound = useCallback(() => {
+    if (!soundEnabled) return;
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch { /* ignore */ }
+  }, [soundEnabled]);
+
+  // Hàm gửi thông báo trình duyệt
+  const sendBrowserNotif = useCallback((title: string, body: string, convId: string) => {
+    if (!notifEnabled || !document.hidden) return;
+    try {
+      const n = new Notification(title, { body, icon: "/favicon.ico", tag: convId });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch { /* ignore */ }
+  }, [notifEnabled]);
+
+  // Hàm toggle thông báo
+  const toggleNotif = useCallback(async () => {
+    if (notifEnabled) {
+      setNotifEnabled(false);
+      return;
+    }
+    if (typeof Notification === "undefined") return;
+    const perm = await Notification.requestPermission();
+    setNotifEnabled(perm === "granted");
+  }, [notifEnabled]);
+
+  // Hàm toggle âm thanh
+  const toggleSound = useCallback(() => {
+    setSoundEnabled(prev => {
+      const next = !prev;
+      localStorage.setItem("zalo_sound", next ? "true" : "false");
+      return next;
+    });
+  }, []);
+
+  // Hàm đánh dấu chưa đọc thủ công
+  const markUnread = useCallback(async (convId: string) => {
+    setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c));
+    try {
+      await fetch(`/api/crm/zalo-inbox/conversations/${convId}/unread`, { method: "POST", credentials: "include" });
+    } catch { /* ignore */ }
+  }, []);
 
   // ─── Message search ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -513,6 +644,16 @@ export default function ZaloInboxClient() {
   return (
     <div style={{ display: "flex", height: "100vh", background: "#F0F2F5", fontFamily: "system-ui, sans-serif" }}>
       {lightbox && <Lightbox state={lightbox} onClose={() => setLightbox(null)} />}
+      {/* Context menu chuột phải */}
+      {contextMenu && (
+        <div style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 9999, background: "#fff", borderRadius: 8, boxShadow: "0 4px 20px rgba(0,0,0,0.15)", border: "1px solid #E5E7EB", minWidth: 180, overflow: "hidden" }}
+          onClick={e => e.stopPropagation()}>
+          <button onClick={() => { markUnread(contextMenu.convId); setContextMenu(null); }}
+            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: 13, color: "#374151", display: "flex", alignItems: "center", gap: 8 }}>
+            <Bell size={14} color="#6B7280" /> Đánh dấu chưa đọc
+          </button>
+        </div>
+      )}
 
       {/* Sidebar */}
       <div style={{ width: 340, background: "#fff", borderRight: "1px solid #E5E7EB", display: "flex", flexDirection: "column", flexShrink: 0 }}>
@@ -535,9 +676,15 @@ export default function ZaloInboxClient() {
                 </div>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <button onClick={loadConversations} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#6B7280" }} title="Làm mới"><RefreshCw size={16} /></button>
-              <button onClick={() => setShowSettings(true)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#6B7280" }} title="Cài đặt"><Settings size={16} /></button>
+            <div style={{ display: "flex", gap: 4 }}>
+              <button onClick={toggleSound} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: soundEnabled ? "#0068FF" : "#9CA3AF" }} title={soundEnabled ? "Đang bật âm thanh" : "Đã tắt âm thanh"}>
+                {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+              </button>
+              <button onClick={toggleNotif} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: notifEnabled ? "#0068FF" : "#9CA3AF" }} title={notifEnabled ? "Đang bật thông báo" : "Bật thông báo trình duyệt"}>
+                {notifEnabled ? <Bell size={15} /> : <BellOff size={15} />}
+              </button>
+              <button onClick={loadConversations} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#6B7280" }} title="Làm mới"><RefreshCw size={15} /></button>
+              <button onClick={() => setShowSettings(true)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#6B7280" }} title="Cài đặt"><Settings size={15} /></button>
             </div>
           </div>
           {!loading && gatewayStatus.message && (
@@ -567,7 +714,9 @@ export default function ZaloInboxClient() {
             </div>
           ) : (
             filteredConvs.map((conv) => (
-              <ConversationItem key={conv.id} conv={conv} isSelected={selectedConv?.id === conv.id} onClick={() => handleSelectConv(conv)} />
+              <div key={conv.id} onContextMenu={(e) => { e.preventDefault(); setContextMenu({ convId: conv.id, x: e.clientX, y: e.clientY }); }}>
+                <ConversationItem conv={conv} isSelected={selectedConv?.id === conv.id} onClick={() => handleSelectConv(conv)} />
+              </div>
             ))
           )}
         </div>
@@ -606,7 +755,7 @@ export default function ZaloInboxClient() {
           )}
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div ref={messagesContainerRef} style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 8, position: "relative" }}>
             {messages.length === 0 ? (
               <div style={{ textAlign: "center", color: "#9CA3AF", fontSize: 13, marginTop: 40, padding: "0 20px" }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>📬</div>
@@ -634,6 +783,13 @@ export default function ZaloInboxClient() {
               })
             )}
             <div ref={messagesEndRef} />
+            {/* Nút cuộn xuống nhanh */}
+            {showScrollDown && (
+              <button onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
+                style={{ position: "sticky", bottom: 8, alignSelf: "center", background: "#0068FF", color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 2px 8px rgba(0,104,255,0.4)", zIndex: 10 }}>
+                <ChevronDown size={14} /> Tin mới nhất
+              </button>
+            )}
           </div>
 
           {/* Input area */}
@@ -659,6 +815,27 @@ export default function ZaloInboxClient() {
             <div style={{ padding: "12px 20px", display: "flex", gap: 8, alignItems: "flex-end" }}>
               <input ref={fileInputRef} type="file" accept="video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar" style={{ display: "none" }} onChange={handleFileUpload} />
               <input ref={multiFileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleMultiImageSelect} />
+              {/* Emoji picker */}
+              <div ref={emojiRef} style={{ position: "relative" }}>
+                <button onClick={() => setShowEmoji(s => !s)} disabled={!selectedConv} title="Chọn emoji"
+                  style={{ width: 36, height: 36, borderRadius: "50%", border: showEmoji ? "1px solid #0068FF" : "1px solid #E5E7EB", background: showEmoji ? "#EFF6FF" : "#F9FAFB", color: showEmoji ? "#0068FF" : "#6B7280", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Smile size={16} />
+                </button>
+                {showEmoji && (
+                  <div style={{ position: "absolute", bottom: 44, left: 0, background: "#fff", borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.15)", border: "1px solid #E5E7EB", padding: 8, zIndex: 100, width: 280 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 2 }}>
+                      {["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘","😗","😚","😙","😋","🤫","🤔","😐","😑","😶","🙄","😬","😮","😯","😲","😳","😕","😟","🙁","☹️","😢","😭","😤","😠","😡","🤬","🤯","😈","👍","👎","❤️","💔","👏","🙏","🔥","💯","🎉","🎁","💰","💪","🚀","✅","❌","⚠️","🔔","📞","📱"].map(em => (
+                        <button key={em} onClick={() => { setInputText(t => t + em); setShowEmoji(false); }}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, padding: 4, borderRadius: 6, lineHeight: 1 }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "#F3F4F6")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                          {em}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               <button onClick={() => multiFileInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi ảnh (có thể chọn nhiều)"
                 style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid #E5E7EB", background: "#F9FAFB", color: "#0068FF", cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
                 <ImageIcon size={16} />
@@ -820,7 +997,10 @@ function MessageBubble({ message, searchQuery, onOpenLightbox, onReply }: {
           </div>
         )}
 
-        <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isSelf ? "right" : "left", paddingLeft: 4 }}>{timeStr}</div>
+        <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isSelf ? "right" : "left", paddingLeft: 4, display: "flex", alignItems: "center", gap: 3, justifyContent: isSelf ? "flex-end" : "flex-start" }}>
+          {timeStr}
+          {isSelf && <CheckCheck size={12} color="#93C5FD" title="Đã gửi" />}
+        </div>
       </div>
 
       {/* Reply button */}
