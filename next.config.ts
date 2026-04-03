@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
     },
   },
   // Externalize server-only packages (mysql2, pg, googleapis) from server bundle
-  serverExternalPackages: ["mysql2", "pg", "pg-native", "googleapis", "google-auth-library"],
+  serverExternalPackages: ["mysql2", "pg", "pg-native", "googleapis", "google-auth-library", "zca-js", "sharp"],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Prevent bundling Node.js-only modules into the client bundle.
