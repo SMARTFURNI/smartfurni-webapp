@@ -1392,7 +1392,12 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const [tasks, setTasks] = useState(todayTasks);
   const [showAddModal, setShowAddModal] = useState(false);
   const [period, setPeriod] = useState<Period>("week");
-  const [darkMode, setDarkMode] = useState(false);
+  // Lưu dark mode preference theo từng user vào localStorage
+  const darkModeKey = `crm_darkmode_${currentUser?.username ?? "default"}`;
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem(darkModeKey) === "true"; } catch { return false; }
+  });
 
   // Dynamic lead types from CRM settings (server-side pre-loaded)
   const [leadTypes, setLeadTypes] = useState<LeadTypeItem[]>(
@@ -1682,7 +1687,11 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           </div>
 
           {/* Dark mode toggle */}
-          <button onClick={() => setDarkMode(d => !d)}
+          <button onClick={() => setDarkMode(d => {
+            const next = !d;
+            try { localStorage.setItem(darkModeKey, String(next)); } catch {}
+            return next;
+          })}
             className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-80"
             style={{ background: dm.bg, border: `1px solid ${dm.cardBorder}` }}>
             {darkMode ? <Sun size={14} style={{ color: T.gold }} /> : <Moon size={14} style={{ color: dm.textSecondary }} />}
