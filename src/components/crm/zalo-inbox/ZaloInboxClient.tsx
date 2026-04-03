@@ -415,7 +415,13 @@ export default function ZaloInboxClient() {
 
       {/* ── Settings Modal ── */}
       {showSettings && (
-        <ZaloSettingsModal onClose={() => setShowSettings(false)} />
+        <ZaloSettingsModal
+          onClose={() => setShowSettings(false)}
+          onDisconnect={() => {
+            setGatewayStatus({ connected: false, phone: null, status: "disconnected" });
+            setConversations([]);
+          }}
+        />
       )}
     </div>
   );
@@ -666,7 +672,7 @@ function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: stri
 
 //// ─── Settings Modal ──────────────────────────────────────────────────
 
-function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
+function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onDisconnect?: () => void }) {
   const [tab, setTab] = useState<"login" | "access">("login");
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [loginStatus, setLoginStatus] = useState<"idle" | "loading" | "scanning" | "success" | "error">("idle");
@@ -770,10 +776,7 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
       setLoginStatus("idle");
       setLoginMessage("");
       setQrImage(null);
-      // Cập nhật gatewayStatus về disconnected
-      setGatewayStatus({ connected: false, phone: null, status: "disconnected" });
-      // Reload conversations để phản ánh trạng thái mới
-      setConversations([]);
+      onDisconnect?.();
     } finally { setDisconnecting(false); }
   };
 
