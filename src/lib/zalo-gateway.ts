@@ -544,6 +544,8 @@ export async function sendZaloMessage(params: {
   senderName?: string;
   senderId?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Tự động kết nối lại nếu server vừa restart
+  await ensureZaloConnected();
   if (!isConnected || !zaloApi) {
     return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
   }
@@ -640,11 +642,18 @@ export async function sendZaloAttachment(params: {
   width?: number;
   height?: number;
 }): Promise<{ success: boolean; error?: string }> {
-  if (!zcaApi) {
-    return { success: false, error: "Zalo chưa được kết nối" };
+  // Tự động kết nối lại nếu server vừa restart
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) {
+    return { success: false, error: "Zalo chưa được kết nối. Vui lòng đăng nhập lại." };
   }
   try {
     const { ThreadType } = await import("zca-js");
+    // Cast sang type có uploadAttachment và sendMessage
+    const api = zaloApi as {
+      uploadAttachment: (sources: unknown[], threadId: string, type: unknown) => Promise<unknown[]>;
+      sendMessage: (msg: unknown, threadId: string, type: unknown) => Promise<unknown>;
+    };
 
     const attachmentSource = {
       data: params.fileBuffer,
@@ -657,29 +666,27 @@ export async function sendZaloAttachment(params: {
     };
 
     // Upload attachment trước
-    const uploadResults = await zcaApi.uploadAttachment(
+    const uploadResults = await api.uploadAttachment(
       [attachmentSource],
       params.conversationId,
-      ThreadType.User
+      ThreadType?.User ?? 0
     );
 
     if (!uploadResults || uploadResults.length === 0) {
       return { success: false, error: "Upload attachment thất bại" };
     }
 
-    const uploaded = uploadResults[0];
-
     // Gửi message với attachment đã upload
-    await zcaApi.sendMessage(
+    await api.sendMessage(
       {
         msg: "",
         attachments: attachmentSource,
       },
       params.conversationId,
-      ThreadType.User
+      ThreadType?.User ?? 0
     );
 
-    console.log(`[ZaloGateway] Sent attachment to ${params.conversationId}:`, uploaded);
+    console.log(`[ZaloGateway] Sent attachment to ${params.conversationId}`);
     return { success: true };
   } catch (err: unknown) {
     const error = err as Error;
