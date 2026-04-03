@@ -224,16 +224,24 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         className="flex items-center gap-3 px-3 flex-shrink-0"
         style={{ borderBottom: `1px solid ${C.border}`, height: 60 }}
       >
-        <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md"
-          style={{ background: C.logo }}
-        >
-          <span className="text-white font-black text-xs tracking-tight">SF</span>
-        </div>
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <div className="font-bold text-sm leading-tight tracking-tight" style={{ color: "#F1F5F9" }}>SmartFurni</div>
-            <div className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: C.accent }}>CRM B2B</div>
+        {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
+        <img src="/smartfurni-icon.png" alt="" style={{ display: "none" }} />
+        <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
+        {collapsed ? (
+          <div className="flex items-center justify-center flex-shrink-0" style={{ width: 36, height: 36 }}>
+            <img
+              src="/smartfurni-icon.png"
+              alt="SF"
+              style={{ width: 36, height: 36, objectFit: "contain" }}
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+            <img
+              src="/smartfurni-logo.png"
+              alt="SmartFurni"
+              style={{ height: 32, objectFit: "contain", maxWidth: 140 }}
+            />
           </div>
         )}
         <button
