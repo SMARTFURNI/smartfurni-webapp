@@ -559,3 +559,36 @@ async function findLeadByPhone(phone: string): Promise<string | null> {
     return null;
   }
 }
+
+// ─── Auto-Reconnect on Server Start ──────────────────────────────────────────
+// Khi Railway deploy lại, process restart → zcaApi = null → cần tự kết nối lại
+// Dùng flag để chỉ chạy 1 lần dù nhiều request cùng lúc
+
+let autoReconnectDone = false;
+let autoReconnectPromise: Promise<void> | null = null;
+
+export async function ensureZaloConnected(): Promise<void> {
+  if (isConnected || autoReconnectDone) return;
+  if (autoReconnectPromise) return autoReconnectPromise;
+
+  autoReconnectPromise = (async () => {
+    autoReconnectDone = true;
+    try {
+      const result = await connectZaloGateway();
+      if (!result.success) {
+        console.warn("[ZaloGateway] Auto-reconnect failed:", result.message);
+        // Cho phép thử lại lần sau nếu thất bại
+        autoReconnectDone = false;
+      } else {
+        console.log("[ZaloGateway] Auto-reconnect success:", result.message);
+      }
+    } catch (err) {
+      console.error("[ZaloGateway] Auto-reconnect error:", err);
+      autoReconnectDone = false;
+    } finally {
+      autoReconnectPromise = null;
+    }
+  })();
+
+  return autoReconnectPromise;
+}
