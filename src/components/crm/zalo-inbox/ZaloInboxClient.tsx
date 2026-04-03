@@ -596,16 +596,18 @@ function MessageBubble({ message }: { message: ZaloMessage }) {
   const attachments = message.attachments || [];
   // Ẩn system messages (zalo_system_message)
   const isSystemMsg = attachments.some(a => a.type === 'zalo_system_message');
-
   // Lấy tất cả ảnh từ attachments
   // Gateway lưu type: "image" (zca-js), Pancake lưu type: "photo" → chấp nhận cả hai
-  const photoAttachments = attachments.filter(a => (a.type === 'photo' || a.type === 'image') && (a.url || a.origin_url));;
-
-   // Kiểm tra content có phải HTML rỗng không (<div></div>, <div/>, etc.)
+  // Cho phép URL rỗng (tin nhắn gửi đi chưa có URL từ CDN) — vẫn hiển thị placeholder
+  const photoAttachments = attachments.filter(a => (a.type === 'photo' || a.type === 'image'));
+  const videoAttachments = attachments.filter(a => a.type === 'video');
+  const fileAttachments = attachments.filter(a => a.type === 'file');
+  // Kiểm tra content có phải HTML rỗng không (<div></div>, <div/>, etc.)
   const isEmptyHtml = /^\s*(<div>\s*<\/div>|<div\s*\/>|<br\s*\/?>|\s*)\s*$/.test(message.content || '');
   const hasTextContent = message.content && !isEmptyHtml && message.content !== '[Hình ảnh]';
+  const hasAnyAttachment = photoAttachments.length > 0 || videoAttachments.length > 0 || fileAttachments.length > 0;
   // Nếu không có nội dung gì cả thì ẩn
-  if (isSystemMsg && !hasTextContent && photoAttachments.length === 0) return null;
+  if (isSystemMsg && !hasTextContent && !hasAnyAttachment) return null;
 
   const timeStr = new Date(message.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
@@ -628,7 +630,20 @@ function MessageBubble({ message }: { message: ZaloMessage }) {
           }}>
             {photoAttachments.map((att, idx) => {
               const rawUrl = att.origin_url || att.url || '';
-              const proxyUrl = getZaloImageUrl(att.url || att.origin_url);
+              const proxyUrl = rawUrl ? getZaloImageUrl(att.url || att.origin_url) : '';
+              // Nếu không có URL (tin nhắn gửi đi chưa có CDN URL) → hiển thị placeholder
+              if (!rawUrl) {
+                return (
+                  <div key={idx} style={{
+                    width: "100%", maxWidth: 240, height: 120,
+                    borderRadius: 8, background: isSelf ? "#005CE6" : "#e5e7eb",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: isSelf ? "rgba(255,255,255,0.7)" : "#9ca3af", fontSize: 12,
+                  }}>
+                    🖼️ Ảnh đã gửi
+                  </div>
+                );
+              }
               return (
                 <a key={idx} href={rawUrl} target="_blank" rel="noopener noreferrer">
                   <img
@@ -660,37 +675,67 @@ function MessageBubble({ message }: { message: ZaloMessage }) {
         )}
 
         {/* Hiển thị video attachments */}
-        {attachments.filter(a => a.type === 'video' && a.url).map((att, idx) => (
+        {videoAttachments.map((att, idx) => (
           <div key={idx} style={{ marginBottom: hasTextContent ? 4 : 0 }}>
-            <video
-              src={att.url}
-              controls
-              style={{
-                maxWidth: 280, width: "100%", borderRadius: 8,
-                display: "block", background: "#000",
-              }}
-            />
+            {att.url ? (
+              <video
+                src={att.url}
+                controls
+                style={{
+                  maxWidth: 280, width: "100%", borderRadius: 8,
+                  display: "block", background: "#000",
+                }}
+              />
+            ) : (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "8px 12px", borderRadius: 8,
+                background: isSelf ? "#0068FF" : "#F3F4F6",
+                color: isSelf ? "#fff" : "#374151",
+                fontSize: 13,
+              }}>
+                <Video size={18} />
+                <span>{(att as any).fileName || "Video"}</span>
+              </div>
+            )}
           </div>
         ))}
         {/* Hiển thị file attachments (không phải ảnh/video) */}
-        {attachments.filter(a => a.type === 'file' && a.url).map((att, idx) => (
-          <a
-            key={idx}
-            href={att.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "8px 12px", borderRadius: 8,
-              background: isSelf ? "#0068FF" : "#F3F4F6",
-              color: isSelf ? "#fff" : "#374151",
-              textDecoration: "none", fontSize: 13,
-              marginBottom: hasTextContent ? 4 : 0,
-            }}
-          >
-            <FileText size={18} />
-            <span style={{ wordBreak: "break-all" }}>{(att as any).fileName || "File đính kèm"}</span>
-          </a>
+        {fileAttachments.map((att, idx) => (
+          att.url ? (
+            <a
+              key={idx}
+              href={att.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "8px 12px", borderRadius: 8,
+                background: isSelf ? "#0068FF" : "#F3F4F6",
+                color: isSelf ? "#fff" : "#374151",
+                textDecoration: "none", fontSize: 13,
+                marginBottom: hasTextContent ? 4 : 0,
+              }}
+            >
+              <FileText size={18} />
+              <span style={{ wordBreak: "break-all" }}>{(att as any).fileName || "File đính kèm"}</span>
+            </a>
+          ) : (
+            <div
+              key={idx}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "8px 12px", borderRadius: 8,
+                background: isSelf ? "#0068FF" : "#F3F4F6",
+                color: isSelf ? "#fff" : "#374151",
+                fontSize: 13,
+                marginBottom: hasTextContent ? 4 : 0,
+              }}
+            >
+              <FileText size={18} />
+              <span style={{ wordBreak: "break-all" }}>{(att as any).fileName || "File đính kèm"}</span>
+            </div>
+          )
         ))}
         {/* Hiển thị text content */}
         {hasTextContent && (

@@ -686,6 +686,39 @@ export async function sendZaloAttachment(params: {
       ThreadType?.User ?? 0
     );
 
+    // Xác định type dựa trên mimeType
+    let attachType: "image" | "video" | "file" = "file";
+    if (params.mimeType.startsWith("image/")) attachType = "image";
+    else if (params.mimeType.startsWith("video/")) attachType = "video";
+
+    const msgId = `sent_att_${Date.now()}`;
+    // Lưu tin nhắn gửi đi vào DB để hiển thị trong CRM
+    await saveMessage({
+      msgId,
+      fromId: currentUserId,
+      toId: params.conversationId,
+      content: "",
+      timestamp: Date.now(),
+      isSelf: true,
+      attachments: [{
+        type: attachType,
+        url: "", // URL sẽ được cập nhật khi Zalo gửi lại event
+        fileName: params.fileName,
+        fileSize: params.fileSize,
+      }],
+      type: attachType,
+    });
+    // Upsert conversation để cập nhật lastMessage
+    const lastMsgLabel = attachType === "image" ? "[Hình ảnh]" : attachType === "video" ? "[Video]" : `[File: ${params.fileName}]`;
+    try {
+      await upsertConversation({
+        id: params.conversationId,
+        phone: params.conversationId,
+        displayName: params.conversationId,
+        lastMessage: lastMsgLabel,
+      });
+    } catch { /* ignore */ }
+
     console.log(`[ZaloGateway] Sent attachment to ${params.conversationId}`);
     return { success: true };
   } catch (err: unknown) {
