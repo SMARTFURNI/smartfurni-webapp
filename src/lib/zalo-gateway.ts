@@ -676,6 +676,24 @@ export async function sendZaloAttachment(params: {
       return { success: false, error: "Upload attachment thất bại" };
     }
 
+    // Lấy URL từ kết quả upload (zca-js trả về URL CDN ngay sau khi upload)
+    const uploadResult = uploadResults[0] as {
+      normalUrl?: string;
+      hdUrl?: string;
+      thumbUrl?: string;
+      fileUrl?: string;
+      fileType?: string;
+    };
+    let attachUrl = "";
+    let attachThumb = "";
+    if (uploadResult.fileType === "image") {
+      attachUrl = uploadResult.hdUrl || uploadResult.normalUrl || "";
+      attachThumb = uploadResult.thumbUrl || uploadResult.normalUrl || "";
+    } else if (uploadResult.fileType === "video" || uploadResult.fileType === "others") {
+      attachUrl = uploadResult.fileUrl || "";
+    }
+    console.log(`[ZaloGateway] Upload result fileType=${uploadResult.fileType} url=${attachUrl}`);
+
     // Gửi message với attachment đã upload
     await api.sendMessage(
       {
@@ -692,7 +710,7 @@ export async function sendZaloAttachment(params: {
     else if (params.mimeType.startsWith("video/")) attachType = "video";
 
     const msgId = `sent_att_${Date.now()}`;
-    // Lưu tin nhắn gửi đi vào DB để hiển thị trong CRM
+    // Lưu tin nhắn gửi đi vào DB với URL thực từ Zalo CDN
     await saveMessage({
       msgId,
       fromId: currentUserId,
@@ -702,7 +720,8 @@ export async function sendZaloAttachment(params: {
       isSelf: true,
       attachments: [{
         type: attachType,
-        url: "", // URL sẽ được cập nhật khi Zalo gửi lại event
+        url: attachUrl,
+        thumb: attachThumb || attachUrl,
         fileName: params.fileName,
         fileSize: params.fileSize,
       }],
