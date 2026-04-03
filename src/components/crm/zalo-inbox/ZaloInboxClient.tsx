@@ -770,6 +770,10 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
       setLoginStatus("idle");
       setLoginMessage("");
       setQrImage(null);
+      // Cập nhật gatewayStatus về disconnected
+      setGatewayStatus({ connected: false, phone: null, status: "disconnected" });
+      // Reload conversations để phản ánh trạng thái mới
+      setConversations([]);
     } finally { setDisconnecting(false); }
   };
 
@@ -841,7 +845,7 @@ function ZaloSettingsModal({ onClose }: { onClose: () => void }) {
                 }}>
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 13, color: "#065F46" }}>✅ Đã đăng nhập</div>
-                    <div style={{ fontSize: 12, color: "#047857", marginTop: 2 }}>Zalo: {currentCreds.phone}</div>
+                    <div style={{ fontSize: 12, color: "#047857", marginTop: 2 }}>Zalo: {currentCreds.phone && currentCreds.phone.length > 20 ? currentCreds.phone.slice(0, 20) + "..." : currentCreds.phone}</div>
                   </div>
                   <button
                     onClick={handleDisconnect}
