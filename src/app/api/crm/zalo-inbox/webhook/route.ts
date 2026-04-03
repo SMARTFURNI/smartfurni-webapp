@@ -68,7 +68,7 @@ async function ensurePancakeTables() {
 
 const sseClients = new Set<(data: string) => void>();
 
-function addSseClient(send: (data: string) => void) {
+export function addSseClient(send: (data: string) => void) {
   sseClients.add(send);
   return () => sseClients.delete(send);
 }

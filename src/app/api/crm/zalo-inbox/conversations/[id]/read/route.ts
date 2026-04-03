@@ -21,7 +21,7 @@ async function getActivePancakeCredentials() {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await getCrmSession();
   if (!session) {
@@ -33,7 +33,7 @@ export async function POST(
     return NextResponse.json({ error: "Chưa cấu hình Pancake API" }, { status: 400 });
   }
 
-  const conversationId = (await params).id;
+  const conversationId = params.id;
 
   try {
     await markConversationAsRead(

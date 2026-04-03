@@ -1,20 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageCircle, Search, Send, Wifi, WifiOff, User, Phone, ShoppingBag, ChevronRight, Settings, RefreshCw, X, Paperclip, Image, FileVideo } from "lucide-react";
+import { MessageCircle, Search, Send, Wifi, WifiOff, User, Phone, ShoppingBag, ChevronRight, Settings, RefreshCw, X } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ZaloAttachment {
-  type: string; // 'photo', 'video', 'file', 'voice', 'sticker', 'link', etc.
+  type: string; // 'photo', 'video', 'file', 'zalo_system_message', etc.
   url?: string;
   origin_url?: string;
-  origin_url_hd?: string;
-  thumb_url?: string;
-  file_name?: string;
-  file_size?: number;
-  duration?: number;
-  title?: string;
   image_data?: { width: number; height: number };
   data?: Record<string, unknown>;
 }
@@ -46,7 +40,7 @@ interface ZaloConversation {
   id: string;
   phone: string;
   displayName: string;
-  avatar: string | null;  // từ API: conv.avatarUrl mapped to 'avatar'
+  avatarUrl: string | null;
   lastMessage: string | null;
   lastMessageAt: string;
   unreadCount: number;
@@ -106,11 +100,9 @@ export default function ZaloInboxClient() {
   const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({ connected: false, phone: null });
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [sendingFile, setSendingFile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ─── Load conversations ──────────────────────────────────────────────────
 
@@ -157,51 +149,20 @@ export default function ZaloInboxClient() {
 
     es.addEventListener("new_message", (e) => {
       const data = JSON.parse(e.data);
-      const { conversationId, message } = data;
+      const { conversationId, text, senderName, createdAt } = data;
 
-      if (!message) return;
-
-      // Parse attachments nếu là string JSON
-      const parsedMsg: ZaloMessage = {
-        ...message,
-        attachments: typeof message.attachments === 'string'
-          ? (() => { try { return JSON.parse(message.attachments); } catch { return []; } })()
-          : (message.attachments || []),
-      };
-
-      // Nếu đang xem conversation này → thêm tin nhắn trực tiếp
-      if (selectedConv?.id === conversationId) {
-        setMessages((prev) => {
-          // Tránh duplicate
-          if (prev.some((m) => m.id === parsedMsg.id)) return prev;
-          return [...prev, parsedMsg];
-        });
-      } else {
-        // Tăng unread count
+      // Tăng unread count nếu không đang xem conversation này
+      if (selectedConv?.id !== conversationId) {
         setConversations((prev) =>
           prev.map((c) => c.id === conversationId
-            ? { ...c, unreadCount: c.unreadCount + 1, lastMessage: message.content, lastMessageAt: message.createdAt }
+            ? { ...c, unreadCount: c.unreadCount + 1, lastMessage: text, lastMessageAt: createdAt }
             : c
           )
         );
       }
 
-      // Reload conversations để cập nhật thứ tự
+      // Reload conversations để cập nhật danh sách
       loadConversations();
-    });
-
-    // Nhận status update từ gateway
-    es.addEventListener("status", (e) => {
-      const data = JSON.parse(e.data);
-      setGatewayStatus({
-        connected: data.status === 'connected',
-        phone: data.phone || null,
-        status: data.status,
-        message: data.message,
-      });
-      if (data.status === 'connected') {
-        loadConversations();
-      }
     });
 
     return () => { es.close(); };
@@ -249,35 +210,6 @@ export default function ZaloInboxClient() {
       setInputText(text);
     } finally {
       setSending(false);
-    }
-  };
-
-  // ─── Send file/image ─────────────────────────────────────────────────────
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedConv) return;
-    e.target.value = ""; // reset input
-
-    setSendingFile(true);
-    try {
-      const formData = new FormData();
-      formData.append("conversationId", selectedConv.id);
-      formData.append("file", file);
-
-      const res = await fetch("/api/crm/zalo-inbox/send-attachment", {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Lỗi gửi file");
-      }
-    } catch (err) {
-      alert("Lỗi gửi file. Vui lòng thử lại.");
-    } finally {
-      setSendingFile(false);
     }
   };
 
@@ -393,10 +325,11 @@ export default function ZaloInboxClient() {
       {selectedConv ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {/* Chat header */}
-          <div style={{ padding: "12px 20px", background: "#fff", borderBottom: "1px solid #E5E7EB",
+          <div style={{
+            padding: "12px 20px", background: "#fff", borderBottom: "1px solid #E5E7EB",
             display: "flex", alignItems: "center", gap: 12,
           }}>
-            <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatar} size={40} />
+            <Avatar name={selectedConv.displayName} size={40} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: 15, color: "#111827" }}>{selectedConv.displayName}</div>
               <div style={{ fontSize: 12, color: "#6B7280" }}>{selectedConv.phone}</div>
@@ -424,8 +357,7 @@ export default function ZaloInboxClient() {
                 <div style={{ fontSize: 32, marginBottom: 8 }}>📬</div>
                 <div style={{ fontWeight: 600, color: "#6B7280", marginBottom: 4 }}>Chưa có tin nhắn nào</div>
                 <div style={{ fontSize: 12, lineHeight: 1.5 }}>
-                  Tin nhắn sẽ xuất hiện ở đây sau khi bạn đăng nhập Zalo.<br/>Nhấn biểu tượng ⚙️ → <strong>Đăng nhập Zalo</strong> để quét QR.
-                </div>
+                  Tin nhắn sẽ xuất hiện ở đây sau khi bạn đăng nhập Zalo.<br/>\n                  Nhấn biểu tượng ⚙️ → <strong>Đăng nhập Zalo</strong> để quét QR.                </div>
               </div>
             ) : (
               messages.map((msg) => (
@@ -438,35 +370,8 @@ export default function ZaloInboxClient() {
           {/* Input */}
           <div style={{
             padding: "12px 20px", background: "#fff", borderTop: "1px solid #E5E7EB",
-            display: "flex", gap: 8, alignItems: "flex-end",
+            display: "flex", gap: 10, alignItems: "flex-end",
           }}>
-            {/* File upload input (hidden) */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
-              style={{ display: "none" }}
-              onChange={handleFileSelect}
-            />
-            {/* Nút upload ảnh/file */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={sendingFile}
-              title="Gửi ảnh/video/file"
-              style={{
-                width: 36, height: 36, borderRadius: "50%", border: "1px solid #E5E7EB",
-                background: sendingFile ? "#F3F4F6" : "#F9FAFB",
-                color: sendingFile ? "#9CA3AF" : "#6B7280",
-                cursor: sendingFile ? "not-allowed" : "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}
-            >
-              {sendingFile ? (
-                <div style={{ width: 14, height: 14, border: "2px solid #9CA3AF", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-              ) : (
-                <Paperclip size={15} />
-              )}
-            </button>
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -517,33 +422,16 @@ export default function ZaloInboxClient() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function Avatar({ name, avatarUrl, size = 40 }: { name: string; avatarUrl?: string | null; size?: number }) {
-  const [imgError, setImgError] = useState(false);
+function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   const colors = ["#0068FF", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
-  const color = colors[(name?.charCodeAt(0) || 0) % colors.length];
-
-  if (avatarUrl && !imgError) {
-    return (
-      <img
-        src={avatarUrl}
-        alt={name}
-        onError={() => setImgError(true)}
-        style={{
-          width: size, height: size, borderRadius: "50%",
-          objectFit: "cover", flexShrink: 0,
-          border: "1px solid #E5E7EB",
-        }}
-      />
-    );
-  }
-
+  const color = colors[name.charCodeAt(0) % colors.length];
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%", background: color,
       display: "flex", alignItems: "center", justifyContent: "center",
       color: "#fff", fontWeight: 700, fontSize: size * 0.35, flexShrink: 0,
     }}>
-      {getInitials(name || "?")}
+      {getInitials(name)}
     </div>
   );
 }
@@ -566,7 +454,7 @@ function ConversationItem({
       }}
     >
       <div style={{ position: "relative" }}>
-        <Avatar name={conv.displayName} avatarUrl={conv.avatar} size={44} />
+        <Avatar name={conv.displayName} size={44} />
         {conv.unreadCount > 0 && (
           <div style={{
             position: "absolute", top: -2, right: -2, width: 18, height: 18,
@@ -610,29 +498,21 @@ function MessageBubble({ message }: { message: ZaloMessage }) {
   // Ẩn system messages (zalo_system_message)
   const isSystemMsg = attachments.some(a => a.type === 'zalo_system_message');
 
-  // Parse attachments nếu là string
-  const parsedAttachments: ZaloAttachment[] = typeof (message.attachments as any) === 'string'
-    ? (() => { try { return JSON.parse(message.attachments as any); } catch { return []; } })()
-    : (attachments || []);
-
   // Lấy tất cả ảnh từ attachments
-  const photoAttachments = parsedAttachments.filter(a => (a.type === 'photo' || a.type === 'sticker') && (a.url || a.origin_url || a.origin_url_hd || a.thumb_url));
-  const videoAttachments = parsedAttachments.filter(a => a.type === 'video' && a.url);
-  const fileAttachments = parsedAttachments.filter(a => a.type === 'file' && a.url);
-  const voiceAttachments = parsedAttachments.filter(a => a.type === 'voice' && a.url);
+  const photoAttachments = attachments.filter(a => a.type === 'photo' && (a.url || a.origin_url));
 
   // Kiểm tra content có phải HTML rỗng không (<div></div>, <div/>, etc.)
   const isEmptyHtml = /^\s*(<div>\s*<\/div>|<div\s*\/>|<br\s*\/?>|\s*)\s*$/.test(message.content || '');
   const hasTextContent = message.content && !isEmptyHtml;
 
   // Nếu không có nội dung gì cả thì ẩn
-  if (isSystemMsg && !hasTextContent && photoAttachments.length === 0 && videoAttachments.length === 0) return null;
+  if (isSystemMsg && !hasTextContent && photoAttachments.length === 0) return null;
 
   const timeStr = new Date(message.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div style={{ display: "flex", justifyContent: isSelf ? "flex-end" : "flex-start", gap: 8, marginBottom: 2 }}>
-      {!isSelf && <Avatar name={message.senderName} size={28} />}  {/* Avatar không có URL cho message bubbles */}
+      {!isSelf && <Avatar name={message.senderName} size={28} />}
       <div style={{ maxWidth: "70%" }}>
         {!isSelf && (
           <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2, paddingLeft: 4 }}>
@@ -640,81 +520,32 @@ function MessageBubble({ message }: { message: ZaloMessage }) {
           </div>
         )}
 
-        {/* Hiển thị hình ảnh / sticker */}
+        {/* Hiển thị hình ảnh */}
         {photoAttachments.length > 0 && (
           <div style={{
             display: "grid",
             gridTemplateColumns: photoAttachments.length === 1 ? "1fr" : "repeat(2, 1fr)",
             gap: 2, marginBottom: hasTextContent ? 4 : 0,
           }}>
-            {photoAttachments.map((att, idx) => {
-              const imgUrl = att.origin_url_hd || att.origin_url || att.url || att.thumb_url || "";
-              const thumbUrl = att.thumb_url || att.url || imgUrl;
-              return (
-                <a key={idx} href={imgUrl} target="_blank" rel="noopener noreferrer">
-                  <img
-                    src={thumbUrl}
-                    alt={att.type === 'sticker' ? 'Sticker' : 'Ảnh'}
-                    style={{
-                      width: "100%", maxWidth: 240,
-                      height: photoAttachments.length === 1 ? "auto" : 120,
-                      objectFit: att.type === 'sticker' ? "contain" : "cover",
-                      borderRadius: 8,
-                      display: "block",
-                      cursor: "pointer",
-                      background: att.type === 'sticker' ? "transparent" : undefined,
-                    }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                </a>
-              );
-            })}
+            {photoAttachments.map((att, idx) => (
+              <a key={idx} href={att.origin_url || att.url} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={att.url || att.origin_url}
+                  alt="Ảnh"
+                  style={{
+                    width: "100%", maxWidth: 240,
+                    height: photoAttachments.length === 1 ? "auto" : 120,
+                    objectFit: "cover",
+                    borderRadius: 8,
+                    display: "block",
+                    cursor: "pointer",
+                  }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </a>
+            ))}
           </div>
         )}
-
-        {/* Hiển thị video */}
-        {videoAttachments.map((att, idx) => (
-          <div key={idx} style={{ marginBottom: hasTextContent ? 4 : 0 }}>
-            <video
-              src={att.url}
-              controls
-              style={{
-                maxWidth: 280, maxHeight: 200, borderRadius: 8,
-                display: "block", background: "#000",
-              }}
-            />
-          </div>
-        ))}
-
-        {/* Hiển thị file */}
-        {fileAttachments.map((att, idx) => (
-          <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer"
-            style={{
-              display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
-              background: isSelf ? "rgba(255,255,255,0.15)" : "#F3F4F6",
-              borderRadius: 8, textDecoration: "none", marginBottom: hasTextContent ? 4 : 0,
-            }}
-          >
-            <span style={{ fontSize: 20 }}>📎</span>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: isSelf ? "#fff" : "#111827" }}>
-                {att.file_name || 'File'}
-              </div>
-              {att.file_size && (
-                <div style={{ fontSize: 11, color: isSelf ? "rgba(255,255,255,0.7)" : "#6B7280" }}>
-                  {(att.file_size / 1024).toFixed(1)} KB
-                </div>
-              )}
-            </div>
-          </a>
-        ))}
-
-        {/* Hiển thị voice message */}
-        {voiceAttachments.map((att, idx) => (
-          <div key={idx} style={{ marginBottom: hasTextContent ? 4 : 0 }}>
-            <audio src={att.url} controls style={{ maxWidth: 240 }} />
-          </div>
-        ))}
 
         {/* Hiển thị text content */}
         {hasTextContent && (
