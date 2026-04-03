@@ -516,20 +516,25 @@ function ConversationItem({
   );
 }
 
+function getZaloImageUrl(url: string | undefined): string {
+  if (!url) return '';
+  // Proxy ảnh qua server để bypass Zalo CDN Referer restriction
+  return `/api/crm/zalo-inbox/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
 function MessageBubble({ message }: { message: ZaloMessage }) {
   const isSelf = message.isSelf;
   const attachments = message.attachments || [];
-
   // Ẩn system messages (zalo_system_message)
   const isSystemMsg = attachments.some(a => a.type === 'zalo_system_message');
 
   // Lấy tất cả ảnh từ attachments
-  const photoAttachments = attachments.filter(a => a.type === 'photo' && (a.url || a.origin_url));
+  // Gateway lưu type: "image" (zca-js), Pancake lưu type: "photo" → chấp nhận cả hai
+  const photoAttachments = attachments.filter(a => (a.type === 'photo' || a.type === 'image') && (a.url || a.origin_url));;
 
-  // Kiểm tra content có phải HTML rỗng không (<div></div>, <div/>, etc.)
+   // Kiểm tra content có phải HTML rỗng không (<div></div>, <div/>, etc.)
   const isEmptyHtml = /^\s*(<div>\s*<\/div>|<div\s*\/>|<br\s*\/?>|\s*)\s*$/.test(message.content || '');
-  const hasTextContent = message.content && !isEmptyHtml;
-
+  const hasTextContent = message.content && !isEmptyHtml && message.content !== '[Hình ảnh]';
   // Nếu không có nội dung gì cả thì ẩn
   if (isSystemMsg && !hasTextContent && photoAttachments.length === 0) return null;
 
@@ -552,23 +557,36 @@ function MessageBubble({ message }: { message: ZaloMessage }) {
             gridTemplateColumns: photoAttachments.length === 1 ? "1fr" : "repeat(2, 1fr)",
             gap: 2, marginBottom: hasTextContent ? 4 : 0,
           }}>
-            {photoAttachments.map((att, idx) => (
-              <a key={idx} href={att.origin_url || att.url} target="_blank" rel="noopener noreferrer">
-                <img
-                  src={att.url || att.origin_url}
-                  alt="Ảnh"
-                  style={{
-                    width: "100%", maxWidth: 240,
-                    height: photoAttachments.length === 1 ? "auto" : 120,
-                    objectFit: "cover",
-                    borderRadius: 8,
-                    display: "block",
-                    cursor: "pointer",
-                  }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-              </a>
-            ))}
+            {photoAttachments.map((att, idx) => {
+              const rawUrl = att.origin_url || att.url || '';
+              const proxyUrl = getZaloImageUrl(att.url || att.origin_url);
+              return (
+                <a key={idx} href={rawUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={proxyUrl}
+                    alt="Ảnh"
+                    style={{
+                      width: "100%", maxWidth: 240,
+                      height: photoAttachments.length === 1 ? "auto" : 120,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      display: "block",
+                      cursor: "pointer",
+                      background: "#f3f4f6",
+                    }}
+                    onError={(e) => {
+                      // Fallback: thử load trực tiếp nếu proxy lỗi
+                      const img = e.target as HTMLImageElement;
+                      if (img.src !== rawUrl) {
+                        img.src = rawUrl;
+                      } else {
+                        img.style.display = 'none';
+                      }
+                    }}
+                  />
+                </a>
+              );
+            })}
           </div>
         )}
 
