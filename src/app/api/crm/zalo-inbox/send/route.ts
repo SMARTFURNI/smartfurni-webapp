@@ -7,7 +7,7 @@ import { getCrmSession } from "@/lib/admin-auth";
 import { sendZaloMessage } from "@/lib/zalo-gateway";
 
 export async function POST(req: NextRequest) {
-  const session = await getCrmSession();
+  const session = await getCrmSession() as any;
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

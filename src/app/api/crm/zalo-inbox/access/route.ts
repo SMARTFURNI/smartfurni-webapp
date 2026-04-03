@@ -26,7 +26,7 @@ export async function GET() {
         );
         return {
           ...access,
-          staff: res.rows[0] || null,
+          staff: (res as any[])[0] || null,
         };
       } catch {
         return { ...access, staff: null };
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
   // Kiểm tra nhân viên tồn tại
   const staffRes = await query(`SELECT id, full_name FROM crm_staff WHERE id = $1`, [staffId]);
-  if (staffRes.rows.length === 0) {
+  if ((staffRes as any[]).length === 0) {
     return NextResponse.json({ error: "Nhân viên không tồn tại" }, { status: 404 });
   }
 
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    message: `Đã cấp quyền cho ${staffRes.rows[0].full_name}`,
+    message: `Đã cấp quyền cho ${(staffRes as any[])[0]?.full_name}`,
   });
 }
 

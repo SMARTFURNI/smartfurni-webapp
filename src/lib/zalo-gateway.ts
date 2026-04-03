@@ -108,9 +108,9 @@ export async function startQRLogin(callbacks: QRLoginCallbacks): Promise<void> {
     if (api) {
       // api là API object từ zca-js sau khi đăng nhập thành công
       // Lưu credentials vào DB
-      const cookieData = savedCredentials?.cookie || [];
+      const cookieData = (savedCredentials as any)?.cookie || [];
       const cookieStr = JSON.stringify(cookieData);
-      const imei = savedCredentials?.imei || `imei_${Date.now()}`;
+      const imei = (savedCredentials as any)?.imei || `imei_${Date.now()}`;
       // Lấy tên người dùng từ loginInfo
       const loginInfo = (api as any).ctx?.loginInfo;
       const displayName = loginInfo?.display_name || loginInfo?.name || imei;
@@ -564,7 +564,7 @@ async function findLeadByPhone(phone: string): Promise<string | null> {
       `SELECT id FROM crm_leads WHERE REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $1 LIMIT 1`,
       [normalized]
     );
-    return res.rows[0]?.id || null;
+    return (res[0] as any)?.id || null;
   } catch {
     return null;
   }
