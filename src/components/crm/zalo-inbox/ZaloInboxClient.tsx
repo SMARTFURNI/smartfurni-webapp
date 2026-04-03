@@ -525,8 +525,13 @@ export default function ZaloInboxClient() {
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Zalo Inbox</div>
                 <div style={{ fontSize: 11, color: gatewayStatus.connected ? "#10B981" : "#9CA3AF", display: "flex", alignItems: "center", gap: 4 }}>
-                  {gatewayStatus.connected ? <Wifi size={10} /> : <WifiOff size={10} />}
-                  {gatewayStatus.connected ? `Zalo: ${gatewayStatus.phone || "Đã kết nối"}` : "Chưa đăng nhập Zalo"}
+                  {loading ? (
+                    <span style={{ color: "#9CA3AF" }}>Đang kết nối...</span>
+                  ) : gatewayStatus.connected ? (
+                    <><Wifi size={10} /> {`Zalo: ${gatewayStatus.phone || "Đã kết nối"}`}</>
+                  ) : (
+                    <><WifiOff size={10} /> Chưa đăng nhập Zalo</>
+                  )}
                 </div>
               </div>
             </div>
@@ -535,12 +540,12 @@ export default function ZaloInboxClient() {
               <button onClick={() => setShowSettings(true)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#6B7280" }} title="Cài đặt"><Settings size={16} /></button>
             </div>
           </div>
-          {gatewayStatus.message && (
+          {!loading && gatewayStatus.message && (
             <div style={{ padding: "6px 10px", background: "#FEF3C7", borderRadius: 6, fontSize: 11, color: "#92400E", marginBottom: 8, border: "1px solid #FDE68A" }}>
               ⚠️ {gatewayStatus.message}
             </div>
           )}
-          {!gatewayStatus.connected && !gatewayStatus.message?.includes("quyền") && (
+          {!loading && !gatewayStatus.connected && !gatewayStatus.message?.includes("quyền") && (
             <button onClick={() => setShowSettings(true)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "none", background: "#0068FF", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", marginBottom: 8 }}>
               Đăng nhập Zalo
             </button>
