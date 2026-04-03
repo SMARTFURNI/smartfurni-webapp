@@ -12,10 +12,10 @@ import {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const scenario = getScenarioById(params.id);
+    const scenario = getScenarioById((await params).id);
 
     if (!scenario) {
       return NextResponse.json(
@@ -49,13 +49,13 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
     const { name, description, trigger, steps, enabled } = body;
 
-    const scenario = updateScenario(params.id, {
+    const scenario = updateScenario((await params).id, {
       name,
       description,
       trigger,
@@ -95,10 +95,10 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const success = deleteScenario(params.id);
+    const success = deleteScenario((await params).id);
 
     if (!success) {
       return NextResponse.json(
@@ -132,10 +132,10 @@ export async function DELETE(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const scenario = getScenarioById(params.id);
+    const scenario = getScenarioById((await params).id);
 
     if (!scenario) {
       return NextResponse.json(

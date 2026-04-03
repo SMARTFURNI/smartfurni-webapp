@@ -43,7 +43,7 @@ function addEmailFooter(html: string, campaignId: string, leadEmail: string): st
 }
 
 // Lọc leads theo segment
-function filterLeadsBySegment(leads: { email: string; type: string; stage: string }[], segment: string) {
+function filterLeadsBySegment(leads: { email: string; type: string; stage: string; name?: string; [key: string]: any }[], segment: string) {
   return leads.filter((l) => {
     if (!l.email) return false;
     if (segment === "all") return true;

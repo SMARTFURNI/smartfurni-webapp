@@ -8,14 +8,14 @@ import { getMessages } from "@/lib/zalo-inbox-store";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getCrmSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const conversationId = params.id;
+  const conversationId = (await params).id;
   const { searchParams } = new URL(req.url);
   const limit = parseInt(searchParams.get("limit") || "100");
   const offset = parseInt(searchParams.get("offset") || "0");
