@@ -5,7 +5,8 @@ import {
   ChevronRight, Settings, RefreshCw, X, Paperclip, FileText, Video,
   Download, ZoomIn, Reply, ChevronLeft,
   Image as ImageIcon, Bell, BellOff, Volume2, VolumeX, Smile,
-  ChevronDown, CheckCheck, MoreVertical, Hash,
+  ChevronDown, CheckCheck, MoreVertical, Hash, Info,
+  File as FileIcon, Users, UserPlus,
 } from "lucide-react";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
@@ -779,6 +780,8 @@ export default function ZaloInboxClient() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showInfoPanel, setShowInfoPanel] = useState(true);
+  const [convFilter, setConvFilter] = useState<"all" | "unread">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const multiFileInputRef = useRef<HTMLInputElement>(null);
@@ -1060,11 +1063,13 @@ export default function ZaloInboxClient() {
     setSoundEnabled(prev => { const next = !prev; localStorage.setItem("zalo_sound", next ? "true" : "false"); return next; });
   }, []);
 
-  const filteredConvs = conversations.filter(c =>
-    c.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.phone.includes(searchQuery) ||
-    c.lead?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredConvs = conversations.filter(c => {
+    const matchSearch = c.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.phone.includes(searchQuery) ||
+      c.lead?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchFilter = convFilter === "all" || (convFilter === "unread" && c.unreadCount > 0);
+    return matchSearch && matchFilter;
+  });
 
   const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
 
@@ -1088,45 +1093,43 @@ export default function ZaloInboxClient() {
 
       {/* ─── Sidebar ─────────────────────────────────────────────────────── */}
       <div style={{ width: 320, background: T.sidebarBg, borderRight: `1px solid ${T.sidebarBorder}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-        {/* Sidebar header */}
-        <div style={{ padding: "16px 14px 12px", borderBottom: `1px solid ${T.sidebarBorder}` }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#3B82F6,#1D4ED8)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(59,130,246,0.4)" }}>
-                <MessageCircle size={17} color="#fff" />
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary, display: "flex", alignItems: "center", gap: 6 }}>
-                  Zalo Inbox
-                  {totalUnread > 0 && (
-                    <span style={{ fontSize: 10, fontWeight: 700, background: T.badge, color: "#fff", borderRadius: 10, padding: "1px 6px" }}>{totalUnread}</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 11, color: loading ? T.textMuted : gatewayStatus.connected ? T.success : T.textMuted, display: "flex", alignItems: "center", gap: 4 }}>
-                  {loading ? "Đang kết nối..." : gatewayStatus.connected
-                    ? <><Wifi size={9} /> {gatewayStatus.phone}</>
-                    : <><WifiOff size={9} /> Chưa đăng nhập</>}
-                </div>
-              </div>
+        {/* Sidebar header - giống Zalo Web */}
+        <div style={{ padding: "12px 14px 0", borderBottom: `1px solid ${T.sidebarBorder}` }}>
+          {/* Top row: title + icons */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontWeight: 700, fontSize: 18, color: T.textPrimary }}>Tin nhắn</span>
+              {totalUnread > 0 && (
+                <span style={{ fontSize: 11, fontWeight: 700, background: T.badge, color: "#fff", borderRadius: 10, padding: "1px 7px", minWidth: 20, textAlign: "center" }}>{totalUnread}</span>
+              )}
             </div>
             <div style={{ display: "flex", gap: 2 }}>
               <button onClick={toggleSound} title={soundEnabled ? "Tắt âm thanh" : "Bật âm thanh"}
-                style={{ width: 30, height: 30, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: soundEnabled ? T.accent : T.textMuted }}>
-                {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: soundEnabled ? T.accent : T.textMuted }}>
+                {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
               </button>
               <button onClick={toggleNotif} title={notifEnabled ? "Tắt thông báo" : "Bật thông báo"}
-                style={{ width: 30, height: 30, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: notifEnabled ? T.accent : T.textMuted }}>
-                {notifEnabled ? <Bell size={14} /> : <BellOff size={14} />}
+                style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: notifEnabled ? T.accent : T.textMuted }}>
+                {notifEnabled ? <Bell size={15} /> : <BellOff size={15} />}
               </button>
               <button onClick={loadConversations} title="Làm mới"
-                style={{ width: 30, height: 30, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
-                <RefreshCw size={14} />
+                style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
+                <RefreshCw size={15} />
               </button>
-              <button onClick={() => setShowSettings(true)} title="Cài đặt"
-                style={{ width: 30, height: 30, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
-                <Settings size={14} />
+              <button onClick={() => setShowSettings(true)} title="Cài đặt Zalo"
+                style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
+                <Settings size={15} />
               </button>
             </div>
+          </div>
+
+          {/* Search bar */}
+          <div style={{ position: "relative", marginBottom: 10 }}>
+            <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted, pointerEvents: "none" }} />
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Tìm kiếm"
+              style={{ width: "100%", padding: "8px 12px 8px 32px", borderRadius: 20, border: "none", background: T.sidebarHover, fontSize: 13, outline: "none", color: T.textPrimary, boxSizing: "border-box" }}
+            />
           </div>
 
           {/* Warning */}
@@ -1137,18 +1140,28 @@ export default function ZaloInboxClient() {
           )}
           {!loading && !gatewayStatus.connected && !gatewayStatus.message?.includes("quyền") && (
             <button onClick={() => setShowSettings(true)}
-              style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "none", background: T.accent, color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", marginBottom: 10, boxShadow: "0 2px 8px rgba(59,130,246,0.3)" }}>
+              style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "none", background: T.accent, color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", marginBottom: 8, boxShadow: "0 2px 8px rgba(59,130,246,0.3)" }}>
               Đăng nhập Zalo
             </button>
           )}
 
-          {/* Search */}
-          <div style={{ position: "relative" }}>
-            <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} />
-            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Tìm hội thoại, tên, SĐT..."
-              style={{ width: "100%", padding: "8px 12px 8px 30px", borderRadius: 10, border: `1px solid ${T.sidebarBorder}`, background: T.sidebarHover, fontSize: 13, outline: "none", color: T.textPrimary, boxSizing: "border-box" }}
-            />
+          {/* Filter tabs: Tất cả / Chưa đọc / Phân loại - giống Zalo Web */}
+          <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.sidebarBorder}`, marginLeft: -14, marginRight: -14, paddingLeft: 14 }}>
+            {(["all", "unread"] as const).map(tab => (
+              <button key={tab} onClick={() => setConvFilter(tab)}
+                style={{
+                  padding: "8px 14px", background: "none", border: "none", cursor: "pointer",
+                  fontSize: 13, fontWeight: convFilter === tab ? 700 : 400,
+                  color: convFilter === tab ? T.accent : T.textMuted,
+                  borderBottom: convFilter === tab ? `2px solid ${T.accent}` : "2px solid transparent",
+                  marginBottom: -1, transition: "all 0.15s",
+                }}>
+                {tab === "all" ? "Tất cả" : "Chưa đọc"}
+                {tab === "unread" && totalUnread > 0 && (
+                  <span style={{ marginLeft: 5, fontSize: 10, background: T.badge, color: "#fff", borderRadius: 8, padding: "1px 5px" }}>{totalUnread}</span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -1190,11 +1203,11 @@ export default function ZaloInboxClient() {
               <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary }}>{selectedConv.displayName}</div>
               <div style={{ fontSize: 12, color: T.textMuted }}>{selectedConv.phone}</div>
             </div>
-            <div style={{ display: "flex", gap: 4 }}>
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
               <button onClick={() => { setShowMsgSearch(s => !s); setMsgSearchQuery(""); }}
                 title="Tìm kiếm trong hội thoại"
-                style={{ width: 34, height: 34, borderRadius: 8, background: showMsgSearch ? "rgba(59,130,246,0.15)" : "none", border: showMsgSearch ? `1px solid rgba(59,130,246,0.3)` : "1px solid transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showMsgSearch ? T.accent : T.textMuted }}>
-                <Search size={15} />
+                style={{ width: 34, height: 34, borderRadius: 8, background: showMsgSearch ? "rgba(59,130,246,0.15)" : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showMsgSearch ? T.accent : T.textMuted }}>
+                <Search size={17} />
               </button>
               {selectedConv.lead && (
                 <a href={`/crm/leads?id=${selectedConv.lead.id}`}
@@ -1202,6 +1215,12 @@ export default function ZaloInboxClient() {
                   <User size={12} /> Hồ sơ KH
                 </a>
               )}
+              {/* Toggle info panel - giống Zalo Web */}
+              <button onClick={() => setShowInfoPanel(s => !s)}
+                title="Thông tin hội thoại"
+                style={{ width: 34, height: 34, borderRadius: 8, background: showInfoPanel ? "rgba(59,130,246,0.15)" : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showInfoPanel ? T.accent : T.textMuted }}>
+                <Info size={17} />
+              </button>
             </div>
           </div>
 
@@ -1361,8 +1380,92 @@ export default function ZaloInboxClient() {
         </div>
       )}
 
-      {/* Lead info panel */}
-      {selectedConv?.lead && <LeadInfoPanel lead={selectedConv.lead} />}
+      {/* Info panel - giống Zalo Web, hiển thị khi showInfoPanel và đã chọn conv */}
+      {selectedConv && showInfoPanel && (
+        <div style={{
+          width: 300, background: T.sidebarBg, borderLeft: `1px solid ${T.sidebarBorder}`,
+          display: "flex", flexDirection: "column", overflowY: "auto", flexShrink: 0,
+        }}>
+          {/* Header */}
+          <div style={{ padding: "16px", borderBottom: `1px solid ${T.sidebarBorder}`, textAlign: "center" }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary, marginBottom: 16 }}>Thông tin hội thoại</div>
+            <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatarUrl} size={64} />
+            <div style={{ fontWeight: 700, fontSize: 16, color: T.textPrimary, marginTop: 10 }}>{selectedConv.displayName}</div>
+            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 3 }}>{selectedConv.phone}</div>
+            {/* Action icons */}
+            <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 14 }}>
+              {[
+                { icon: <Bell size={16} />, label: "Tắt TB" },
+                { icon: <Users size={16} />, label: "Nhóm chung" },
+                { icon: <ShoppingBag size={16} />, label: "Hồ sơ" },
+              ].map(item => (
+                <div key={item.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer" }}
+                  onClick={item.label === "Hồ sơ" && selectedConv.lead ? () => window.open(`/crm/leads?id=${selectedConv.lead!.id}`, "_blank") : undefined}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: T.sidebarHover, display: "flex", alignItems: "center", justifyContent: "center", color: T.textSecondary }}>
+                    {item.icon}
+                  </div>
+                  <span style={{ fontSize: 11, color: T.textMuted }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Lead info nếu có */}
+          {selectedConv.lead && (
+            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.sidebarBorder}` }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Khách hàng</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { label: "SĐT", value: selectedConv.lead.phone },
+                  { label: "Loại", value: selectedConv.lead.type },
+                  { label: "Trạng thái", value: selectedConv.lead.stage },
+                  { label: "Phụ trách", value: selectedConv.lead.assignedTo || "Chưa phân công" },
+                ].map(row => (
+                  <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 12, color: T.textMuted }}>{row.label}</span>
+                    <span style={{ fontSize: 12, color: T.textPrimary, fontWeight: 500, maxWidth: 160, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+              {selectedConv.lead.recent_quotes && selectedConv.lead.recent_quotes.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Báo giá gần đây</div>
+                  {selectedConv.lead.recent_quotes.slice(0, 3).map(q => (
+                    <div key={q.id} style={{ padding: "7px 10px", background: T.sidebarHover, borderRadius: 8, border: `1px solid ${T.sidebarBorder}`, marginBottom: 5 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: T.textPrimary }}>{q.name}</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
+                        <span style={{ fontSize: 11, color: T.accent, fontWeight: 600 }}>{q.total_amount?.toLocaleString("vi-VN")}đ</span>
+                        <span style={{ fontSize: 10, color: T.textMuted }}>{q.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <a href={`/crm/leads?id=${selectedConv.lead.id}`}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10, padding: "8px", background: T.accent, color: "#fff", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: 600 }}>
+                <ShoppingBag size={13} /> Xem hồ sơ đầy đủ
+              </a>
+            </div>
+          )}
+
+          {/* Ảnh/Video section placeholder */}
+          <div style={{ padding: "12px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: T.textSecondary }}>Ảnh/Video</span>
+              <ChevronDown size={14} color={T.textMuted} />
+            </div>
+            <div style={{ fontSize: 12, color: T.textMuted, textAlign: "center", padding: "10px 0" }}>Chưa có ảnh nào</div>
+          </div>
+
+          <div style={{ padding: "0 16px 12px", borderTop: `1px solid ${T.sidebarBorder}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0 10px" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: T.textSecondary }}>File</span>
+              <ChevronDown size={14} color={T.textMuted} />
+            </div>
+            <div style={{ fontSize: 12, color: T.textMuted, textAlign: "center", padding: "6px 0" }}>Chưa có file nào</div>
+          </div>
+        </div>
+      )}
 
       {/* Settings modal */}
       {showSettings && (
