@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import {
   Zap, Plus, Trash2, Save, RefreshCw, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Clock, GitBranch, Users, ArrowRight,
-  Play, Pause, BarChart2, Settings, Activity, Tag, Bell,
+  Play, Pause, BarChart2, Settings, Activity, Tag, Bell, MessageCircle,
 } from "lucide-react";
+import ZaloWorkflowAutomation from "./ZaloWorkflowAutomation";
 import type {
   AutomationRule, AutomationTrigger, AutomationAction,
   SlaConfig, SlaStageConfig, AutoAssignConfig,
@@ -561,7 +562,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-type TabId = "rules" | "sla" | "auto_assign" | "run";
+type TabId = "rules" | "sla" | "auto_assign" | "run" | "zalo_workflow";
 
 export default function AutomationSettingsClient() {
   const [activeTab, setActiveTab] = useState<TabId>("rules");
@@ -643,6 +644,7 @@ export default function AutomationSettingsClient() {
 
   const TABS = [
     { id: "rules" as TabId, label: "Quy tắc tự động", icon: Zap, count: rules.filter(r => r.enabled).length },
+    { id: "zalo_workflow" as TabId, label: "Zalo Workflow", icon: MessageCircle, count: null },
     { id: "sla" as TabId, label: "SLA & Thời gian", icon: Clock, count: null },
     { id: "auto_assign" as TabId, label: "Phân công tự động", icon: Users, count: null },
     { id: "run" as TabId, label: "Chạy & Kiểm tra", icon: Activity, count: null },
@@ -725,6 +727,10 @@ export default function AutomationSettingsClient() {
             ))}
           </div>
         </div>
+      )}
+
+      {activeTab === "zalo_workflow" && (
+        <ZaloWorkflowAutomation />
       )}
 
       {activeTab === "sla" && sla && (

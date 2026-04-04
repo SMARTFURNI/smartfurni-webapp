@@ -12,6 +12,32 @@ import { getAutomationRules, getAutoAssignConfig, getSlaConfig, saveAutomationRu
 import { getNotificationRules, logNotification } from "./crm-notifications-store";
 import type { Lead } from "./crm-types";
 import type { AutomationRule, AutomationAction } from "./crm-automation-store";
+import { findZaloUserByPhone, sendZaloMessage, isZaloConnected, initZaloGateway, sendZaloFriendRequest } from "./zalo-gateway";
+
+// Module-level init flag cho Zalo gateway
+let zaloGatewayInitialized = false;
+async function ensureZaloGateway(): Promise<boolean> {
+  if (!zaloGatewayInitialized) {
+    zaloGatewayInitialized = true;
+    await initZaloGateway().catch(() => {});
+  }
+  let waited = 0;
+  while (!isZaloConnected() && waited < 5000) {
+    await new Promise((r) => setTimeout(r, 300));
+    waited += 300;
+  }
+  return isZaloConnected();
+}
+
+const STAGE_LABELS_VI: Record<string, string> = {
+  new: "Kh\u00e1ch h\u00e0ng m\u1edbi",
+  profile_sent: "\u0110\u00e3 g\u1eedi Profile",
+  surveyed: "\u0110\u00e3 kh\u1ea3o s\u00e1t",
+  quoted: "\u0110\u00e3 b\u00e1o gi\u00e1",
+  negotiating: "Th\u01b0\u01a1ng th\u1ea3o",
+  won: "\u0110\u00e3 ch\u1ed1t",
+  lost: "Th\u1ea5t b\u1ea1i",
+};
 
 // ─── Run log entry ─────────────────────────────────────────────────────────────
 export interface AutomationRunLog {
@@ -197,6 +223,56 @@ async function executeAction(
       } catch (e) {
         return `Loi webhook: ${e instanceof Error ? e.message : "unknown"}`;
       }
+    }
+
+    case "send_zalo_personal": {
+      const phone = lead.zaloPhone || lead.phone;
+      if (!phone) return "Bo qua Zalo: khong co so dien thoai";
+
+      // Delay neu can
+      const delayMs = (action.zaloDelayMinutes ?? 0) * 60 * 1000;
+      if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
+
+      // Kiem tra Zalo connected
+      const connected = await ensureZaloGateway();
+      if (!connected) return "Bo qua Zalo: chua ket noi Zalo Personal";
+
+      // Chuan hoa so dien thoai
+      const normalizedPhone = phone.replace(/\s+/g, "").replace(/^\+84/, "0").replace(/^84/, "0");
+
+      // Noi dung tin nhan (thay the bien)
+      const rawMsg = action.zaloMessage || "Xin ch\u00e0o {{name}}! SmartFurni xin c\u1ea3m \u01a1n b\u1ea1n \u0111\u00e3 quan t\u00e2m.";
+      const message = rawMsg
+        .replace(/\{\{name\}\}/g, lead.name)
+        .replace(/\{\{stage\}\}/g, STAGE_LABELS_VI[lead.stage] ?? lead.stage)
+        .replace(/\{\{phone\}\}/g, normalizedPhone)
+        .replace(/\{\{assignedTo\}\}/g, lead.assignedTo ?? "")
+        .replace(/\{\{value\}\}/g, lead.expectedValue?.toLocaleString("vi-VN") ?? "0");
+
+      // Tim userId Zalo tu S\u0110T
+      const findResult = await findZaloUserByPhone(normalizedPhone);
+      if (!findResult.success || !findResult.user?.uid) {
+        if (action.zaloFallbackToAddFriend) {
+          const friendMsg = `Xin ch\u00e0o ${lead.name}! T\u00f4i l\u00e0 nh\u00e2n vi\u00ean SmartFurni.`;
+          await sendZaloFriendRequest({ userId: normalizedPhone, message: friendMsg }).catch(() => {});
+          return `Khong tim thay Zalo, da gui loi moi ket ban den ${normalizedPhone}`;
+        }
+        return `Khong tim thay tai khoan Zalo voi so ${normalizedPhone}`;
+      }
+
+      const { uid } = findResult.user;
+      const sendResult = await sendZaloMessage({ toId: uid, message });
+      if (sendResult.success) {
+        return `Da gui Zalo den ${lead.name} (${normalizedPhone}): "${message.slice(0, 50)}..."` ;
+      }
+
+      if (action.zaloFallbackToAddFriend) {
+        const friendMsg = `Xin ch\u00e0o ${lead.name}! T\u00f4i l\u00e0 nh\u00e2n vi\u00ean SmartFurni.`;
+        await sendZaloFriendRequest({ userId: uid, message: friendMsg }).catch(() => {});
+        return `Gui tin nhan that bai, da gui loi moi ket ban den ${lead.name}`;
+      }
+
+      return `Loi gui Zalo: ${sendResult.error ?? "unknown"}`;
     }
 
     default:

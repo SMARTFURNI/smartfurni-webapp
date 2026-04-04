@@ -17,7 +17,8 @@ export type ActionType =
   | "add_tag"              // Gắn nhãn
   | "notify_manager"       // Thông báo quản lý
   | "move_stage"           // Chuyển giai đoạn
-  | "send_webhook";        // Gửi webhook ra ngoài
+  | "send_webhook"         // Gửi webhook ra ngoài
+  | "send_zalo_personal";  // Gửi tin nhắn Zalo Personal
 
 export interface AutomationTrigger {
   type: TriggerType;
@@ -54,6 +55,10 @@ export interface AutomationAction {
   webhookPayload?: string;
   // notify_manager
   notifyMessage?: string;
+  // send_zalo_personal
+  zaloMessage?: string;              // Nội dung tin nhắn (hỗ trợ {{name}}, {{stage}}, {{phone}}, {{assignedTo}})
+  zaloDelayMinutes?: number;         // Trì hoãn N phút trước khi gửi (0 = gửi ngay)
+  zaloFallbackToAddFriend?: boolean; // Nếu chưa là bạn bè → tự động gửi lời mời kết bạn
 }
 
 export interface AutomationRule {
@@ -275,4 +280,5 @@ export const ACTION_LABELS: Record<ActionType, string> = {
   notify_manager: "Thông báo quản lý",
   move_stage: "Chuyển giai đoạn",
   send_webhook: "Gửi webhook",
+  send_zalo_personal: "Gửi tin nhắn Zalo Personal",
 };
