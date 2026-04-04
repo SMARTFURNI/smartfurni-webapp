@@ -929,12 +929,46 @@ export default function ZaloInboxClient() {
       .then(d => { if (d?.requests) setPendingFriendCount(d.requests.length); })
       .catch(() => {});
 
-    // SSE listener
+    // SSE listener — nhận tất cả events: message, friend_request, friend_event
     let es: EventSource | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
-    const connectFriendSSE = () => {
+    const connectSSE = () => {
       try {
         es = new EventSource("/api/crm/zalo-inbox/sse");
+
+        // ✅ Realtime message: cập nhật tin nhắn ngay khi nhận được
+        es.addEventListener("message", (e: MessageEvent) => {
+          try {
+            const p = JSON.parse(e.data);
+            // Reload conversations list
+            fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" })
+              .then(r => r.ok ? r.json() : null)
+              .then(d => {
+                if (d?.conversations) setConversations(d.conversations);
+                if (d?.connected !== undefined) setGatewayStatus({ connected: d.connected, phone: d.phone || null, status: d.status });
+              })
+              .catch(() => {});
+            // Nếu đang mở đúng hội thoại này, reload messages ngay
+            const currentConvId = selectedConvRef.current?.id;
+            const msgConvId = p.conversationId || p.threadId || p.fromId;
+            if (currentConvId && msgConvId && (currentConvId === msgConvId || msgConvId === currentConvId)) {
+              fetch(`/api/crm/zalo-inbox/conversations/${currentConvId}/messages`, { credentials: "include" })
+                .then(r => r.ok ? r.json() : null)
+                .then(d => {
+                  if (d?.messages) {
+                    setMessages(prev => {
+                      const newMsgs = d.messages;
+                      if (newMsgs.length !== prev.length || newMsgs[newMsgs.length - 1]?.id !== prev[prev.length - 1]?.id) return newMsgs;
+                      return prev;
+                    });
+                  }
+                })
+                .catch(() => {});
+            }
+          } catch { }
+        });
+
+        // ✅ Friend request badge
         es.addEventListener("friend_request", () => {
           setPendingFriendCount(prev => prev + 1);
         });
@@ -942,7 +976,6 @@ export default function ZaloInboxClient() {
           try {
             const p = JSON.parse(e.data);
             if (p.type === "accepted" || p.type === "added") {
-              // Reload count
               fetch("/api/crm/zalo-inbox/friend-requests", { credentials: "include" })
                 .then(r => r.ok ? r.json() : null)
                 .then(d => { if (d?.requests) setPendingFriendCount(d.requests.length); })
@@ -950,13 +983,14 @@ export default function ZaloInboxClient() {
             }
           } catch { }
         });
+
         es.onerror = () => {
           es?.close(); es = null;
-          retryTimer = setTimeout(connectFriendSSE, 5000);
+          retryTimer = setTimeout(connectSSE, 5000);
         };
       } catch { }
     };
-    connectFriendSSE();
+    connectSSE();
     return () => { es?.close(); if (retryTimer) clearTimeout(retryTimer); };
   }, []);
 

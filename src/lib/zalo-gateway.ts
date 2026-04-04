@@ -109,6 +109,7 @@ let zaloApi: unknown = null;
 let isConnected = false;
 let isConnecting = false;
 let currentUserId = "";
+let currentUserDisplayName = ""; // Tên hiển thị của tài khoản Zalo đang đăng nhập
 let qrCallbackFn: ((qrBase64: string) => void) | null = null;
 let loginResolve: ((api: unknown) => void) | null = null;
 let loginReject: ((err: Error) => void) | null = null;
@@ -545,9 +546,44 @@ export async function connectWithCredentials(creds: ZaloCredentials): Promise<vo
       currentUserId = "";
     }
 
+    // Load display name from credentials DB
+    try {
+      const credRow = await queryOne<{ display_name: string | null; user_id: string | null }>(
+        "SELECT display_name, user_id FROM zalo_inbox_credentials LIMIT 1"
+      );
+      const rawName = credRow?.display_name || "";
+      const isNumericName = /^\d{8,}$/.test(rawName.trim());
+      if (rawName && !isNumericName) {
+        currentUserDisplayName = rawName;
+      } else {
+        // display_name chưa có hoặc là ID số — thử lấy từ getUserInfo
+        try {
+          const apiObj2 = api as { getUserInfo?: (uid: string) => Promise<any> };
+          if (currentUserId && apiObj2.getUserInfo) {
+            const userInfo = await apiObj2.getUserInfo(currentUserId);
+            const displayName = userInfo?.display_name || userInfo?.zalo_name || userInfo?.name || "";
+            const avatar = userInfo?.avatar || userInfo?.avt || "";
+            if (displayName && !/^\d{8,}$/.test(displayName)) {
+              currentUserDisplayName = displayName;
+              // Cập nhật vào DB
+              if (creds) await saveCredentials(creds, currentUserId, displayName, avatar);
+            } else {
+              currentUserDisplayName = credRow?.user_id || currentUserId;
+            }
+          } else {
+            currentUserDisplayName = credRow?.user_id || currentUserId;
+          }
+        } catch {
+          currentUserDisplayName = credRow?.user_id || currentUserId;
+        }
+      }
+    } catch {
+      currentUserDisplayName = currentUserId;
+    }
+
     setupListeners(api);
-    broadcastSSE("connected", { userId: currentUserId });
-    console.log("[ZaloGateway] Connected as", currentUserId);
+    broadcastSSE("connected", { userId: currentUserId, displayName: currentUserDisplayName });
+    console.log("[ZaloGateway] Connected as", currentUserId, "/", currentUserDisplayName);
   } catch (err) {
     isConnecting = false;
     isConnected = false;
@@ -612,10 +648,22 @@ export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<vo
         }
       )
       .then(async (api: unknown) => {
-        // Get user info
+        // Get user info including display name and avatar
         try {
-          const apiObj = api as { getOwnId: () => Promise<string>; getCookie: () => unknown };
+          const apiObj = api as { getOwnId: () => Promise<string>; getCookie: () => unknown; getUserInfo?: (uid: string) => Promise<any> };
           currentUserId = await apiObj.getOwnId();
+          // Try to get display name and avatar
+          if (currentUserId && apiObj.getUserInfo) {
+            try {
+              const userInfo = await apiObj.getUserInfo(currentUserId);
+              const displayName = userInfo?.display_name || userInfo?.zalo_name || userInfo?.name || "";
+              const avatar = userInfo?.avatar || userInfo?.avt || "";
+              currentUserDisplayName = displayName;
+              // Update credentials with display name and avatar
+              const creds2 = await loadCredentials();
+              if (creds2) await saveCredentials(creds2, currentUserId, displayName, avatar);
+            } catch { /* ignore */ }
+          }
         } catch {
           currentUserId = "";
         }
@@ -680,7 +728,7 @@ export async function sendZaloMessage(params: {
       ThreadType?.USER ?? 0
     );
     const msgId = result?.msgId || `sent_${Date.now()}`;
-    // Lưu tin nhắn gửi đi vào DB
+    // Lưu tin nhắn gửi đi vào DB (kèm senderName để hiển thị đúng tên)
     await saveMessage({
       msgId,
       fromId: currentUserId,
@@ -690,6 +738,7 @@ export async function sendZaloMessage(params: {
       isSelf: true,
       attachments: [],
       type: "text",
+      senderName: currentUserDisplayName || params.senderName || currentUserId,
     });
     // Upsert conversation
     try {

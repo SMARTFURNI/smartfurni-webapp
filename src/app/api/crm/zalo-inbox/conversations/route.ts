@@ -4,8 +4,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { getConversations } from "@/lib/zalo-inbox-store";
-import { getGatewayStatus, ensureZaloConnected } from "@/lib/zalo-gateway";
+import { getConversations, upsertConversation } from "@/lib/zalo-inbox-store";
+import { getGatewayStatus, ensureZaloConnected, getZaloUserInfo } from "@/lib/zalo-gateway";
 import { getDb } from "@/lib/db";
 
 async function checkAccess(session: any): Promise<boolean> {
@@ -89,6 +89,34 @@ export async function GET(req: NextRequest) {
         };
       })
     );
+
+    // Fire-and-forget: enrich avatar cho conversations chưa có avatar
+    const missingAvatarConvs = enriched.filter(c => !c.avatarUrl && c.id);
+    if (missingAvatarConvs.length > 0 && gatewayStatus.isConnected) {
+      Promise.all(
+        missingAvatarConvs.slice(0, 5).map(async (conv) => { // limit 5 per request
+          try {
+            const info = await getZaloUserInfo(conv.id);
+            if (info.success && info.user) {
+              const avatar = info.user?.avatar || info.user?.avt || info.user?.data?.avatar || null;
+              const name = info.user?.display_name || info.user?.zalo_name || info.user?.name || null;
+              if (avatar || name) {
+                await upsertConversation({
+                  id: conv.id,
+                  phone: conv.id,
+                  displayName: name || conv.displayName,
+                  avatarUrl: avatar,
+                  lastMessage: conv.lastMessage,
+                });
+                // Update in response
+                if (avatar) conv.avatarUrl = avatar;
+                if (name && /^\d{8,}$/.test(conv.displayName)) conv.displayName = name;
+              }
+            }
+          } catch { /* ignore */ }
+        })
+      ).catch(() => {});
+    }
 
     return NextResponse.json({
       conversations: enriched,
