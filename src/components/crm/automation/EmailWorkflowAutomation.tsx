@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   Mail, Plus, Trash2, ChevronDown, ChevronUp, CheckCircle2,
-  AlertCircle, RefreshCw, Settings, Eye, EyeOff, Send, Zap,
+  AlertCircle, RefreshCw, ExternalLink, Zap,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -19,14 +19,11 @@ interface EmailRule {
   fromName: string;
 }
 
-interface SmtpConfig {
+interface SmtpStatusInfo {
+  configured: boolean;
   host: string;
-  port: number;
   user: string;
-  pass: string;
   fromName: string;
-  fromEmail: string;
-  secure: boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -249,175 +246,58 @@ function RuleCard({
   );
 }
 
-// ─── SMTP Settings ────────────────────────────────────────────────────────────
+// ─── SMTP Status Banner ───────────────────────────────────────────────────────
 
-function SmtpSettings({ onClose }: { onClose: () => void }) {
-  const [config, setConfig] = useState<SmtpConfig>({
-    host: "", port: 587, user: "", pass: "", fromName: "SmartFurni", fromEmail: "", secure: false,
-  });
-  const [showPass, setShowPass] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+function SmtpStatusBanner({ status }: { status: SmtpStatusInfo | null }) {
+  if (!status) {
+    return (
+      <div className="flex items-center gap-2 p-3 rounded-xl"
+        style={{ background: "rgba(156,163,175,0.08)", border: "1px solid rgba(156,163,175,0.2)" }}>
+        <RefreshCw size={13} className="animate-spin" style={{ color: "#9ca3af" }} />
+        <span className="text-xs" style={{ color: "#6b7280" }}>Đang kiểm tra cấu hình SMTP...</span>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    fetch("/api/crm/automation/email-config")
-      .then(r => r.json())
-      .then(d => { if (d.host) setConfig(d); })
-      .catch(() => {});
-  }, []);
-
-  const testConnection = async () => {
-    setTesting(true);
-    setTestResult(null);
-    try {
-      const r = await fetch("/api/admin/email-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "test",
-          smtpHost: config.host,
-          smtpPort: config.port.toString(),
-          smtpUser: config.user,
-          smtpPass: config.pass,
-        }),
-      });
-      const d = await r.json();
-      setTestResult({ ok: r.ok, msg: d.message || d.error || "Không rõ" });
-    } catch {
-      setTestResult({ ok: false, msg: "Lỗi kết nối" });
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const save = async () => {
-    setSaving(true);
-    try {
-      await fetch("/api/crm/automation/email-config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      setSaved(true);
-      setTimeout(() => { setSaved(false); onClose(); }, 1500);
-    } catch {
-      // ignore
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (!status.configured) {
+    return (
+      <div className="flex items-center justify-between p-3 rounded-xl"
+        style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+        <div className="flex items-center gap-2">
+          <AlertCircle size={14} style={{ color: "#f59e0b" }} />
+          <span className="text-xs" style={{ color: "#92400e" }}>
+            Chưa cấu hình SMTP — Email sẽ không được gửi cho đến khi cài đặt xong.
+          </span>
+        </div>
+        <a href="/crm/settings?tab=email" target="_blank"
+          className="flex items-center gap-1 text-xs px-3 py-1 rounded-lg font-medium hover:opacity-80 flex-shrink-0 ml-3"
+          style={{ background: "rgba(245,158,11,0.12)", color: "#b45309", border: "1px solid rgba(245,158,11,0.2)" }}>
+          Cài đặt SMTP <ExternalLink size={10} />
+        </a>
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-2xl p-5 space-y-4" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Settings size={15} style={{ color: "#C9A84C" }} />
-          <h3 className="text-sm font-bold" style={{ color: "#111827" }}>Cài đặt SMTP Email</h3>
-        </div>
-        <button onClick={onClose} className="text-xs px-3 py-1 rounded-lg hover:opacity-70"
-          style={{ color: "#6b7280" }}>Đóng</button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2 grid grid-cols-3 gap-3">
-          <div className="col-span-2">
-            <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>SMTP Host</label>
-            <input value={config.host} onChange={e => setConfig({ ...config, host: e.target.value })}
-              placeholder="smtp.gmail.com"
-              className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#fff", border: "1px solid #d1d5db", color: "#111827" }} />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>Port</label>
-            <input type="number" value={config.port} onChange={e => setConfig({ ...config, port: parseInt(e.target.value) || 587 })}
-              className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#fff", border: "1px solid #d1d5db", color: "#111827" }} />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>Tài khoản email</label>
-          <input value={config.user} onChange={e => setConfig({ ...config, user: e.target.value })}
-            placeholder="your@gmail.com"
-            className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#fff", border: "1px solid #d1d5db", color: "#111827" }} />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>Mật khẩu / App Password</label>
-          <div className="relative">
-            <input type={showPass ? "text" : "password"} value={config.pass}
-              onChange={e => setConfig({ ...config, pass: e.target.value })}
-              placeholder="App password"
-              className="w-full px-3 py-2 pr-9 rounded-lg text-sm outline-none"
-              style={{ background: "#fff", border: "1px solid #d1d5db", color: "#111827" }} />
-            <button onClick={() => setShowPass(!showPass)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2"
-              style={{ color: "#9ca3af" }}>
-              {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>Tên hiển thị người gửi</label>
-          <input value={config.fromName} onChange={e => setConfig({ ...config, fromName: e.target.value })}
-            placeholder="SmartFurni"
-            className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#fff", border: "1px solid #d1d5db", color: "#111827" }} />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>Email người gửi</label>
-          <input value={config.fromEmail} onChange={e => setConfig({ ...config, fromEmail: e.target.value })}
-            placeholder="noreply@smartfurni.vn"
-            className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#fff", border: "1px solid #d1d5db", color: "#111827" }} />
-        </div>
-
-        <div className="col-span-2 flex items-center gap-2">
-          <input type="checkbox" id="smtp-secure" checked={config.secure}
-            onChange={e => setConfig({ ...config, secure: e.target.checked })} />
-          <label htmlFor="smtp-secure" className="text-xs" style={{ color: "#374151" }}>
-            Dùng SSL/TLS (port 465)
-          </label>
+    <div className="flex items-center justify-between p-3 rounded-xl"
+      style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+      <div className="flex items-center gap-2 min-w-0">
+        <CheckCircle2 size={14} style={{ color: "#22c55e" }} />
+        <div className="min-w-0">
+          <span className="text-xs font-medium" style={{ color: "#15803d" }}>
+            SMTP đã cấu hình — Email Automation sẵn sàng hoạt động
+          </span>
+          <p className="text-xs mt-0.5 truncate" style={{ color: "#6b7280" }}>
+            {status.host} · {status.user}
+            {status.fromName && ` · Tên gửi: ${status.fromName}`}
+          </p>
         </div>
       </div>
-
-      {/* Hướng dẫn Gmail */}
-      <div className="p-3 rounded-xl" style={{ background: "#eff6ff", border: "1px solid #bfdbfe" }}>
-        <p className="text-xs font-semibold mb-1" style={{ color: "#1d4ed8" }}>Hướng dẫn Gmail App Password:</p>
-        <p className="text-xs" style={{ color: "#1e40af" }}>
-          1. Bật 2-Step Verification trong tài khoản Google<br />
-          2. Vào myaccount.google.com → Security → App passwords<br />
-          3. Tạo App Password cho "Mail" và dùng mật khẩu đó ở đây
-        </p>
-      </div>
-
-      {testResult && (
-        <div className="flex items-center gap-2 p-3 rounded-xl"
-          style={{ background: testResult.ok ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)", border: `1px solid ${testResult.ok ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}` }}>
-          {testResult.ok ? <CheckCircle2 size={14} style={{ color: "#22c55e" }} /> : <AlertCircle size={14} style={{ color: "#ef4444" }} />}
-          <span className="text-xs" style={{ color: testResult.ok ? "#15803d" : "#dc2626" }}>{testResult.msg}</span>
-        </div>
-      )}
-
-      <div className="flex items-center gap-3">
-        <button onClick={testConnection} disabled={testing || !config.host}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:opacity-80 disabled:opacity-40"
-          style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }}>
-          {testing ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
-          Kiểm tra kết nối
-        </button>
-        <button onClick={save} disabled={saving || !config.host}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-          style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)", color: "#000" }}>
-          {saving ? <RefreshCw size={13} className="animate-spin" /> : saved ? <CheckCircle2 size={13} /> : null}
-          {saved ? "Đã lưu!" : "Lưu cài đặt"}
-        </button>
-      </div>
+      <a href="/crm/settings?tab=email" target="_blank"
+        className="flex items-center gap-1 text-xs px-3 py-1 rounded-lg font-medium hover:opacity-80 flex-shrink-0 ml-3"
+        style={{ background: "rgba(34,197,94,0.08)", color: "#15803d", border: "1px solid rgba(34,197,94,0.2)" }}>
+        Chỉnh sửa <ExternalLink size={10} />
+      </a>
     </div>
   );
 }
@@ -426,23 +306,34 @@ function SmtpSettings({ onClose }: { onClose: () => void }) {
 
 export default function EmailWorkflowAutomation() {
   const [rules, setRules] = useState<EmailRule[]>([]);
-  const [showSmtp, setShowSmtp] = useState(false);
-  const [smtpStatus, setSmtpStatus] = useState<"ok" | "not_configured" | "checking">("checking");
+  const [smtpStatus, setSmtpStatus] = useState<SmtpStatusInfo | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    // Load rules
+    // Load email workflow rules
     fetch("/api/crm/automation/email-rules")
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setRules(d); })
       .catch(() => {});
 
-    // Check SMTP status
-    fetch("/api/crm/automation/email-config")
+    // Load SMTP status from Email Marketing settings (crm_settings key "email")
+    fetch("/api/crm/settings")
       .then(r => r.json())
-      .then(d => setSmtpStatus(d.host ? "ok" : "not_configured"))
-      .catch(() => setSmtpStatus("not_configured"));
+      .then(d => {
+        const emailCfg = d?.email;
+        if (emailCfg?.smtpHost && emailCfg?.smtpUser) {
+          setSmtpStatus({
+            configured: true,
+            host: emailCfg.smtpHost,
+            user: emailCfg.smtpUser,
+            fromName: emailCfg.senderName ?? emailCfg.fromName ?? "",
+          });
+        } else {
+          setSmtpStatus({ configured: false, host: "", user: "", fromName: "" });
+        }
+      })
+      .catch(() => setSmtpStatus({ configured: false, host: "", user: "", fromName: "" }));
   }, []);
 
   const addRule = (stageId?: string) => {
@@ -492,51 +383,16 @@ export default function EmailWorkflowAutomation() {
             <p className="text-xs" style={{ color: "#6b7280" }}>Tự động gửi email theo giai đoạn khách hàng</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowSmtp(!showSmtp)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-            style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }}>
-            <Settings size={12} /> Cài đặt SMTP
-          </button>
-          <button onClick={save} disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)", color: "#000" }}>
-            {saving ? <RefreshCw size={13} className="animate-spin" /> : saved ? <CheckCircle2 size={13} /> : null}
-            {saved ? "Đã lưu!" : "Lưu thay đổi"}
-          </button>
-        </div>
+        <button onClick={save} disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)", color: "#000" }}>
+          {saving ? <RefreshCw size={13} className="animate-spin" /> : saved ? <CheckCircle2 size={13} /> : null}
+          {saved ? "Đã lưu!" : "Lưu thay đổi"}
+        </button>
       </div>
 
-      {/* SMTP Status Banner */}
-      {smtpStatus === "not_configured" && !showSmtp && (
-        <div className="flex items-center justify-between p-3 rounded-xl"
-          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
-          <div className="flex items-center gap-2">
-            <AlertCircle size={14} style={{ color: "#f59e0b" }} />
-            <span className="text-xs" style={{ color: "#92400e" }}>
-              Chưa cấu hình SMTP — Email sẽ không được gửi cho đến khi cài đặt xong.
-            </span>
-          </div>
-          <button onClick={() => setShowSmtp(true)}
-            className="text-xs px-3 py-1 rounded-lg font-medium hover:opacity-80"
-            style={{ background: "rgba(245,158,11,0.12)", color: "#b45309" }}>
-            Cài đặt ngay
-          </button>
-        </div>
-      )}
-
-      {smtpStatus === "ok" && !showSmtp && (
-        <div className="flex items-center gap-2 p-3 rounded-xl"
-          style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
-          <CheckCircle2 size={14} style={{ color: "#22c55e" }} />
-          <span className="text-xs" style={{ color: "#15803d" }}>
-            SMTP đã cấu hình — Email Automation sẵn sàng hoạt động
-          </span>
-        </div>
-      )}
-
-      {/* SMTP Settings Panel */}
-      {showSmtp && <SmtpSettings onClose={() => { setShowSmtp(false); setSmtpStatus("ok"); }} />}
+      {/* SMTP Status Banner — reads from Email Marketing settings */}
+      <SmtpStatusBanner status={smtpStatus} />
 
       {/* Quick add by stage */}
       <div>
@@ -598,7 +454,7 @@ export default function EmailWorkflowAutomation() {
           {[
             "Khi chuyển giai đoạn: Email gửi ngay (hoặc sau thời gian trì hoãn) khi nhân viên cập nhật giai đoạn",
             "Biến {{name}}, {{stage}}, {{assignedTo}}... được thay thế bằng dữ liệu thực của khách",
-            "Cần cấu hình SMTP trước — khuyến nghị dùng Gmail App Password",
+            "SMTP được lấy tự động từ cài đặt Email Marketing — không cần cấu hình lại",
             "Lịch sử gửi được ghi nhận trong tab Lịch sử gửi",
           ].map((t, i) => (
             <li key={i} className="text-xs" style={{ color: "#1e40af" }}>· {t}</li>

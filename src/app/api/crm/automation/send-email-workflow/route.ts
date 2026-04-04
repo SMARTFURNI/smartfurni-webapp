@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import nodemailer from "nodemailer";
 import { logNotification } from "@/lib/crm-notifications-store";
+import { getCrmSettings } from "@/lib/crm-settings-store";
 
 function replaceVars(template: string, lead: Record<string, string>): string {
   return template
@@ -36,23 +37,48 @@ export async function POST(req: NextRequest) {
     );
     if (rules.length === 0) return NextResponse.json({ skipped: true, reason: "No matching rules" });
 
-    // Get SMTP config
-    const configRows = await query<Record<string, unknown>>(
-      "SELECT * FROM crm_email_smtp_config WHERE id='default'"
-    );
-    const config = configRows[0];
-    if (!config?.host || !config?.smtp_user || !config?.smtp_pass) {
+    // ── Get SMTP config from Email Marketing settings (crm_settings key "email") ──
+    const crmSettings = await getCrmSettings();
+    const emailCfg = crmSettings.email;
+
+    // Fallback: also check legacy crm_email_smtp_config table
+    let smtpHost = emailCfg?.smtpHost ?? "";
+    let smtpPort = emailCfg?.smtpPort ?? 587;
+    let smtpUser = emailCfg?.smtpUser ?? "";
+    let smtpPass = emailCfg?.smtpPassword ?? "";
+    let fromEmail = emailCfg?.senderEmail ?? emailCfg?.smtpUser ?? "";
+    let fromName = (emailCfg as unknown as Record<string, unknown>)?.senderName as string ?? "SmartFurni";
+    let secure = smtpPort === 465;
+
+    // If Email Marketing SMTP not configured, fall back to legacy table
+    if (!smtpHost || !smtpUser || !smtpPass) {
+      const configRows = await query<Record<string, unknown>>(
+        "SELECT * FROM crm_email_smtp_config WHERE id='default'"
+      );
+      const legacyConfig = configRows[0];
+      if (legacyConfig?.host && legacyConfig?.smtp_user && legacyConfig?.smtp_pass) {
+        smtpHost = legacyConfig.host as string;
+        smtpPort = (legacyConfig.port as number) ?? 587;
+        smtpUser = legacyConfig.smtp_user as string;
+        smtpPass = legacyConfig.smtp_pass as string;
+        fromEmail = (legacyConfig.from_email as string) ?? smtpUser;
+        fromName = (legacyConfig.from_name as string) ?? "SmartFurni";
+        secure = (legacyConfig.secure as boolean) ?? false;
+      }
+    }
+
+    if (!smtpHost || !smtpUser || !smtpPass) {
       return NextResponse.json({ skipped: true, reason: "SMTP not configured" });
     }
 
     // Create transporter
     const transporter = nodemailer.createTransport({
-      host: config.host as string,
-      port: (config.port as number) ?? 587,
-      secure: (config.secure as boolean) ?? false,
+      host: smtpHost,
+      port: smtpPort,
+      secure,
       auth: {
-        user: config.smtp_user as string,
-        pass: config.smtp_pass as string,
+        user: smtpUser,
+        pass: smtpPass,
       },
     });
 
@@ -70,8 +96,8 @@ export async function POST(req: NextRequest) {
     for (const rule of rules) {
       const subject = replaceVars((rule.subject as string) ?? "", leadVars);
       const body = replaceVars((rule.body as string) ?? "", leadVars);
-      const fromName = (rule.from_name as string) ?? "SmartFurni";
-      const fromEmail = (config.from_email as string) ?? (config.smtp_user as string);
+      const ruleFromName = (rule.from_name as string) ?? fromName;
+      const ruleFromEmail = fromEmail || smtpUser;
 
       try {
         // Handle delay — log as pending and skip actual send for now
@@ -92,7 +118,7 @@ export async function POST(req: NextRequest) {
         }
 
         await transporter.sendMail({
-          from: `"${fromName}" <${fromEmail}>`,
+          from: `"${ruleFromName}" <${ruleFromEmail}>`,
           to: lead.email as string,
           subject,
           text: body,
