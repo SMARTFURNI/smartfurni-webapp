@@ -680,34 +680,44 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
       .catch(() => { });
   }, []);
 
-  const getQR = () => {
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopPolling = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+
+  const getQR = async () => {
     setLoading(true);
     setQrData(null);
-    const es = new EventSource("/api/crm/zalo-inbox/qr-login", { withCredentials: true });
-    es.addEventListener("qr", (e: MessageEvent) => {
+    stopPolling();
+
+    try {
+      // Trigger QR login non-blocking
+      await fetch("/api/crm/zalo-inbox/qr-image", { method: "POST", credentials: "include" });
+    } catch { /* ignore */ }
+
+    // Poll mỗi 1.5s để lấy QR image
+    let attempts = 0;
+    pollRef.current = setInterval(async () => {
+      attempts++;
+      if (attempts > 60) { stopPolling(); setLoading(false); return; } // timeout 90s
       try {
-        const d = JSON.parse(e.data);
-        setQrData({ qr: d.image, status: "pending" });
-        setLoading(false);
+        const res = await fetch("/api/crm/zalo-inbox/qr-image", { credentials: "include" });
+        const d = await res.json();
+        if (d.connected) {
+          setStatus({ connected: true, phone: d.phone || "Đã kết nối" });
+          setQrData(null);
+          setLoading(false);
+          stopPolling();
+        } else if (d.qrImage) {
+          setQrData({ qr: d.qrImage, status: "pending" });
+          setLoading(false);
+        }
       } catch { /* ignore */ }
-    });
-    es.addEventListener("success", (e: MessageEvent) => {
-      try {
-        const d = JSON.parse(e.data);
-        setStatus({ connected: true, phone: d.phone || d.displayName || "Đã kết nối" });
-        setQrData(null);
-      } catch { /* ignore */ }
-      es.close();
-    });
-    es.addEventListener("error", () => {
-      setLoading(false);
-      es.close();
-    });
-    es.onerror = () => {
-      setLoading(false);
-      es.close();
-    };
+    }, 1500);
   };
+
+  useEffect(() => () => stopPolling(), []);
 
   const disconnect = async () => {
     await fetch("/api/crm/zalo-inbox/disconnect", { method: "POST", credentials: "include" });

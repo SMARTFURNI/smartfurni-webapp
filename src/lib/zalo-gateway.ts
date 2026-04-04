@@ -90,6 +90,20 @@ let currentUserId = "";
 let qrCallbackFn: ((qrBase64: string) => void) | null = null;
 let loginResolve: ((api: unknown) => void) | null = null;
 let loginReject: ((err: Error) => void) | null = null;
+let currentQRImage: string | null = null; // Lưu QR image mới nhất để client poll
+
+export function getCurrentQRImage(): string | null {
+  return currentQRImage;
+}
+
+export function resetQRLogin(): void {
+  if (!isConnected) {
+    isConnecting = false;
+    currentQRImage = null;
+    loginResolve = null;
+    loginReject = null;
+  }
+}
 
 export function getZaloApi() {
   return zaloApi;
@@ -468,8 +482,14 @@ export async function connectWithCredentials(creds: ZaloCredentials): Promise<vo
 // ─── QR Login ─────────────────────────────────────────────────────────────────
 
 export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<void> {
+  // Reset trạng thái nếu đang connecting nhưng chưa connected (cho phép retry)
+  if (isConnecting && !isConnected) {
+    isConnecting = false;
+    currentQRImage = null;
+  }
   if (isConnecting) throw new Error("Already connecting");
   isConnecting = true;
+  currentQRImage = null;
   qrCallbackFn = onQR;
 
   return new Promise<void>((resolve, reject) => {
@@ -495,7 +515,10 @@ export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<vo
           if (event.type === LoginQRCallbackEventType.QRCodeGenerated) {
             const qrData = event.data as { image?: string } | null;
             if (qrData?.image) {
-              onQR(qrData.image);
+              // Lưu QR vào memory để client có thể poll
+              const image = qrData.image.startsWith("data:") ? qrData.image : `data:image/png;base64,${qrData.image}`;
+              currentQRImage = image;
+              onQR(image);
             }
           } else if (event.type === LoginQRCallbackEventType.GotLoginInfo) {
             // Save credentials
