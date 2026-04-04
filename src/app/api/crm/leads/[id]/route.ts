@@ -34,6 +34,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     triggerStageChangeAutomation(lead, prevStage).catch((e) =>
       console.error("[Automation] Stage change trigger error:", e)
     );
+    // Trigger email workflow automation
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
+    fetch(`${baseUrl}/api/crm/automation/send-email-workflow`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId: lead.id, toStage: updates.stage }),
+    }).catch((e) => console.error("[Email Workflow] Trigger error:", e));
     await logAudit({
       action: "lead.stage_changed",
       entityType: "lead",
