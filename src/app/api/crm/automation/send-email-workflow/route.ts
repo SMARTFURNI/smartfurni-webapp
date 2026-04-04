@@ -3,6 +3,7 @@ import { query } from "@/lib/db";
 import nodemailer from "nodemailer";
 import { logNotification } from "@/lib/crm-notifications-store";
 import { getCrmSettings } from "@/lib/crm-settings-store";
+import { getAutomationRules } from "@/lib/crm-automation-store";
 
 function replaceVars(template: string, lead: Record<string, string>): string {
   return template
@@ -30,15 +31,62 @@ export async function POST(req: NextRequest) {
     if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     if (!lead.email) return NextResponse.json({ skipped: true, reason: "No email" });
 
-    // Get email rules from crm_settings (MySQL) — replaces old PostgreSQL table
-    const crmSettings = await getCrmSettings();
-    const allRules = crmSettings.emailRules ?? [];
-    const rules = allRules.filter(
-      (r) => r.triggerStage === toStage && r.enabled
-    );
-    if (rules.length === 0) return NextResponse.json({ skipped: true, reason: "No matching rules" });
+    // ── Get email rules from shared PostgreSQL automation table (same as Zalo Workflow) ──
+    // Rules are stored as AutomationRule with actions[].type === "send_email_workflow"
+    let matchingRules: Array<{
+      id: string;
+      name: string;
+      subject: string;
+      body: string;
+      fromName: string;
+      delayMinutes: number;
+    }> = [];
+
+    try {
+      const allAutomationRules = await getAutomationRules();
+      matchingRules = allAutomationRules
+        .filter(r =>
+          r.enabled &&
+          r.trigger.type === "stage_changed" &&
+          r.trigger.toStage === toStage &&
+          r.actions.some(a => a.type === "send_email_workflow")
+        )
+        .map(r => {
+          const action = r.actions.find(a => a.type === "send_email_workflow")!;
+          return {
+            id: r.id,
+            name: r.name,
+            subject: action.emailSubject ?? "",
+            body: action.emailBody ?? "",
+            fromName: action.emailFromName ?? "SmartFurni",
+            delayMinutes: action.emailDelayMinutes ?? 0,
+          };
+        });
+    } catch {
+      // PostgreSQL may not be available, fall back to legacy MySQL emailRules
+      const crmSettings = await getCrmSettings();
+      const legacyRules = (crmSettings.emailRules ?? []) as Array<{
+        id: string; name: string; triggerStage: string; enabled: boolean;
+        subject: string; body: string; fromName: string; delayMinutes: number;
+      }>;
+      matchingRules = legacyRules
+        .filter(r => r.triggerStage === toStage && r.enabled)
+        .map(r => ({
+          id: r.id,
+          name: r.name,
+          subject: r.subject ?? "",
+          body: r.body ?? "",
+          fromName: r.fromName ?? "SmartFurni",
+          delayMinutes: r.delayMinutes ?? 0,
+        }));
+    }
+
+    if (matchingRules.length === 0) {
+      return NextResponse.json({ skipped: true, reason: "No matching email workflow rules" });
+    }
 
     // ── Get SMTP config from Email Marketing settings (crm_settings key "email") ──
+    const crmSettings = await getCrmSettings();
     const emailCfg = crmSettings.email;
 
     let smtpHost = emailCfg?.smtpHost ?? "";
@@ -96,7 +144,7 @@ export async function POST(req: NextRequest) {
     };
 
     const results = [];
-    for (const rule of rules) {
+    for (const rule of matchingRules) {
       const subject = replaceVars(rule.subject ?? "", leadVars);
       const body = replaceVars(rule.body ?? "", leadVars);
       const ruleFromName = rule.fromName ?? fromName;
