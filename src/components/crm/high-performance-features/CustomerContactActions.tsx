@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MessageCircle, Phone, Mail, Copy, CheckCircle2, ExternalLink, X } from 'lucide-react';
+import { MessageCircle, Phone, Mail, Copy, CheckCircle2, ExternalLink, X, UserPlus } from 'lucide-react';
 import type { Lead } from '@/lib/crm-types';
+import ZaloPersonalAddFriendModal from '@/components/crm/ZaloPersonalAddFriendModal';
 
 interface CustomerContactActionsProps {
   lead: Lead;
@@ -16,6 +17,7 @@ export default function CustomerContactActions({
   const [activeMenu, setActiveMenu] = useState<'zalo' | 'call' | 'email' | null>(null);
   const [copied, setCopied] = useState(false);
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const [showAddFriendModal, setShowAddFriendModal] = useState(false);
 
   const zaloPhone = lead.zaloPhone || lead.phone;
   const normalizedPhone = zaloPhone.replace(/\D/g, '');
@@ -133,10 +135,29 @@ export default function CustomerContactActions({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-gray-900">
-                    {copied ? '✓ Đã sao chép' : 'Sao chép số'}
+                    {copied ? '\u2713 Đã sao chép' : 'Sao chép số'}
                   </p>
                   <p className="text-xs text-gray-500">Dán vào Zalo</p>
                 </div>
+              </button>
+
+              {/* Kết bạn Zalo Personal */}
+              <div className="px-2 pt-1 pb-1">
+                <div className="border-t border-gray-100 mb-1" />
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 mb-1">Zalo Personal</p>
+              </div>
+              <button
+                onClick={() => { setActiveMenu(null); setShowAddFriendModal(true); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 text-left group/item"
+              >
+                <div className="p-2 bg-blue-100 rounded-lg group-hover/item:bg-blue-200 transition-colors">
+                  <UserPlus className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-900">Gửi lời mời kết bạn</p>
+                  <p className="text-xs text-gray-500">Tự động qua Zalo cá nhân</p>
+                </div>
+                <span className="text-lg">→</span>
               </button>
             </div>
           </div>
@@ -304,6 +325,15 @@ export default function CustomerContactActions({
         <div
           className="fixed inset-0 z-40"
           onClick={() => setActiveMenu(null)}
+        />
+      )}
+
+      {/* Zalo Personal Add Friend Modal */}
+      {showAddFriendModal && (
+        <ZaloPersonalAddFriendModal
+          leadName={lead.name}
+          leadPhone={zaloPhone}
+          onClose={() => setShowAddFriendModal(false)}
         />
       )}
     </div>
