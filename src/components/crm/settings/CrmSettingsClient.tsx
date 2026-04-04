@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   Building2, GitBranch, Users, Tag, Percent, Webhook,
@@ -1941,7 +1942,12 @@ function SectionCard({ title, icon: Icon, children }: { title: string; icon: Rea
 
 export default function CrmSettingsClient({ initialSettings }: Props) {
   const [settings, setSettings] = useState<CrmSettings>(initialSettings);
-  const [activeTab, setActiveTab] = useState<TabId>("company");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get("tab") ?? null;
+  const validTabs: TabId[] = ["company", "pipeline", "sources", "leadtypes", "discount", "webhook", "notifications", "quote", "email", "dashboardtheme", "googlesheet"];
+  const [activeTab, setActiveTab] = useState<TabId>(
+    (tabParam && validTabs.includes(tabParam as TabId)) ? tabParam as TabId : "company"
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");

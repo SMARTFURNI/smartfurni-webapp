@@ -530,7 +530,9 @@ export async function getCrmSettings(): Promise<CrmSettings> {
       : DEFAULT_SETTINGS.googleSheet,
     notifications: (stored.notifications as NotificationConfig) ?? DEFAULT_SETTINGS.notifications,
     quote:         (stored.quote         as QuoteConfig)       ?? DEFAULT_SETTINGS.quote,
-    email:         (stored.email         as EmailConfig)       ?? DEFAULT_SETTINGS.email,
+    email: stored.email
+      ? { ...DEFAULT_SETTINGS.email, ...(stored.email as EmailConfig) }
+      : DEFAULT_SETTINGS.email,
     // Merge saved theme with defaults so new fields always have a value
     dashboardTheme: savedTheme
       ? { ...DEFAULT_SETTINGS.dashboardTheme, ...savedTheme }
