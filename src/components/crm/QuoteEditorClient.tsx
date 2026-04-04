@@ -15,15 +15,26 @@ interface Props {
 
 export default function QuoteEditorClient({ products, leads, defaultLead, defaultTiers = [] }: Props) {
   // Helper: get discount using product-specific tiers first, fallback to global defaultTiers
-  function getDiscount(product: CrmProduct, qty: number): number {
+  // totalQty: tổng số lượng toàn bộ báo giá (để áp mức chiết khấu theo tổng SL)
+  function getDiscount(product: CrmProduct, totalQty: number): number {
     const tiers = product.discountTiers && product.discountTiers.length > 0
       ? product.discountTiers
       : defaultTiers;
     const sorted = [...tiers].sort((a, b) => b.minQty - a.minQty);
     for (const tier of sorted) {
-      if (qty >= tier.minQty) return tier.discountPct;
+      if (totalQty >= tier.minQty) return tier.discountPct;
     }
     return 0;
+  }
+
+  // Tính tổng số lượng hiện tại của báo giá (dùng để xác định mức chiết khấu)
+  function getTotalQty(currentItems: typeof items, excludeIdx?: number, addQty?: number): number {
+    let total = currentItems.reduce((sum, item, i) => {
+      if (i === excludeIdx) return sum;
+      return sum + item.qty;
+    }, 0);
+    if (addQty !== undefined) total += addQty;
+    return total;
   }
   const router = useRouter();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(defaultLead || null);
@@ -56,55 +67,88 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
     // Nếu có sizePricings, dùng kích thước đầu tiên làm mặc định
     const firstSize = product.sizePricings && product.sizePricings.length > 0 ? product.sizePricings[0] : null;
     const unitPrice = firstSize ? firstSize.price : product.basePrice;
-    const discountPct = getDiscount(product, qty);
+    // Tổng SL sau khi thêm sản phẩm mới
+    const newTotalQty = getTotalQty(items) + qty;
+    const discountPct = getDiscount(product, newTotalQty);
     const finalPrice = unitPrice * (1 - discountPct / 100);
-    setItems(prev => [...prev, {
-      productId: product.id,
-      productName: product.name,
-      sku: product.sku,
-      qty,
-      unitPrice,
-      discountPct,
-      finalPrice,
-      notes: "",
-      selectedSize: firstSize?.size,
-      selectedSizeLabel: firstSize?.label || firstSize?.size,
-    }]);
+    setItems(prev => {
+      const newItem = {
+        productId: product.id,
+        productName: product.name,
+        sku: product.sku,
+        qty,
+        unitPrice,
+        discountPct,
+        finalPrice,
+        notes: "",
+        selectedSize: firstSize?.size,
+        selectedSizeLabel: firstSize?.label || firstSize?.size,
+      };
+      const newItems = [...prev, newItem];
+      // Tái tính chiết khấu cho tất cả items theo tổng SL mới
+      const totalQty = newItems.reduce((s, it) => s + it.qty, 0);
+      return newItems.map(it => {
+        const prod = products.find(p => p.id === it.productId);
+        if (!prod) return it;
+        const dp = getDiscount(prod, totalQty);
+        return { ...it, discountPct: dp, finalPrice: it.unitPrice * (1 - dp / 100) };
+      });
+    });
     setShowProductPicker(false);
   }
 
   function updateSize(idx: number, sizeKey: string) {
-    setItems(prev => prev.map((item, i) => {
-      if (i !== idx) return item;
-      const product = products.find(p => p.id === item.productId);
-      if (!product) return item;
-      const sizePricing = product.sizePricings?.find(s => s.size === sizeKey);
-      const unitPrice = sizePricing ? sizePricing.price : product.basePrice;
-      const discountPct = getDiscount(product, item.qty);
-      const finalPrice = unitPrice * (1 - discountPct / 100);
-      return {
-        ...item,
-        unitPrice,
-        discountPct,
-        finalPrice,
-        selectedSize: sizeKey,
-        selectedSizeLabel: sizePricing?.label || sizeKey,
-      };
-    }));
+    setItems(prev => {
+      const totalQty = prev.reduce((s, it) => s + it.qty, 0);
+      return prev.map((item, i) => {
+        if (i !== idx) return item;
+        const product = products.find(p => p.id === item.productId);
+        if (!product) return item;
+        const sizePricing = product.sizePricings?.find(s => s.size === sizeKey);
+        const unitPrice = sizePricing ? sizePricing.price : product.basePrice;
+        // Dùng tổng SL toàn bộ báo giá để xác định mức chiết khấu
+        const discountPct = getDiscount(product, totalQty);
+        const finalPrice = unitPrice * (1 - discountPct / 100);
+        return {
+          ...item,
+          unitPrice,
+          discountPct,
+          finalPrice,
+          selectedSize: sizeKey,
+          selectedSizeLabel: sizePricing?.label || sizeKey,
+        };
+      });
+    });
   }
 
   function updateQty(idx: number, qty: number) {
-    setItems(prev => prev.map((item, i) => {
-      if (i !== idx) return item;
-      const product = products.find(p => p.id === item.productId);
-      const discountPct = product ? getDiscount(product, qty) : item.discountPct;
-      const finalPrice = item.unitPrice * (1 - discountPct / 100);
-      return { ...item, qty, discountPct, finalPrice };
-    }));
+    setItems(prev => {
+      // Tính tổng SL mới (thay SL cũ của item idx bằng qty mới)
+      const totalQty = prev.reduce((s, it, i) => s + (i === idx ? qty : it.qty), 0);
+      // Tái tính chiết khấu cho tất cả items theo tổng SL mới
+      return prev.map((item, i) => {
+        const newQty = i === idx ? qty : item.qty;
+        const product = products.find(p => p.id === item.productId);
+        const discountPct = product ? getDiscount(product, totalQty) : item.discountPct;
+        const finalPrice = item.unitPrice * (1 - discountPct / 100);
+        return { ...item, qty: newQty, discountPct, finalPrice };
+      });
+    });
   }
 
   function removeItem(idx: number) {
-    setItems(prev => prev.filter((_, i) => i !== idx));
+    setItems(prev => {
+      const newItems = prev.filter((_, i) => i !== idx);
+      // Tái tính chiết khấu cho các items còn lại theo tổng SL mới
+      const totalQty = newItems.reduce((s, it) => s + it.qty, 0);
+      return newItems.map(item => {
+        const product = products.find(p => p.id === item.productId);
+        if (!product) return item;
+        const discountPct = getDiscount(product, totalQty);
+        const finalPrice = item.unitPrice * (1 - discountPct / 100);
+        return { ...item, discountPct, finalPrice };
+      });
+    });
   }
 
   async function submit() {
