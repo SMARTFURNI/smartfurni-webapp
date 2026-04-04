@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Users, UserPlus, UserMinus, UserCheck, Search, RefreshCw,
   Phone, Clock, X, Check, Undo2, Tag, ChevronRight, Wifi,
-  Star, AlertCircle
+  Star, AlertCircle, MessageCircle
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -284,16 +284,25 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
                 <div className="px-4 py-2 text-xs text-gray-400">{friends.length} bạn bè</div>
                 {friends.map(f => (
                   <div key={f.userId} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 group">
-                    <AvatarCircle name={f.displayName} avatar={f.avatar} size={38} />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-gray-900 dark:text-white truncate">{f.displayName}</div>
+                    <div
+                      onClick={() => onOpenChat && onOpenChat(f.userId, f.displayName)}
+                      style={{ cursor: onOpenChat ? "pointer" : "default" }}
+                    >
+                      <AvatarCircle name={f.displayName} avatar={f.avatar} size={38} />
+                    </div>
+                    <div
+                      className="flex-1 min-w-0"
+                      onClick={() => onOpenChat && onOpenChat(f.userId, f.displayName)}
+                      style={{ cursor: onOpenChat ? "pointer" : "default" }}
+                    >
+                      <div className="font-medium text-sm text-gray-900 dark:text-white truncate hover:text-blue-500 transition-colors">{f.displayName}</div>
                       {f.zaloName && f.zaloName !== f.displayName && <div className="text-xs text-gray-400 truncate">@{f.zaloName}</div>}
                       {f.phoneNumber && <div className="text-xs text-gray-400">{f.phoneNumber}</div>}
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {onOpenChat && (
                         <button onClick={() => onOpenChat(f.userId, f.displayName)} className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-500" title="Nhắn tin">
-                          <ChevronRight size={14} />
+                          <MessageCircle size={14} />
                         </button>
                       )}
                       <button onClick={() => { setNicknameModal({ userId: f.userId, name: f.displayName }); setNicknameInput(""); }} className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400" title="Đặt biệt danh">

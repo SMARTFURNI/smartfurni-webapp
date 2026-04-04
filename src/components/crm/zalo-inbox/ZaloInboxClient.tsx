@@ -1186,7 +1186,38 @@ export default function ZaloInboxClient() {
           <div style={{ flex: 1, textAlign: "center", fontWeight: 700, fontSize: 15, color: T.textPrimary, marginRight: 80 }}>{subViewTitles[mainView]}</div>
         </div>
         <div style={{ paddingTop: 48, height: "100vh", overflow: "hidden" }}>
-          {mainView === "friends" && <ZaloFriendsPanel onClose={() => setMainView("messages")} />}
+          {mainView === "friends" && <ZaloFriendsPanel
+            onClose={() => setMainView("messages")}
+            onOpenChat={async (userId: string, displayName: string) => {
+              // Chuyển sang view messages trước
+              setMainView("messages");
+              // Tìm conversation đã tồn tại trong danh sách
+              const existing = conversations.find(c => c.id === userId || c.phone === userId);
+              if (existing) {
+                handleSelectConv(existing);
+              } else {
+                // Tạo conversation stub để mở chat ngay lập tức
+                const stub: ZaloConversation = {
+                  id: userId,
+                  phone: userId,
+                  displayName,
+                  avatarUrl: null,
+                  lastMessage: null,
+                  lastMessageAt: new Date().toISOString(),
+                  unreadCount: 0,
+                  leadId: null,
+                  lead: null,
+                };
+                setSelectedConv(stub);
+                setMessages([]);
+                setReplyContext(null);
+                setMsgSearchQuery("");
+                setShowMsgSearch(false);
+                // Load lịch sử tin nhắn nếu có
+                loadMessages(userId);
+              }
+            }}
+          />}
           {mainView === "groups" && <ZaloGroupsPanel onClose={() => setMainView("messages")} />}
           {mainView === "auto-reply" && <ZaloAutoReplyPanel onClose={() => setMainView("messages")} />}
           {mainView === "catalog" && <ZaloCatalogPanel onClose={() => setMainView("messages")} />}
