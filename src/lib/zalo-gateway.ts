@@ -140,12 +140,17 @@ export function getZaloUserId() {
   return currentUserId;
 }
 
+export function getZaloUserDisplayName() {
+  return currentUserDisplayName;
+}
+
 export function getGatewayStatus() {
   return {
     isConnected: isConnected && zaloApi !== null,
     isConnecting,
     userId: currentUserId || null,
     phone: currentUserId || null,
+    displayName: currentUserDisplayName || null,
     status: isConnected ? "connected" : isConnecting ? "connecting" : "disconnected",
   };
 }

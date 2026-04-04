@@ -93,6 +93,7 @@ interface ZaloConversation {
 interface GatewayStatus {
   connected: boolean;
   phone: string | null;
+  displayName?: string | null;
   status?: string;
   message?: string;
 }
@@ -678,11 +679,15 @@ function LeadInfoPanel({ lead }: { lead: LeadInfo }) {
 function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onDisconnect: () => void }) {
   const [qrData, setQrData] = useState<{ qr: string; status: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{ connected: boolean; phone: string | null } | null>(null);
+  const [status, setStatus] = useState<{ connected: boolean; phone: string | null; displayName: string | null } | null>(null);
 
   useEffect(() => {
     fetch("/api/crm/zalo-inbox/status", { credentials: "include" })
-      .then(r => r.json()).then(d => setStatus({ connected: d.connected, phone: d.phone }))
+      .then(r => r.json()).then(d => setStatus({
+        connected: d.connected,
+        phone: d.phone,
+        displayName: d.displayName || null,
+      }))
       .catch(() => { });
   }, []);
 
@@ -711,7 +716,7 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
         const res = await fetch("/api/crm/zalo-inbox/qr-image", { credentials: "include" });
         const d = await res.json();
         if (d.connected) {
-          setStatus({ connected: true, phone: d.phone || "Đã kết nối" });
+          setStatus({ connected: true, phone: d.phone || null, displayName: d.displayName || null });
           setQrData(null);
           setLoading(false);
           stopPolling();
@@ -743,7 +748,9 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
           <div style={{ padding: "12px 14px", borderRadius: 10, background: status.connected ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${status.connected ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: status.connected ? T.success : T.error }} />
             <span style={{ fontSize: 13, color: status.connected ? T.success : T.error, fontWeight: 500 }}>
-              {status.connected ? `Đã kết nối: ${status.phone}` : "Chưa đăng nhập"}
+              {status.connected
+                ? `Đã kết nối: ${status.displayName || status.phone || "Zalo"}`
+                : "Chưa đăng nhập"}
             </span>
           </div>
         )}

@@ -124,7 +124,9 @@ export async function GET(req: NextRequest) {
       total: enriched.length,
       connected: gatewayStatus.isConnected,
       status: gatewayStatus.status,
-      phone: gatewayStatus.phone,
+      // phone: hiển thị tên thật nếu có, fallback về userId
+      phone: gatewayStatus.displayName || gatewayStatus.phone,
+      displayName: gatewayStatus.displayName || null,
     });
   } catch (error: any) {
     console.error("[zalo-inbox/conversations] Error:", error);

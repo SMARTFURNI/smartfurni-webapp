@@ -42,7 +42,9 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     connected: status.isConnected,
     connecting: status.isConnecting,
-    phone: status.phone || null,
+    // phone: hiển thị tên thật nếu có, fallback về userId
+    phone: status.displayName || status.phone || null,
+    displayName: status.displayName || null,
     qrImage: qrImage || null,
     status: status.status,
   });

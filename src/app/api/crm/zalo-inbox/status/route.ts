@@ -4,7 +4,7 @@
  */
 import { NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { isZaloConnected, getZaloUserId, initZaloGateway } from "@/lib/zalo-gateway";
+import { isZaloConnected, getZaloUserId, getZaloUserDisplayName, initZaloGateway } from "@/lib/zalo-gateway";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,10 +27,14 @@ export async function GET() {
 
   const connected = isZaloConnected();
   const userId = getZaloUserId();
+  const displayName = getZaloUserDisplayName();
 
   return NextResponse.json({
     connected,
     userId: userId || null,
+    // phone field: hiển thị tên thật nếu có, fallback về userId
+    phone: displayName || userId || null,
+    displayName: displayName || null,
     status: connected ? "connected" : "disconnected",
   });
 }
