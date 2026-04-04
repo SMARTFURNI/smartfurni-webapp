@@ -1077,8 +1077,11 @@ export default function ZaloInboxClient() {
     setInputText("");
     setReplyContext(null);
     setSending(true);
-    // Auto resize textarea
-    if (textareaRef.current) textareaRef.current.style.height = "40px";
+    // Clear textarea DOM trực tiếp để tránh React batch update không kịp
+    if (textareaRef.current) {
+      textareaRef.current.value = "";
+      textareaRef.current.style.height = "40px";
+    }
     try {
       const fullText = reply
         ? `[Trả lời ${reply.senderName}: "${reply.isPhoto ? "🖼️ Hình ảnh" : reply.content.slice(0, 60)}${reply.content.length > 60 ? "..." : ""}"]\n${text}`
