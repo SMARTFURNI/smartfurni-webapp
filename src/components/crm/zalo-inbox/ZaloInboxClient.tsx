@@ -680,14 +680,33 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
       .catch(() => { });
   }, []);
 
-  const getQR = async () => {
+  const getQR = () => {
     setLoading(true);
-    try {
-      const res = await fetch("/api/crm/zalo-inbox/login", { method: "POST", credentials: "include" });
-      const data = await res.json();
-      setQrData(data);
-    } catch { }
-    finally { setLoading(false); }
+    setQrData(null);
+    const es = new EventSource("/api/crm/zalo-inbox/qr-login", { withCredentials: true });
+    es.addEventListener("qr", (e: MessageEvent) => {
+      try {
+        const d = JSON.parse(e.data);
+        setQrData({ qr: d.image, status: "pending" });
+        setLoading(false);
+      } catch { /* ignore */ }
+    });
+    es.addEventListener("success", (e: MessageEvent) => {
+      try {
+        const d = JSON.parse(e.data);
+        setStatus({ connected: true, phone: d.phone || d.displayName || "Đã kết nối" });
+        setQrData(null);
+      } catch { /* ignore */ }
+      es.close();
+    });
+    es.addEventListener("error", () => {
+      setLoading(false);
+      es.close();
+    });
+    es.onerror = () => {
+      setLoading(false);
+      es.close();
+    };
   };
 
   const disconnect = async () => {
