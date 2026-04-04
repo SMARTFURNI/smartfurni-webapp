@@ -67,7 +67,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>Điều kiện kích hoạt</label>
+        <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>Điều kiện kích hoạt</label>
         <select value={trigger.type} onChange={e => onChange({ type: e.target.value as TriggerType })}
           className="w-full px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
@@ -80,7 +80,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
       {trigger.type === "stage_changed" && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs mb-1" style={{  }}>Từ giai đoạn</label>
+            <label className="block text-xs mb-1" style={{ color: "#374151" }}>Từ giai đoạn</label>
             <select value={trigger.fromStage ?? ""} onChange={e => onChange({ ...trigger, fromStage: e.target.value || undefined })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
               style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
@@ -89,7 +89,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1" style={{  }}>Sang giai đoạn</label>
+            <label className="block text-xs mb-1" style={{ color: "#374151" }}>Sang giai đoạn</label>
             <select value={trigger.toStage ?? ""} onChange={e => onChange({ ...trigger, toStage: e.target.value || undefined })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
               style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
@@ -102,7 +102,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
 
       {(trigger.type === "no_activity_days") && (
         <div>
-          <label className="block text-xs mb-1" style={{  }}>Số ngày không tương tác</label>
+          <label className="block text-xs mb-1" style={{ color: "#374151" }}>Số ngày không tương tác</label>
           <input type="number" min={1} max={30} value={trigger.days ?? 3}
             onChange={e => onChange({ ...trigger, days: parseInt(e.target.value) })}
             className="w-32 px-3 py-2 rounded-lg text-sm outline-none"
@@ -112,7 +112,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
 
       {trigger.type === "stage_duration" && (
         <div>
-          <label className="block text-xs mb-1" style={{  }}>Số giờ ở giai đoạn</label>
+          <label className="block text-xs mb-1" style={{ color: "#374151" }}>Số giờ ở giai đoạn</label>
           <div className="flex items-center gap-3">
             <select value={trigger.fromStage ?? ""} onChange={e => onChange({ ...trigger, fromStage: e.target.value || undefined })}
               className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
@@ -124,14 +124,14 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
               onChange={e => onChange({ ...trigger, hours: parseInt(e.target.value) })}
               className="w-24 px-3 py-2 rounded-lg text-sm outline-none"
               style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
-            <span className="text-xs" style={{ color: "#6b7280" }}>giờ</span>
+            <span className="text-xs" style={{ color: "#374151" }}>giờ</span>
           </div>
         </div>
       )}
 
       {trigger.type === "value_threshold" && (
         <div>
-          <label className="block text-xs mb-1" style={{  }}>Giá trị tối thiểu (VND)</label>
+          <label className="block text-xs mb-1" style={{ color: "#374151" }}>Giá trị tối thiểu (VND)</label>
           <input type="number" value={trigger.minValue ?? 500000000}
             onChange={e => onChange({ ...trigger, minValue: parseInt(e.target.value) })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
@@ -141,7 +141,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
 
       {trigger.type === "lead_type_match" && (
         <div>
-          <label className="block text-xs mb-1" style={{  }}>Phân loại KH</label>
+          <label className="block text-xs mb-1" style={{ color: "#374151" }}>Phân loại KH</label>
           <select value={trigger.leadType ?? ""} onChange={e => onChange({ ...trigger, leadType: e.target.value })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
             style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
@@ -194,7 +194,7 @@ function ActionEditor({ action, onChange, onRemove }: {
               onChange={e => onChange({ ...action, taskDueDays: parseInt(e.target.value) })}
               className="w-16 px-2 py-1.5 rounded text-xs outline-none"
               style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
-            <span className="text-xs" style={{  }}>ngày sau</span>
+            <span className="text-xs" style={{ color: "#374151" }}>ngày sau</span>
           </div>
         </div>
       )}
@@ -259,7 +259,7 @@ function RuleCard({ rule, onChange, onDelete }: {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold truncate" style={{ color: rule.enabled ? "#fff" : "#6b7280" }}>
+            <span className="text-sm font-semibold truncate" style={{ color: rule.enabled ? "#111827" : "#374151" }}>
               {rule.name}
             </span>
             {rule.runCount > 0 && (
@@ -269,7 +269,7 @@ function RuleCard({ rule, onChange, onDelete }: {
               </span>
             )}
           </div>
-          <p className="text-xs truncate mt-0.5" style={{ color: "#9ca3af" }}>{rule.description}</p>
+          <p className="text-xs truncate mt-0.5" style={{ color: "#4b5563" }}>{rule.description}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
@@ -319,7 +319,7 @@ function RuleCard({ rule, onChange, onDelete }: {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold" style={{ color: "#6b7280" }}>
+              <span className="text-xs font-semibold" style={{ color: "#374151" }}>
                 Hành động thực hiện ({rule.actions.length})
               </span>
               <button
@@ -662,7 +662,7 @@ export default function AutomationSettingsClient() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-gray-900">Tự động hóa CRM</h1>
-          <p className="text-xs mt-0.5" style={{  }}>
+          <p className="text-xs mt-0.5" style={{ color: "#4b5563" }}>
             Cấu hình quy tắc tự động, SLA và phân công nhân viên
           </p>
         </div>
@@ -689,7 +689,7 @@ export default function AutomationSettingsClient() {
             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
             style={{
               background: activeTab === tab.id ? "rgba(201,168,76,0.12)" : "transparent",
-              color: activeTab === tab.id ? "#C9A84C" : "#6b7280",
+              color: activeTab === tab.id ? "#C9A84C" : "#374151",
             }}>
             <tab.icon size={14} />
             {tab.label}
@@ -707,7 +707,7 @@ export default function AutomationSettingsClient() {
       {activeTab === "rules" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm" style={{ color: "#6b7280" }}>
+            <p className="text-sm" style={{ color: "#374151" }}>
               {rules.filter(r => r.enabled).length}/{rules.length} quy tắc đang hoạt động
             </p>
             <button onClick={addRule}
