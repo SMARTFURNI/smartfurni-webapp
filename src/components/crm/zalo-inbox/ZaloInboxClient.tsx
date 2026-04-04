@@ -1272,7 +1272,7 @@ export default function ZaloInboxClient() {
                 <RefreshCw size={15} />
               </button>
               <button onClick={() => { setMainView("friends"); setPendingFriendCount(0); }} title="Quản lý bạn bè"
-                style={{ width: 32, height: 32, borderRadius: 8, background: mainView === "friends" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: pendingFriendCount > 0 ? T.accent : T.textMuted, position: "relative" }}>
+                style={{ width: 32, height: 32, borderRadius: 8, background: (mainView as string) === "friends" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: pendingFriendCount > 0 ? T.accent : T.textMuted, position: "relative" }}>
                 <UserPlus size={15} />
                 {pendingFriendCount > 0 && (
                   <span style={{ position: "absolute", top: 2, right: 2, width: 14, height: 14, borderRadius: "50%", background: T.badge, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
@@ -1281,15 +1281,15 @@ export default function ZaloInboxClient() {
                 )}
               </button>
               <button onClick={() => setMainView("groups")} title="Quản lý nhóm"
-                style={{ width: 32, height: 32, borderRadius: 8, background: mainView === "groups" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
+                style={{ width: 32, height: 32, borderRadius: 8, background: (mainView as string) === "groups" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
                 <Users size={15} />
               </button>
               <button onClick={() => setMainView("auto-reply")} title="Trả lời tự động"
-                style={{ width: 32, height: 32, borderRadius: 8, background: mainView === "auto-reply" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
+                style={{ width: 32, height: 32, borderRadius: 8, background: (mainView as string) === "auto-reply" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
                 <Bot size={15} />
               </button>
               <button onClick={() => setMainView("catalog")} title="Catalog sản phẩm"
-                style={{ width: 32, height: 32, borderRadius: 8, background: mainView === "catalog" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
+                style={{ width: 32, height: 32, borderRadius: 8, background: (mainView as string) === "catalog" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
                 <CatalogIcon size={15} />
               </button>
               <button onClick={() => setShowSettings(true)} title="Cài đặt Zalo"

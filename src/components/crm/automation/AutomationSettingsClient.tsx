@@ -25,6 +25,7 @@ const ACTION_COLORS: Record<ActionType, string> = {
   create_task: "#60a5fa", send_email: "#a78bfa", assign_staff: "#22c55e",
   add_tag: "#C9A84C", notify_manager: "#f97316", move_stage: "#06b6d4",
   send_webhook: "#f87171",
+  send_zalo_personal: "#0ea5e9",
 };
 
 const STAGES = [

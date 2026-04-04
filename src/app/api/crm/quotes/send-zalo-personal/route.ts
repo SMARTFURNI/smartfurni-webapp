@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { getQuote } from "@/lib/crm-quotes-store";
-import { getLead } from "@/lib/crm-leads-store";
+import { getQuote, getLead } from "@/lib/crm-store";
+import { getCrmSettings } from "@/lib/crm-settings-store";
+import { formatVND } from "@/lib/crm-types";
 import {
   initZaloGateway,
-  ensureZaloConnected,
   isZaloConnected,
   findZaloUserByPhone,
   sendZaloMessage,
 } from "@/lib/zalo-gateway";
-import { getCompanyInfo } from "@/lib/crm-settings-store";
-import { formatVND } from "@/lib/crm-types";
 
 export async function POST(req: NextRequest) {
   const session = await getAdminSession();
@@ -32,7 +30,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Lấy thông tin công ty
-    const company = await getCompanyInfo();
+    const settings = await getCrmSettings();
+    const company = settings.company;
 
     // Đảm bảo Zalo Personal đã kết nối
     await initZaloGateway();
@@ -51,18 +50,18 @@ export async function POST(req: NextRequest) {
 
     // Tìm Zalo userId từ số điện thoại
     const findResult = await findZaloUserByPhone(phone);
-    if (!findResult.success || !findResult.userId) {
+    if (!findResult.success || !findResult.user) {
       return NextResponse.json({
         error: findResult.error || `Không tìm thấy tài khoản Zalo cho số ${phone}`,
       }, { status: 404 });
     }
 
-    const userId = findResult.userId;
-    const displayName = findResult.displayName || quote.leadName;
+    const userId = findResult.user.uid;
+    const displayName = findResult.user.displayName || quote.leadName;
 
     // Lấy base URL để tạo link PDF
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
-      || process.env.RAILWAY_PUBLIC_DOMAIN && `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "")
       || "https://smartfurni-webapp-production.up.railway.app";
 
     const pdfLink = `${baseUrl}/api/crm/quotes/${quoteId}/pdf`;
@@ -74,7 +73,7 @@ export async function POST(req: NextRequest) {
     // Gửi tin nhắn qua Zalo Personal
     const sendResult = await sendZaloMessage({
       conversationId: userId,
-      message: finalMessage,
+      content: finalMessage,
     });
 
     if (!sendResult.success) {

@@ -261,7 +261,7 @@ async function executeAction(
       }
 
       const { uid } = findResult.user;
-      const sendResult = await sendZaloMessage({ toId: uid, message });
+      const sendResult = await sendZaloMessage({ conversationId: uid, content: message });
       if (sendResult.success) {
         return `Da gui Zalo den ${lead.name} (${normalizedPhone}): "${message.slice(0, 50)}..."` ;
       }
