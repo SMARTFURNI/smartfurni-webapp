@@ -98,8 +98,9 @@ export async function GET(req: NextRequest) {
           try {
             const info = await getZaloUserInfo(conv.id);
             if (info.success && info.user) {
-              const avatar = info.user?.avatar || info.user?.avt || info.user?.data?.avatar || null;
-              const name = info.user?.display_name || info.user?.zalo_name || info.user?.name || null;
+              // getZaloUserInfo đã parse đúng cấu trúc zalo-personal: { displayName, zaloName, avatar }
+              const avatar = info.user?.avatar || null;
+              const name = info.user?.displayName || info.user?.zaloName || null;
               if (avatar || name) {
                 await upsertConversation({
                   id: conv.id,

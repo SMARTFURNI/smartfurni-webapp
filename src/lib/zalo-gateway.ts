@@ -556,13 +556,16 @@ export async function connectWithCredentials(creds: ZaloCredentials): Promise<vo
       if (rawName && !isNumericName) {
         currentUserDisplayName = rawName;
       } else {
-        // display_name chưa có hoặc là ID số — thử lấy từ getUserInfo
+        // display_name chưa có hoặc là ID số — thử lấy từ getUserInfo (parse đúng cấu trúc zalo-personal)
         try {
           const apiObj2 = api as { getUserInfo?: (uid: string) => Promise<any> };
           if (currentUserId && apiObj2.getUserInfo) {
-            const userInfo = await apiObj2.getUserInfo(currentUserId);
-            const displayName = userInfo?.display_name || userInfo?.zalo_name || userInfo?.name || "";
-            const avatar = userInfo?.avatar || userInfo?.avt || "";
+            const rawInfo = await apiObj2.getUserInfo(currentUserId);
+            // zalo-personal: result.changed_profiles[userId].displayName
+            const profiles = rawInfo?.changed_profiles ?? {};
+            const info = profiles[currentUserId] ?? Object.values(profiles)[0] as any;
+            const displayName = info?.displayName ?? info?.display_name ?? info?.zaloName ?? info?.zalo_name ?? "";
+            const avatar = info?.avatar ?? "";
             if (displayName && !/^\d{8,}$/.test(displayName)) {
               currentUserDisplayName = displayName;
               // Cập nhật vào DB
@@ -652,16 +655,19 @@ export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<vo
         try {
           const apiObj = api as { getOwnId: () => Promise<string>; getCookie: () => unknown; getUserInfo?: (uid: string) => Promise<any> };
           currentUserId = await apiObj.getOwnId();
-          // Try to get display name and avatar
+          // Try to get display name and avatar (parse đúng cấu trúc zalo-personal)
           if (currentUserId && apiObj.getUserInfo) {
             try {
-              const userInfo = await apiObj.getUserInfo(currentUserId);
-              const displayName = userInfo?.display_name || userInfo?.zalo_name || userInfo?.name || "";
-              const avatar = userInfo?.avatar || userInfo?.avt || "";
-              currentUserDisplayName = displayName;
+              const rawInfo = await apiObj.getUserInfo(currentUserId);
+              // zalo-personal: result.changed_profiles[userId].displayName
+              const profiles = rawInfo?.changed_profiles ?? {};
+              const info = profiles[currentUserId] ?? Object.values(profiles)[0] as any;
+              const displayName = info?.displayName ?? info?.display_name ?? info?.zaloName ?? info?.zalo_name ?? "";
+              const avatar = info?.avatar ?? "";
+              if (displayName) currentUserDisplayName = displayName;
               // Update credentials with display name and avatar
               const creds2 = await loadCredentials();
-              if (creds2) await saveCredentials(creds2, currentUserId, displayName, avatar);
+              if (creds2) await saveCredentials(creds2, currentUserId, displayName || currentUserId, avatar);
             } catch { /* ignore */ }
           }
         } catch {
@@ -740,12 +746,42 @@ export async function sendZaloMessage(params: {
       type: "text",
       senderName: currentUserDisplayName || params.senderName || currentUserId,
     });
-    // Upsert conversation
+    // Upsert conversation — lấy tên thật của khách từ getUserInfo (zalo-personal pattern)
     try {
+      let customerName = params.conversationId;
+      let customerAvatar = "";
+      // Kiểm tra xem conversation đã có tên trong DB chưa
+      try {
+        const existing = await queryOne<{ display_name: string | null; avatar_url: string | null }>(
+          "SELECT display_name, avatar_url FROM zalo_conversations WHERE id=$1",
+          [params.conversationId]
+        );
+        const existingName = existing?.display_name || "";
+        const isNumericName = /^\d{8,}$/.test(existingName.trim());
+        if (existingName && !isNumericName) {
+          customerName = existingName;
+          customerAvatar = existing?.avatar_url || "";
+        } else {
+          // Chưa có tên — gọi getUserInfo để lấy tên thật (parse theo zalo-personal)
+          const apiForInfo = zaloApi as { getUserInfo?: (uid: string) => Promise<any> };
+          if (apiForInfo.getUserInfo) {
+            const rawInfo = await apiForInfo.getUserInfo(params.conversationId);
+            const profiles = rawInfo?.changed_profiles ?? {};
+            const info = profiles[params.conversationId] ?? Object.values(profiles)[0] as any;
+            const name = info?.displayName ?? info?.display_name ?? info?.zaloName ?? info?.zalo_name ?? "";
+            const avatar = info?.avatar ?? "";
+            if (name && !/^\d{8,}$/.test(name)) {
+              customerName = name;
+              customerAvatar = avatar;
+            }
+          }
+        }
+      } catch { /* ignore */ }
       await upsertConversation({
         id: params.conversationId,
         phone: params.conversationId,
-        displayName: params.conversationId,
+        displayName: customerName,
+        avatarUrl: customerAvatar || undefined,
         lastMessage: params.content,
       });
     } catch { /* ignore */ }
@@ -2060,14 +2096,27 @@ export async function getZaloBoards(groupId: string): Promise<{ success: boolean
 
 // ─── User Info API ────────────────────────────────────────────────────────────
 
-/** Lấy thông tin chi tiết một user */
+/** Lấy thông tin chi tiết một user - parse đúng cấu trúc zalo-personal */
 export async function getZaloUserInfo(userId: string): Promise<{ success: boolean; user?: any; error?: string }> {
   await ensureZaloConnected();
   if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
   try {
     const api = zaloApi as { getUserInfo: (userId: string) => Promise<any> };
     const result = await api.getUserInfo(userId);
-    return { success: true, user: result };
+    // Parse theo cấu trúc zalo-personal: result.changed_profiles[userId]
+    const profiles = result?.changed_profiles ?? {};
+    const info = profiles[userId] ?? Object.values(profiles)[0] as any;
+    if (!info) return { success: true, user: result };
+    const parsed = {
+      userId,
+      displayName: info.displayName ?? info.display_name ?? "",
+      zaloName: info.zaloName ?? info.zalo_name ?? "",
+      avatar: info.avatar ?? "",
+      gender: info.gender,
+      dob: info.dob,
+      _raw: result,
+    };
+    return { success: true, user: parsed };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
