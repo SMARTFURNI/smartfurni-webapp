@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing leadId or toStage" }, { status: 400 });
     }
 
-    // Get lead info
+    // Get lead info from MySQL
     const leadRows = await query<Record<string, unknown>>(
       "SELECT * FROM crm_leads WHERE id=$1", [leadId]
     );
@@ -30,18 +30,17 @@ export async function POST(req: NextRequest) {
     if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     if (!lead.email) return NextResponse.json({ skipped: true, reason: "No email" });
 
-    // Get matching email rules
-    const rules = await query<Record<string, unknown>>(
-      "SELECT * FROM crm_email_automation_rules WHERE trigger_stage=$1 AND enabled=true",
-      [toStage]
+    // Get email rules from crm_settings (MySQL) — replaces old PostgreSQL table
+    const crmSettings = await getCrmSettings();
+    const allRules = crmSettings.emailRules ?? [];
+    const rules = allRules.filter(
+      (r) => r.triggerStage === toStage && r.enabled
     );
     if (rules.length === 0) return NextResponse.json({ skipped: true, reason: "No matching rules" });
 
     // ── Get SMTP config from Email Marketing settings (crm_settings key "email") ──
-    const crmSettings = await getCrmSettings();
     const emailCfg = crmSettings.email;
 
-    // Fallback: also check legacy crm_email_smtp_config table
     let smtpHost = emailCfg?.smtpHost ?? "";
     let smtpPort = emailCfg?.smtpPort ?? 587;
     let smtpUser = emailCfg?.smtpUser ?? "";
@@ -50,20 +49,24 @@ export async function POST(req: NextRequest) {
     let fromName = (emailCfg as unknown as Record<string, unknown>)?.senderName as string ?? "SmartFurni";
     let secure = smtpPort === 465;
 
-    // If Email Marketing SMTP not configured, fall back to legacy table
+    // If Email Marketing SMTP not configured, fall back to legacy PostgreSQL table
     if (!smtpHost || !smtpUser || !smtpPass) {
-      const configRows = await query<Record<string, unknown>>(
-        "SELECT * FROM crm_email_smtp_config WHERE id='default'"
-      );
-      const legacyConfig = configRows[0];
-      if (legacyConfig?.host && legacyConfig?.smtp_user && legacyConfig?.smtp_pass) {
-        smtpHost = legacyConfig.host as string;
-        smtpPort = (legacyConfig.port as number) ?? 587;
-        smtpUser = legacyConfig.smtp_user as string;
-        smtpPass = legacyConfig.smtp_pass as string;
-        fromEmail = (legacyConfig.from_email as string) ?? smtpUser;
-        fromName = (legacyConfig.from_name as string) ?? "SmartFurni";
-        secure = (legacyConfig.secure as boolean) ?? false;
+      try {
+        const configRows = await query<Record<string, unknown>>(
+          "SELECT * FROM crm_email_smtp_config WHERE id='default'"
+        );
+        const legacyConfig = configRows[0];
+        if (legacyConfig?.host && legacyConfig?.smtp_user && legacyConfig?.smtp_pass) {
+          smtpHost = legacyConfig.host as string;
+          smtpPort = (legacyConfig.port as number) ?? 587;
+          smtpUser = legacyConfig.smtp_user as string;
+          smtpPass = legacyConfig.smtp_pass as string;
+          fromEmail = (legacyConfig.from_email as string) ?? smtpUser;
+          fromName = (legacyConfig.from_name as string) ?? "SmartFurni";
+          secure = (legacyConfig.secure as boolean) ?? false;
+        }
+      } catch {
+        // Legacy table may not exist, ignore
       }
     }
 
@@ -94,17 +97,17 @@ export async function POST(req: NextRequest) {
 
     const results = [];
     for (const rule of rules) {
-      const subject = replaceVars((rule.subject as string) ?? "", leadVars);
-      const body = replaceVars((rule.body as string) ?? "", leadVars);
-      const ruleFromName = (rule.from_name as string) ?? fromName;
+      const subject = replaceVars(rule.subject ?? "", leadVars);
+      const body = replaceVars(rule.body ?? "", leadVars);
+      const ruleFromName = rule.fromName ?? fromName;
       const ruleFromEmail = fromEmail || smtpUser;
 
       try {
         // Handle delay — log as pending and skip actual send for now
-        if (rule.delay_minutes && (rule.delay_minutes as number) > 0) {
+        if (rule.delayMinutes && rule.delayMinutes > 0) {
           await logNotification({
-            ruleId: (rule.id as string) ?? "",
-            ruleName: (rule.name as string) ?? "",
+            ruleId: rule.id ?? "",
+            ruleName: rule.name ?? "",
             channel: "email",
             recipient: lead.email as string,
             leadId: leadId,
@@ -126,8 +129,8 @@ export async function POST(req: NextRequest) {
         });
 
         await logNotification({
-          ruleId: (rule.id as string) ?? "",
-          ruleName: (rule.name as string) ?? "",
+          ruleId: rule.id ?? "",
+          ruleName: rule.name ?? "",
           channel: "email",
           recipient: lead.email as string,
           leadId: leadId,
@@ -141,8 +144,8 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : "Unknown error";
         await logNotification({
-          ruleId: (rule.id as string) ?? "",
-          ruleName: (rule.name as string) ?? "",
+          ruleId: rule.id ?? "",
+          ruleName: rule.name ?? "",
           channel: "email",
           recipient: lead.email as string,
           leadId: leadId,

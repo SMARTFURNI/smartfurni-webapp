@@ -277,6 +277,17 @@ export interface DashboardTheme {
   keyboardShortcutsEnabled: boolean;
 }
 
+export interface EmailWorkflowRule {
+  id: string;
+  enabled: boolean;
+  name: string;
+  triggerStage: string;
+  subject: string;
+  body: string;
+  delayMinutes: number;
+  fromName: string;
+}
+
 export interface CrmSettings {
   company: CompanyInfo;
   pipeline: PipelineStage[];
@@ -289,6 +300,7 @@ export interface CrmSettings {
   quote: QuoteConfig;
   email: EmailConfig;
   dashboardTheme: DashboardTheme;
+  emailRules: EmailWorkflowRule[];
 }
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -494,6 +506,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     presentationMode: false,
     keyboardShortcutsEnabled: true,
   },
+  emailRules: [],
 };
 
 // ─── DB Init ──────────────────────────────────────────────────────────────────
@@ -537,6 +550,7 @@ export async function getCrmSettings(): Promise<CrmSettings> {
     dashboardTheme: savedTheme
       ? { ...DEFAULT_SETTINGS.dashboardTheme, ...savedTheme }
       : DEFAULT_SETTINGS.dashboardTheme,
+    emailRules: (stored.emailRules as EmailWorkflowRule[]) ?? DEFAULT_SETTINGS.emailRules,
   };
 }
 
