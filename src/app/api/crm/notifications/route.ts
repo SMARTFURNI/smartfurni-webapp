@@ -13,7 +13,10 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
   if (type === "rules") return NextResponse.json(await getNotificationRules());
-  if (type === "logs") return NextResponse.json(await getNotificationLogs(100));
+  if (type === "logs") {
+    const limit = parseInt(searchParams.get("limit") ?? "100");
+    return NextResponse.json(await getNotificationLogs(limit));
+  }
   if (type === "zalo") return NextResponse.json(await getZaloConfig());
   if (type === "sms") return NextResponse.json(await getSmsConfig());
   if (type === "assignment") return NextResponse.json(await getAssignmentRules());

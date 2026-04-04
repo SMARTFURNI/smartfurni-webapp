@@ -62,6 +62,7 @@ export interface NotificationLog {
   ruleId: string;
   ruleName: string;
   channel: NotificationChannel;
+  actionType?: string;     // 'zalo_personal' | 'email' | 'zalo_oa' | 'automation'
   recipient: string;       // phone or zalo uid
   leadId?: string;
   leadName?: string;
@@ -149,6 +150,8 @@ export async function initNotificationsSchema(): Promise<void> {
     INSERT INTO crm_zalo_config (id) VALUES ('default') ON CONFLICT (id) DO NOTHING;
     INSERT INTO crm_sms_config (id) VALUES ('default') ON CONFLICT (id) DO NOTHING;
   `);
+  // Migration: add action_type column if not exists
+  await query(`ALTER TABLE crm_notification_logs ADD COLUMN IF NOT EXISTS action_type TEXT`).catch(() => {});
 }
 
 // ─── Notification Rules CRUD ──────────────────────────────────────────────────
@@ -389,6 +392,7 @@ export async function getNotificationLogs(limit = 50): Promise<NotificationLog[]
       ruleId: r.rule_id as string,
       ruleName: r.rule_name as string,
       channel: r.channel as NotificationChannel,
+      actionType: r.action_type as string | undefined,
       recipient: r.recipient as string,
       leadId: r.lead_id as string | undefined,
       leadName: r.lead_name as string | undefined,
@@ -405,9 +409,9 @@ export async function logNotification(log: Omit<NotificationLog, "id" | "sentAt"
     await initNotificationsSchema();
     const id = `nlog-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     await query(
-      `INSERT INTO crm_notification_logs (id, rule_id, rule_name, channel, recipient, lead_id, lead_name, message, status, error)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [id, log.ruleId, log.ruleName, log.channel, log.recipient, log.leadId ?? null, log.leadName ?? null, log.message, log.status, log.error ?? null]
+      `INSERT INTO crm_notification_logs (id, rule_id, rule_name, channel, action_type, recipient, lead_id, lead_name, message, status, error)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [id, log.ruleId, log.ruleName, log.channel, log.actionType ?? null, log.recipient, log.leadId ?? null, log.leadName ?? null, log.message, log.status, log.error ?? null]
     );
   } catch { /* silent */ }
 }

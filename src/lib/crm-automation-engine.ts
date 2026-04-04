@@ -263,8 +263,32 @@ async function executeAction(
       const { uid } = findResult.user;
       const sendResult = await sendZaloMessage({ conversationId: uid, content: message });
       if (sendResult.success) {
+        await logNotification({
+          ruleId,
+          ruleName,
+          channel: "zalo",
+          actionType: "zalo_personal",
+          recipient: normalizedPhone,
+          leadId: lead.id,
+          leadName: lead.name,
+          message: message.slice(0, 500),
+          status: "sent",
+        });
         return `Da gui Zalo den ${lead.name} (${normalizedPhone}): "${message.slice(0, 50)}..."` ;
       }
+
+      await logNotification({
+        ruleId,
+        ruleName,
+        channel: "zalo",
+        actionType: "zalo_personal",
+        recipient: normalizedPhone,
+        leadId: lead.id,
+        leadName: lead.name,
+        message: message.slice(0, 500),
+        status: "failed",
+        error: sendResult.error ?? "unknown",
+      });
 
       if (action.zaloFallbackToAddFriend) {
         const friendMsg = `Xin ch\u00e0o ${lead.name}! T\u00f4i l\u00e0 nh\u00e2n vi\u00ean SmartFurni.`;
