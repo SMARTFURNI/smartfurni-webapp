@@ -1448,22 +1448,73 @@ export default function ZaloInboxClient() {
             </div>
           )}
 
-          {/* Ảnh/Video section placeholder */}
-          <div style={{ padding: "12px 16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: T.textSecondary }}>Ảnh/Video</span>
-              <ChevronDown size={14} color={T.textMuted} />
-            </div>
-            <div style={{ fontSize: 12, color: T.textMuted, textAlign: "center", padding: "10px 0" }}>Chưa có ảnh nào</div>
-          </div>
+          {/* Ảnh/Video section - lọc từ messages */}
+          {(() => {
+            const mediaAttachments = messages.flatMap(m =>
+              (m.attachments || []).filter(a => (a.type === "image" || a.type === "video") && (a.url || a.thumb))
+                .map(a => ({ ...a, msgId: m.id, createdAt: m.createdAt }))
+            );
+            const fileAttachments = messages.flatMap(m =>
+              (m.attachments || []).filter(a => (a.type === "others" || a.type === "file") && a.fileName)
+                .map(a => ({ ...a, msgId: m.id, createdAt: m.createdAt }))
+            );
+            return (
+              <>
+                <div style={{ padding: "12px 16px", borderTop: `1px solid ${T.sidebarBorder}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: T.textSecondary }}>Ảnh/Video</span>
+                    <span style={{ fontSize: 11, color: T.textMuted }}>{mediaAttachments.length > 0 ? `${mediaAttachments.length} mục` : ""}</span>
+                  </div>
+                  {mediaAttachments.length === 0 ? (
+                    <div style={{ fontSize: 12, color: T.textMuted, textAlign: "center", padding: "10px 0" }}>Chưa có ảnh nào</div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4 }}>
+                      {mediaAttachments.slice(0, 9).map((a, i) => (
+                        <a key={`${a.msgId}-${i}`} href={a.url || a.thumb} target="_blank" rel="noreferrer"
+                          style={{ display: "block", aspectRatio: "1", borderRadius: 6, overflow: "hidden", background: T.sidebarHover, position: "relative" }}>
+                          <img src={a.thumb || a.url} alt=""
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          {a.type === "video" && (
+                            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.35)" }}>
+                              <div style={{ width: 0, height: 0, borderTop: "7px solid transparent", borderBottom: "7px solid transparent", borderLeft: "12px solid white", marginLeft: 2 }} />
+                            </div>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {mediaAttachments.length > 9 && (
+                    <div style={{ fontSize: 12, color: T.accent, textAlign: "center", marginTop: 8, cursor: "pointer" }}>Xem tất cả {mediaAttachments.length} ảnh/video</div>
+                  )}
+                </div>
 
-          <div style={{ padding: "0 16px 12px", borderTop: `1px solid ${T.sidebarBorder}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0 10px" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: T.textSecondary }}>File</span>
-              <ChevronDown size={14} color={T.textMuted} />
-            </div>
-            <div style={{ fontSize: 12, color: T.textMuted, textAlign: "center", padding: "6px 0" }}>Chưa có file nào</div>
-          </div>
+                <div style={{ padding: "0 16px 12px", borderTop: `1px solid ${T.sidebarBorder}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0 10px" }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: T.textSecondary }}>File</span>
+                    <span style={{ fontSize: 11, color: T.textMuted }}>{fileAttachments.length > 0 ? `${fileAttachments.length} mục` : ""}</span>
+                  </div>
+                  {fileAttachments.length === 0 ? (
+                    <div style={{ fontSize: 12, color: T.textMuted, textAlign: "center", padding: "6px 0" }}>Chưa có file nào</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {fileAttachments.slice(0, 5).map((a, i) => (
+                        <a key={`${a.msgId}-${i}`} href={a.url} target="_blank" rel="noreferrer"
+                          style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: T.sidebarHover, borderRadius: 8, textDecoration: "none", border: `1px solid ${T.sidebarBorder}` }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 6, background: T.accent + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <Paperclip size={14} color={T.accent} />
+                          </div>
+                          <div style={{ overflow: "hidden", flex: 1 }}>
+                            <div style={{ fontSize: 12, color: T.textPrimary, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.fileName}</div>
+                            <div style={{ fontSize: 11, color: T.textMuted }}>{a.fileSize ? `${(a.fileSize / 1024).toFixed(0)} KB` : ""}</div>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
 
