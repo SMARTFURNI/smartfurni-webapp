@@ -1022,3 +1022,1022 @@ export async function getZaloFriendRequestStatus(friendId: string): Promise<{
     return { success: false, error: error.message || "Lỗi kiểm tra trạng thái kết bạn" };
   }
 }
+
+// ─── Friends Extended API ─────────────────────────────────────────────────────
+
+/** Lấy danh sách tất cả bạn bè */
+export async function getAllZaloFriends(query?: string): Promise<{
+  success: boolean;
+  friends?: Array<{ userId: string; displayName: string; zaloName: string; avatar: string; phoneNumber?: string }>;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getAllFriends: () => Promise<unknown[]> };
+    let friends = await api.getAllFriends();
+    if (!Array.isArray(friends)) friends = [];
+    if (query) {
+      const q = query.toLowerCase();
+      friends = friends.filter((f: any) =>
+        (f.displayName ?? "").toLowerCase().includes(q) ||
+        (f.zaloName ?? "").toLowerCase().includes(q) ||
+        String(f.userId ?? "").includes(q)
+      );
+    }
+    return {
+      success: true,
+      friends: (friends as any[]).map((f: any) => ({
+        userId: f.userId,
+        displayName: f.displayName || f.zaloName || f.userId,
+        zaloName: f.zaloName || "",
+        avatar: f.avatar || "",
+        phoneNumber: f.phoneNumber || "",
+      })),
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy danh sách lời mời kết bạn đã gửi (đang chờ) */
+export async function getZaloSentFriendRequests(): Promise<{
+  success: boolean;
+  requests?: Array<{ userId: string; displayName: string; avatar: string; requestMessage?: string; sentAt?: number }>;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getSentFriendRequest: () => Promise<Record<string, any>> };
+    const response = await api.getSentFriendRequest();
+    const requests = Object.entries(response || {}).map(([uid, info]: [string, any]) => ({
+      userId: info.userId || uid,
+      displayName: info.displayName || info.zaloName || uid,
+      avatar: info.avatar || "",
+      requestMessage: info.fReqInfo?.message,
+      sentAt: info.fReqInfo?.time,
+    }));
+    return { success: true, requests };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Thu hồi lời mời kết bạn đã gửi */
+export async function undoZaloFriendRequest(userId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { undoFriendRequest: (userId: string) => Promise<unknown> };
+    await api.undoFriendRequest(userId);
+    broadcastSSE("friend_event", { type: "undo_sent", userId });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Hủy kết bạn */
+export async function removeZaloFriend(userId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { removeFriend: (userId: string) => Promise<unknown> };
+    await api.removeFriend(userId);
+    broadcastSSE("friend_event", { type: "unfriended", userId });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Đặt biệt danh cho bạn bè */
+export async function setZaloFriendNickname(userId: string, nickname: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { changeFriendAlias: (alias: string, userId: string) => Promise<unknown> };
+    await api.changeFriendAlias(nickname, userId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Xóa biệt danh bạn bè */
+export async function removeZaloFriendNickname(userId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { removeFriendAlias: (userId: string) => Promise<unknown> };
+    await api.removeFriendAlias(userId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy danh sách bạn bè đang online */
+export async function getZaloOnlineFriends(): Promise<{
+  success: boolean;
+  friends?: Array<{ userId: string; status: string }>;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getFriendOnlines: () => Promise<{ onlines?: Array<{ userId: string; status: string }> }> };
+    const response = await api.getFriendOnlines();
+    return { success: true, friends: response?.onlines ?? [] };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy gợi ý kết bạn */
+export async function getZaloFriendRecommendations(): Promise<{
+  success: boolean;
+  recommendations?: Array<{ userId: string; displayName: string; avatar: string; source?: string }>;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getFriendRecommendations: () => Promise<{ recommItems?: any[] }> };
+    const result = await api.getFriendRecommendations();
+    return {
+      success: true,
+      recommendations: (result?.recommItems ?? []).map((item: any) => ({
+        userId: item.userId,
+        displayName: item.displayName || item.dName || item.userId,
+        avatar: item.avatar || "",
+        source: item.source,
+      })),
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy danh sách biệt danh bạn bè */
+export async function getZaloAliasList(): Promise<{
+  success: boolean;
+  aliases?: Array<{ userId: string; alias: string }>;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getAliasList: () => Promise<{ items?: any[] }> };
+    const result = await api.getAliasList();
+    return { success: true, aliases: (result?.items ?? []).map((a: any) => ({ userId: a.userId, alias: a.alias })) };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy thông tin tài khoản của mình */
+export async function getZaloMyProfile(): Promise<{
+  success: boolean;
+  profile?: { userId: string; displayName: string; zaloName: string; avatar: string; phoneNumber?: string; gender?: number; dob?: string };
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getOwnId: () => string; fetchAccountInfo?: () => Promise<any> };
+    const ownId = api.getOwnId();
+    let raw: any = null;
+    try { raw = await api.fetchAccountInfo?.(); } catch { /* ignore */ }
+    const info = raw?.profile ?? raw;
+    return {
+      success: true,
+      profile: {
+        userId: info?.userId ?? ownId ?? "",
+        displayName: info?.displayName ?? "",
+        zaloName: info?.zaloName ?? "",
+        avatar: info?.avatar ?? "",
+        phoneNumber: info?.phoneNumber,
+        gender: info?.gender,
+        dob: info?.sdob,
+      },
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── Groups API ───────────────────────────────────────────────────────────────
+
+/** Lấy danh sách tất cả nhóm */
+export async function getAllZaloGroups(queryStr?: string): Promise<{
+  success: boolean;
+  groups?: Array<{ groupId: string; name: string; desc?: string; totalMember?: number; avatar?: string; adminIds?: string[] }>;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as {
+      getAllGroups: () => Promise<{ gridVerMap?: Record<string, unknown> }>;
+      getGroupInfo: (ids: string[]) => Promise<{ gridInfoMap?: Record<string, any> }>;
+    };
+    const groupsResp = await api.getAllGroups();
+    const groupIds = Object.keys(groupsResp?.gridVerMap ?? {});
+    if (groupIds.length === 0) return { success: true, groups: [] };
+    const infoResp = await api.getGroupInfo(groupIds);
+    let groups = Object.entries(infoResp?.gridInfoMap ?? {}).map(([id, info]: [string, any]) => ({
+      groupId: id,
+      name: info.name || id,
+      desc: info.desc,
+      totalMember: info.totalMember,
+      maxMember: info.maxMember,
+      creatorId: info.creatorId,
+      adminIds: info.adminIds || [],
+      avatar: info.avt || "",
+    }));
+    if (queryStr) {
+      const q = queryStr.toLowerCase();
+      groups = groups.filter(g => (g.name ?? "").toLowerCase().includes(q) || g.groupId.includes(q));
+    }
+    return { success: true, groups };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy thông tin chi tiết một nhóm */
+export async function getZaloGroupInfo(groupId: string): Promise<{
+  success: boolean;
+  group?: any;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getGroupInfo: (id: string | string[]) => Promise<{ gridInfoMap?: Record<string, any> }> };
+    const infoResp = await api.getGroupInfo(groupId);
+    const info = infoResp?.gridInfoMap?.[groupId];
+    if (!info) return { success: false, error: "Không tìm thấy nhóm" };
+    return { success: true, group: { groupId, name: info.name, desc: info.desc, totalMember: info.totalMember, maxMember: info.maxMember, creatorId: info.creatorId, adminIds: info.adminIds, avatar: info.avt, createdTime: info.createdTime } };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Tạo nhóm mới */
+export async function createZaloGroup(params: { name?: string; memberIds: string[] }): Promise<{
+  success: boolean;
+  groupId?: string;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { createGroup: (opts: { name?: string; members: string[] }) => Promise<{ groupId?: string }> };
+    const result = await api.createGroup({ name: params.name, members: params.memberIds });
+    return { success: true, groupId: result?.groupId };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Thêm thành viên vào nhóm */
+export async function addZaloUserToGroup(userId: string, groupId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { addUserToGroup: (memberId: string, groupId: string) => Promise<{ errorMembers?: string[] }> };
+    const result = await api.addUserToGroup(userId, groupId);
+    if (result?.errorMembers?.length) return { success: false, error: `Không thể thêm: ${result.errorMembers.join(", ")}` };
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Xóa thành viên khỏi nhóm */
+export async function removeZaloUserFromGroup(userId: string, groupId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { removeUserFromGroup: (memberId: string, groupId: string) => Promise<unknown> };
+    await api.removeUserFromGroup(userId, groupId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Rời nhóm */
+export async function leaveZaloGroup(groupId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { leaveGroup: (groupId: string) => Promise<unknown> };
+    await api.leaveGroup(groupId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Đổi tên nhóm */
+export async function changeZaloGroupName(groupId: string, name: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { changeGroupName: (name: string, groupId: string) => Promise<unknown> };
+    await api.changeGroupName(name, groupId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy link tham gia nhóm */
+export async function getZaloGroupLink(groupId: string): Promise<{ success: boolean; link?: string; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getGroupLink: (groupId: string) => Promise<{ link?: string }> };
+    const result = await api.getGroupLink(groupId);
+    return { success: true, link: result?.link };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Bật link tham gia nhóm */
+export async function enableZaloGroupLink(groupId: string): Promise<{ success: boolean; link?: string; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { enableGroupLink: (groupId: string) => Promise<{ link?: string }> };
+    const result = await api.enableGroupLink(groupId);
+    return { success: true, link: result?.link };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Tham gia nhóm qua link */
+export async function joinZaloGroupByLink(link: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { joinGroupLink: (link: string) => Promise<unknown> };
+    await api.joinGroupLink(link);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy danh sách lời mời vào nhóm */
+export async function getZaloGroupInvites(): Promise<{ success: boolean; invites?: any; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getGroupInviteBoxList: () => Promise<any> };
+    const result = await api.getGroupInviteBoxList();
+    return { success: true, invites: result };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Chấp nhận lời mời vào nhóm */
+export async function joinZaloGroupInvite(groupId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { joinGroupInviteBox: (groupId: string) => Promise<unknown> };
+    await api.joinGroupInviteBox(groupId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy danh sách thành viên bị block trong nhóm */
+export async function getZaloGroupBlockedMembers(groupId: string): Promise<{
+  success: boolean;
+  members?: Array<{ userId: string; displayName: string; avatar: string }>;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getGroupBlockedMember: (opts: object, groupId: string) => Promise<{ blocked_members?: any[] }> };
+    const result = await api.getGroupBlockedMember({}, groupId);
+    return {
+      success: true,
+      members: (result?.blocked_members ?? []).map((m: any) => ({
+        userId: m.id,
+        displayName: m.dName || m.zaloName || m.id,
+        avatar: m.avatar || "",
+      })),
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Block thành viên trong nhóm (Zalo-level) */
+export async function blockZaloGroupMember(userId: string, groupId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { addGroupBlockedMember: (memberId: string, groupId: string) => Promise<unknown> };
+    await api.addGroupBlockedMember(userId, groupId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Unblock thành viên trong nhóm */
+export async function unblockZaloGroupMember(userId: string, groupId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { removeGroupBlockedMember: (memberId: string, groupId: string) => Promise<unknown> };
+    await api.removeGroupBlockedMember(userId, groupId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Mời user vào nhiều nhóm */
+export async function inviteZaloUserToGroups(userId: string, groupIds: string[]): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { inviteUserToGroups: (userId: string, groupIds: string[]) => Promise<unknown> };
+    await api.inviteUserToGroups(userId, groupIds);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Đổi chủ nhóm */
+export async function changeZaloGroupOwner(userId: string, groupId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { changeGroupOwner: (memberId: string, groupId: string) => Promise<unknown> };
+    await api.changeGroupOwner(userId, groupId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Giải tán nhóm */
+export async function disperseZaloGroup(groupId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { disperseGroup: (groupId: string) => Promise<unknown> };
+    await api.disperseGroup(groupId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy nhóm chung với một user */
+export async function getZaloRelatedFriendGroups(userId: string): Promise<{ success: boolean; groupIds?: string[]; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getRelatedFriendGroup: (userId: string) => Promise<{ groupRelateds?: Record<string, string[]> }> };
+    const result = await api.getRelatedFriendGroup(userId);
+    return { success: true, groupIds: result?.groupRelateds?.[userId] ?? [] };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── Message Extended API ─────────────────────────────────────────────────────
+
+/** Thu hồi tin nhắn */
+export async function recallZaloMessage(params: {
+  msgId: string;
+  cliMsgId: string;
+  threadId: string;
+  isGroup?: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType } = require("zca-js");
+    const api = zaloApi as { undo: (msg: { msgId: string; cliMsgId: string }, threadId: string, type: number) => Promise<unknown> };
+    const type = params.isGroup ? ThreadType.Group : ThreadType.User;
+    await api.undo({ msgId: params.msgId, cliMsgId: params.cliMsgId }, params.threadId, type);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Thêm reaction vào tin nhắn */
+export async function addZaloReaction(params: {
+  threadId: string;
+  msgId: string;
+  cliMsgId: string;
+  icon: string;
+  isGroup?: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType, Reactions } = require("zca-js");
+    const iconMap: Record<string, string> = {
+      heart: Reactions.HEART, like: Reactions.LIKE, haha: Reactions.HAHA,
+      wow: Reactions.WOW, cry: Reactions.CRY, angry: Reactions.ANGRY,
+      kiss: Reactions.KISS, sad: Reactions.SAD, dislike: Reactions.DISLIKE,
+      love: Reactions.LOVE, ok: Reactions.OK, pray: Reactions.PRAY,
+    };
+    const reactionIcon = iconMap[params.icon.toLowerCase()] ?? params.icon;
+    const api = zaloApi as { addReaction: (icon: string, opts: { data: { msgId: string; cliMsgId: string }; threadId: string; type: number }) => Promise<unknown> };
+    const type = params.isGroup ? ThreadType.Group : ThreadType.User;
+    await api.addReaction(reactionIcon, { data: { msgId: params.msgId, cliMsgId: params.cliMsgId }, threadId: params.threadId, type });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Chuyển tiếp tin nhắn */
+export async function forwardZaloMessage(params: {
+  message: string;
+  threadIds: string[];
+  isGroup?: boolean;
+}): Promise<{ success: boolean; successCount?: number; failCount?: number; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType } = require("zca-js");
+    const api = zaloApi as { forwardMessage: (msg: { message: string }, threadIds: string[], type: number) => Promise<{ success?: string[]; fail?: string[] }> };
+    const type = params.isGroup ? ThreadType.Group : ThreadType.User;
+    const result = await api.forwardMessage({ message: params.message }, params.threadIds, type);
+    return { success: true, successCount: result?.success?.length ?? 0, failCount: result?.fail?.length ?? 0 };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Gửi tin nhắn có định dạng (styled) */
+export async function sendZaloStyledMessage(params: {
+  threadId: string;
+  message: string;
+  isGroup?: boolean;
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType } = require("zca-js");
+    const api = zaloApi as { sendMessage: (msg: { msg: string }, threadId: string, type: number) => Promise<{ message?: { msgId?: string } }> };
+    const type = params.isGroup ? ThreadType.Group : ThreadType.User;
+    const result = await api.sendMessage({ msg: params.message }, params.threadId, type);
+    return { success: true, messageId: result?.message?.msgId };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Gửi sticker */
+export async function sendZaloSticker(params: {
+  threadId: string;
+  stickerId: number;
+  stickerCateId: number;
+  isGroup?: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType } = require("zca-js");
+    const api = zaloApi as { sendSticker: (sticker: { id: number; cateId: number; type: number }, threadId: string, type: number) => Promise<unknown> };
+    const type = params.isGroup ? ThreadType.Group : ThreadType.User;
+    await api.sendSticker({ id: params.stickerId, cateId: params.stickerCateId, type: 0 }, params.threadId, type);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Tìm kiếm sticker */
+export async function searchZaloStickers(keyword: string): Promise<{
+  success: boolean;
+  stickers?: Array<{ id: number; cateId: number; text: string; stickerUrl: string }>;
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as {
+      getStickers: (keyword: string) => Promise<number[]>;
+      getStickersDetail: (ids: number[]) => Promise<any[]>;
+    };
+    const stickerIds = await api.getStickers(keyword);
+    if (!stickerIds?.length) return { success: true, stickers: [] };
+    const details = await api.getStickersDetail(stickerIds.slice(0, 20));
+    return {
+      success: true,
+      stickers: (Array.isArray(details) ? details : []).map((s: any) => ({
+        id: s.id, cateId: s.cateId, text: s.text, stickerUrl: s.stickerUrl,
+      })),
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Gửi typing event */
+export async function sendZaloTypingEvent(threadId: string, isGroup?: boolean): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType } = require("zca-js");
+    const api = zaloApi as { sendTypingEvent: (threadId: string, type: number) => Promise<unknown> };
+    await api.sendTypingEvent(threadId, isGroup ? ThreadType.Group : ThreadType.User);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── Auto-Reply API ───────────────────────────────────────────────────────────
+
+/** Lấy danh sách auto-reply */
+export async function getZaloAutoReplies(): Promise<{ success: boolean; replies?: any[]; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getAutoReplyList: () => Promise<{ items?: any[] }> };
+    const result = await api.getAutoReplyList();
+    return { success: true, replies: result?.items ?? [] };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Tạo auto-reply */
+export async function createZaloAutoReply(params: {
+  message: string;
+  startTime?: number;
+  endTime?: number;
+}): Promise<{ success: boolean; item?: any; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as {
+      createAutoReply: (opts: { content: string; isEnable: boolean; startTime: number; endTime: number; scope: number }) => Promise<{ item?: any }>;
+    };
+    const result = await api.createAutoReply({
+      content: params.message,
+      isEnable: true,
+      startTime: params.startTime ?? 0,
+      endTime: params.endTime ?? 0,
+      scope: 0,
+    });
+    return { success: true, item: result?.item };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Xóa auto-reply */
+export async function deleteZaloAutoReply(replyId: number): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { deleteAutoReply: (replyId: number) => Promise<unknown> };
+    await api.deleteAutoReply(replyId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── Catalog & Products API ───────────────────────────────────────────────────
+
+/** Lấy danh sách catalog */
+export async function getZaloCatalogs(): Promise<{ success: boolean; catalogs?: any[]; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getCatalogList: () => Promise<{ items?: any[]; has_more?: number }> };
+    const result = await api.getCatalogList();
+    return { success: true, catalogs: result?.items ?? [] };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Tạo catalog */
+export async function createZaloCatalog(title: string): Promise<{ success: boolean; catalog?: any; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { createCatalog: (title: string) => Promise<{ item?: any }> };
+    const result = await api.createCatalog(title);
+    return { success: true, catalog: result?.item };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Cập nhật catalog */
+export async function updateZaloCatalog(catalogId: string, title: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { updateCatalog: (opts: { catalogId: string; catalogName: string }) => Promise<unknown> };
+    await api.updateCatalog({ catalogId, catalogName: title });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Xóa catalog */
+export async function deleteZaloCatalog(catalogId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { deleteCatalog: (catalogId: string) => Promise<unknown> };
+    await api.deleteCatalog(catalogId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy danh sách sản phẩm trong catalog */
+export async function getZaloProducts(catalogId: string): Promise<{ success: boolean; products?: any[]; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getProductCatalogList: (opts: { catalogId: string }) => Promise<{ items?: any[] }> };
+    const result = await api.getProductCatalogList({ catalogId });
+    return { success: true, products: result?.items ?? [] };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Tạo sản phẩm trong catalog */
+export async function createZaloProduct(params: {
+  catalogId: string;
+  title: string;
+  price: number;
+  description?: string;
+}): Promise<{ success: boolean; product?: any; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { createProductCatalog: (opts: { catalogId: string; productName: string; price: number; description: string }) => Promise<{ item?: any }> };
+    const result = await api.createProductCatalog({ catalogId: params.catalogId, productName: params.title, price: params.price, description: params.description || "" });
+    return { success: true, product: result?.item };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Cập nhật sản phẩm */
+export async function updateZaloProduct(params: {
+  catalogId: string;
+  productId: string;
+  title: string;
+  price: number;
+  description?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { updateProductCatalog: (opts: any) => Promise<unknown> };
+    await api.updateProductCatalog({ catalogId: params.catalogId, productId: params.productId, productName: params.title, price: params.price, description: params.description || "", createTime: Date.now() });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Xóa sản phẩm */
+export async function deleteZaloProduct(catalogId: string, productId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { deleteProductCatalog: (opts: { catalogId: string; productIds: string }) => Promise<unknown> };
+    await api.deleteProductCatalog({ catalogId, productIds: productId });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── Reminders API ────────────────────────────────────────────────────────────
+
+/** Lấy danh sách reminder trong hội thoại */
+export async function getZaloReminders(threadId: string, isGroup?: boolean): Promise<{ success: boolean; reminders?: any[]; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType } = require("zca-js");
+    const api = zaloApi as { getListReminder: (opts: object, threadId: string, type: number) => Promise<any[]> };
+    const result = await api.getListReminder({}, threadId, isGroup ? ThreadType.Group : ThreadType.User);
+    return { success: true, reminders: Array.isArray(result) ? result : [] };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Tạo reminder */
+export async function createZaloReminder(params: {
+  threadId: string;
+  title: string;
+  emoji?: string;
+  startTime?: number;
+  repeat?: string;
+  isGroup?: boolean;
+}): Promise<{ success: boolean; reminder?: any; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType } = require("zca-js");
+    const api = zaloApi as { createReminder: (opts: any, threadId: string, type: number) => Promise<any> };
+    const result = await api.createReminder({ title: params.title, emoji: params.emoji, startTime: params.startTime, repeat: params.repeat }, params.threadId, params.isGroup ? ThreadType.Group : ThreadType.User);
+    return { success: true, reminder: result };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Xóa reminder */
+export async function removeZaloReminder(reminderId: string, threadId: string, isGroup?: boolean): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType } = require("zca-js");
+    const api = zaloApi as { removeReminder: (reminderId: string, threadId: string, type: number) => Promise<unknown> };
+    await api.removeReminder(reminderId, threadId, isGroup ? ThreadType.Group : ThreadType.User);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── Labels API ───────────────────────────────────────────────────────────────
+
+/** Lấy danh sách nhãn (labels) */
+export async function getZaloLabels(): Promise<{ success: boolean; labels?: any[]; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getLabels: () => Promise<{ labelData?: any[] }> };
+    const result = await api.getLabels();
+    return { success: true, labels: result?.labelData ?? [] };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── Polls API ────────────────────────────────────────────────────────────────
+
+/** Tạo bình chọn trong nhóm */
+export async function createZaloPoll(params: {
+  groupId: string;
+  title: string;
+  options: string[];
+}): Promise<{ success: boolean; poll?: any; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { createPoll: (opts: { question: string; options: string[] }, groupId: string) => Promise<any> };
+    const result = await api.createPoll({ question: params.title, options: params.options }, params.groupId);
+    return { success: true, poll: result };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Vote bình chọn */
+export async function voteZaloPoll(pollId: number, optionId: number): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { votePoll: (pollId: number, optionId: number) => Promise<unknown> };
+    await api.votePoll(pollId, optionId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Khóa bình chọn */
+export async function lockZaloPoll(pollId: number): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { lockPoll: (pollId: number) => Promise<unknown> };
+    await api.lockPoll(pollId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── Settings API ─────────────────────────────────────────────────────────────
+
+/** Lấy cài đặt tài khoản */
+export async function getZaloSettings(): Promise<{ success: boolean; settings?: any; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getSettings: () => Promise<any> };
+    const result = await api.getSettings();
+    return { success: true, settings: result };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Cập nhật cài đặt tài khoản */
+export async function updateZaloSetting(settingKey: string, settingValue: unknown): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { updateSettings: (key: string, value: unknown) => Promise<unknown> };
+    await api.updateSettings(settingKey, settingValue);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── Notes API ────────────────────────────────────────────────────────────────
+
+/** Tạo ghi chú trong nhóm */
+export async function createZaloNote(groupId: string, title: string, pinAct?: number): Promise<{ success: boolean; note?: any; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { createNote: (opts: { title: string; pinAct?: number }, groupId: string) => Promise<any> };
+    const result = await api.createNote({ title, pinAct }, groupId);
+    return { success: true, note: result };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Lấy danh sách board trong nhóm */
+export async function getZaloBoards(groupId: string): Promise<{ success: boolean; boards?: any[]; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getListBoard: (opts: object, groupId: string) => Promise<{ items?: any[] }> };
+    const result = await api.getListBoard({}, groupId);
+    return { success: true, boards: result?.items ?? [] };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ─── User Info API ────────────────────────────────────────────────────────────
+
+/** Lấy thông tin chi tiết một user */
+export async function getZaloUserInfo(userId: string): Promise<{ success: boolean; user?: any; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getUserInfo: (userId: string) => Promise<any> };
+    const result = await api.getUserInfo(userId);
+    return { success: true, user: result };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/** Gửi tin nhắn đến người lạ (chưa kết bạn) */
+export async function sendZaloMessageToStranger(params: {
+  userId: string;
+  message: string;
+  qna?: string;
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const { ThreadType } = require("zca-js");
+    const api = zaloApi as { sendMessageToStranger: (opts: { msg: string; qna?: string }, userId: string, type: number) => Promise<{ message?: { msgId?: string } }> };
+    const result = await api.sendMessageToStranger({ msg: params.message, qna: params.qna }, params.userId, ThreadType.User);
+    return { success: true, messageId: result?.message?.msgId };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
