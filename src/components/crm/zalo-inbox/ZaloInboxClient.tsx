@@ -743,9 +743,11 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
         )}
 
         {qrData?.qr && (
-          <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <img src={qrData.qr} alt="QR Code" style={{ width: 200, height: 200, borderRadius: 12, border: `2px solid ${T.accent}` }} />
-            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 8 }}>Quét bằng Zalo để đăng nhập</div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 16, padding: "8px 0" }}>
+            <div style={{ background: "#fff", padding: 12, borderRadius: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", display: "inline-flex" }}>
+              <img src={qrData.qr} alt="QR Code" style={{ width: 200, height: 200, display: "block", borderRadius: 4 }} />
+            </div>
+            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 10, textAlign: "center" }}>Quét bằng Zalo để đăng nhập</div>
           </div>
         )}
 
