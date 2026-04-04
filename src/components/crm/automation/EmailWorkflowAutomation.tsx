@@ -306,15 +306,36 @@ function SmtpStatusBanner({ status }: { status: SmtpStatusInfo | null }) {
 
 export default function EmailWorkflowAutomation() {
   const [rules, setRules] = useState<EmailRule[]>([]);
+  const [allRules, setAllRules] = useState<{ id: string; actions: { type: string }[] }[]>([]);
   const [smtpStatus, setSmtpStatus] = useState<SmtpStatusInfo | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    // Load email workflow rules
-    fetch("/api/crm/automation/email-rules")
+    // Load ALL automation rules from shared table (same as Zalo Workflow)
+    fetch("/api/crm/automation?type=rules")
       .then(r => r.json())
-      .then(d => { if (Array.isArray(d)) setRules(d); })
+      .then((allData: { id: string; name: string; description: string; enabled: boolean; trigger: { type: string; toStage?: string }; actions: { type: string; emailSubject?: string; emailBody?: string; emailFromName?: string; emailDelayMinutes?: number }[]; runCount: number; lastRunAt: string | null; createdAt: string; updatedAt: string }[]) => {
+        if (!Array.isArray(allData)) return;
+        setAllRules(allData);
+        // Filter only email workflow rules
+        const emailRules = allData
+          .filter(r => r.actions.some(a => a.type === "send_email_workflow"))
+          .map(r => {
+            const action = r.actions.find(a => a.type === "send_email_workflow")!;
+            return {
+              id: r.id,
+              enabled: r.enabled,
+              name: r.name,
+              triggerStage: r.trigger.toStage ?? "new",
+              subject: action.emailSubject ?? "",
+              body: action.emailBody ?? "",
+              delayMinutes: action.emailDelayMinutes ?? 0,
+              fromName: action.emailFromName ?? "SmartFurni",
+            } as EmailRule;
+          });
+        setRules(emailRules);
+      })
       .catch(() => {});
 
     // Load SMTP status from Email Marketing settings (crm_settings key "email")
@@ -355,11 +376,36 @@ export default function EmailWorkflowAutomation() {
   const save = async () => {
     setSaving(true);
     try {
-      await fetch("/api/crm/automation/email-rules", {
+      // Convert EmailRule -> AutomationRule format (same as Zalo Workflow pattern)
+      const emailAutomationRules = rules.map(rule => ({
+        id: rule.id,
+        name: rule.name,
+        description: `Gửi email tự động khi chuyển sang ${STAGE_LABEL[rule.triggerStage] ?? rule.triggerStage}`,
+        enabled: rule.enabled,
+        trigger: { type: "stage_changed", toStage: rule.triggerStage },
+        actions: [{
+          type: "send_email_workflow",
+          emailSubject: rule.subject,
+          emailBody: rule.body,
+          emailFromName: rule.fromName,
+          emailDelayMinutes: rule.delayMinutes,
+        }],
+        runCount: 0,
+        lastRunAt: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+
+      // Merge: keep non-email rules, replace email workflow rules (same as Zalo pattern)
+      const nonEmailRules = allRules.filter(r => !r.actions.some(a => a.type === "send_email_workflow"));
+      const merged = [...nonEmailRules, ...emailAutomationRules];
+
+      await fetch("/api/crm/automation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(rules),
+        body: JSON.stringify({ type: "rules", data: merged }),
       });
+      setAllRules(merged);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {

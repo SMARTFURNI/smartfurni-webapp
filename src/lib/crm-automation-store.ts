@@ -18,7 +18,8 @@ export type ActionType =
   | "notify_manager"       // Thông báo quản lý
   | "move_stage"           // Chuyển giai đoạn
   | "send_webhook"         // Gửi webhook ra ngoài
-  | "send_zalo_personal";  // Gửi tin nhắn Zalo Personal
+  | "send_zalo_personal"  // Gửi tin nhắn Zalo Personal
+  | "send_email_workflow"; // Gửi email workflow (Email Automation tab)
 
 export interface AutomationTrigger {
   type: TriggerType;
@@ -40,9 +41,12 @@ export interface AutomationAction {
   taskTitle?: string;
   taskDueDays?: number;        // due in N days from now
   taskPriority?: "high" | "medium" | "low";
-  // send_email
+  // send_email / send_email_workflow
   emailTemplateId?: string;
   emailSubject?: string;
+  emailBody?: string;         // Nội dung email (hỗ trợ {{name}}, {{stage}}, ...)
+  emailFromName?: string;     // Tên người gửi
+  emailDelayMinutes?: number; // Trì hoãn gửi (phút)
   // assign_staff
   assignMode?: "specific" | "round_robin" | "least_loaded";
   assignStaffId?: string;
@@ -281,4 +285,5 @@ export const ACTION_LABELS: Record<ActionType, string> = {
   move_stage: "Chuyển giai đoạn",
   send_webhook: "Gửi webhook",
   send_zalo_personal: "Gửi tin nhắn Zalo Personal",
+  send_email_workflow: "Gửi email tự động (Email Workflow)",
 };

@@ -28,6 +28,7 @@ const ACTION_COLORS: Record<ActionType, string> = {
   add_tag: "#C9A84C", notify_manager: "#f97316", move_stage: "#06b6d4",
   send_webhook: "#f87171",
   send_zalo_personal: "#0ea5e9",
+  send_email_workflow: "#a78bfa",
 };
 
 const STAGES = [
@@ -206,6 +207,15 @@ function ActionEditor({ action, onChange, onRemove }: {
         <input placeholder="Tiêu đề email" value={action.emailSubject ?? ""} onChange={e => onChange({ ...action, emailSubject: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
           style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+      )}
+
+      {action.type === "send_email_workflow" && (
+        <div className="space-y-2">
+          <input placeholder="Tiêu đề email" value={action.emailSubject ?? ""} onChange={e => onChange({ ...action, emailSubject: e.target.value })}
+            className="w-full px-2 py-1.5 rounded text-xs outline-none"
+            style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+          <p className="text-xs" style={{ color: "#6b7280" }}>Nội dung email được cấu hình trong tab Email Workflow</p>
+        </div>
       )}
 
       {action.type === "add_tag" && (
