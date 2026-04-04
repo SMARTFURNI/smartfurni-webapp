@@ -81,6 +81,28 @@ export function broadcastSSE(event: string, data: unknown) {
   }
 }
 
+// ─── Friend Request Types ───────────────────────────────────────────────────
+
+export interface FriendRequest {
+  fromUid: string;
+  toUid: string;
+  message: string;
+  timestamp: number;
+  displayName?: string;
+  avatar?: string;
+}
+
+// In-memory store for pending friend requests (incoming)
+const incomingFriendRequests: Map<string, FriendRequest> = new Map();
+
+export function getIncomingFriendRequests(): FriendRequest[] {
+  return Array.from(incomingFriendRequests.values()).sort((a, b) => b.timestamp - a.timestamp);
+}
+
+export function clearIncomingFriendRequest(fromUid: string) {
+  incomingFriendRequests.delete(fromUid);
+}
+
 // ─── Gateway State ────────────────────────────────────────────────────────────
 
 let zaloApi: unknown = null;
@@ -403,6 +425,61 @@ function setupListeners(api: unknown) {
       ...processed,
       threadId,
     });
+  });
+
+  // Lắng nghe friend events (kết bạn, yêu cầu kết bạn)
+  apiObj.listener.on("friend_event", async (event: Record<string, unknown>) => {
+    try {
+      const eventType = (event.type as number);
+      const eventData = event.data as Record<string, unknown>;
+      const isSelf = event.isSelf as boolean;
+
+      // FriendEventType.REQUEST = 2
+      if (eventType === 2 && !isSelf) {
+        // Có người gửi lời mời kết bạn đến mình
+        const fromUid = (eventData.fromUid as string) || "";
+        const toUid = (eventData.toUid as string) || "";
+        const message = (eventData.message as string) || "";
+        if (fromUid) {
+          const req: FriendRequest = {
+            fromUid,
+            toUid,
+            message,
+            timestamp: Date.now(),
+          };
+          // Thử lấy thông tin user
+          try {
+            const api2 = zaloApi as { findUser: (phone: string) => Promise<{ display_name?: string; zalo_name?: string; avatar?: string; uid?: string }> };
+            // Không có phone, dùng uid để tìm nếu có thể
+            req.displayName = fromUid;
+          } catch { /* ignore */ }
+          incomingFriendRequests.set(fromUid, req);
+          broadcastSSE("friend_request", { type: "incoming", request: req });
+          console.log(`[ZaloGateway] Incoming friend request from ${fromUid}: ${message}`);
+        }
+      }
+      // FriendEventType.ADD = 0 (đã kết bạn thành công)
+      else if (eventType === 0) {
+        const friendUid = (eventData as unknown as string) || "";
+        broadcastSSE("friend_event", { type: "added", userId: friendUid, isSelf });
+        console.log(`[ZaloGateway] Friend added: ${friendUid}`);
+      }
+      // FriendEventType.REJECT_REQUEST = 4
+      else if (eventType === 4) {
+        const fromUid = (eventData.fromUid as string) || "";
+        const toUid = (eventData.toUid as string) || "";
+        broadcastSSE("friend_event", { type: "rejected", fromUid, toUid, isSelf });
+        console.log(`[ZaloGateway] Friend request rejected: from=${fromUid} to=${toUid}`);
+      }
+      // FriendEventType.UNDO_REQUEST = 3
+      else if (eventType === 3) {
+        const fromUid = (eventData.fromUid as string) || "";
+        if (fromUid) incomingFriendRequests.delete(fromUid);
+        broadcastSSE("friend_event", { type: "undo_request", fromUid, isSelf });
+      }
+    } catch (err) {
+      console.error("[ZaloGateway] friend_event error:", err);
+    }
   });
 
   apiObj.listener.on("close", (reason: unknown) => {
@@ -787,5 +864,161 @@ export async function sendZaloAttachment(params: {
     const error = err as Error;
     console.error("[ZaloGateway] sendZaloAttachment error:", error);
     return { success: false, error: error.message || "Lỗi gửi attachment" };
+  }
+}
+
+// ─── Friend API Functions ─────────────────────────────────────────────────────
+
+/**
+ * Tìm user Zalo qua số điện thoại
+ */
+export async function findZaloUserByPhone(phone: string): Promise<{
+  success: boolean;
+  user?: { uid: string; displayName: string; avatar: string; zaloName: string };
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) {
+    return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
+  }
+  try {
+    const api = zaloApi as {
+      findUser: (phone: string) => Promise<{
+        uid?: string;
+        display_name?: string;
+        zalo_name?: string;
+        avatar?: string;
+      }>;
+    };
+    const result = await api.findUser(phone);
+    if (!result || !result.uid) {
+      return { success: false, error: "Không tìm thấy người dùng với số điện thoại này." };
+    }
+    return {
+      success: true,
+      user: {
+        uid: result.uid,
+        displayName: result.display_name || result.zalo_name || result.uid,
+        avatar: result.avatar || "",
+        zaloName: result.zalo_name || "",
+      },
+    };
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[ZaloGateway] findZaloUserByPhone error:", error);
+    return { success: false, error: error.message || "Lỗi tìm kiếm người dùng" };
+  }
+}
+
+/**
+ * Gửi lời mời kết bạn đến một user
+ */
+export async function sendZaloFriendRequest(params: {
+  userId: string;
+  message?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) {
+    return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
+  }
+  try {
+    const api = zaloApi as {
+      sendFriendRequest: (msg: string, userId: string) => Promise<unknown>;
+    };
+    const msg = params.message || "Xin chào, tôi muốn kết bạn với bạn!";
+    await api.sendFriendRequest(msg, params.userId);
+    return { success: true };
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[ZaloGateway] sendZaloFriendRequest error:", error);
+    return { success: false, error: error.message || "Lỗi gửi lời mời kết bạn" };
+  }
+}
+
+/**
+ * Chấp nhận lời mời kết bạn
+ */
+export async function acceptZaloFriendRequest(friendId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) {
+    return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
+  }
+  try {
+    const api = zaloApi as {
+      acceptFriendRequest: (friendId: string) => Promise<unknown>;
+    };
+    await api.acceptFriendRequest(friendId);
+    // Xóa khỏi danh sách incoming requests
+    clearIncomingFriendRequest(friendId);
+    broadcastSSE("friend_event", { type: "accepted", userId: friendId });
+    return { success: true };
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[ZaloGateway] acceptZaloFriendRequest error:", error);
+    return { success: false, error: error.message || "Lỗi chấp nhận lời mời kết bạn" };
+  }
+}
+
+/**
+ * Từ chối lời mời kết bạn
+ */
+export async function rejectZaloFriendRequest(friendId: string): Promise<{ success: boolean; error?: string }> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) {
+    return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
+  }
+  try {
+    const api = zaloApi as {
+      rejectFriendRequest: (friendId: string) => Promise<unknown>;
+    };
+    await api.rejectFriendRequest(friendId);
+    // Xóa khỏi danh sách incoming requests
+    clearIncomingFriendRequest(friendId);
+    broadcastSSE("friend_event", { type: "rejected_by_me", userId: friendId });
+    return { success: true };
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[ZaloGateway] rejectZaloFriendRequest error:", error);
+    return { success: false, error: error.message || "Lỗi từ chối lời mời kết bạn" };
+  }
+}
+
+/**
+ * Kiểm tra trạng thái kết bạn với một user
+ */
+export async function getZaloFriendRequestStatus(friendId: string): Promise<{
+  success: boolean;
+  status?: {
+    isFriend: boolean;
+    isRequested: boolean; // mình đã gửi lời mời
+    isRequesting: boolean; // họ đã gửi lời mời cho mình
+  };
+  error?: string;
+}> {
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) {
+    return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
+  }
+  try {
+    const api = zaloApi as {
+      getFriendRequestStatus: (friendId: string) => Promise<{
+        is_friend: number;
+        is_requested: number;
+        is_requesting: number;
+      }>;
+    };
+    const result = await api.getFriendRequestStatus(friendId);
+    return {
+      success: true,
+      status: {
+        isFriend: result.is_friend === 1,
+        isRequested: result.is_requested === 1,
+        isRequesting: result.is_requesting === 1,
+      },
+    };
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[ZaloGateway] getZaloFriendRequestStatus error:", error);
+    return { success: false, error: error.message || "Lỗi kiểm tra trạng thái kết bạn" };
   }
 }
