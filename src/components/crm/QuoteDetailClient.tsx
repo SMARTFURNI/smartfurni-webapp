@@ -27,6 +27,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
   const [sendingZalo, setSendingZalo] = useState(false);
   const [zaloMsg, setZaloMsg] = useState("");
   const [showZaloModal, setShowZaloModal] = useState(false);
+  const [zaloSendResult, setZaloSendResult] = useState<{ ok: boolean; msg: string; pdfLink?: string } | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailTo, setEmailTo] = useState(lead?.email || "");
@@ -57,21 +58,25 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
     } finally { setExportingPdf(false); }
   }
 
-  async function sendZalo() {
-    if (!zaloMsg.trim()) return;
+  async function sendZaloPersonal() {
     setSendingZalo(true);
+    setZaloSendResult(null);
     try {
-      const res = await fetch("/api/crm/quotes/send-zalo", {
+      const res = await fetch("/api/crm/quotes/send-zalo-personal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quoteId: quote.id, leadId: lead?.id, message: zaloMsg }),
+        body: JSON.stringify({ quoteId: quote.id, message: zaloMsg }),
       });
-      if (res.ok) {
-        setShowZaloModal(false);
-        setZaloMsg("");
-        alert("Đã gửi Zalo thành công!");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setZaloSendResult({ ok: true, msg: data.message, pdfLink: data.pdfLink });
+        // Tự động đánh dấu đã gửi nếu còn nháp
+        if (quote.status === "draft") updateStatus("sent");
       } else {
-        alert("Gửi Zalo thất bại. Kiểm tra cấu hình Zalo OA.");
+        setZaloSendResult({
+          ok: false,
+          msg: data.error || "Gửi Zalo thất bại",
+        });
       }
     } finally { setSendingZalo(false); }
   }
@@ -85,7 +90,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
 
   const s = STATUS_MAP[quote.status];
 
-  const defaultZaloMsg = `Kính gửi Quý khách ${quote.leadName},\n\n${company.name} xin gửi báo giá ${quote.quoteNumber} với tổng giá trị ${formatVND(quote.total)}.\n\nHiệu lực đến: ${new Date(quote.validUntil).toLocaleDateString("vi-VN")}\n\nVui lòng liên hệ ${company.phone} để được tư vấn thêm.\n\nTrân trọng,\n${company.name}`;
+  const defaultZaloMsg = `Kính gửi ${quote.leadName},\n\n${company.name} xin gửi báo giá ${quote.quoteNumber} với tổng giá trị ${formatVND(quote.total)}.\n\nHiệu lực đến: ${new Date(quote.validUntil).toLocaleDateString("vi-VN")}\n\nVui lòng liên hệ ${company.phone || ""} để được tư vấn thêm.\n\nTrân trọng,\n${company.name}`;
 
   const defaultEmailSubject = `Báo giá ${quote.quoteNumber} từ ${company.name}`;
   const defaultEmailMessage = `Kính gửi Quý khách ${quote.leadName},\n\nCảm ơn bạn đã quan tâm đến sản phẩm của ${company.name}.\n\nVui lòng xem báo giá đính kèm và liên hệ chúng tôi nếu cần tư vấn thêm.\n\nTrân trọng,\n${company.representativeName || company.name}`;
@@ -145,9 +150,9 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
               <AtSign size={14} /> Gửi Email
             </button>
-            {/* Gửi Zalo */}
+            {/* Gửi Zalo Personal */}
             {lead && (
-              <button onClick={() => { setZaloMsg(defaultZaloMsg); setShowZaloModal(true); }}
+              <button onClick={() => { setZaloMsg(defaultZaloMsg); setZaloSendResult(null); setShowZaloModal(true); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
                 style={{ background: "#0068FF" }}>
                 <MessageCircle size={14} /> Gửi Zalo
@@ -490,34 +495,96 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
       {showZaloModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-            <div className="flex items-center gap-2 mb-4">
-              <MessageCircle size={20} style={{ color: "#0068FF" }} />
-              <h2 className="font-bold text-gray-900">Gửi báo giá qua Zalo</h2>
-            </div>
-            {lead && (
-              <div className="flex items-center gap-2 mb-3 p-2 rounded-lg" style={{ background: "#f0f7ff" }}>
-                <Phone size={14} className="text-blue-500" />
-                <span className="text-sm text-gray-700">Gửi đến: <strong>{lead.name}</strong> · {lead.zaloPhone || lead.phone}</span>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MessageCircle size={20} style={{ color: "#0068FF" }} />
+                <h2 className="font-bold text-gray-900">Gửi báo giá qua Zalo Personal</h2>
               </div>
-            )}
-            <textarea
-              value={zaloMsg}
-              onChange={e => setZaloMsg(e.target.value)}
-              rows={8}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-              placeholder="Nội dung tin nhắn Zalo..."
-            />
-            <div className="flex gap-2 mt-4">
-              <button onClick={() => setShowZaloModal(false)}
-                className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
-                Huỷ
-              </button>
-              <button onClick={sendZalo} disabled={sendingZalo || !zaloMsg.trim()}
-                className="flex-1 px-4 py-2 text-sm rounded-xl font-semibold text-white disabled:opacity-50"
-                style={{ background: "#0068FF" }}>
-                {sendingZalo ? "Đang gửi..." : "Gửi Zalo"}
+              <button onClick={() => { setShowZaloModal(false); setZaloSendResult(null); }}
+                className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
               </button>
             </div>
+
+            {/* Kết quả gửi */}
+            {zaloSendResult ? (
+              <div className="text-center py-4">
+                {zaloSendResult.ok ? (
+                  <>
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: "#dcfce7" }}>
+                      <Check size={28} style={{ color: "#16a34a" }} />
+                    </div>
+                    <p className="font-semibold text-gray-900 mb-1">Gửi thành công!</p>
+                    <p className="text-sm text-gray-500 mb-3">{zaloSendResult.msg}</p>
+                    {zaloSendResult.pdfLink && (
+                      <a href={zaloSendResult.pdfLink} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-blue-600 underline break-all">
+                        📄 Xem PDF báo giá
+                      </a>
+                    )}
+                    <button onClick={() => { setShowZaloModal(false); setZaloSendResult(null); }}
+                      className="mt-4 w-full px-4 py-2 text-sm rounded-xl font-semibold text-white"
+                      style={{ background: "#0068FF" }}>
+                      Đóng
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: "#fee2e2" }}>
+                      <X size={28} style={{ color: "#dc2626" }} />
+                    </div>
+                    <p className="font-semibold text-gray-900 mb-1">Gửi thất bại</p>
+                    <p className="text-sm text-red-500 mb-4">{zaloSendResult.msg}</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setZaloSendResult(null)}
+                        className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
+                        Thử lại
+                      </button>
+                      <button onClick={() => { setShowZaloModal(false); setZaloSendResult(null); }}
+                        className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
+                        Đóng
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : sendingZalo ? (
+              <div className="text-center py-8">
+                <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm text-gray-500">Đang gửi qua Zalo Personal...</p>
+              </div>
+            ) : (
+              <>
+                {/* Thông tin khách */}
+                {lead && (
+                  <div className="flex items-center gap-2 mb-3 p-2 rounded-lg" style={{ background: "#f0f7ff" }}>
+                    <Phone size={14} className="text-blue-500" />
+                    <span className="text-sm text-gray-700">Gửi đến: <strong>{lead.name}</strong> · {lead.phone}</span>
+                  </div>
+                )}
+                {/* Nội dung tin nhắn */}
+                <textarea
+                  value={zaloMsg}
+                  onChange={e => setZaloMsg(e.target.value)}
+                  rows={8}
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  placeholder="Nội dung tin nhắn Zalo..."
+                />
+                <p className="text-xs text-gray-400 mt-1">Link xem PDF báo giá sẽ được tự động thêm vào tin nhắn.</p>
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => setShowZaloModal(false)}
+                    className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
+                    Huỷ
+                  </button>
+                  <button onClick={sendZaloPersonal} disabled={sendingZalo}
+                    className="flex-1 px-4 py-2 text-sm rounded-xl font-semibold text-white disabled:opacity-50"
+                    style={{ background: "#0068FF" }}>
+                    Gửi Zalo Personal
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
