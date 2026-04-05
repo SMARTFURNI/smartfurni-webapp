@@ -22,7 +22,7 @@ export default function ChooseModulePage() {
             <img
               src="/smartfurni-logo.png"
               alt="SmartFurni"
-              style={{ height: 72, objectFit: "contain", filter: "brightness(0) invert(1)" }}
+              style={{ height: 72, objectFit: "contain" }}
             />
           </div>
           <p className="text-slate-400 text-lg">Chọn module quản lý</p>
