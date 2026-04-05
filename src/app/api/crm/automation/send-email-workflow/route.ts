@@ -99,11 +99,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Create transporter — force IPv4 to avoid ENETUNREACH on Railway (IPv6 not supported)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const dns = require("dns");
+    dns.setDefaultResultOrder("ipv4first");
     const transporter = nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
       secure,
-      family: 4,
       auth: {
         user: smtpUser,
         pass: smtpPass,
