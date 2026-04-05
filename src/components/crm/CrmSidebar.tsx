@@ -222,17 +222,17 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
       {/* ── Logo header ── */}
       <div
         className="flex items-center gap-3 px-3 flex-shrink-0"
-        style={{ borderBottom: `1px solid ${C.border}`, height: 60 }}
+        style={{ borderBottom: `1px solid ${C.border}`, height: 68 }}
       >
         {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
         <img src="/smartfurni-icon.png" alt="" style={{ display: "none" }} />
         <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
         {collapsed ? (
-          <div className="flex items-center justify-center flex-shrink-0" style={{ width: 36, height: 36 }}>
+          <div className="flex items-center justify-center flex-shrink-0" style={{ width: 40, height: 40 }}>
             <img
               src="/smartfurni-icon.png"
               alt="SF"
-              style={{ width: 36, height: 36, objectFit: "contain" }}
+              style={{ width: 40, height: 40, objectFit: "contain" }}
             />
           </div>
         ) : (
@@ -240,7 +240,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
             <img
               src="/smartfurni-logo.png"
               alt="SmartFurni"
-              style={{ height: 32, objectFit: "contain", maxWidth: 140 }}
+              style={{ height: 42, objectFit: "contain", maxWidth: 180 }}
             />
           </div>
         )}

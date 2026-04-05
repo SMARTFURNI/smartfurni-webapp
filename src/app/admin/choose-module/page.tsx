@@ -17,10 +17,14 @@ export default function ChooseModulePage() {
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-500 rounded-lg mb-4">
-            <span className="text-2xl font-bold text-slate-900">SF</span>
+          <div className="flex items-center justify-center mb-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/smartfurni-logo.png"
+              alt="SmartFurni"
+              style={{ height: 72, objectFit: "contain", filter: "brightness(0) invert(1)" }}
+            />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">SmartFurni</h1>
           <p className="text-slate-400 text-lg">Chọn module quản lý</p>
         </div>
 

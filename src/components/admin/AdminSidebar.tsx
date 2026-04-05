@@ -182,7 +182,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
       className={`${collapsed ? "w-[60px]" : "w-[220px]"} min-h-screen bg-[#0A0800] border-r border-[#C9A84C]/8 flex flex-col transition-all duration-200 flex-shrink-0`}
     >
       {/* Logo */}
-      <div className={`h-14 border-b border-[#C9A84C]/8 flex items-center ${collapsed ? "justify-center px-2" : "px-4"} gap-3`}>
+      <div className={`h-[68px] border-b border-[#C9A84C]/8 flex items-center ${collapsed ? "justify-center px-2" : "px-4"} gap-3`}>
         {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
         <img src="/smartfurni-icon.png" alt="" style={{ display: "none" }} />
         <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
@@ -191,7 +191,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
             <img
               src="/smartfurni-logo.png"
               alt="SmartFurni"
-              style={{ height: 32, objectFit: "contain", maxWidth: 140 }}
+              style={{ height: 42, objectFit: "contain", maxWidth: 180 }}
             />
           </Link>
         )}
@@ -200,7 +200,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
             <img
               src="/smartfurni-icon.png"
               alt="SF"
-              style={{ width: 36, height: 36, objectFit: "contain" }}
+              style={{ width: 40, height: 40, objectFit: "contain" }}
             />
             {totalAlerts > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold">
