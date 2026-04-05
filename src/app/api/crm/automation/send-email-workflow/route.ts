@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
 import nodemailer from "nodemailer";
 import { logNotification } from "@/lib/crm-notifications-store";
 import { getCrmSettings } from "@/lib/crm-settings-store";
 import { getAutomationRules } from "@/lib/crm-automation-store";
+import { getLead } from "@/lib/crm-store";
 
 function replaceVars(template: string, lead: Record<string, string>): string {
   return template
@@ -23,13 +23,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing leadId or toStage" }, { status: 400 });
     }
 
-    // Get lead info from MySQL
-    const leadRows = await query<Record<string, unknown>>(
-      "SELECT * FROM crm_leads WHERE id=$1", [leadId]
-    );
-    const lead = leadRows[0];
+    // Get lead using crm-store (returns fully parsed Lead object with all fields)
+    const lead = await getLead(leadId);
     if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
-    if (!lead.email) return NextResponse.json({ skipped: true, reason: "No email" });
+    if (!lead.email) return NextResponse.json({ skipped: true, reason: "No email on lead" });
 
     // ── Get email rules from shared PostgreSQL automation table (same as Zalo Workflow) ──
     // Rules are stored as AutomationRule with actions[].type === "send_email_workflow"
@@ -97,27 +94,6 @@ export async function POST(req: NextRequest) {
     let fromName = (emailCfg as unknown as Record<string, unknown>)?.senderName as string ?? "SmartFurni";
     let secure = smtpPort === 465;
 
-    // If Email Marketing SMTP not configured, fall back to legacy PostgreSQL table
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      try {
-        const configRows = await query<Record<string, unknown>>(
-          "SELECT * FROM crm_email_smtp_config WHERE id='default'"
-        );
-        const legacyConfig = configRows[0];
-        if (legacyConfig?.host && legacyConfig?.smtp_user && legacyConfig?.smtp_pass) {
-          smtpHost = legacyConfig.host as string;
-          smtpPort = (legacyConfig.port as number) ?? 587;
-          smtpUser = legacyConfig.smtp_user as string;
-          smtpPass = legacyConfig.smtp_pass as string;
-          fromEmail = (legacyConfig.from_email as string) ?? smtpUser;
-          fromName = (legacyConfig.from_name as string) ?? "SmartFurni";
-          secure = (legacyConfig.secure as boolean) ?? false;
-        }
-      } catch {
-        // Legacy table may not exist, ignore
-      }
-    }
-
     if (!smtpHost || !smtpUser || !smtpPass) {
       return NextResponse.json({ skipped: true, reason: "SMTP not configured" });
     }
@@ -134,13 +110,13 @@ export async function POST(req: NextRequest) {
     });
 
     const leadVars = {
-      name: (lead.name as string) ?? "",
+      name: lead.name ?? "",
       stage: toStage,
-      phone: (lead.phone as string) ?? "",
-      email: (lead.email as string) ?? "",
-      assignedTo: (lead.assigned_to as string) ?? "",
-      value: lead.value ? `${Number(lead.value).toLocaleString("vi-VN")} đ` : "",
-      company: (lead.company as string) ?? "",
+      phone: lead.phone ?? "",
+      email: lead.email ?? "",
+      assignedTo: lead.assignedTo ?? "",
+      value: lead.expectedValue ? `${Number(lead.expectedValue).toLocaleString("vi-VN")} đ` : "",
+      company: (lead as unknown as Record<string, unknown>).company as string ?? "",
     };
 
     const results = [];
@@ -157,9 +133,9 @@ export async function POST(req: NextRequest) {
             ruleId: rule.id ?? "",
             ruleName: rule.name ?? "",
             channel: "email",
-            recipient: lead.email as string,
+            recipient: lead.email ?? "",
             leadId: leadId,
-            leadName: (lead.name as string) ?? "",
+            leadName: lead.name ?? "",
             message: subject,
             status: "pending",
             actionType: "send_email",
@@ -170,7 +146,7 @@ export async function POST(req: NextRequest) {
 
         await transporter.sendMail({
           from: `"${ruleFromName}" <${ruleFromEmail}>`,
-          to: lead.email as string,
+          to: lead.email,
           subject,
           text: body,
           html: body.replace(/\n/g, "<br>"),
@@ -180,11 +156,11 @@ export async function POST(req: NextRequest) {
           ruleId: rule.id ?? "",
           ruleName: rule.name ?? "",
           channel: "email",
-          recipient: lead.email as string,
-          leadId: leadId,
-          leadName: (lead.name as string) ?? "",
-          message: subject,
-          status: "sent",
+            recipient: lead.email ?? "",
+            leadId: leadId,
+            leadName: lead.name ?? "",
+            message: subject,
+            status: "sent",
           actionType: "send_email",
         });
 
@@ -195,11 +171,11 @@ export async function POST(req: NextRequest) {
           ruleId: rule.id ?? "",
           ruleName: rule.name ?? "",
           channel: "email",
-          recipient: lead.email as string,
-          leadId: leadId,
-          leadName: (lead.name as string) ?? "",
-          message: subject,
-          status: "failed",
+            recipient: lead.email ?? "",
+            leadId: leadId,
+            leadName: lead.name ?? "",
+            message: subject,
+            status: "failed",
           error: errMsg,
           actionType: "send_email",
         });
