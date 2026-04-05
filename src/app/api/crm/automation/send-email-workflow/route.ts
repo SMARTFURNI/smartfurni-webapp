@@ -98,14 +98,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ skipped: true, reason: "SMTP not configured" });
     }
 
-    // Create transporter
+    // Create transporter — force IPv4 to avoid ENETUNREACH on Railway (IPv6 not supported)
     const transporter = nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
       secure,
+      family: 4,
       auth: {
         user: smtpUser,
         pass: smtpPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
       },
     });
 
