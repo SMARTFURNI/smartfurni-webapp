@@ -13,6 +13,8 @@ import { getNotificationRules, logNotification } from "./crm-notifications-store
 import type { Lead } from "./crm-types";
 import type { AutomationRule, AutomationAction } from "./crm-automation-store";
 import { findZaloUserByPhone, sendZaloMessage, isZaloConnected, initZaloGateway, sendZaloFriendRequest } from "./zalo-gateway";
+import { getCrmSettings } from "./crm-settings-store";
+import nodemailer from "nodemailer";
 
 // Module-level init flag cho Zalo gateway
 let zaloGatewayInitialized = false;
@@ -297,6 +299,84 @@ async function executeAction(
       }
 
       return `Loi gui Zalo: ${sendResult.error ?? "unknown"}`;
+    }
+
+    case "send_email_workflow": {
+      if (!lead.email) return "Bo qua email workflow: khong co email khach hang";
+      try {
+        const crmSettings = await getCrmSettings();
+        const emailCfg = crmSettings.email;
+        const smtpHost = emailCfg?.smtpHost ?? "";
+        const smtpPort = emailCfg?.smtpPort ?? 587;
+        const smtpUser = emailCfg?.smtpUser ?? "";
+        const smtpPass = emailCfg?.smtpPassword ?? "";
+        const fromEmail = emailCfg?.senderEmail ?? emailCfg?.smtpUser ?? "";
+        const fromName = (emailCfg as unknown as Record<string, unknown>)?.senderName as string ?? action.emailFromName ?? "SmartFurni";
+        const secure = smtpPort === 465;
+        if (!smtpHost || !smtpUser || !smtpPass) {
+          await logNotification({
+            ruleId, ruleName, channel: "email",
+            recipient: lead.email ?? "",
+            leadId: lead.id, leadName: lead.name,
+            message: action.emailSubject ?? "Email tu dong",
+            status: "pending",
+            actionType: "send_email",
+          });
+          return "SMTP chua cau hinh, xep hang gui email";
+        }
+        const rawSubject = action.emailSubject ?? "Thong bao tu SmartFurni";
+        const rawBody = action.emailBody ?? "Xin chao {{name}}!";
+        const replaceVars = (t: string) => t
+          .replace(/\{\{name\}\}/g, lead.name)
+          .replace(/\{\{stage\}\}/g, STAGE_LABELS_VI[lead.stage] ?? lead.stage)
+          .replace(/\{\{phone\}\}/g, lead.phone ?? "")
+          .replace(/\{\{email\}\}/g, lead.email ?? "")
+          .replace(/\{\{assignedTo\}\}/g, lead.assignedTo ?? "")
+          .replace(/\{\{value\}\}/g, lead.expectedValue?.toLocaleString("vi-VN") ?? "0");
+        const subject = replaceVars(rawSubject);
+        const body = replaceVars(rawBody);
+        const delayMs = (action.emailDelayMinutes ?? 0) * 60 * 1000;
+        if (delayMs > 0) {
+          await logNotification({
+            ruleId, ruleName, channel: "email",
+            recipient: lead.email ?? "",
+            leadId: lead.id, leadName: lead.name,
+            message: subject, status: "pending",
+            actionType: "send_email",
+          });
+          return `Xep hang gui email (delay ${action.emailDelayMinutes} phut): "${subject}"`;
+        }
+        const transporter = nodemailer.createTransport({
+          host: smtpHost, port: smtpPort, secure,
+          auth: { user: smtpUser, pass: smtpPass },
+        });
+        await transporter.sendMail({
+          from: `"${fromName}" <${fromEmail || smtpUser}>`,
+          to: lead.email,
+          subject,
+          text: body,
+          html: body.replace(/\n/g, "<br>"),
+        });
+        await logNotification({
+          ruleId, ruleName, channel: "email",
+          recipient: lead.email ?? "",
+          leadId: lead.id, leadName: lead.name,
+          message: subject, status: "sent",
+          actionType: "send_email",
+        });
+        return `Gui email thanh cong: "${subject}" den ${lead.email}`;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : "unknown";
+        await logNotification({
+          ruleId, ruleName, channel: "email",
+          recipient: lead.email ?? "",
+          leadId: lead.id, leadName: lead.name,
+          message: action.emailSubject ?? "Email tu dong",
+          status: "failed", error: errMsg,
+          actionType: "send_email",
+        });
+        return `Loi gui email: ${errMsg}`;
+      }
     }
 
     default:
