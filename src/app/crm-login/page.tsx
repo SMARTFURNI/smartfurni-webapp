@@ -37,26 +37,18 @@ export default function CrmStaffLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] flex items-center justify-center px-4">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: "radial-gradient(circle at 1px 1px, #C9A84C 1px, transparent 0)",
-            backgroundSize: "28px 28px",
-          }}
-        />
-      </div>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#1a1a1a" }}>
 
       <div className="relative w-full max-w-md">
         {/* Logo & Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] mb-4 shadow-lg shadow-[#C9A84C]/20">
-            <span className="text-white font-bold text-2xl">SF</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-widest">SMARTFURNI</h1>
-          <p className="text-[#C9A84C] text-sm mt-1 font-medium">Cổng nhân viên CRM</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/smartfurni-logo-transparent.png"
+            alt="SmartFurni"
+            style={{ height: 120, objectFit: "contain", margin: "0 auto 16px" }}
+          />
+          <p className="text-sm font-medium" style={{ color: "#C9A84C" }}>Cổng nhân viên CRM</p>
         </div>
 
         {/* Login Card */}

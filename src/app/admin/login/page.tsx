@@ -34,29 +34,21 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] flex items-center justify-center px-4">
-      {/* Subtle dot pattern */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: "radial-gradient(circle at 1px 1px, #C9A84C 1px, transparent 0)",
-            backgroundSize: "28px 28px",
-          }}
-        />
-      </div>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#1a1a1a" }}>
 
       <div className="relative w-full max-w-md">
         {/* Logo & Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] mb-4 shadow-lg shadow-[#C9A84C]/20">
-            <span className="text-white font-bold text-2xl">SF</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-widest">SMARTFURNI</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/smartfurni-logo-transparent.png"
+            alt="SmartFurni"
+            style={{ height: 120, objectFit: "contain", margin: "0 auto 16px" }}
+          />
           {/* Admin badge — phân biệt với trang nhân viên */}
-          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-[#C9A84C]/10 border border-[#C9A84C]/30">
-            <ShieldCheck size={13} className="text-[#C9A84C]" />
-            <span className="text-[#9A7A2E] text-xs font-semibold tracking-wide">
+          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full" style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)" }}>
+            <ShieldCheck size={13} style={{ color: "#C9A84C" }} />
+            <span className="text-xs font-semibold tracking-wide" style={{ color: "#C9A84C" }}>
               Cổng Quản Trị Viên
             </span>
           </div>
