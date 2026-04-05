@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
           <img
             src="/smartfurni-logo-transparent.png"
             alt="SmartFurni"
-            style={{ height: 120, objectFit: "contain", margin: "0 auto 16px" }}
+            style={{ height: 180, objectFit: "contain", margin: "0 auto 20px" }}
           />
           {/* Admin badge — phân biệt với trang nhân viên */}
           <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full" style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)" }}>

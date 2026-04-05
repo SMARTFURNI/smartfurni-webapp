@@ -46,7 +46,7 @@ export default function CrmStaffLoginPage() {
           <img
             src="/smartfurni-logo-transparent.png"
             alt="SmartFurni"
-            style={{ height: 120, objectFit: "contain", margin: "0 auto 16px" }}
+            style={{ height: 180, objectFit: "contain", margin: "0 auto 20px" }}
           />
           <p className="text-sm font-medium" style={{ color: "#C9A84C" }}>Cổng nhân viên CRM</p>
         </div>
