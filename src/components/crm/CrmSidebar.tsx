@@ -221,14 +221,14 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
     >
       {/* ── Logo header ── */}
       <div
-        className="flex items-center gap-3 px-3 flex-shrink-0"
-        style={{ borderBottom: `1px solid ${C.border}`, height: 68 }}
+        className="flex items-center flex-shrink-0"
+        style={{ borderBottom: `1px solid ${C.border}`, height: 68, paddingLeft: 12, paddingRight: 8 }}
       >
         {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
         <img src="/smartfurni-icon.png" alt="" style={{ display: "none" }} />
         <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
         {collapsed ? (
-          <div className="flex items-center justify-center flex-shrink-0" style={{ width: 40, height: 40 }}>
+          <div className="flex items-center justify-center flex-1" style={{ height: 40 }}>
             <img
               src="/smartfurni-icon.png"
               alt="SF"
@@ -236,11 +236,11 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
             />
           </div>
         ) : (
-          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <div className="flex items-center flex-1 min-w-0" style={{ paddingRight: 4 }}>
             <img
               src="/smartfurni-logo.png"
               alt="SmartFurni"
-              style={{ height: 42, objectFit: "contain", maxWidth: 180 }}
+              style={{ height: 42, objectFit: "contain", maxWidth: 160 }}
             />
           </div>
         )}

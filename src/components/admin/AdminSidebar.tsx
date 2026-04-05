@@ -182,21 +182,21 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
       className={`${collapsed ? "w-[60px]" : "w-[220px]"} min-h-screen bg-[#0A0800] border-r border-[#C9A84C]/8 flex flex-col transition-all duration-200 flex-shrink-0`}
     >
       {/* Logo */}
-      <div className={`h-[68px] border-b border-[#C9A84C]/8 flex items-center ${collapsed ? "justify-center px-2" : "px-4"} gap-3`}>
+      <div className="h-[68px] border-b border-[#C9A84C]/8 flex items-center" style={{ paddingLeft: 12, paddingRight: 8 }}>
         {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
         <img src="/smartfurni-icon.png" alt="" style={{ display: "none" }} />
         <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
         {!collapsed && (
-          <Link href="/admin" className="flex items-center gap-2.5 flex-1 min-w-0">
+          <Link href="/admin" className="flex items-center flex-1 min-w-0" style={{ paddingRight: 4 }}>
             <img
               src="/smartfurni-logo.png"
               alt="SmartFurni"
-              style={{ height: 42, objectFit: "contain", maxWidth: 180 }}
+              style={{ height: 42, objectFit: "contain", maxWidth: 160 }}
             />
           </Link>
         )}
         {collapsed && (
-          <Link href="/admin" className="relative">
+          <Link href="/admin" className="relative flex-1 flex items-center justify-center">
             <img
               src="/smartfurni-icon.png"
               alt="SF"
