@@ -13,8 +13,7 @@ import { getNotificationRules, logNotification } from "./crm-notifications-store
 import type { Lead } from "./crm-types";
 import type { AutomationRule, AutomationAction } from "./crm-automation-store";
 import { findZaloUserByPhone, sendZaloMessage, isZaloConnected, initZaloGateway, sendZaloFriendRequest } from "./zalo-gateway";
-import { getCrmSettings } from "./crm-settings-store";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 // Module-level init flag cho Zalo gateway
 let zaloGatewayInitialized = false;
@@ -304,16 +303,9 @@ async function executeAction(
     case "send_email_workflow": {
       if (!lead.email) return "Bo qua email workflow: khong co email khach hang";
       try {
-        const crmSettings = await getCrmSettings();
-        const emailCfg = crmSettings.email;
-        const smtpHost = emailCfg?.smtpHost ?? "";
-        const smtpPort = emailCfg?.smtpPort ?? 587;
-        const smtpUser = emailCfg?.smtpUser ?? "";
-        const smtpPass = emailCfg?.smtpPassword ?? "";
-        const fromEmail = emailCfg?.senderEmail ?? emailCfg?.smtpUser ?? "";
-        const fromName = (emailCfg as unknown as Record<string, unknown>)?.senderName as string ?? action.emailFromName ?? "SmartFurni";
-        const secure = smtpPort === 465;
-        if (!smtpHost || !smtpUser || !smtpPass) {
+        // Use Resend HTTP API (HTTPS port 443) — avoids Railway SMTP/TCP blocking
+        const resendApiKey = process.env.RESEND_API_KEY ?? "";
+        if (!resendApiKey) {
           await logNotification({
             ruleId, ruleName, channel: "email",
             recipient: lead.email ?? "",
@@ -322,7 +314,7 @@ async function executeAction(
             status: "pending",
             actionType: "send_email",
           });
-          return "SMTP chua cau hinh, xep hang gui email";
+          return "RESEND_API_KEY chua cau hinh, xep hang gui email";
         }
         const rawSubject = action.emailSubject ?? "Thong bao tu SmartFurni";
         const rawBody = action.emailBody ?? "Xin chao {{name}}!";
@@ -346,17 +338,19 @@ async function executeAction(
           });
           return `Xep hang gui email (delay ${action.emailDelayMinutes} phut): "${subject}"`;
         }
-        const transporter = nodemailer.createTransport({
-          host: smtpHost, port: smtpPort, secure,
-          auth: { user: smtpUser, pass: smtpPass },
-        });
-        await transporter.sendMail({
-          from: `"${fromName}" <${fromEmail || smtpUser}>`,
-          to: lead.email,
+        const resend = new Resend(resendApiKey);
+        const fromEmail = process.env.RESEND_FROM_EMAIL ?? "noreply@smartfurni.vn";
+        const fromName = action.emailFromName ?? "SmartFurni";
+        const { error: resendError } = await resend.emails.send({
+          from: `${fromName} <${fromEmail}>`,
+          to: [lead.email!],
           subject,
-          text: body,
           html: body.replace(/\n/g, "<br>"),
+          text: body,
         });
+        if (resendError) {
+          throw new Error(resendError.message ?? "Resend API error");
+        }
         await logNotification({
           ruleId, ruleName, channel: "email",
           recipient: lead.email ?? "",

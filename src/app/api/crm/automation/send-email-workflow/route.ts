@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { logNotification } from "@/lib/crm-notifications-store";
 import { getCrmSettings } from "@/lib/crm-settings-store";
 import { getAutomationRules } from "@/lib/crm-automation-store";
@@ -82,38 +82,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ skipped: true, reason: "No matching email workflow rules" });
     }
 
-    // ── Get SMTP config from Email Marketing settings (crm_settings key "email") ──
-    const crmSettings = await getCrmSettings();
-    const emailCfg = crmSettings.email;
-
-    let smtpHost = emailCfg?.smtpHost ?? "";
-    let smtpPort = emailCfg?.smtpPort ?? 587;
-    let smtpUser = emailCfg?.smtpUser ?? "";
-    let smtpPass = emailCfg?.smtpPassword ?? "";
-    let fromEmail = emailCfg?.senderEmail ?? emailCfg?.smtpUser ?? "";
-    let fromName = (emailCfg as unknown as Record<string, unknown>)?.senderName as string ?? "SmartFurni";
-    let secure = smtpPort === 465;
-
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      return NextResponse.json({ skipped: true, reason: "SMTP not configured" });
+    // ── Use Resend HTTP API (not SMTP) to avoid Railway TCP/SMTP blocking ──
+    const resendApiKey = process.env.RESEND_API_KEY ?? "";
+    if (!resendApiKey) {
+      return NextResponse.json({ skipped: true, reason: "RESEND_API_KEY not configured" });
     }
 
-    // Create transporter — force IPv4 to avoid ENETUNREACH on Railway (IPv6 not supported)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const dns = require("dns");
-    dns.setDefaultResultOrder("ipv4first");
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+    const resend = new Resend(resendApiKey);
+    // Use verified sender domain from env, fallback to smartfurni.vn
+    const fromEmail = process.env.RESEND_FROM_EMAIL ?? "noreply@smartfurni.vn";
 
     const leadVars = {
       name: lead.name ?? "",
@@ -129,8 +106,7 @@ export async function POST(req: NextRequest) {
     for (const rule of matchingRules) {
       const subject = replaceVars(rule.subject ?? "", leadVars);
       const body = replaceVars(rule.body ?? "", leadVars);
-      const ruleFromName = rule.fromName ?? fromName;
-      const ruleFromEmail = fromEmail || smtpUser;
+      const ruleFromName = rule.fromName ?? "SmartFurni";
 
       try {
         // Handle delay — log as pending and skip actual send for now
@@ -150,23 +126,28 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        await transporter.sendMail({
-          from: `"${ruleFromName}" <${ruleFromEmail}>`,
-          to: lead.email,
+        // Send via Resend HTTP API (HTTPS port 443 — not blocked by Railway)
+        const { error: resendError } = await resend.emails.send({
+          from: `${ruleFromName} <${fromEmail}>`,
+          to: [lead.email!],
           subject,
-          text: body,
           html: body.replace(/\n/g, "<br>"),
+          text: body,
         });
+
+        if (resendError) {
+          throw new Error(resendError.message ?? "Resend API error");
+        }
 
         await logNotification({
           ruleId: rule.id ?? "",
           ruleName: rule.name ?? "",
           channel: "email",
-            recipient: lead.email ?? "",
-            leadId: leadId,
-            leadName: lead.name ?? "",
-            message: subject,
-            status: "sent",
+          recipient: lead.email ?? "",
+          leadId: leadId,
+          leadName: lead.name ?? "",
+          message: subject,
+          status: "sent",
           actionType: "send_email",
         });
 
@@ -177,11 +158,11 @@ export async function POST(req: NextRequest) {
           ruleId: rule.id ?? "",
           ruleName: rule.name ?? "",
           channel: "email",
-            recipient: lead.email ?? "",
-            leadId: leadId,
-            leadName: lead.name ?? "",
-            message: subject,
-            status: "failed",
+          recipient: lead.email ?? "",
+          leadId: leadId,
+          leadName: lead.name ?? "",
+          message: subject,
+          status: "failed",
           error: errMsg,
           actionType: "send_email",
         });
