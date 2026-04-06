@@ -232,9 +232,9 @@ export async function loadContentMarketingFromDb(): Promise<void> {
       query("SELECT * FROM content_script_templates ORDER BY usage_count DESC, created_at DESC"),
     ]);
 
-    videos = (videoRows.rows || []).map(mapVideoRow);
-    aiGenerations = (genRows.rows || []).map(mapAIGenRow);
-    scriptTemplates = (templateRows.rows || []).map(mapTemplateRow);
+    videos = (videoRows || []).map(mapVideoRow);
+    aiGenerations = (genRows || []).map(mapAIGenRow);
+    scriptTemplates = (templateRows || []).map(mapTemplateRow);
 
     console.log(`[content-store] Loaded ${videos.length} videos, ${aiGenerations.length} AI gens, ${scriptTemplates.length} templates`);
   } catch (err) {
@@ -293,7 +293,7 @@ export async function createContentVideo(data: {
   assignedToName?: string;
 }): Promise<ContentVideo> {
   const newId = randomUUID();
-  const result = await query(
+  const rows = await query(
     `INSERT INTO content_videos
       (id, title, topic, platform, status, script, script_generated_by, ai_prompt,
        duration_seconds, hashtags, notes, scheduled_at, created_by, created_by_name,
@@ -309,7 +309,7 @@ export async function createContentVideo(data: {
       data.assignedTo || null, data.assignedToName || null,
     ]
   );
-  const video = mapVideoRow(result.rows[0]);
+  const video = mapVideoRow(rows[0]);
   videos.unshift(video);
   return video;
 }
@@ -354,13 +354,13 @@ export async function updateContentVideo(
   values.push(new Date());
   values.push(id);
 
-  const result = await query(
+  const rows = await query(
     `UPDATE content_videos SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
     values
   );
 
-  if (!result.rows[0]) return null;
-  const updated = mapVideoRow(result.rows[0]);
+  if (!rows[0]) return null;
+  const updated = mapVideoRow(rows[0]);
   const i = videos.findIndex(v => v.id === id);
   if (i >= 0) videos[i] = updated;
   return updated;
@@ -390,7 +390,7 @@ export async function saveAIGeneration(data: {
   createdBy: string;
 }): Promise<ContentAIGeneration> {
   const genId = randomUUID();
-  const result = await query(
+  const rows = await query(
     `INSERT INTO content_ai_generations
       (id, video_id, platform, topic, product_name, target_audience, tone,
        duration_seconds, additional_notes, prompt_used, generated_script,
@@ -402,12 +402,12 @@ export async function saveAIGeneration(data: {
       data.productName || null, data.targetAudience || null, data.tone || null,
       data.durationSeconds || null, data.additionalNotes || null,
       data.promptUsed, data.generatedScript,
-      data.modelUsed || "gemini-2.5-flash",
+      data.modelUsed || "gemini-1.5-flash",
       data.tokensUsed || null, data.generationTimeMs || null,
       data.createdBy,
     ]
   );
-  const gen = mapAIGenRow(result.rows[0]);
+  const gen = mapAIGenRow(rows[0]);
   aiGenerations.unshift(gen);
   return gen;
 }

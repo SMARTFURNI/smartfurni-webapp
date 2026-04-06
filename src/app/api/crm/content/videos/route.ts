@@ -28,69 +28,84 @@ async function getSession() {
 
 // GET /api/crm/content/videos?status=idea&platform=tiktok
 export async function GET(req: NextRequest) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await ensureLoaded();
+    await ensureLoaded();
 
-  const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status") as ContentStatus | null;
-  const platform = searchParams.get("platform") as ContentPlatform | null;
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status") as ContentStatus | null;
+    const platform = searchParams.get("platform") as ContentPlatform | null;
 
-  const videos = getContentVideos({
-    status: status ?? undefined,
-    platform: platform ?? undefined,
-  });
+    const videos = getContentVideos({
+      status: status ?? undefined,
+      platform: platform ?? undefined,
+    });
 
-  return NextResponse.json(videos);
+    return NextResponse.json(videos);
+  } catch (err) {
+    const msg = (err as Error).message;
+    console.error("[videos GET] error:", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 // POST /api/crm/content/videos — Tạo video mới
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await ensureLoaded();
+    await ensureLoaded();
 
-  const body = await req.json();
-  const {
-    title,
-    topic,
-    platform = "tiktok",
-    script,
-    scriptGeneratedBy,
-    aiPrompt,
-    durationSeconds,
-    hashtags = [],
-    notes,
-    scheduledAt,
-    assignedTo,
-    assignedToName,
-  } = body;
+    const body = await req.json();
+    const {
+      title,
+      topic,
+      platform = "tiktok",
+      script,
+      scriptGeneratedBy,
+      aiPrompt,
+      durationSeconds,
+      hashtags = [],
+      notes,
+      scheduledAt,
+      assignedTo,
+      assignedToName,
+    } = body;
 
-  if (!title) {
-    return NextResponse.json(
-      { error: "Thiếu thông tin bắt buộc: title" },
-      { status: 400 }
-    );
+    if (!title) {
+      return NextResponse.json(
+        { error: "Thiếu thông tin bắt buộc: title" },
+        { status: 400 }
+      );
+    }
+
+    console.log("[videos POST] Creating video:", { title, platform, scriptGeneratedBy, session: session.id });
+
+    const video = await createContentVideo({
+      title,
+      topic,
+      platform: platform as ContentPlatform,
+      script,
+      scriptGeneratedBy,
+      aiPrompt,
+      durationSeconds,
+      hashtags,
+      notes,
+      scheduledAt,
+      createdBy: session.id,
+      createdByName: session.name,
+      assignedTo,
+      assignedToName,
+    });
+
+    console.log("[videos POST] Created video:", video.id);
+    return NextResponse.json(video, { status: 201 });
+  } catch (err) {
+    const msg = (err as Error).message;
+    console.error("[videos POST] error:", msg, (err as Error).stack);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  const video = await createContentVideo({
-    title,
-    topic,
-    platform: platform as ContentPlatform,
-    script,
-    scriptGeneratedBy,
-    aiPrompt,
-    durationSeconds,
-    hashtags,
-    notes,
-    scheduledAt,
-    createdBy: session.id,
-    createdByName: session.name,
-    assignedTo,
-    assignedToName,
-  });
-
-  return NextResponse.json(video, { status: 201 });
 }
