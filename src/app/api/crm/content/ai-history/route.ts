@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
+import { getCrmSession } from "@/lib/admin-auth";
 import {
   getAIGenerations,
   loadContentMarketingFromDb,
@@ -14,19 +14,13 @@ async function ensureLoaded() {
 }
 
 async function getSession() {
-  const admin = await getAdminSession();
-  if (admin) {
-    return {
-      id: "admin",
-      name: (admin as unknown as { username?: string }).username || "Admin",
-      isAdmin: true,
-    };
-  }
-  const staff = await getStaffSession();
-  if (staff) {
-    return { id: staff.staffId, name: staff.staffId, isAdmin: false };
-  }
-  return null;
+  const session = await getCrmSession();
+  if (!session) return null;
+  return {
+    id: session.isAdmin ? "admin" : (session.staffId || "staff"),
+    name: session.isAdmin ? "Admin" : (session.staffId || "Staff"),
+    isAdmin: session.isAdmin,
+  };
 }
 
 // GET /api/crm/content/ai-history?limit=50
