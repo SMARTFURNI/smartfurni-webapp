@@ -70,84 +70,103 @@ const TONE_OPTIONS = [
 
 const KANBAN_COLUMNS: ContentStatus[] = ["idea", "scripted", "recording", "editing", "published"];
 
-// ─── Gợi ý chủ đề video theo nền tảng ────────────────────────────────────────
+// ─── Gợi ý chủ đề video B2B theo nền tảng ───────────────────────────────────
 const TOPIC_SUGGESTIONS: Record<ContentPlatform, string[]> = {
   tiktok: [
-    "Giường điều chỉnh điện giúp ngủ ngon hơn",
-    "3 lý do nên dùng giường thông minh",
-    "Unboxing giường SmartFurni mới nhất",
-    "So sánh giường thường vs giường điều chỉnh",
-    "Cách chỉnh tư thế ngủ đúng cho người đau lưng",
-    "Review thực tế sau 1 tháng dùng giường SmartFurni",
-    "Tính năng massage giường SmartFurni có thực sự tốt?",
-    "Giường thông minh cho phòng nhỏ - giải pháp tiết kiệm không gian",
-    "Hướng dẫn điều khiển giường bằng điện thoại",
-    "Mẹo ngủ ngon cho dân văn phòng",
+    // Chủ đầu tư / BĐS
+    "SmartFurni trang bị giường thông minh cho toàn bộ căn hộ dự án",
+    "Chủ đầu tư chọn giường điều chỉnh SmartFurni để tăng giá trị bàn giao",
+    // Khách sạn / Resort
+    "Khách sạn 5 sao nâng cấp trải nghiệm phòng ngủ với giường SmartFurni",
+    "Homestay tăng đánh giá 5 sao nhờ trang bị giường điều chỉnh",
+    // Bệnh viện / Y tế
+    "Giường bệnh viện thông minh SmartFurni hỗ trợ phục hồi bệnh nhân",
+    "Nhà dưỡng lão nâng cao chất lượng chăm sóc với giường điều chỉnh",
+    // Văn phòng / Co-working
+    "Phòng nghỉ ngơi văn phòng hiện đại với giường SmartFurni",
+    "Co-working space tích hợp nap room với giường thông minh",
+    // Showroom / Đại lý
+    "Trở thành đại lý SmartFurni - Cơ hội kinh doanh nội thất thông minh",
+    "Showroom nội thất tăng doanh thu với dòng giường cao cấp SmartFurni",
   ],
   facebook: [
-    "Giải pháp giường thông minh cho gia đình hiện đại",
-    "Câu chuyện khách hàng: Hết đau lưng nhờ giường SmartFurni",
-    "Khuyến mãi tháng này: Giảm 20% giường điều chỉnh",
-    "Hướng dẫn chọn giường phù hợp với không gian phòng ngủ",
-    "Top 5 tính năng nổi bật của giường SmartFurni 2024",
-    "Thiết kế phòng ngủ hiện đại với giường thông minh",
-    "Giường điều chỉnh - Đầu tư cho sức khỏe gia đình",
-    "Chính sách bảo hành 5 năm - Cam kết chất lượng SmartFurni",
+    // Chủ đầu tư / BĐS
+    "Giải pháp trang bị nội thất thông minh cho dự án căn hộ cao cấp",
+    "SmartFurni - Đối tác cung cấp giường điều chỉnh cho chủ đầu tư BĐS",
+    "Tăng giá trị bàn giao căn hộ với giường thông minh SmartFurni",
+    // Khách sạn / Hospitality
+    "Nâng cấp tiêu chuẩn phòng ngủ khách sạn với giường điều chỉnh điện",
+    "Resort 5 sao lựa chọn SmartFurni cho trải nghiệm nghỉ dưỡng đẳng cấp",
+    "Homestay & villa tăng lợi thế cạnh tranh với giường thông minh",
+    // Bệnh viện / Y tế
+    "Giường bệnh viện SmartFurni: Tiêu chuẩn y tế, công nghệ hiện đại",
+    "Nhà dưỡng lão & trung tâm phục hồi chức năng tin dùng SmartFurni",
+    // Showroom / Đại lý
+    "Chính sách đại lý SmartFurni 2024 - Chiết khấu hấp dẫn, hỗ trợ toàn diện",
+    "Mở showroom nội thất thông minh cùng SmartFurni",
   ],
   youtube: [
-    "Review chi tiết giường điều chỉnh SmartFurni Pro 3000",
-    "Hướng dẫn lắp đặt giường SmartFurni từ A đến Z",
-    "So sánh các dòng giường SmartFurni 2024",
-    "Trải nghiệm 30 ngày dùng giường thông minh",
-    "Khoa học giấc ngủ: Tại sao tư thế ngủ quan trọng?",
-    "Tour phòng ngủ thực tế với giường SmartFurni",
-    "Giường thông minh có đáng tiền không? Đánh giá thực tế",
-    "Hướng dẫn bảo dưỡng giường điều chỉnh điện đúng cách",
+    // Chủ đầu tư / BĐS
+    "Case study: Dự án căn hộ XYZ trang bị 500 giường SmartFurni",
+    "Hướng dẫn lựa chọn nội thất thông minh cho dự án BĐS cao cấp",
+    // Khách sạn / Resort
+    "Tour phòng ngủ khách sạn 5 sao trang bị giường SmartFurni",
+    "Giải pháp giường điều chỉnh cho chuỗi khách sạn - Tối ưu vận hành",
+    // Bệnh viện / Y tế
+    "Giường bệnh viện thông minh SmartFurni - Tính năng y tế chuyên sâu",
+    "Phòng phục hồi chức năng hiện đại với giường điều chỉnh đa tư thế",
+    // Văn phòng / Co-working
+    "Thiết kế nap room văn phòng hiện đại - SmartFurni chia sẻ giải pháp",
+    // Showroom / Đại lý
+    "Hành trình trở thành đại lý SmartFurni - Câu chuyện thành công",
+    "Chương trình đào tạo đại lý SmartFurni 2024",
   ],
   all: [
-    "SmartFurni - Nâng tầm giấc ngủ của bạn",
-    "Giường thông minh cho cuộc sống hiện đại",
-    "Sức khoẻ bắt đầu từ giấc ngủ tốt",
-    "SmartFurni: Công nghệ phục vụ sức khoẻ",
-    "Đầu tư giường tốt - Đầu tư cho tương lai",
-    "Khuyến mãi đặc biệt tháng này tại SmartFurni",
-    "Câu chuyện thay đổi cuộc sống với giường SmartFurni",
+    "SmartFurni B2B - Giải pháp giường thông minh cho doanh nghiệp",
+    "Tại sao các chủ đầu tư BĐS chọn SmartFurni?",
+    "SmartFurni cung cấp số lượng lớn cho khách sạn, bệnh viện, dự án",
+    "Chính sách B2B SmartFurni: Chiết khấu, bảo hành, hỗ trợ lắp đặt",
+    "Đối tác chiến lược SmartFurni - Cùng phát triển thị trường nội thất thông minh",
+    "SmartFurni và hành trình phủ sóng nội thất thông minh tại Việt Nam",
+    "Câu chuyện thành công của đại lý SmartFurni trên toàn quốc",
   ],
 };
 
-// ─── Gợi ý đối tượng mục tiêu ────────────────────────────────────────────────
+// ─── Gợi ý đối tượng mục tiêu B2B ───────────────────────────────────────────
 const AUDIENCE_SUGGESTIONS: Record<ContentPlatform, string[]> = {
   tiktok: [
-    "Gen Z 18-25 tuổi, thích công nghệ, hay thức khuya",
-    "Millennials 25-35 tuổi, làm việc từ xa, cần ngủ đủ giấc",
-    "Dân văn phòng 25-40 tuổi, đau lưng, khó ngủ",
-    "Sinh viên 18-24 tuổi, phòng trọ nhỏ, ngân sách hạn chế",
-    "Người yêu thích gadget và đồ gia dụng thông minh",
-    "Người đang tìm kiếm giải pháp cải thiện giấc ngủ",
+    "Chủ đầu tư BĐS 35-55 tuổi, đang phát triển dự án căn hộ cao cấp",
+    "Quản lý khách sạn / resort, tìm kiếm nâng cấp tiện nghi phòng ngủ",
+    "Chủ homestay, villa cho thuê muốn tăng đánh giá và giá phòng",
+    "Giám đốc bệnh viện / phòng khám tư tìm thiết bị y tế hiện đại",
+    "Quản lý nhà dưỡng lão, trung tâm phục hồi chức năng",
+    "Chủ showroom nội thất muốn mở rộng danh mục sản phẩm cao cấp",
   ],
   facebook: [
-    "Gia đình trẻ 30-45 tuổi, có con nhỏ, quan tâm sức khỏe",
-    "Cặp vợ chồng mới cưới, đang trang trí nhà",
-    "Người trung niên 40-55 tuổi, đau lưng mãn tính",
-    "Chủ nhà đang cải tạo phòng ngủ",
-    "Người có thu nhập trung bình-cao, quan tâm chất lượng sống",
-    "Phụ nữ 30-50 tuổi, nội trợ, quan tâm sức khỏe gia đình",
+    "Chủ đầu tư / Developer BĐS, dự án căn hộ 100+ unit",
+    "Giám đốc mua hàng khách sạn 3-5 sao, chuỗi resort nghỉ dưỡng",
+    "Chủ chuỗi homestay, villa cho thuê ngắn/dài hạn",
+    "Giám đốc bệnh viện tư, phòng khám đa khoa, nhà dưỡng lão",
+    "Quản lý văn phòng, HR tìm giải pháp wellness cho nhân viên",
+    "Chủ đại lý nội thất, showroom muốn thêm dòng sản phẩm cao cấp",
+    "Nhà thiết kế nội thất, kiến trúc sư tư vấn cho khách hàng B2B",
   ],
   youtube: [
-    "Người tiêu dùng kỹ tính, nghiên cứu kỹ trước khi mua",
-    "Chủ nhà đang so sánh các thương hiệu giường cao cấp",
-    "Người bị rối loạn giấc ngủ, tìm giải pháp y tế",
-    "Kiến trúc sư, nhà thiết kế nội thất tìm sản phẩm cho khách hàng",
-    "Người 35-55 tuổi, thu nhập cao, ưu tiên sức khỏe",
-    "Reviewer, blogger nội thất và lifestyle",
+    "Giám đốc điều hành, CFO doanh nghiệp đánh giá ROI đầu tư nội thất",
+    "Chủ đầu tư BĐS nghiên cứu giải pháp trang bị nội thất số lượng lớn",
+    "Quản lý chuỗi khách sạn, tập đoàn hospitality tìm nhà cung cấp",
+    "Giám đốc y tế, trưởng khoa bệnh viện tư tìm thiết bị phòng bệnh",
+    "Nhà thiết kế nội thất thương mại, công ty FF&E",
+    "Chủ đại lý nội thất muốn tìm hiểu chính sách phân phối SmartFurni",
   ],
   all: [
-    "Người trưởng thành 25-55 tuổi, quan tâm sức khỏe giấc ngủ",
-    "Dân văn phòng bận rộn, cần phục hồi sức khoẻ tốt",
-    "Người đang tìm kiếm giường chất lượng cao",
-    "Gia đình Việt Nam hiện đại, thu nhập trung bình-cao",
-    "Người bị đau lưng, cổ, vai gáy do ngồi nhiều",
-    "Người cao tuổi 50+ cần hỗ trợ tư thế ngủ",
+    "Chủ đầu tư BĐS và developer dự án căn hộ, chung cư cao cấp",
+    "Chủ khách sạn, resort, homestay, villa cho thuê",
+    "Giám đốc bệnh viện tư, phòng khám, nhà dưỡng lão",
+    "Quản lý văn phòng, co-working space tìm giải pháp wellness",
+    "Chủ showroom nội thất, đại lý phân phối muốn hợp tác SmartFurni",
+    "Nhà thiết kế nội thất thương mại tư vấn cho doanh nghiệp",
+    "Giám đốc mua hàng tập đoàn hospitality & healthcare",
   ],
 };
 
