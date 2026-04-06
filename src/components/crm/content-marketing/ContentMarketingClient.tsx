@@ -111,7 +111,7 @@ function StatusBadge({ status }: { status: ContentStatus }) {
 }
 
 // ─── Tab 1: AI Script Generator ───────────────────────────────────────────────
-function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
+function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
   const [platform, setPlatform] = useState<ContentPlatform>("tiktok");
   const [topic, setTopic] = useState("");
   const [productName, setProductName] = useState("");
@@ -168,7 +168,7 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
     if (!saveTitle.trim()) return;
     setSaving(true);
     try {
-      await fetch("/api/crm/content/videos", {
+      const res = await fetch("/api/crm/content/videos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -182,7 +182,14 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
           notes: additionalNotes,
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Lỗi ${res.status}`);
+      }
       setShowSaveForm(false);
+      setGeneratedScript("");
+      setGenerationId("");
+      setTopic("");
       onScriptSaved();
     } catch (err) {
       setError((err as Error).message);
@@ -1037,6 +1044,7 @@ function VideoDetailModal({
 export function ContentMarketingClient() {
   const [activeTab, setActiveTab] = useState<"generator" | "planner" | "calendar">("generator");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [savedToast, setSavedToast] = useState(false);
 
   const tabs = [
     { id: "generator" as const, label: "AI Script Generator", icon: Sparkles, desc: "Tạo kịch bản video bằng AI" },
@@ -1082,10 +1090,23 @@ export function ContentMarketingClient() {
         })}
       </div>
 
+      {/* Toast notification */}
+      {savedToast && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-green-600 text-white px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top-2">
+          <CheckCircle2 size={16} />
+          Đã lưu kịch bản vào Kế hoạch Content!
+        </div>
+      )}
+
       {/* Tab Content */}
       <div>
         {activeTab === "generator" && (
-          <AIScriptTab onScriptSaved={() => setRefreshKey(k => k + 1)} />
+          <AIScriptTab onScriptSaved={() => {
+            setRefreshKey(k => k + 1);
+            setActiveTab("planner");
+            setSavedToast(true);
+            setTimeout(() => setSavedToast(false), 3000);
+          }} />
         )}
         {activeTab === "planner" && (
           <ContentPlannerTab key={refreshKey} />
