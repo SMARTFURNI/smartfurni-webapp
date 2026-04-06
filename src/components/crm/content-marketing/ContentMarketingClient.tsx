@@ -468,6 +468,24 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
   const [targetAudience, setTargetAudience] = useState("");
   const [tone, setTone] = useState("professional");
   const [duration, setDuration] = useState(30);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  // Load default values from settings on mount
+  useEffect(() => {
+    if (settingsLoaded) return;
+    fetch("/api/crm/content/settings")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.settings) {
+          const s = data.settings;
+          if (s.defaultPlatform) setPlatform(s.defaultPlatform as ContentPlatform);
+          if (s.defaultTone) setTone(s.defaultTone);
+          if (s.defaultDuration) setDuration(s.defaultDuration);
+        }
+        setSettingsLoaded(true);
+      })
+      .catch(() => setSettingsLoaded(true));
+  }, [settingsLoaded]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [generatedScript, setGeneratedScript] = useState("");
