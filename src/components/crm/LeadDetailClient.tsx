@@ -506,13 +506,25 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                       {tasks.map(task => (
                         <TaskItem key={task.id} task={task}
                           onToggle={async () => {
-                            const updated = { ...task, done: !task.done };
+                            const newDone = !task.done;
+                            const updated = { ...task, done: newDone };
                             setTasks(prev => prev.map(t => t.id === task.id ? updated : t));
                             await fetch(`/api/crm/tasks/${task.id}`, {
                               method: "PATCH",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ done: !task.done }),
+                              body: JSON.stringify({ done: newDone }),
                             });
+                            // Khi đánh dấu hoàn thành → chuyển sang tab Lịch sử
+                            if (newDone) {
+                              setTimeout(async () => {
+                                // Reload activities mới nhất trước khi chuyển tab
+                                try {
+                                  const res = await fetch(`/api/crm/activities?leadId=${lead.id}&limit=50`);
+                                  if (res.ok) { const data = await res.json(); setActivities(data); }
+                                } catch {}
+                                setActiveTab("timeline");
+                              }, 400);
+                            }
                           }}
                           onDelete={async () => {
                             if (!confirm("Xóa việc này?")) return;
