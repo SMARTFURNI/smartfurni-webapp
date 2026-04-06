@@ -210,7 +210,38 @@ function StatusBadge({ status }: { status: ContentStatus }) {
   );
 }
 
-// ─── Tab 1: AI Script Generator ───────────────────────────────────────────────
+// ─── Hook lưu lịch sử nhập liệu ─────────────────────────────────────────────
+const HISTORY_MAX = 8;
+function useInputHistory(storageKey: string): [string[], (val: string) => void, (val: string) => void] {
+  const [history, setHistory] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+
+  const addToHistory = (val: string) => {
+    const trimmed = val.trim();
+    if (!trimmed) return;
+    setHistory(prev => {
+      const deduped = [trimmed, ...prev.filter(v => v !== trimmed)].slice(0, HISTORY_MAX);
+      try { localStorage.setItem(storageKey, JSON.stringify(deduped)); } catch {}
+      return deduped;
+    });
+  };
+
+  const removeFromHistory = (val: string) => {
+    setHistory(prev => {
+      const next = prev.filter(v => v !== val);
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  return [history, addToHistory, removeFromHistory];
+}
+
+// ─── Tab 1: AI Script Generator ──────────────────────────────────────────────
 function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
   const [platform, setPlatform] = useState<ContentPlatform>("tiktok");
   const [topic, setTopic] = useState("");
@@ -229,6 +260,8 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
   const [error, setError] = useState("");
   const [showTopicSuggestions, setShowTopicSuggestions] = useState(false);
   const [showAudienceSuggestions, setShowAudienceSuggestions] = useState(false);
+  const [topicHistory, addTopicHistory, removeTopicHistory] = useInputHistory("sf_content_topic_history");
+  const [audienceHistory, addAudienceHistory, removeAudienceHistory] = useInputHistory("sf_content_audience_history");
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -253,6 +286,9 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
       setGeneratedScript(data.script);
       setGenerationId(data.generationId);
       setSaveTitle(`[${PLATFORM_CONFIG[platform].label}] ${topic}`);
+      // Lưu lịch sử sau khi tạo thành công
+      if (topic.trim()) addTopicHistory(topic);
+      if (targetAudience.trim()) addAudienceHistory(targetAudience);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -360,12 +396,44 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
             />
             {showTopicSuggestions && (
               <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white border border-yellow-200 rounded-xl shadow-lg overflow-hidden">
+                {/* Lịch sử đã dùng */}
+                {topicHistory.length > 0 && (
+                  <>
+                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                      <p className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+                        <History size={11} /> Đã dùng gần đây
+                      </p>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto border-b border-gray-100">
+                      {topicHistory.map((s, i) => (
+                        <div key={i} className="flex items-center group hover:bg-yellow-50 transition-colors border-b border-gray-50 last:border-0">
+                          <button
+                            type="button"
+                            onClick={() => { setTopic(s); setShowTopicSuggestions(false); }}
+                            className="flex-1 text-left px-3 py-2 text-sm text-gray-700 hover:text-yellow-800"
+                          >
+                            {s}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeTopicHistory(s); }}
+                            className="px-2 py-2 text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Xóa khỏi lịch sử"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {/* Gợi ý có sẵn */}
                 <div className="px-3 py-2 bg-yellow-50 border-b border-yellow-100">
                   <p className="text-xs font-semibold text-yellow-700 flex items-center gap-1">
                     <Sparkles size={11} /> Gợi ý chủ đề cho {PLATFORM_CONFIG[platform].label}
                   </p>
                 </div>
-                <div className="max-h-52 overflow-y-auto">
+                <div className="max-h-44 overflow-y-auto">
                   {TOPIC_SUGGESTIONS[platform].map((s, i) => (
                     <button
                       key={i}
@@ -415,12 +483,44 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
             />
             {showAudienceSuggestions && (
               <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white border border-blue-200 rounded-xl shadow-lg overflow-hidden">
+                {/* Lịch sử đã dùng */}
+                {audienceHistory.length > 0 && (
+                  <>
+                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+                        <History size={11} /> Đã dùng gần đây
+                      </p>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto border-b border-gray-100">
+                      {audienceHistory.map((s, i) => (
+                        <div key={i} className="flex items-center group hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
+                          <button
+                            type="button"
+                            onClick={() => { setTargetAudience(s); setShowAudienceSuggestions(false); }}
+                            className="flex-1 text-left px-3 py-2 text-sm text-gray-700 hover:text-blue-800"
+                          >
+                            {s}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeAudienceHistory(s); }}
+                            className="px-2 py-2 text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Xóa khỏi lịch sử"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {/* Gợi ý có sẵn */}
                 <div className="px-3 py-2 bg-blue-50 border-b border-blue-100">
                   <p className="text-xs font-semibold text-blue-700 flex items-center gap-1">
                     <TrendingUp size={11} /> Gợi ý đối tượng cho {PLATFORM_CONFIG[platform].label}
                   </p>
                 </div>
-                <div className="max-h-52 overflow-y-auto">
+                <div className="max-h-44 overflow-y-auto">
                   {AUDIENCE_SUGGESTIONS[platform].map((s, i) => (
                     <button
                       key={i}
