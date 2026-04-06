@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
     });
 
     const result = await model.generateContent(prompt);
@@ -147,25 +147,31 @@ export async function POST(req: NextRequest) {
     const generatedScript = response.text();
     const generationTimeMs = Date.now() - startTime;
 
-    // Lưu vào DB
-    const generation = await saveAIGeneration({
-      platform: platform as ContentPlatform,
-      topic,
-      productName,
-      targetAudience,
-      tone,
-      durationSeconds,
-      additionalNotes,
-      promptUsed: prompt,
-      generatedScript,
-      modelUsed: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-      generationTimeMs,
-      createdBy: session.id,
-    });
+    // Lưu vào DB (non-blocking - không ảnh hưởng response nếu DB lỗi)
+    let generationId = "";
+    try {
+      const generation = await saveAIGeneration({
+        platform: platform as ContentPlatform,
+        topic,
+        productName,
+        targetAudience,
+        tone,
+        durationSeconds,
+        additionalNotes,
+        promptUsed: prompt,
+        generatedScript,
+        modelUsed: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+        generationTimeMs,
+        createdBy: session.id,
+      });
+      generationId = generation.id;
+    } catch (dbErr) {
+      console.error("[generate-script] DB save error (non-fatal):", (dbErr as Error).message);
+    }
 
     return NextResponse.json({
       success: true,
-      generationId: generation.id,
+      generationId,
       script: generatedScript,
       generationTimeMs,
       platform,
