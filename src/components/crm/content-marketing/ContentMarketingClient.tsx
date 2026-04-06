@@ -70,6 +70,87 @@ const TONE_OPTIONS = [
 
 const KANBAN_COLUMNS: ContentStatus[] = ["idea", "scripted", "recording", "editing", "published"];
 
+// ─── Gợi ý chủ đề video theo nền tảng ────────────────────────────────────────
+const TOPIC_SUGGESTIONS: Record<ContentPlatform, string[]> = {
+  tiktok: [
+    "Giường điều chỉnh điện giúp ngủ ngon hơn",
+    "3 lý do nên dùng giường thông minh",
+    "Unboxing giường SmartFurni mới nhất",
+    "So sánh giường thường vs giường điều chỉnh",
+    "Cách chỉnh tư thế ngủ đúng cho người đau lưng",
+    "Review thực tế sau 1 tháng dùng giường SmartFurni",
+    "Tính năng massage giường SmartFurni có thực sự tốt?",
+    "Giường thông minh cho phòng nhỏ - giải pháp tiết kiệm không gian",
+    "Hướng dẫn điều khiển giường bằng điện thoại",
+    "Mẹo ngủ ngon cho dân văn phòng",
+  ],
+  facebook: [
+    "Giải pháp giường thông minh cho gia đình hiện đại",
+    "Câu chuyện khách hàng: Hết đau lưng nhờ giường SmartFurni",
+    "Khuyến mãi tháng này: Giảm 20% giường điều chỉnh",
+    "Hướng dẫn chọn giường phù hợp với không gian phòng ngủ",
+    "Top 5 tính năng nổi bật của giường SmartFurni 2024",
+    "Thiết kế phòng ngủ hiện đại với giường thông minh",
+    "Giường điều chỉnh - Đầu tư cho sức khỏe gia đình",
+    "Chính sách bảo hành 5 năm - Cam kết chất lượng SmartFurni",
+  ],
+  youtube: [
+    "Review chi tiết giường điều chỉnh SmartFurni Pro 3000",
+    "Hướng dẫn lắp đặt giường SmartFurni từ A đến Z",
+    "So sánh các dòng giường SmartFurni 2024",
+    "Trải nghiệm 30 ngày dùng giường thông minh",
+    "Khoa học giấc ngủ: Tại sao tư thế ngủ quan trọng?",
+    "Tour phòng ngủ thực tế với giường SmartFurni",
+    "Giường thông minh có đáng tiền không? Đánh giá thực tế",
+    "Hướng dẫn bảo dưỡng giường điều chỉnh điện đúng cách",
+  ],
+  all: [
+    "SmartFurni - Nâng tầm giấc ngủ của bạn",
+    "Giường thông minh cho cuộc sống hiện đại",
+    "Sức khoẻ bắt đầu từ giấc ngủ tốt",
+    "SmartFurni: Công nghệ phục vụ sức khoẻ",
+    "Đầu tư giường tốt - Đầu tư cho tương lai",
+    "Khuyến mãi đặc biệt tháng này tại SmartFurni",
+    "Câu chuyện thay đổi cuộc sống với giường SmartFurni",
+  ],
+};
+
+// ─── Gợi ý đối tượng mục tiêu ────────────────────────────────────────────────
+const AUDIENCE_SUGGESTIONS: Record<ContentPlatform, string[]> = {
+  tiktok: [
+    "Gen Z 18-25 tuổi, thích công nghệ, hay thức khuya",
+    "Millennials 25-35 tuổi, làm việc từ xa, cần ngủ đủ giấc",
+    "Dân văn phòng 25-40 tuổi, đau lưng, khó ngủ",
+    "Sinh viên 18-24 tuổi, phòng trọ nhỏ, ngân sách hạn chế",
+    "Người yêu thích gadget và đồ gia dụng thông minh",
+    "Người đang tìm kiếm giải pháp cải thiện giấc ngủ",
+  ],
+  facebook: [
+    "Gia đình trẻ 30-45 tuổi, có con nhỏ, quan tâm sức khỏe",
+    "Cặp vợ chồng mới cưới, đang trang trí nhà",
+    "Người trung niên 40-55 tuổi, đau lưng mãn tính",
+    "Chủ nhà đang cải tạo phòng ngủ",
+    "Người có thu nhập trung bình-cao, quan tâm chất lượng sống",
+    "Phụ nữ 30-50 tuổi, nội trợ, quan tâm sức khỏe gia đình",
+  ],
+  youtube: [
+    "Người tiêu dùng kỹ tính, nghiên cứu kỹ trước khi mua",
+    "Chủ nhà đang so sánh các thương hiệu giường cao cấp",
+    "Người bị rối loạn giấc ngủ, tìm giải pháp y tế",
+    "Kiến trúc sư, nhà thiết kế nội thất tìm sản phẩm cho khách hàng",
+    "Người 35-55 tuổi, thu nhập cao, ưu tiên sức khỏe",
+    "Reviewer, blogger nội thất và lifestyle",
+  ],
+  all: [
+    "Người trưởng thành 25-55 tuổi, quan tâm sức khỏe giấc ngủ",
+    "Dân văn phòng bận rộn, cần phục hồi sức khoẻ tốt",
+    "Người đang tìm kiếm giường chất lượng cao",
+    "Gia đình Việt Nam hiện đại, thu nhập trung bình-cao",
+    "Người bị đau lưng, cổ, vai gáy do ngồi nhiều",
+    "Người cao tuổi 50+ cần hỗ trợ tư thế ngủ",
+  ],
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(iso?: string) {
   if (!iso) return "";
@@ -117,7 +198,7 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
   const [productName, setProductName] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
   const [tone, setTone] = useState("professional");
-  const [durationSeconds, setDurationSeconds] = useState<number | "">("");
+  const [durationSeconds, setDurationSeconds] = useState<number | "">("")
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [generatedScript, setGeneratedScript] = useState("");
@@ -127,6 +208,8 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
   const [saveTitle, setSaveTitle] = useState("");
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [error, setError] = useState("");
+  const [showTopicSuggestions, setShowTopicSuggestions] = useState(false);
+  const [showAudienceSuggestions, setShowAudienceSuggestions] = useState(false);
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -234,16 +317,49 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
           </div>
 
           {/* Topic */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Chủ đề video <span className="text-red-500">*</span>
-            </label>
+          <div className="mb-4 relative">
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Chủ đề video <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => { setShowTopicSuggestions(v => !v); setShowAudienceSuggestions(false); }}
+                className="flex items-center gap-1 text-xs text-yellow-600 hover:text-yellow-700 font-medium px-2 py-0.5 rounded-md hover:bg-yellow-50 transition-colors"
+              >
+                <Sparkles size={11} />
+                Gợi ý ý tưởng
+                <ChevronDown size={11} className={`transition-transform ${showTopicSuggestions ? "rotate-180" : ""}`} />
+              </button>
+            </div>
             <input
               value={topic}
               onChange={e => setTopic(e.target.value)}
+              onFocus={() => { setShowTopicSuggestions(false); }}
               placeholder="VD: Giường điều chỉnh điện giúp ngủ ngon hơn"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
+            {showTopicSuggestions && (
+              <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white border border-yellow-200 rounded-xl shadow-lg overflow-hidden">
+                <div className="px-3 py-2 bg-yellow-50 border-b border-yellow-100">
+                  <p className="text-xs font-semibold text-yellow-700 flex items-center gap-1">
+                    <Sparkles size={11} /> Gợi ý chủ đề cho {PLATFORM_CONFIG[platform].label}
+                  </p>
+                </div>
+                <div className="max-h-52 overflow-y-auto">
+                  {TOPIC_SUGGESTIONS[platform].map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => { setTopic(s); setShowTopicSuggestions(false); }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-800 transition-colors border-b border-gray-50 last:border-0"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Product Name */}
@@ -258,14 +374,47 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void; }) {
           </div>
 
           {/* Target Audience */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Đối tượng mục tiêu</label>
+          <div className="mb-4 relative">
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">Đối tượng mục tiêu</label>
+              <button
+                type="button"
+                onClick={() => { setShowAudienceSuggestions(v => !v); setShowTopicSuggestions(false); }}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium px-2 py-0.5 rounded-md hover:bg-blue-50 transition-colors"
+              >
+                <TrendingUp size={11} />
+                Gợi ý đối tượng
+                <ChevronDown size={11} className={`transition-transform ${showAudienceSuggestions ? "rotate-180" : ""}`} />
+              </button>
+            </div>
             <input
               value={targetAudience}
               onChange={e => setTargetAudience(e.target.value)}
+              onFocus={() => { setShowAudienceSuggestions(false); }}
               placeholder="VD: Dân văn phòng 25-45 tuổi, đau lưng, khó ngủ"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
+            {showAudienceSuggestions && (
+              <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white border border-blue-200 rounded-xl shadow-lg overflow-hidden">
+                <div className="px-3 py-2 bg-blue-50 border-b border-blue-100">
+                  <p className="text-xs font-semibold text-blue-700 flex items-center gap-1">
+                    <TrendingUp size={11} /> Gợi ý đối tượng cho {PLATFORM_CONFIG[platform].label}
+                  </p>
+                </div>
+                <div className="max-h-52 overflow-y-auto">
+                  {AUDIENCE_SUGGESTIONS[platform].map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => { setTargetAudience(s); setShowAudienceSuggestions(false); }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-800 transition-colors border-b border-gray-50 last:border-0"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Tone + Duration */}
