@@ -507,23 +507,38 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                         <TaskItem key={task.id} task={task}
                           onToggle={async () => {
                             const newDone = !task.done;
-                            const updated = { ...task, done: newDone };
-                            setTasks(prev => prev.map(t => t.id === task.id ? updated : t));
-                            await fetch(`/api/crm/tasks/${task.id}`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ done: newDone }),
-                            });
-                            // Khi đánh dấu hoàn thành → chuyển sang tab Lịch sử
                             if (newDone) {
-                              setTimeout(async () => {
-                                // Reload activities mới nhất trước khi chuyển tab
-                                try {
-                                  const res = await fetch(`/api/crm/activities?leadId=${lead.id}&limit=50`);
-                                  if (res.ok) { const data = await res.json(); setActivities(data); }
-                                } catch {}
-                                setActiveTab("timeline");
-                              }, 400);
+                              // Hoàn thành: xóa khỏi danh sách Việc cần làm
+                              setTasks(prev => prev.filter(t => t.id !== task.id));
+                              // Xóa task khỏi DB
+                              await fetch(`/api/crm/tasks/${task.id}`, { method: "DELETE" });
+                              // Tạo bản ghi Lịch sử tương tác
+                              const actRes = await fetch("/api/crm/activities", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  leadId: lead.id,
+                                  type: "note",
+                                  title: `✅ Hoàn thành: ${task.title}`,
+                                  content: `Đã hoàn thành việc cần làm: ${task.title}`,
+                                  createdBy: task.assignedTo || "Hệ thống",
+                                  attachments: [],
+                                }),
+                              });
+                              if (actRes.ok) {
+                                const newAct = await actRes.json();
+                                setActivities(prev => [newAct, ...prev]);
+                              }
+                              // Chuyển sang tab Lịch sử
+                              setActiveTab("timeline");
+                            } else {
+                              // Bỏ tích: chỉ cập nhật trạng thái (không xóa)
+                              setTasks(prev => prev.map(t => t.id === task.id ? { ...t, done: false } : t));
+                              await fetch(`/api/crm/tasks/${task.id}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ done: false }),
+                              });
                             }
                           }}
                           onDelete={async () => {
