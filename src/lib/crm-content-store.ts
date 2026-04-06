@@ -3,6 +3,7 @@
  * Quản lý video content: kịch bản AI, kế hoạch sản xuất, lịch đăng bài
  */
 import { query } from "@/lib/db";
+import { randomUUID } from "crypto";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type ContentPlatform = "tiktok" | "facebook" | "youtube" | "all";
@@ -159,7 +160,7 @@ export async function loadContentMarketingFromDb(): Promise<void> {
     // Ensure tables exist
     await query(`
       CREATE TABLE IF NOT EXISTS content_videos (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        id TEXT PRIMARY KEY,
         title VARCHAR(500) NOT NULL,
         topic VARCHAR(500),
         platform VARCHAR(50) NOT NULL DEFAULT 'tiktok',
@@ -190,8 +191,8 @@ export async function loadContentMarketingFromDb(): Promise<void> {
 
     await query(`
       CREATE TABLE IF NOT EXISTS content_ai_generations (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        video_id UUID REFERENCES content_videos(id) ON DELETE SET NULL,
+        id TEXT PRIMARY KEY,
+        video_id TEXT REFERENCES content_videos(id) ON DELETE SET NULL,
         platform VARCHAR(50) NOT NULL,
         topic VARCHAR(500) NOT NULL,
         product_name VARCHAR(500),
@@ -212,7 +213,7 @@ export async function loadContentMarketingFromDb(): Promise<void> {
 
     await query(`
       CREATE TABLE IF NOT EXISTS content_script_templates (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        id TEXT PRIMARY KEY,
         name VARCHAR(500) NOT NULL,
         platform VARCHAR(50) NOT NULL,
         category VARCHAR(100),
@@ -291,15 +292,16 @@ export async function createContentVideo(data: {
   assignedTo?: string;
   assignedToName?: string;
 }): Promise<ContentVideo> {
+  const newId = randomUUID();
   const result = await query(
     `INSERT INTO content_videos
-      (title, topic, platform, status, script, script_generated_by, ai_prompt,
+      (id, title, topic, platform, status, script, script_generated_by, ai_prompt,
        duration_seconds, hashtags, notes, scheduled_at, created_by, created_by_name,
        assigned_to, assigned_to_name)
-     VALUES ($1,$2,$3,'idea',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+     VALUES ($1,$2,$3,$4,'idea',$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      RETURNING *`,
     [
-      data.title, data.topic || null, data.platform,
+      newId, data.title, data.topic || null, data.platform,
       data.script || null, data.scriptGeneratedBy || null, data.aiPrompt || null,
       data.durationSeconds || null, data.hashtags || [], data.notes || null,
       data.scheduledAt ? new Date(data.scheduledAt) : null,
@@ -387,15 +389,16 @@ export async function saveAIGeneration(data: {
   generationTimeMs?: number;
   createdBy: string;
 }): Promise<ContentAIGeneration> {
+  const genId = randomUUID();
   const result = await query(
     `INSERT INTO content_ai_generations
-      (video_id, platform, topic, product_name, target_audience, tone,
+      (id, video_id, platform, topic, product_name, target_audience, tone,
        duration_seconds, additional_notes, prompt_used, generated_script,
        model_used, tokens_used, generation_time_ms, was_saved, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,FALSE,$14)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,FALSE,$15)
      RETURNING *`,
     [
-      data.videoId || null, data.platform, data.topic,
+      genId, data.videoId || null, data.platform, data.topic,
       data.productName || null, data.targetAudience || null, data.tone || null,
       data.durationSeconds || null, data.additionalNotes || null,
       data.promptUsed, data.generatedScript,
