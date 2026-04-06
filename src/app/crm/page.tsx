@@ -27,13 +27,15 @@ export default async function CrmDashboardPage() {
   const staffUsername = currentStaff?.username ?? "";
   const staffId = currentStaff?.id ?? null;
 
-  // Đọc darkMode preference theo tài khoản
+  // Đọc darkMode và gradientPreset preference theo tài khoản
   let initialDarkMode = false;
+  let initialGradientPreset = "default";
   try {
     if (session.isAdmin) {
       // Admin: đọc từ cookie sf_admin_theme
       const cookieStore = await cookies();
       initialDarkMode = cookieStore.get("sf_admin_theme")?.value === "dark";
+      initialGradientPreset = cookieStore.get("sf_admin_gradient")?.value ?? "default";
     } else if (session.staffId) {
       // Nhân viên: đọc từ data JSONB của crm_staff
       const row = await queryOne<{ data: string }>(
@@ -44,6 +46,7 @@ export default async function CrmDashboardPage() {
         const data = typeof row.data === "string" ? JSON.parse(row.data) : row.data as Record<string, unknown>;
         const prefs = (data?.preferences as Record<string, unknown>) ?? {};
         initialDarkMode = prefs.darkMode === true;
+        initialGradientPreset = (prefs.gradientPreset as string) ?? "default";
       }
     }
   } catch { /* ignore, default to light */ }
@@ -130,6 +133,7 @@ export default async function CrmDashboardPage() {
         staffId: staffId ?? undefined,
       }}
       initialDarkMode={initialDarkMode}
+      initialGradientPreset={initialGradientPreset}
     />
   );
 }

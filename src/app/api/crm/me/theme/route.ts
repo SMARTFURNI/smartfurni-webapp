@@ -1,41 +1,35 @@
 /**
- * GET  /api/crm/me/theme  — Lấy darkMode preference của tài khoản đang đăng nhập
- * PATCH /api/crm/me/theme — Lưu darkMode preference vào DB theo tài khoản
- *
- * Lưu vào cột data JSONB của crm_staff: { ...existingData, preferences: { darkMode: boolean } }
- * Admin (không phải crm_staff) lưu qua cookie riêng.
+ * GET  /api/crm/me/theme  — Lấy theme preferences (darkMode + gradientPreset)
+ * PATCH /api/crm/me/theme — Lưu theme preferences vào DB/cookie theo tài khoản
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireCrmAccess } from "@/lib/admin-auth";
-import { getStaffById, updateStaff } from "@/lib/crm-staff-store";
 import { query, queryOne } from "@/lib/db";
 import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-// ─── GET: Lấy darkMode preference ────────────────────────────────────────────
+// ─── GET: Lấy theme preferences ──────────────────────────────────────────────
 export async function GET() {
   try {
     const session = await requireCrmAccess();
 
     if (session.isAdmin) {
-      // Admin: đọc từ cookie sf_admin_theme
       const cookieStore = await cookies();
-      const themeCookie = cookieStore.get("sf_admin_theme");
-      const darkMode = themeCookie?.value === "dark";
-      return NextResponse.json({ darkMode });
+      const darkMode = cookieStore.get("sf_admin_theme")?.value === "dark";
+      const gradientPreset = cookieStore.get("sf_admin_gradient")?.value ?? "default";
+      return NextResponse.json({ darkMode, gradientPreset });
     }
 
     if (!session.staffId) {
-      return NextResponse.json({ darkMode: false });
+      return NextResponse.json({ darkMode: false, gradientPreset: "default" });
     }
 
-    // Nhân viên: đọc từ data JSONB của crm_staff
     const row = await queryOne<{ data: string }>(
       "SELECT data FROM crm_staff WHERE id = $1",
       [session.staffId]
     );
-    if (!row) return NextResponse.json({ darkMode: false });
+    if (!row) return NextResponse.json({ darkMode: false, gradientPreset: "default" });
 
     let data: Record<string, unknown>;
     try {
@@ -44,29 +38,35 @@ export async function GET() {
       data = {};
     }
     const prefs = (data.preferences as Record<string, unknown>) ?? {};
-    const darkMode = prefs.darkMode === true;
-    return NextResponse.json({ darkMode });
+    return NextResponse.json({
+      darkMode: prefs.darkMode === true,
+      gradientPreset: (prefs.gradientPreset as string) ?? "default",
+    });
   } catch {
-    return NextResponse.json({ darkMode: false });
+    return NextResponse.json({ darkMode: false, gradientPreset: "default" });
   }
 }
 
-// ─── PATCH: Lưu darkMode preference ──────────────────────────────────────────
+// ─── PATCH: Lưu theme preferences ────────────────────────────────────────────
 export async function PATCH(req: NextRequest) {
   try {
     const session = await requireCrmAccess();
     const body = await req.json();
-    const darkMode = Boolean(body.darkMode);
+    const darkMode = body.darkMode !== undefined ? Boolean(body.darkMode) : undefined;
+    const gradientPreset = typeof body.gradientPreset === "string" ? body.gradientPreset : undefined;
 
     if (session.isAdmin) {
-      // Admin: lưu vào cookie sf_admin_theme (1 năm)
       const res = NextResponse.json({ success: true });
-      res.cookies.set("sf_admin_theme", darkMode ? "dark" : "light", {
-        httpOnly: false,
-        maxAge: 60 * 60 * 24 * 365,
-        path: "/",
-        sameSite: "lax",
-      });
+      if (darkMode !== undefined) {
+        res.cookies.set("sf_admin_theme", darkMode ? "dark" : "light", {
+          httpOnly: false, maxAge: 60 * 60 * 24 * 365, path: "/", sameSite: "lax",
+        });
+      }
+      if (gradientPreset !== undefined) {
+        res.cookies.set("sf_admin_gradient", gradientPreset, {
+          httpOnly: false, maxAge: 60 * 60 * 24 * 365, path: "/", sameSite: "lax",
+        });
+      }
       return res;
     }
 
@@ -74,7 +74,6 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Không tìm thấy tài khoản" }, { status: 400 });
     }
 
-    // Nhân viên: cập nhật data.preferences.darkMode trong crm_staff
     const row = await queryOne<{ data: string }>(
       "SELECT data FROM crm_staff WHERE id = $1",
       [session.staffId]
@@ -90,14 +89,12 @@ export async function PATCH(req: NextRequest) {
       data = {};
     }
 
-    const updatedData = {
-      ...data,
-      preferences: {
-        ...((data.preferences as Record<string, unknown>) ?? {}),
-        darkMode,
-      },
-    };
+    const existingPrefs = (data.preferences as Record<string, unknown>) ?? {};
+    const updatedPrefs: Record<string, unknown> = { ...existingPrefs };
+    if (darkMode !== undefined) updatedPrefs.darkMode = darkMode;
+    if (gradientPreset !== undefined) updatedPrefs.gradientPreset = gradientPreset;
 
+    const updatedData = { ...data, preferences: updatedPrefs };
     await query(
       "UPDATE crm_staff SET data = $1, updated_at = NOW() WHERE id = $2",
       [JSON.stringify(updatedData), session.staffId]

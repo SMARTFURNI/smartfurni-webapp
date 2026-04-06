@@ -43,6 +43,7 @@ interface Props {
   initialPoolStats?: PoolStats | null;
   initialPeriodStats?: PeriodStats | null;
   initialDarkMode?: boolean;
+  initialGradientPreset?: string;
 }
 
 const PRIORITY_CONFIG = {
@@ -1371,7 +1372,20 @@ const DASHBOARD_DEFAULT_LEAD_TYPES: LeadTypeItem[] = [
   { id: "investor",  label: "Chủ đầu tư CHDV", color: "#60a5fa" },
   { id: "dealer",    label: "Đại lý",           color: "#C9A84C" },
 ];
-export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes, initialTwelveWeekPlan, initialSharedPlan, initialPoolStats, initialPeriodStats, initialDarkMode }: Props) {
+// ─── Gradient Presets ────────────────────────────────────────────────────────
+const GRADIENT_PRESETS = [
+  { id: "default", name: "Mặc định", colors: ["#F7F8FA", "#FFFFFF"], accent: "#4F46E5", preview: "linear-gradient(135deg, #F7F8FA 0%, #EAECF0 100%)" },
+  { id: "sunset", name: "Hoàng hôn", colors: ["#FFF7ED", "#FEF3C7"], accent: "#EA580C", preview: "linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%)" },
+  { id: "ocean", name: "Biển xanh", colors: ["#EFF6FF", "#E0F2FE"], accent: "#2563EB", preview: "linear-gradient(135deg, #EFF6FF 0%, #E0F2FE 100%)" },
+  { id: "forest", name: "Rừng xanh", colors: ["#F0FDF4", "#DCFCE7"], accent: "#059669", preview: "linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)" },
+  { id: "lavender", name: "Oai hương", colors: ["#F5F3FF", "#EDE9FE"], accent: "#7C3AED", preview: "linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)" },
+  { id: "rose", name: "Hồng nhạt", colors: ["#FFF1F2", "#FFE4E6"], accent: "#E11D48", preview: "linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%)" },
+  { id: "gold", name: "Vàng SmartFurni", colors: ["#FFFBEB", "#FEF3C7"], accent: "#C9A84C", preview: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" },
+  { id: "midnight", name: "Nửa đêm", colors: ["#0F172A", "#1E293B"], accent: "#818CF8", preview: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)" },
+  { id: "aurora", name: "Bắc cực quang", colors: ["#0F2027", "#203A43"], accent: "#34D399", preview: "linear-gradient(135deg, #0F2027 0%, #2C5364 100%)" },
+];
+
+export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes, initialTwelveWeekPlan, initialSharedPlan, initialPoolStats, initialPeriodStats, initialDarkMode, initialGradientPreset }: Props) {
   // Merge with defaults so all keys are always defined
   const theme: DashboardTheme = { ...DEFAULT_SETTINGS.dashboardTheme, ...(themeProp ?? {}) };
   // Section ordering & visibility helpers
@@ -1394,9 +1408,11 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const [showAddModal, setShowAddModal] = useState(false);
   const [period, setPeriod] = useState<Period>("week");
   const [darkMode, setDarkMode] = useState(initialDarkMode ?? false);
-
+  const [gradientPreset, setGradientPreset] = useState(initialGradientPreset ?? "default");
+  const [showGradientPicker, setShowGradientPicker] = useState(false);
   // Lưu theme preference khi toggle (debounce 500ms để tránh gọi API quá nhiều)
   const darkModeRef = useRef(initialDarkMode ?? false);
+  const gradientRef = useRef(initialGradientPreset ?? "default");
   useEffect(() => {
     if (darkMode === darkModeRef.current) return;
     darkModeRef.current = darkMode;
@@ -1410,6 +1426,19 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     }, 500);
     return () => clearTimeout(timer);
   }, [darkMode]);
+  useEffect(() => {
+    if (gradientPreset === gradientRef.current) return;
+    gradientRef.current = gradientPreset;
+    const timer = setTimeout(() => {
+      fetch("/api/crm/me/theme", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ gradientPreset }),
+      }).catch(() => {/* ignore */});
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [gradientPreset]);;
 
   // Dynamic lead types from CRM settings (server-side pre-loaded)
   const [leadTypes, setLeadTypes] = useState<LeadTypeItem[]>(
@@ -1637,13 +1666,18 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const fmtVal = (v: number) => v >= 1e9 ? `${(v/1e9).toFixed(1)}B` : v >= 1e6 ? `${(v/1e6).toFixed(0)}tr` : formatVND(v);
 
   // Build effective theme (dark mode overrides theme settings)
-  const dm = darkMode ? {
+  // Active gradient preset
+  const activeGradient = GRADIENT_PRESETS.find(g => g.id === gradientPreset) ?? GRADIENT_PRESETS[0];
+  const isDarkGradient = ["midnight", "aurora"].includes(gradientPreset);
+  const effectiveDarkMode = darkMode || isDarkGradient;
+
+  const dm = effectiveDarkMode ? {
     bg: "#0F172A", card: "#1E293B", cardBorder: "#334155",
     textPrimary: "#F1F5F9", textSecondary: "#94A3B8", textMuted: "#64748B",
     divider: "#1E293B", headerBg: "#1E293B", headerBorder: "#334155",
     cardShadow: T.cardShadow,
-  } : {
-    bg: theme.pageBg,
+   } : {
+    bg: activeGradient.colors[0],
     card: theme.kpiCardBg,
     cardBorder: theme.kpiCardBorder,
     textPrimary: theme.kpiCardTitleColor,
@@ -1654,10 +1688,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     headerBorder: theme.kpiCardBorder,
     cardShadow: T.cardShadow,
   };
-
   return (
     <div className="flex flex-col h-full overflow-y-auto transition-colors duration-300"
-      style={{ background: dm.bg }}>
+      style={{ background: isDarkGradient ? activeGradient.preview : `linear-gradient(160deg, ${activeGradient.colors[0]} 0%, ${activeGradient.colors[1]} 100%)` }}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 px-4 md:px-8 py-3 md:py-5 flex items-center justify-between gap-2"
@@ -1698,11 +1731,52 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             ))}
           </div>
 
+          {/* Gradient Picker */}
+          <div className="relative">
+            <button
+              onClick={() => setShowGradientPicker(p => !p)}
+              title="Đổi màu giao diện"
+              className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center transition-all hover:scale-105 hover:shadow-md"
+              style={{ background: activeGradient.preview, border: `2px solid ${activeGradient.accent}60`, boxShadow: `0 2px 8px ${activeGradient.accent}30` }}
+            >
+              <span style={{ fontSize: 13 }}>🎨</span>
+            </button>
+            {showGradientPicker && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowGradientPicker(false)} />
+                <div
+                  className="absolute right-0 top-11 z-50 rounded-2xl shadow-2xl p-3 w-64"
+                  style={{ background: dm.card, border: `1px solid ${dm.cardBorder}` }}
+                >
+                  <div className="text-xs font-bold mb-2.5 px-1" style={{ color: dm.textPrimary }}>Chọn giao diện màu sắc</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {GRADIENT_PRESETS.map(preset => (
+                      <button
+                        key={preset.id}
+                        onClick={() => { setGradientPreset(preset.id); setShowGradientPicker(false); }}
+                        className="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all hover:scale-105"
+                        style={{
+                          background: gradientPreset === preset.id ? preset.accent + "15" : "transparent",
+                          border: gradientPreset === preset.id ? `2px solid ${preset.accent}` : "2px solid transparent",
+                        }}
+                      >
+                        <div
+                          className="w-10 h-10 rounded-xl shadow-sm"
+                          style={{ background: preset.preview }}
+                        />
+                        <span className="text-[10px] font-semibold text-center leading-tight" style={{ color: dm.textSecondary }}>{preset.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
           {/* Dark mode toggle */}
           <button onClick={() => setDarkMode(d => !d)}
             className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-80"
             style={{ background: dm.bg, border: `1px solid ${dm.cardBorder}` }}>
-            {darkMode ? <Sun size={14} style={{ color: T.gold }} /> : <Moon size={14} style={{ color: dm.textSecondary }} />}
+            {effectiveDarkMode ? <Sun size={14} style={{ color: T.gold }} /> : <Moon size={14} style={{ color: dm.textSecondary }} />}
           </button>
 
           {/* Notification bell */}
