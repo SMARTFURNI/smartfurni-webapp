@@ -33,6 +33,7 @@ import {
   ChevronDown,
   PhoneCall,
   Share2,
+  Clapperboard,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -82,6 +83,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Marketing & CS",
     items: [
       { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true },
+      { label: "Content Marketing AI", href: "/crm/content", icon: Clapperboard },
       { label: "Hợp đồng điện tử", href: "/crm/contracts", icon: FileText },
       { label: "Khảo sát NPS", href: "/crm/nps", icon: TrendingUp, adminOnly: true },
       { label: "Nhắc nhở Zalo/SMS", href: "/crm/notifications", icon: Bell },
