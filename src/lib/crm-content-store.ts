@@ -411,3 +411,172 @@ export async function saveAIGeneration(data: {
   aiGenerations.unshift(gen);
   return gen;
 }
+
+// ─── Content Settings ─────────────────────────────────────────────────────────
+export interface ContentSettings {
+  id: string;
+  // AI Model
+  aiProvider: "gemini" | "openai" | "claude";
+  aiModel: string;
+  aiTemperature: number;
+  aiMaxTokens: number;
+  // Prompt template
+  promptTemplate: string;
+  promptSystemContext: string;
+  // Brand context
+  brandName: string;
+  brandDescription: string;
+  brandUsp: string;
+  brandProducts: string;
+  brandTone: string;
+  // Platform defaults
+  defaultPlatform: string;
+  defaultTone: string;
+  defaultDuration: number;
+  // Workflow
+  autoSaveToKanban: boolean;
+  requireApproval: boolean;
+  maxGenerationsPerDay: number;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export const DEFAULT_PROMPT_TEMPLATE = `Bạn là chuyên gia sáng tạo nội dung video cho thương hiệu {{brandName}}.
+Hãy viết kịch bản video hoàn chỉnh cho nền tảng {{platform}}.
+
+**Thông tin video:**
+- Chủ đề: {{topic}}
+{{#productName}}- Sản phẩm: {{productName}}{{/productName}}
+- Thời lượng: {{duration}}
+- Giọng điệu: {{tone}}
+{{#targetAudience}}- Đối tượng mục tiêu: {{targetAudience}}{{/targetAudience}}
+{{#additionalNotes}}- Ghi chú thêm: {{additionalNotes}}{{/additionalNotes}}
+
+**Yêu cầu kịch bản:**
+1. Viết bằng tiếng Việt, tự nhiên và cuốn hút
+2. Bao gồm: Hook mở đầu → Nội dung chính → Call-to-Action
+3. Ghi rõ [CẢNH], [VOICEOVER], [TEXT ON SCREEN], [NHẠC NỀN] khi cần
+4. Phù hợp với đặc thù của nền tảng
+5. Kết thúc bằng hashtag gợi ý (5-10 hashtag tiếng Việt và tiếng Anh)
+6. Thêm ghi chú sản xuất (góc quay, ánh sáng, props cần thiết)
+
+Hãy viết kịch bản chi tiết, sáng tạo và có thể thực hiện ngay:`;
+
+export const DEFAULT_SYSTEM_CONTEXT = `Thương hiệu nội thất công thái học cao cấp tại Việt Nam.
+Sản phẩm: giường điều chỉnh điện, bàn làm việc ergonomic, ghế văn phòng.
+USP: Chăm sóc sức khỏe cột sống, nâng cao chất lượng giấc ngủ và hiệu suất làm việc.
+Giá trị: Chất lượng Đức/Nhật, phù hợp với người Việt.
+Khách hàng B2B: chủ đầu tư BĐS, khách sạn/resort, bệnh viện/y tế, văn phòng/co-working, showroom/đại lý.`;
+
+let contentSettings: ContentSettings | null = null;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSettingsRow(row: any): ContentSettings {
+  return {
+    id: row.id || "default",
+    aiProvider: row.ai_provider || "gemini",
+    aiModel: row.ai_model || "gemini-1.5-flash",
+    aiTemperature: Number(row.ai_temperature) || 0.7,
+    aiMaxTokens: Number(row.ai_max_tokens) || 8192,
+    promptTemplate: row.prompt_template || DEFAULT_PROMPT_TEMPLATE,
+    promptSystemContext: row.prompt_system_context || DEFAULT_SYSTEM_CONTEXT,
+    brandName: row.brand_name || "SmartFurni",
+    brandDescription: row.brand_description || "",
+    brandUsp: row.brand_usp || "",
+    brandProducts: row.brand_products || "",
+    brandTone: row.brand_tone || "",
+    defaultPlatform: row.default_platform || "tiktok",
+    defaultTone: row.default_tone || "professional",
+    defaultDuration: Number(row.default_duration) || 30,
+    autoSaveToKanban: Boolean(row.auto_save_to_kanban),
+    requireApproval: Boolean(row.require_approval),
+    maxGenerationsPerDay: Number(row.max_generations_per_day) || 50,
+    updatedBy: row.updated_by || "",
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
+  };
+}
+
+export function getContentSettings(): ContentSettings | null {
+  return contentSettings;
+}
+
+export async function loadContentSettings(): Promise<ContentSettings> {
+  await query(`
+    CREATE TABLE IF NOT EXISTS content_settings (
+      id TEXT PRIMARY KEY DEFAULT 'default',
+      ai_provider VARCHAR(50) DEFAULT 'gemini',
+      ai_model VARCHAR(100) DEFAULT 'gemini-1.5-flash',
+      ai_temperature DECIMAL(3,2) DEFAULT 0.7,
+      ai_max_tokens INT DEFAULT 8192,
+      prompt_template TEXT,
+      prompt_system_context TEXT,
+      brand_name VARCHAR(255) DEFAULT 'SmartFurni',
+      brand_description TEXT,
+      brand_usp TEXT,
+      brand_products TEXT,
+      brand_tone TEXT,
+      default_platform VARCHAR(50) DEFAULT 'tiktok',
+      default_tone VARCHAR(50) DEFAULT 'professional',
+      default_duration INT DEFAULT 30,
+      auto_save_to_kanban BOOLEAN DEFAULT FALSE,
+      require_approval BOOLEAN DEFAULT FALSE,
+      max_generations_per_day INT DEFAULT 50,
+      updated_by VARCHAR(255),
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  // Insert default row if not exists
+  await query(
+    `INSERT INTO content_settings (id, prompt_template, prompt_system_context)
+     VALUES ('default', $1, $2)
+     ON CONFLICT (id) DO NOTHING`,
+    [DEFAULT_PROMPT_TEMPLATE, DEFAULT_SYSTEM_CONTEXT]
+  );
+  const rows = await query<Record<string, unknown>>("SELECT * FROM content_settings WHERE id = 'default'");
+  const settings = rows[0] ? mapSettingsRow(rows[0]) : mapSettingsRow({ id: "default" });
+  contentSettings = settings;
+  return settings;
+}
+
+export async function updateContentSettings(
+  updates: Partial<Omit<ContentSettings, "id" | "updatedAt">>,
+): Promise<ContentSettings> {
+  const fieldMap: Record<string, string> = {
+    aiProvider: "ai_provider",
+    aiModel: "ai_model",
+    aiTemperature: "ai_temperature",
+    aiMaxTokens: "ai_max_tokens",
+    promptTemplate: "prompt_template",
+    promptSystemContext: "prompt_system_context",
+    brandName: "brand_name",
+    brandDescription: "brand_description",
+    brandUsp: "brand_usp",
+    brandProducts: "brand_products",
+    brandTone: "brand_tone",
+    defaultPlatform: "default_platform",
+    defaultTone: "default_tone",
+    defaultDuration: "default_duration",
+    autoSaveToKanban: "auto_save_to_kanban",
+    requireApproval: "require_approval",
+    maxGenerationsPerDay: "max_generations_per_day",
+    updatedBy: "updated_by",
+  };
+  const fields: string[] = [];
+  const values: unknown[] = [];
+  let idx = 1;
+  for (const [key, dbCol] of Object.entries(fieldMap)) {
+    if (key in updates) {
+      fields.push(`${dbCol} = $${idx}`);
+      values.push((updates as Record<string, unknown>)[key]);
+      idx++;
+    }
+  }
+  if (fields.length === 0) return loadContentSettings();
+  fields.push(`updated_at = CURRENT_TIMESTAMP`);
+  values.push("default");
+  await query(
+    `UPDATE content_settings SET ${fields.join(", ")} WHERE id = $${idx}`,
+    values
+  );
+  return loadContentSettings();
+}
