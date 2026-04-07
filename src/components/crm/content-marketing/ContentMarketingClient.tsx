@@ -597,6 +597,7 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
 
 
   return (
+    <>
     <div className="grid grid-cols-1 xl:grid-cols-[460px_1fr] gap-5">
       {/* ── Left: Form Panel ───────────────────────────────────────────────────── */}
       <div className="rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(20px)" }}>
@@ -933,7 +934,7 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
       </div>
     </div>
 
-    {/* ── Save Script Modal ─────────────────────────────────────────────────── */}
+
     {showSaveModal && (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
         style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
@@ -1029,9 +1030,10 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
         </div>
       </div>
     )}
+    </>
   );
 }
-// ─── Tab 2: Content Planner (Kanban with DnD) ─────────────────────────────────
+
 function ContentPlannerTab() {
   const [videos, setVideos] = useState<ContentVideo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1173,7 +1175,7 @@ function ContentPlannerTab() {
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
-          onDragOver={handleDragOver as (event: { over: { id: string } | null }) => void}
+          onDragOver={handleDragOver as unknown as (event: DragEndEvent) => void}
           onDragEnd={handleDragEnd}
         >
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 overflow-x-auto pb-2">
