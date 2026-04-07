@@ -56,7 +56,7 @@ function StageTag({ stageId, label }: { stageId: string; label: string }) {
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
       style={{
-        background: stage ? `${stage.color}18` : "rgba(255,255,255,0.04)",
+        background: stage ? `${stage.color}18` : "#f3f4f6",
         color: stage?.color ?? "#6b7280",
         border: `1px solid ${stage ? `${stage.color}40` : "#e5e7eb"}`,
       }}
@@ -113,7 +113,7 @@ function RuleEditor({
       className="rounded-xl border transition-all"
       style={{
         background: rule.enabled ? "#fff" : "#fafafa",
-        borderColor: rule.enabled ? "#e5e7eb" : "rgba(255,255,255,0.04)",
+        borderColor: rule.enabled ? "#e5e7eb" : "#f3f4f6",
       }}
     >
       {/* Header */}
@@ -136,7 +136,7 @@ function RuleEditor({
             <span className="text-xs text-gray-500">{triggerLabel}</span>
             {rule.trigger.type === "stage_changed" && rule.trigger.toStage && (
               <>
-                <ArrowRight size={12} className="text-[rgba(245,237,214,0.35)]" />
+                <ArrowRight size={12} className="text-gray-400" />
                 <StageTag
                   stageId={rule.trigger.toStage}
                   label={STAGES.find((s) => s.id === rule.trigger.toStage)?.label ?? rule.trigger.toStage}
@@ -158,7 +158,7 @@ function RuleEditor({
           )}
           <button
             onClick={() => setExpanded(!expanded)}
-            className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.08)] text-gray-400 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors"
           >
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>

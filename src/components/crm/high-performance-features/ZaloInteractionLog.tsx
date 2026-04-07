@@ -99,7 +99,7 @@ export default function ZaloInteractionLog({
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="p-1.5 hover:bg-[rgba(255,255,255,0.08)] rounded-lg transition-colors"
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
           title="Thêm tương tác"
         >
           {showForm ? (
@@ -112,7 +112,7 @@ export default function ZaloInteractionLog({
 
       {/* Add Interaction Form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="px-4 py-3 border-b border-gray-100 bg-[rgba(255,255,255,0.04)]">
+        <form onSubmit={handleSubmit} className="px-4 py-3 border-b border-gray-100 bg-gray-50">
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -131,7 +131,7 @@ export default function ZaloInteractionLog({
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-[rgba(255,255,255,0.08)] transition-colors"
+              className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
             >
               Hủy
             </button>
@@ -140,7 +140,7 @@ export default function ZaloInteractionLog({
       )}
 
       {/* Interactions List */}
-      <div className="divide-y divide-[rgba(255,255,255,0.06)] max-h-96 overflow-y-auto">
+      <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
         {interactions.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <MessageCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
@@ -148,7 +148,7 @@ export default function ZaloInteractionLog({
           </div>
         ) : (
           interactions.map((interaction) => (
-            <div key={interaction.id} className="px-4 py-3 hover:bg-[rgba(255,255,255,0.05)] transition-colors">
+            <div key={interaction.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
               <div className="flex items-start gap-3">
                 {/* Icon */}
                 <div className="text-lg flex-shrink-0 mt-0.5">
@@ -158,7 +158,7 @@ export default function ZaloInteractionLog({
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-gray-600 bg-[rgba(255,255,255,0.06)] px-2 py-0.5 rounded">
+                    <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
                       {getInteractionLabel(interaction.type)}
                     </span>
                     <span className="text-xs text-gray-500 flex items-center gap-1">

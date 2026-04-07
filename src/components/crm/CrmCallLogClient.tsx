@@ -27,7 +27,7 @@ const T = {
   textPrimary: "#111827", textSecondary: "#374151", textMuted: "#6B7280",
   divider: "#F3F4F6",
   green: "#059669", greenBg: "#ECFDF5",
-  red: "#DC2626", redBg: "rgba(239,68,68,0.15)",
+  red: "#DC2626", redBg: "#FEF2F2",
   gold: "#D97706", goldBg: "#FFFBEB",
   gray: "#6B7280", grayBg: "#F9FAFB",
 };
@@ -516,7 +516,7 @@ function AnalyticsPanel({ analytics }: { analytics: CallAnalytics | null }) {
             {analytics.callsByStaff.slice(0, 5).map((s, i) => (
               <div key={s.staffId} className="flex items-center gap-3">
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
-                  style={{ background: i === 0 ? "#D97706" : i === 1 ? "#6B7280" : i === 2 ? "#fbbf24" : T.primary }}>
+                  style={{ background: i === 0 ? "#D97706" : i === 1 ? "#6B7280" : i === 2 ? "#92400E" : T.primary }}>
                   {i + 1}
                 </span>
                 <div className="flex-1 min-w-0">

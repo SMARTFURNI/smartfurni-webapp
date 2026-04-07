@@ -60,20 +60,20 @@ export default function CalendarView({ leads }: CalendarViewProps) {
   };
 
   return (
-    <div className="bg-[rgba(255,255,255,0.07)] rounded-xl border border-gray-200 p-6">
+    <div className="bg-white rounded-xl border border-gray-200 p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">{monthName}</h2>
         <div className="flex gap-2">
           <button
             onClick={handlePrevMonth}
-            className="p-2 hover:bg-[rgba(255,255,255,0.08)] rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
           <button
             onClick={handleNextMonth}
-            className="p-2 hover:bg-[rgba(255,255,255,0.08)] rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ChevronRight className="w-5 h-5 text-gray-600" />
           </button>

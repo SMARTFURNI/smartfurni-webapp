@@ -31,18 +31,18 @@ const T = {
   indigo: "#4F46E5", indigoBg: "#EEF2FF", indigoLight: "#C7D2FE",
   green: "#059669", greenBg: "#ECFDF5",
   gold: "#D97706", goldBg: "#FFFBEB",
-  red: "#DC2626", redBg: "rgba(239,68,68,0.15)",
-  purple: "#7C3AED", purpleBg: "rgba(139,92,246,0.15)",
-  blue: "#2563EB", blueBg: "rgba(59,130,246,0.15)",
+  red: "#DC2626", redBg: "#FEF2F2",
+  purple: "#7C3AED", purpleBg: "#F5F3FF",
+  blue: "#2563EB", blueBg: "#EFF6FF",
 };
 
 const GOAL_COLORS: Record<GoalColor, { bg: string; text: string; border: string; label: string }> = {
   indigo: { bg: "#EEF2FF", text: "#4F46E5", border: "#C7D2FE", label: "Indigo" },
   green:  { bg: "#ECFDF5", text: "#059669", border: "#A7F3D0", label: "Xanh lá" },
   gold:   { bg: "#FFFBEB", text: "#D97706", border: "#FDE68A", label: "Vàng" },
-  red:    { bg: "rgba(239,68,68,0.15)", text: "#DC2626", border: "#FECACA", label: "Đỏ" },
-  purple: { bg: "rgba(139,92,246,0.15)", text: "#7C3AED", border: "#DDD6FE", label: "Tím" },
-  blue:   { bg: "rgba(59,130,246,0.15)", text: "#2563EB", border: "#BFDBFE", label: "Xanh dương" },
+  red:    { bg: "#FEF2F2", text: "#DC2626", border: "#FECACA", label: "Đỏ" },
+  purple: { bg: "#F5F3FF", text: "#7C3AED", border: "#DDD6FE", label: "Tím" },
+  blue:   { bg: "#EFF6FF", text: "#2563EB", border: "#BFDBFE", label: "Xanh dương" },
 };
 
 const STATUS_CONFIG: Record<TaskStatus, { icon: React.ElementType; color: string; label: string }> = {
@@ -335,7 +335,7 @@ function KpiAllocationEditor({ goal, kpi, kpiIndex, planStartDate, onSave, onClo
         {/* Footer */}
         <div className="px-5 py-4 flex gap-3" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-transparent"
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
             style={{ borderColor: T.cardBorder, color: T.textMuted }}>
             Hủy
           </button>
@@ -604,7 +604,7 @@ function DailyCalendarView({ plan, onUpdateTask }: {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setSelectedWeek(w => Math.max(1, w - 1))}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-transparent"
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"
             disabled={selectedWeek === 1}>
             <ChevronLeft size={16} style={{ color: selectedWeek === 1 ? T.textMuted : T.textPrimary }} />
           </button>
@@ -622,7 +622,7 @@ function DailyCalendarView({ plan, onUpdateTask }: {
             ))}
           </div>
           <button onClick={() => setSelectedWeek(w => Math.min(12, w + 1))}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-transparent"
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"
             disabled={selectedWeek === 12}>
             <ChevronRight size={16} style={{ color: selectedWeek === 12 ? T.textMuted : T.textPrimary }} />
           </button>
@@ -877,7 +877,7 @@ function AllocationView({ plan, onUpdateGoal, onUpdateTask }: {
 
 // ── Task Row ──────────────────────────────────────────────────────────────────
 const PRIORITY_CONFIG = {
-  high:   { label: "Cao",   color: T.red,   bg: "rgba(239,68,68,0.15)" },
+  high:   { label: "Cao",   color: T.red,   bg: "#FEF2F2" },
   medium: { label: "TB",    color: T.gold,  bg: "#FFFBEB" },
   low:    { label: "Thấp",  color: T.green, bg: "#ECFDF5" },
 };
@@ -905,7 +905,7 @@ function TaskRow({ task, goal, onUpdate, onDelete }: {
   };
 
   return (
-    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl group transition-all hover:bg-transparent"
+    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl group transition-all hover:bg-gray-50"
       style={{ borderLeft: `3px solid ${gc.border}` }}>
       {/* Status toggle */}
       <button onClick={cycleStatus}
@@ -962,7 +962,7 @@ function TaskRow({ task, goal, onUpdate, onDelete }: {
             <Calendar size={11} style={{ color: T.indigo }} />
           </button>
           {showDatePicker && (
-            <div className="absolute right-0 top-7 z-20 bg-transparent rounded-xl shadow-xl border p-2" style={{ borderColor: T.cardBorder, minWidth: 160 }}>
+            <div className="absolute right-0 top-7 z-20 bg-white rounded-xl shadow-xl border p-2" style={{ borderColor: T.cardBorder, minWidth: 160 }}>
               <div className="text-[10px] font-semibold mb-1.5" style={{ color: T.textMuted }}>Gán ngày thực hiện</div>
               <input
                 type="date"
@@ -2065,7 +2065,7 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
             <span className="text-[9px]" style={{ color: T.textMuted }}>0%</span>
             {[10, 30, 50, 70, 100].map(v => (
               <div key={v} className="w-3 h-3 rounded-sm"
-                style={{ background: v === 0 ? "#F3F4F6" : v <= 30 ? "rgba(245,158,11,0.15)" : v <= 60 ? "#FDE68A" : v <= 80 ? "#86EFAC" : "#059669" }} />
+                style={{ background: v === 0 ? "#F3F4F6" : v <= 30 ? "#FEF3C7" : v <= 60 ? "#FDE68A" : v <= 80 ? "#86EFAC" : "#059669" }} />
             ))}
             <span className="text-[9px]" style={{ color: T.textMuted }}>100%</span>
           </div>
@@ -2098,12 +2098,12 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
                     {weeklyPcts.map((p, wi) => {
                       const isCur = wi + 1 === currentWeek;
                       const cellBg = p < 0 ? "#F9FAFB"
-                        : p === 0   ? "rgba(239,68,68,0.15)"
-                        : p <= 30   ? "rgba(245,158,11,0.15)"
+                        : p === 0   ? "#FEF2F2"
+                        : p <= 30   ? "#FEF3C7"
                         : p <= 60   ? "#FDE68A"
                         : p <= 80   ? "#86EFAC"
                         : "#059669";
-                      const textColor = p >= 80 ? "#fff" : p >= 60 ? "#4ade80" : p >= 30 ? "#fbbf24" : p >= 0 ? "#991B1B" : T.textMuted;
+                      const textColor = p >= 80 ? "#fff" : p >= 60 ? "#065F46" : p >= 30 ? "#92400E" : p >= 0 ? "#991B1B" : T.textMuted;
                       return (
                         <td key={wi} className="text-center py-1">
                           <div className="w-7 h-7 rounded-md flex items-center justify-center mx-auto font-bold transition-all"
@@ -2134,8 +2134,8 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
                   const weekAllDone   = plan.tasks.filter(t => t.weekNumber === wi + 1 && t.status === "done");
                   const wp = weekAllActive.length > 0 ? Math.round((weekAllDone.length / weekAllActive.length) * 100) : -1;
                   const isCur = wi + 1 === currentWeek;
-                  const cellBg = wp < 0 ? "#F9FAFB" : wp === 0 ? "rgba(239,68,68,0.15)" : wp <= 30 ? "rgba(245,158,11,0.15)" : wp <= 60 ? "#FDE68A" : wp <= 80 ? "#86EFAC" : "#059669";
-                  const textColor = wp >= 80 ? "#fff" : wp >= 60 ? "#4ade80" : wp >= 30 ? "#fbbf24" : wp >= 0 ? "#991B1B" : T.textMuted;
+                  const cellBg = wp < 0 ? "#F9FAFB" : wp === 0 ? "#FEF2F2" : wp <= 30 ? "#FEF3C7" : wp <= 60 ? "#FDE68A" : wp <= 80 ? "#86EFAC" : "#059669";
+                  const textColor = wp >= 80 ? "#fff" : wp >= 60 ? "#065F46" : wp >= 30 ? "#92400E" : wp >= 0 ? "#991B1B" : T.textMuted;
                   return (
                     <td key={wi} className="text-center py-1.5">
                       <div className="w-7 h-7 rounded-md flex items-center justify-center mx-auto font-black"
@@ -3011,7 +3011,7 @@ export default function TwelveWeekPlanClient() {
 
             <div className="flex gap-3 mt-6">
               <button onClick={() => setShowNewPlanModal(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-transparent"
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
                 style={{ borderColor: T.cardBorder, color: T.textMuted }}>
                 Hủy
               </button>

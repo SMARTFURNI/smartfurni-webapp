@@ -683,11 +683,11 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                 style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
               />
               {showTopicSuggestions && (
-                <div className="absolute z-30 top-full mt-2 left-0 right-0 bg-[rgba(255,255,255,0.07)] border border-gray-100 rounded-2xl shadow-2xl overflow-hidden"
+                <div className="absolute z-30 top-full mt-2 left-0 right-0 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden"
                   style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
                   {topicHistory.length > 0 && (
                     <>
-                      <div className="px-4 py-2.5 bg-[rgba(255,255,255,0.04)]/80 border-b border-gray-100">
+                      <div className="px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
                         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
                           <History size={10} /> Đã dùng gần đây
                         </p>
@@ -761,11 +761,11 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                 style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
               />
               {showAudienceSuggestions && (
-                <div className="absolute z-30 top-full mt-2 left-0 right-0 bg-[rgba(255,255,255,0.07)] border border-gray-100 rounded-2xl shadow-2xl overflow-hidden"
+                <div className="absolute z-30 top-full mt-2 left-0 right-0 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden"
                   style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
                   {audienceHistory.length > 0 && (
                     <>
-                      <div className="px-4 py-2.5 bg-[rgba(255,255,255,0.04)]/80 border-b border-gray-100">
+                      <div className="px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
                         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
                           <History size={10} /> Đã dùng gần đây
                         </p>
@@ -1194,7 +1194,7 @@ function ContentPlannerTab() {
 
           <DragOverlay>
             {activeVideo && (
-              <div className="bg-[rgba(255,255,255,0.07)] rounded-2xl border-2 border-amber-400 shadow-2xl p-3.5 opacity-95 rotate-2 w-52"
+              <div className="bg-white rounded-2xl border-2 border-amber-400 shadow-2xl p-3.5 opacity-95 rotate-2 w-52"
                 style={{ boxShadow: "0 20px 40px rgba(180,83,9,0.25)" }}>
                 <p className="text-xs font-bold text-gray-800 line-clamp-2 mb-2">{activeVideo.title}</p>
                 <PlatformBadge platform={activeVideo.platform} />
@@ -1273,14 +1273,14 @@ function PublishingCalendarTab() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <button onClick={prevMonth}
-            className="w-9 h-9 flex items-center justify-center rounded-2xl border-2 border-gray-100 hover:bg-[rgba(255,255,255,0.04)] hover:border-gray-200 transition-all">
+            className="w-9 h-9 flex items-center justify-center rounded-2xl border-2 border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all">
             <ChevronLeft size={16} className="text-gray-600" />
           </button>
           <h3 className="text-lg font-bold text-gray-800 min-w-[130px] text-center">
             {monthNames[month]} {year}
           </h3>
           <button onClick={nextMonth}
-            className="w-9 h-9 flex items-center justify-center rounded-2xl border-2 border-gray-100 hover:bg-[rgba(255,255,255,0.04)] hover:border-gray-200 transition-all">
+            className="w-9 h-9 flex items-center justify-center rounded-2xl border-2 border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all">
             <ChevronRight size={16} className="text-gray-600" />
           </button>
         </div>
@@ -1299,15 +1299,15 @@ function PublishingCalendarTab() {
           <Loader2 size={24} className="animate-spin text-amber-500" />
         </div>
       ) : (
-        <div className="bg-[rgba(255,255,255,0.07)] rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-          <div className="grid grid-cols-7 border-b border-gray-50 bg-[rgba(255,255,255,0.04)]/80">
+        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="grid grid-cols-7 border-b border-gray-50 bg-gray-50/80">
             {dayNames.map(d => (
               <div key={d} className="text-center text-xs font-bold text-gray-400 py-3.5 uppercase tracking-wider">{d}</div>
             ))}
           </div>
           <div className="grid grid-cols-7">
             {days.map((day, idx) => {
-              if (!day) return <div key={`e-${idx}`} className="min-h-[96px] border-r border-b border-gray-50 bg-[rgba(255,255,255,0.04)]/20" />;
+              if (!day) return <div key={`e-${idx}`} className="min-h-[96px] border-r border-b border-gray-50 bg-gray-50/20" />;
               const dayVideos = getVideosForDay(day);
               return (
                 <div key={day}
@@ -1351,7 +1351,7 @@ function PublishingCalendarTab() {
             const cfg = PLATFORM_CONFIG[p];
             const Icon = cfg.icon;
             return (
-              <div key={p} className="bg-[rgba(255,255,255,0.07)] rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-sm transition-shadow">
+              <div key={p} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-sm transition-shadow">
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: cfg.bg }}>
                   <Icon size={18} style={{ color: cfg.color }} />
                 </div>
@@ -1403,7 +1403,7 @@ function AddVideoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
             </div>
             Thêm ý tưởng video
           </h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-[rgba(255,255,255,0.06)] transition-colors text-gray-400">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400">
             <X size={16} />
           </button>
         </div>
@@ -1414,13 +1414,13 @@ function AddVideoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
             </label>
             <input value={title} onChange={e => setTitle(e.target.value)}
               placeholder="VD: Review giường SmartFurni Pro 3000"
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-[rgba(255,255,255,0.04)]/50 transition-all placeholder:text-gray-300" />
+              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all placeholder:text-gray-300" />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Chủ đề</label>
             <input value={topic} onChange={e => setTopic(e.target.value)}
               placeholder="VD: Giường điều chỉnh, sức khỏe cột sống..."
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-[rgba(255,255,255,0.04)]/50 transition-all placeholder:text-gray-300" />
+              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all placeholder:text-gray-300" />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Nền tảng</label>
@@ -1442,12 +1442,12 @@ function AddVideoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Ngày đăng dự kiến</label>
             <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-[rgba(255,255,255,0.04)]/50 transition-all" />
+              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all" />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Ghi chú</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none bg-[rgba(255,255,255,0.04)]/50 transition-all placeholder:text-gray-300" />
+              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none bg-gray-50/50 transition-all placeholder:text-gray-300" />
           </div>
         </div>
         <div className="px-6 pb-6 flex gap-2.5">
@@ -1458,7 +1458,7 @@ function AddVideoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
             Lưu
           </button>
           <button onClick={onClose}
-            className="px-5 py-3 text-sm text-gray-500 border-2 border-gray-100 rounded-2xl hover:bg-[rgba(255,255,255,0.04)] transition-all font-semibold">
+            className="px-5 py-3 text-sm text-gray-500 border-2 border-gray-100 rounded-2xl hover:bg-gray-50 transition-all font-semibold">
             Huỷ
           </button>
         </div>
@@ -1503,7 +1503,7 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
           <div className="flex items-center gap-2">
             {!editing ? (
               <button onClick={() => setEditing(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-2 border-gray-100 rounded-xl hover:bg-[rgba(255,255,255,0.04)] transition-all text-gray-600">
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-2 border-gray-100 rounded-xl hover:bg-gray-50 transition-all text-gray-600">
                 <Edit3 size={12} /> Chỉnh sửa
               </button>
             ) : (
@@ -1514,12 +1514,12 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
                   {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Lưu
                 </button>
                 <button onClick={() => setEditing(false)}
-                  className="px-3 py-2 text-xs font-semibold border-2 border-gray-100 rounded-xl hover:bg-[rgba(255,255,255,0.04)] transition-all text-gray-500">
+                  className="px-3 py-2 text-xs font-semibold border-2 border-gray-100 rounded-xl hover:bg-gray-50 transition-all text-gray-500">
                   Huỷ
                 </button>
               </>
             )}
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-[rgba(255,255,255,0.06)] transition-colors text-gray-400">
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400">
               <X size={16} />
             </button>
           </div>
@@ -1528,13 +1528,13 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
         <div className="p-6 space-y-5">
           {editing ? (
             <input value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full text-lg font-bold border-2 border-gray-100 rounded-2xl px-4 py-3 focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-[rgba(255,255,255,0.04)]/50" />
+              className="w-full text-lg font-bold border-2 border-gray-100 rounded-2xl px-4 py-3 focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50" />
           ) : (
             <h2 className="text-lg font-bold text-gray-900">{video.title}</h2>
           )}
 
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2 text-gray-500 bg-[rgba(255,255,255,0.04)] rounded-2xl px-4 py-2.5">
+            <div className="flex items-center gap-2 text-gray-500 bg-gray-50 rounded-2xl px-4 py-2.5">
               <Clock size={13} className="text-gray-400" />
               <span className="text-xs font-medium">Tạo: {fmtDateTime(video.createdAt)}</span>
             </div>
@@ -1548,7 +1548,7 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ngày đăng</label>
                 <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
-                  className="w-full border-2 border-gray-100 rounded-2xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-[rgba(255,255,255,0.04)]/50" />
+                  className="w-full border-2 border-gray-100 rounded-2xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50" />
               </div>
             )}
           </div>
@@ -1575,7 +1575,7 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Link bài đăng</label>
               <input value={publishedUrl} onChange={e => setPublishedUrl(e.target.value)}
                 placeholder="https://..."
-                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-[rgba(255,255,255,0.04)]/50" />
+                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50" />
             </div>
           ) : video.publishedUrl ? (
             <a href={video.publishedUrl} target="_blank" rel="noopener noreferrer"
@@ -1597,13 +1597,13 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
             {editing ? (
               <textarea value={script} onChange={e => setScript(e.target.value)} rows={10}
                 placeholder="Nhập kịch bản video..."
-                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none font-mono bg-[rgba(255,255,255,0.04)]/50" />
+                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none font-mono bg-gray-50/50" />
             ) : video.script ? (
-              <pre className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-4 text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed max-h-64 overflow-y-auto border border-gray-100">
+              <pre className="bg-gray-50 rounded-2xl p-4 text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed max-h-64 overflow-y-auto border border-gray-100">
                 {video.script}
               </pre>
             ) : (
-              <p className="text-sm text-gray-300 italic bg-[rgba(255,255,255,0.04)] rounded-2xl p-4">Chưa có kịch bản</p>
+              <p className="text-sm text-gray-300 italic bg-gray-50 rounded-2xl p-4">Chưa có kịch bản</p>
             )}
           </div>
 
@@ -1611,11 +1611,11 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ghi chú</label>
             {editing ? (
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none bg-[rgba(255,255,255,0.04)]/50" />
+                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none bg-gray-50/50" />
             ) : video.notes ? (
-              <p className="text-sm text-gray-600 bg-[rgba(255,255,255,0.04)] rounded-2xl p-4">{video.notes}</p>
+              <p className="text-sm text-gray-600 bg-gray-50 rounded-2xl p-4">{video.notes}</p>
             ) : (
-              <p className="text-sm text-gray-300 italic bg-[rgba(255,255,255,0.04)] rounded-2xl p-4">Không có ghi chú</p>
+              <p className="text-sm text-gray-300 italic bg-gray-50 rounded-2xl p-4">Không có ghi chú</p>
             )}
           </div>
         </div>

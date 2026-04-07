@@ -97,7 +97,7 @@ function LogRow({ log }: { log: NotificationLog }) {
           )}
         </td>
         <td style={{ padding: "10px 12px", maxWidth: 280 }}>
-          <span style={{ fontSize: 12, color: "rgba(245,237,214,0.85)", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          <span style={{ fontSize: 12, color: "#374151", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {log.message}
           </span>
         </td>
@@ -117,26 +117,26 @@ function LogRow({ log }: { log: NotificationLog }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Nội dung tin nhắn</div>
-                <div style={{ fontSize: 13, color: "rgba(245,237,214,0.85)", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "10px 12px", whiteSpace: "pre-wrap", maxHeight: 120, overflowY: "auto" }}>
+                <div style={{ fontSize: 13, color: "#374151", background: "white", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", whiteSpace: "pre-wrap", maxHeight: 120, overflowY: "auto" }}>
                   {log.message}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Quy tắc: </span>
-                  <span style={{ fontSize: 13, color: "rgba(245,237,214,0.85)" }}>{log.ruleName || "Thủ công"}</span>
+                  <span style={{ fontSize: 13, color: "#374151" }}>{log.ruleName || "Thủ công"}</span>
                 </div>
                 <div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Kênh: </span>
-                  <span style={{ fontSize: 13, color: "rgba(245,237,214,0.85)" }}>{getChannelLabel(log)}</span>
+                  <span style={{ fontSize: 13, color: "#374151" }}>{getChannelLabel(log)}</span>
                 </div>
                 <div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Người nhận: </span>
-                  <span style={{ fontSize: 13, color: "rgba(245,237,214,0.85)" }}>{log.leadName ? `${log.leadName} (${log.recipient})` : log.recipient}</span>
+                  <span style={{ fontSize: 13, color: "#374151" }}>{log.leadName ? `${log.leadName} (${log.recipient})` : log.recipient}</span>
                 </div>
                 <div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Thời gian: </span>
-                  <span style={{ fontSize: 13, color: "rgba(245,237,214,0.85)" }}>{formatDate(log.sentAt)}</span>
+                  <span style={{ fontSize: 13, color: "#374151" }}>{formatDate(log.sentAt)}</span>
                 </div>
                 {log.error && (
                   <div style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 10px" }}>
@@ -212,7 +212,7 @@ export default function AutomationHistoryPanel() {
         </div>
         <button
           onClick={loadLogs}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, background: "#f1f5f9", border: "1px solid rgba(255,255,255,0.10)", cursor: "pointer", fontSize: 13, color: "rgba(245,237,214,0.85)", fontWeight: 500 }}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, background: "#f1f5f9", border: "1px solid #e2e8f0", cursor: "pointer", fontSize: 13, color: "#374151", fontWeight: 500 }}
         >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Làm mới
         </button>
@@ -245,7 +245,7 @@ export default function AutomationHistoryPanel() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Tìm tên khách, SĐT, nội dung..."
-            style={{ width: "100%", padding: "8px 10px 8px 32px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.10)", fontSize: 13, color: "rgba(245,237,214,0.85)", outline: "none", boxSizing: "border-box" }}
+            style={{ width: "100%", padding: "8px 10px 8px 32px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, color: "#374151", outline: "none", boxSizing: "border-box" }}
           />
         </div>
 
@@ -300,7 +300,7 @@ export default function AutomationHistoryPanel() {
       </div>
 
       {/* Table */}
-      <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)", overflow: "hidden" }}>
+      <div style={{ background: "white", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
         {loading ? (
           <div style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>
             <RefreshCw size={24} style={{ margin: "0 auto 8px", display: "block" }} />
@@ -309,7 +309,7 @@ export default function AutomationHistoryPanel() {
         ) : filtered.length === 0 ? (
           <div style={{ padding: 48, textAlign: "center" }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>📭</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(245,237,214,0.85)", marginBottom: 6 }}>Chưa có lịch sử gửi</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Chưa có lịch sử gửi</div>
             <div style={{ fontSize: 13, color: "#94a3b8" }}>
               {logs.length === 0
                 ? "Khi automation gửi Zalo Personal hoặc Email, lịch sử sẽ hiển thị ở đây."

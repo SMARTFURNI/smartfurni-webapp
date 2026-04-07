@@ -107,7 +107,7 @@ export default function AdvancedSearchFilter({
           {search && (
             <button
               onClick={() => handleSearch('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-[rgba(255,255,255,0.08)] rounded-lg transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <X className="w-5 h-5 text-gray-400" />
             </button>
@@ -177,7 +177,7 @@ export default function AdvancedSearchFilter({
 
       {/* Filter Panel */}
       {showFilterPanel && (
-        <div className="bg-[rgba(255,255,255,0.07)] border-2 border-gray-200 rounded-lg p-6 space-y-6">
+        <div className="bg-white border-2 border-gray-200 rounded-lg p-6 space-y-6">
           {filterOptions.map((filterGroup) => (
             <div key={filterGroup.id}>
               <h3 className="font-semibold text-gray-900 mb-3">{filterGroup.label}</h3>
@@ -185,7 +185,7 @@ export default function AdvancedSearchFilter({
                 {filterGroup.options.map((option) => (
                   <label
                     key={option.value}
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] cursor-pointer transition-colors"
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"

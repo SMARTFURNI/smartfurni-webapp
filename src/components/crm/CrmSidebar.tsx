@@ -173,7 +173,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
-    return (pathname ?? "").startsWith(href);
+    return pathname.startsWith(href);
   }
 
   function toggleGroup(label: string) {

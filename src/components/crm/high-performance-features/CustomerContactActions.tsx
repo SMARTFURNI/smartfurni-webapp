@@ -92,7 +92,7 @@ export default function CustomerContactActions({
 
         {/* Zalo Dropdown */}
         {activeMenu === 'zalo' && zaloPhone && (
-          <div className="absolute top-full right-0 mt-2 w-72 bg-[rgba(255,255,255,0.07)] border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+          <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
             <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-100 flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">💬 Kết Bạn Zalo</p>
@@ -189,7 +189,7 @@ export default function CustomerContactActions({
 
         {/* Call Dropdown */}
         {activeMenu === 'call' && lead.phone && (
-          <div className="absolute top-full right-0 mt-2 w-72 bg-[rgba(255,255,255,0.07)] border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+          <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
             <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-green-50 to-green-100 flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold text-green-600 uppercase tracking-wider">☎️ Gọi Điện</p>
@@ -267,7 +267,7 @@ export default function CustomerContactActions({
 
         {/* Email Dropdown */}
         {activeMenu === 'email' && lead.email && (
-          <div className="absolute top-full right-0 mt-2 w-72 bg-[rgba(255,255,255,0.07)] border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+          <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
             <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-purple-100 flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">✉️ Gửi Email</p>

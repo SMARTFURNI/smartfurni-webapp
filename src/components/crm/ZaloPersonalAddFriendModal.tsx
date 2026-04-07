@@ -87,7 +87,7 @@ export default function ZaloPersonalAddFriendModal({
         {/* Body */}
         <div className="p-5">
           {/* Thông tin khách hàng */}
-          <div className="flex items-center gap-3 p-3 bg-[rgba(255,255,255,0.04)] dark:bg-gray-800 rounded-xl mb-4">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4">
             <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base flex-shrink-0">
               {leadName.charAt(0).toUpperCase()}
             </div>
@@ -118,7 +118,7 @@ export default function ZaloPersonalAddFriendModal({
               <div className="flex gap-2">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-[rgba(255,255,255,0.06)] dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors"
                 >
                   Hủy
                 </button>
@@ -153,7 +153,7 @@ export default function ZaloPersonalAddFriendModal({
                   Tìm kiếm tài khoản Zalo từ số {normalizedPhone}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                  <div className="w-4 h-4 rounded-full bg-[rgba(255,255,255,0.06)] dark:bg-gray-800 flex items-center justify-center">
+                  <div className="w-4 h-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
                   </div>
                   Gửi lời mời kết bạn
@@ -212,7 +212,7 @@ export default function ZaloPersonalAddFriendModal({
               <div className="flex gap-2 w-full">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-[rgba(255,255,255,0.06)] dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors"
                 >
                   Đóng
                 </button>

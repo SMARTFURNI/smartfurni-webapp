@@ -117,15 +117,15 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
       <div
         className="w-full max-w-xl rounded-2xl overflow-hidden"
         style={{
-          background: "rgba(255,255,255,0.06)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          background: "#ffffff",
+          border: "1px solid #d1d5db",
           boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
         }}
       >
         {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)" }}
+          style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}
         >
           <div className="flex items-center gap-3">
             <div
@@ -136,13 +136,13 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
             </div>
             <div>
               <h2 className="text-base font-bold text-gray-900">Thêm khách hàng mới</h2>
-              <p className="text-[11px]" style={{ color: "rgba(245,237,214,0.50)" }}>Điền thông tin khách hàng B2B</p>
+              <p className="text-[11px]" style={{ color: "#6b7280" }}>Điền thông tin khách hàng B2B</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-[rgba(255,255,255,0.08)]"
-            style={{ color: "rgba(245,237,214,0.50)" }}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-gray-100"
+            style={{ color: "#6b7280" }}
           >
             <X size={16} />
           </button>
@@ -159,7 +159,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
                 onClick={() => set("type", cfg.id)}
                 className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all"
                 style={{
-                  background: active ? cfg.bg : "rgba(255,255,255,0.04)",
+                  background: active ? cfg.bg : "#f3f4f6",
                   color: active ? cfg.color : "#6b7280",
                   border: `1px solid ${active ? cfg.color + "40" : "#e5e7eb"}`,
                 }}
@@ -171,7 +171,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
         </div>
 
         {/* Tabs */}
-        <div className="px-6 pt-4 flex gap-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="px-6 pt-4 flex gap-0" style={{ borderBottom: "1px solid #e5e7eb" }}>
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -286,8 +286,8 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
                   placeholder="Ghi chú về khách hàng, yêu cầu đặc biệt, lịch hẹn..."
                   className="w-full px-3 py-2.5 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none resize-none transition-all"
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.10)",
+                    background: "#f3f4f6",
+                    border: "1px solid #d1d5db",
                   }}
                 />
               </DarkField>
@@ -297,13 +297,13 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
           {/* Footer */}
           <div
             className="px-6 py-4 flex gap-3"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)" }}
+            style={{ borderTop: "1px solid #e5e7eb", background: "#ffffff" }}
           >
             <button
               type="button"
               onClick={onClose}
               className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-colors hover:bg-white/5"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.50)" }}
+              style={{ border: "1px solid #d1d5db", color: "#6b7280" }}
             >
               Hủy
             </button>
@@ -327,8 +327,8 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
 function DarkField({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-[11px] font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>
-        {icon && <span style={{ color: "rgba(245,237,214,0.40)" }}>{icon}</span>}
+      <label className="flex items-center gap-1.5 text-[11px] font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+        {icon && <span style={{ color: "#9ca3af" }}>{icon}</span>}
         {label}
       </label>
       {children}
@@ -346,7 +346,7 @@ function DarkInput({ value, onChange, placeholder, type = "text", style }: {
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none transition-all"
-      style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", ...style }}
+      style={{ background: "#f3f4f6", border: "1px solid #d1d5db", ...style }}
     />
   );
 }
@@ -359,7 +359,7 @@ function DarkSelect({ value, onChange, children }: {
       value={value}
       onChange={e => onChange(e.target.value)}
       className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none transition-all"
-      style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}
+      style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}
     >
       {children}
     </select>

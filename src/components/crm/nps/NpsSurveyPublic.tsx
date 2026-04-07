@@ -112,7 +112,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
           </p>
         </div>
 
-        <div className="bg-[rgba(255,255,255,0.07)] border border-gray-200 rounded-2xl p-6 space-y-8">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-8">
           {/* NPS Score */}
           <div>
             <p className="text-sm font-medium text-gray-900 mb-1">
@@ -184,7 +184,7 @@ export default function NpsSurveyPublic({ surveyId }: { surveyId: string }) {
               onChange={e => setFeedback(e.target.value)}
               placeholder="Điều gì bạn thích nhất? Điều gì có thể cải thiện hơn?"
               rows={4}
-              className="w-full bg-[rgba(255,255,255,0.04)] border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
             />
           </div>
 

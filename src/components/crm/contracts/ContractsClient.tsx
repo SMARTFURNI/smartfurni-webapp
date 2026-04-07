@@ -95,14 +95,14 @@ export default function ContractsClient() {
       {/* Left panel */}
       <div className={`flex flex-col ${selected ? "w-[420px]" : "flex-1"} border-r border-gray-200 transition-all duration-300`}>
         {/* Header */}
-        <div className="p-6 border-b border-[rgba(255,255,255,0.12)]">
+        <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-xl font-semibold text-gray-900">Hợp đồng điện tử</h1>
               <p className="text-sm text-gray-500 mt-0.5">Tạo, ký và lưu trữ hợp đồng PDF</p>
             </div>
             <div className="flex gap-2">
-              <button onClick={load} className="p-2 rounded-lg bg-transparent text-gray-500 hover:text-gray-900 transition-colors">
+              <button onClick={load} className="p-2 rounded-lg bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors">
                 <RefreshCw size={16} />
               </button>
               <button
@@ -117,12 +117,12 @@ export default function ContractsClient() {
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3 mb-4">
             {[
-              { label: "Tổng", value: stats.total, color: "text-[#f5edd6]" },
-              { label: "Bản nháp", value: stats.draft, color: "text-[rgba(245,237,214,0.45)]" },
+              { label: "Tổng", value: stats.total, color: "text-gray-900" },
+              { label: "Bản nháp", value: stats.draft, color: "text-gray-500" },
               { label: "Đã gửi", value: stats.sent, color: "text-blue-400" },
               { label: "Đã ký", value: stats.signed, color: "text-emerald-400" },
             ].map(s => (
-              <div key={s.label} className="bg-transparent rounded-lg p-3 text-center">
+              <div key={s.label} className="bg-gray-50 rounded-lg p-3 text-center">
                 <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
                 <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
               </div>
@@ -142,12 +142,12 @@ export default function ContractsClient() {
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Tìm hợp đồng, khách hàng..."
-                className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-[#C9A84C]/50"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#C9A84C]/50"
               />
             </div>
             <select
               value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContractStatus | "all")}
-              className="bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
+              className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
             >
               <option value="all">Tất cả</option>
               {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -177,7 +177,7 @@ export default function ContractsClient() {
               <div
                 key={c.id}
                 onClick={() => setSelected(isSelected ? null : c)}
-                className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-[rgba(255,255,255,0.05)]/50 transition-colors ${isSelected ? "bg-gray-50 border-l-2 border-l-[#C9A84C]" : ""}`}
+                className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50/50 transition-colors ${isSelected ? "bg-gray-50 border-l-2 border-l-[#C9A84C]" : ""}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -205,7 +205,7 @@ export default function ContractsClient() {
       {/* Right panel - Contract Detail */}
       {selected && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="p-6 border-b border-[rgba(255,255,255,0.12)] flex items-center justify-between">
+          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-semibold text-gray-900">{selected.contractNumber}</span>
@@ -234,7 +234,7 @@ export default function ContractsClient() {
               )}
               <button
                 onClick={() => { setEditingContract(selected); setShowEditor(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-transparent text-gray-500 border border-[rgba(255,255,255,0.12)] text-sm hover:text-gray-900 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 border border-gray-200 text-sm hover:text-gray-900 transition-colors"
               >
                 <Edit2 size={14} /> Chỉnh sửa
               </button>
@@ -250,42 +250,42 @@ export default function ContractsClient() {
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Parties */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-transparent rounded-xl p-4 border border-[rgba(255,255,255,0.12)] shadow-sm">
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <Building2 size={16} className="text-[#C9A84C]" />
                   <span className="text-sm font-medium text-gray-900">Bên Bán (A)</span>
                 </div>
                 <div className="space-y-1.5 text-sm">
                   <div className="text-gray-900 font-medium">{selected.sellerName || "SmartFurni"}</div>
-                  <div className="text-[rgba(245,237,214,0.45)]">{selected.sellerAddress}</div>
-                  <div className="text-[rgba(245,237,214,0.45)]">MST: {selected.sellerTaxId}</div>
-                  <div className="text-[rgba(245,237,214,0.45)]">Đại diện: {selected.sellerRepresentative}</div>
+                  <div className="text-gray-500">{selected.sellerAddress}</div>
+                  <div className="text-gray-500">MST: {selected.sellerTaxId}</div>
+                  <div className="text-gray-500">Đại diện: {selected.sellerRepresentative}</div>
                 </div>
               </div>
-              <div className="bg-transparent rounded-xl p-4 border border-[rgba(255,255,255,0.12)] shadow-sm">
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <User size={16} className="text-blue-400" />
                   <span className="text-sm font-medium text-gray-900">Bên Mua (B)</span>
                 </div>
                 <div className="space-y-1.5 text-sm">
                   <div className="text-gray-900 font-medium">{selected.buyerName}</div>
-                  <div className="text-[rgba(245,237,214,0.45)]">{selected.buyerAddress}</div>
-                  <div className="text-[rgba(245,237,214,0.45)]">MST: {selected.buyerTaxId}</div>
-                  <div className="text-[rgba(245,237,214,0.45)]">Đại diện: {selected.buyerRepresentative}</div>
+                  <div className="text-gray-500">{selected.buyerAddress}</div>
+                  <div className="text-gray-500">MST: {selected.buyerTaxId}</div>
+                  <div className="text-gray-500">Đại diện: {selected.buyerRepresentative}</div>
                 </div>
               </div>
             </div>
 
             {/* Items */}
             {selected.items.length > 0 && (
-              <div className="bg-transparent rounded-xl border border-[rgba(255,255,255,0.12)] overflow-hidden">
-                <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.12)]">
+              <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-200">
                   <span className="text-sm font-medium text-gray-900">Danh sách sản phẩm</span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-[rgba(255,255,255,0.12)]">
+                      <tr className="border-b border-gray-200">
                         {["Sản phẩm", "SL", "Đơn giá", "CK%", "Thành tiền"].map(h => (
                           <th key={h} className="px-4 py-2 text-left text-xs text-gray-500 font-medium">{h}</th>
                         ))}
@@ -293,7 +293,7 @@ export default function ContractsClient() {
                     </thead>
                     <tbody>
                       {selected.items.map((item, i) => (
-                        <tr key={i} className="border-b border-[rgba(255,255,255,0.12)]/50 hover:bg-transparent/30">
+                        <tr key={i} className="border-b border-gray-200/50 hover:bg-gray-100/30">
                           <td className="px-4 py-2.5">
                             <div className="text-gray-900 font-medium">{item.productName}</div>
                             <div className="text-xs text-gray-500">{item.sku}</div>
@@ -307,19 +307,19 @@ export default function ContractsClient() {
                     </tbody>
                   </table>
                 </div>
-                <div className="px-4 py-3 border-t border-[rgba(255,255,255,0.12)] space-y-1">
+                <div className="px-4 py-3 border-t border-gray-200 space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-[rgba(245,237,214,0.45)]">Tổng cộng</span>
-                    <span className="text-[#f5edd6]">{fmt(selected.totalValue)}</span>
+                    <span className="text-gray-500">Tổng cộng</span>
+                    <span className="text-gray-900">{fmt(selected.totalValue)}</span>
                   </div>
                   {selected.discount > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-[rgba(245,237,214,0.45)]">Chiết khấu</span>
+                      <span className="text-gray-500">Chiết khấu</span>
                       <span className="text-orange-400">-{fmt(selected.discount)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-base font-semibold pt-1 border-t border-[rgba(255,255,255,0.12)]">
-                    <span className="text-[#f5edd6]">Thành tiền</span>
+                  <div className="flex justify-between text-base font-semibold pt-1 border-t border-gray-200">
+                    <span className="text-gray-900">Thành tiền</span>
                     <span className="text-[#C9A84C]">{fmt(selected.finalValue)}</span>
                   </div>
                 </div>
@@ -334,7 +334,7 @@ export default function ContractsClient() {
                 { label: "Bảo hành", value: selected.warrantyTerms },
                 { label: "Điều khoản đặc biệt", value: selected.specialTerms },
               ].filter(t => t.value).map(t => (
-                <div key={t.label} className="bg-transparent rounded-xl p-4 border border-[rgba(255,255,255,0.12)] shadow-sm">
+                <div key={t.label} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                   <div className="text-xs text-gray-500 mb-1.5">{t.label}</div>
                   <div className="text-sm text-gray-600 leading-relaxed">{t.value}</div>
                 </div>
@@ -342,7 +342,7 @@ export default function ContractsClient() {
             </div>
 
             {/* Signatures */}
-            <div className="bg-transparent rounded-xl p-4 border border-[rgba(255,255,255,0.12)] shadow-sm">
+            <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <PenTool size={16} className="text-[#C9A84C]" />
                 <span className="text-sm font-medium text-gray-900">Chữ ký</span>
@@ -352,7 +352,7 @@ export default function ContractsClient() {
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   {selected.signatures.map((sig, i) => (
-                    <div key={i} className="border border-[rgba(255,255,255,0.12)] rounded-lg p-3">
+                    <div key={i} className="border border-gray-200 rounded-lg p-3">
                       <div className="text-xs text-gray-500 mb-1">{sig.party === "seller" ? "Bên Bán" : "Bên Mua"}</div>
                       <div className="text-sm text-gray-900 font-medium">{sig.name}</div>
                       <div className="text-xs text-gray-500">{sig.title}</div>
@@ -372,7 +372,7 @@ export default function ContractsClient() {
                 { label: "Ngày giao hàng", value: selected.deliveryDate, icon: <Clock size={14} /> },
                 { label: "Hiệu lực đến", value: selected.validUntil, icon: <AlertCircle size={14} /> },
               ].map(d => (
-                <div key={d.label} className="bg-transparent rounded-lg p-3 border border-[rgba(255,255,255,0.12)]">
+                <div key={d.label} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                   <div className="flex items-center gap-1.5 text-gray-500 mb-1">
                     {d.icon}
                     <span className="text-xs">{d.label}</span>
@@ -388,8 +388,8 @@ export default function ContractsClient() {
       {/* Editor Modal */}
       {showEditor && editingContract && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-transparent border border-[rgba(255,255,255,0.12)] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-[rgba(255,255,255,0.12)] flex items-center justify-between">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
                 {editingContract.id ? "Chỉnh sửa hợp đồng" : "Tạo hợp đồng mới"}
               </h2>
@@ -402,7 +402,7 @@ export default function ContractsClient() {
                   value={editingContract.title ?? ""}
                   onChange={e => setEditingContract(p => ({ ...p, title: e.target.value }))}
                   placeholder="VD: Hợp đồng cung cấp nội thất thông minh..."
-                  className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -412,7 +412,7 @@ export default function ContractsClient() {
                     value={editingContract.leadId ?? ""}
                     onChange={e => setEditingContract(p => ({ ...p, leadId: e.target.value }))}
                     placeholder="ID khách hàng trong CRM"
-                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
                 <div>
@@ -421,7 +421,7 @@ export default function ContractsClient() {
                     value={editingContract.leadName ?? ""}
                     onChange={e => setEditingContract(p => ({ ...p, leadName: e.target.value }))}
                     placeholder="Tên khách hàng"
-                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
               </div>
@@ -432,7 +432,7 @@ export default function ContractsClient() {
                     value={editingContract.buyerName ?? ""}
                     onChange={e => setEditingContract(p => ({ ...p, buyerName: e.target.value }))}
                     placeholder="Công ty TNHH ABC..."
-                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
                 <div>
@@ -441,7 +441,7 @@ export default function ContractsClient() {
                     value={editingContract.buyerTaxId ?? ""}
                     onChange={e => setEditingContract(p => ({ ...p, buyerTaxId: e.target.value }))}
                     placeholder="0123456789"
-                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
               </div>
@@ -451,7 +451,7 @@ export default function ContractsClient() {
                   value={editingContract.buyerAddress ?? ""}
                   onChange={e => setEditingContract(p => ({ ...p, buyerAddress: e.target.value }))}
                   placeholder="Số nhà, đường, quận, tỉnh/thành phố"
-                  className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -461,7 +461,7 @@ export default function ContractsClient() {
                     value={editingContract.buyerRepresentative ?? ""}
                     onChange={e => setEditingContract(p => ({ ...p, buyerRepresentative: e.target.value }))}
                     placeholder="Họ và tên"
-                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
                 <div>
@@ -470,7 +470,7 @@ export default function ContractsClient() {
                     value={editingContract.buyerTitle ?? ""}
                     onChange={e => setEditingContract(p => ({ ...p, buyerTitle: e.target.value }))}
                     placeholder="Giám đốc, Trưởng phòng..."
-                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
               </div>
@@ -481,7 +481,7 @@ export default function ContractsClient() {
                     type="number"
                     value={editingContract.finalValue ?? 0}
                     onChange={e => setEditingContract(p => ({ ...p, finalValue: Number(e.target.value), totalValue: Number(e.target.value) }))}
-                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
                 <div>
@@ -490,7 +490,7 @@ export default function ContractsClient() {
                     type="date"
                     value={editingContract.contractDate ?? ""}
                     onChange={e => setEditingContract(p => ({ ...p, contractDate: e.target.value }))}
-                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
                 <div>
@@ -499,7 +499,7 @@ export default function ContractsClient() {
                     type="date"
                     value={editingContract.deliveryDate ?? ""}
                     onChange={e => setEditingContract(p => ({ ...p, deliveryDate: e.target.value }))}
-                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
               </div>
@@ -510,7 +510,7 @@ export default function ContractsClient() {
                   onChange={e => setEditingContract(p => ({ ...p, paymentTerms: e.target.value }))}
                   rows={2}
                   placeholder="Thanh toán 50% khi ký, 50% khi giao hàng..."
-                  className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70 resize-none"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70 resize-none"
                 />
               </div>
               <div>
@@ -520,7 +520,7 @@ export default function ContractsClient() {
                   onChange={e => setEditingContract(p => ({ ...p, warrantyTerms: e.target.value }))}
                   rows={2}
                   placeholder="Bảo hành 5 năm..."
-                  className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70 resize-none"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70 resize-none"
                 />
               </div>
               <div>
@@ -529,12 +529,12 @@ export default function ContractsClient() {
                   value={editingContract.notes ?? ""}
                   onChange={e => setEditingContract(p => ({ ...p, notes: e.target.value }))}
                   rows={2}
-                  className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70 resize-none"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70 resize-none"
                 />
               </div>
             </div>
-            <div className="p-6 border-t border-[rgba(255,255,255,0.12)] flex justify-end gap-3">
-              <button onClick={() => { setShowEditor(false); setEditingContract(null); }} className="px-4 py-2 rounded-lg bg-transparent text-gray-600 text-sm hover:text-gray-900 transition-colors">Hủy</button>
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button onClick={() => { setShowEditor(false); setEditingContract(null); }} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm hover:text-gray-900 transition-colors">Hủy</button>
               <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-[#C9A84C] text-black text-sm font-medium hover:bg-[#d4b55a] transition-colors">
                 {editingContract.id ? "Lưu thay đổi" : "Tạo hợp đồng"}
               </button>

@@ -187,9 +187,9 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
   );
 
   return (
-    <div className="flex flex-col h-full bg-transparent">
+    <div className="flex flex-col h-full bg-white">
       {/* ── Header ── */}
-      <div className="flex-shrink-0 px-6 pt-5 pb-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="flex-shrink-0 px-6 pt-5 pb-0" style={{ borderBottom: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -207,8 +207,8 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm..."
-                className="pl-8 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none w-44"
-                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}
+                className="pl-8 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none w-44"
+                style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}
               />
             </div>
             {tab === "campaigns" && (
@@ -253,7 +253,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
             { label: "Tỷ lệ click", value: `${avgClickRate}%`,                                icon: Target,     color: "#f87171" },
           ].map((kpi, i) => (
             <div key={i} className="rounded-xl px-3 py-2.5 flex items-center gap-2.5"
-              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ background: `${kpi.color}18` }}>
                 <kpi.icon size={14} style={{ color: kpi.color }} />
@@ -309,7 +309,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 const clickRate = campaign.sentCount > 0 ? Math.round((campaign.clickCount / campaign.sentCount) * 100) : 0;
                 return (
                   <div key={campaign.id} className="rounded-2xl p-4 transition-all hover:shadow-sm"
-                    style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+                    style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -366,19 +366,19 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                               htmlContent: campaign.htmlContent || `<div style="font-family:Arial,sans-serif;padding:32px;max-width:600px"><h2>${campaign.name}</h2><p>${campaign.subject}</p></div>`,
                             })}
                             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-50 transition-colors"
-                            style={{ border: "1px solid rgba(255,255,255,0.10)", color: "#3b82f6" }}
+                            style={{ border: "1px solid #e5e7eb", color: "#3b82f6" }}
                             title="Gửi email test">
                             <FlaskConical size={11} /> Test
                           </button>
                           <button onClick={() => setEditingCampaign(campaign)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-transparent transition-colors"
-                            style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
-                            <Edit3 size={12} className="text-[rgba(245,237,214,0.45)]" />
+                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
+                            style={{ border: "1px solid #e5e7eb" }}>
+                            <Edit3 size={12} className="text-gray-500" />
                           </button>
                           <button onClick={() => deleteCampaign(campaign.id)}
                             className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
-                            style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
-                            <Trash2 size={12} className="text-[rgba(245,237,214,0.35)]" />
+                            style={{ border: "1px solid #e5e7eb" }}>
+                            <Trash2 size={12} className="text-gray-400" />
                           </button>
                         </div>
                       </div>
@@ -389,7 +389,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                           <span>Tỷ lệ mở</span>
                           <span>{openRate}%</span>
                         </div>
-                        <div className="h-1 rounded-full overflow-hidden" style={{ background: "transparent" }}>
+                        <div className="h-1 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
                           <div className="h-full rounded-full" style={{ width: `${openRate}%`, background: "#22c55e" }} />
                         </div>
                       </div>
@@ -417,8 +417,8 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                       + Tạo mẫu mới
                     </button>
                     <button onClick={seedTemplates} disabled={loading}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 hover:bg-transparent transition-colors"
-                      style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+                      className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                      style={{ border: "1px solid #e5e7eb" }}>
                       {loading ? <Loader2 size={14} className="animate-spin inline" /> : "Tải mẫu mặc định"}
                     </button>
                   </div>
@@ -430,7 +430,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                   const catColor = CATEGORY_COLORS[template.category];
                   return (
                     <div key={template.id} className="rounded-2xl overflow-hidden hover:shadow-sm transition-all group"
-                      style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
                       <div className="h-28 overflow-hidden relative cursor-pointer" onClick={() => setPreviewTemplate(template)}
                         style={{ background: "#050505" }}>
                         <div className="absolute inset-0 p-2 overflow-hidden"
@@ -456,8 +456,8 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                         <div className="text-xs text-gray-500 truncate mb-2">{template.subject}</div>
                         <div className="flex gap-1">
                           <button onClick={() => setPreviewTemplate(template)}
-                            className="flex-1 py-1.5 rounded-lg text-xs font-medium hover:bg-transparent transition-colors flex items-center justify-center gap-1"
-                            style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.50)" }}>
+                            className="flex-1 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
+                            style={{ border: "1px solid #e5e7eb", color: "#6b7280" }}>
                             <Eye size={11} /> Xem trước
                           </button>
                           <button
@@ -468,19 +468,19 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                               htmlContent: template.htmlContent,
                             })}
                             className="flex-1 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-1"
-                            style={{ border: "1px solid rgba(255,255,255,0.10)", color: "#3b82f6" }}>
+                            style={{ border: "1px solid #e5e7eb", color: "#3b82f6" }}>
                             <FlaskConical size={11} /> Gửi test
                           </button>
                           <button onClick={() => setEditingTemplate(template)}
                             className="w-8 h-7 rounded-lg flex items-center justify-center hover:bg-blue-50 transition-colors"
-                            style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+                            style={{ border: "1px solid #e5e7eb" }}
                             title="Chỉnh sửa mẫu email">
                             <Edit3 size={12} className="text-blue-500" />
                           </button>
                           <button onClick={() => deleteTemplate(template.id)}
                             className="w-8 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
-                            style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
-                            <Trash2 size={12} className="text-[rgba(245,237,214,0.35)]" />
+                            style={{ border: "1px solid #e5e7eb" }}>
+                            <Trash2 size={12} className="text-gray-400" />
                           </button>
                         </div>
                       </div>
@@ -490,7 +490,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 <button onClick={() => setShowNewTemplate(true)}
                   className="rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 hover:border-yellow-400 hover:bg-yellow-50/30 transition-all min-h-[160px]"
                   style={{ borderColor: "#e5e7eb" }}>
-                  <Plus size={20} className="text-[rgba(245,237,214,0.35)]" />
+                  <Plus size={20} className="text-gray-400" />
                   <span className="text-sm text-gray-400 font-medium">Tạo mẫu mới</span>
                 </button>
               </div>
@@ -535,7 +535,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 const wsc = WORKFLOW_STATUS_CONFIG[wf.status];
                 return (
                   <div key={wf.id} className="rounded-2xl p-4 transition-all hover:shadow-sm"
-                    style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+                    style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -565,11 +565,11 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                             {wf.steps.slice(0, 4).map((step, i) => (
                               <div key={step.id} className="flex items-center gap-1">
                                 <span className="text-[10px] px-2 py-0.5 rounded-md font-medium"
-                                  style={{ background: "transparent", color: "rgba(245,237,214,0.50)" }}>
+                                  style={{ background: "#f3f4f6", color: "#6b7280" }}>
                                   {step.delayDays > 0 ? `+${step.delayDays}d` : "Ngay"}: {(step.subject || "Email").substring(0, 18)}...
                                 </span>
                                 {i < Math.min(wf.steps.length - 1, 3) && (
-                                  <ChevronRight size={10} className="text-[rgba(245,237,214,0.35)]" />
+                                  <ChevronRight size={10} className="text-gray-400" />
                                 )}
                               </div>
                             ))}
@@ -602,7 +602,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                         </button>
                         <button onClick={() => setEditingWorkflow(wf)}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-                          style={{ background: "transparent", color: "rgba(245,237,214,0.85)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                          style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }}>
                           <Edit2 size={11} /> Sửa
                         </button>
                         <button onClick={() => toggleWorkflow(wf.id, wf.status)}
@@ -794,7 +794,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
     <div className="grid grid-cols-2 gap-6" style={{ minHeight: "600px" }}>
       {/* Left: Editor */}
       <div className="space-y-4">
-        <div className="rounded-2xl p-5" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+        <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
           <h3 className="text-sm font-bold text-gray-900 mb-4">Thông tin template</h3>
           <div className="space-y-3">
             <div>
@@ -802,21 +802,21 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
               <input value={name} onChange={e => setName(e.target.value)}
                 placeholder="VD: Email chào mừng B2B"
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Tiêu đề email *</label>
               <input value={subject} onChange={e => setSubject(e.target.value)}
                 placeholder="VD: Giải pháp nội thất cho dự án của bạn"
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Danh mục</label>
                 <select value={category} onChange={e => setCategory(e.target.value as EmailTemplateCategory)}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}>
+                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
                   {Object.entries(TEMPLATE_CATEGORY_LABELS).map(([k, v]) => (
                     <option key={k} value={k}>{v}</option>
                   ))}
@@ -827,40 +827,40 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
                 <input value={previewText} onChange={e => setPreviewText(e.target.value)}
                   placeholder="Mô tả ngắn..."
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl p-4" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+        <div className="rounded-2xl p-4" style={{ border: "1px solid #e5e7eb" }}>
           <div className="flex items-center gap-2 mb-3">
-            <Tag size={13} className="text-[rgba(245,237,214,0.45)]" />
+            <Tag size={13} className="text-gray-500" />
             <span className="text-xs font-semibold text-gray-700">Biến động (click để chèn)</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {VARIABLES.map(v => (
               <button key={v} onClick={() => insertVariable(v)}
                 className="px-2.5 py-1 rounded-lg text-xs font-mono font-medium hover:bg-yellow-50 transition-colors"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", color: "#C9A84C" }}>
+                style={{ border: "1px solid #e5e7eb", color: "#C9A84C" }}>
                 {`{{${v}}}`}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
           <div className="flex items-center justify-between px-4 py-2.5"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "transparent" }}>
+            style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
             <span className="text-xs font-semibold text-gray-700">Nội dung email</span>
-            <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+            <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
               <button
                 onClick={() => setEditorMode("text")}
                 className="px-3 py-1 text-xs font-semibold transition-colors"
                 style={{
-                  background: editorMode === "text" ? "#1e1e1e" : "transparent",
+                  background: editorMode === "text" ? "#1e1e1e" : "#f9fafb",
                   color: editorMode === "text" ? "#d4d4d4" : "#6b7280",
-                  borderRight: "1px solid rgba(255,255,255,0.08)",
+                  borderRight: "1px solid #e5e7eb",
                 }}>
                 ✏️ Văn bản
               </button>
@@ -868,7 +868,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
                 onClick={() => setEditorMode("html")}
                 className="px-3 py-1 text-xs font-semibold transition-colors"
                 style={{
-                  background: editorMode === "html" ? "#1e1e1e" : "transparent",
+                  background: editorMode === "html" ? "#1e1e1e" : "#f9fafb",
                   color: editorMode === "html" ? "#d4d4d4" : "#6b7280",
                 }}>
                 {"</>"}  HTML
@@ -886,8 +886,8 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
                 onChange={e => setPlainText(e.target.value)}
                 className="w-full p-3 text-sm focus:outline-none resize-none rounded-xl"
                 style={{
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid #e5e7eb",
+                  background: "#ffffff",
                   color: "#1a1a1a",
                   minHeight: "220px",
                   fontFamily: "Arial, sans-serif",
@@ -927,19 +927,19 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
       </div>
 
       {/* Right: Preview */}
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
         <div className="px-4 py-2.5 flex items-center gap-2"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "transparent" }}>
-          <Eye size={13} className="text-[rgba(245,237,214,0.45)]" />
+          style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+          <Eye size={13} className="text-gray-500" />
           <span className="text-xs font-semibold text-gray-700">Preview Email</span>
         </div>
-        <div className="overflow-auto" style={{ height: "calc(100% - 40px)", background: "rgba(255,255,255,0.04)" }}>
+        <div className="overflow-auto" style={{ height: "calc(100% - 40px)", background: "#f3f4f6" }}>
           <div className="p-4">
             {subject && <div className="text-xs font-semibold text-gray-700 mb-2 px-2">Tiêu đề: {subject}</div>}
             <iframe
               srcDoc={finalHtml}
               className="w-full rounded-xl"
-              style={{ minHeight: "500px", border: "none", background: "rgba(255,255,255,0.06)" }}
+              style={{ minHeight: "500px", border: "none", background: "#fff" }}
               sandbox="allow-same-origin"
               key={finalHtml.substring(0, 50)}
             />
@@ -968,7 +968,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
           { label: "Tỷ lệ mở trung bình", value: `${avgOpenRate}%`,                  icon: TrendingUp, color: "#22c55e" },
           { label: "Tỷ lệ click",         value: `${avgClickRate}%`,                 icon: Target,     color: "#C9A84C" },
         ].map((kpi, i) => (
-          <div key={i} className="rounded-2xl p-4" style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+          <div key={i} className="rounded-2xl p-4" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
             <div className="flex items-center justify-between mb-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                 style={{ background: `${kpi.color}15` }}>
@@ -982,12 +982,12 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
         ))}
       </div>
 
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
         <div className="px-5 py-3.5 flex items-center justify-between"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "transparent" }}>
+          style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
           <h3 className="text-sm font-bold text-gray-900">Hiệu suất từng chiến dịch</h3>
-          <button className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-transparent transition-colors text-gray-600"
-            style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+          <button className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+            style={{ border: "1px solid #e5e7eb" }}>
             <Download size={12} /> Xuất CSV
           </button>
         </div>
@@ -997,7 +997,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "transparent" }}>
+                <tr style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
                   {["Chiến dịch", "Phân khúc", "Đã gửi", "Đã mở", "Tỷ lệ mở", "Click", "Tỷ lệ click", "Ngày gửi"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-600">{h}</th>
                   ))}
@@ -1010,7 +1010,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
                   return (
                     <tr key={c.id}
                       style={{ borderBottom: i < sentCampaigns.length - 1 ? "1px solid #f3f4f6" : "none" }}
-                      className="hover:bg-transparent/50 transition-colors">
+                      className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-4 py-3 font-medium text-gray-900 max-w-[180px] truncate">{c.name}</td>
                       <td className="px-4 py-3 text-gray-600 text-xs">{SEGMENT_LABELS[c.segment]}</td>
                       <td className="px-4 py-3 text-gray-900 font-semibold">{c.sentCount.toLocaleString()}</td>
@@ -1039,10 +1039,10 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
       </div>
 
       {/* Thống kê Inbox vs Promotions */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-gray-900">Phân loại hộp thư (Inbox vs Quảng cáo)</h3>
-          <span className="text-xs text-gray-400 bg-transparent px-2 py-1 rounded-full">Dựa trên tỷ lệ mở email</span>
+          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Dựa trên tỷ lệ mở email</span>
         </div>
         <div className="grid grid-cols-2 gap-4 mb-4">
           {/* Inbox */}
@@ -1059,7 +1059,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
             <div className="text-xs text-gray-500 mt-1">
               Ưc tính dựa trên tỷ lệ mở email ({totalOpened.toLocaleString("vi-VN")} người mở)
             </div>
-            <div className="mt-3 h-2 rounded-full bg-transparent overflow-hidden">
+            <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
               <div className="h-full rounded-full" style={{
                 width: `${totalSent > 0 ? Math.min(100, Math.round((totalOpened / totalSent) * 100)) : 0}%`,
                 background: "#22c55e"
@@ -1080,7 +1080,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
             <div className="text-xs text-gray-500 mt-1">
               Ưc tính email chưa được mở ({(totalSent - totalOpened).toLocaleString("vi-VN")} email)
             </div>
-            <div className="mt-3 h-2 rounded-full bg-transparent overflow-hidden">
+            <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
               <div className="h-full rounded-full" style={{
                 width: `${totalSent > 0 ? Math.max(0, 100 - Math.round((totalOpened / totalSent) * 100)) : 100}%`,
                 background: "#f59e0b"
@@ -1088,7 +1088,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
             </div>
           </div>
         </div>
-        <div className="rounded-xl p-3" style={{ background: "#f8fafc", border: "1px solid rgba(255,255,255,0.10)" }}>
+        <div className="rounded-xl p-3" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
           <div className="flex items-start gap-2">
             <AlertCircle size={14} style={{ color: "#64748b", marginTop: 2, flexShrink: 0 }} />
             <p className="text-xs text-gray-500 leading-relaxed">
@@ -1100,7 +1100,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
         </div>
       </div>
 
-      <div className="rounded-2xl p-5" style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-3">Benchmark ngành B2B</h3>
         <div className="grid grid-cols-3 gap-4 text-sm">
           {[
@@ -1108,7 +1108,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
             { metric: "Tỷ lệ click",            industry: "2.3%",  yours: `${avgClickRate}%`, good: parseFloat(avgClickRate) >= 2.3 },
             { metric: "Tỷ lệ hủy đăng ký",     industry: "< 0.5%", yours: "0.1%", good: true },
           ].map((b, i) => (
-            <div key={i} className="rounded-xl p-3 bg-transparent" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+            <div key={i} className="rounded-xl p-3 bg-white" style={{ border: "1px solid #e5e7eb" }}>
               <div className="text-xs text-gray-500 mb-1">{b.metric}</div>
               <div className="flex items-center justify-between">
                 <div>
@@ -1144,7 +1144,7 @@ function ToggleSwitch({ value, onChange }: { value: boolean; onChange: (v: boole
     <button type="button" onClick={() => onChange(!value)}
       className="relative w-10 h-5 rounded-full transition-colors flex-shrink-0"
       style={{ background: value ? "#22c55e" : "#d1d5db" }}>
-      <span className="absolute top-0.5 w-4 h-4 rounded-full bg-transparent shadow transition-transform"
+      <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
         style={{ transform: value ? "translateX(22px)" : "translateX(2px)" }} />
     </button>
   );
@@ -1191,7 +1191,7 @@ function SettingsTab() {
     <div className="max-w-2xl space-y-5">
 
       {/* ── Thông tin người gửi ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Mail size={14} style={{ color: "#C9A84C" }} /> Thông tin người gửi
         </h3>
@@ -1201,13 +1201,13 @@ function SettingsTab() {
               <label className="block text-xs font-semibold text-gray-700 mb-1">Tên người gửi</label>
               <input value={config.senderName} onChange={e => setConfig(p => ({ ...p, senderName: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Email người gửi</label>
               <input type="email" value={config.senderEmail} onChange={e => setConfig(p => ({ ...p, senderEmail: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
             </div>
           </div>
           <div>
@@ -1215,19 +1215,19 @@ function SettingsTab() {
             <input type="email" value={config.replyToEmail} onChange={e => setConfig(p => ({ ...p, replyToEmail: e.target.value }))}
               placeholder="sales@smartfurni.com"
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Chữ ký email</label>
             <textarea value={config.emailSignature} onChange={e => setConfig(p => ({ ...p, emailSignature: e.target.value }))}
               rows={3} className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none resize-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
           </div>
         </div>
       </div>
 
       {/* ── Lịch gửi ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Clock size={14} style={{ color: "#60a5fa" }} /> Lịch gửi email
         </h3>
@@ -1237,20 +1237,20 @@ function SettingsTab() {
               <label className="block text-xs font-semibold text-gray-700 mb-1">Giờ bắt đầu gửi</label>
               <input type="time" value={config.scheduleTime} onChange={e => setConfig(p => ({ ...p, scheduleTime: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Giờ kết thúc gửi</label>
               <input type="time" value={config.scheduleTimeEnd} onChange={e => setConfig(p => ({ ...p, scheduleTimeEnd: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
             </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-2">Múi giờ</label>
             <select value={config.timezone} onChange={e => setConfig(p => ({ ...p, timezone: e.target.value }))}
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}>
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
               <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (GMT+7)</option>
               <option value="Asia/Bangkok">Asia/Bangkok (GMT+7)</option>
               <option value="UTC">UTC</option>
@@ -1271,7 +1271,7 @@ function SettingsTab() {
                     }))}
                     className="w-9 h-9 rounded-xl text-xs font-bold transition-colors"
                     style={{
-                      background: active ? "rgba(201,168,76,0.15)" : "transparent",
+                      background: active ? "rgba(201,168,76,0.15)" : "#f9fafb",
                       color: active ? "#C9A84C" : "#9ca3af",
                       border: `1px solid ${active ? "#C9A84C" : "#e5e7eb"}`,
                     }}>
@@ -1285,7 +1285,7 @@ function SettingsTab() {
       </div>
 
       {/* ── Giới hạn & Kiểm soát ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Target size={14} style={{ color: "#a78bfa" }} /> Giới hạn & Kiểm soát gửi
         </h3>
@@ -1296,7 +1296,7 @@ function SettingsTab() {
               <input type="number" min={10} max={2000} value={config.dailyLimit}
                 onChange={e => setConfig(p => ({ ...p, dailyLimit: parseInt(e.target.value) || 200 }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
               <p className="text-[10px] text-gray-400 mt-1">Giới hạn tổng email gửi mỗi ngày</p>
             </div>
             <div>
@@ -1304,7 +1304,7 @@ function SettingsTab() {
               <input type="number" min={1} max={168} value={config.minIntervalHours}
                 onChange={e => setConfig(p => ({ ...p, minIntervalHours: parseInt(e.target.value) || 24 }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
               <p className="text-[10px] text-gray-400 mt-1">Thời gian chờ giữa 2 email cho cùng 1 lead</p>
             </div>
           </div>
@@ -1313,20 +1313,20 @@ function SettingsTab() {
             <input type="number" min={0} max={5} value={config.retryCount}
               onChange={e => setConfig(p => ({ ...p, retryCount: parseInt(e.target.value) }))}
               className="w-32 px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Blacklist domain <span className="font-normal text-gray-400">(phân cách bởi dấu phẩy)</span></label>
             <input value={config.blacklistDomains} onChange={e => setConfig(p => ({ ...p, blacklistDomains: e.target.value }))}
               placeholder="spam.com, test.com, ..."
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
           </div>
         </div>
       </div>
 
       {/* ── Điều kiện dừng ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <AlertCircle size={14} style={{ color: "#f87171" }} /> Điều kiện dừng workflow
         </h3>
@@ -1336,7 +1336,7 @@ function SettingsTab() {
             { key: "stopOnUnsubscribe",  label: "Dừng khi khách hủy đăng ký",          desc: "Tự động loại khỏi mọi workflow khi nhận unsubscribe" },
           ].map(item => (
             <div key={item.key} className="flex items-center justify-between py-2.5 px-3 rounded-xl"
-              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
               <div>
                 <div className="text-sm font-semibold text-gray-900">{item.label}</div>
                 <div className="text-xs text-gray-500">{item.desc}</div>
@@ -1351,7 +1351,7 @@ function SettingsTab() {
       </div>
 
       {/* ── Tracking ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <BarChart3 size={14} style={{ color: "#22c55e" }} /> Tracking & Tuân thủ
         </h3>
@@ -1362,7 +1362,7 @@ function SettingsTab() {
             { key: "unsubscribeLink",  label: "Tự động thêm link hủy đăng ký",   desc: "Bắt buộc theo quy định CAN-SPAM / GDPR" },
           ].map(item => (
             <div key={item.key} className="flex items-center justify-between py-2.5 px-3 rounded-xl"
-              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
               <div>
                 <div className="text-sm font-semibold text-gray-900">{item.label}</div>
                 <div className="text-xs text-gray-500">{item.desc}</div>
@@ -1441,19 +1441,19 @@ function CampaignModal({
           <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
             placeholder="VD: Email B2B tháng 4/2026"
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
         </Field>
         <Field label="Tiêu đề email *">
           <input value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))}
             placeholder="VD: Ưu đãi đặc biệt dành cho đối tác SmartFurni"
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Phân khúc khách hàng">
             <select value={form.segment} onChange={e => setForm(p => ({ ...p, segment: e.target.value as EmailSegment }))}
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}>
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
               {Object.entries(SEGMENT_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
@@ -1462,7 +1462,7 @@ function CampaignModal({
           <Field label="Dùng template có sẵn">
             <select value={form.templateId} onChange={e => setForm(p => ({ ...p, templateId: e.target.value }))}
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}>
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
               <option value="">— Không dùng template —</option>
               {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
@@ -1472,7 +1472,7 @@ function CampaignModal({
           <input type="datetime-local" value={form.scheduledAt}
             onChange={e => setForm(p => ({ ...p, scheduledAt: e.target.value }))}
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
         </Field>
         <button type="submit" disabled={loading || !form.name || !form.subject}
           className="w-full py-2.5 rounded-xl text-sm font-bold text-black flex items-center justify-center gap-2"
@@ -1511,18 +1511,18 @@ function TemplateModal({ onClose, onCreated }: { onClose: () => void; onCreated:
           <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
             placeholder="VD: Email chào mừng B2B"
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
         </Field>
         <Field label="Tiêu đề email *">
           <input value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))}
             placeholder="VD: Giải pháp nội thất thông minh"
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
         </Field>
         <Field label="Danh mục">
           <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as EmailTemplateCategory }))}
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}>
+            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
             {Object.entries(TEMPLATE_CATEGORY_LABELS).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
@@ -1613,19 +1613,19 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
       <form onSubmit={handleSubmit} className="space-y-4">
 
         {/* ── Thông tin cơ bản ── */}
-        <div className="rounded-xl p-4 space-y-3" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
           <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Thông tin cơ bản</div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Tên workflow *">
               <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                 placeholder="VĐ: Chào mừng lead mới"
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
             </Field>
             <Field label="Trigger kích hoạt">
               <select value={form.triggerType} onChange={e => setForm(p => ({ ...p, triggerType: e.target.value as EmailWorkflow["triggerType"] }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+                style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
                 {Object.entries(TRIGGER_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
@@ -1636,12 +1636,12 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
             <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
               placeholder="Mô tả ngắn về workflow..."
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }} />
+              style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
           </Field>
         </div>
 
         {/* ── Điều kiện lọc ── */}
-        <div className="rounded-xl p-4 space-y-3" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
           <div className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
             <Target size={11} /> Điều kiện lọc <span className="font-normal normal-case text-gray-400">(tùy chọn)</span>
           </div>
@@ -1650,7 +1650,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
               <Field label="Giai đoạn lead">
                 <select value={form.filterStage} onChange={e => setForm(p => ({ ...p, filterStage: e.target.value }))}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+                  style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
                   {STAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
@@ -1658,7 +1658,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
             <Field label="Giá trị lead">
               <select value={form.filterValueRange} onChange={e => setForm(p => ({ ...p, filterValueRange: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+                style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
                 {VALUE_RANGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </Field>
@@ -1666,14 +1666,14 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
               <input value={form.filterTag} onChange={e => setForm(p => ({ ...p, filterTag: e.target.value }))}
                 placeholder="VD: B2B, VIP, ..."
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }} />
+                style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
             </Field>
             {showNoActivityDays && (
               <Field label="Không tương tác (ngày)">
                 <input type="number" min={1} max={90} value={form.noActivityDays}
                   onChange={e => setForm(p => ({ ...p, noActivityDays: parseInt(e.target.value) || 5 }))}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }} />
+                  style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
               </Field>
             )}
           </div>
@@ -1684,15 +1684,15 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-semibold text-gray-700">Các bước email ({steps.length})</label>
             <button type="button" onClick={addStep}
-              className="text-xs font-medium px-2.5 py-1 rounded-lg hover:bg-transparent transition-colors flex items-center gap-1"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", color: "#C9A84C" }}>
+              className="text-xs font-medium px-2.5 py-1 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1"
+              style={{ border: "1px solid #e5e7eb", color: "#C9A84C" }}>
               <Plus size={11} /> Thêm bước
             </button>
           </div>
           <div className="space-y-2">
             {steps.map((step, i) => (
               <div key={i} className="rounded-xl p-3 space-y-2"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}>
+                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                     style={{ background: "#C9A84C20", color: "#C9A84C" }}>{i + 1}</span>
@@ -1701,18 +1701,18 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
                     <input type="number" min={0} value={step.delayDays}
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, delayDays: parseInt(e.target.value) || 0 } : s))}
                       className="w-10 px-1.5 py-1 text-xs rounded-lg text-center focus:outline-none"
-                      style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }} />
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
                     <span className="text-xs text-gray-500">ngày</span>
                     <input type="number" min={0} max={23} value={step.delayHours}
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, delayHours: parseInt(e.target.value) || 0 } : s))}
                       className="w-10 px-1.5 py-1 text-xs rounded-lg text-center focus:outline-none"
-                      style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }} />
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
                     <span className="text-xs text-gray-500">giờ</span>
                   </div>
                   <select value={step.action}
                     onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, action: e.target.value } : s))}
                     className="text-xs px-2 py-1.5 rounded-lg focus:outline-none flex-shrink-0"
-                    style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+                    style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
                     <option value="send_email">✉️ Gửi email</option>
                     <option value="create_task">✅ Tạo task</option>
                     <option value="add_tag">🏷️ Thêm tag</option>
@@ -1721,7 +1721,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
                   {steps.length > 1 && (
                     <button type="button" onClick={() => removeStep(i)}
                       className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors flex-shrink-0 ml-auto">
-                      <X size={12} className="text-[rgba(245,237,214,0.35)]" />
+                      <X size={12} className="text-gray-400" />
                     </button>
                   )}
                 </div>
@@ -1731,11 +1731,11 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
                       placeholder="Tiêu đề email..."
                       className="px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
-                      style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }} />
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
                     <select value={step.templateId}
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, templateId: e.target.value } : s))}
                       className="text-xs px-2 py-1.5 rounded-lg focus:outline-none"
-                      style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
                       <option value="">Không dùng template</option>
                       {templates.map(t => <option key={t.id} value={t.id}>{t.name.substring(0, 25)}</option>)}
                     </select>
@@ -1747,7 +1747,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
                       placeholder="Tiêu đề task... (VD: Gọi điện follow-up)"
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
-                      style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }} />
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
                   </div>
                 )}
                 {step.action === "add_tag" && (
@@ -1756,7 +1756,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
                       placeholder="Tên tag cần thêm... (VD: hot-lead)"
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
-                      style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }} />
+                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
                   </div>
                 )}
               </div>
@@ -1780,24 +1780,24 @@ function TemplatePreviewModal({ template, onClose }: { template: EmailTemplate; 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-transparent rounded-2xl overflow-hidden flex flex-col"
-        style={{ width: "680px", maxHeight: "85vh", border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
+        style={{ width: "680px", maxHeight: "85vh", border: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          style={{ borderBottom: "1px solid #e5e7eb" }}>
           <div>
             <div className="text-sm font-bold text-gray-900">{template.name}</div>
             <div className="text-xs text-gray-500 mt-0.5">Tiêu đề: {template.subject}</div>
           </div>
           <button onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-transparent transition-colors">
-            <X size={16} className="text-[rgba(245,237,214,0.45)]" />
+            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors">
+            <X size={16} className="text-gray-500" />
           </button>
         </div>
-        <div className="flex-1 overflow-auto p-4" style={{ background: "transparent" }}>
+        <div className="flex-1 overflow-auto p-4" style={{ background: "#f3f4f6" }}>
           <iframe
             srcDoc={template.htmlContent}
             className="w-full rounded-xl"
-            style={{ minHeight: "500px", border: "none", background: "rgba(255,255,255,0.06)" }}
+            style={{ minHeight: "500px", border: "none", background: "#fff" }}
             sandbox="allow-same-origin"
           />
         </div>
@@ -1813,7 +1813,7 @@ function EmptyState({ icon, title, description, action }: {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+        style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         {icon}
       </div>
       <div className="text-base font-bold text-gray-900 mb-1">{title}</div>
@@ -1829,14 +1829,14 @@ function Modal({ title, onClose, children, wide }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-transparent rounded-2xl overflow-hidden flex flex-col"
-        style={{ width: wide ? "680px" : "480px", maxHeight: "85vh", border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
+        style={{ width: wide ? "680px" : "480px", maxHeight: "85vh", border: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          style={{ borderBottom: "1px solid #e5e7eb" }}>
           <span className="text-sm font-bold text-gray-900">{title}</span>
           <button onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-transparent transition-colors">
-            <X size={16} className="text-[rgba(245,237,214,0.45)]" />
+            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors">
+            <X size={16} className="text-gray-500" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-5">{children}</div>
@@ -1926,12 +1926,12 @@ function SendTestEmailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-transparent rounded-2xl overflow-hidden flex flex-col"
-        style={{ width: "520px", maxHeight: "85vh", border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
+        style={{ width: "520px", maxHeight: "85vh", border: "1px solid #e5e7eb" }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          style={{ borderBottom: "1px solid #e5e7eb" }}>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: `${srcColor}15` }}>
@@ -1946,8 +1946,8 @@ function SendTestEmailModal({
             </div>
           </div>
           <button onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-transparent transition-colors">
-            <X size={16} className="text-[rgba(245,237,214,0.45)]" />
+            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors">
+            <X size={16} className="text-gray-500" />
           </button>
         </div>
 
@@ -1959,7 +1959,7 @@ function SendTestEmailModal({
             style={{ background: `${srcColor}0d`, border: `1px solid ${srcColor}30` }}>
             <FlaskConical size={14} style={{ color: srcColor, marginTop: 2, flexShrink: 0 }} />
             <p className="text-xs text-gray-600 leading-relaxed">
-              Email test sẽ được gửi ngay tới địa chỉ bạn nhập. Các biến động <code className="text-xs px-1 py-0.5 rounded" style={{ background: "transparent" }}>{'{{name}}'}</code>, <code className="text-xs px-1 py-0.5 rounded" style={{ background: "transparent" }}>{'{{company}}'}</code>... sẽ được thay thế bằng dữ liệu mẫu. Email sẽ có banner <strong>[TEST]</strong> ở đầu.
+              Email test sẽ được gửi ngay tới địa chỉ bạn nhập. Các biến động <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#f3f4f6" }}>{'{{name}}'}</code>, <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#f3f4f6" }}>{'{{company}}'}</code>... sẽ được thay thế bằng dữ liệu mẫu. Email sẽ có banner <strong>[TEST]</strong> ở đầu.
             </p>
           </div>
 
@@ -1974,7 +1974,7 @@ function SendTestEmailModal({
               onChange={e => { setToEmail(e.target.value); setResult(null); }}
               placeholder="your@email.com"
               className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}
               onKeyDown={e => e.key === "Enter" && handleSend()}
             />
           </div>
@@ -1987,7 +1987,7 @@ function SendTestEmailModal({
               onChange={e => setSubject(e.target.value)}
               placeholder="Tiêu đề email..."
               className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}
+              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}
             />
             <p className="text-[10px] text-gray-400 mt-1">Email sẽ có tiêu đề <strong>[TEST]</strong> ở đầu</p>
           </div>
@@ -1996,11 +1996,11 @@ function SendTestEmailModal({
           {htmlContent && (
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Xem trước nội dung</label>
-              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)", maxHeight: "200px", overflow: "auto" }}>
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb", maxHeight: "200px", overflow: "auto" }}>
                 <iframe
                   srcDoc={htmlContent}
                   className="w-full"
-                  style={{ minHeight: "180px", border: "none", background: "rgba(255,255,255,0.06)" }}
+                  style={{ minHeight: "180px", border: "none", background: "#fff" }}
                   sandbox="allow-same-origin"
                 />
               </div>
@@ -2022,7 +2022,7 @@ function SendTestEmailModal({
                 <p className="text-xs font-semibold" style={{ color: result.success ? "#15803d" : "#dc2626" }}>
                   {result.success ? (result.mock ? "ℹ️ Chế độ xem trước" : "✓ Đã gửi thành công!") : "✗ Gửi thất bại"}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: result.success ? "#166534" : "#f87171" }}>
+                <p className="text-xs mt-0.5" style={{ color: result.success ? "#166534" : "#991b1b" }}>
                   {result.message}
                 </p>
                 {result.mock && (
@@ -2036,10 +2036,10 @@ function SendTestEmailModal({
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid #e5e7eb" }}>
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-transparent transition-colors"
-            style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            style={{ border: "1px solid #e5e7eb" }}>
             Đóng
           </button>
           <button
@@ -2126,9 +2126,9 @@ function LaunchCampaignModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-transparent rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "90vh" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "90vh" }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: "1px solid #e5e7eb" }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
               <Rocket size={16} style={{ color: "#000" }} />
@@ -2139,8 +2139,8 @@ function LaunchCampaignModal({
             </div>
           </div>
           {step !== "sending" && (
-            <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-transparent">
-              <X size={14} className="text-[rgba(245,237,214,0.45)]" />
+            <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100">
+              <X size={14} className="text-gray-500" />
             </button>
           )}
         </div>
@@ -2150,27 +2150,27 @@ function LaunchCampaignModal({
           {step === "confirm" && (
             <>
               {/* Campaign info */}
-              <div className="rounded-xl p-4 space-y-2" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              <div className="rounded-xl p-4 space-y-2" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[rgba(245,237,214,0.45)]">Chiến dịch</span>
+                  <span className="text-gray-500">Chiến dịch</span>
                   <span className="font-semibold text-gray-900 text-right max-w-[200px] truncate">{campaign.name}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[rgba(245,237,214,0.45)]">Tiêu đề email</span>
+                  <span className="text-gray-500">Tiêu đề email</span>
                   <span className="font-semibold text-gray-900 text-right max-w-[200px] truncate">{campaign.subject}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[rgba(245,237,214,0.45)]">Phân khúc</span>
+                  <span className="text-gray-500">Phân khúc</span>
                   <span className="font-semibold text-gray-900">{SEGMENT_LABELS[campaign.segment]}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[rgba(245,237,214,0.45)]">Số người nhận</span>
+                  <span className="text-gray-500">Số người nhận</span>
                   <span className="font-bold" style={{ color: "#C9A84C" }}>
                     {loadingCount ? <Loader2 size={12} className="animate-spin inline" /> : `${recipientCount?.toLocaleString("vi-VN") ?? 0} người`}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[rgba(245,237,214,0.45)]">Gửi từ</span>
+                  <span className="text-gray-500">Gửi từ</span>
                   <span className="font-semibold text-gray-900">noreply@smartfurni.vn</span>
                 </div>
               </div>
@@ -2179,7 +2179,7 @@ function LaunchCampaignModal({
               <div className="rounded-xl px-4 py-3 flex items-start gap-2.5" style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)" }}>
                 <AlertCircle size={14} style={{ color: "#C9A84C", marginTop: 1, flexShrink: 0 }} />
                 <div>
-                  <p className="text-xs font-semibold" style={{ color: "#fbbf24" }}>Lưu ý trước khi phát động</p>
+                  <p className="text-xs font-semibold" style={{ color: "#92400e" }}>Lưu ý trước khi phát động</p>
                   <p className="text-xs mt-0.5 text-gray-600 leading-relaxed">
                     Email sẽ được gửi <strong>ngay lập tức</strong> tới toàn bộ khách hàng trong phân khúc có địa chỉ email.
                     Hãy đảm bảo đã gửi email test và kiểm tra nội dung trước khi phát động.
@@ -2257,12 +2257,12 @@ function LaunchCampaignModal({
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid #e5e7eb" }}>
           {step === "confirm" && (
             <>
               <button onClick={onClose}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-transparent transition-colors"
-                style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                style={{ border: "1px solid #e5e7eb" }}>
                 Hủy
               </button>
               <button
@@ -2403,12 +2403,12 @@ SmartFurni · smartfurni.vn<br>
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.6)" }}>
-      <div className="bg-transparent rounded-2xl flex flex-col overflow-hidden"
-        style={{ width: "min(1100px, 96vw)", height: "90vh", border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="bg-white rounded-2xl flex flex-col overflow-hidden"
+        style={{ width: "min(1100px, 96vw)", height: "90vh", border: "1px solid #e5e7eb" }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "transparent" }}>
+          style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center"
               style={{ background: "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
@@ -2428,7 +2428,7 @@ SmartFurni · smartfurni.vn<br>
             </button>
             <button onClick={onClose}
               className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-colors">
-              <X size={16} className="text-[rgba(245,237,214,0.45)]" />
+              <X size={16} className="text-gray-500" />
             </button>
           </div>
         </div>
@@ -2437,7 +2437,7 @@ SmartFurni · smartfurni.vn<br>
         <div className="flex flex-1 overflow-hidden">
 
           {/* Left: Form + Editor */}
-          <div className="flex flex-col overflow-y-auto" style={{ width: "420px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex flex-col overflow-y-auto" style={{ width: "420px", flexShrink: 0, borderRight: "1px solid #e5e7eb" }}>
 
             {/* Thông tin cơ bản */}
             <div className="p-4 space-y-3" style={{ borderBottom: "1px solid #f3f4f6" }}>
@@ -2446,20 +2446,20 @@ SmartFurni · smartfurni.vn<br>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Tên template *</label>
                 <input value={name} onChange={e => setName(e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-300"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Tiêu đề email *</label>
                 <input value={subject} onChange={e => setSubject(e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-300"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Danh mục</label>
                   <select value={category} onChange={e => setCategory(e.target.value as EmailTemplateCategory)}
                     className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                    style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }}>
+                    style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
                     {Object.entries(TEMPLATE_CATEGORY_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
                     ))}
@@ -2470,7 +2470,7 @@ SmartFurni · smartfurni.vn<br>
                   <input value={previewText} onChange={e => setPreviewText(e.target.value)}
                     placeholder="Mô tả ngắn..."
                     className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                    style={{ border: "1px solid rgba(255,255,255,0.10)", background: "transparent" }} />
+                    style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
                 </div>
               </div>
             </div>
@@ -2478,14 +2478,14 @@ SmartFurni · smartfurni.vn<br>
             {/* Biến động */}
             <div className="px-4 py-3" style={{ borderBottom: "1px solid #f3f4f6" }}>
               <div className="flex items-center gap-1.5 mb-2">
-                <Tag size={11} className="text-[rgba(245,237,214,0.35)]" />
+                <Tag size={11} className="text-gray-400" />
                 <span className="text-xs font-semibold text-gray-600">Biến động (click để chèn)</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {VARIABLES.map(v => (
                   <button key={v} onClick={() => insertVariable(v)}
                     className="px-2 py-0.5 rounded-lg text-xs font-mono font-medium hover:bg-yellow-50 transition-colors"
-                    style={{ border: "1px solid rgba(255,255,255,0.10)", color: "#C9A84C" }}>
+                    style={{ border: "1px solid #e5e7eb", color: "#C9A84C" }}>
                     {`{{${v}}}`}
                   </button>
                 ))}
@@ -2496,14 +2496,14 @@ SmartFurni · smartfurni.vn<br>
             <div className="px-4 pt-3 pb-2">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-gray-700">Nội dung email</span>
-                <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+                <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
                   <button
                     onClick={switchToText}
                     className="px-3 py-1.5 text-xs font-semibold transition-colors"
                     style={{
-                      background: editorMode === "text" ? "#1e1e1e" : "transparent",
+                      background: editorMode === "text" ? "#1e1e1e" : "#f9fafb",
                       color: editorMode === "text" ? "#d4d4d4" : "#6b7280",
-                      borderRight: "1px solid rgba(255,255,255,0.08)",
+                      borderRight: "1px solid #e5e7eb",
                     }}>
                     ✏️ Văn bản
                   </button>
@@ -2511,7 +2511,7 @@ SmartFurni · smartfurni.vn<br>
                     onClick={switchToHtml}
                     className="px-3 py-1.5 text-xs font-semibold transition-colors"
                     style={{
-                      background: editorMode === "html" ? "#1e1e1e" : "transparent",
+                      background: editorMode === "html" ? "#1e1e1e" : "#f9fafb",
                       color: editorMode === "html" ? "#d4d4d4" : "#6b7280",
                     }}>
                     {"</>"} HTML
@@ -2531,7 +2531,7 @@ SmartFurni · smartfurni.vn<br>
                     onChange={e => setPlainText(e.target.value)}
                     className="w-full p-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 resize-none rounded-xl"
                     style={{
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      border: "1px solid #e5e7eb",
                       background: "#fafafa",
                       color: "#1a1a1a",
                       minHeight: "320px",
@@ -2551,7 +2551,7 @@ SmartFurni · smartfurni.vn<br>
                   onChange={e => setHtmlContent(e.target.value)}
                   className="w-full p-3 text-xs font-mono focus:outline-none resize-none rounded-xl"
                   style={{
-                    border: "1px solid rgba(255,255,255,0.10)",
+                    border: "1px solid #e5e7eb",
                     background: "#1e1e1e",
                     color: "#d4d4d4",
                     minHeight: "320px",
@@ -2566,7 +2566,7 @@ SmartFurni · smartfurni.vn<br>
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Preview tabs */}
             <div className="flex items-center gap-1 px-4 py-2.5 flex-shrink-0"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "transparent" }}>
+              style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
               <Eye size={13} className="text-gray-400 mr-1" />
               <span className="text-xs font-semibold text-gray-600 mr-3">Xem trước</span>
               {(["preview", "html", "text"] as const).map(mode => (
@@ -2582,16 +2582,16 @@ SmartFurni · smartfurni.vn<br>
             </div>
 
             {/* Preview content */}
-            <div className="flex-1 overflow-auto" style={{ background: "transparent" }}>
+            <div className="flex-1 overflow-auto" style={{ background: "#f3f4f6" }}>
               {activePreview === "preview" && (
                 <div className="p-4">
                   <div className="text-xs font-semibold text-gray-600 mb-2 px-1">
-                    Tiêu đề: <span className="text-[#f5edd6]">{subject}</span>
+                    Tiêu đề: <span className="text-gray-900">{subject}</span>
                   </div>
                   <iframe
                     srcDoc={finalHtml}
                     className="w-full rounded-xl"
-                    style={{ minHeight: "500px", border: "none", background: "rgba(255,255,255,0.06)" }}
+                    style={{ minHeight: "500px", border: "none", background: "#fff" }}
                     sandbox="allow-same-origin"
                     key={finalHtml.substring(0, 50)}
                   />
@@ -2607,7 +2607,7 @@ SmartFurni · smartfurni.vn<br>
               )}
               {activePreview === "text" && (
                 <div className="p-4">
-                  <div className="bg-transparent rounded-xl p-6" style={{ minHeight: "500px", border: "1px solid rgba(255,255,255,0.10)" }}>
+                  <div className="bg-white rounded-xl p-6" style={{ minHeight: "500px", border: "1px solid #e5e7eb" }}>
                     <div className="text-xs text-gray-400 mb-3 pb-2" style={{ borderBottom: "1px solid #f3f4f6" }}>
                       Plain text version (dự phòng khi email client không hiển thị HTML)
                     </div>

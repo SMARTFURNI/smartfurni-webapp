@@ -55,7 +55,7 @@ export default function LeadDetailPageNew({ lead }: LeadDetailPageNewProps) {
       {/* Quick Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Phone */}
-        <div className="bg-transparent rounded-lg border border-[rgba(255,255,255,0.12)] p-4 hover:shadow-lg transition-shadow">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-green-100 rounded-lg">
               <Phone className="w-5 h-5 text-green-600" />
@@ -68,7 +68,7 @@ export default function LeadDetailPageNew({ lead }: LeadDetailPageNewProps) {
         </div>
 
         {/* Email */}
-        <div className="bg-transparent rounded-lg border border-[rgba(255,255,255,0.12)] p-4 hover:shadow-lg transition-shadow">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-purple-100 rounded-lg">
               <Mail className="w-5 h-5 text-purple-600" />
@@ -81,7 +81,7 @@ export default function LeadDetailPageNew({ lead }: LeadDetailPageNewProps) {
         </div>
 
         {/* Location */}
-        <div className="bg-transparent rounded-lg border border-[rgba(255,255,255,0.12)] p-4 hover:shadow-lg transition-shadow">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-orange-100 rounded-lg">
               <MapPin className="w-5 h-5 text-orange-600" />
@@ -94,7 +94,7 @@ export default function LeadDetailPageNew({ lead }: LeadDetailPageNewProps) {
         </div>
 
         {/* Value */}
-        <div className="bg-transparent rounded-lg border border-[rgba(255,255,255,0.12)] p-4 hover:shadow-lg transition-shadow">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-blue-100 rounded-lg">
               <DollarSign className="w-5 h-5 text-blue-600" />
@@ -108,9 +108,9 @@ export default function LeadDetailPageNew({ lead }: LeadDetailPageNewProps) {
       </div>
 
       {/* Tabs */}
-      <div className="bg-transparent rounded-xl border border-[rgba(255,255,255,0.12)] overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {/* Tab Navigation */}
-        <div className="flex border-b border-[rgba(255,255,255,0.12)] bg-transparent">
+        <div className="flex border-b border-gray-200 bg-gray-50">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -169,7 +169,7 @@ export default function LeadDetailPageNew({ lead }: LeadDetailPageNewProps) {
               {lead.notes && (
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                   <h3 className="font-semibold text-gray-900 mb-2">Ghi Chú</h3>
-                  <p className="text-[rgba(245,237,214,0.85)]">{lead.notes}</p>
+                  <p className="text-gray-700">{lead.notes}</p>
                 </div>
               )}
 
@@ -194,7 +194,7 @@ export default function LeadDetailPageNew({ lead }: LeadDetailPageNewProps) {
 
           {activeTab === 'activities' && (
             <div className="space-y-4">
-              <p className="text-[rgba(245,237,214,0.65)]">Không có tương tác nào được ghi lại.</p>
+              <p className="text-gray-600">Không có tương tác nào được ghi lại.</p>
               <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
                 Thêm Tương Tác
               </button>
@@ -203,7 +203,7 @@ export default function LeadDetailPageNew({ lead }: LeadDetailPageNewProps) {
 
           {activeTab === 'documents' && (
             <div className="space-y-4">
-              <p className="text-[rgba(245,237,214,0.65)]">Không có tài liệu nào được tải lên.</p>
+              <p className="text-gray-600">Không có tài liệu nào được tải lên.</p>
               <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
                 Tải Lên Tài Liệu
               </button>
@@ -214,7 +214,7 @@ export default function LeadDetailPageNew({ lead }: LeadDetailPageNewProps) {
             <div className="space-y-4">
               <textarea
                 placeholder="Thêm ghi chú cho khách hàng này..."
-                className="w-full px-4 py-3 rounded-lg border border-[rgba(255,255,255,0.12)] focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:outline-none"
                 rows={4}
               />
               <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">

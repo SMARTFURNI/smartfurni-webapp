@@ -238,11 +238,11 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Quản lý bạn bè</h2>
         <div className="flex items-center gap-2">
-          <button onClick={() => { if (tab === "friends") loadFriends(); else if (tab === "incoming") loadIncoming(); else if (tab === "sent") loadSent(); else if (tab === "recommend") loadRecommendations(); }} className="p-1.5 rounded hover:bg-[rgba(255,255,255,0.08)] dark:hover:bg-gray-800 text-gray-500" title="Làm mới">
+          <button onClick={() => { if (tab === "friends") loadFriends(); else if (tab === "incoming") loadIncoming(); else if (tab === "sent") loadSent(); else if (tab === "recommend") loadRecommendations(); }} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Làm mới">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
           {onClose && (
-            <button onClick={onClose} className="p-1.5 rounded hover:bg-[rgba(255,255,255,0.08)] dark:hover:bg-gray-800 text-gray-500">
+            <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
               <X size={14} />
             </button>
           )}
@@ -269,7 +269,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
             <div className="p-3 border-b border-gray-100 dark:border-gray-800">
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Tìm kiếm bạn bè..." className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-[rgba(255,255,255,0.04)] dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Tìm kiếm bạn bè..." className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </div>
             </div>
             {loading ? (
@@ -280,10 +280,10 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
                 {searchQuery ? "Không tìm thấy bạn bè" : "Chưa có bạn bè"}
               </div>
             ) : (
-              <div className="divide-y divide-[rgba(255,255,255,0.06)] dark:divide-gray-800">
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 <div className="px-4 py-2 text-xs text-gray-400">{friends.length} bạn bè</div>
                 {friends.map(f => (
-                  <div key={f.userId} className="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(255,255,255,0.05)] dark:hover:bg-gray-800 group">
+                  <div key={f.userId} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 group">
                     <div
                       onClick={() => onOpenChat && onOpenChat(f.userId, f.displayName)}
                       style={{ cursor: onOpenChat ? "pointer" : "default" }}
@@ -330,7 +330,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
                 Không có lời mời kết bạn
               </div>
             ) : (
-              <div className="divide-y divide-[rgba(255,255,255,0.06)] dark:divide-gray-800">
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 <div className="px-4 py-2 text-xs text-gray-400">{incomingRequests.length} lời mời đang chờ</div>
                 {incomingRequests.map(req => (
                   <div key={req.userId} className="flex items-start gap-3 px-4 py-3">
@@ -343,7 +343,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
                         <button onClick={() => handleAccept(req.userId)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg font-medium">
                           <Check size={12} /> Chấp nhận
                         </button>
-                        <button onClick={() => handleReject(req.userId)} className="flex items-center gap-1 px-3 py-1.5 bg-[rgba(255,255,255,0.06)] hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-medium">
+                        <button onClick={() => handleReject(req.userId)} className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-medium">
                           <X size={12} /> Từ chối
                         </button>
                       </div>
@@ -366,7 +366,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
                 Chưa có lời mời nào đang chờ
               </div>
             ) : (
-              <div className="divide-y divide-[rgba(255,255,255,0.06)] dark:divide-gray-800">
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 <div className="px-4 py-2 text-xs text-gray-400">{sentRequests.length} lời mời đang chờ phản hồi</div>
                 {sentRequests.map(req => (
                   <div key={req.userId} className="flex items-center gap-3 px-4 py-3">
@@ -396,7 +396,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
                 Không có gợi ý kết bạn
               </div>
             ) : (
-              <div className="divide-y divide-[rgba(255,255,255,0.06)] dark:divide-gray-800">
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 <div className="px-4 py-2 text-xs text-gray-400">Gợi ý từ Zalo</div>
                 {recommendations.map(rec => (
                   <div key={rec.userId} className="flex items-center gap-3 px-4 py-3">
@@ -467,13 +467,13 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
 
       {/* Nickname Modal */}
       {nicknameModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 rounded-xl p-5 w-80 shadow-xl">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Đặt biệt danh</h3>
             <p className="text-xs text-gray-500 mb-3">Cho {nicknameModal.name}</p>
             <input value={nicknameInput} onChange={e => setNicknameInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSetNickname()} placeholder="Nhập biệt danh..." autoFocus className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 mb-3" />
             <div className="flex gap-2">
-              <button onClick={() => setNicknameModal(null)} className="flex-1 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-[rgba(255,255,255,0.05)] dark:hover:bg-gray-800">Hủy</button>
+              <button onClick={() => setNicknameModal(null)} className="flex-1 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Hủy</button>
               <button onClick={handleSetNickname} className="flex-1 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium">Lưu</button>
             </div>
           </div>

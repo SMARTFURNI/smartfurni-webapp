@@ -55,7 +55,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
     if (typeId === "architect") return { label: "Kiến trúc sư", color: "#8b5cf6" };
     if (typeId === "investor")  return { label: "Chủ đầu tư CHDV", color: "#3b82f6" };
     if (typeId === "dealer")    return { label: "Đại lý", color: "#f59e0b" };
-    return { label: typeId || "Không rõ", color: "rgba(245,237,214,0.50)" };
+    return { label: typeId || "Không rõ", color: "#6b7280" };
   }
   const [showAddModal, setShowAddModal] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -135,14 +135,14 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   const activeFilters = [filterDistrict, filterType, filterSource].filter(Boolean).length;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+    <div className="flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
       <div className="flex-shrink-0 px-6 py-4"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)" }}>
+        style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Bảng Kanban</h1>
-            <p className="text-sm mt-0.5" style={{ color: "rgba(245,237,214,0.50)" }}>
+            <p className="text-sm mt-0.5" style={{ color: "#6b7280" }}>
               {filtered.length} khách hàng · {leads.filter(isOverdue).length} quá hạn tương tác
             </p>
           </div>
@@ -156,8 +156,8 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                 placeholder="Tìm kiếm..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none w-48 transition-all"
-                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}
+                className="pl-9 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none w-48 transition-all"
+                style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}
               />
             </div>
 
@@ -166,7 +166,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
               onClick={() => setShowFilters(v => !v)}
               className="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border transition-colors"
               style={{
-                background: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)",
+                background: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.12)" : "#f3f4f6",
                 borderColor: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.3)" : "#e5e7eb",
                 color: showFilters || activeFilters > 0 ? "#C9A84C" : "#6b7280",
               }}
@@ -182,7 +182,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
             {/* Refresh */}
             <button onClick={refresh}
               className="p-2 rounded-xl transition-colors"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.50)" }}
+              style={{ border: "1px solid #e5e7eb", color: "#6b7280" }}
               title="Làm mới">
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             </button>
@@ -202,16 +202,16 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
         {/* Filter panel */}
         {showFilters && (
           <div className="mt-3 pt-3 flex items-center gap-3 flex-wrap"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            style={{ borderTop: "1px solid #e5e7eb" }}>
             <select value={filterDistrict} onChange={e => setFilterDistrict(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
               <option value="">Tất cả tỉnh/thành</option>
               {VIETNAM_PROVINCES.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             <select value={filterType} onChange={e => setFilterType(e.target.value as LeadType | "")}
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
               <option value="">Tất cả loại</option>
               {leadTypes.map(lt => (
                 <option key={lt.id} value={lt.id}>{lt.label}</option>
@@ -219,7 +219,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
             </select>
             <select value={filterSource} onChange={e => setFilterSource(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
               <option value="">Tất cả nguồn</option>
               {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -249,7 +249,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                 style={{
                   width: "250px",
                   minWidth: "250px",
-                  background: isDragTarget ? `${STAGE_COLORS[stage]}10` : "transparent",
+                  background: isDragTarget ? `${STAGE_COLORS[stage]}10` : "#f8f9fb",
                   border: `1px solid ${isDragTarget ? STAGE_COLORS[stage] + "40" : "#e5e7eb"}`,
                   minHeight: "200px",
                   boxShadow: isDragTarget ? `0 0 0 2px ${STAGE_COLORS[stage]}20` : "none",
@@ -287,10 +287,10 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                   {stageLeads.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-8">
                       <div className="w-8 h-8 rounded-xl border-2 border-dashed flex items-center justify-center mb-2"
-                        style={{ borderColor: "#d1d5db", color: "rgba(245,237,214,0.40)" }}>
+                        style={{ borderColor: "#d1d5db", color: "#9ca3af" }}>
                         <Plus size={14} />
                       </div>
-                      <span className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>Kéo thả vào đây</span>
+                      <span className="text-xs" style={{ color: "#9ca3af" }}>Kéo thả vào đây</span>
                     </div>
                   )}
                   {stageLeads.map(lead => (
@@ -376,7 +376,7 @@ function LeadCard({
             <div className="min-w-0">
               <div className="font-semibold text-sm text-gray-900 truncate">{lead.name}</div>
               {lead.company && (
-                <div className="text-xs truncate" style={{ color: "rgba(245,237,214,0.50)" }}>{lead.company}</div>
+                <div className="text-xs truncate" style={{ color: "#6b7280" }}>{lead.company}</div>
               )}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -402,13 +402,13 @@ function LeadCard({
           {/* Tags row */}
           <div className="flex items-center gap-2 flex-wrap">
             {lead.district && (
-              <div className="flex items-center gap-1 text-[11px]" style={{ color: "rgba(245,237,214,0.40)" }}>
+              <div className="flex items-center gap-1 text-[11px]" style={{ color: "#9ca3af" }}>
                 <MapPin size={10} />
                 <span className="truncate max-w-[80px]">{lead.district.split(",")[0]}</span>
               </div>
             )}
             {lead.unitCount > 0 && (
-              <div className="text-[11px]" style={{ color: "rgba(245,237,214,0.40)" }}>
+              <div className="text-[11px]" style={{ color: "#9ca3af" }}>
                 {lead.unitCount} căn
               </div>
             )}

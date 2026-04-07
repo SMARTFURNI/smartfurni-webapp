@@ -68,7 +68,7 @@ export default function EmailBuilder() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-[#C9A84C] mb-2">✉️ Trình Soạn Thảo Email</h1>
-          <p className="text-[rgba(245,237,214,0.35)]">Tạo mẫu email chuyên nghiệp với cá nhân hoá</p>
+          <p className="text-gray-400">Tạo mẫu email chuyên nghiệp với cá nhân hoá</p>
         </div>
 
         <div className="grid grid-cols-3 gap-6">
@@ -211,7 +211,7 @@ export default function EmailBuilder() {
                     {template.bodyHtml ? (
                       <div dangerouslySetInnerHTML={{ __html: template.bodyHtml }} />
                     ) : (
-                      <p className="text-[rgba(245,237,214,0.45)]">Chưa có nội dung</p>
+                      <p className="text-gray-500">Chưa có nội dung</p>
                     )}
                   </div>
                 </div>

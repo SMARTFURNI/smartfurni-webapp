@@ -85,7 +85,7 @@ export default function EmailScenarios() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-[#C9A84C] mb-2">🎯 Email Scenarios</h1>
-            <p className="text-[rgba(245,237,214,0.35)]">Quản lý các kịch bản email tự động hoá</p>
+            <p className="text-gray-400">Quản lý các kịch bản email tự động hoá</p>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}

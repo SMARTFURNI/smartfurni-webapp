@@ -38,9 +38,9 @@ const STATUS_LABELS: Record<RawLeadStatus, string> = {
 };
 
 const STATUS_COLORS: Record<RawLeadStatus, { bg: string; text: string; border: string }> = {
-  pending: { bg: "rgba(245,158,11,0.15)", text: "#fbbf24", border: "rgba(245,158,11,0.4)" },
-  claimed: { bg: "rgba(34,197,94,0.15)", text: "#4ade80", border: "rgba(34,197,94,0.4)" },
-  converted: { bg: "rgba(139,92,246,0.15)", text: "#c4b5fd", border: "rgba(139,92,246,0.4)" },
+  pending: { bg: "#FEF3C7", text: "#92400E", border: "#FCD34D" },
+  claimed: { bg: "#D1FAE5", text: "#065F46", border: "#6EE7B7" },
+  converted: { bg: "#EDE9FE", text: "#4C1D95", border: "#A78BFA" },
 };
 
 function SourceBadge({ source }: { source: RawLeadSource }) {
@@ -87,14 +87,14 @@ const SOURCE_OPTIONS: { value: RawLeadSource; label: string; desc: string; color
     label: "Facebook Lead",
     desc: "Từ Facebook Lead Ads",
     color: "#1877F2",
-    bg: "rgba(59,130,246,0.15)",
+    bg: "#EFF6FF",
     border: "#BFDBFE",
   },
   {
     value: "tiktok_lead",
     label: "TikTok Lead",
     desc: "Từ TikTok Lead Gen",
-    color: "#f5edd6",
+    color: "#111827",
     bg: "#F9FAFB",
     border: "#E5E7EB",
   },
@@ -212,7 +212,7 @@ function AddRawLeadModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="bg-transparent w-full max-w-xl flex flex-col"
+        className="bg-white w-full max-w-xl flex flex-col"
         style={{
           borderRadius: "20px",
           boxShadow: "0 25px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)",
@@ -273,7 +273,7 @@ function AddRawLeadModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
             <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                style={{ background: "rgba(34,197,94,0.15)" }}
+                style={{ background: "#D1FAE5" }}
               >
                 <CheckCircle2 size={32} style={{ color: "#059669" }} />
               </div>
@@ -370,7 +370,7 @@ function AddRawLeadModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
 
               {submitError && (
                 <div className="flex items-center gap-2 p-3 rounded-xl text-sm"
-                  style={{ background: "rgba(239,68,68,0.15)", color: "#DC2626", border: "1px solid #FECACA" }}>
+                  style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}>
                   <AlertCircle size={14} className="flex-shrink-0" /> {submitError}
                 </div>
               )}
@@ -432,7 +432,7 @@ function AddRawLeadModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-2.5 text-sm font-semibold rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-600 hover:bg-transparent transition-colors"
+                  className="flex-1 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors"
                 >
                   Hủy
                 </button>
@@ -451,7 +451,7 @@ function AddRawLeadModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="py-2.5 px-5 text-sm font-semibold rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-600 hover:bg-transparent transition-colors flex items-center gap-1.5"
+                  className="py-2.5 px-5 text-sm font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1.5"
                 >
                   <ChevronLeft size={14} /> Quay lại
                 </button>
@@ -517,21 +517,21 @@ function AssignModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
-      <div className="bg-transparent rounded-2xl shadow-2xl w-full max-w-md mx-4" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4" style={{ border: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #f3f4f6" }}>
           <h3 className="text-base font-bold text-gray-900">Phân data cho nhân viên</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
         </div>
         <div className="p-6 space-y-4">
           {/* Lead info */}
-          <div className="p-3 rounded-xl" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+          <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
             <p className="font-semibold text-gray-900 text-sm">{lead.fullName}</p>
             <p className="text-xs text-gray-500 mt-0.5">{lead.phone} {lead.email && `· ${lead.email}`}</p>
             <div className="mt-1.5"><SourceBadge source={lead.source} /></div>
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg text-sm" style={{ background: "rgba(239,68,68,0.15)", color: "#DC2626", border: "1px solid #FECACA" }}>
+            <div className="flex items-center gap-2 p-3 rounded-lg text-sm" style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}>
               <AlertCircle size={14} /> {error}
             </div>
           )}
@@ -566,7 +566,7 @@ function AssignModal({
 
           <div className="flex gap-3 pt-2">
             <button onClick={onClose}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-600 hover:bg-transparent transition-colors">
+              className="flex-1 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
               Hủy
             </button>
             <button onClick={submit} disabled={loading || !selectedStaffId}
@@ -592,7 +592,7 @@ function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
-      <div className="bg-transparent rounded-2xl shadow-2xl w-full max-w-lg mx-4" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4" style={{ border: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #f3f4f6" }}>
           <h3 className="text-base font-bold text-gray-900">Chi tiết data</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
@@ -614,7 +614,7 @@ function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) 
 
           <div className="grid grid-cols-2 gap-3">
             {lead.phone && (
-              <div className="p-3 rounded-xl" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
                 <p className="text-xs text-gray-500 mb-1">Số điện thoại</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-gray-900">{lead.phone}</p>
@@ -625,7 +625,7 @@ function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) 
               </div>
             )}
             {lead.email && (
-              <div className="p-3 rounded-xl" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
                 <p className="text-xs text-gray-500 mb-1">Email</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-gray-900 truncate">{lead.email}</p>
@@ -638,23 +638,23 @@ function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) 
           </div>
 
           {(lead.adName || lead.campaignName || lead.formName) && (
-            <div className="p-3 rounded-xl space-y-2" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+            <div className="p-3 rounded-xl space-y-2" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Thông tin quảng cáo</p>
-              {lead.adName && <div className="flex justify-between text-sm"><span className="text-[rgba(245,237,214,0.45)]">Tên quảng cáo</span><span className="font-medium text-gray-900">{lead.adName}</span></div>}
-              {lead.campaignName && <div className="flex justify-between text-sm"><span className="text-[rgba(245,237,214,0.45)]">Chiến dịch</span><span className="font-medium text-gray-900">{lead.campaignName}</span></div>}
-              {lead.formName && <div className="flex justify-between text-sm"><span className="text-[rgba(245,237,214,0.45)]">Form</span><span className="font-medium text-gray-900">{lead.formName}</span></div>}
+              {lead.adName && <div className="flex justify-between text-sm"><span className="text-gray-500">Tên quảng cáo</span><span className="font-medium text-gray-900">{lead.adName}</span></div>}
+              {lead.campaignName && <div className="flex justify-between text-sm"><span className="text-gray-500">Chiến dịch</span><span className="font-medium text-gray-900">{lead.campaignName}</span></div>}
+              {lead.formName && <div className="flex justify-between text-sm"><span className="text-gray-500">Form</span><span className="font-medium text-gray-900">{lead.formName}</span></div>}
             </div>
           )}
 
           {lead.customerRole && (
-            <div className="p-3 rounded-xl" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+            <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Vai trò / Nhu cầu chính</p>
               <p className="text-sm text-gray-700">{lead.customerRole}</p>
             </div>
           )}
 
           {lead.message && (
-            <div className="p-3 rounded-xl" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+            <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Ghi chú từ form</p>
               <p className="text-sm text-gray-700">{lead.message}</p>
             </div>
@@ -780,9 +780,9 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
   const nextFifoId = leads.find(l => l.status === "pending")?.id;
 
   return (
-    <div className="h-full flex flex-col" style={{ background: "transparent", color: "#f5edd6" }}>
+    <div className="h-full flex flex-col" style={{ background: "#f8f9fb", color: "#111827" }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-transparent" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="flex items-center justify-between px-6 py-4 bg-white" style={{ borderBottom: "1px solid #e5e7eb" }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{ background: "linear-gradient(135deg, #C9A84C20, #C9A84C10)", border: "1px solid #C9A84C30" }}>
@@ -797,7 +797,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
           <button
             onClick={() => fetchData(false)}
             disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-600 hover:bg-transparent transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             <span className="hidden sm:inline">Làm mới</span>
@@ -821,9 +821,9 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: "Chờ nhận", value: stats.pending, color: "#F59E0B", bg: "#FFFBEB", icon: Clock, filter: "pending" as RawLeadStatus },
-              { label: "Đã nhận", value: stats.claimed, color: "#22C55E", bg: "rgba(34,197,94,0.10)", icon: CheckCircle2, filter: "claimed" as RawLeadStatus },
-              { label: "Đã chuyển KH", value: stats.converted, color: "#8B5CF6", bg: "rgba(139,92,246,0.15)", icon: ArrowRight, filter: "converted" as RawLeadStatus },
-              { label: "Tổng cộng", value: stats.total, color: "#3B82F6", bg: "rgba(59,130,246,0.15)", icon: Database, filter: "" as "" },
+              { label: "Đã nhận", value: stats.claimed, color: "#22C55E", bg: "#F0FDF4", icon: CheckCircle2, filter: "claimed" as RawLeadStatus },
+              { label: "Đã chuyển KH", value: stats.converted, color: "#8B5CF6", bg: "#F5F3FF", icon: ArrowRight, filter: "converted" as RawLeadStatus },
+              { label: "Tổng cộng", value: stats.total, color: "#3B82F6", bg: "#EFF6FF", icon: Database, filter: "" as "" },
             ].map(card => (
               <button
                 key={card.label}
@@ -846,7 +846,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
 
         {/* Source breakdown */}
         {stats && stats.bySource.length > 0 && (
-          <div className="bg-transparent rounded-2xl p-4" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+          <div className="bg-white rounded-2xl p-4" style={{ border: "1px solid #e5e7eb" }}>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Data đang chờ theo kênh</p>
             <div className="flex flex-wrap gap-2">
               {stats.bySource.map(s => (
@@ -855,7 +855,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                   onClick={() => { setSourceFilter(s.source as RawLeadSource); setPage(1); }}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
                   style={{
-                    background: sourceFilter === s.source ? `${SOURCE_COLORS[s.source as RawLeadSource] || "#6b7280"}20` : "rgba(255,255,255,0.04)",
+                    background: sourceFilter === s.source ? `${SOURCE_COLORS[s.source as RawLeadSource] || "#6b7280"}20` : "#f3f4f6",
                     color: SOURCE_COLORS[s.source as RawLeadSource] || "#6b7280",
                     border: `1px solid ${sourceFilter === s.source ? SOURCE_COLORS[s.source as RawLeadSource] || "#6b7280" : "#e5e7eb"}`,
                   }}
@@ -874,7 +874,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
           <div className="flex items-start gap-3 p-4 rounded-2xl" style={{ background: "#FFFBEB", border: "1px solid #FCD34D" }}>
             <AlertCircle size={16} style={{ color: "#D97706", flexShrink: 0, marginTop: 1 }} />
             <div>
-              <p className="text-sm font-semibold" style={{ color: "#fbbf24" }}>Quy tắc nhận data (FIFO)</p>
+              <p className="text-sm font-semibold" style={{ color: "#92400E" }}>Quy tắc nhận data (FIFO)</p>
               <p className="text-xs mt-0.5" style={{ color: "#B45309" }}>
                 Data vào trước sẽ được nhận trước. Bạn chỉ có thể nhận data theo thứ tự — không được bỏ qua data cũ hơn.
                 Data được đánh dấu <strong>"Nhận tiếp theo"</strong> là data bạn có thể nhận ngay.
@@ -885,7 +885,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
 
         {/* Claim Error */}
         {claimError && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: "rgba(239,68,68,0.15)", border: "1px solid #FECACA" }}>
+          <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
             <AlertCircle size={16} style={{ color: "#DC2626", flexShrink: 0 }} />
             <p className="text-sm font-semibold" style={{ color: "#DC2626" }}>{claimError}</p>
           </div>
@@ -893,16 +893,16 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
 
         {/* Claim Success Toast */}
         {claimingId?.startsWith("success:") && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: "rgba(34,197,94,0.15)", border: "1px solid #6EE7B7" }}>
+          <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: "#D1FAE5", border: "1px solid #6EE7B7" }}>
             <CheckCircle2 size={16} style={{ color: "#059669", flexShrink: 0 }} />
-            <p className="text-sm font-semibold" style={{ color: "#4ade80" }}>
+            <p className="text-sm font-semibold" style={{ color: "#065F46" }}>
               Đã nhận data thành công! Khách hàng đã được tạo tự động trong danh sách của bạn.
             </p>
           </div>
         )}
 
         {/* Search & Filter */}
-        <div className="bg-transparent rounded-2xl p-4" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+        <div className="bg-white rounded-2xl p-4" style={{ border: "1px solid #e5e7eb" }}>
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -910,14 +910,14 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Tìm theo tên, SĐT, email..."
-                className="w-full pl-9 pr-4 py-2 text-sm text-gray-900 rounded-xl border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                className="w-full pl-9 pr-4 py-2 text-sm text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
               />
             </div>
             <div className="flex gap-2">
               <select
                 value={statusFilter}
                 onChange={e => { setStatusFilter(e.target.value as RawLeadStatus | ""); setPage(1); }}
-                className="px-3 py-2 text-sm text-gray-900 rounded-xl border border-[rgba(255,255,255,0.12)] focus:outline-none bg-transparent"
+                className="px-3 py-2 text-sm text-gray-900 rounded-xl border border-gray-200 focus:outline-none bg-white"
               >
                 <option value="">Tất cả trạng thái</option>
                 <option value="pending">Chờ nhận</option>
@@ -927,7 +927,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
               <select
                 value={sourceFilter}
                 onChange={e => { setSourceFilter(e.target.value as RawLeadSource | ""); setPage(1); }}
-                className="px-3 py-2 text-sm text-gray-900 rounded-xl border border-[rgba(255,255,255,0.12)] focus:outline-none bg-transparent"
+                className="px-3 py-2 text-sm text-gray-900 rounded-xl border border-gray-200 focus:outline-none bg-white"
               >
                 <option value="">Tất cả kênh</option>
                 <option value="facebook_lead">Facebook Lead</option>
@@ -937,7 +937,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
               {(statusFilter || sourceFilter || search) && (
                 <button
                   onClick={() => { setStatusFilter(""); setSourceFilter(""); setSearch(""); setPage(1); }}
-                  className="px-3 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-500 hover:bg-transparent transition-colors"
+                  className="px-3 py-2 text-sm rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
                 >
                   <X size={14} />
                 </button>
@@ -947,10 +947,10 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
         </div>
 
           {/* Data List */}
-        <div className="bg-transparent rounded-2xl overflow-x-auto" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+        <div className="bg-white rounded-2xl overflow-x-auto" style={{ border: "1px solid #e5e7eb" }}>
           {/* Table header */}
           <div className="hidden sm:grid gap-4 px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-            style={{ background: "transparent", borderBottom: "1px solid #f3f4f6", gridTemplateColumns: "60px 180px 120px 150px 120px 100px 150px 80px", minWidth: "960px" }}>
+            style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6", gridTemplateColumns: "60px 180px 120px 150px 120px 100px 150px 80px", minWidth: "960px" }}>
             <div>#</div>
             <div>Khách hàng</div>
             <div>Liên hệ</div>
@@ -981,7 +981,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                 return (
                   <div
                     key={lead.id}
-                    className="grid gap-4 px-4 py-3.5 items-center transition-colors hover:bg-transparent"
+                    className="grid gap-4 px-4 py-3.5 items-center transition-colors hover:bg-gray-50"
                     style={{
                       borderBottom: "1px solid #f3f4f6",
                       background: isNextFifo ? "rgba(201,168,76,0.04)" : undefined,
@@ -1049,7 +1049,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => setDetailLead(lead)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-transparent transition-colors"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                         title="Xem chi tiết"
                       >
                         <Eye size={13} />
@@ -1063,7 +1063,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                           title={!isNextFifo ? "Phải nhận data theo thứ tự" : "Nhận data này"}
                           className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all"
                           style={{
-                            background: isNextFifo ? "linear-gradient(135deg, #C9A84C, #9A7A2E)" : "rgba(255,255,255,0.04)",
+                            background: isNextFifo ? "linear-gradient(135deg, #C9A84C, #9A7A2E)" : "#f3f4f6",
                             color: isNextFifo ? "#fff" : "#9ca3af",
                             cursor: isNextFifo ? "pointer" : "not-allowed",
                             opacity: claimingId === lead.id ? 0.7 : 1,
@@ -1107,7 +1107,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center border border-[rgba(255,255,255,0.12)] text-gray-600 disabled:opacity-40 hover:bg-transparent transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 transition-colors"
                 >
                   <ChevronLeft size={14} />
                 </button>
@@ -1115,7 +1115,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center border border-[rgba(255,255,255,0.12)] text-gray-600 disabled:opacity-40 hover:bg-transparent transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 transition-colors"
                 >
                   <ChevronRight size={14} />
                 </button>

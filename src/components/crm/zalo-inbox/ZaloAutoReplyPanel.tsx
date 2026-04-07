@@ -96,10 +96,10 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
           <button onClick={() => setShowCreate(!showCreate)} className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg">
             <Plus size={12} /> Thêm
           </button>
-          <button onClick={loadReplies} className="p-1.5 rounded hover:bg-[rgba(255,255,255,0.08)] dark:hover:bg-gray-800 text-gray-500">
+          <button onClick={loadReplies} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
-          {onClose && <button onClick={onClose} className="p-1.5 rounded hover:bg-[rgba(255,255,255,0.08)] dark:hover:bg-gray-800 text-gray-500"><X size={14} /></button>}
+          {onClose && <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"><X size={14} /></button>}
         </div>
       </div>
 
@@ -122,7 +122,7 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setShowCreate(false)} className="flex-1 py-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-[rgba(255,255,255,0.05)] dark:hover:bg-gray-800">Hủy</button>
+            <button onClick={() => setShowCreate(false)} className="flex-1 py-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Hủy</button>
             <button onClick={handleCreate} disabled={creating || !message.trim()} className="flex-1 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg font-medium flex items-center justify-center gap-1">
               {creating ? <RefreshCw size={12} className="animate-spin" /> : <Plus size={12} />}
               Tạo
@@ -142,7 +142,7 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
             <p className="text-xs mt-1">Nhấn "Thêm" để tạo tin nhắn tự động</p>
           </div>
         ) : (
-          <div className="divide-y divide-[rgba(255,255,255,0.06)] dark:divide-gray-800">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             <div className="px-4 py-2 text-xs text-gray-400">{replies.length} auto-reply</div>
             {replies.map(r => (
               <div key={r.id} className="px-4 py-3">
@@ -153,7 +153,7 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
                         <CheckCircle size={10} /> Đang bật
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-xs text-gray-400 bg-[rgba(255,255,255,0.06)] dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                      <span className="flex items-center gap-1 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                         <X size={10} /> Tắt
                       </span>
                     )}
@@ -177,7 +177,7 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
       </div>
 
       {/* Info */}
-      <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 bg-[rgba(255,255,255,0.04)] dark:bg-gray-800/50">
+      <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
         <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
           <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
           <span>Auto-reply sẽ tự động trả lời khi bạn nhận tin nhắn mới trong thời gian đã cài đặt.</span>

@@ -13,11 +13,11 @@ import type {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<PostStatus, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  draft:     { label: "Nháp",       color: "rgba(245,237,214,0.50)", bg: "rgba(255,255,255,0.04)", icon: FileText },
+  draft:     { label: "Nháp",       color: "#6b7280", bg: "#f3f4f6", icon: FileText },
   scheduled: { label: "Đã lên lịch", color: "#2563eb", bg: "#eff6ff", icon: Clock },
   published: { label: "Đã đăng",    color: "#16a34a", bg: "#f0fdf4", icon: CheckCircle2 },
   failed:    { label: "Thất bại",   color: "#dc2626", bg: "#fef2f2", icon: AlertCircle },
-  cancelled: { label: "Đã huỷ",    color: "rgba(245,237,214,0.40)", bg: "transparent", icon: X },
+  cancelled: { label: "Đã huỷ",    color: "#9ca3af", bg: "#f9fafb", icon: X },
 };
 
 const REPEAT_LABELS: Record<RepeatType, string> = {
@@ -175,7 +175,7 @@ function PostFormModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
-        style={{ background: "rgba(255,255,255,0.06)", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        style={{ background: "#fff", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "#e5e7eb" }}>
           <div className="flex items-center gap-2">
@@ -187,15 +187,15 @@ function PostFormModal({
               {post ? "Chỉnh sửa bài đăng" : "Tạo bài đăng mới"}
             </h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.08)]">
-            <X size={18} style={{ color: "rgba(245,237,214,0.50)" }} />
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
+            <X size={18} style={{ color: "#6b7280" }} />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
           {/* Tiêu đề */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
               Tiêu đề nội bộ <span style={{ color: "#ef4444" }}>*</span>
             </label>
             <input
@@ -203,13 +203,13 @@ function PostFormModal({
               onChange={e => setTitle(e.target.value)}
               placeholder="VD: Bài đăng thứ 2 tuần 1 - Giới thiệu sản phẩm"
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
+              style={{ border: "1px solid #d1d5db", color: "#374151" }}
             />
           </div>
 
           {/* Chọn Fanpage */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
               Fanpage đăng lên <span style={{ color: "#ef4444" }}>*</span>
             </label>
             {pages.length === 0 ? (
@@ -225,7 +225,7 @@ function PostFormModal({
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={{
                       border: selectedPageIds.includes(page.id) ? "1.5px solid #1877f2" : "1.5px solid #e5e7eb",
-                      background: selectedPageIds.includes(page.id) ? "#e7f3ff" : "transparent",
+                      background: selectedPageIds.includes(page.id) ? "#e7f3ff" : "#f9fafb",
                       color: selectedPageIds.includes(page.id) ? "#1877f2" : "#6b7280",
                     }}>
                     <Facebook size={12} />
@@ -239,7 +239,7 @@ function PostFormModal({
           {/* Nội dung */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold" style={{ color: "rgba(245,237,214,0.85)" }}>
+              <label className="text-xs font-semibold" style={{ color: "#374151" }}>
                 Nội dung bài đăng <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <span className="text-xs" style={{ color: charCount > 63206 ? "#ef4444" : "#9ca3af" }}>
@@ -252,13 +252,13 @@ function PostFormModal({
               rows={6}
               placeholder="Nhập nội dung bài đăng Facebook..."
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)", lineHeight: "1.6" }}
+              style={{ border: "1px solid #d1d5db", color: "#374151", lineHeight: "1.6" }}
             />
           </div>
 
           {/* Hashtag */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
               <Hash size={12} className="inline mr-1" />
               Hashtag (cách nhau bằng dấu cách)
             </label>
@@ -267,13 +267,13 @@ function PostFormModal({
               onChange={e => setHashtags(e.target.value)}
               placeholder="#smartfurni #giuongthongminh #noithat"
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
+              style={{ border: "1px solid #d1d5db", color: "#374151" }}
             />
           </div>
 
           {/* Ảnh */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
               <Image size={12} className="inline mr-1" />
               Ảnh đính kèm
             </label>
@@ -302,11 +302,11 @@ function PostFormModal({
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-1">
-                  <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "rgba(245,237,214,0.85)" }}>
-                    <Image size={16} style={{ color: "rgba(245,237,214,0.50)" }} />
+                  <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "#374151" }}>
+                    <Image size={16} style={{ color: "#6b7280" }} />
                     <span>Nhấn để chọn ảnh từ máy tính</span>
                   </div>
-                  <span className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>JPG, PNG, WEBP, GIF · Tối đa 10MB · Chọn nhiều ảnh cùng lúc</span>
+                  <span className="text-xs" style={{ color: "#9ca3af" }}>JPG, PNG, WEBP, GIF · Tối đa 10MB · Chọn nhiều ảnh cùng lúc</span>
                 </div>
               )}
             </label>
@@ -318,11 +318,11 @@ function PostFormModal({
                 onKeyDown={e => e.key === "Enter" && addImage()}
                 placeholder="Hoặc dán URL ảnh: https://example.com/image.jpg"
                 className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
+                style={{ border: "1px solid #d1d5db", color: "#374151" }}
               />
               <button onClick={addImage}
                 className="px-3 py-2 rounded-lg text-xs font-medium"
-                style={{ background: "transparent", color: "rgba(245,237,214,0.85)" }}>
+                style={{ background: "#f3f4f6", color: "#374151" }}>
                 Thêm
               </button>
             </div>
@@ -333,7 +333,7 @@ function PostFormModal({
               <div className="mt-2 grid grid-cols-3 gap-2">
                 {imageUrls.map((url, i) => (
                   <div key={i} className="relative group rounded-lg overflow-hidden"
-                    style={{ aspectRatio: "1", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                    style={{ aspectRatio: "1", background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt="" className="w-full h-full object-cover" />
                     <button
@@ -351,7 +351,7 @@ function PostFormModal({
 
           {/* Link */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
               <Link size={12} className="inline mr-1" />
               Link đính kèm (tuỳ chọn)
             </label>
@@ -360,14 +360,14 @@ function PostFormModal({
               onChange={e => setLinkUrl(e.target.value)}
               placeholder="https://smartfurni.vn/san-pham/..."
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
+              style={{ border: "1px solid #d1d5db", color: "#374151" }}
             />
           </div>
 
           {/* Thời gian đăng */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
                 <Clock size={12} className="inline mr-1" />
                 Thời gian đăng <span style={{ color: "#ef4444" }}>*</span>
               </label>
@@ -376,11 +376,11 @@ function PostFormModal({
                 value={scheduledAt}
                 onChange={e => setScheduledAt(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
+                style={{ border: "1px solid #d1d5db", color: "#374151" }}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
                 <Repeat size={12} className="inline mr-1" />
                 Lặp lại
               </label>
@@ -388,7 +388,7 @@ function PostFormModal({
                 value={repeatType}
                 onChange={e => setRepeatType(e.target.value as RepeatType)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
+                style={{ border: "1px solid #d1d5db", color: "#374151" }}>
                 {(Object.entries(REPEAT_LABELS) as [RepeatType, string][]).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
@@ -399,7 +399,7 @@ function PostFormModal({
           {/* Tuỳ chỉnh ngày lặp */}
           {repeatType === "custom_days" && (
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
                 Chọn ngày trong tuần
               </label>
               <div className="flex gap-2">
@@ -408,7 +408,7 @@ function PostFormModal({
                     className="w-9 h-9 rounded-lg text-xs font-medium transition-all"
                     style={{
                       border: repeatDays.includes(i) ? "1.5px solid #C9A84C" : "1.5px solid #e5e7eb",
-                      background: repeatDays.includes(i) ? "rgba(201,168,76,0.1)" : "transparent",
+                      background: repeatDays.includes(i) ? "rgba(201,168,76,0.1)" : "#f9fafb",
                       color: repeatDays.includes(i) ? "#C9A84C" : "#6b7280",
                     }}>
                     {label}
@@ -421,7 +421,7 @@ function PostFormModal({
           {/* Ngày kết thúc lặp */}
           {repeatType !== "none" && (
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
                 Ngày kết thúc lặp lại (tuỳ chọn)
               </label>
               <input
@@ -429,7 +429,7 @@ function PostFormModal({
                 value={repeatEndDate}
                 onChange={e => setRepeatEndDate(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
+                style={{ border: "1px solid #d1d5db", color: "#374151" }}
               />
             </div>
           )}
@@ -439,7 +439,7 @@ function PostFormModal({
         <div className="flex items-center justify-end gap-3 p-5 border-t" style={{ borderColor: "#e5e7eb" }}>
           <button onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm font-medium"
-            style={{ background: "transparent", color: "rgba(245,237,214,0.85)" }}>
+            style={{ background: "#f3f4f6", color: "#374151" }}>
             Huỷ
           </button>
           <button onClick={handleSubmit} disabled={saving}
@@ -508,11 +508,11 @@ function AddPageModal({ onClose, onSave }: { onClose: () => void; onSave: (data:
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="w-full max-w-md rounded-2xl" style={{ background: "rgba(255,255,255,0.06)", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+      <div className="w-full max-w-md rounded-2xl" style={{ background: "#fff", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
         <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "#e5e7eb" }}>
           <h2 className="text-base font-bold text-gray-900">Kết nối Fanpage Facebook</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.08)]">
-            <X size={18} style={{ color: "rgba(245,237,214,0.50)" }} />
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
+            <X size={18} style={{ color: "#6b7280" }} />
           </button>
         </div>
         <div className="p-5 space-y-4">
@@ -528,7 +528,7 @@ function AddPageModal({ onClose, onSave }: { onClose: () => void; onSave: (data:
           </div>
 
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
               Page Access Token <span style={{ color: "#ef4444" }}>*</span>
             </label>
             <div className="flex gap-2">
@@ -538,7 +538,7 @@ function AddPageModal({ onClose, onSave }: { onClose: () => void; onSave: (data:
                 placeholder="EAABsbCS..."
                 type="password"
                 className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
+                style={{ border: "1px solid #d1d5db", color: "#374151" }}
               />
               <button onClick={handleVerify} disabled={verifying || !token.trim()}
                 className="px-3 py-2 rounded-lg text-xs font-medium"
@@ -562,7 +562,7 @@ function AddPageModal({ onClose, onSave }: { onClose: () => void; onSave: (data:
                 <CheckCircle2 size={16} style={{ color: "#16a34a" }} />
                 <span className="text-xs font-semibold" style={{ color: "#15803d" }}>Xác thực thành công!</span>
               </div>
-              <div className="space-y-1 text-xs" style={{ color: "rgba(245,237,214,0.85)" }}>
+              <div className="space-y-1 text-xs" style={{ color: "#374151" }}>
                 <p><span className="font-medium">Tên Page:</span> {verified.pageName}</p>
                 <p><span className="font-medium">Page ID:</span> {verified.pageId}</p>
                 {verified.category && <p><span className="font-medium">Danh mục:</span> {verified.category}</p>}
@@ -574,7 +574,7 @@ function AddPageModal({ onClose, onSave }: { onClose: () => void; onSave: (data:
         <div className="flex items-center justify-end gap-3 p-5 border-t" style={{ borderColor: "#e5e7eb" }}>
           <button onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm font-medium"
-            style={{ background: "transparent", color: "rgba(245,237,214,0.85)" }}>
+            style={{ background: "#f3f4f6", color: "#374151" }}>
             Huỷ
           </button>
           <button onClick={handleSave} disabled={!verified || saving}
@@ -679,7 +679,7 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
             <button key={s} onClick={() => setFilterStatus(s)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={{
-                background: filterStatus === s ? "#1877f2" : "rgba(255,255,255,0.04)",
+                background: filterStatus === s ? "#1877f2" : "#f3f4f6",
                 color: filterStatus === s ? "#fff" : "#6b7280",
               }}>
               {s === "all" ? "Tất cả" : STATUS_CONFIG[s].label}
@@ -687,8 +687,8 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={loadPosts} className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)]">
-            <RefreshCw size={15} style={{ color: "rgba(245,237,214,0.50)" }} />
+          <button onClick={loadPosts} className="p-2 rounded-lg hover:bg-gray-100">
+            <RefreshCw size={15} style={{ color: "#6b7280" }} />
           </button>
           <button onClick={() => { setEditingPost(null); setShowForm(true); }}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
@@ -702,7 +702,7 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
       {/* Danh sách */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <RefreshCw size={20} className="animate-spin" style={{ color: "rgba(245,237,214,0.40)" }} />
+          <RefreshCw size={20} className="animate-spin" style={{ color: "#9ca3af" }} />
         </div>
       ) : posts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -711,7 +711,7 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
             <Calendar size={24} style={{ color: "#1877f2" }} />
           </div>
           <p className="text-sm font-medium text-gray-700">Chưa có bài đăng nào</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(245,237,214,0.40)" }}>
+          <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>
             Nhấn "Tạo bài mới" để lên lịch bài đăng đầu tiên
           </p>
         </div>
@@ -722,7 +722,7 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
             const postPages = post.pageIds.map(id => pageMap[id]).filter(Boolean);
             return (
               <div key={post.id} className="rounded-2xl overflow-hidden"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+                style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
                 {/* Header */}
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -731,7 +731,7 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
                         <StatusBadge status={post.status} />
                         {post.repeatType !== "none" && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
-                            style={{ background: "transparent", color: "rgba(245,237,214,0.50)" }}>
+                            style={{ background: "#f3f4f6", color: "#6b7280" }}>
                             <Repeat size={10} />
                             {REPEAT_LABELS[post.repeatType]}
                           </span>
@@ -739,7 +739,7 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
                       </div>
                       <h3 className="text-sm font-semibold text-gray-900 truncate">{post.title}</h3>
                       <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        <span className="flex items-center gap-1 text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>
+                        <span className="flex items-center gap-1 text-xs" style={{ color: "#6b7280" }}>
                           <Clock size={11} />
                           {formatDateTime(post.scheduledAt)}
                           {post.status === "scheduled" && (
@@ -748,7 +748,7 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
                             </span>
                           )}
                         </span>
-                        <span className="flex items-center gap-1 text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>
+                        <span className="flex items-center gap-1 text-xs" style={{ color: "#6b7280" }}>
                           <Facebook size={11} />
                           {postPages.map(p => p.pageName).join(", ") || "Không rõ page"}
                         </span>
@@ -769,8 +769,8 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
                           </button>
                           <button onClick={() => { setEditingPost(post); setShowForm(true); }}
                             title="Chỉnh sửa"
-                            className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-colors"
-                            style={{ color: "rgba(245,237,214,0.50)" }}>
+                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            style={{ color: "#6b7280" }}>
                             <Edit3 size={15} />
                           </button>
                           <button onClick={() => handleCancel(post.id)}
@@ -793,8 +793,8 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
                         </button>
                       )}
                       <button onClick={() => setExpandedPost(isExpanded ? null : post.id)}
-                        className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-colors"
-                        style={{ color: "rgba(245,237,214,0.40)" }}>
+                        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                        style={{ color: "#9ca3af" }}>
                         {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                       </button>
                       <button onClick={() => handleDelete(post.id)}
@@ -809,10 +809,10 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
 
                 {/* Expanded content */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 pt-0 border-t" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+                  <div className="px-4 pb-4 pt-0 border-t" style={{ borderColor: "#f3f4f6" }}>
                     <div className="mt-3 space-y-3">
                       <div className="p-3 rounded-xl text-sm whitespace-pre-wrap"
-                        style={{ background: "transparent", color: "rgba(245,237,214,0.85)", lineHeight: "1.6" }}>
+                        style={{ background: "#f9fafb", color: "#374151", lineHeight: "1.6" }}>
                         {post.content}
                         {post.hashtags.length > 0 && (
                           <div className="mt-2" style={{ color: "#1877f2" }}>
@@ -824,7 +824,7 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
                         <div className="flex flex-wrap gap-2">
                           {post.imageUrls.map((url, i) => (
                             <div key={i} className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg"
-                              style={{ background: "transparent", color: "rgba(245,237,214,0.50)" }}>
+                              style={{ background: "#f3f4f6", color: "#6b7280" }}>
                               <Image size={11} />
                               <span className="max-w-xs truncate">{url}</span>
                             </div>
@@ -921,7 +921,7 @@ function CalendarTab({ pages }: { pages: FacebookPage[] }) {
 
   if (loading) return (
     <div className="flex items-center justify-center py-12">
-      <RefreshCw size={20} className="animate-spin" style={{ color: "rgba(245,237,214,0.40)" }} />
+      <RefreshCw size={20} className="animate-spin" style={{ color: "#9ca3af" }} />
     </div>
   );
 
@@ -929,19 +929,19 @@ function CalendarTab({ pages }: { pages: FacebookPage[] }) {
     <div className="space-y-4">
       {/* Calendar header */}
       <div className="flex items-center justify-between">
-        <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)]">
-          <ChevronDown size={16} style={{ color: "rgba(245,237,214,0.50)", transform: "rotate(90deg)" }} />
+        <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100">
+          <ChevronDown size={16} style={{ color: "#6b7280", transform: "rotate(90deg)" }} />
         </button>
         <h3 className="text-sm font-bold text-gray-900 capitalize">{monthName}</h3>
-        <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)]">
-          <ChevronDown size={16} style={{ color: "rgba(245,237,214,0.50)", transform: "rotate(-90deg)" }} />
+        <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-100">
+          <ChevronDown size={16} style={{ color: "#6b7280", transform: "rotate(-90deg)" }} />
         </button>
       </div>
 
       {/* Day labels */}
       <div className="grid grid-cols-7 gap-1">
         {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map(d => (
-          <div key={d} className="text-center text-xs font-semibold py-1" style={{ color: "rgba(245,237,214,0.40)" }}>{d}</div>
+          <div key={d} className="text-center text-xs font-semibold py-1" style={{ color: "#9ca3af" }}>{d}</div>
         ))}
       </div>
 
@@ -955,7 +955,7 @@ function CalendarTab({ pages }: { pages: FacebookPage[] }) {
             <div key={day}
               className="min-h-16 p-1.5 rounded-xl"
               style={{
-                background: isToday ? "rgba(24,119,242,0.06)" : "transparent",
+                background: isToday ? "rgba(24,119,242,0.06)" : "#f9fafb",
                 border: isToday ? "1.5px solid #1877f2" : "1px solid #e5e7eb",
               }}>
               <div className="text-xs font-semibold mb-1"
@@ -972,7 +972,7 @@ function CalendarTab({ pages }: { pages: FacebookPage[] }) {
                 </div>
               ))}
               {dayPosts.length > 2 && (
-                <div className="text-xs" style={{ color: "rgba(245,237,214,0.40)", fontSize: "10px" }}>
+                <div className="text-xs" style={{ color: "#9ca3af", fontSize: "10px" }}>
                   +{dayPosts.length - 2} bài
                 </div>
               )}
@@ -984,7 +984,7 @@ function CalendarTab({ pages }: { pages: FacebookPage[] }) {
       {/* Legend */}
       <div className="flex flex-wrap gap-3 pt-2">
         {(Object.entries(STATUS_CONFIG) as [PostStatus, typeof STATUS_CONFIG[PostStatus]][]).map(([status, cfg]) => (
-          <div key={status} className="flex items-center gap-1.5 text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>
+          <div key={status} className="flex items-center gap-1.5 text-xs" style={{ color: "#6b7280" }}>
             <div className="w-2.5 h-2.5 rounded-sm" style={{ background: cfg.bg, border: `1px solid ${cfg.color}` }} />
             {cfg.label}
           </div>
@@ -1010,7 +1010,7 @@ function LogsTab() {
   const ACTION_CONFIG = {
     published: { label: "Đã đăng", color: "#16a34a", bg: "#f0fdf4" },
     failed:    { label: "Thất bại", color: "#dc2626", bg: "#fef2f2" },
-    cancelled: { label: "Đã huỷ",  color: "rgba(245,237,214,0.40)", bg: "transparent" },
+    cancelled: { label: "Đã huỷ",  color: "#9ca3af", bg: "#f9fafb" },
     scheduled: { label: "Đã lên lịch", color: "#2563eb", bg: "#eff6ff" },
     retry:     { label: "Thử lại", color: "#d97706", bg: "#fffbeb" },
   };
@@ -1025,19 +1025,19 @@ function LogsTab() {
             .then(r => r.json())
             .then(d => setLogs(Array.isArray(d) ? d : []))
             .finally(() => setLoading(false));
-        }} className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.08)]">
-          <RefreshCw size={14} style={{ color: "rgba(245,237,214,0.50)" }} />
+        }} className="p-1.5 rounded-lg hover:bg-gray-100">
+          <RefreshCw size={14} style={{ color: "#6b7280" }} />
         </button>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <RefreshCw size={20} className="animate-spin" style={{ color: "rgba(245,237,214,0.40)" }} />
+          <RefreshCw size={20} className="animate-spin" style={{ color: "#9ca3af" }} />
         </div>
       ) : logs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <Activity size={24} style={{ color: "#d1d5db" }} />
-          <p className="text-sm mt-2" style={{ color: "rgba(245,237,214,0.40)" }}>Chưa có lịch sử hoạt động</p>
+          <p className="text-sm mt-2" style={{ color: "#9ca3af" }}>Chưa có lịch sử hoạt động</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -1045,7 +1045,7 @@ function LogsTab() {
             const cfg = ACTION_CONFIG[log.action] ?? ACTION_CONFIG.scheduled;
             return (
               <div key={log.id} className="flex items-start gap-3 p-3 rounded-xl"
-                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+                style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: cfg.bg }}>
                   {log.action === "published" ? <CheckCircle2 size={14} style={{ color: cfg.color }} />
@@ -1061,11 +1061,11 @@ function LogsTab() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>
+                    <span className="text-xs" style={{ color: "#6b7280" }}>
                       <Facebook size={10} className="inline mr-0.5" />
                       {log.pageName}
                     </span>
-                    <span className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>
+                    <span className="text-xs" style={{ color: "#9ca3af" }}>
                       {formatDateTime(log.executedAt)}
                     </span>
                   </div>
@@ -1147,7 +1147,7 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
   return (
     <div className="space-y-6">
       {/* Fanpages */}
-      <div className="rounded-2xl p-5" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-2xl p-5" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center"
@@ -1156,7 +1156,7 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
             </div>
             <div>
               <h3 className="text-sm font-bold text-gray-900">Fanpage đã kết nối</h3>
-              <p className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>{pages.length} fanpage</p>
+              <p className="text-xs" style={{ color: "#9ca3af" }}>{pages.length} fanpage</p>
             </div>
           </div>
           <button onClick={() => setShowAddPage(true)}
@@ -1170,7 +1170,7 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
         {pages.length === 0 ? (
           <div className="text-center py-8">
             <Facebook size={28} style={{ color: "#d1d5db", margin: "0 auto 8px" }} />
-            <p className="text-sm" style={{ color: "rgba(245,237,214,0.40)" }}>Chưa có Fanpage nào được kết nối</p>
+            <p className="text-sm" style={{ color: "#9ca3af" }}>Chưa có Fanpage nào được kết nối</p>
             <p className="text-xs mt-1" style={{ color: "#d1d5db" }}>
               Nhấn "Thêm Fanpage" và nhập Page Access Token
             </p>
@@ -1179,14 +1179,14 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
           <div className="space-y-2">
             {pages.map(page => (
               <div key={page.id} className="flex items-center gap-3 p-3 rounded-xl bg-white"
-                style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+                style={{ border: "1px solid #e5e7eb" }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: "#1877f2" }}>
                   <Facebook size={18} color="#fff" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{page.pageName}</p>
-                  <p className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>
                     ID: {page.pageId}
                     {page.followerCount ? ` · ${page.followerCount.toLocaleString("vi-VN")} followers` : ""}
                   </p>
@@ -1195,7 +1195,7 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
                   <button onClick={() => handleTogglePage(page)}
                     className="px-2 py-1 rounded-lg text-xs font-medium"
                     style={{
-                      background: page.isActive ? "#f0fdf4" : "rgba(255,255,255,0.04)",
+                      background: page.isActive ? "#f0fdf4" : "#f3f4f6",
                       color: page.isActive ? "#16a34a" : "#9ca3af",
                     }}>
                     {page.isActive ? "Đang bật" : "Đã tắt"}
@@ -1213,7 +1213,7 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
       </div>
 
       {/* Cài đặt Scheduler */}
-      <div className="rounded-2xl p-5" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-2xl p-5" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center"
             style={{ background: "rgba(201,168,76,0.12)" }}>
@@ -1224,15 +1224,15 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
 
         {loadingConfig ? (
           <div className="flex items-center justify-center py-6">
-            <RefreshCw size={16} className="animate-spin" style={{ color: "rgba(245,237,214,0.40)" }} />
+            <RefreshCw size={16} className="animate-spin" style={{ color: "#9ca3af" }} />
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 rounded-xl bg-white"
-              style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
+              style={{ border: "1px solid #e5e7eb" }}>
               <div>
                 <p className="text-sm font-medium text-gray-900">Bật tự động đăng bài</p>
-                <p className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>
+                <p className="text-xs" style={{ color: "#9ca3af" }}>
                   Hệ thống sẽ tự động đăng bài theo lịch đã cài đặt
                 </p>
               </div>
@@ -1246,7 +1246,7 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
                   Số lần thử lại khi lỗi
                 </label>
                 <input
@@ -1254,11 +1254,11 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
                   value={config.maxRetries}
                   onChange={e => setConfig(c => ({ ...c, maxRetries: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
+                  style={{ border: "1px solid #d1d5db", color: "#374151" }}
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
                   Thời gian chờ thử lại (phút)
                 </label>
                 <input
@@ -1266,7 +1266,7 @@ function SettingsTab({ pages, onPagesChange }: { pages: FacebookPage[]; onPagesC
                   value={config.retryDelayMinutes}
                   onChange={e => setConfig(c => ({ ...c, retryDelayMinutes: parseInt(e.target.value) || 30 }))}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
+                  style={{ border: "1px solid #d1d5db", color: "#374151" }}
                 />
               </div>
             </div>
@@ -1349,7 +1349,7 @@ export default function FacebookSchedulerClient() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-900">Lịch đăng bài Facebook</h1>
-            <p className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>
+            <p className="text-xs" style={{ color: "#9ca3af" }}>
               Tự động hoá đăng bài theo lịch lên Fanpage
             </p>
           </div>
@@ -1372,7 +1372,7 @@ export default function FacebookSchedulerClient() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "transparent" }}>
+      <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "#f3f4f6" }}>
         {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

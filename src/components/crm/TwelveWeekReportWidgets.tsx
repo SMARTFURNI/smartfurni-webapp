@@ -23,7 +23,7 @@ const T = {
   gold: "#D97706", goldBg: "#FFFBEB",
   red: "#DC2626", redBg: "#FEF2F2",
   purple: "#7C3AED", purpleBg: "#F5F3FF",
-  blue: "#2563EB", blueBg: "rgba(59,130,246,0.15)",
+  blue: "#2563EB", blueBg: "#EFF6FF",
 };
 
 const GOAL_COLORS: Record<GoalColor, { bg: string; text: string; border: string; label: string }> = {
@@ -32,7 +32,7 @@ const GOAL_COLORS: Record<GoalColor, { bg: string; text: string; border: string;
   gold:   { bg: "#FFFBEB", text: "#D97706", border: "#FDE68A", label: "Vàng" },
   red:    { bg: "#FEF2F2", text: "#DC2626", border: "#FECACA", label: "Đỏ" },
   purple: { bg: "#F5F3FF", text: "#7C3AED", border: "#DDD6FE", label: "Tím" },
-  blue:   { bg: "rgba(59,130,246,0.15)", text: "#2563EB", border: "#BFDBFE", label: "Xanh dương" },
+  blue:   { bg: "#EFF6FF", text: "#2563EB", border: "#BFDBFE", label: "Xanh dương" },
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────────────────
@@ -404,7 +404,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
           <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Heatmap tiến độ — 12 tuần × mục tiêu</span>
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[9px] font-medium" style={{ color: T.textMuted }}>0%</span>
-            {["rgba(239,68,68,0.15)","rgba(245,158,11,0.15)","#FDE68A","#86EFAC","#34D399","#059669"].map((c,i) => (
+            {["#FEE2E2","#FEF3C7","#FDE68A","#86EFAC","#34D399","#059669"].map((c,i) => (
               <div key={i} className="w-4 h-4 rounded" style={{ background: c }} />
             ))}
             <span className="text-[9px] font-medium" style={{ color: T.textMuted }}>100%</span>
@@ -449,8 +449,8 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   const isFuture = wi + 1 > currentWeek;
                   const cellBg = p < 0
                     ? (isFuture ? "#F3F4F6" : "#F9FAFB")
-                    : p === 0   ? "rgba(239,68,68,0.15)"
-                    : p <= 25   ? "rgba(245,158,11,0.15)"
+                    : p === 0   ? "#FEE2E2"
+                    : p <= 25   ? "#FEF3C7"
                     : p <= 50   ? "#FDE68A"
                     : p <= 75   ? "#86EFAC"
                     : p < 100   ? "#34D399"
@@ -507,8 +507,8 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   const isFuture = wi + 1 > currentWeek;
                   const cellBg = wp < 0
                     ? (isFuture ? "#F3F4F6" : "#F9FAFB")
-                    : wp === 0   ? "rgba(239,68,68,0.15)"
-                    : wp <= 25   ? "rgba(245,158,11,0.15)"
+                    : wp === 0   ? "#FEE2E2"
+                    : wp <= 25   ? "#FEF3C7"
                     : wp <= 50   ? "#FDE68A"
                     : wp <= 75   ? "#86EFAC"
                     : wp < 100   ? "#34D399"
@@ -543,7 +543,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
         {/* Footer legend */}
         <div className="px-5 py-2.5 flex items-center gap-4 flex-wrap" style={{ borderTop: `1px solid ${T.cardBorder}`, background: T.bg }}>
           {[
-            { color: "rgba(239,68,68,0.15)", label: "0%" },
+            { color: "#FEE2E2", label: "0%" },
             { color: "#FDE68A", label: "25–50%" },
             { color: "#86EFAC", label: "50–75%" },
             { color: "#059669", label: "100%" },

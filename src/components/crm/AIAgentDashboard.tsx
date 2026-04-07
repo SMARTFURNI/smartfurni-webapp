@@ -194,7 +194,7 @@ export function AIAgentDashboard() {
       </div>
 
       {/* Recent Tasks */}
-      <div className="bg-[rgba(255,255,255,0.07)] border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h3 className="text-xl font-semibold mb-4">📋 Tác Vụ Gần Đây</h3>
         <p className="text-sm text-gray-600 mb-4">Các tác vụ tự động hoá được thực hiện</p>
         {isLoading ? (
@@ -206,7 +206,7 @@ export function AIAgentDashboard() {
             {tasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-center justify-between p-4 bg-[rgba(255,255,255,0.04)] rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-colors"
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <div className="flex items-center gap-3 flex-1">
                   <span className="text-xl">{getTypeIcon(task.type)}</span>
@@ -230,7 +230,7 @@ export function AIAgentDashboard() {
       </div>
 
       {/* Features */}
-      <div className="bg-[rgba(255,255,255,0.07)] border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h3 className="text-xl font-semibold mb-4">🎯 Tính Năng Tự Động Hoá</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
