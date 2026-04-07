@@ -535,10 +535,10 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
       const res = await fetch("/api/crm/content/generate-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform, topic, productName, targetAudience, tone, duration, notes }),
+        body: JSON.stringify({ platform, topic, productName, targetAudience, tone, durationSeconds: duration, additionalNotes: notes }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Lỗi tạo kịch bản");
+      if (!res.ok) throw new Error(data.details ? `${data.error}: ${data.details}` : (data.error || "Lỗi tạo kịch bản"));
       setGeneratedScript(data.script);
       setGenerationId(data.generationId);
       setSaveTitle(`[${PLATFORM_CONFIG[platform].label}] ${topic}`);

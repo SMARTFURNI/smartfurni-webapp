@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
   const settings = getContentSettings();
   const promptTemplate = settings?.promptTemplate || DEFAULT_PROMPT_TEMPLATE;
   const systemContext = settings?.promptSystemContext || DEFAULT_SYSTEM_CONTEXT;
-  const modelName = settings?.aiModel || process.env.GEMINI_MODEL || "gemini-1.5-flash";
+  const modelName = settings?.aiModel || process.env.GEMINI_MODEL || "gemini-2.0-flash";
   const temperature = settings?.aiTemperature ?? 0.7;
   const brandName = settings?.brandName || "SmartFurni";
 
@@ -201,9 +201,21 @@ export async function POST(req: NextRequest) {
       modelUsed: modelName,
     });
   } catch (err) {
-    console.error("[generate-script] AI error:", err);
+    const errMsg = (err as Error).message || "Unknown error";
+    console.error("[generate-script] AI error:", errMsg);
+    // Provide user-friendly error messages
+    let userError = "Lỗi khi tạo kịch bản AI";
+    if (errMsg.includes("API_KEY") || errMsg.includes("API key") || errMsg.includes("INVALID_ARGUMENT")) {
+      userError = "GEMINI_API_KEY không hợp lệ hoặc chưa được cấu hình";
+    } else if (errMsg.includes("quota") || errMsg.includes("RESOURCE_EXHAUSTED")) {
+      userError = "Quá giới hạn API, vui lòng thử lại sau";
+    } else if (errMsg.includes("not found") || errMsg.includes("404")) {
+      userError = `Model "${modelName}" không tồn tại, vui lòng kiểm tra cài đặt`;
+    } else if (errMsg.includes("network") || errMsg.includes("fetch")) {
+      userError = "Lỗi kết nối mạng, vui lòng thử lại";
+    }
     return NextResponse.json(
-      { error: "Lỗi khi tạo kịch bản AI", details: (err as Error).message },
+      { error: userError, details: errMsg },
       { status: 500 }
     );
   }
