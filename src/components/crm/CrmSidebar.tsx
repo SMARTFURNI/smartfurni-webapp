@@ -115,6 +115,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Automation Rules", href: "/crm/automation", icon: Zap, superAdminOnly: true },
       { label: "Lịch đăng bài FB", href: "/crm/facebook-scheduler", icon: Share2, superAdminOnly: true },
       { label: "Nhật ký hoạt động", href: "/crm/audit", icon: Shield, superAdminOnly: true },
+      { label: "Quản lý Vai trò", href: "/crm/roles", icon: Shield, superAdminOnly: true },
       { label: "Phân quyền & API Keys", href: "/crm/permissions", icon: Key, superAdminOnly: true },
       { label: "Import / Export", href: "/crm/import-export", icon: Upload, superAdminOnly: true },
     ],
