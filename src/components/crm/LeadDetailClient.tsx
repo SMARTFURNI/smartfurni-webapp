@@ -930,72 +930,128 @@ function DLAddActivityModal({ leadId, onClose, onCreated }: { leadId: string; on
     } finally { setLoading(false); }
   }
 
-  const inputStyle = { background: DL.inputBg, border: `1px solid ${DL.inputBorder}`, color: DL.text };
+  const inputStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.06)",
+    border: `1px solid rgba(255,255,255,0.12)`,
+    color: DL.text,
+    colorScheme: "dark",
+  };
+  const inputFocusStyle: React.CSSProperties = {
+    border: `1px solid ${DL.borderGold}`,
+    outline: "none",
+    boxShadow: `0 0 0 2px rgba(245,158,11,0.12)`,
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+      style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(8px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="rounded-2xl shadow-2xl w-full max-w-md"
-        style={{ background: DL.modalBg, border: `1px solid ${DL.border}` }}>
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${DL.border}` }}>
-          <h2 className="text-base font-bold" style={{ color: DL.text }}>Thêm hoạt động</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-            style={{ background: DL.surface, color: DL.textMuted }}
-            onMouseEnter={e => (e.currentTarget.style.background = DL.surfaceHover)}
-            onMouseLeave={e => (e.currentTarget.style.background = DL.surface)}>
-            <X size={16} />
+        style={{
+          background: "linear-gradient(160deg, #1a1400 0%, #130f00 100%)",
+          border: `1px solid rgba(245,158,11,0.20)`,
+          boxShadow: "0 25px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.08)",
+        }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4"
+          style={{ borderBottom: `1px solid rgba(255,255,255,0.08)` }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ background: `${ACTIVITY_COLORS[type]}18`, border: `1px solid ${ACTIVITY_COLORS[type]}40` }}>
+              <span style={{ fontSize: 14 }}>
+                {type === "call" ? "📞" : type === "meeting" ? "🤝" : type === "email" ? "✉️" : type === "note" ? "📝" : type === "quote_sent" ? "💰" : "📄"}
+              </span>
+            </div>
+            <h2 className="text-base font-bold" style={{ color: DL.text }}>Thêm hoạt động</h2>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+            style={{ background: "rgba(255,255,255,0.06)", color: DL.textMuted, border: `1px solid rgba(255,255,255,0.08)` }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = DL.text; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = DL.textMuted; }}>
+            <X size={15} />
           </button>
         </div>
-        <form onSubmit={submit} className="p-6 space-y-4">
+
+        <form onSubmit={submit} className="p-6 space-y-5">
+          {/* Loại hoạt động */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: DL.textMuted }}>Loại hoạt động</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2.5"
+              style={{ color: "rgba(245,237,214,0.40)" }}>Loại hoạt động</label>
             <div className="grid grid-cols-3 gap-2">
               {(["call", "meeting", "email", "note", "quote_sent", "contract"] as ActivityType[]).map(t => (
                 <button key={t} type="button" onClick={() => setType(t)}
-                  className="py-2 text-xs font-medium rounded-lg transition-all"
+                  className="py-2.5 text-xs font-semibold rounded-xl transition-all"
                   style={{
-                    background: type === t ? `${ACTIVITY_COLORS[t]}15` : DL.surface,
-                    border: `1px solid ${type === t ? ACTIVITY_COLORS[t] : DL.border}`,
-                    color: type === t ? ACTIVITY_COLORS[t] : DL.textMuted,
+                    background: type === t ? `${ACTIVITY_COLORS[t]}18` : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${type === t ? ACTIVITY_COLORS[t] + "80" : "rgba(255,255,255,0.08)"}`,
+                    color: type === t ? ACTIVITY_COLORS[t] : "rgba(245,237,214,0.50)",
+                    boxShadow: type === t ? `0 0 12px ${ACTIVITY_COLORS[t]}20` : "none",
                   }}>
                   {ACTIVITY_LABELS[t]}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Tiêu đề */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: DL.textMuted }}>Tiêu đề</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2"
+              style={{ color: "rgba(245,237,214,0.40)" }}>Tiêu đề</label>
             <input value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-sm rounded-xl transition-all"
               style={{ ...inputStyle }}
+              onFocus={e => Object.assign(e.currentTarget.style, inputFocusStyle)}
+              onBlur={e => { e.currentTarget.style.border = inputStyle.border as string; e.currentTarget.style.boxShadow = "none"; }}
               placeholder="VD: Gọi tư vấn lần 1" />
           </div>
+
+          {/* Nội dung */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: DL.textMuted }}>Nội dung *</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2"
+              style={{ color: "rgba(245,237,214,0.40)" }}>
+              Nội dung <span style={{ color: DL.gold }}>*</span>
+            </label>
             <textarea value={content} onChange={e => setContent(e.target.value)} rows={3} required
-              className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none resize-none"
+              className="w-full px-3.5 py-2.5 text-sm rounded-xl resize-none transition-all"
               style={{ ...inputStyle }}
-              placeholder="Mô tả chi tiết..." />
+              onFocus={e => Object.assign(e.currentTarget.style, inputFocusStyle)}
+              onBlur={e => { e.currentTarget.style.border = inputStyle.border as string; e.currentTarget.style.boxShadow = "none"; }}
+              placeholder="Mô tả chi tiết kết quả cuộc gọi, nội dung gặp mặt..." />
           </div>
+
+          {/* Người thực hiện */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: DL.textMuted }}>Người thực hiện</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2"
+              style={{ color: "rgba(245,237,214,0.40)" }}>Người thực hiện</label>
             <input value={createdBy} onChange={e => setCreatedBy(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-sm rounded-xl transition-all"
               style={{ ...inputStyle }}
-              placeholder="Tên sales" />
+              onFocus={e => Object.assign(e.currentTarget.style, inputFocusStyle)}
+              onBlur={e => { e.currentTarget.style.border = inputStyle.border as string; e.currentTarget.style.boxShadow = "none"; }}
+              placeholder="Tên nhân viên thực hiện" />
           </div>
+
+          {/* Buttons */}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 text-sm rounded-xl transition-all"
-              style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}>
+              className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: `1px solid rgba(255,255,255,0.10)`, color: "rgba(245,237,214,0.60)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = DL.text; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(245,237,214,0.60)"; }}>
               Hủy
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-85"
-              style={{ background: `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`, color: "#1a1200" }}>
+              className="flex-1 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2"
+              style={{
+                background: loading ? "rgba(245,158,11,0.40)" : `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`,
+                color: "#1a1200",
+                boxShadow: loading ? "none" : `0 4px 16px rgba(245,158,11,0.30)`,
+              }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.boxShadow = `0 6px 20px rgba(245,158,11,0.45)`; }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.boxShadow = `0 4px 16px rgba(245,158,11,0.30)`; }}>
               {loading && <Loader2 size={13} className="animate-spin" />}
-              Lưu
+              {loading ? "Đang lưu..." : "Lưu hoạt động"}
             </button>
           </div>
         </form>
