@@ -45,7 +45,7 @@ export default async function CrmDashboardPage() {
       // Admin: đọc từ cookie sf_admin_theme
       const cookieStore = await cookies();
       initialDarkMode = cookieStore.get("sf_admin_theme")?.value === "dark";
-      initialGradientPreset = cookieStore.get("sf_admin_gradient")?.value ?? "default";
+      initialGradientPreset = cookieStore.get("sf_admin_gradient")?.value ?? "dark-luxury";
     } else if (session.staffId) {
       // Nhân viên: đọc từ data JSONB của crm_staff
       const row = await queryOne<{ data: string }>(
@@ -56,7 +56,7 @@ export default async function CrmDashboardPage() {
         const data = typeof row.data === "string" ? JSON.parse(row.data) : row.data as Record<string, unknown>;
         const prefs = (data?.preferences as Record<string, unknown>) ?? {};
         initialDarkMode = prefs.darkMode === true;
-        initialGradientPreset = (prefs.gradientPreset as string) ?? "default";
+        initialGradientPreset = (prefs.gradientPreset as string) ?? "dark-luxury";
       }
     }
   } catch { /* ignore, default to light */ }
