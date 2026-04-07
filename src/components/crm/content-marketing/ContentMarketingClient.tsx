@@ -260,13 +260,13 @@ function GenerateButton({ loading, disabled, onClick }: { loading: boolean; disa
   }, [loading]);
 
   const gradients = [
-    "linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%)",
-    "linear-gradient(135deg, #92400e 0%, #b45309 50%, #d97706 100%)",
-    "linear-gradient(135deg, #d97706 0%, #c2410c 50%, #b45309 100%)",
-    "linear-gradient(135deg, #b45309 0%, #d97706 50%, #92400e 100%)",
+    "linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)",
+    "linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)",
+    "linear-gradient(135deg, #f59e0b 0%, #e67e22 50%, #d97706 100%)",
+    "linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #b45309 100%)",
   ];
 
-  const staticGradient = "linear-gradient(135deg, #d97706 0%, #b45309 100%)";
+  const staticGradient = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
 
   return (
     <button
@@ -329,33 +329,35 @@ function KanbanCard({
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden"
+      className="rounded-2xl transition-all group cursor-pointer relative overflow-hidden"
+      style={{ ...style, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
     >
       {/* Top accent bar */}
       <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
-        style={{ background: `linear-gradient(90deg, ${platCfg.color}60, transparent)` }} />
+        style={{ background: `linear-gradient(90deg, ${platCfg.color}, transparent)` }} />
 
       {/* Drag handle + title row */}
       <div className="flex items-start gap-1.5 p-3 pb-2 pt-3">
         <button
           {...attributes}
           {...listeners}
-          className="mt-0.5 p-0.5 rounded-lg text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing flex-shrink-0 transition-colors"
+          className="mt-0.5 p-0.5 rounded-lg cursor-grab active:cursor-grabbing flex-shrink-0 transition-colors"
+          style={{ color: "rgba(255,255,255,0.2)" }}
           onClick={e => e.stopPropagation()}
         >
           <GripVertical size={12} />
         </button>
         <div className="flex-1 min-w-0" onClick={onClick}>
-          <p className="text-xs font-semibold text-gray-800 line-clamp-2 leading-relaxed">
+          <p className="text-xs font-semibold line-clamp-2 leading-relaxed" style={{ color: "#f5edd6" }}>
             {video.title}
           </p>
         </div>
         <button
           onClick={e => { e.stopPropagation(); onDelete(video.id); }}
-          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 transition-all flex-shrink-0"
+          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all flex-shrink-0"
+          style={{ background: "rgba(248,113,113,0.15)" }}
         >
-          <Trash2 size={10} className="text-red-400" />
+          <Trash2 size={10} style={{ color: "#f87171" }} />
         </button>
       </div>
 
@@ -363,7 +365,8 @@ function KanbanCard({
       <div className="px-3 pb-2 flex flex-wrap gap-1" onClick={onClick}>
         <PlatformBadge platform={video.platform} />
         {video.scriptGeneratedBy === "ai" && (
-          <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold">
+          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+            style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>
             <Sparkles size={8} />
             AI
           </span>
@@ -372,7 +375,7 @@ function KanbanCard({
 
       {/* Scheduled date */}
       {video.scheduledAt && (
-        <div className="px-3 pb-2 flex items-center gap-1 text-[10px] text-gray-400" onClick={onClick}>
+        <div className="px-3 pb-2 flex items-center gap-1 text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }} onClick={onClick}>
           <Clock size={9} />
           {fmtDate(video.scheduledAt)}
         </div>
@@ -383,7 +386,8 @@ function KanbanCard({
         {cfg.prev && (
           <button
             onClick={e => { e.stopPropagation(); onStatusChange(video.id, cfg.prev!); }}
-            className="flex-1 flex items-center justify-center gap-0.5 text-[10px] text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl py-1.5 transition-all border border-transparent hover:border-blue-100"
+            className="flex-1 flex items-center justify-center gap-0.5 text-[10px] rounded-xl py-1.5 transition-all"
+            style={{ color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.05)" }}
             title={`Quay lại: ${STATUS_CONFIG[cfg.prev].label}`}
           >
             <ArrowLeft size={9} />
@@ -393,7 +397,8 @@ function KanbanCard({
         {cfg.next && (
           <button
             onClick={e => { e.stopPropagation(); onStatusChange(video.id, cfg.next!); }}
-            className="flex-1 flex items-center justify-center gap-0.5 text-[10px] text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-xl py-1.5 transition-all border border-transparent hover:border-amber-200 font-medium"
+            className="flex-1 flex items-center justify-center gap-0.5 text-[10px] rounded-xl py-1.5 transition-all font-medium"
+            style={{ color: "#f59e0b", background: "rgba(245,158,11,0.1)" }}
             title={`Tiếp theo: ${STATUS_CONFIG[cfg.next].label}`}
           >
             <span className="hidden sm:inline truncate">{STATUS_CONFIG[cfg.next].label}</span>
@@ -426,31 +431,28 @@ function KanbanColumn({
 
   return (
     <div
-      className={`flex flex-col rounded-2xl transition-all duration-200 ${
-        isOver
-          ? "ring-2 ring-amber-400 ring-offset-2 shadow-lg"
-          : "shadow-sm"
-      }`}
+      className="flex flex-col rounded-2xl transition-all duration-200"
       style={{
         minHeight: 420,
-        background: isOver ? "rgba(251,191,36,0.04)" : "#fafafa",
-        border: "1px solid rgba(0,0,0,0.06)",
+        background: isOver ? `${cfg.color}10` : "rgba(255,255,255,0.05)",
+        border: isOver ? `1px solid ${cfg.color}50` : "1px solid rgba(255,255,255,0.08)",
+        boxShadow: isOver ? `0 0 20px ${cfg.color}15` : "none",
       }}
     >
       {/* Column header */}
       <div
         className="flex items-center gap-2 px-3.5 py-3 rounded-t-2xl"
-        style={{ background: cfg.headerBg }}
+        style={{ background: `${cfg.color}18`, borderBottom: `1px solid ${cfg.color}25` }}
       >
         <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-          style={{ background: `${cfg.color}20` }}>
+          style={{ background: `${cfg.color}25` }}>
           <Icon size={12} style={{ color: cfg.color }} />
         </div>
         <span className="text-xs font-bold tracking-wide" style={{ color: cfg.color }}>
           {cfg.label}
         </span>
         <span
-          className="ml-auto text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm"
+          className="ml-auto text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
           style={{ background: cfg.color, color: "#fff" }}
         >
           {videos.length}
@@ -471,11 +473,11 @@ function KanbanColumn({
           ))}
         </SortableContext>
         {videos.length === 0 && (
-          <div className={`flex flex-col items-center justify-center py-10 text-xs rounded-2xl border-2 border-dashed transition-all duration-200 ${
-            isOver
-              ? "border-amber-300 text-amber-500 bg-amber-50/50"
-              : "border-gray-200 text-gray-300"
-          }`}>
+          <div className="flex flex-col items-center justify-center py-10 text-xs rounded-xl border border-dashed transition-all duration-200"
+            style={isOver
+              ? { borderColor: `${cfg.color}60`, color: cfg.color, background: `${cfg.color}08` }
+              : { borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.2)" }
+            }>
             <Icon size={18} className="mb-2 opacity-50" />
             <span className="font-medium">Kéo thả vào đây</span>
           </div>
@@ -590,28 +592,27 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
 
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[480px_1fr] gap-6">
-      {/* ── Left: Form Panel ─────────────────────────────────────────────── */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="grid grid-cols-1 xl:grid-cols-[460px_1fr] gap-5">
+      {/* ── Left: Form Panel ───────────────────────────────────────────────────── */}
+      <div className="rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(20px)" }}>
         {/* Form header */}
-        <div className="px-6 py-5 border-b border-gray-50"
-          style={{ background: "linear-gradient(135deg, #fafafa 0%, #fff 100%)" }}>
+        <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(245,158,11,0.08)" }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl flex items-center justify-center shadow-sm"
-              style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}>
-              <Wand2 size={16} className="text-white" />
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm"
+              style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
+              <Wand2 size={14} className="text-white" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900">Thông tin kịch bản</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Điền đầy đủ để AI tạo kịch bản chính xác nhất</p>
+              <h3 className="text-sm font-bold" style={{ color: "#f5edd6" }}>Thông tin kịch bản</h3>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Điền đầy đủ để AI tạo kịch bản chính xác nhất</p>
             </div>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-5 space-y-4">
           {/* Platform selector */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>
               Nền tảng
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -623,23 +624,25 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                   <button
                     key={p}
                     onClick={() => setPlatform(p)}
-                    className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 ${
-                      active ? "shadow-md scale-[1.01]" : "border-gray-100 text-gray-500 hover:border-gray-200 bg-gray-50/50 hover:bg-gray-50"
-                    }`}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200`}
                     style={active ? {
                       borderColor: cfg.color,
-                      background: `linear-gradient(135deg, ${cfg.bg}, white)`,
+                      background: `linear-gradient(135deg, ${cfg.color}22, ${cfg.color}10)`,
                       color: cfg.color,
-                      boxShadow: `0 4px 12px ${cfg.color}25`,
-                    } : {}}
+                      boxShadow: `0 4px 12px ${cfg.color}30`,
+                    } : {
+                      borderColor: "rgba(255,255,255,0.1)",
+                      background: "rgba(255,255,255,0.04)",
+                      color: "rgba(255,255,255,0.45)",
+                    }}
                   >
-                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${active ? "" : "bg-white"}`}
-                      style={active ? { background: `${cfg.color}15` } : {}}>
-                      <Icon size={14} style={{ color: active ? cfg.color : "#9ca3af" }} />
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+                      style={{ background: active ? `${cfg.color}20` : "rgba(255,255,255,0.08)" }}>
+                      <Icon size={12} style={{ color: active ? cfg.color : "rgba(255,255,255,0.4)" }} />
                     </div>
                     <span>{cfg.label}</span>
                     {active && (
-                      <span className="ml-auto w-2 h-2 rounded-full flex-shrink-0"
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
                         style={{ background: cfg.color }} />
                     )}
                   </button>
@@ -650,14 +653,15 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
 
           {/* Topic */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                Chủ đề video <span className="text-red-400 normal-case tracking-normal">*</span>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
+                Chủ đề video <span style={{ color: "#f87171" }}>*</span>
               </label>
               <button
                 type="button"
                 onClick={() => { setShowTopicSuggestions(v => !v); setShowAudienceSuggestions(false); }}
-                className="flex items-center gap-1.5 text-[11px] text-amber-700 hover:text-amber-800 font-semibold bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-xl transition-all border border-amber-200"
+                className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl transition-all"
+                style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.25)" }}
               >
                 <Sparkles size={10} />
                 Gợi ý ý tưởng
@@ -669,7 +673,8 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                 onChange={e => setTopic(e.target.value)}
                 onFocus={() => setShowTopicSuggestions(false)}
                 placeholder="VD: Giường điều chỉnh điện giúp ngủ ngon hơn"
-                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all placeholder:text-gray-300"
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
               />
               {showTopicSuggestions && (
                 <div className="absolute z-30 top-full mt-2 left-0 right-0 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden"
@@ -716,23 +721,25 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
 
           {/* Product name */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Tên sản phẩm</label>
+            <label className="block text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>Tên sản phẩm</label>
             <input
               value={productName}
               onChange={e => setProductName(e.target.value)}
               placeholder="VD: Giường điều chỉnh SmartFurni Pro 3000"
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all placeholder:text-gray-300"
+              className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
             />
           </div>
 
           {/* Target audience */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Đối tượng mục tiêu</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Đối tượng mục tiêu</label>
               <button
                 type="button"
                 onClick={() => { setShowAudienceSuggestions(v => !v); setShowTopicSuggestions(false); }}
-                className="flex items-center gap-1.5 text-[11px] text-blue-700 hover:text-blue-800 font-semibold bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-xl transition-all border border-blue-200"
+                className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl transition-all"
+                style={{ background: "rgba(96,165,250,0.15)", color: "#60a5fa", border: "1px solid rgba(96,165,250,0.25)" }}
               >
                 <Target size={10} />
                 Gợi ý đối tượng
@@ -744,7 +751,8 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                 onChange={e => setTargetAudience(e.target.value)}
                 onFocus={() => setShowAudienceSuggestions(false)}
                 placeholder="VD: Chủ đầu tư BĐS, quản lý khách sạn..."
-                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50 bg-gray-50/50 transition-all placeholder:text-gray-300"
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
               />
               {showAudienceSuggestions && (
                 <div className="absolute z-30 top-full mt-2 left-0 right-0 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden"
@@ -792,24 +800,25 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
           {/* Tone + Duration */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+              <label className="block text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
                 <span className="flex items-center gap-1.5"><Mic size={10} /> Giọng điệu</span>
               </label>
               <div className="relative">
                 <select
                   value={tone}
                   onChange={e => setTone(e.target.value)}
-                  className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all appearance-none cursor-pointer"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all appearance-none cursor-pointer"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
                 >
                   {TONE_OPTIONS.map(t => (
-                    <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
+                    <option key={t.value} value={t.value} style={{ background: "#1a1200", color: "#f5edd6" }}>{t.icon} {t.label}</option>
                   ))}
                 </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "rgba(255,255,255,0.4)" }} />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+              <label className="block text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
                 <span className="flex items-center gap-1.5"><Timer size={10} /> Thời lượng (giây)</span>
               </label>
               <input
@@ -818,14 +827,15 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                 onChange={e => setDuration(Number(e.target.value))}
                 min={15}
                 max={600}
-                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all"
+                className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
               />
             </div>
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+            <label className="block text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
               <span className="flex items-center gap-1.5"><FileText size={10} /> Ghi chú thêm</span>
             </label>
             <textarea
@@ -833,13 +843,14 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
               onChange={e => setNotes(e.target.value)}
               rows={2}
               placeholder="VD: Nhấn mạnh tính năng massage, có khuyến mãi 20%..."
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none bg-gray-50/50 transition-all placeholder:text-gray-300"
+              className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none transition-all"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
             />
           </div>
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-sm text-red-600">
+            <div className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.25)", color: "#fca5a5" }}>
               <AlertCircle size={14} className="flex-shrink-0" />
               {error}
             </div>
@@ -850,20 +861,19 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
         </div>
       </div>
 
-      {/* ── Right: Generated Script Panel ────────────────────────────────── */}
+      {/* ── Right: Generated Script Panel ────────────────────────────────────────────────── */}
       <div className="space-y-4">
         {generatedScript ? (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-full flex flex-col">
+          <div className="rounded-3xl overflow-hidden h-full flex flex-col" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
             {/* Script header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50"
-              style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fff 100%)" }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(245,158,11,0.08)" }}>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-2xl flex items-center justify-center shadow-sm"
-                  style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
                   <Sparkles size={14} className="text-white" />
                 </div>
                 <div>
-                  <span className="text-sm font-bold text-gray-900">Kịch bản AI</span>
+                  <span className="text-sm font-bold" style={{ color: "#f5edd6" }}>Kịch bản AI</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <PlatformBadge platform={platform} />
                   </div>
@@ -871,13 +881,14 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-gray-200 hover:bg-gray-50 transition-all text-gray-600">
-                  {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                  style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: copied ? "#4ade80" : "rgba(255,255,255,0.7)" }}>
+                  {copied ? <Check size={12} /> : <Copy size={12} />}
                   {copied ? "Đã copy" : "Copy"}
                 </button>
                 <button onClick={() => setShowSaveForm(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:shadow-md"
-                  style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}>
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 4px 12px rgba(245,158,11,0.35)" }}>
                   <Save size={12} />
                   Lưu vào kế hoạch
                 </button>
@@ -885,41 +896,41 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
             </div>
 
             {/* Script content */}
-            <div className="flex-1 p-6 overflow-y-auto" style={{ maxHeight: "520px" }}>
-              <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+            <div className="flex-1 p-5 overflow-y-auto" style={{ maxHeight: "520px" }}>
+              <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed" style={{ color: "rgba(245,237,214,0.85)" }}>
                 {generatedScript}
               </pre>
             </div>
           </div>
         ) : (
           /* Empty state */
-          <div className="bg-white rounded-3xl border-2 border-dashed border-gray-100 h-full flex flex-col items-center justify-center text-center"
-            style={{ minHeight: "480px" }}>
-            <div className="relative mb-6">
-              <div className="w-24 h-24 rounded-3xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)" }}>
-                <Wand2 size={36} className="text-amber-500" />
+          <div className="rounded-3xl border-2 h-full flex flex-col items-center justify-center text-center"
+            style={{ minHeight: "480px", borderColor: "rgba(255,255,255,0.08)", borderStyle: "dashed", background: "rgba(255,255,255,0.03)" }}>
+            <div className="relative mb-5">
+              <div className="w-20 h-20 rounded-3xl flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.15))", border: "1px solid rgba(245,158,11,0.2)" }}>
+                <Wand2 size={32} style={{ color: "#f59e0b" }} />
               </div>
-              <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-white border-2 border-amber-200 flex items-center justify-center shadow-sm">
-                <Sparkles size={12} className="text-amber-500" />
+              <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.3)" }}>
+                <Sparkles size={11} style={{ color: "#f59e0b" }} />
               </div>
             </div>
-            <h3 className="text-base font-bold text-gray-800 mb-2">Sẵn sàng tạo kịch bản</h3>
-            <p className="text-sm text-gray-400 max-w-xs leading-relaxed">
+            <h3 className="text-base font-bold mb-2" style={{ color: "#f5edd6" }}>Sẵn sàng tạo kịch bản</h3>
+            <p className="text-sm max-w-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
               Điền thông tin bên trái và nhấn{" "}
-              <span className="text-amber-600 font-semibold">Tạo kịch bản AI</span>
+              <span style={{ color: "#f59e0b", fontWeight: 600 }}>Tạo kịch bản AI</span>
             </p>
-            <p className="text-xs text-gray-300 mt-3">Gemini AI sẽ tạo kịch bản video chuyên nghiệp</p>
+            <p className="text-xs mt-3" style={{ color: "rgba(255,255,255,0.2)" }}>Gemini AI sẽ tạo kịch bản video chuyên nghiệp</p>
           </div>
         )}
 
         {/* Save Form */}
         {showSaveForm && (
-          <div className="bg-white rounded-3xl border border-amber-100 p-5 shadow-sm"
-            style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fff 100%)" }}>
-            <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <div className="rounded-3xl p-5" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
+            <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: "#f5edd6" }}>
               <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}>
+                style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
                 <Save size={11} className="text-white" />
               </div>
               Lưu vào kế hoạch content
@@ -928,17 +939,19 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
               value={saveTitle}
               onChange={e => setSaveTitle(e.target.value)}
               placeholder="Tiêu đề video..."
-              className="w-full border-2 border-amber-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 mb-3 bg-white"
+              className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none mb-3"
+              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#f5edd6" }}
             />
             <div className="flex gap-2">
               <button onClick={handleSaveVideo} disabled={saving || !saveTitle.trim()}
-                className="flex-1 flex items-center justify-center gap-2 text-white text-sm font-bold py-3 rounded-2xl disabled:opacity-50 transition-all shadow-sm"
-                style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}>
+                className="flex-1 flex items-center justify-center gap-2 text-white text-sm font-bold py-3 rounded-xl disabled:opacity-50 transition-all"
+                style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 4px 12px rgba(245,158,11,0.3)" }}>
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                 Lưu
               </button>
               <button onClick={() => setShowSaveForm(false)}
-                className="px-5 py-3 text-sm text-gray-500 border-2 border-gray-100 rounded-2xl hover:bg-gray-50 transition-all font-medium">
+                className="px-5 py-3 text-sm rounded-xl transition-all font-medium"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}>
                 Huỷ
               </button>
             </div>
@@ -948,7 +961,6 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
     </div>
   );
 }
-
 // ─── Tab 2: Content Planner (Kanban with DnD) ─────────────────────────────────
 function ContentPlannerTab() {
   const [videos, setVideos] = useState<ContentVideo[]>([]);
@@ -1039,27 +1051,28 @@ function ContentPlannerTab() {
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           {/* Filter */}
-          <div className="flex items-center gap-2 bg-white border border-gray-100 rounded-2xl px-3 py-2 shadow-sm">
-            <span className="text-xs font-semibold text-gray-400">Lọc:</span>
+          <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Lọc:</span>
             <div className="relative">
               <select
                 value={filterPlatform}
                 onChange={e => setFilterPlatform(e.target.value as ContentPlatform | "")}
-                className="text-sm font-semibold text-gray-700 focus:outline-none bg-transparent cursor-pointer appearance-none pr-5"
+                className="text-sm font-semibold focus:outline-none bg-transparent cursor-pointer appearance-none pr-5"
+                style={{ color: "#f5edd6" }}
               >
-                <option value="">Tất cả ({totalVideos})</option>
-                <option value="tiktok">TikTok</option>
-                <option value="facebook">Facebook</option>
-                <option value="youtube">YouTube</option>
+                <option value="" style={{ background: "#1a1200" }}>Tất cả ({totalVideos})</option>
+                <option value="tiktok" style={{ background: "#1a1200" }}>TikTok</option>
+                <option value="facebook" style={{ background: "#1a1200" }}>Facebook</option>
+                <option value="youtube" style={{ background: "#1a1200" }}>YouTube</option>
               </select>
-              <ChevronDown size={12} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown size={12} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "rgba(255,255,255,0.4)" }} />
             </div>
           </div>
 
-          <span className="text-xs text-gray-300 hidden md:flex items-center gap-1.5">
+          <span className="text-xs hidden md:flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>
             <GripVertical size={12} />
             Kéo thả card để chuyển trạng thái
           </span>
@@ -1067,8 +1080,8 @@ function ContentPlannerTab() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 text-white text-sm font-bold px-5 py-2.5 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95"
-          style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}
+          className="flex items-center gap-2 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all active:scale-95"
+          style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 4px 16px rgba(245,158,11,0.35)" }}
         >
           <Plus size={15} />
           Thêm ý tưởng
@@ -1553,21 +1566,21 @@ export function ContentMarketingClient() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5" style={{ background: "linear-gradient(160deg, #0f172a 0%, #1e1a0e 40%, #1a1200 100%)", minHeight: "100vh", margin: "-24px", padding: "24px", borderRadius: "0" }}>
       {/* Header */}
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0"
-          style={{ background: "linear-gradient(135deg, #d97706 0%, #b45309 100%)" }}>
+          style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", boxShadow: "0 8px 24px rgba(245,158,11,0.35)" }}>
           <Video size={22} className="text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Content Marketing AI</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Tạo kịch bản video, quản lý sản xuất và lên lịch đăng bài TikTok / Facebook / YouTube</p>
+          <h1 className="text-xl font-bold" style={{ color: "#f5edd6" }}>Content Marketing AI</h1>
+          <p className="text-sm mt-0.5" style={{ color: "#9ca3af" }}>Tạo kịch bản video, quản lý sản xuất và lên lịch đăng bài TikTok / Facebook / YouTube</p>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 bg-gray-50 rounded-2xl p-1.5 border border-gray-100">
+      <div className="flex gap-1 rounded-2xl p-1.5" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
         {tabs.map(tab => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
@@ -1575,13 +1588,16 @@ export function ContentMarketingClient() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                active
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-white/60"
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200`}
+              style={active ? {
+                background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                color: "#fff",
+                boxShadow: "0 4px 16px rgba(245,158,11,0.35)",
+              } : {
+                color: "rgba(255,255,255,0.45)",
+              }}
             >
-              <Icon size={15} style={active ? { color: "#b45309" } : {}} />
+              <Icon size={15} />
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
           );
