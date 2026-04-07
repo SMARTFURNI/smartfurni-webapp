@@ -9,7 +9,7 @@ import {
   CheckCircle2, Circle, PlayCircle, Scissors,
   AlertCircle, LayoutGrid, ChevronLeft, ChevronRight,
   Wand2, GripVertical, ArrowLeft, ArrowRight, Settings,
-  Zap, Target, Mic, Timer, FileText, ChevronDown,
+  Zap, Target, Mic, Timer, FileText, ChevronDown, Printer, Download,
 } from "lucide-react";
 import ContentSettingsTab from "./ContentSettingsTab";
 import {
@@ -1476,6 +1476,23 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
   const [scheduledAt, setScheduledAt] = useState(video.scheduledAt ? new Date(video.scheduledAt).toISOString().slice(0, 16) : "");
   const [publishedUrl, setPublishedUrl] = useState(video.publishedUrl || "");
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  // Design tokens — dark luxury (matching Settings tab)
+  const D = {
+    bg: "linear-gradient(160deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)",
+    headerBg: "linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(15,23,42,0.95) 100%)",
+    card: "rgba(255,255,255,0.05)",
+    cardBorder: "rgba(245,158,11,0.15)",
+    inputBg: "rgba(255,255,255,0.07)",
+    inputBorder: "rgba(255,158,11,0.2)",
+    textPrimary: "#f5edd6",
+    textSecondary: "#c4b896",
+    textMuted: "rgba(196,184,150,0.5)",
+    gold: "#f59e0b",
+    goldGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+    divider: "rgba(245,158,11,0.1)",
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -1490,69 +1507,188 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
     } finally { setSaving(false); }
   };
 
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      const platformLabel = video.platform === "tiktok" ? "TikTok" : video.platform === "facebook" ? "Facebook" : video.platform === "youtube" ? "YouTube" : "Đa nền tảng";
+      const createdDate = new Date(video.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const scheduledDate = video.scheduledAt ? new Date(video.scheduledAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) : "Chưa lên lịch";
+
+      const htmlContent = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>${video.title}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #fff; color: #1a1a1a; padding: 40px; max-width: 800px; margin: 0 auto; }
+  .header { border-bottom: 3px solid #f59e0b; padding-bottom: 20px; margin-bottom: 28px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .brand-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 16px; }
+  .brand-name { font-size: 14px; font-weight: 700; color: #6b7280; letter-spacing: 0.05em; text-transform: uppercase; }
+  .title { font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.3; margin-bottom: 12px; }
+  .meta { display: flex; gap: 16px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge-platform { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-ai { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+  .badge-date { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .section { margin-bottom: 24px; }
+  .section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+  .script-box { background: #fafafa; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; font-size: 13px; line-height: 1.8; color: #374151; white-space: pre-wrap; word-break: break-word; }
+  .notes-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 16px; font-size: 13px; color: #78350f; line-height: 1.6; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .info-item { background: #f9fafb; border-radius: 10px; padding: 12px 16px; }
+  .info-item-label { font-size: 10px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px; }
+  .info-item-value { font-size: 13px; font-weight: 600; color: #374151; }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+  .footer-text { font-size: 11px; color: #9ca3af; }
+  @media print { body { padding: 20px; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">SF</div>
+      <span class="brand-name">SmartFurni — Content Marketing AI</span>
+    </div>
+    <h1 class="title">${video.title}</h1>
+    <div class="meta">
+      <span class="badge badge-platform">📱 ${platformLabel}</span>
+      ${video.scriptGeneratedBy === "ai" ? '<span class="badge badge-ai">✨ Tạo bởi AI</span>' : ""}
+      <span class="badge badge-date">📅 Tạo: ${createdDate}</span>
+      ${video.scheduledAt ? `<span class="badge badge-date">🗓️ Lên lịch: ${scheduledDate}</span>` : ""}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">🎬 Kịch bản video</div>
+    <div class="script-box">${(video.script || "Chưa có kịch bản").replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>")}</div>
+  </div>
+
+  ${video.notes ? `<div class="section"><div class="section-label">📝 Ghi chú</div><div class="notes-box">${video.notes}</div></div>` : ""}
+
+  <div class="footer">
+    <span class="footer-text">SmartFurni CRM — Content Marketing AI</span>
+    <span class="footer-text">In ngày: ${new Date().toLocaleDateString("vi-VN")}</span>
+  </div>
+</body>
+</html>`;
+
+      const printWindow = window.open("", "_blank", "width=900,height=700");
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
-        style={{ boxShadow: "0 40px 80px rgba(0,0,0,0.2)" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50 sticky top-0 bg-white z-10 rounded-t-3xl"
-          style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fff 80%)" }}>
-          <div className="flex items-center gap-2">
-            <PlatformBadge platform={video.platform} />
-            <StatusBadge status={video.status} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(10,15,30,0.75)", backdropFilter: "blur(8px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl overflow-hidden"
+        style={{ background: D.bg, border: "1px solid rgba(245,158,11,0.25)", boxShadow: "0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.1)" }}>
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-6 py-4 flex-shrink-0"
+          style={{ background: D.headerBg, borderBottom: `1px solid ${D.divider}` }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: D.goldGradient, boxShadow: "0 4px 12px rgba(245,158,11,0.4)" }}>
+              <Film size={15} className="text-white" />
+            </div>
+            <div className="flex items-center gap-2">
+              <PlatformBadge platform={video.platform} />
+              <StatusBadge status={video.status} />
+            </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Export PDF button */}
+            <button onClick={handleExportPDF} disabled={exporting}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: D.textSecondary }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.15)"; e.currentTarget.style.color = D.gold; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = D.textSecondary; }}>
+              {exporting ? <Loader2 size={12} className="animate-spin" /> : <Printer size={12} />}
+              Xuất PDF
+            </button>
             {!editing ? (
               <button onClick={() => setEditing(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-2 border-gray-100 rounded-xl hover:bg-gray-50 transition-all text-gray-600">
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: D.textSecondary }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}>
                 <Edit3 size={12} /> Chỉnh sửa
               </button>
             ) : (
               <>
                 <button onClick={handleSave} disabled={saving}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white rounded-xl transition-all shadow-sm"
-                  style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}>
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all"
+                  style={{ background: D.goldGradient, boxShadow: "0 4px 12px rgba(245,158,11,0.35)" }}>
                   {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Lưu
                 </button>
                 <button onClick={() => setEditing(false)}
-                  className="px-3 py-2 text-xs font-semibold border-2 border-gray-100 rounded-xl hover:bg-gray-50 transition-all text-gray-500">
+                  className="px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: D.textSecondary }}>
                   Huỷ
                 </button>
               </>
             )}
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400">
+            <button onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-xl transition-colors"
+              style={{ color: D.textMuted }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = D.textSecondary; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = D.textMuted; }}>
               <X size={16} />
             </button>
           </div>
         </div>
 
-        <div className="p-6 space-y-5">
+        {/* ── Scrollable body ── */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(245,158,11,0.2) transparent" }}>
+
+          {/* Title */}
           {editing ? (
             <input value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full text-lg font-bold border-2 border-gray-100 rounded-2xl px-4 py-3 focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50" />
+              className="w-full text-lg font-bold rounded-2xl px-4 py-3 focus:outline-none"
+              style={{ background: D.inputBg, border: `2px solid ${D.inputBorder}`, color: D.textPrimary }} />
           ) : (
-            <h2 className="text-lg font-bold text-gray-900">{video.title}</h2>
+            <h2 className="text-lg font-bold leading-snug" style={{ color: D.textPrimary }}>{video.title}</h2>
           )}
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2 text-gray-500 bg-gray-50 rounded-2xl px-4 py-2.5">
-              <Clock size={13} className="text-gray-400" />
-              <span className="text-xs font-medium">Tạo: {fmtDateTime(video.createdAt)}</span>
+          {/* Meta info */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2.5 rounded-2xl px-4 py-2.5"
+              style={{ background: D.card, border: `1px solid ${D.divider}` }}>
+              <Clock size={13} style={{ color: D.gold }} />
+              <span className="text-xs font-medium" style={{ color: D.textSecondary }}>Tạo: {fmtDateTime(video.createdAt)}</span>
             </div>
             {video.scheduledAt && !editing && (
-              <div className="flex items-center gap-2 text-gray-500 bg-amber-50 rounded-2xl px-4 py-2.5">
-                <Calendar size={13} className="text-amber-500" />
-                <span className="text-xs font-medium">Lên lịch: {fmtDateTime(video.scheduledAt)}</span>
+              <div className="flex items-center gap-2.5 rounded-2xl px-4 py-2.5"
+                style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+                <Calendar size={13} style={{ color: D.gold }} />
+                <span className="text-xs font-medium" style={{ color: D.textSecondary }}>Lên lịch: {fmtDateTime(video.scheduledAt)}</span>
               </div>
             )}
             {editing && (
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ngày đăng</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: D.textMuted }}>Ngày đăng</label>
                 <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
-                  className="w-full border-2 border-gray-100 rounded-2xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50" />
+                  className="w-full rounded-2xl px-3 py-2.5 text-sm focus:outline-none"
+                  style={{ background: D.inputBg, border: `2px solid ${D.inputBorder}`, color: D.textPrimary }} />
               </div>
             )}
           </div>
 
+          {/* Stats (published) */}
           {video.status === "published" && (
             <div className="grid grid-cols-4 gap-3">
               {[
@@ -1561,61 +1697,79 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
                 { icon: MessageCircle, label: "Bình luận", value: video.commentsCount, color: "#8b5cf6" },
                 { icon: Share2, label: "Chia sẻ", value: video.sharesCount, color: "#10b981" },
               ].map(({ icon: Icon, label, value, color }) => (
-                <div key={label} className="rounded-2xl p-3 text-center border-2" style={{ background: `${color}08`, borderColor: `${color}20` }}>
+                <div key={label} className="rounded-2xl p-3 text-center" style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
                   <Icon size={16} className="mx-auto mb-1" style={{ color }} />
-                  <p className="text-base font-bold text-gray-800">{fmtNum(value)}</p>
-                  <p className="text-[10px] text-gray-400 font-semibold">{label}</p>
+                  <p className="text-base font-bold" style={{ color: D.textPrimary }}>{fmtNum(value)}</p>
+                  <p className="text-[10px] font-semibold" style={{ color: D.textMuted }}>{label}</p>
                 </div>
               ))}
             </div>
           )}
 
+          {/* Published URL */}
           {editing ? (
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Link bài đăng</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: D.textMuted }}>Link bài đăng</label>
               <input value={publishedUrl} onChange={e => setPublishedUrl(e.target.value)}
                 placeholder="https://..."
-                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50" />
+                className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none"
+                style={{ background: D.inputBg, border: `2px solid ${D.inputBorder}`, color: D.textPrimary }} />
             </div>
           ) : video.publishedUrl ? (
             <a href={video.publishedUrl} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-blue-600 hover:underline font-semibold">
+              className="flex items-center gap-2 text-sm font-semibold transition-colors"
+              style={{ color: "#60a5fa" }}>
               <ExternalLink size={13} /> Xem bài đăng
             </a>
           ) : null}
 
+          {/* Script section */}
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Film size={11} />
-              Kịch bản
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: "rgba(245,158,11,0.2)" }}>
+                <Film size={11} style={{ color: D.gold }} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: D.textMuted }}>Kịch bản</span>
               {video.scriptGeneratedBy === "ai" && (
-                <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full flex items-center gap-0.5 font-bold normal-case tracking-normal">
+                <span className="text-[10px] px-2 py-0.5 rounded-full flex items-center gap-0.5 font-bold"
+                  style={{ background: "rgba(245,158,11,0.15)", color: D.gold, border: "1px solid rgba(245,158,11,0.3)" }}>
                   <Sparkles size={8} /> AI
                 </span>
               )}
-            </label>
+              <div className="flex-1 h-px" style={{ background: D.divider }} />
+            </div>
             {editing ? (
               <textarea value={script} onChange={e => setScript(e.target.value)} rows={10}
                 placeholder="Nhập kịch bản video..."
-                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none font-mono bg-gray-50/50" />
+                className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none resize-none font-mono"
+                style={{ background: D.inputBg, border: `2px solid ${D.inputBorder}`, color: D.textPrimary }} />
             ) : video.script ? (
-              <pre className="bg-gray-50 rounded-2xl p-4 text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed max-h-64 overflow-y-auto border border-gray-100">
+              <pre className="rounded-2xl p-4 text-sm whitespace-pre-wrap font-sans leading-relaxed max-h-72 overflow-y-auto"
+                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${D.cardBorder}`, color: D.textSecondary, scrollbarWidth: "thin" }}>
                 {video.script}
               </pre>
             ) : (
-              <p className="text-sm text-gray-300 italic bg-gray-50 rounded-2xl p-4">Chưa có kịch bản</p>
+              <p className="text-sm italic rounded-2xl p-4" style={{ background: D.card, color: D.textMuted }}>Chưa có kịch bản</p>
             )}
           </div>
 
+          {/* Notes section */}
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ghi chú</label>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: "rgba(245,158,11,0.2)" }}>
+                <FileText size={11} style={{ color: D.gold }} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: D.textMuted }}>Ghi chú</span>
+              <div className="flex-1 h-px" style={{ background: D.divider }} />
+            </div>
             {editing ? (
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-                className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none bg-gray-50/50" />
+                className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none resize-none"
+                style={{ background: D.inputBg, border: `2px solid ${D.inputBorder}`, color: D.textPrimary }} />
             ) : video.notes ? (
-              <p className="text-sm text-gray-600 bg-gray-50 rounded-2xl p-4">{video.notes}</p>
+              <p className="text-sm rounded-2xl p-4 leading-relaxed" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)", color: D.textSecondary }}>{video.notes}</p>
             ) : (
-              <p className="text-sm text-gray-300 italic bg-gray-50 rounded-2xl p-4">Không có ghi chú</p>
+              <p className="text-sm italic rounded-2xl p-4" style={{ background: D.card, color: D.textMuted }}>Không có ghi chú</p>
             )}
           </div>
         </div>
