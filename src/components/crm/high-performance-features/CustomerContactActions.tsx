@@ -10,311 +10,258 @@ interface CustomerContactActionsProps {
   className?: string;
 }
 
+// ── Dark Luxury Palette (đồng bộ Content Marketing AI) ──────────────────────
+const D = {
+  // Dropdown panel
+  panelBg:     "rgba(18,14,0,0.97)",
+  panelBorder: "rgba(255,255,255,0.10)",
+  // Header per type
+  zaloHeader:  "rgba(96,165,250,0.12)",
+  callHeader:  "rgba(74,222,128,0.12)",
+  emailHeader: "rgba(192,132,252,0.12)",
+  // Item hover
+  itemHover:   "rgba(255,255,255,0.05)",
+  // Icon bg per type
+  zaloIconBg:  "rgba(96,165,250,0.15)",
+  callIconBg:  "rgba(74,222,128,0.15)",
+  emailIconBg: "rgba(192,132,252,0.15)",
+  copyIconBg:  "rgba(245,158,11,0.15)",
+  // Colors
+  zaloColor:   "#60a5fa",
+  callColor:   "#4ade80",
+  emailColor:  "#c084fc",
+  goldColor:   "#f59e0b",
+  textPrimary: "#f5edd6",
+  textMuted:   "#9ca3af",
+  textDim:     "rgba(255,255,255,0.35)",
+  divider:     "rgba(255,255,255,0.07)",
+};
+
 export default function CustomerContactActions({
   lead,
   className = '',
 }: CustomerContactActionsProps) {
   const [activeMenu, setActiveMenu] = useState<'zalo' | 'call' | 'email' | null>(null);
   const [copied, setCopied] = useState(false);
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
 
   const zaloPhone = lead.zaloPhone || lead.phone;
   const normalizedPhone = zaloPhone.replace(/\D/g, '');
   const zaloLink = `https://zalo.me/${normalizedPhone}`;
 
-  // Handle Zalo
-  const handleOpenZalo = () => {
-    window.open(zaloLink, '_blank');
-    setActiveMenu(null);
-  };
+  const handleOpenZalo = () => { window.open(zaloLink, '_blank'); setActiveMenu(null); };
+  const handleCopyZaloPhone = () => { navigator.clipboard.writeText(normalizedPhone); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const handleCall = () => { window.location.href = `tel:${lead.phone}`; setActiveMenu(null); };
+  const handleCopyPhone = () => { navigator.clipboard.writeText(lead.phone); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const handleSendEmail = () => { window.location.href = `mailto:${lead.email}`; setActiveMenu(null); };
+  const handleCopyEmail = () => { navigator.clipboard.writeText(lead.email); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
-  const handleCopyZaloPhone = () => {
-    navigator.clipboard.writeText(normalizedPhone);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  // Nút icon nhỏ — glass morphism style
+  function ActionBtn({
+    type, disabled, onClick, color, icon: Icon, label,
+  }: {
+    type: 'zalo' | 'call' | 'email';
+    disabled: boolean;
+    onClick: () => void;
+    color: string;
+    icon: React.ElementType;
+    label: string;
+  }) {
+    const isActive = activeMenu === type;
+    return (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        title={label}
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 8,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: isActive
+            ? `${color}25`
+            : disabled
+            ? "rgba(255,255,255,0.04)"
+            : "rgba(255,255,255,0.07)",
+          border: `1px solid ${isActive ? `${color}50` : "rgba(255,255,255,0.10)"}`,
+          color: disabled ? "rgba(255,255,255,0.20)" : color,
+          cursor: disabled ? "not-allowed" : "pointer",
+          transition: "all 0.15s ease",
+          flexShrink: 0,
+        }}
+        onMouseEnter={e => {
+          if (!disabled && !isActive) {
+            (e.currentTarget as HTMLElement).style.background = `${color}20`;
+            (e.currentTarget as HTMLElement).style.borderColor = `${color}40`;
+            (e.currentTarget as HTMLElement).style.transform = "scale(1.08)";
+          }
+        }}
+        onMouseLeave={e => {
+          if (!disabled && !isActive) {
+            (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.07)";
+            (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.10)";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+          }
+        }}
+      >
+        <Icon size={13} />
+      </button>
+    );
+  }
 
-  // Handle Call
-  const handleCall = () => {
-    window.location.href = `tel:${lead.phone}`;
-    setActiveMenu(null);
-  };
+  // Dropdown item row
+  function DropdownItem({
+    onClick, iconBg, iconColor, icon: Icon, title, subtitle, arrow = false,
+  }: {
+    onClick: () => void;
+    iconBg: string;
+    iconColor: string;
+    icon: React.ElementType;
+    title: string;
+    subtitle: string;
+    arrow?: boolean;
+  }) {
+    return (
+      <button
+        onClick={onClick}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "9px 12px",
+          borderRadius: 10,
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+          transition: "background 0.12s",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = D.itemHover)}
+        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+      >
+        <div style={{
+          width: 30, height: 30, borderRadius: 8,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: iconBg, flexShrink: 0,
+        }}>
+          <Icon size={14} style={{ color: iconColor }} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: D.textPrimary, margin: 0 }}>{title}</p>
+          <p style={{ fontSize: 11, color: D.textMuted, margin: 0 }}>{subtitle}</p>
+        </div>
+        {arrow && <span style={{ color: D.textDim, fontSize: 14 }}>→</span>}
+      </button>
+    );
+  }
 
-  const handleCopyPhone = () => {
-    navigator.clipboard.writeText(lead.phone);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // Dropdown panel wrapper
+  const dropdownStyle: React.CSSProperties = {
+    position: "absolute",
+    top: "calc(100% + 6px)",
+    right: 0,
+    width: 264,
+    background: D.panelBg,
+    border: `1px solid ${D.panelBorder}`,
+    borderRadius: 14,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)",
+    zIndex: 50,
+    overflow: "hidden",
+    backdropFilter: "blur(20px)",
   };
-
-  // Handle Email
-  const handleSendEmail = () => {
-    window.location.href = `mailto:${lead.email}`;
-    setActiveMenu(null);
-  };
-
-  const handleCopyEmail = () => {
-    navigator.clipboard.writeText(lead.email);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const buttonBaseClass = `
-    inline-flex items-center justify-center w-10 h-10 rounded-lg font-medium
-    transition-all duration-300 border-2 relative
-    hover:shadow-lg hover:scale-110
-  `;
 
   return (
-    <div className={`flex items-center gap-1.5 ${className}`}>
-      {/* Zalo Button */}
-      <div className="relative group">
-        <button
+    <div className={`flex items-center gap-1 ${className}`} style={{ position: "relative" }}>
+
+      {/* ── Zalo Button ── */}
+      <div style={{ position: "relative" }}>
+        <ActionBtn
+          type="zalo" disabled={!zaloPhone}
           onClick={() => setActiveMenu(activeMenu === 'zalo' ? null : 'zalo')}
-          onMouseEnter={() => setHoveredButton('zalo')}
-          onMouseLeave={() => setHoveredButton(null)}
-          disabled={!zaloPhone}
-          className={`
-            ${buttonBaseClass}
-            ${zaloPhone
-              ? 'bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 border-blue-300 hover:from-blue-200 hover:to-blue-100 hover:border-blue-400 cursor-pointer shadow-sm'
-              : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-50'
-            }
-          `}
-        >
-          <MessageCircle className="w-5 h-5" />
-          {hoveredButton === 'zalo' && zaloPhone && (
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-              Kết bạn Zalo
-            </div>
-          )}
-        </button>
-
-        {/* Zalo Dropdown */}
+          color={D.zaloColor} icon={MessageCircle} label="Kết bạn Zalo"
+        />
         {activeMenu === 'zalo' && zaloPhone && (
-          <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-            <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-100 flex items-start justify-between">
-              <div>
-                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">💬 Kết Bạn Zalo</p>
-                <p className="text-sm font-bold text-gray-900 mt-2">{lead.name}</p>
-                <p className="text-sm font-mono text-blue-600 mt-1 font-semibold">{normalizedPhone}</p>
+          <div style={dropdownStyle}>
+            {/* Header */}
+            <div style={{ padding: "12px 14px 10px", borderBottom: `1px solid ${D.divider}`, background: D.zaloHeader }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: D.zaloColor, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>💬 Kết Bạn Zalo</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary, marginTop: 6, marginBottom: 2 }}>{lead.name}</p>
+                  <p style={{ fontSize: 12, fontFamily: "monospace", color: D.zaloColor, fontWeight: 600, margin: 0 }}>{normalizedPhone}</p>
+                </div>
+                <button onClick={() => setActiveMenu(null)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 6, padding: 4, cursor: "pointer", color: D.textMuted, lineHeight: 0 }}>
+                  <X size={13} />
+                </button>
               </div>
-              <button
-                onClick={() => setActiveMenu(null)}
-                className="p-1 hover:bg-white rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
             </div>
-
-            <div className="p-2 space-y-1">
-              <button
-                onClick={handleOpenZalo}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 text-left group/item"
-              >
-                <div className="p-2 bg-blue-100 rounded-lg group-hover/item:bg-blue-200 transition-colors">
-                  <ExternalLink className="w-4 h-4 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">Mở Zalo</p>
-                  <p className="text-xs text-gray-500">Kết bạn trực tiếp</p>
-                </div>
-                <span className="text-lg">→</span>
-              </button>
-
-              <button
-                onClick={handleCopyZaloPhone}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-green-50 transition-all duration-200 text-left group/item"
-              >
-                <div className="p-2 bg-green-100 rounded-lg group-hover/item:bg-green-200 transition-colors">
-                  {copied ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <Copy className="w-4 h-4 text-green-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {copied ? '\u2713 Đã sao chép' : 'Sao chép số'}
-                  </p>
-                  <p className="text-xs text-gray-500">Dán vào Zalo</p>
-                </div>
-              </button>
-
-              {/* Kết bạn Zalo Personal */}
-              <div className="px-2 pt-1 pb-1">
-                <div className="border-t border-gray-100 mb-1" />
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 mb-1">Zalo Personal</p>
-              </div>
-              <button
-                onClick={() => { setActiveMenu(null); setShowAddFriendModal(true); }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 text-left group/item"
-              >
-                <div className="p-2 bg-blue-100 rounded-lg group-hover/item:bg-blue-200 transition-colors">
-                  <UserPlus className="w-4 h-4 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">Gửi lời mời kết bạn</p>
-                  <p className="text-xs text-gray-500">Tự động qua Zalo cá nhân</p>
-                </div>
-                <span className="text-lg">→</span>
-              </button>
+            <div style={{ padding: "6px 6px" }}>
+              <DropdownItem onClick={handleOpenZalo} iconBg={D.zaloIconBg} iconColor={D.zaloColor} icon={ExternalLink} title="Mở Zalo" subtitle="Kết bạn trực tiếp" arrow />
+              <DropdownItem onClick={handleCopyZaloPhone} iconBg={copied ? "rgba(74,222,128,0.15)" : D.copyIconBg} iconColor={copied ? D.callColor : D.goldColor} icon={copied ? CheckCircle2 : Copy} title={copied ? "✓ Đã sao chép" : "Sao chép số"} subtitle="Dán vào Zalo" />
+              <div style={{ height: 1, background: D.divider, margin: "4px 6px" }} />
+              <p style={{ fontSize: 10, fontWeight: 700, color: D.textDim, textTransform: "uppercase", letterSpacing: "0.08em", padding: "2px 6px 4px" }}>Zalo Personal</p>
+              <DropdownItem onClick={() => { setActiveMenu(null); setShowAddFriendModal(true); }} iconBg={D.zaloIconBg} iconColor={D.zaloColor} icon={UserPlus} title="Gửi lời mời kết bạn" subtitle="Tự động qua Zalo cá nhân" arrow />
             </div>
           </div>
         )}
       </div>
 
-      {/* Call Button */}
-      <div className="relative group">
-        <button
+      {/* ── Call Button ── */}
+      <div style={{ position: "relative" }}>
+        <ActionBtn
+          type="call" disabled={!lead.phone}
           onClick={() => setActiveMenu(activeMenu === 'call' ? null : 'call')}
-          onMouseEnter={() => setHoveredButton('call')}
-          onMouseLeave={() => setHoveredButton(null)}
-          disabled={!lead.phone}
-          className={`
-            ${buttonBaseClass}
-            ${lead.phone
-              ? 'bg-gradient-to-br from-green-100 to-green-50 text-green-600 border-green-300 hover:from-green-200 hover:to-green-100 hover:border-green-400 cursor-pointer shadow-sm'
-              : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-50'
-            }
-          `}
-        >
-          <Phone className="w-5 h-5" />
-          {hoveredButton === 'call' && lead.phone && (
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-              Gọi điện
-            </div>
-          )}
-        </button>
-
-        {/* Call Dropdown */}
+          color={D.callColor} icon={Phone} label="Gọi điện"
+        />
         {activeMenu === 'call' && lead.phone && (
-          <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-            <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-green-50 to-green-100 flex items-start justify-between">
-              <div>
-                <p className="text-xs font-bold text-green-600 uppercase tracking-wider">☎️ Gọi Điện</p>
-                <p className="text-sm font-bold text-gray-900 mt-2">{lead.name}</p>
-                <p className="text-sm font-mono text-green-600 mt-1 font-semibold">{lead.phone}</p>
+          <div style={dropdownStyle}>
+            <div style={{ padding: "12px 14px 10px", borderBottom: `1px solid ${D.divider}`, background: D.callHeader }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: D.callColor, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>☎️ Gọi Điện</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary, marginTop: 6, marginBottom: 2 }}>{lead.name}</p>
+                  <p style={{ fontSize: 12, fontFamily: "monospace", color: D.callColor, fontWeight: 600, margin: 0 }}>{lead.phone}</p>
+                </div>
+                <button onClick={() => setActiveMenu(null)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 6, padding: 4, cursor: "pointer", color: D.textMuted, lineHeight: 0 }}>
+                  <X size={13} />
+                </button>
               </div>
-              <button
-                onClick={() => setActiveMenu(null)}
-                className="p-1 hover:bg-white rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
             </div>
-
-            <div className="p-2 space-y-1">
-              <button
-                onClick={handleCall}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-green-50 transition-all duration-200 text-left group/item"
-              >
-                <div className="p-2 bg-green-100 rounded-lg group-hover/item:bg-green-200 transition-colors">
-                  <Phone className="w-4 h-4 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">Gọi ngay</p>
-                  <p className="text-xs text-gray-500">Khởi động ứng dụng gọi</p>
-                </div>
-                <span className="text-lg">→</span>
-              </button>
-
-              <button
-                onClick={handleCopyPhone}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 text-left group/item"
-              >
-                <div className="p-2 bg-blue-100 rounded-lg group-hover/item:bg-blue-200 transition-colors">
-                  {copied ? (
-                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                  ) : (
-                    <Copy className="w-4 h-4 text-blue-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {copied ? '✓ Đã sao chép' : 'Sao chép số'}
-                  </p>
-                  <p className="text-xs text-gray-500">Dán vào điện thoại</p>
-                </div>
-              </button>
+            <div style={{ padding: "6px 6px" }}>
+              <DropdownItem onClick={handleCall} iconBg={D.callIconBg} iconColor={D.callColor} icon={Phone} title="Gọi ngay" subtitle="Khởi động ứng dụng gọi" arrow />
+              <DropdownItem onClick={handleCopyPhone} iconBg={copied ? "rgba(74,222,128,0.15)" : D.copyIconBg} iconColor={copied ? D.callColor : D.goldColor} icon={copied ? CheckCircle2 : Copy} title={copied ? "✓ Đã sao chép" : "Sao chép số"} subtitle="Dán vào điện thoại" />
             </div>
           </div>
         )}
       </div>
 
-      {/* Email Button */}
-      <div className="relative group">
-        <button
+      {/* ── Email Button ── */}
+      <div style={{ position: "relative" }}>
+        <ActionBtn
+          type="email" disabled={!lead.email}
           onClick={() => setActiveMenu(activeMenu === 'email' ? null : 'email')}
-          onMouseEnter={() => setHoveredButton('email')}
-          onMouseLeave={() => setHoveredButton(null)}
-          disabled={!lead.email}
-          className={`
-            ${buttonBaseClass}
-            ${lead.email
-              ? 'bg-gradient-to-br from-purple-100 to-purple-50 text-purple-600 border-purple-300 hover:from-purple-200 hover:to-purple-100 hover:border-purple-400 cursor-pointer shadow-sm'
-              : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-50'
-            }
-          `}
-        >
-          <Mail className="w-5 h-5" />
-          {hoveredButton === 'email' && lead.email && (
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-              Gửi email
-            </div>
-          )}
-        </button>
-
-        {/* Email Dropdown */}
+          color={D.emailColor} icon={Mail} label="Gửi Email"
+        />
         {activeMenu === 'email' && lead.email && (
-          <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-            <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-purple-100 flex items-start justify-between">
-              <div>
-                <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">✉️ Gửi Email</p>
-                <p className="text-sm font-bold text-gray-900 mt-2">{lead.name}</p>
-                <p className="text-sm font-mono text-purple-600 mt-1 font-semibold break-all">{lead.email}</p>
+          <div style={dropdownStyle}>
+            <div style={{ padding: "12px 14px 10px", borderBottom: `1px solid ${D.divider}`, background: D.emailHeader }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: D.emailColor, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>✉️ Gửi Email</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary, marginTop: 6, marginBottom: 2 }}>{lead.name}</p>
+                  <p style={{ fontSize: 12, fontFamily: "monospace", color: D.emailColor, fontWeight: 600, margin: 0, wordBreak: "break-all" }}>{lead.email}</p>
+                </div>
+                <button onClick={() => setActiveMenu(null)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 6, padding: 4, cursor: "pointer", color: D.textMuted, lineHeight: 0 }}>
+                  <X size={13} />
+                </button>
               </div>
-              <button
-                onClick={() => setActiveMenu(null)}
-                className="p-1 hover:bg-white rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
             </div>
-
-            <div className="p-2 space-y-1">
-              <button
-                onClick={handleSendEmail}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-purple-50 transition-all duration-200 text-left group/item"
-              >
-                <div className="p-2 bg-purple-100 rounded-lg group-hover/item:bg-purple-200 transition-colors">
-                  <Mail className="w-4 h-4 text-purple-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">Soạn email</p>
-                  <p className="text-xs text-gray-500">Mở ứng dụng email</p>
-                </div>
-                <span className="text-lg">→</span>
-              </button>
-
-              <button
-                onClick={handleCopyEmail}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 text-left group/item"
-              >
-                <div className="p-2 bg-blue-100 rounded-lg group-hover/item:bg-blue-200 transition-colors">
-                  {copied ? (
-                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                  ) : (
-                    <Copy className="w-4 h-4 text-blue-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {copied ? '✓ Đã sao chép' : 'Sao chép email'}
-                  </p>
-                  <p className="text-xs text-gray-500">Dán vào email</p>
-                </div>
-              </button>
+            <div style={{ padding: "6px 6px" }}>
+              <DropdownItem onClick={handleSendEmail} iconBg={D.emailIconBg} iconColor={D.emailColor} icon={Mail} title="Soạn email" subtitle="Mở ứng dụng email" arrow />
+              <DropdownItem onClick={handleCopyEmail} iconBg={copied ? "rgba(74,222,128,0.15)" : D.copyIconBg} iconColor={copied ? D.callColor : D.goldColor} icon={copied ? CheckCircle2 : Copy} title={copied ? "✓ Đã sao chép" : "Sao chép email"} subtitle="Dán vào email" />
             </div>
           </div>
         )}
@@ -322,10 +269,7 @@ export default function CustomerContactActions({
 
       {/* Backdrop */}
       {activeMenu && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setActiveMenu(null)}
-        />
+        <div className="fixed inset-0 z-40" onClick={() => setActiveMenu(null)} />
       )}
 
       {/* Zalo Personal Add Friend Modal */}
