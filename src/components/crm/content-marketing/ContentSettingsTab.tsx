@@ -11,6 +11,7 @@ interface ContentSettings {
   id: string;
   aiProvider: "gemini" | "openai" | "claude";
   aiModel: string;
+  aiFallbackModels: string[]; // ordered list of fallback models
   aiTemperature: number;
   aiMaxTokens: number;
   promptTemplate: string;
@@ -350,6 +351,91 @@ export default function ContentSettingsTab() {
               );
             })}
           </div>
+        </div>
+
+        {/* Fallback Model Chain */}
+        <div>
+          <Label hint="Khi model ưu tiên bị giới hạn rate limit, hệ thống tự động thử lần lượt các model dưới đây">
+            ✨ Tự động chuyển model khi hết giới hạn
+          </Label>
+          {/* Fallback chain visual */}
+          <div className="rounded-xl p-3 mb-3" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "#f59e0b" }}>1</div>
+              <span className="text-xs font-semibold" style={{ color: "#f5edd6" }}>
+                {AI_MODELS[settings.aiProvider]?.models.find(m => m.value === settings.aiModel)?.label || settings.aiModel}
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold ml-auto" style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>
+                ưu tiên
+              </span>
+            </div>
+            {(settings.aiFallbackModels || []).map((fm, idx) => {
+              const modelInfo = AI_MODELS[settings.aiProvider]?.models.find(m => m.value === fm);
+              return (
+                <div key={fm} className="flex items-center gap-2 mt-2">
+                  <div className="w-3 h-3 rounded-full ml-1" style={{ background: "rgba(255,255,255,0.15)" }} />
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}>{idx + 2}</div>
+                  <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    {modelInfo?.label || fm}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const updated = (settings.aiFallbackModels || []).filter(m => m !== fm);
+                      update("aiFallbackModels", updated);
+                    }}
+                    className="ml-auto text-[10px] px-2 py-0.5 rounded-full transition-all"
+                    style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.2)" }}
+                  >
+                    Xóa
+                  </button>
+                </div>
+              );
+            })}
+            {(settings.aiFallbackModels || []).length === 0 && (
+              <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.3)" }}>Chưa có model dự phòng. Thêm model bên dưới.</p>
+            )}
+          </div>
+          {/* Add fallback model */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <select
+                className="w-full text-sm rounded-xl px-3 py-2.5 focus:outline-none appearance-none pr-8"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
+                defaultValue=""
+                onChange={e => {
+                  const val = e.target.value;
+                  if (!val) return;
+                  const current = settings.aiFallbackModels || [];
+                  if (!current.includes(val) && val !== settings.aiModel) {
+                    update("aiFallbackModels", [...current, val]);
+                  }
+                  e.target.value = "";
+                }}
+              >
+                <option value="" style={{ background: "#1a1200" }}>+ Thêm model dự phòng...</option>
+                {(AI_MODELS[settings.aiProvider]?.models || []).filter(m =>
+                  m.value !== settings.aiModel &&
+                  !(settings.aiFallbackModels || []).includes(m.value)
+                ).map(m => (
+                  <option key={m.value} value={m.value} style={{ background: "#1a1200" }}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "rgba(255,255,255,0.4)" }} />
+            </div>
+            <button
+              onClick={() => update("aiFallbackModels", [])}
+              className="px-3 py-2 rounded-xl text-xs transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}
+              title="Xóa tất cả fallback"
+            >
+              Reset
+            </button>
+          </div>
+          <p className="text-[11px] mt-2" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Hệ thống sẽ thử lần lượt từng model theo thứ tự khi gặp lỗi giới hạn (429/RESOURCE_EXHAUSTED).
+          </p>
         </div>
 
         {/* Temperature & Max Tokens */}

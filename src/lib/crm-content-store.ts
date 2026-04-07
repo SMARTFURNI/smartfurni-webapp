@@ -418,6 +418,7 @@ export interface ContentSettings {
   // AI Model
   aiProvider: "gemini" | "openai" | "claude";
   aiModel: string;
+  aiFallbackModels: string[]; // ordered fallback models when primary is rate-limited
   aiTemperature: number;
   aiMaxTokens: number;
   // Prompt template
@@ -476,6 +477,14 @@ function mapSettingsRow(row: any): ContentSettings {
     id: row.id || "default",
     aiProvider: row.ai_provider || "gemini",
     aiModel: row.ai_model || "gemini-2.5-flash-preview-04-17",
+    aiFallbackModels: (() => {
+      try {
+        if (!row.ai_fallback_models) return ["gemini-2.5-flash-lite-preview-06-17", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+        return typeof row.ai_fallback_models === "string"
+          ? JSON.parse(row.ai_fallback_models)
+          : row.ai_fallback_models;
+      } catch { return ["gemini-2.5-flash-lite-preview-06-17", "gemini-2.0-flash", "gemini-2.0-flash-lite"]; }
+    })(),
     aiTemperature: Number(row.ai_temperature) || 0.7,
     aiMaxTokens: Number(row.ai_max_tokens) || 8192,
     promptTemplate: row.prompt_template || DEFAULT_PROMPT_TEMPLATE,
@@ -506,6 +515,7 @@ export async function loadContentSettings(): Promise<ContentSettings> {
       id TEXT PRIMARY KEY DEFAULT 'default',
       ai_provider VARCHAR(50) DEFAULT 'gemini',
       ai_model VARCHAR(100) DEFAULT 'gemini-2.5-flash-preview-04-17',
+      ai_fallback_models TEXT DEFAULT '["gemini-2.5-flash-lite-preview-06-17","gemini-2.0-flash","gemini-2.0-flash-lite"]',
       ai_temperature DECIMAL(3,2) DEFAULT 0.7,
       ai_max_tokens INT DEFAULT 8192,
       prompt_template TEXT,
@@ -525,6 +535,12 @@ export async function loadContentSettings(): Promise<ContentSettings> {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  // Migration: add ai_fallback_models column if not exists (for existing deployments)
+  await query(`
+    ALTER TABLE content_settings
+    ADD COLUMN IF NOT EXISTS ai_fallback_models TEXT DEFAULT '["gemini-2.5-flash-lite-preview-06-17","gemini-2.0-flash","gemini-2.0-flash-lite"]'
+  `).catch(() => { /* ignore if column already exists */ });
+
   // Insert default row if not exists
   await query(
     `INSERT INTO content_settings (id, prompt_template, prompt_system_context)
@@ -544,6 +560,7 @@ export async function updateContentSettings(
   const fieldMap: Record<string, string> = {
     aiProvider: "ai_provider",
     aiModel: "ai_model",
+    aiFallbackModels: "ai_fallback_models",
     aiTemperature: "ai_temperature",
     aiMaxTokens: "ai_max_tokens",
     promptTemplate: "prompt_template",
@@ -567,7 +584,9 @@ export async function updateContentSettings(
   for (const [key, dbCol] of Object.entries(fieldMap)) {
     if (key in updates) {
       fields.push(`${dbCol} = $${idx}`);
-      values.push((updates as Record<string, unknown>)[key]);
+      const rawVal = (updates as Record<string, unknown>)[key];
+      // Serialize arrays to JSON string for TEXT columns
+      values.push(Array.isArray(rawVal) ? JSON.stringify(rawVal) : rawVal);
       idx++;
     }
   }

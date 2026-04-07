@@ -99,6 +99,23 @@ function buildPromptFromTemplate(
   return prompt;
 }
 
+/** Check if an error is a rate-limit / quota error that warrants trying the next model */
+function isRateLimitError(msg: string): boolean {
+  return (
+    msg.includes("quota") ||
+    msg.includes("RESOURCE_EXHAUSTED") ||
+    msg.includes("429") ||
+    msg.includes("rate limit") ||
+    msg.includes("rateLimitExceeded") ||
+    msg.includes("Too Many Requests")
+  );
+}
+
+/** Check if an error means the model name is invalid (try next in chain) */
+function isModelNotFoundError(msg: string): boolean {
+  return msg.includes("not found") || msg.includes("404") || msg.includes("MODEL_NOT_FOUND");
+}
+
 // POST /api/crm/content/generate-script
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -138,9 +155,16 @@ export async function POST(req: NextRequest) {
   const settings = getContentSettings();
   const promptTemplate = settings?.promptTemplate || DEFAULT_PROMPT_TEMPLATE;
   const systemContext = settings?.promptSystemContext || DEFAULT_SYSTEM_CONTEXT;
-  const modelName = settings?.aiModel || process.env.GEMINI_MODEL || "gemini-2.5-flash-preview-04-17";
+  const primaryModel = settings?.aiModel || process.env.GEMINI_MODEL || "gemini-2.5-flash-preview-04-17";
   const temperature = settings?.aiTemperature ?? 0.7;
   const brandName = settings?.brandName || "SmartFurni";
+
+  // Build fallback model chain: primary model + fallback list (deduplicated, preserving order)
+  const rawFallback = settings?.aiFallbackModels;
+  const fallbackList: string[] = rawFallback
+    ? (typeof rawFallback === "string" ? JSON.parse(rawFallback) : rawFallback)
+    : ["gemini-2.5-flash-lite-preview-06-17", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+  const modelChain = [primaryModel, ...fallbackList.filter(m => m !== primaryModel)];
 
   const prompt = buildPromptFromTemplate(promptTemplate, systemContext, {
     platform: platform as ContentPlatform,
@@ -154,69 +178,95 @@ export async function POST(req: NextRequest) {
   });
 
   const startTime = Date.now();
+  const genAI = new GoogleGenerativeAI(apiKey);
+  let lastError = "";
+  let lastErrMsg = "";
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      generationConfig: {
-        temperature,
-        maxOutputTokens: settings?.aiMaxTokens || 8192,
-      },
-    });
-
-    const result = await model.generateContent(prompt);
-    const generatedScript = result.response.text();
-    const generationTimeMs = Date.now() - startTime;
-
-    // Save to DB (non-blocking)
-    let generationId = "";
+  // ── Try each model in chain until one succeeds ──────────────────────────────
+  for (let i = 0; i < modelChain.length; i++) {
+    const modelName = modelChain[i];
     try {
-      const generation = await saveAIGeneration({
-        platform: platform as ContentPlatform,
-        topic,
-        productName,
-        targetAudience,
-        tone,
-        durationSeconds,
-        additionalNotes,
-        promptUsed: prompt,
-        generatedScript,
-        modelUsed: modelName,
-        generationTimeMs,
-        createdBy: session.id,
+      console.log(`[generate-script] Trying model [${i + 1}/${modelChain.length}]: ${modelName}`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature,
+          maxOutputTokens: settings?.aiMaxTokens || 8192,
+        },
       });
-      generationId = generation.id;
-    } catch (dbErr) {
-      console.error("[generate-script] DB save error (non-fatal):", (dbErr as Error).message);
-    }
 
-    return NextResponse.json({
-      success: true,
-      generationId,
-      script: generatedScript,
-      generationTimeMs,
-      platform,
-      topic,
-      modelUsed: modelName,
-    });
-  } catch (err) {
-    const errMsg = (err as Error).message || "Unknown error";
-    console.error("[generate-script] AI error:", errMsg);
-    // Provide user-friendly error messages
-    let userError = "Lỗi khi tạo kịch bản AI";
-    if (errMsg.includes("API_KEY") || errMsg.includes("API key") || errMsg.includes("INVALID_ARGUMENT")) {
-      userError = "GEMINI_API_KEY không hợp lệ hoặc chưa được cấu hình";
-    } else if (errMsg.includes("quota") || errMsg.includes("RESOURCE_EXHAUSTED")) {
-      userError = "Quá giới hạn API, vui lòng thử lại sau";
-    } else if (errMsg.includes("not found") || errMsg.includes("404")) {
-      userError = `Model "${modelName}" không tồn tại, vui lòng kiểm tra cài đặt`;
-    } else if (errMsg.includes("network") || errMsg.includes("fetch")) {
-      userError = "Lỗi kết nối mạng, vui lòng thử lại";
+      const result = await model.generateContent(prompt);
+      const generatedScript = result.response.text();
+      const generationTimeMs = Date.now() - startTime;
+
+      // Save to DB (non-blocking)
+      let generationId = "";
+      try {
+        const generation = await saveAIGeneration({
+          platform: platform as ContentPlatform,
+          topic,
+          productName,
+          targetAudience,
+          tone,
+          durationSeconds,
+          additionalNotes,
+          promptUsed: prompt,
+          generatedScript,
+          modelUsed: modelName,
+          generationTimeMs,
+          createdBy: session.id,
+        });
+        generationId = generation.id;
+      } catch (dbErr) {
+        console.error("[generate-script] DB save error (non-fatal):", (dbErr as Error).message);
+      }
+
+      const isFallback = modelName !== primaryModel;
+      return NextResponse.json({
+        success: true,
+        generationId,
+        script: generatedScript,
+        generationTimeMs,
+        platform,
+        topic,
+        modelUsed: modelName,
+        // Notify frontend when a fallback model was used
+        ...(isFallback && {
+          fallbackUsed: true,
+          fallbackFrom: primaryModel,
+          fallbackReason: `Model ưu tiên đã đạt giới hạn, tự động chuyển sang ${modelName}`,
+        }),
+      });
+    } catch (err) {
+      const errMsg = (err as Error).message || "Unknown error";
+      lastError = modelName;
+      lastErrMsg = errMsg;
+      console.warn(`[generate-script] Model ${modelName} failed (${i + 1}/${modelChain.length}): ${errMsg.slice(0, 120)}`);
+
+      // Only continue fallback chain for rate-limit or model-not-found errors
+      if (!isRateLimitError(errMsg) && !isModelNotFoundError(errMsg)) {
+        // Fatal error (bad API key, network, etc.) — stop immediately
+        break;
+      }
+      // Continue to next model in chain
     }
-    return NextResponse.json(
-      { error: userError, details: errMsg },
-      { status: 500 }
-    );
   }
+
+  // ── All models exhausted — return final error ───────────────────────────────
+  console.error("[generate-script] All models failed. Last error:", lastErrMsg);
+  let userError = "Lỗi khi tạo kịch bản AI";
+  if (lastErrMsg.includes("API_KEY") || lastErrMsg.includes("API key") || lastErrMsg.includes("INVALID_ARGUMENT")) {
+    userError = "GEMINI_API_KEY không hợp lệ hoặc chưa được cấu hình";
+  } else if (isRateLimitError(lastErrMsg)) {
+    userError = `Tất cả ${modelChain.length} model đã đạt giới hạn ngày. Vui lòng thử lại vào ngày mai hoặc nâng cấp gói Gemini API.`;
+  } else if (isModelNotFoundError(lastErrMsg)) {
+    userError = `Model "${lastError}" không tồn tại, vui lòng kiểm tra cài đặt`;
+  } else if (lastErrMsg.includes("network") || lastErrMsg.includes("fetch")) {
+    userError = "Lỗi kết nối mạng, vui lòng thử lại";
+  }
+
+  return NextResponse.json(
+    { error: userError, details: lastErrMsg },
+    { status: 500 }
+  );
 }
