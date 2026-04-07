@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Users, Plus, Edit2, Trash2, Shield, Eye, EyeOff,
   CheckCircle, XCircle, Crown, Star, UserCheck, User, GraduationCap,
@@ -9,11 +9,23 @@ import {
 import type { StaffMember, StaffRole, StaffPermissions } from "@/lib/crm-staff-store";
 import { ROLE_LABELS, ROLE_COLORS, DEFAULT_PERMISSIONS } from "@/lib/crm-staff-store";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface RoleOption {
+  id: string;
+  name: string;
+  color: string;
+  icon: string;
+  isSystem: boolean;
+}
+
 interface Props {
   initialStaff: StaffMember[];
 }
 
-const ROLE_ICONS: Record<StaffRole, React.ElementType> = {
+// ─── Hardcoded fallback icons for system roles ────────────────────────────────
+
+const SYSTEM_ROLE_ICONS: Record<string, React.ElementType> = {
   super_admin: Crown,
   manager: Star,
   senior_sales: UserCheck,
@@ -68,12 +80,87 @@ const VIETNAM_PROVINCES = [
   "Vĩnh Long", "Vĩnh Phúc", "Yên Bái",
 ];
 
+// ─── Hook: load roles from API ────────────────────────────────────────────────
+
+function useRoles() {
+  const [roles, setRoles] = useState<RoleOption[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/crm/roles")
+      .then(r => r.json())
+      .then((data: RoleOption[]) => {
+        setRoles(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        // Fallback to hardcoded roles if API fails
+        setRoles(
+          (Object.keys(ROLE_LABELS) as StaffRole[]).map(r => ({
+            id: r,
+            name: ROLE_LABELS[r],
+            color: ROLE_COLORS[r],
+            icon: "👤",
+            isSystem: true,
+          }))
+        );
+        setLoading(false);
+      });
+  }, []);
+
+  return { roles, loading };
+}
+
+// ─── Helper: get role display info ───────────────────────────────────────────
+
+function getRoleInfo(roleId: string, roles: RoleOption[]) {
+  const found = roles.find(r => r.id === roleId);
+  if (found) return found;
+  // Fallback for hardcoded roles
+  const label = ROLE_LABELS[roleId as StaffRole] ?? roleId;
+  const color = ROLE_COLORS[roleId as StaffRole] ?? "#6b7280";
+  return { id: roleId, name: label, color, icon: "👤", isSystem: true };
+}
+
+// ─── Role Dropdown Component ──────────────────────────────────────────────────
+
+function RoleSelect({
+  value,
+  onChange,
+  roles,
+  excludeSuperAdmin = true,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  roles: RoleOption[];
+  excludeSuperAdmin?: boolean;
+}) {
+  const filtered = excludeSuperAdmin ? roles.filter(r => r.id !== "super_admin") : roles;
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="w-full px-3 py-2 text-sm rounded-lg text-gray-900"
+      style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}
+    >
+      {filtered.map(r => (
+        <option key={r.id} value={r.id}>
+          {r.icon} {r.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function StaffManagementClient({ initialStaff }: Props) {
   const [staff, setStaff] = useState(initialStaff);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [permissionStaff, setPermissionStaff] = useState<StaffMember | null>(null);
   const [loading, setLoading] = useState(false);
+  const { roles } = useRoles();
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Xóa nhân viên "${name}"?`)) return;
@@ -125,18 +212,18 @@ export default function StaffManagementClient({ initialStaff }: Props) {
         </button>
       </div>
 
-      {/* Role Summary */}
-      <div className="px-8 py-4 grid grid-cols-5 gap-3">
-        {(Object.keys(ROLE_LABELS) as StaffRole[]).map(role => {
-          const count = staff.filter(s => s.role === role).length;
-          const Icon = ROLE_ICONS[role];
+      {/* Role Summary — dynamic from roles list */}
+      <div className="px-8 py-4 flex flex-wrap gap-3">
+        {roles.filter(r => r.id !== "super_admin").map(role => {
+          const count = staff.filter(s => s.role === role.id).length;
+          const Icon = SYSTEM_ROLE_ICONS[role.id] ?? Shield;
           return (
-            <div key={role} className="rounded-xl p-3 text-center"
+            <div key={role.id} className="rounded-xl p-3 text-center min-w-[80px]"
               style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
-              <Icon size={18} className="mx-auto mb-1.5" style={{ color: ROLE_COLORS[role] }} />
+              <div className="text-lg mb-1">{role.icon}</div>
               <div className="text-lg font-black text-gray-900">{count}</div>
               <div className="text-[10px] font-medium" style={{ color: "#6b7280" }}>
-                {ROLE_LABELS[role]}
+                {role.name}
               </div>
             </div>
           );
@@ -149,7 +236,7 @@ export default function StaffManagementClient({ initialStaff }: Props) {
           <table className="w-full">
             <thead>
               <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-                {["Nhân viên", "Cấp bậc", "Liên hệ", "Khu vực", "Trạng thái", "Đăng nhập lần cuối", "Thao tác"].map(h => (
+                {["Nhân viên", "Vai trò", "Liên hệ", "Khu vực", "Trạng thái", "Đăng nhập lần cuối", "Thao tác"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider"
                     style={{ color: "#9ca3af" }}>{h}</th>
                 ))}
@@ -157,7 +244,8 @@ export default function StaffManagementClient({ initialStaff }: Props) {
             </thead>
             <tbody className="divide-y" style={{ borderColor: "#e5e7eb" }}>
               {staff.map(member => {
-                const Icon = ROLE_ICONS[member.role];
+                const roleInfo = getRoleInfo(member.role, roles);
+                const Icon = SYSTEM_ROLE_ICONS[member.role] ?? Shield;
                 const isActive = member.status === "active";
                 return (
                   <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
@@ -165,7 +253,7 @@ export default function StaffManagementClient({ initialStaff }: Props) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0"
-                          style={{ background: `${ROLE_COLORS[member.role]}20`, color: ROLE_COLORS[member.role] }}>
+                          style={{ background: `${roleInfo.color}20`, color: roleInfo.color }}>
                           {member.fullName.charAt(0)}
                         </div>
                         <div>
@@ -177,10 +265,10 @@ export default function StaffManagementClient({ initialStaff }: Props) {
                     {/* Role */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg w-fit"
-                        style={{ background: `${ROLE_COLORS[member.role]}15`, border: `1px solid ${ROLE_COLORS[member.role]}30` }}>
-                        <Icon size={12} style={{ color: ROLE_COLORS[member.role] }} />
-                        <span className="text-xs font-semibold" style={{ color: ROLE_COLORS[member.role] }}>
-                          {ROLE_LABELS[member.role]}
+                        style={{ background: `${roleInfo.color}15`, border: `1px solid ${roleInfo.color}30` }}>
+                        <span className="text-sm">{roleInfo.icon}</span>
+                        <span className="text-xs font-semibold" style={{ color: roleInfo.color }}>
+                          {roleInfo.name}
                         </span>
                       </div>
                     </td>
@@ -222,20 +310,23 @@ export default function StaffManagementClient({ initialStaff }: Props) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <button onClick={() => setPermissionStaff(member)}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-amber-500/20"
-                          style={{ color: "#C9A84C" }} title="Phân quyền">
-                          <Shield size={14} />
+                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-purple-50"
+                          style={{ border: "1px solid #e5e7eb" }}
+                          title="Phân quyền">
+                          <Shield size={13} style={{ color: "#8b5cf6" }} />
                         </button>
                         <button onClick={() => setEditingStaff(member)}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-blue-500/20"
-                          style={{ color: "#60a5fa" }} title="Chỉnh sửa">
-                          <Edit2 size={14} />
+                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-blue-50"
+                          style={{ border: "1px solid #e5e7eb" }}
+                          title="Chỉnh sửa">
+                          <Edit2 size={13} style={{ color: "#3b82f6" }} />
                         </button>
                         {member.role !== "super_admin" && (
                           <button onClick={() => handleDelete(member.id, member.fullName)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/20"
-                            style={{ color: "#f87171" }} title="Xóa">
-                            <Trash2 size={14} />
+                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-red-50"
+                            style={{ border: "1px solid #e5e7eb" }}
+                            title="Xóa">
+                            <Trash2 size={13} style={{ color: "#ef4444" }} />
                           </button>
                         )}
                       </div>
@@ -245,36 +336,31 @@ export default function StaffManagementClient({ initialStaff }: Props) {
               })}
             </tbody>
           </table>
-          {staff.length === 0 && (
-            <div className="text-center py-16 text-gray-900/30">
-              <Users size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Chưa có nhân viên nào</p>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Add Staff Modal */}
       {showAddModal && (
         <AddStaffModal
+          roles={roles}
           onClose={() => setShowAddModal(false)}
           onCreated={(s) => { setStaff(prev => [...prev, s]); setShowAddModal(false); }}
         />
       )}
-
       {/* Edit Staff Modal */}
       {editingStaff && (
         <EditStaffModal
           staff={editingStaff}
+          roles={roles}
           onClose={() => setEditingStaff(null)}
           onSaved={(s) => { setStaff(prev => prev.map(m => m.id === s.id ? s : m)); setEditingStaff(null); }}
         />
       )}
-
       {/* Permission Modal */}
       {permissionStaff && (
         <PermissionModal
           staff={permissionStaff}
+          roles={roles}
           loading={loading}
           onClose={() => setPermissionStaff(null)}
           onSave={(perms) => handleSavePermissions(permissionStaff, perms)}
@@ -285,10 +371,17 @@ export default function StaffManagementClient({ initialStaff }: Props) {
 }
 
 // ── Add Staff Modal ────────────────────────────────────────────────────────────
-function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated: (s: StaffMember) => void }) {
+
+function AddStaffModal({
+  roles, onClose, onCreated,
+}: {
+  roles: RoleOption[];
+  onClose: () => void;
+  onCreated: (s: StaffMember) => void;
+}) {
   const [form, setForm] = useState({
     username: "", password: "", fullName: "", email: "", phone: "",
-    role: "sales" as StaffRole, targetRevenue: "", assignedDistricts: [] as string[],
+    role: "sales", targetRevenue: "", assignedDistricts: [] as string[],
   });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -306,7 +399,10 @@ function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated:
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.username || !form.password || !form.fullName) { setError("Vui lòng điền đầy đủ thông tin bắt buộc"); return; }
+    if (!form.username || !form.password || !form.fullName) {
+      setError("Vui lòng điền đầy đủ thông tin bắt buộc");
+      return;
+    }
     setLoading(true); setError("");
     try {
       const res = await fetch("/api/crm/staff", {
@@ -325,42 +421,31 @@ function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated:
     <ModalWrapper onClose={onClose} title="Thêm nhân viên mới">
       <form onSubmit={handleSubmit} className="p-6 space-y-4">
         {error && <div className="p-3 rounded-lg text-sm text-red-400 bg-red-500/10 border border-red-500/20">{error}</div>}
-
         <div className="grid grid-cols-2 gap-3">
           <Field label="Họ và tên *"><DarkInput value={form.fullName} onChange={v => set("fullName", v)} placeholder="Nguyễn Văn A" /></Field>
-          <Field label="Cấp bậc *">
-            <select value={form.role} onChange={e => set("role", e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg text-gray-900"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
-              {(Object.keys(ROLE_LABELS) as StaffRole[]).filter(r => r !== "super_admin").map(r => (
-                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-              ))}
-            </select>
+          <Field label="Vai trò *">
+            <RoleSelect value={form.role} onChange={v => set("role", v)} roles={roles} />
           </Field>
         </div>
-
         <div className="grid grid-cols-2 gap-3">
           <Field label="Tên đăng nhập *"><DarkInput value={form.username} onChange={v => set("username", v)} placeholder="nguyenvana" /></Field>
           <Field label="Mật khẩu *">
             <div className="relative">
               <DarkInput value={form.password} onChange={v => set("password", v)} placeholder="••••••••" type={showPw ? "text" : "password"} />
-              <button type="button" onClick={() => setShowPw(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-900/30 hover:text-gray-900/60">
+              <button type="button" onClick={() => setShowPw(p => !p)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
           </Field>
         </div>
-
         <div className="grid grid-cols-2 gap-3">
           <Field label="Số điện thoại"><DarkInput value={form.phone} onChange={v => set("phone", v)} placeholder="0901234567" /></Field>
-          <Field label="Email"><DarkInput value={form.email} onChange={v => set("email", v)} placeholder="email@smartfurni.vn" type="email" /></Field>
+          <Field label="Email"><DarkInput value={form.email} onChange={v => set("email", v)} placeholder="email@company.vn" type="email" /></Field>
         </div>
-
-        <Field label="Doanh số mục tiêu / tháng (VND)">
+        <Field label="Doanh số mục tiêu / tháng">
           <DarkInput value={form.targetRevenue} onChange={v => set("targetRevenue", v)} placeholder="500000000" type="number" />
         </Field>
-
         <Field label="Khu vực phụ trách (chọn nhiều)">
           <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 rounded-lg" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
             {VIETNAM_PROVINCES.map(p => (
@@ -376,7 +461,6 @@ function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated:
             ))}
           </div>
         </Field>
-
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose}
             className="flex-1 py-2.5 text-sm font-medium rounded-xl text-gray-900/50 hover:text-gray-900/80 transition-colors"
@@ -394,7 +478,15 @@ function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated:
 }
 
 // ── Edit Staff Modal ───────────────────────────────────────────────────────────
-function EditStaffModal({ staff, onClose, onSaved }: { staff: StaffMember; onClose: () => void; onSaved: (s: StaffMember) => void }) {
+
+function EditStaffModal({
+  staff, roles, onClose, onSaved,
+}: {
+  staff: StaffMember;
+  roles: RoleOption[];
+  onClose: () => void;
+  onSaved: (s: StaffMember) => void;
+}) {
   const [form, setForm] = useState({
     fullName: staff.fullName, email: staff.email, phone: staff.phone,
     role: staff.role, targetRevenue: staff.targetRevenue.toString(),
@@ -435,14 +527,8 @@ function EditStaffModal({ staff, onClose, onSaved }: { staff: StaffMember; onClo
       <form onSubmit={handleSubmit} className="p-6 space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Họ và tên"><DarkInput value={form.fullName} onChange={v => set("fullName", v)} /></Field>
-          <Field label="Cấp bậc">
-            <select value={form.role} onChange={e => set("role", e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg text-gray-900"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
-              {(Object.keys(ROLE_LABELS) as StaffRole[]).filter(r => r !== "super_admin").map(r => (
-                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-              ))}
-            </select>
+          <Field label="Vai trò">
+            <RoleSelect value={form.role} onChange={v => set("role", v)} roles={roles} />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -472,10 +558,10 @@ function EditStaffModal({ staff, onClose, onSaved }: { staff: StaffMember; onClo
         </Field>
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 text-sm font-medium rounded-xl text-gray-900/50 hover:text-gray-900/80"
+            className="flex-1 py-2.5 text-sm font-medium rounded-xl text-gray-900/50 hover:text-gray-900/80 transition-colors"
             style={{ border: "1px solid #d1d5db" }}>Hủy</button>
           <button type="submit" disabled={loading}
-            className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-black flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-black transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
             {loading && <RefreshCw size={14} className="animate-spin" />}
             {loading ? "Đang lưu..." : "Lưu thay đổi"}
@@ -487,9 +573,15 @@ function EditStaffModal({ staff, onClose, onSaved }: { staff: StaffMember; onClo
 }
 
 // ── Permission Modal ───────────────────────────────────────────────────────────
-function PermissionModal({ staff, loading, onClose, onSave }: {
-  staff: StaffMember; loading: boolean;
-  onClose: () => void; onSave: (p: StaffPermissions) => void;
+
+function PermissionModal({
+  staff, roles, loading, onClose, onSave,
+}: {
+  staff: StaffMember;
+  roles: RoleOption[];
+  loading: boolean;
+  onClose: () => void;
+  onSave: (perms: StaffPermissions) => void;
 }) {
   const [perms, setPerms] = useState<StaffPermissions>({ ...staff.permissions });
 
@@ -498,17 +590,23 @@ function PermissionModal({ staff, loading, onClose, onSave }: {
   }
 
   function resetToDefault() {
-    setPerms({ ...DEFAULT_PERMISSIONS[staff.role] });
+    // Try to find matching role in DEFAULT_PERMISSIONS (system roles only)
+    const defaultPerms = DEFAULT_PERMISSIONS[staff.role as StaffRole];
+    if (defaultPerms) {
+      setPerms({ ...defaultPerms });
+    }
   }
+
+  const roleInfo = getRoleInfo(staff.role, roles);
 
   return (
     <ModalWrapper onClose={onClose} title={`Phân quyền: ${staff.fullName}`} wide>
       <div className="p-6 space-y-5">
         <div className="flex items-center justify-between p-3 rounded-xl"
-          style={{ background: `${ROLE_COLORS[staff.role]}10`, border: `1px solid ${ROLE_COLORS[staff.role]}20` }}>
+          style={{ background: `${roleInfo.color}10`, border: `1px solid ${roleInfo.color}20` }}>
           <div className="flex items-center gap-2">
-            <Shield size={15} style={{ color: ROLE_COLORS[staff.role] }} />
-            <span className="text-sm font-semibold text-gray-900">Cấp bậc: {ROLE_LABELS[staff.role]}</span>
+            <span className="text-lg">{roleInfo.icon}</span>
+            <span className="text-sm font-semibold text-gray-900">Vai trò: {roleInfo.name}</span>
           </div>
           <button onClick={resetToDefault}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100"
@@ -555,6 +653,7 @@ function PermissionModal({ staff, loading, onClose, onSave }: {
 }
 
 // ── Shared UI ──────────────────────────────────────────────────────────────────
+
 function ModalWrapper({ onClose, title, children, wide }: {
   onClose: () => void; title: string; children: React.ReactNode; wide?: boolean;
 }) {
