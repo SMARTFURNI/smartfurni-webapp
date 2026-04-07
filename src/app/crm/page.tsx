@@ -1,5 +1,6 @@
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { getStaffById } from "@/lib/crm-staff-store";
+import { getRoleById } from "@/lib/crm-roles-store";
 import { getLeads, getTasks, getQuotes, getCrmStats } from "@/lib/crm-store";
 import { getCrmSettings } from "@/lib/crm-settings-store";
 import { getAllPlans } from "@/lib/twelve-week-plan-store";
@@ -27,6 +28,15 @@ export default async function CrmDashboardPage() {
   const staffUsername = currentStaff?.username ?? "";
   const staffId = currentStaff?.id ?? null;
 
+  // Kiểm tra permission leads_view_all từ DB
+  let canViewAll = session.isAdmin;
+  if (!session.isAdmin && staffRole) {
+    const roleData = await getRoleById(staffRole).catch(() => null);
+    if (roleData?.permissions?.leads_view_all) {
+      canViewAll = true;
+    }
+  }
+
   // Đọc darkMode và gradientPreset preference theo tài khoản
   let initialDarkMode = false;
   let initialGradientPreset = "default";
@@ -51,8 +61,8 @@ export default async function CrmDashboardPage() {
     }
   } catch { /* ignore, default to light */ }
 
-  // Admin thấy tất cả, nhân viên chỉ thấy leads được giao cho mình
-  const staffFilter = (!session.isAdmin && staffName) ? { assignedTo: staffName } : undefined;
+  // canViewAll (admin hoặc leader): xem tất cả; còn lại chỉ xem leads được giao cho mình
+  const staffFilter = (!canViewAll && staffName) ? { assignedTo: staffName } : undefined;
 
   // Pre-load tất cả dữ liệu song song để giảm thời gian chờ
   const [leads, tasks, quotes, stats, crmSettings, allPlans, poolStats] = await Promise.all([

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { getStaffById, getAllStaff } from "@/lib/crm-staff-store";
+import { getRoleById } from "@/lib/crm-roles-store";
 import { getTasks } from "@/lib/crm-store";
 import type { CrmTask } from "@/lib/crm-types";
 import TasksListClient from "@/components/crm/TasksListClient";
@@ -9,13 +10,23 @@ export default async function CrmTasksPage() {
   const session = await requireCrmAccess();
 
   let staffName: string | undefined;
+  let canViewAll = session.isAdmin;
+
   if (!session.isAdmin && session.staffId) {
     const staff = await getStaffById(session.staffId);
     staffName = staff?.fullName;
+
+    // Kiểm tra permission leads_view_all từ DB
+    if (staff?.role) {
+      const roleData = await getRoleById(staff.role);
+      if (roleData?.permissions?.leads_view_all) {
+        canViewAll = true;
+      }
+    }
   }
 
-  // Role-based filter: staff chỉ thấy tasks của mình
-  const staffFilter = (!session.isAdmin && staffName) ? { assignedTo: staffName } : undefined;
+  // canViewAll: xem tất cả; còn lại chỉ xem tasks của mình
+  const staffFilter = (!canViewAll && staffName) ? { assignedTo: staffName } : undefined;
 
   let tasks: CrmTask[] = [];
   try {
@@ -24,9 +35,9 @@ export default async function CrmTasksPage() {
     console.error("[crm/tasks] Failed to load tasks:", err);
   }
 
-  // Admin: lấy danh sách nhân viên để filter/assign
+  // Admin hoặc leader (canViewAll): lấy danh sách nhân viên để filter/assign
   let staffList: { id: string; fullName: string }[] = [];
-  if (session.isAdmin) {
+  if (canViewAll) {
     try {
       const allStaff = await getAllStaff();
       staffList = allStaff.map(s => ({ id: s.id, fullName: s.fullName }));
@@ -38,7 +49,7 @@ export default async function CrmTasksPage() {
   return (
     <TasksListClient
       initialTasks={tasks}
-      isAdmin={session.isAdmin}
+      isAdmin={session.isAdmin || canViewAll}
       currentUserName={staffName || ""}
       staffList={staffList}
     />
