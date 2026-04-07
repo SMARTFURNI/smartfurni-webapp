@@ -36,6 +36,7 @@ import {
   Clapperboard,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import type { RolePermissions } from "@/lib/crm-roles-store";
 
 type NavItem = {
   label: string;
@@ -44,6 +45,7 @@ type NavItem = {
   exact?: boolean;
   adminOnly?: boolean;
   superAdminOnly?: boolean;
+  permissionKey?: keyof RolePermissions; // Kiểm tra permission key cụ thể từ DB
   showPendingBadge?: boolean;
   badge?: string;
 };
@@ -54,6 +56,7 @@ type NavGroup = {
   items: NavItem[];
   adminOnly?: boolean;
   superAdminOnly?: boolean;
+  permissionKey?: keyof RolePermissions; // Kiểm tra permission key cho cả group
   collapsible?: boolean;
 };
 
@@ -61,34 +64,34 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tổng quan",
     items: [
-      { label: "Dashboard", href: "/crm", icon: LayoutDashboard, exact: true },
-      { label: "Bảng Kanban", href: "/crm/kanban", icon: Kanban },
-      { label: "Kế hoạch 12 Tuần", href: "/crm/twelve-week-plan", icon: Crosshair },
-      { label: "Quản lý Kế hoạch", href: "/crm/plans-management", icon: Settings, adminOnly: true },
+      { label: "Dashboard", href: "/crm", icon: LayoutDashboard, exact: true, permissionKey: "dashboard_view" },
+      { label: "Bảng Kanban", href: "/crm/kanban", icon: Kanban, permissionKey: "kanban_view" },
+      { label: "Kế hoạch 12 Tuần", href: "/crm/twelve-week-plan", icon: Crosshair, permissionKey: "twelve_week_plan_view" },
+      { label: "Quản lý Kế hoạch", href: "/crm/plans-management", icon: Settings, adminOnly: true, permissionKey: "plans_management_view" },
     ],
   },
   {
     label: "Khách hàng",
     items: [
-      { label: "Data Pool", href: "/crm/data-pool", icon: Database, showPendingBadge: true },
-      { label: "Danh sách KH", href: "/crm/leads", icon: Users },
-      { label: "Phân loại Lead", href: "/crm/lead-segmentation", icon: TrendingUp, adminOnly: true },
-      { label: "Báo giá", href: "/crm/quotes", icon: FileText },
-      { label: "Cuộc gọi", href: "/crm/call-logs", icon: PhoneCall },
-      { label: "Việc cần làm", href: "/crm/tasks", icon: CheckSquare },
-      { label: "Lịch hẹn", href: "/crm/calendar", icon: CalendarDays },
+      { label: "Data Pool", href: "/crm/data-pool", icon: Database, showPendingBadge: true, permissionKey: "data_pool_view" },
+      { label: "Danh sách KH", href: "/crm/leads", icon: Users, permissionKey: "leads_view_own" },
+      { label: "Phân loại Lead", href: "/crm/lead-segmentation", icon: TrendingUp, adminOnly: true, permissionKey: "lead_segmentation_view" },
+      { label: "Báo giá", href: "/crm/quotes", icon: FileText, permissionKey: "quotes_view_own" },
+      { label: "Cuộc gọi", href: "/crm/call-logs", icon: PhoneCall, permissionKey: "call_logs_view" },
+      { label: "Việc cần làm", href: "/crm/tasks", icon: CheckSquare, permissionKey: "tasks_view" },
+      { label: "Lịch hẹn", href: "/crm/calendar", icon: CalendarDays, permissionKey: "calendar_view" },
     ],
   },
   {
     label: "Marketing & CS",
     items: [
-      { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true },
-      { label: "Content Marketing AI", href: "/crm/content", icon: Clapperboard },
-      { label: "Hợp đồng điện tử", href: "/crm/contracts", icon: FileText },
-      { label: "Khảo sát NPS", href: "/crm/nps", icon: TrendingUp, adminOnly: true },
-      { label: "Nhắc nhở Zalo/SMS", href: "/crm/notifications", icon: Bell },
-      { label: "Zalo OA", href: "/crm/zalo", icon: MessageSquare, superAdminOnly: true },
-      { label: "Zalo Inbox", href: "/crm/zalo-inbox", icon: MessageSquare },
+      { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true, permissionKey: "email_marketing_view" },
+      { label: "Content Marketing AI", href: "/crm/content", icon: Clapperboard, permissionKey: "content_marketing_view" },
+      { label: "Hợp đồng điện tử", href: "/crm/contracts", icon: FileText, permissionKey: "contracts_view" },
+      { label: "Khảo sát NPS", href: "/crm/nps", icon: TrendingUp, adminOnly: true, permissionKey: "nps_view" },
+      { label: "Nhắc nhở Zalo/SMS", href: "/crm/notifications", icon: Bell, permissionKey: "notifications_view" },
+      { label: "Zalo OA", href: "/crm/zalo", icon: MessageSquare, superAdminOnly: true, permissionKey: "zalo_oa_view" },
+      { label: "Zalo Inbox", href: "/crm/zalo-inbox", icon: MessageSquare, permissionKey: "zalo_inbox_view" },
     ],
     adminOnly: true,
   },
@@ -101,9 +104,9 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Quản lý & Báo cáo",
     items: [
-      { label: "Nhân viên", href: "/crm/staff", icon: UserCog, superAdminOnly: true },
-      { label: "Báo cáo & Phân tích", href: "/crm/reports", icon: BarChart3, adminOnly: true },
-      { label: "Cài đặt CRM", href: "/crm/settings", icon: SlidersHorizontal, superAdminOnly: true },
+      { label: "Nhân viên", href: "/crm/staff", icon: UserCog, superAdminOnly: true, permissionKey: "staff_view" },
+      { label: "Báo cáo & Phân tích", href: "/crm/reports", icon: BarChart3, adminOnly: true, permissionKey: "reports_view" },
+      { label: "Cài đặt CRM", href: "/crm/settings", icon: SlidersHorizontal, superAdminOnly: true, permissionKey: "crm_settings_view" },
     ],
     adminOnly: true,
   },
@@ -111,36 +114,54 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Tự động hóa & Bảo mật",
     icon: Zap,
     items: [
-      { label: "AI Agent", href: "/crm/ai-agent", icon: Bot, superAdminOnly: true },
-      { label: "Automation Rules", href: "/crm/automation", icon: Zap, superAdminOnly: true },
-      { label: "Lịch đăng bài FB", href: "/crm/facebook-scheduler", icon: Share2, superAdminOnly: true },
-      { label: "Nhật ký hoạt động", href: "/crm/audit", icon: Shield, superAdminOnly: true },
-      { label: "Quản lý Vai trò", href: "/crm/roles", icon: Shield, superAdminOnly: true },
-      { label: "Phân quyền & API Keys", href: "/crm/permissions", icon: Key, superAdminOnly: true },
-      { label: "Import / Export", href: "/crm/import-export", icon: Upload, superAdminOnly: true },
+      { label: "AI Agent", href: "/crm/ai-agent", icon: Bot, superAdminOnly: true, permissionKey: "ai_agent_view" },
+      { label: "Automation Rules", href: "/crm/automation", icon: Zap, superAdminOnly: true, permissionKey: "automation_view" },
+      { label: "Lịch đăng bài FB", href: "/crm/facebook-scheduler", icon: Share2, superAdminOnly: true, permissionKey: "facebook_scheduler_view" },
+      { label: "Nhật ký hoạt động", href: "/crm/audit", icon: Shield, superAdminOnly: true, permissionKey: "audit_logs_view" },
+      { label: "Quản lý Vai trò", href: "/crm/roles", icon: Shield, superAdminOnly: true, permissionKey: "permissions_manage" },
+      { label: "Phân quyền & API Keys", href: "/crm/permissions", icon: Key, superAdminOnly: true, permissionKey: "permissions_manage" },
+      { label: "Import / Export", href: "/crm/import-export", icon: Upload, superAdminOnly: true, permissionKey: "import_export_view" },
     ],
     superAdminOnly: true,
     collapsible: true,
   },
 ];
 
-function canSeeItem(item: NavItem, role: string, isAdmin: boolean): boolean {
-  if (item.superAdminOnly) return isAdmin || role === "super_admin";
-  if (item.adminOnly) return isAdmin || role === "super_admin" || role === "manager";
+function canSeeItem(item: NavItem, role: string, isAdmin: boolean, perms: RolePermissions | null): boolean {
+  // Admin hệ thống: xem tất cả
+  if (isAdmin) return true;
+  // superAdminOnly: chỉ super_admin role
+  if (item.superAdminOnly) return role === "super_admin";
+  // Nếu có permissions từ DB, dùng permission key
+  if (perms && item.permissionKey) {
+    return !!perms[item.permissionKey];
+  }
+  // Fallback: adminOnly dùng role cũ
+  if (item.adminOnly) return role === "super_admin" || role === "manager";
   return true;
 }
-
-function canSeeGroup(group: NavGroup, role: string, isAdmin: boolean): boolean {
-  if (group.superAdminOnly) return isAdmin || role === "super_admin";
-  if (group.adminOnly) return isAdmin || role === "super_admin" || role === "manager";
+function canSeeGroup(group: NavGroup, role: string, isAdmin: boolean, perms: RolePermissions | null): boolean {
+  // Admin hệ thống: xem tất cả
+  if (isAdmin) return true;
+  // superAdminOnly: chỉ super_admin role
+  if (group.superAdminOnly) return role === "super_admin";
+  // Nếu có permissions từ DB, group adminOnly sẽ được kiểm tra qua items
+  if (perms) return true;
+  // Fallback: adminOnly dùng role cũ
+   if (group.adminOnly) return role === "super_admin" || role === "manager";
   return true;
 }
-
-function getRoleLabel(role: string) {
+function getRoleLabel(role: string, roleName?: string) {
+  // Ưu tiên tên từ DB nếu có
+  if (roleName) return roleName;
   if (role === "manager") return "Trưởng nhóm";
   if (role === "sales") return "Kinh doanh";
   if (role === "support") return "Hỗ trợ";
   if (role === "super_admin") return "Quản trị viên";
+  if (role === "leader") return "Leader / Trưởng nhóm";
+  if (role === "marketing") return "Marketing";
+  if (role === "accountant") return "Kế toán";
+  if (role === "intern") return "Thực tập sinh";
   return role;
 }
 
@@ -148,9 +169,11 @@ interface CrmSidebarProps {
   isAdmin?: boolean;
   staffRole?: string;
   staffName?: string;
+  rolePermissions?: RolePermissions | null;
+  roleName?: string; // Tên vai trò hiển thị từ DB
 }
 
-export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staffName }: CrmSidebarProps) {
+export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staffName, rolePermissions = null, roleName }: CrmSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
@@ -173,6 +196,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
   }, []);
 
   function isActive(href: string, exact?: boolean) {
+    if (!pathname) return false;
     if (exact) return pathname === href;
     return pathname.startsWith(href);
   }
@@ -272,7 +296,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-xs font-semibold truncate" style={{ color: "#F1F5F9" }}>{staffName}</div>
-            <div className="text-[10px]" style={{ color: C.groupLabel }}>{getRoleLabel(staffRole)}</div>
+            <div className="text-[10px]" style={{ color: C.groupLabel }}>{getRoleLabel(staffRole, roleName)}</div>
           </div>
         </div>
       )}
@@ -280,8 +304,8 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
       {/* ── Nav ── */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5" style={{ scrollbarWidth: "none" }}>
         {NAV_GROUPS.map(group => {
-          if (!canSeeGroup(group, staffRole, isAdmin)) return null;
-          const visibleItems = group.items.filter(item => canSeeItem(item, staffRole, isAdmin));
+          if (!canSeeGroup(group, staffRole, isAdmin, rolePermissions)) return null;
+          const visibleItems = group.items.filter(item => canSeeItem(item, staffRole, isAdmin, rolePermissions));
           if (visibleItems.length === 0) return null;
 
           const isGroupCollapsed = group.collapsible && collapsedGroups[group.label];
