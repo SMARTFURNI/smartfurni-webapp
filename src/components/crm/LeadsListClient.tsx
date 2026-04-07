@@ -30,10 +30,10 @@ const DEFAULT_LEAD_TYPES_FALLBACK: LeadTypeItem[] = [
 ];
 
 // ── Dark Luxury Color Tokens — đồng bộ với Content Marketing AI ─────────────
-// Nền: linear-gradient(160deg, #0f172a → #1e1a0e → #1a1200) — navy → warm brown
+// Nền: linear-gradient(160deg, #0d0b1a → #1a1000 → #2a1800) — deep purple-navy → dark amber → rich brown
 const C = {
-  bg:         "#0f172a",                    // deep navy (same as CM AI)
-  bgGradient: "linear-gradient(160deg, #0f172a 0%, #1e1a0e 40%, #1a1200 100%)",
+  bg:         "#0d0b1a",                    // deep purple-navy
+  bgGradient: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
   surface:    "rgba(255,255,255,0.06)",      // card bg — CM AI style
   surface2:   "rgba(255,255,255,0.04)",      // elevated card
   surfaceSolid: "#1a1200",                  // solid bg for inputs/selects
@@ -168,7 +168,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: C.bg }}>
+    <div className="flex flex-col h-full" style={{ background: C.bgGradient }}>
 
       {/* ── Header ── */}
       <div className="flex-shrink-0 px-6 py-4" style={{ background: C.surface, borderBottom: `1px solid ${C.border}` }}>

@@ -126,12 +126,12 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
   const isSelected = (d: Date) => selectedDate?.toDateString() === d.toDateString();
 
   return (
-    <div className="flex h-full" style={{ background: "#ffffff" }}>
+    <div className="flex h-full" style={{ background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)" }}>
       {/* Left: Calendar */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between"
-          style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
+          style={{ borderBottom: "1px solid #e5e7eb", background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)" }}>
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Calendar size={20} style={{ color: "#C9A84C" }} />
@@ -463,7 +463,7 @@ function AppointmentDetailModal({ appointment: apt, onClose, onDelete, onUpdateS
       style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: "#ffffff", border: "1px solid #d1d5db", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
+        style={{ background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)", border: "1px solid #d1d5db", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
         {/* Header */}
         <div className="px-5 py-4 flex items-start justify-between gap-3"
           style={{ borderBottom: "1px solid #e5e7eb", borderLeft: `4px solid ${typeColor}` }}>
@@ -551,7 +551,7 @@ function DarkModal({ title, onClose, children }: { title: string; onClose: () =>
       style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: "#ffffff", border: "1px solid #d1d5db", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
+        style={{ background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)", border: "1px solid #d1d5db", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
         <div className="flex items-center justify-between px-5 py-4"
           style={{ borderBottom: "1px solid #e5e7eb" }}>
           <h2 className="text-sm font-bold text-gray-900">{title}</h2>

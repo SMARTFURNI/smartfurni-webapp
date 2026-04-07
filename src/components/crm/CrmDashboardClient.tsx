@@ -70,18 +70,19 @@ const SOURCE_COLORS: Record<string, string> = {
 };
 
 const T = {
-  bg: "#F7F8FA", card: "#FFFFFF", cardBorder: "#EAECF0",
-  cardShadow: "0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04)",
-  headerBg: "#FFFFFF", headerBorder: "#F2F4F7", divider: "#F2F4F7",
-  textPrimary: "#101828", textSecondary: "#344054",
-  textMuted: "#98A2B3", textLabel: "#667085",
-  gold: "#C9A84C", goldDark: "#9A7A2E", goldLight: "#FEF3C7", goldBg: "#FFFBEB",
-  indigo: "#4F46E5", indigoBg: "#EEF2FF", indigoLight: "#C7D2FE",
-  green: "#059669", greenBg: "#ECFDF5",
-  red: "#DC2626", redBg: "#FEF2F2",
-  orange: "#EA580C", orangeBg: "#FFF7ED",
-  purple: "#7C3AED", purpleBg: "#F5F3FF",
-  blue: "#2563EB", blueBg: "#EFF6FF",
+  bg: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
+  card: "rgba(255,255,255,0.06)", cardBorder: "rgba(255,255,255,0.10)",
+  cardShadow: "0 4px 20px rgba(0,0,0,0.30)",
+  headerBg: "rgba(13,11,26,0.95)", headerBorder: "rgba(255,255,255,0.08)", divider: "rgba(255,255,255,0.07)",
+  textPrimary: "#f5edd6", textSecondary: "rgba(245,237,214,0.75)",
+  textMuted: "rgba(245,237,214,0.45)", textLabel: "rgba(245,237,214,0.55)",
+  gold: "#f59e0b", goldDark: "#d97706", goldLight: "rgba(245,158,11,0.20)", goldBg: "rgba(245,158,11,0.12)",
+  indigo: "#818cf8", indigoBg: "rgba(129,140,248,0.12)", indigoLight: "rgba(129,140,248,0.30)",
+  green: "#4ade80", greenBg: "rgba(74,222,128,0.12)",
+  red: "#f87171", redBg: "rgba(248,113,113,0.12)",
+  orange: "#fb923c", orangeBg: "rgba(251,146,60,0.12)",
+  purple: "#c084fc", purpleBg: "rgba(192,132,252,0.12)",
+  blue: "#60a5fa", blueBg: "rgba(96,165,250,0.12)",
 };
 
 // ── Revenue Chart (Doanh thu & Dự báo) ─────────────────────────────────────

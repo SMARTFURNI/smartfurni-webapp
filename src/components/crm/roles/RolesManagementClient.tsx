@@ -218,7 +218,7 @@ function RoleFormModal({
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="w-full max-w-md rounded-2xl p-6 space-y-5"
         style={{
-          background: "linear-gradient(145deg, #1a1200, #0f0d00)",
+          background: "linear-gradient(160deg, #0d0b1a, #1a1000)",
           border: "1px solid rgba(201,168,76,0.25)",
           boxShadow: "0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.1)",
         }}>
@@ -470,7 +470,7 @@ export default function RolesManagementClient() {
   const totalPerms = Object.keys(PERMISSION_LABELS).length;
 
   return (
-    <div className="min-h-screen p-6" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)" }}>
+    <div className="min-h-screen p-6" style={{ background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)" }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -645,7 +645,7 @@ export default function RolesManagementClient() {
           style={{ background: "rgba(10,15,30,0.75)", backdropFilter: "blur(8px)" }}>
           <div className="w-full max-w-sm rounded-2xl p-6 space-y-4"
             style={{
-              background: "linear-gradient(145deg, #1a1200, #0f0d00)",
+              background: "linear-gradient(160deg, #0d0b1a, #1a1000)",
               border: "1px solid rgba(239,68,68,0.3)",
               boxShadow: "0 40px 80px rgba(0,0,0,0.6)",
             }}>

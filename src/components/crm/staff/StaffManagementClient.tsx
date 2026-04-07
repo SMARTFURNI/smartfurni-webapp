@@ -192,21 +192,35 @@ export default function StaffManagementClient({ initialStaff }: Props) {
 
   const activeCount = staff.filter(s => s.status === "active").length;
 
+  const DL = {
+    bg: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
+    card: "rgba(255,255,255,0.06)", cardBorder: "rgba(255,255,255,0.10)",
+    surface: "rgba(255,255,255,0.04)", surfaceBorder: "rgba(255,255,255,0.07)",
+    headerBg: "rgba(13,11,26,0.95)", headerBorder: "rgba(255,255,255,0.08)",
+    text: "#f5edd6", textMuted: "rgba(245,237,214,0.55)", textDim: "rgba(245,237,214,0.35)",
+    gold: "#f59e0b", goldDark: "#d97706",
+    green: "#4ade80", greenBg: "rgba(74,222,128,0.12)",
+    red: "#f87171", redBg: "rgba(248,113,113,0.12)",
+    purple: "#c084fc", purpleBg: "rgba(192,132,252,0.12)",
+    blue: "#60a5fa", blueBg: "rgba(96,165,250,0.12)",
+    divider: "rgba(255,255,255,0.07)",
+  };
+
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto">
+    <div className="flex flex-col h-full overflow-y-auto" style={{ background: DL.bg, color: DL.text }}>
 
       {/* Header */}
       <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between"
-        style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
+        style={{ borderBottom: `1px solid ${DL.headerBorder}`, background: DL.headerBg, backdropFilter: "blur(12px)" }}>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Quản lý nhân viên</h1>
-          <p className="text-sm mt-0.5" style={{ color: "#6b7280" }}>
+          <h1 className="text-xl font-bold" style={{ color: DL.text }}>Quản lý nhân viên</h1>
+          <p className="text-sm mt-0.5" style={{ color: DL.textMuted }}>
             {activeCount}/{staff.length} nhân viên đang hoạt động
           </p>
         </div>
         <button onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-black transition-opacity hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+          style={{ background: `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`, color: "#fff", boxShadow: `0 4px 16px rgba(245,158,11,0.30)` }}>
           <Plus size={15} />
           Thêm nhân viên
         </button>
@@ -219,10 +233,10 @@ export default function StaffManagementClient({ initialStaff }: Props) {
           const Icon = SYSTEM_ROLE_ICONS[role.id] ?? Shield;
           return (
             <div key={role.id} className="rounded-xl p-3 text-center min-w-[80px]"
-              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              style={{ background: DL.card, border: `1px solid ${DL.cardBorder}` }}>
               <div className="text-lg mb-1">{role.icon}</div>
-              <div className="text-lg font-black text-gray-900">{count}</div>
-              <div className="text-[10px] font-medium" style={{ color: "#6b7280" }}>
+              <div className="text-lg font-black" style={{ color: DL.text }}>{count}</div>
+              <div className="text-[10px] font-medium" style={{ color: DL.textMuted }}>
                 {role.name}
               </div>
             </div>
@@ -232,33 +246,35 @@ export default function StaffManagementClient({ initialStaff }: Props) {
 
       {/* Staff Table */}
       <div className="px-8 pb-8">
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+        <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${DL.cardBorder}` }}>
           <table className="w-full">
             <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+              <tr style={{ background: "rgba(13,11,26,0.8)", borderBottom: `1px solid ${DL.divider}` }}>
                 {["Nhân viên", "Vai trò", "Liên hệ", "Khu vực", "Trạng thái", "Đăng nhập lần cuối", "Thao tác"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider"
-                    style={{ color: "#9ca3af" }}>{h}</th>
+                    style={{ color: DL.textDim }}>{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y" style={{ borderColor: "#e5e7eb" }}>
+            <tbody className="divide-y" style={{ borderColor: DL.divider }}>
               {staff.map(member => {
                 const roleInfo = getRoleInfo(member.role, roles);
                 const Icon = SYSTEM_ROLE_ICONS[member.role] ?? Shield;
                 const isActive = member.status === "active";
                 return (
-                  <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
+                  <tr key={member.id} className="transition-colors" style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(245,158,11,0.04)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     {/* Name */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0"
-                          style={{ background: `${roleInfo.color}20`, color: roleInfo.color }}>
+                          style={{ background: `${roleInfo.color}25`, color: roleInfo.color }}>
                           {member.fullName.charAt(0)}
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-gray-900">{member.fullName}</div>
-                          <div className="text-[11px]" style={{ color: "#9ca3af" }}>@{member.username}</div>
+                          <div className="text-sm font-semibold" style={{ color: DL.text }}>{member.fullName}</div>
+                          <div className="text-[11px]" style={{ color: DL.textDim }}>@{member.username}</div>
                         </div>
                       </div>
                     </td>
@@ -274,15 +290,15 @@ export default function StaffManagementClient({ initialStaff }: Props) {
                     </td>
                     {/* Contact */}
                     <td className="px-4 py-3">
-                      <div className="text-xs text-gray-900/70">{member.phone}</div>
-                      <div className="text-[11px] text-gray-900/35">{member.email}</div>
+                      <div className="text-xs" style={{ color: DL.textMuted }}>{member.phone}</div>
+                      <div className="text-[11px]" style={{ color: DL.textDim }}>{member.email}</div>
                     </td>
                     {/* Districts */}
                     <td className="px-4 py-3">
-                      <div className="text-xs text-gray-900/50">
+                      <div className="text-xs" style={{ color: DL.textMuted }}>
                         {member.assignedDistricts.length > 0
                           ? member.assignedDistricts.slice(0, 2).join(", ") + (member.assignedDistricts.length > 2 ? `...+${member.assignedDistricts.length - 2}` : "")
-                          : <span className="text-gray-900/20">Toàn quốc</span>}
+                          : <span style={{ color: DL.textDim }}>Toàn quốc</span>}
                       </div>
                     </td>
                     {/* Status */}
@@ -300,7 +316,7 @@ export default function StaffManagementClient({ initialStaff }: Props) {
                     </td>
                     {/* Last Login */}
                     <td className="px-4 py-3">
-                      <div className="text-xs text-gray-900/40">
+                      <div className="text-xs" style={{ color: DL.textDim }}>
                         {member.lastLoginAt
                           ? new Date(member.lastLoginAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
                           : "Chưa đăng nhập"}
@@ -310,23 +326,29 @@ export default function StaffManagementClient({ initialStaff }: Props) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <button onClick={() => setPermissionStaff(member)}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-purple-50"
-                          style={{ border: "1px solid #e5e7eb" }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                          style={{ border: `1px solid ${DL.cardBorder}`, background: DL.surface }}
+                          onMouseEnter={e => (e.currentTarget.style.background = DL.purpleBg)}
+                          onMouseLeave={e => (e.currentTarget.style.background = DL.surface)}
                           title="Phân quyền">
-                          <Shield size={13} style={{ color: "#8b5cf6" }} />
+                          <Shield size={13} style={{ color: DL.purple }} />
                         </button>
                         <button onClick={() => setEditingStaff(member)}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-blue-50"
-                          style={{ border: "1px solid #e5e7eb" }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                          style={{ border: `1px solid ${DL.cardBorder}`, background: DL.surface }}
+                          onMouseEnter={e => (e.currentTarget.style.background = DL.blueBg)}
+                          onMouseLeave={e => (e.currentTarget.style.background = DL.surface)}
                           title="Chỉnh sửa">
-                          <Edit2 size={13} style={{ color: "#3b82f6" }} />
+                          <Edit2 size={13} style={{ color: DL.blue }} />
                         </button>
                         {member.role !== "super_admin" && (
                           <button onClick={() => handleDelete(member.id, member.fullName)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-red-50"
-                            style={{ border: "1px solid #e5e7eb" }}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                            style={{ border: `1px solid ${DL.cardBorder}`, background: DL.surface }}
+                            onMouseEnter={e => (e.currentTarget.style.background = DL.redBg)}
+                            onMouseLeave={e => (e.currentTarget.style.background = DL.surface)}
                             title="Xóa">
-                            <Trash2 size={13} style={{ color: "#ef4444" }} />
+                            <Trash2 size={13} style={{ color: DL.red }} />
                           </button>
                         )}
                       </div>
@@ -447,14 +469,14 @@ function AddStaffModal({
           <DarkInput value={form.targetRevenue} onChange={v => set("targetRevenue", v)} placeholder="500000000" type="number" />
         </Field>
         <Field label="Khu vực phụ trách (chọn nhiều)">
-          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 rounded-lg" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
             {VIETNAM_PROVINCES.map(p => (
               <button key={p} type="button" onClick={() => toggleDistrict(p)}
                 className="px-2 py-0.5 rounded-md text-[11px] font-medium transition-all"
                 style={{
-                  background: form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.2)" : "#f3f4f6",
-                  color: form.assignedDistricts.includes(p) ? "#C9A84C" : "#6b7280",
-                  border: `1px solid ${form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
+                  background: form.assignedDistricts.includes(p) ? "rgba(245,158,11,0.18)" : "rgba(255,255,255,0.05)",
+                  color: form.assignedDistricts.includes(p) ? "#f59e0b" : "rgba(245,237,214,0.55)",
+                  border: `1px solid ${form.assignedDistricts.includes(p) ? "rgba(245,158,11,0.35)" : "rgba(255,255,255,0.08)"}`,
                 }}>
                 {p}
               </button>
@@ -463,11 +485,13 @@ function AddStaffModal({
         </Field>
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 text-sm font-medium rounded-xl text-gray-900/50 hover:text-gray-900/80 transition-colors"
-            style={{ border: "1px solid #d1d5db" }}>Hủy</button>
+            className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-all"
+            style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(245,237,214,0.55)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>Hủy</button>
           <button type="submit" disabled={loading}
-            className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-black transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+            className="flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", boxShadow: "0 4px 16px rgba(245,158,11,0.30)" }}>
             {loading && <RefreshCw size={14} className="animate-spin" />}
             {loading ? "Đang lưu..." : "Tạo tài khoản"}
           </button>
@@ -542,14 +566,14 @@ function EditStaffModal({
           <DarkInput value={form.targetRevenue} onChange={v => set("targetRevenue", v)} type="number" />
         </Field>
         <Field label="Khu vực phụ trách">
-          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
             {VIETNAM_PROVINCES.map(p => (
               <button key={p} type="button" onClick={() => toggleDistrict(p)}
                 className="px-2 py-0.5 rounded-md text-[11px] font-medium transition-all"
                 style={{
-                  background: form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.2)" : "#f3f4f6",
-                  color: form.assignedDistricts.includes(p) ? "#C9A84C" : "#6b7280",
-                  border: `1px solid ${form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
+                  background: form.assignedDistricts.includes(p) ? "rgba(245,158,11,0.18)" : "rgba(255,255,255,0.05)",
+                  color: form.assignedDistricts.includes(p) ? "#f59e0b" : "rgba(245,237,214,0.55)",
+                  border: `1px solid ${form.assignedDistricts.includes(p) ? "rgba(245,158,11,0.35)" : "rgba(255,255,255,0.08)"}`,
                 }}>
                 {p}
               </button>
@@ -558,11 +582,13 @@ function EditStaffModal({
         </Field>
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 text-sm font-medium rounded-xl text-gray-900/50 hover:text-gray-900/80 transition-colors"
-            style={{ border: "1px solid #d1d5db" }}>Hủy</button>
+            className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-all"
+            style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(245,237,214,0.55)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>Hủy</button>
           <button type="submit" disabled={loading}
-            className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-black transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+            className="flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", boxShadow: "0 4px 16px rgba(245,158,11,0.30)" }}>
             {loading && <RefreshCw size={14} className="animate-spin" />}
             {loading ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
@@ -603,32 +629,36 @@ function PermissionModal({
     <ModalWrapper onClose={onClose} title={`Phân quyền: ${staff.fullName}`} wide>
       <div className="p-6 space-y-5">
         <div className="flex items-center justify-between p-3 rounded-xl"
-          style={{ background: `${roleInfo.color}10`, border: `1px solid ${roleInfo.color}20` }}>
+          style={{ background: `${roleInfo.color}12`, border: `1px solid ${roleInfo.color}25` }}>
           <div className="flex items-center gap-2">
             <span className="text-lg">{roleInfo.icon}</span>
-            <span className="text-sm font-semibold text-gray-900">Vai trò: {roleInfo.name}</span>
+            <span className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Vai trò: {roleInfo.name}</span>
           </div>
           <button onClick={resetToDefault}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100"
-            style={{ color: "#6b7280" }}>
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
+            style={{ color: "rgba(245,237,214,0.55)", border: "1px solid rgba(255,255,255,0.10)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
             <RefreshCw size={11} /> Đặt lại mặc định
           </button>
         </div>
 
         {PERMISSION_GROUPS.map(group => (
           <div key={group.label}>
-            <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5"
-              style={{ color: "#9ca3af" }}>{group.label}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-widest mb-2.5"
+              style={{ color: "rgba(245,237,214,0.35)" }}>{group.label}</div>
             <div className="space-y-1.5">
               {group.keys.map(key => (
                 <button key={key} onClick={() => toggle(key)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all hover:bg-gray-50"
-                  style={{ border: "1px solid #e5e7eb" }}>
-                  <span className="text-sm text-gray-900/70">{PERMISSION_LABELS[key]}</span>
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
+                  style={{ border: `1px solid ${perms[key] ? "rgba(245,158,11,0.20)" : "rgba(255,255,255,0.07)"}`, background: perms[key] ? "rgba(245,158,11,0.06)" : "rgba(255,255,255,0.03)" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = perms[key] ? "rgba(245,158,11,0.10)" : "rgba(255,255,255,0.06)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = perms[key] ? "rgba(245,158,11,0.06)" : "rgba(255,255,255,0.03)")}>
+                  <span className="text-sm" style={{ color: perms[key] ? "#f5edd6" : "rgba(245,237,214,0.60)" }}>{PERMISSION_LABELS[key]}</span>
                   <div className="w-9 h-5 rounded-full relative transition-all flex-shrink-0"
-                    style={{ background: perms[key] ? "#C9A84C" : "#e5e7eb" }}>
-                    <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
-                      style={{ left: perms[key] ? "calc(100% - 18px)" : "2px" }} />
+                    style={{ background: perms[key] ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(255,255,255,0.12)" }}>
+                    <div className="absolute top-0.5 w-4 h-4 rounded-full shadow transition-all"
+                      style={{ left: perms[key] ? "calc(100% - 18px)" : "2px", background: perms[key] ? "#fff" : "rgba(255,255,255,0.60)" }} />
                   </div>
                 </button>
               ))}
@@ -638,11 +668,13 @@ function PermissionModal({
 
         <div className="flex gap-3 pt-2">
           <button onClick={onClose}
-            className="flex-1 py-2.5 text-sm font-medium rounded-xl text-gray-900/50 hover:text-gray-900/80"
-            style={{ border: "1px solid #d1d5db" }}>Hủy</button>
+            className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-all"
+            style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(245,237,214,0.55)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>Hủy</button>
           <button onClick={() => onSave(perms)} disabled={loading}
-            className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-black flex items-center justify-center gap-2"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+            className="flex-1 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all"
+            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", boxShadow: "0 4px 16px rgba(245,158,11,0.30)" }}>
             {loading && <RefreshCw size={14} className="animate-spin" />}
             <Save size={14} /> Lưu phân quyền
           </button>
@@ -657,16 +689,24 @@ function PermissionModal({
 function ModalWrapper({ onClose, title, children, wide }: {
   onClose: () => void; title: string; children: React.ReactNode; wide?: boolean;
 }) {
+  const MBG = "linear-gradient(160deg, #1a1400 0%, #130f00 100%)";
+  const MBORDER = "rgba(255,200,100,0.15)";
+  const MTEXT = "#f5edd6";
+  const MMUTED = "rgba(245,237,214,0.55)";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+      style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(12px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className={`rounded-2xl w-full ${wide ? "max-w-2xl" : "max-w-lg"} max-h-[90vh] overflow-y-auto`}
-        style={{ background: "#ffffff", border: "1px solid #d1d5db", boxShadow: "0 25px 60px rgba(0,0,0,0.5)" }}>
+        style={{ background: MBG, border: `1px solid ${MBORDER}`, boxShadow: "0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.08)" }}>
         <div className="flex items-center justify-between px-6 py-4 sticky top-0 z-10 rounded-t-2xl"
-          style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb" }}>
-          <h2 className="text-base font-bold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-900/40">
+          style={{ background: "rgba(20,16,0,0.95)", borderBottom: `1px solid ${MBORDER}`, backdropFilter: "blur(12px)" }}>
+          <h2 className="text-base font-bold" style={{ color: MTEXT }}>{title}</h2>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+            style={{ border: `1px solid rgba(255,255,255,0.10)`, color: MMUTED }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
             <X size={16} />
           </button>
         </div>
@@ -679,7 +719,7 @@ function ModalWrapper({ onClose, title, children, wide }: {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>{label}</label>
+      <label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "rgba(245,237,214,0.45)" }}>{label}</label>
       {children}
     </div>
   );
@@ -690,7 +730,12 @@ function DarkInput({ value, onChange, placeholder, type = "text" }: {
 }) {
   return (
     <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      className="w-full px-3 py-2 text-sm rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none transition-all"
-      style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
+      className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none transition-all"
+      style={{
+        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)",
+        color: "#f5edd6", colorScheme: "dark",
+      }}
+      onFocus={e => { e.target.style.border = "1px solid rgba(245,158,11,0.50)"; e.target.style.background = "rgba(245,158,11,0.06)"; }}
+      onBlur={e => { e.target.style.border = "1px solid rgba(255,255,255,0.10)"; e.target.style.background = "rgba(255,255,255,0.06)"; }} />
   );
 }

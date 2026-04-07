@@ -20,7 +20,7 @@ import {
 
 // ─── Dark Luxury Theme Tokens ─────────────────────────────────────────────────
 const DL = {
-  bg: "linear-gradient(160deg, #0f172a 0%, #1e1a0e 40%, #1a1200 100%)",
+  bg: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
   surface: "rgba(255,255,255,0.05)",
   surfaceHover: "rgba(255,255,255,0.08)",
   surfaceActive: "rgba(245,158,11,0.10)",
