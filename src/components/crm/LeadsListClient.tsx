@@ -29,30 +29,34 @@ const DEFAULT_LEAD_TYPES_FALLBACK: LeadTypeItem[] = [
   { id: "dealer",    label: "Đại lý",           color: "#f59e0b" },
 ];
 
-// ── Dark Luxury Color Tokens ──────────────────────────────────────────────────
+// ── Dark Luxury Color Tokens — đồng bộ với Content Marketing AI ─────────────
+// Nền: linear-gradient(160deg, #0f172a → #1e1a0e → #1a1200) — navy → warm brown
 const C = {
-  bg:         "#0B0F1A",       // deep navy black
-  surface:    "#111827",       // card background
-  surface2:   "#1a2235",       // elevated card
-  border:     "#1E2D45",       // subtle border
-  borderGold: "#C9A84C40",     // gold border subtle
-  text:       "#E2E8F0",       // primary text
-  textMuted:  "#64748B",       // muted text
-  textDim:    "#94A3B8",       // dim text
-  gold:       "#C9A84C",       // brand gold
-  goldLight:  "#E2C97E",       // gold highlight
-  goldBg:     "#C9A84C15",     // gold bg tint
-  blue:       "#3B82F6",       // accent blue
-  blueBg:     "#3B82F615",     // blue bg tint
-  green:      "#10B981",       // success
-  greenBg:    "#10B98115",     // green bg tint
-  red:        "#EF4444",       // danger
-  redBg:      "#EF444415",     // red bg tint
-  purple:     "#8B5CF6",       // purple accent
-  purpleBg:   "#8B5CF615",     // purple bg tint
-  headerBg:   "#0D1526",       // table header
-  rowHover:   "#141E30",       // row hover
-  rowBorder:  "#1E2D4530",     // row divider
+  bg:         "#0f172a",                    // deep navy (same as CM AI)
+  bgGradient: "linear-gradient(160deg, #0f172a 0%, #1e1a0e 40%, #1a1200 100%)",
+  surface:    "rgba(255,255,255,0.06)",      // card bg — CM AI style
+  surface2:   "rgba(255,255,255,0.04)",      // elevated card
+  surfaceSolid: "#1a1200",                  // solid bg for inputs/selects
+  border:     "rgba(255,255,255,0.10)",      // CM AI border
+  borderGold: "rgba(245,158,11,0.30)",       // gold border
+  text:       "#f5edd6",                    // CM AI primary text (warm cream)
+  textMuted:  "#9ca3af",                    // CM AI muted
+  textDim:    "rgba(255,255,255,0.45)",      // CM AI dim
+  gold:       "#f59e0b",                    // CM AI gold
+  goldDark:   "#d97706",                    // CM AI gold dark
+  goldBg:     "rgba(245,158,11,0.15)",       // gold bg tint
+  goldBorder: "rgba(245,158,11,0.25)",       // gold border
+  blue:       "#60a5fa",                    // soft blue
+  blueBg:     "rgba(96,165,250,0.15)",       // blue bg tint
+  green:      "#4ade80",                    // soft green
+  greenBg:    "rgba(74,222,128,0.15)",       // green bg tint
+  red:        "#f87171",                    // soft red
+  redBg:      "rgba(248,113,113,0.15)",      // red bg tint
+  purple:     "#c084fc",                    // soft purple
+  purpleBg:   "rgba(192,132,252,0.15)",      // purple bg tint
+  headerBg:   "rgba(0,0,0,0.25)",           // table header
+  rowHover:   "rgba(245,158,11,0.06)",       // row hover — warm gold tint
+  rowBorder:  "rgba(255,255,255,0.06)",      // row divider
 };
 
 export default function LeadsListClient({ initialLeads, isAdmin = false, currentUserName = "", initialLeadTypes }: Props) {
@@ -212,7 +216,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-opacity hover:opacity-90"
-              style={{ background: `linear-gradient(135deg, ${C.gold}, #9A7A2E)`, color: "#0B0F1A" }}>
+              style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#fff", boxShadow: "0 4px 16px rgba(245,158,11,0.35)" }}>
               <Plus size={14} /> Thêm khách hàng
             </button>
           </div>
@@ -340,7 +344,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 <tr>
                   <td colSpan={8} className="text-center py-16">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: C.surface2 }}>
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}` }}>
                         <Users size={24} style={{ color: C.textMuted }} />
                       </div>
                       <p className="text-sm" style={{ color: C.textMuted }}>Không có khách hàng nào</p>
@@ -364,12 +368,12 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     key={lead.id}
                     style={{
                       borderBottom: `1px solid ${C.rowBorder}`,
-                      borderLeft: overdue ? `3px solid ${C.red}` : `3px solid ${isOwnLead ? C.gold : C.blue}`,
-                      background: idx % 2 === 0 ? "transparent" : "#0D1424",
+                      borderLeft: overdue ? `3px solid ${C.red}` : `3px solid ${isOwnLead ? C.gold : "rgba(255,255,255,0.15)"}`,
+                      background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)",
                       transition: "background 0.15s",
                     }}
                     onMouseEnter={e => (e.currentTarget.style.background = C.rowHover)}
-                    onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : "#0D1424")}
+                    onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)")}
                   >
                     {/* Customer */}
                     <td className="px-4 py-3">
@@ -536,7 +540,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
                   className="px-3 py-1.5 text-xs rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{ border: `1px solid ${C.border}`, color: C.textDim, background: C.surface2 }}>
+                  style={{ border: `1px solid ${C.border}`, color: C.textDim, background: "rgba(255,255,255,0.07)" }}>
                   ← Trước
                 </button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -558,7 +562,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
                   className="px-3 py-1.5 text-xs rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{ border: `1px solid ${C.border}`, color: C.textDim, background: C.surface2 }}>
+                  style={{ border: `1px solid ${C.border}`, color: C.textDim, background: "rgba(255,255,255,0.07)" }}>
                   Sau →
                 </button>
               </div>
