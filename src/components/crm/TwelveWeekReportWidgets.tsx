@@ -256,7 +256,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
   return (
     <div className="space-y-4">
       {/* ── 1. Scorecard header ── */}
-      <div className="rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${T.indigoBg}, #F0FDF4)`, border: `1.5px solid ${T.indigoLight}` }}>
+      <div className="rounded-2xl p-5" style={{ background: `linear-gradient(135deg, rgba(129,140,248,0.12), rgba(74,222,128,0.08))`, border: `1.5px solid ${T.indigoLight}` }}>
         <div className="flex items-start gap-3 mb-4">
           <div className="p-2 rounded-xl" style={{ background: T.indigo }}>
             <Star size={18} color="#fff" />
@@ -282,7 +282,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
             { label: "Còn lại", value: String(totalPend), sub: `${weeksLeft} tuần còn lại`, color: T.gold },
             { label: "Bỏ qua", value: String(totalSkip), sub: "Công việc skipped", color: T.textMuted },
           ].map(({ label, value, sub, color }) => (
-            <div key={label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.7)", border: `1px solid ${T.cardBorder}` }}>
+            <div key={label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${T.cardBorder}` }}>
               <div className="text-xl font-black" style={{ color }}>{value}</div>
               <div className="text-[9px] font-semibold mt-0.5" style={{ color: T.textMuted }}>{label}</div>
               <div className="text-[8px]" style={{ color: T.textMuted }}>{sub}</div>
