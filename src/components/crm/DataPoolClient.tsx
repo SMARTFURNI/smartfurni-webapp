@@ -224,7 +224,7 @@ function AddRawLeadModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
         <div
           className="flex items-center justify-between px-6 py-5 flex-shrink-0"
           style={{
-            background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
+            background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
             borderRadius: "20px 20px 0 0",
           }}
         >
@@ -780,7 +780,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
   const nextFifoId = leads.find(l => l.status === "pending")?.id;
 
   return (
-    <div className="h-full flex flex-col" style={{ background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)", color: "#f5edd6" }}>
+    <div className="h-full flex flex-col" style={{ background: "#f8f9fb", color: "#111827" }}>
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 bg-white" style={{ borderBottom: "1px solid #e5e7eb" }}>
         <div className="flex items-center gap-3">

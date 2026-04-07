@@ -187,7 +187,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
   );
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)" }}>
+    <div className="flex flex-col h-full bg-white">
       {/* ── Header ── */}
       <div className="flex-shrink-0 px-6 pt-5 pb-0" style={{ borderBottom: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between gap-4 mb-4">

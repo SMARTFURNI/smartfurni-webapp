@@ -14,40 +14,40 @@ import ZaloGroupsPanel from "./ZaloGroupsPanel";
 import ZaloAutoReplyPanel from "./ZaloAutoReplyPanel";
 import ZaloCatalogPanel from "./ZaloCatalogPanel";
 
-// ─── Design Tokens ────────────────────────────────────────────────────────────────────────────────
+// ─── Design Tokens ────────────────────────────────────────────────────────────
 const T = {
   // Sidebar
-  sidebarBg: "linear-gradient(180deg, #0d0b1a 0%, #1a1000 60%, #2a1800 100%)",
-  sidebarBorder: "rgba(255,255,255,0.08)",
-  sidebarHover: "rgba(255,255,255,0.06)",
-  sidebarActive: "#f59e0b",
-  sidebarActiveBg: "rgba(245,158,11,0.12)",
+  sidebarBg: "#111827",
+  sidebarBorder: "#1F2937",
+  sidebarHover: "#1F2937",
+  sidebarActive: "#1D4ED8",
+  sidebarActiveBg: "#1E3A5F",
   // Chat
-  chatBg: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
-  chatBgPattern: "radial-gradient(circle at 20% 50%, rgba(245,158,11,0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,92,246,0.02) 0%, transparent 50%)",
-  headerBg: "rgba(13,11,26,0.95)",
-  headerBorder: "rgba(255,255,255,0.08)",
+  chatBg: "#0F172A",
+  chatBgPattern: "radial-gradient(circle at 20% 50%, rgba(59,130,246,0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,92,246,0.03) 0%, transparent 50%)",
+  headerBg: "rgba(15,23,42,0.95)",
+  headerBorder: "#1E293B",
   // Bubbles
-  bubbleSelf: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
-  bubbleOther: "rgba(255,255,255,0.07)",
-  bubbleOtherText: "#f5edd6",
-  bubbleSelfText: "#1a1200",
+  bubbleSelf: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+  bubbleOther: "#1E293B",
+  bubbleOtherText: "#E2E8F0",
+  bubbleSelfText: "#FFFFFF",
   // Input
-  inputBg: "rgba(255,255,255,0.06)",
-  inputBorder: "rgba(255,255,255,0.10)",
-  inputFocus: "#f59e0b",
+  inputBg: "#1E293B",
+  inputBorder: "#334155",
+  inputFocus: "#3B82F6",
   // Text
-  textPrimary: "#f5edd6",
-  textSecondary: "rgba(245,237,214,0.70)",
-  textMuted: "rgba(245,237,214,0.45)",
+  textPrimary: "#F1F5F9",
+  textSecondary: "#94A3B8",
+  textMuted: "#64748B",
   // Accent
-  accent: "#f59e0b",
-  accentHover: "#d97706",
-  success: "#4ade80",
-  warning: "#f59e0b",
-  error: "#f87171",
+  accent: "#3B82F6",
+  accentHover: "#2563EB",
+  success: "#10B981",
+  warning: "#F59E0B",
+  error: "#EF4444",
   // Unread badge
-  badge: "#ef4444",
+  badge: "#EF4444",
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────

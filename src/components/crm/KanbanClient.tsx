@@ -135,10 +135,10 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   const activeFilters = [filterDistrict, filterType, filterSource].filter(Boolean).length;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)" }}>
+    <div className="flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
       <div className="flex-shrink-0 px-6 py-4"
-        style={{ borderBottom: "1px solid #e5e7eb", background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)" }}>
+        style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Bảng Kanban</h1>

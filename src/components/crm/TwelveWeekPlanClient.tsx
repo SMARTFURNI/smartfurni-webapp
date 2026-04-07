@@ -22,28 +22,27 @@ import {
 } from "lucide-react";
 import type { TwelveWeekPlan, Goal, WeeklyTask, GoalColor, TaskStatus, GoalKpi, WeeklyAllocation } from "@/lib/twelve-week-plan-store";
 
-// ── Theme ────────────────────────────────────────────────────────────────────────────
+// ── Theme ────────────────────────────────────────────────────────────────────
 const T = {
-  bg: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
-  card: "rgba(255,255,255,0.06)", cardBorder: "rgba(255,255,255,0.10)",
-  cardShadow: "0 4px 20px rgba(0,0,0,0.30)",
-  textPrimary: "#f5edd6", textSecondary: "rgba(245,237,214,0.75)", textMuted: "rgba(245,237,214,0.45)",
-  divider: "rgba(255,255,255,0.07)",
-  indigo: "#818cf8", indigoBg: "rgba(129,140,248,0.12)", indigoLight: "rgba(129,140,248,0.30)",
-  green: "#4ade80", greenBg: "rgba(74,222,128,0.12)",
-  gold: "#f59e0b", goldBg: "rgba(245,158,11,0.12)",
-  red: "#f87171", redBg: "rgba(248,113,113,0.12)",
-  purple: "#c084fc", purpleBg: "rgba(192,132,252,0.12)",
-  blue: "#60a5fa", blueBg: "rgba(96,165,250,0.12)",
+  bg: "#F8F9FB", card: "#FFFFFF", cardBorder: "#E5E7EB",
+  cardShadow: "0 1px 4px rgba(0,0,0,0.06)",
+  textPrimary: "#111827", textSecondary: "#374151", textMuted: "#6B7280",
+  divider: "#F3F4F6",
+  indigo: "#4F46E5", indigoBg: "#EEF2FF", indigoLight: "#C7D2FE",
+  green: "#059669", greenBg: "#ECFDF5",
+  gold: "#D97706", goldBg: "#FFFBEB",
+  red: "#DC2626", redBg: "#FEF2F2",
+  purple: "#7C3AED", purpleBg: "#F5F3FF",
+  blue: "#2563EB", blueBg: "#EFF6FF",
 };
 
 const GOAL_COLORS: Record<GoalColor, { bg: string; text: string; border: string; label: string }> = {
-  indigo: { bg: "rgba(129,140,248,0.12)", text: "#818cf8", border: "rgba(129,140,248,0.30)", label: "Indigo" },
-  green:  { bg: "rgba(74,222,128,0.12)",  text: "#4ade80", border: "rgba(74,222,128,0.30)",  label: "Xanh lá" },
-  gold:   { bg: "rgba(245,158,11,0.12)",  text: "#f59e0b", border: "rgba(245,158,11,0.30)",  label: "Vàng" },
-  red:    { bg: "rgba(248,113,113,0.12)", text: "#f87171", border: "rgba(248,113,113,0.30)", label: "Đỏ" },
-  purple: { bg: "rgba(192,132,252,0.12)", text: "#c084fc", border: "rgba(192,132,252,0.30)", label: "Tím" },
-  blue:   { bg: "rgba(96,165,250,0.12)",  text: "#60a5fa", border: "rgba(96,165,250,0.30)",  label: "Xanh dương" },
+  indigo: { bg: "#EEF2FF", text: "#4F46E5", border: "#C7D2FE", label: "Indigo" },
+  green:  { bg: "#ECFDF5", text: "#059669", border: "#A7F3D0", label: "Xanh lá" },
+  gold:   { bg: "#FFFBEB", text: "#D97706", border: "#FDE68A", label: "Vàng" },
+  red:    { bg: "#FEF2F2", text: "#DC2626", border: "#FECACA", label: "Đỏ" },
+  purple: { bg: "#F5F3FF", text: "#7C3AED", border: "#DDD6FE", label: "Tím" },
+  blue:   { bg: "#EFF6FF", text: "#2563EB", border: "#BFDBFE", label: "Xanh dương" },
 };
 
 const STATUS_CONFIG: Record<TaskStatus, { icon: React.ElementType; color: string; label: string }> = {
