@@ -1990,7 +1990,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: dm.cardShadow }}>
             <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
+                <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(129,140,248,0.15)" }}>
                   <Crosshair size={15} style={{ color: "#4F46E5" }} />
                 </div>
                 <div>
@@ -2000,7 +2000,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               </div>
               <Link href="/crm/twelve-week-plan"
                 className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
-                style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+                style={{ background: "rgba(129,140,248,0.15)", color: "#4F46E5" }}>
                 Chi tiết <ChevronRight size={12} />
               </Link>
             </div>
@@ -2016,7 +2016,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 </div>
               ) : !twelveWeekPlan ? (
                 <div className="text-center py-8">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "#EEF2FF" }}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(129,140,248,0.15)" }}>
                     <Crosshair size={24} style={{ color: "#4F46E5" }} />
                   </div>
                   <h3 className="text-base font-bold mb-2" style={{ color: dm.textPrimary }}>Chưa có kế hoạch 12 tuần</h3>
@@ -2045,7 +2045,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: dm.cardShadow }}>
                 <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(129,140,248,0.15)" }}>
                       <Flag size={16} style={{ color: "#4F46E5" }} />
                     </div>
                     <div>
@@ -2055,7 +2055,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   </div>
                   <Link href="/crm/twelve-week-plan"
                     className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+                    style={{ background: "rgba(129,140,248,0.15)", color: "#4F46E5" }}>
                     Chi tiết <ArrowUpRight size={12} />
                   </Link>
                 </div>
