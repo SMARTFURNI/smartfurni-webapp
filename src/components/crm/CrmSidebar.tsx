@@ -223,14 +223,14 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
 
   // Color tokens — Dark Luxury Warm Theme (đồng bộ Content Marketing AI)
   const C = {
-    bg: "#0f0e0a",              // near-black warm
-    bgHover: "rgba(255,255,255,0.06)",  // glass hover
-    bgActive: "rgba(245,158,11,0.12)",  // gold tint active
-    border: "rgba(255,255,255,0.08)",   // subtle warm border
-    groupLabel: "rgba(245,237,214,0.35)", // warm cream dim
-    text: "rgba(245,237,214,0.60)",     // warm cream muted
-    textActive: "#f5edd6",              // warm cream bright
-    textHover: "rgba(245,237,214,0.85)", // warm cream hover
+    bg: "#0d0b1a",              // deep purple-navy
+    bgHover: "rgba(255,255,255,0.08)",  // glass hover
+    bgActive: "rgba(245,158,11,0.15)",  // gold tint active
+    border: "rgba(255,200,100,0.12)",   // warm gold border
+    groupLabel: "rgba(245,237,214,0.40)", // warm cream dim
+    text: "rgba(245,237,214,0.65)",     // warm cream muted
+    textActive: "#fde68a",              // bright gold-cream
+    textHover: "#f5edd6",              // warm cream hover
     accent: "#f59e0b",                  // amber gold
     accentLight: "#fde68a",             // gold light
     activeIndicator: "#f59e0b",         // gold indicator
@@ -242,7 +242,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
       className="flex flex-col h-full transition-all duration-300 flex-shrink-0 relative select-none"
       style={{
         width: collapsed ? "60px" : "220px",
-        background: "linear-gradient(180deg, #0f0e0a 0%, #130f06 50%, #0f0c04 100%)",
+        background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
         borderRight: `1px solid ${C.border}`,
       }}
     >
