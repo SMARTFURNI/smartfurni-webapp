@@ -521,7 +521,8 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveTitle, setSaveTitle] = useState("");
-  const [showSaveForm, setShowSaveForm] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
   const [error, setError] = useState("");
   const [showTopicSuggestions, setShowTopicSuggestions] = useState(false);
   const [showAudienceSuggestions, setShowAudienceSuggestions] = useState(false);
@@ -581,8 +582,12 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
         const d = await res.json();
         throw new Error(d.error || "Lỗi lưu video");
       }
-      setShowSaveForm(false);
-      onScriptSaved();
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setShowSaveModal(false);
+        setSavedSuccess(false);
+        onScriptSaved();
+      }, 1200);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -886,7 +891,7 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                   {copied ? <Check size={12} /> : <Copy size={12} />}
                   {copied ? "Đã copy" : "Copy"}
                 </button>
-                <button onClick={() => setShowSaveForm(true)}
+                <button onClick={() => setShowSaveModal(true)}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all"
                   style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 4px 12px rgba(245,158,11,0.35)" }}>
                   <Save size={12} />
@@ -925,40 +930,105 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
           </div>
         )}
 
-        {/* Save Form */}
-        {showSaveForm && (
-          <div className="rounded-3xl p-5" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
-            <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: "#f5edd6" }}>
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
-                <Save size={11} className="text-white" />
+      </div>
+    </div>
+
+    {/* ── Save Script Modal ─────────────────────────────────────────────────── */}
+    {showSaveModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+        onClick={e => { if (e.target === e.currentTarget) setShowSaveModal(false); }}>
+        <div className="w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
+          style={{ background: "linear-gradient(145deg, #1a1200, #0f0d00)", border: "1px solid rgba(245,158,11,0.25)", boxShadow: "0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.1)" }}>
+          {/* Modal header */}
+          <div className="px-6 pt-6 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 4px 16px rgba(245,158,11,0.4)" }}>
+                  <Save size={18} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold" style={{ color: "#f5edd6" }}>Lưu vào kế hoạch</h3>
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>Thêm kịch bản vào Kanban Board</p>
+                </div>
               </div>
-              Lưu vào kế hoạch content
-            </h4>
-            <input
-              value={saveTitle}
-              onChange={e => setSaveTitle(e.target.value)}
-              placeholder="Tiêu đề video..."
-              className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none mb-3"
-              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#f5edd6" }}
-            />
-            <div className="flex gap-2">
-              <button onClick={handleSaveVideo} disabled={saving || !saveTitle.trim()}
-                className="flex-1 flex items-center justify-center gap-2 text-white text-sm font-bold py-3 rounded-xl disabled:opacity-50 transition-all"
-                style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 4px 12px rgba(245,158,11,0.3)" }}>
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                Lưu
-              </button>
-              <button onClick={() => setShowSaveForm(false)}
-                className="px-5 py-3 text-sm rounded-xl transition-all font-medium"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}>
-                Huỷ
+              <button onClick={() => setShowSaveModal(false)}
+                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+                style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                <X size={14} />
               </button>
             </div>
           </div>
-        )}
+
+          {/* Modal body */}
+          <div className="px-6 py-5 space-y-4">
+            {/* Preview info */}
+            <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}>
+                  {platform.toUpperCase()}
+                </div>
+                <span className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Trạng thái: Đã có kịch bản</span>
+              </div>
+              <p className="text-xs leading-relaxed line-clamp-2" style={{ color: "rgba(255,255,255,0.5)" }}>
+                {topic}
+              </p>
+            </div>
+
+            {/* Title input */}
+            <div>
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
+                Tiêu đề video
+              </label>
+              <input
+                value={saveTitle}
+                onChange={e => setSaveTitle(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !saving && saveTitle.trim() && handleSaveVideo()}
+                placeholder="VD: [TikTok] SmartFurni - Giường thông minh cho căn hộ..."
+                autoFocus
+                className="w-full rounded-2xl px-4 py-3.5 text-sm focus:outline-none transition-all"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
+              />
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-xl text-xs" style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171" }}>
+                <AlertCircle size={12} />
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Modal footer */}
+          <div className="px-6 pb-6">
+            {savedSuccess ? (
+              <div className="flex items-center justify-center gap-2 py-4 rounded-2xl text-sm font-bold"
+                style={{ background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.25)", color: "#4ade80" }}>
+                <CheckCircle2 size={16} />
+                Đã lưu thành công!
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <button onClick={() => setShowSaveModal(false)}
+                  className="flex-1 py-3.5 rounded-2xl text-sm font-semibold transition-all"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.45)" }}>
+                  Huỷ
+                </button>
+                <button onClick={handleSaveVideo} disabled={saving || !saveTitle.trim()}
+                  className="flex-2 flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all disabled:opacity-40"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: saving ? "none" : "0 6px 20px rgba(245,158,11,0.4)" }}>
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {saving ? "Đang lưu..." : "Lưu vào kế hoạch"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    )}
   );
 }
 // ─── Tab 2: Content Planner (Kanban with DnD) ─────────────────────────────────
