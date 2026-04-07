@@ -23,32 +23,39 @@ import {
 import type { TwelveWeekPlan, Goal, WeeklyTask, GoalColor, TaskStatus, GoalKpi, WeeklyAllocation } from "@/lib/twelve-week-plan-store";
 
 // ── Theme ────────────────────────────────────────────────────────────────────
+// Dark Luxury Theme — consistent with Roles Management page
 const T = {
-  bg: "#F8F9FB", card: "#FFFFFF", cardBorder: "#E5E7EB",
-  cardShadow: "0 1px 4px rgba(0,0,0,0.06)",
-  textPrimary: "#111827", textSecondary: "#374151", textMuted: "#6B7280",
-  divider: "#F3F4F6",
-  indigo: "#4F46E5", indigoBg: "#EEF2FF", indigoLight: "#C7D2FE",
-  green: "#059669", greenBg: "#ECFDF5",
-  gold: "#D97706", goldBg: "#FFFBEB",
-  red: "#DC2626", redBg: "#FEF2F2",
-  purple: "#7C3AED", purpleBg: "#F5F3FF",
-  blue: "#2563EB", blueBg: "#EFF6FF",
+  bg: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)",
+  bgSolid: "#0f0d00",
+  card: "rgba(255,255,255,0.04)",
+  cardSolid: "#1a1200",
+  cardBorder: "rgba(255,255,255,0.08)",
+  cardShadow: "0 4px 24px rgba(0,0,0,0.4)",
+  textPrimary: "#f5edd6",
+  textSecondary: "rgba(245,237,214,0.75)",
+  textMuted: "rgba(255,255,255,0.4)",
+  divider: "rgba(255,255,255,0.05)",
+  indigo: "#8b5cf6", indigoBg: "rgba(139,92,246,0.12)", indigoLight: "rgba(139,92,246,0.3)",
+  green: "#22c55e", greenBg: "rgba(34,197,94,0.1)",
+  gold: "#C9A84C", goldBg: "rgba(201,168,76,0.12)",
+  red: "#f87171", redBg: "rgba(248,113,113,0.1)",
+  purple: "#a78bfa", purpleBg: "rgba(167,139,250,0.1)",
+  blue: "#60a5fa", blueBg: "rgba(96,165,250,0.1)",
 };
 
 const GOAL_COLORS: Record<GoalColor, { bg: string; text: string; border: string; label: string }> = {
-  indigo: { bg: "#EEF2FF", text: "#4F46E5", border: "#C7D2FE", label: "Indigo" },
-  green:  { bg: "#ECFDF5", text: "#059669", border: "#A7F3D0", label: "Xanh lá" },
-  gold:   { bg: "#FFFBEB", text: "#D97706", border: "#FDE68A", label: "Vàng" },
-  red:    { bg: "#FEF2F2", text: "#DC2626", border: "#FECACA", label: "Đỏ" },
-  purple: { bg: "#F5F3FF", text: "#7C3AED", border: "#DDD6FE", label: "Tím" },
-  blue:   { bg: "#EFF6FF", text: "#2563EB", border: "#BFDBFE", label: "Xanh dương" },
+  indigo: { bg: "rgba(139,92,246,0.1)",  text: "#a78bfa", border: "rgba(139,92,246,0.25)",  label: "Tím" },
+  green:  { bg: "rgba(34,197,94,0.08)",   text: "#4ade80", border: "rgba(34,197,94,0.2)",    label: "Xanh lá" },
+  gold:   { bg: "rgba(201,168,76,0.1)",   text: "#C9A84C", border: "rgba(201,168,76,0.25)",  label: "Vàng" },
+  red:    { bg: "rgba(248,113,113,0.08)", text: "#f87171", border: "rgba(248,113,113,0.2)",  label: "Đỏ" },
+  purple: { bg: "rgba(192,132,252,0.08)", text: "#c084fc", border: "rgba(192,132,252,0.2)",  label: "Tím nhạt" },
+  blue:   { bg: "rgba(96,165,250,0.08)",  text: "#60a5fa", border: "rgba(96,165,250,0.2)",   label: "Xanh dương" },
 };
 
 const STATUS_CONFIG: Record<TaskStatus, { icon: React.ElementType; color: string; label: string }> = {
-  pending:  { icon: Circle,       color: T.textMuted, label: "Chưa làm" },
-  done:     { icon: CheckCircle2, color: T.green,     label: "Hoàn thành" },
-  skipped:  { icon: SkipForward,  color: T.gold,      label: "Bỏ qua" },
+  pending:  { icon: Circle,       color: "rgba(255,255,255,0.35)", label: "Chưa làm" },
+  done:     { icon: CheckCircle2, color: T.green,                   label: "Hoàn thành" },
+  skipped:  { icon: SkipForward,  color: T.gold,                    label: "Bỏ qua" },
 };
 
 function fmtDate(iso: string) {
@@ -152,7 +159,7 @@ function InlineEdit({ value, onSave, placeholder, multiline, className, style }:
       if (e.key === "Escape") { setVal(value); setEditing(false); }
     },
     className: `border rounded px-2 py-1 text-sm outline-none w-full ${className || ""}`,
-    style: { borderColor: T.indigo, ...style },
+    style: { borderColor: T.indigo, background: "rgba(255,255,255,0.06)", ...style },
     placeholder,
   };
   return multiline
@@ -235,7 +242,7 @@ function KpiAllocationEditor({ goal, kpi, kpiIndex, planStartDate, onSave, onClo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden" style={{ background: T.card, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+      <div className="w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden" style={{ background: "#1e1a0e", border: `1px solid ${T.cardBorder}`, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
         {/* Header */}
         <div className="px-5 py-4 flex items-center gap-3" style={{ background: gc.bg, borderBottom: `1px solid ${gc.border}` }}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: gc.text + "20" }}>
@@ -247,7 +254,10 @@ function KpiAllocationEditor({ goal, kpi, kpiIndex, planStartDate, onSave, onClo
               {kpi.label} • Tổng: <strong>{fmtKpiValue(kpi.targetTotal, kpi.format)} {kpi.unit}</strong>
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: "transparent" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(248,113,113,0.12)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
             <X size={16} style={{ color: T.textMuted }} />
           </button>
         </div>
@@ -305,7 +315,7 @@ function KpiAllocationEditor({ goal, kpi, kpiIndex, planStartDate, onSave, onClo
               const isAbove = val > defaultVal * 1.2;
               const isBelow = val < defaultVal * 0.8;
               return (
-                <div key={weekNum} className="rounded-xl p-3" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+                <div key={weekNum} className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${T.cardBorder}` }}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-black" style={{ color: T.indigo }}>T{weekNum}</span>
                     <span className="text-[9px]" style={{ color: T.textMuted }}>{fmtDate(start.toISOString())}</span>
@@ -317,7 +327,7 @@ function KpiAllocationEditor({ goal, kpi, kpiIndex, planStartDate, onSave, onClo
                     onBlur={(e) => updateWeek(i, e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                     className="w-full text-center text-sm font-bold rounded-lg px-2 py-1.5 outline-none border transition-all"
-                    style={{ borderColor: isAbove ? `${T.green}60` : isBelow ? `${T.red}60` : T.cardBorder, color: T.textPrimary }}
+                    style={{ borderColor: isAbove ? `${T.green}60` : isBelow ? `${T.red}60` : T.cardBorder, color: T.textPrimary, background: "rgba(255,255,255,0.05)" }}
                   />
                   <div className="flex items-center gap-1 mt-1.5">
                     <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: `${gc.text}15` }}>
@@ -335,8 +345,10 @@ function KpiAllocationEditor({ goal, kpi, kpiIndex, planStartDate, onSave, onClo
         {/* Footer */}
         <div className="px-5 py-4 flex gap-3" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
-            style={{ borderColor: T.cardBorder, color: T.textMuted }}>
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors"
+            style={{ borderColor: T.cardBorder, color: T.textMuted, background: "transparent" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
             Hủy
           </button>
           <button onClick={handleSave}
@@ -451,7 +463,7 @@ function KpiManagerPanel({ goal, planStartDate, onUpdateGoal }: {
                 onBlur={(e) => updateKpiCurrentValue(idx, parseKpiInput(e.target.value, kpi.format))}
                 onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                 className="w-32 text-sm font-bold rounded-lg px-2 py-1 outline-none border"
-                style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                style={{ borderColor: T.cardBorder, color: T.textPrimary, background: "rgba(255,255,255,0.05)" }}
                 placeholder="Nhập giá trị..."
               />
               <span className="text-xs" style={{ color: T.textMuted }}>{kpi.unit}</span>
@@ -463,7 +475,7 @@ function KpiManagerPanel({ goal, planStartDate, onUpdateGoal }: {
 
             {/* Weekly allocation preview */}
             {hasCustomAlloc && (
-              <div className="px-4 py-2 flex items-center gap-1 overflow-x-auto" style={{ borderTop: `1px solid ${gc.border}`, background: T.bg }}>
+              <div className="px-4 py-2 flex items-center gap-1 overflow-x-auto" style={{ borderTop: `1px solid ${gc.border}`, background: "rgba(255,255,255,0.02)" }}>
                 <span className="text-[9px] font-semibold flex-shrink-0 mr-1" style={{ color: T.textMuted }}>Phân bổ:</span>
                 {Array.from({ length: 12 }, (_, i) => {
                   const wTarget = getWeeklyTarget(kpi, i + 1);
@@ -482,7 +494,7 @@ function KpiManagerPanel({ goal, planStartDate, onUpdateGoal }: {
 
       {/* Add KPI form */}
       {showAddKpi ? (
-        <div className="rounded-xl p-4 space-y-3" style={{ background: T.bg, border: `2px dashed ${gc.border}` }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(255,255,255,0.03)", border: `2px dashed ${gc.border}` }}>
           <div className="flex items-center gap-2 mb-2">
             <BarChart size={14} style={{ color: gc.text }} />
             <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Thêm chỉ số KPI mới</span>
@@ -492,28 +504,28 @@ function KpiManagerPanel({ goal, planStartDate, onUpdateGoal }: {
               <label className="text-[10px] font-semibold block mb-1" style={{ color: T.textSecondary }}>Tên chỉ số</label>
               <input value={newKpi.label || ""} onChange={e => setNewKpi(p => ({ ...p, label: e.target.value }))}
                 className="w-full border rounded-lg px-2.5 py-1.5 text-sm outline-none"
-                style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                style={{ borderColor: T.cardBorder, color: T.textPrimary, background: "rgba(255,255,255,0.05)" }}
                 placeholder="VD: Doanh thu, Số khách..." />
             </div>
             <div>
               <label className="text-[10px] font-semibold block mb-1" style={{ color: T.textSecondary }}>Đơn vị</label>
               <input value={newKpi.unit || ""} onChange={e => setNewKpi(p => ({ ...p, unit: e.target.value }))}
                 className="w-full border rounded-lg px-2.5 py-1.5 text-sm outline-none"
-                style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                style={{ borderColor: T.cardBorder, color: T.textPrimary, background: "rgba(255,255,255,0.05)" }}
                 placeholder="VNĐ, KH, đơn..." />
             </div>
             <div>
               <label className="text-[10px] font-semibold block mb-1" style={{ color: T.textSecondary }}>Mục tiêu 12 tuần</label>
               <input value={newKpi.targetTotal || ""} onChange={e => setNewKpi(p => ({ ...p, targetTotal: parseFloat(e.target.value) || 0 }))}
                 className="w-full border rounded-lg px-2.5 py-1.5 text-sm outline-none"
-                style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                style={{ borderColor: T.cardBorder, color: T.textPrimary, background: "rgba(255,255,255,0.05)" }}
                 type="number" placeholder="1200000000" />
             </div>
             <div>
               <label className="text-[10px] font-semibold block mb-1" style={{ color: T.textSecondary }}>Định dạng</label>
               <select value={newKpi.format || "number"} onChange={e => setNewKpi(p => ({ ...p, format: e.target.value as GoalKpi["format"] }))}
                 className="w-full border rounded-lg px-2.5 py-1.5 text-sm outline-none"
-                style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
+                style={{ borderColor: T.cardBorder, color: T.textPrimary, background: "rgba(255,255,255,0.05)" }}>
                 <option value="number">Số thường</option>
                 <option value="currency">Tiền tệ (VNĐ)</option>
                 <option value="percent">Phần trăm (%)</option>
@@ -604,7 +616,10 @@ function DailyCalendarView({ plan, onUpdateTask }: {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setSelectedWeek(w => Math.max(1, w - 1))}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+            style={{ background: "transparent" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             disabled={selectedWeek === 1}>
             <ChevronLeft size={16} style={{ color: selectedWeek === 1 ? T.textMuted : T.textPrimary }} />
           </button>
@@ -622,7 +637,10 @@ function DailyCalendarView({ plan, onUpdateTask }: {
             ))}
           </div>
           <button onClick={() => setSelectedWeek(w => Math.min(12, w + 1))}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+            style={{ background: "transparent" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             disabled={selectedWeek === 12}>
             <ChevronRight size={16} style={{ color: selectedWeek === 12 ? T.textMuted : T.textPrimary }} />
           </button>
@@ -645,7 +663,7 @@ function DailyCalendarView({ plan, onUpdateTask }: {
               minHeight: 120,
             }}>
               {/* Day header */}
-              <div className="px-2 py-2 text-center" style={{ borderBottom: `1px solid ${isToday ? T.indigoLight : T.divider}`, background: isToday ? T.indigo : T.bg }}>
+              <div className="px-2 py-2 text-center" style={{ borderBottom: `1px solid ${isToday ? T.indigoLight : T.divider}`, background: isToday ? T.indigo : "rgba(255,255,255,0.03)" }}>
                 <div className="text-[9px] font-semibold" style={{ color: isToday ? "#fff" : T.textMuted }}>{dayName}</div>
                 <div className="text-base font-black" style={{ color: isToday ? "#fff" : T.textPrimary }}>{day.getDate()}</div>
                 {dayTasks.length > 0 && (
@@ -715,7 +733,7 @@ function DailyCalendarView({ plan, onUpdateTask }: {
                     value=""
                     onChange={(e) => { if (e.target.value) assignTaskToDay(task.id, e.target.value); }}
                     className="text-[9px] border rounded px-1 py-0.5 outline-none"
-                    style={{ borderColor: T.cardBorder, color: T.textMuted }}>
+                    style={{ borderColor: T.cardBorder, color: T.textMuted, background: "rgba(255,255,255,0.05)" }}>
                     <option value="">Gán ngày...</option>
                     {days.map(d => (
                       <option key={d.toISOString()} value={d.toISOString().split("T")[0]}>
@@ -821,7 +839,7 @@ function AllocationView({ plan, onUpdateGoal, onUpdateTask }: {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr style={{ background: T.bg }}>
+                    <tr style={{ background: "rgba(255,255,255,0.03)" }}>
                       <th className="px-4 py-2 text-left font-semibold" style={{ color: T.textMuted }}>Mục tiêu</th>
                       <th className="px-4 py-2 text-left font-semibold" style={{ color: T.textMuted }}>KPI</th>
                       <th className="px-4 py-2 text-right font-semibold" style={{ color: T.textMuted }}>Tổng 12T</th>
@@ -877,9 +895,9 @@ function AllocationView({ plan, onUpdateGoal, onUpdateTask }: {
 
 // ── Task Row ──────────────────────────────────────────────────────────────────
 const PRIORITY_CONFIG = {
-  high:   { label: "Cao",   color: T.red,   bg: "#FEF2F2" },
-  medium: { label: "TB",    color: T.gold,  bg: "#FFFBEB" },
-  low:    { label: "Thấp",  color: T.green, bg: "#ECFDF5" },
+  high:   { label: "Cao",   color: T.red,   bg: "rgba(248,113,113,0.12)" },
+  medium: { label: "TB",    color: T.gold,  bg: "rgba(201,168,76,0.12)" },
+  low:    { label: "Thấp",  color: T.green, bg: "rgba(34,197,94,0.1)" },
 };
 
 function TaskRow({ task, goal, onUpdate, onDelete }: {
@@ -905,8 +923,10 @@ function TaskRow({ task, goal, onUpdate, onDelete }: {
   };
 
   return (
-    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl group transition-all hover:bg-gray-50"
-      style={{ borderLeft: `3px solid ${gc.border}` }}>
+    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl group transition-all"
+      style={{ borderLeft: `3px solid ${gc.border}`, background: "transparent" }}
+      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
       {/* Status toggle */}
       <button onClick={cycleStatus}
         className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center transition-all hover:scale-110"
@@ -957,12 +977,15 @@ function TaskRow({ task, goal, onUpdate, onDelete }: {
         <div className="relative">
           <button
             onClick={() => setShowDatePicker(p => !p)}
-            className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-50 transition-colors"
+            className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+            style={{ background: "transparent" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(139,92,246,0.15)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             title="Gán ngày">
             <Calendar size={11} style={{ color: T.indigo }} />
           </button>
           {showDatePicker && (
-            <div className="absolute right-0 top-7 z-20 bg-white rounded-xl shadow-xl border p-2" style={{ borderColor: T.cardBorder, minWidth: 160 }}>
+            <div className="absolute right-0 top-7 z-20 rounded-xl shadow-xl border p-2" style={{ background: "#1e1a0e", borderColor: T.cardBorder, minWidth: 160 }}>
               <div className="text-[10px] font-semibold mb-1.5" style={{ color: T.textMuted }}>Gán ngày thực hiện</div>
               <input
                 type="date"
@@ -977,7 +1000,9 @@ function TaskRow({ task, goal, onUpdate, onDelete }: {
               {task.assignedDate && (
                 <button
                   onClick={() => { onUpdate(task.id, { assignedDate: undefined }); setShowDatePicker(false); }}
-                  className="w-full mt-1 text-[10px] py-1 rounded-lg text-center hover:bg-red-50"
+                  className="w-full mt-1 text-[10px] py-1 rounded-lg text-center"
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(248,113,113,0.1)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   style={{ color: T.red }}>
                   Xóa ngày
                 </button>
@@ -986,7 +1011,10 @@ function TaskRow({ task, goal, onUpdate, onDelete }: {
           )}
         </div>
         <button onClick={() => onDelete(task.id)}
-          className="w-6 h-6 rounded flex items-center justify-center hover:bg-red-50 transition-colors"
+          className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+          style={{ background: "transparent" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(248,113,113,0.12)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           title="Xóa">
           <Trash2 size={11} style={{ color: T.red }} />
         </button>
@@ -1122,7 +1150,10 @@ function GoalCard({ goal, tasks, planStartDate, onUpdateGoal, onDeleteGoal, onAd
           </div>
           <div className="flex-1" />
           <button onClick={() => onDeleteGoal(goal.id)}
-            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+            style={{ background: "transparent" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(248,113,113,0.12)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             title="Xóa mục tiêu">
             <Trash2 size={13} style={{ color: T.red }} />
           </button>
@@ -1621,9 +1652,9 @@ function ComparisonChart({ plan }: { plan: TwelveWeekPlan }) {
             {yLabels.map(y => (
               <g key={y}>
                 <line x1={PAD.l} y1={toY(y)} x2={W - PAD.r} y2={toY(y)}
-                  stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
+                  stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
                 <text x={PAD.l - 6} y={toY(y) + 4} textAnchor="end"
-                  fontSize="9" fill="#9CA3AF">{y}%</text>
+                  fontSize="9" fill="rgba(255,255,255,0.3)">{y}%</text>
               </g>
             ))}
 
@@ -1680,7 +1711,7 @@ function ComparisonChart({ plan }: { plan: TwelveWeekPlan }) {
             {weeklyData.map(d => (
               <text key={d.week} x={toX(d.week)} y={H - PAD.b + 14}
                 textAnchor="middle" fontSize="9"
-                fill={d.isCurrent ? T.indigo : "#9CA3AF"}
+                fill={d.isCurrent ? T.indigo : "rgba(255,255,255,0.3)"}
                 fontWeight={d.isCurrent ? "bold" : "normal"}>
                 T{d.week}
               </text>
@@ -1717,7 +1748,7 @@ function ComparisonChart({ plan }: { plan: TwelveWeekPlan }) {
                 <div className="relative h-5 rounded-full overflow-hidden" style={{ background: `${gc.text}10` }}>
                   {/* Ideal marker */}
                   <div className="absolute top-0 bottom-0 w-0.5 z-10"
-                    style={{ left: `${idealAtNow}%`, background: "#94A3B8" }} />
+                    style={{ left: `${idealAtNow}%`, background: "rgba(255,255,255,0.3)" }} />
                   {/* Actual bar */}
                   <div className="h-full rounded-full transition-all duration-700 relative"
                     style={{ width: `${gPct}%`, background: `linear-gradient(90deg, ${gc.text}80, ${gc.text})` }}>
@@ -1728,7 +1759,7 @@ function ComparisonChart({ plan }: { plan: TwelveWeekPlan }) {
                 </div>
                 <div className="flex justify-between mt-1">
                   <span className="text-[9px]" style={{ color: T.textMuted }}>{gDone}/{gTasks} việc hoàn thành</span>
-                  <span className="text-[9px]" style={{ color: "#94A3B8" }}>Mục tiêu: {idealAtNow}%</span>
+                  <span className="text-[9px]" style={{ color: T.textMuted }}>Mục tiêu: {idealAtNow}%</span>
                 </div>
               </div>
             );
@@ -1748,7 +1779,7 @@ function ComparisonChart({ plan }: { plan: TwelveWeekPlan }) {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr style={{ background: T.bg }}>
+              <tr style={{ background: "rgba(255,255,255,0.03)" }}>
                 <th className="px-4 py-2 text-left font-semibold" style={{ color: T.textMuted }}>Tuần</th>
                 <th className="px-4 py-2 text-left font-semibold" style={{ color: T.textMuted }}>Thời gian</th>
                 <th className="px-4 py-2 text-center font-semibold" style={{ color: T.textMuted }}>Mục tiêu</th>
@@ -1776,7 +1807,7 @@ function ComparisonChart({ plan }: { plan: TwelveWeekPlan }) {
                     <td className="px-4 py-2.5" style={{ color: T.textMuted }}>
                       {fmtDate(start.toISOString())} – {fmtDate(end.toISOString())}
                     </td>
-                    <td className="px-4 py-2.5 text-center font-semibold" style={{ color: "#94A3B8" }}>{d.idealPct}%</td>
+                    <td className="px-4 py-2.5 text-center font-semibold" style={{ color: T.textMuted }}>{d.idealPct}%</td>
                     <td className="px-4 py-2.5 text-center font-bold" style={{ color: d.actualPct !== null ? T.indigo : T.textMuted }}>
                       {d.actualPct !== null ? `${d.actualPct}%` : "—"}
                     </td>
@@ -1906,7 +1937,7 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
   return (
     <div className="space-y-4">
       {/* ── Scorecard header ── */}
-      <div className="rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${T.indigoBg}, #F0FDF4)`, border: `1.5px solid ${T.indigoLight}` }}>
+      <div className="rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${T.indigoBg}, rgba(34,197,94,0.06))`, border: `1.5px solid ${T.indigoLight}` }}>
         <div className="flex items-start gap-3 mb-4">
           <div className="p-2 rounded-xl" style={{ background: T.indigo }}>
             <Star size={18} color="#fff" />
@@ -1933,7 +1964,7 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
             { label: "Còn lại", value: String(totalPend), sub: `${weeksLeft} tuần còn lại`, color: T.gold },
             { label: "Bỏ qua", value: String(totalSkip), sub: "Công việc skipped", color: T.textMuted },
           ].map(({ label, value, sub, color }) => (
-            <div key={label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.7)", border: `1px solid ${T.cardBorder}` }}>
+            <div key={label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${T.cardBorder}` }}>
               <div className="text-xl font-black" style={{ color }}>{value}</div>
               <div className="text-[9px] font-semibold mt-0.5" style={{ color: T.textMuted }}>{label}</div>
               <div className="text-[8px]" style={{ color: T.textMuted }}>{sub}</div>
@@ -1962,13 +1993,13 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
                   });
                   return (
                     <polygon key={pct} points={pts.map(p => `${p.x},${p.y}`).join(" ")}
-                      fill="none" stroke="#E5E7EB" strokeWidth="0.8" />
+                      fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />
                   );
                 })}
                 {/* Axis lines */}
                 {goalStats.map((_, i) => {
                   const p = radarPointIdeal(i);
-                  return <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="#E5E7EB" strokeWidth="0.8" />;
+                  return <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />;
                 })}
                 {/* Ideal polygon */}
                 <polygon points={idealPoints.map(p => `${p.x},${p.y}`).join(" ")}
@@ -1981,7 +2012,7 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
                   const gc = GOAL_COLORS[goalStats[i].goal.color];
                   return (
                     <g key={i}>
-                      <circle cx={p.x} cy={p.y} r={5} fill={gc.text} stroke="#fff" strokeWidth="1.5" />
+                      <circle cx={p.x} cy={p.y} r={5} fill={gc.text} stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
                       <text x={radarPointIdeal(i).x} y={radarPointIdeal(i).y}
                         textAnchor={radarPointIdeal(i).x < CX - 5 ? "end" : radarPointIdeal(i).x > CX + 5 ? "start" : "middle"}
                         dy={radarPointIdeal(i).y < CY ? -6 : 14}
@@ -2065,7 +2096,7 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
             <span className="text-[9px]" style={{ color: T.textMuted }}>0%</span>
             {[10, 30, 50, 70, 100].map(v => (
               <div key={v} className="w-3 h-3 rounded-sm"
-                style={{ background: v === 0 ? "#F3F4F6" : v <= 30 ? "#FEF3C7" : v <= 60 ? "#FDE68A" : v <= 80 ? "#86EFAC" : "#059669" }} />
+                style={{ background: v <= 10 ? "rgba(248,113,113,0.2)" : v <= 30 ? "rgba(201,168,76,0.25)" : v <= 60 ? "rgba(201,168,76,0.5)" : v <= 80 ? "rgba(34,197,94,0.4)" : "rgba(34,197,94,0.8)" }} />
             ))}
             <span className="text-[9px]" style={{ color: T.textMuted }}>100%</span>
           </div>
@@ -2097,13 +2128,13 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
                     </td>
                     {weeklyPcts.map((p, wi) => {
                       const isCur = wi + 1 === currentWeek;
-                      const cellBg = p < 0 ? "#F9FAFB"
-                        : p === 0   ? "#FEF2F2"
-                        : p <= 30   ? "#FEF3C7"
-                        : p <= 60   ? "#FDE68A"
-                        : p <= 80   ? "#86EFAC"
-                        : "#059669";
-                      const textColor = p >= 80 ? "#fff" : p >= 60 ? "#065F46" : p >= 30 ? "#92400E" : p >= 0 ? "#991B1B" : T.textMuted;
+                      const cellBg = p < 0 ? "rgba(255,255,255,0.03)"
+                        : p === 0   ? "rgba(248,113,113,0.12)"
+                        : p <= 30   ? "rgba(201,168,76,0.15)"
+                        : p <= 60   ? "rgba(201,168,76,0.3)"
+                        : p <= 80   ? "rgba(34,197,94,0.25)"
+                        : "rgba(34,197,94,0.55)";
+                      const textColor = p >= 80 ? "#4ade80" : p >= 60 ? "#86efac" : p >= 30 ? "#C9A84C" : p >= 0 ? "#f87171" : T.textMuted;
                       return (
                         <td key={wi} className="text-center py-1">
                           <div className="w-7 h-7 rounded-md flex items-center justify-center mx-auto font-bold transition-all"
@@ -2134,8 +2165,8 @@ function SummaryReport({ plan }: { plan: TwelveWeekPlan }) {
                   const weekAllDone   = plan.tasks.filter(t => t.weekNumber === wi + 1 && t.status === "done");
                   const wp = weekAllActive.length > 0 ? Math.round((weekAllDone.length / weekAllActive.length) * 100) : -1;
                   const isCur = wi + 1 === currentWeek;
-                  const cellBg = wp < 0 ? "#F9FAFB" : wp === 0 ? "#FEF2F2" : wp <= 30 ? "#FEF3C7" : wp <= 60 ? "#FDE68A" : wp <= 80 ? "#86EFAC" : "#059669";
-                  const textColor = wp >= 80 ? "#fff" : wp >= 60 ? "#065F46" : wp >= 30 ? "#92400E" : wp >= 0 ? "#991B1B" : T.textMuted;
+                  const cellBg = wp < 0 ? "rgba(255,255,255,0.03)" : wp === 0 ? "rgba(248,113,113,0.12)" : wp <= 30 ? "rgba(201,168,76,0.15)" : wp <= 60 ? "rgba(201,168,76,0.3)" : wp <= 80 ? "rgba(34,197,94,0.25)" : "rgba(34,197,94,0.55)";
+                  const textColor = wp >= 80 ? "#4ade80" : wp >= 60 ? "#86efac" : wp >= 30 ? "#C9A84C" : wp >= 0 ? "#f87171" : T.textMuted;
                   return (
                     <td key={wi} className="text-center py-1.5">
                       <div className="w-7 h-7 rounded-md flex items-center justify-center mx-auto font-black"
@@ -2372,8 +2403,8 @@ function GoalDetailReport({ plan }: { plan: TwelveWeekPlan }) {
               const yPos = PAD.t + (1 - y / 100) * chartH;
               return (
                 <g key={y}>
-                  <line x1={PAD.l} y1={yPos} x2={W - PAD.r} y2={yPos} stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
-                  <text x={PAD.l - 4} y={yPos + 4} textAnchor="end" fontSize="8" fill="#9CA3AF">{y}%</text>
+                  <line x1={PAD.l} y1={yPos} x2={W - PAD.r} y2={yPos} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
+                  <text x={PAD.l - 4} y={yPos + 4} textAnchor="end" fontSize="8" fill="rgba(255,255,255,0.3)">{y}%</text>
                 </g>
               );
             })}
@@ -2395,7 +2426,7 @@ function GoalDetailReport({ plan }: { plan: TwelveWeekPlan }) {
                       fill={pct === 100 ? T.green : isCurrent ? gc.text : T.textMuted} fontWeight="bold">{pct}%</text>
                   )}
                   <text x={x + barW / 2} y={H - PAD.b + 12} textAnchor="middle" fontSize="9"
-                    fill={isCurrent ? gc.text : "#9CA3AF"} fontWeight={isCurrent ? "bold" : "normal"}>T{week}</text>
+                    fill={isCurrent ? gc.text : "rgba(255,255,255,0.3)"} fontWeight={isCurrent ? "bold" : "normal"}>T{week}</text>
                 </g>
               );
             })}
@@ -2871,8 +2902,10 @@ export default function TwelveWeekPlanClient() {
           </button>
           {activePlan && (
             <button onClick={() => deletePlan(activePlan.id)}
-              className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-red-50 transition-colors"
-              style={{ border: `1px solid ${T.cardBorder}` }}>
+              className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors"
+              style={{ border: `1px solid ${T.cardBorder}`, background: "transparent" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(248,113,113,0.12)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
               <Trash2 size={13} style={{ color: T.red }} />
             </button>
           )}
@@ -2959,7 +2992,7 @@ export default function TwelveWeekPlanClient() {
       {showNewPlanModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.4)" }}>
-          <div className="w-full max-w-md rounded-2xl p-6 shadow-2xl" style={{ background: T.card }}>
+          <div className="w-full max-w-md rounded-2xl p-6 shadow-2xl" style={{ background: "#1e1a0e", border: `1px solid ${T.cardBorder}` }}>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: T.indigoBg }}>
                 <Crosshair size={20} style={{ color: T.indigo }} />
@@ -2980,7 +3013,7 @@ export default function TwelveWeekPlanClient() {
                   value={newPlanForm.title}
                   onChange={(e) => setNewPlanForm((f) => ({ ...f, title: e.target.value }))}
                   className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2"
-                  style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                  style={{ borderColor: T.cardBorder, color: T.textPrimary, background: "rgba(255,255,255,0.05)" }}
                   placeholder="Kế hoạch Q1 2026..."
                 />
               </div>
@@ -2992,7 +3025,7 @@ export default function TwelveWeekPlanClient() {
                   value={newPlanForm.vision}
                   onChange={(e) => setNewPlanForm((f) => ({ ...f, vision: e.target.value }))}
                   className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 resize-none"
-                  style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                  style={{ borderColor: T.cardBorder, color: T.textPrimary, background: "rgba(255,255,255,0.05)" }}
                   rows={3}
                   placeholder="Tôi muốn đạt doanh thu 1.2 tỷ trong 12 tuần tới, mở rộng thêm 3 đại lý mới..."
                 />
@@ -3004,15 +3037,17 @@ export default function TwelveWeekPlanClient() {
                   value={newPlanForm.startDate}
                   onChange={(e) => setNewPlanForm((f) => ({ ...f, startDate: e.target.value }))}
                   className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2"
-                  style={{ borderColor: T.cardBorder, color: T.textPrimary }}
+                  style={{ borderColor: T.cardBorder, color: T.textPrimary, background: "rgba(255,255,255,0.05)" }}
                 />
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
               <button onClick={() => setShowNewPlanModal(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
-                style={{ borderColor: T.cardBorder, color: T.textMuted }}>
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors"
+                style={{ borderColor: T.cardBorder, color: T.textMuted, background: "transparent" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                 Hủy
               </button>
               <button onClick={createPlan} disabled={saving || !newPlanForm.title}
