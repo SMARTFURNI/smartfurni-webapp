@@ -12,31 +12,27 @@ import {
 } from "lucide-react";
 import type { TwelveWeekPlan, GoalColor } from "@/lib/twelve-week-plan-store";
 
-// ── Theme (Dark Luxury — mirror of TwelveWeekPlanClient dark mode) ───────────
+// ── Theme (mirror of TwelveWeekPlanClient) ───────────────────────────────────
 const T = {
-  bg: "rgba(255,255,255,0.03)",
-  card: "rgba(255,255,255,0.05)",
-  cardBorder: "rgba(255,255,255,0.10)",
-  cardShadow: "0 2px 12px rgba(0,0,0,0.3)",
-  textPrimary: "#f5edd6",
-  textSecondary: "rgba(245,237,214,0.75)",
-  textMuted: "rgba(255,255,255,0.40)",
-  divider: "rgba(255,255,255,0.07)",
-  indigo: "#818CF8", indigoBg: "rgba(129,140,248,0.12)", indigoLight: "rgba(129,140,248,0.25)",
-  green: "#4ADE80", greenBg: "rgba(74,222,128,0.12)",
-  gold: "#F59E0B", goldBg: "rgba(245,158,11,0.12)",
-  red: "#F87171", redBg: "rgba(248,113,113,0.12)",
-  purple: "#A78BFA", purpleBg: "rgba(167,139,250,0.12)",
-  blue: "#60A5FA", blueBg: "rgba(96,165,250,0.12)",
+  bg: "#F8F9FB", card: "#FFFFFF", cardBorder: "#E5E7EB",
+  cardShadow: "0 1px 4px rgba(0,0,0,0.06)",
+  textPrimary: "#111827", textSecondary: "#374151", textMuted: "#6B7280",
+  divider: "#F3F4F6",
+  indigo: "#4F46E5", indigoBg: "#EEF2FF", indigoLight: "#C7D2FE",
+  green: "#059669", greenBg: "#ECFDF5",
+  gold: "#D97706", goldBg: "#FFFBEB",
+  red: "#DC2626", redBg: "#FEF2F2",
+  purple: "#7C3AED", purpleBg: "#F5F3FF",
+  blue: "#2563EB", blueBg: "#EFF6FF",
 };
 
 const GOAL_COLORS: Record<GoalColor, { bg: string; text: string; border: string; label: string }> = {
-  indigo: { bg: "rgba(129,140,248,0.12)", text: "#818CF8", border: "rgba(129,140,248,0.25)", label: "Indigo" },
-  green:  { bg: "rgba(74,222,128,0.12)",  text: "#4ADE80", border: "rgba(74,222,128,0.25)",  label: "Xanh lá" },
-  gold:   { bg: "rgba(245,158,11,0.12)",  text: "#F59E0B", border: "rgba(245,158,11,0.25)",  label: "Vàng" },
-  red:    { bg: "rgba(248,113,113,0.12)", text: "#F87171", border: "rgba(248,113,113,0.25)", label: "Đỏ" },
-  purple: { bg: "rgba(167,139,250,0.12)", text: "#A78BFA", border: "rgba(167,139,250,0.25)", label: "Tím" },
-  blue:   { bg: "rgba(96,165,250,0.12)",  text: "#60A5FA", border: "rgba(96,165,250,0.25)",  label: "Xanh dương" },
+  indigo: { bg: "#EEF2FF", text: "#4F46E5", border: "#C7D2FE", label: "Indigo" },
+  green:  { bg: "#ECFDF5", text: "#059669", border: "#A7F3D0", label: "Xanh lá" },
+  gold:   { bg: "#FFFBEB", text: "#D97706", border: "#FDE68A", label: "Vàng" },
+  red:    { bg: "#FEF2F2", text: "#DC2626", border: "#FECACA", label: "Đỏ" },
+  purple: { bg: "#F5F3FF", text: "#7C3AED", border: "#DDD6FE", label: "Tím" },
+  blue:   { bg: "#EFF6FF", text: "#2563EB", border: "#BFDBFE", label: "Xanh dương" },
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────────────────
@@ -256,7 +252,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
   return (
     <div className="space-y-4">
       {/* ── 1. Scorecard header ── */}
-      <div className="rounded-2xl p-5" style={{ background: `linear-gradient(135deg, rgba(129,140,248,0.12), rgba(74,222,128,0.08))`, border: `1.5px solid ${T.indigoLight}` }}>
+      <div className="rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${T.indigoBg}, #F0FDF4)`, border: `1.5px solid ${T.indigoLight}` }}>
         <div className="flex items-start gap-3 mb-4">
           <div className="p-2 rounded-xl" style={{ background: T.indigo }}>
             <Star size={18} color="#fff" />
@@ -282,7 +278,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
             { label: "Còn lại", value: String(totalPend), sub: `${weeksLeft} tuần còn lại`, color: T.gold },
             { label: "Bỏ qua", value: String(totalSkip), sub: "Công việc skipped", color: T.textMuted },
           ].map(({ label, value, sub, color }) => (
-            <div key={label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${T.cardBorder}` }}>
+            <div key={label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.7)", border: `1px solid ${T.cardBorder}` }}>
               <div className="text-xl font-black" style={{ color }}>{value}</div>
               <div className="text-[9px] font-semibold mt-0.5" style={{ color: T.textMuted }}>{label}</div>
               <div className="text-[8px]" style={{ color: T.textMuted }}>{sub}</div>
@@ -310,12 +306,12 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   });
                   return (
                     <polygon key={pct} points={pts.map(p => `${p.x},${p.y}`).join(" ")}
-                      fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="0.8" />
+                      fill="none" stroke="#E5E7EB" strokeWidth="0.8" />
                   );
                 })}
                 {goalStats.map((_, i) => {
                   const p = radarPointIdeal(i);
-                  return <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="rgba(255,255,255,0.10)" strokeWidth="0.8" />;
+                  return <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="#E5E7EB" strokeWidth="0.8" />;
                 })}
                 <polygon points={idealRadarPoints.map(p => `${p.x},${p.y}`).join(" ")}
                   fill={`${T.indigo}08`} stroke={`${T.indigo}30`} strokeWidth="1" strokeDasharray="3 3" />
@@ -365,7 +361,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
           <div className="space-y-3">
             {sorted.map(({ goal, pct, gap, forecastPct, healthScore }, rank) => {
               const gc = GOAL_COLORS[goal.color];
-              const rankColors = ["#F59E0B", "rgba(255,255,255,0.5)", "#CD9F62"];
+              const rankColors = ["#F59E0B", "#9CA3AF", "#CD7F32"];
               return (
                 <div key={goal.id} className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black"
@@ -408,7 +404,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
           <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Heatmap tiến độ — 12 tuần × mục tiêu</span>
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[9px] font-medium" style={{ color: T.textMuted }}>0%</span>
-            {["rgba(248,113,113,0.20)","rgba(245,158,11,0.20)","rgba(245,158,11,0.40)","rgba(74,222,128,0.35)","rgba(74,222,128,0.60)","#4ADE80"].map((c,i) => (
+            {["#FEE2E2","#FEF3C7","#FDE68A","#86EFAC","#34D399","#059669"].map((c,i) => (
               <div key={i} className="w-4 h-4 rounded" style={{ background: c }} />
             ))}
             <span className="text-[9px] font-medium" style={{ color: T.textMuted }}>100%</span>
@@ -452,13 +448,13 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   const isCur = wi + 1 === currentWeek;
                   const isFuture = wi + 1 > currentWeek;
                   const cellBg = p < 0
-                    ? (isFuture ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.06)")
-                    : p === 0   ? "rgba(248,113,113,0.20)"
-                    : p <= 25   ? "rgba(245,158,11,0.20)"
-                    : p <= 50   ? "rgba(245,158,11,0.40)"
-                    : p <= 75   ? "rgba(74,222,128,0.35)"
-                    : p < 100   ? "rgba(74,222,128,0.60)"
-                    : "#4ADE80";
+                    ? (isFuture ? "#F3F4F6" : "#F9FAFB")
+                    : p === 0   ? "#FEE2E2"
+                    : p <= 25   ? "#FEF3C7"
+                    : p <= 50   ? "#FDE68A"
+                    : p <= 75   ? "#86EFAC"
+                    : p < 100   ? "#34D399"
+                    : "#059669";
                   return (
                     <div key={wi} className="flex-1 group relative" style={{ minWidth: 0 }}>
                       <div
@@ -469,7 +465,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                           border: isCur
                             ? `2px solid ${T.indigo}`
                             : isFuture
-                            ? `1px dashed rgba(255,255,255,0.15)`
+                            ? `1px dashed #E5E7EB`
                             : `1px solid transparent`,
                         }}
                       />
@@ -510,20 +506,20 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   const isCur = wi + 1 === currentWeek;
                   const isFuture = wi + 1 > currentWeek;
                   const cellBg = wp < 0
-                    ? (isFuture ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.06)")
-                    : wp === 0   ? "rgba(248,113,113,0.20)"
-                    : wp <= 25   ? "rgba(245,158,11,0.20)"
-                    : wp <= 50   ? "rgba(245,158,11,0.40)"
-                    : wp <= 75   ? "rgba(74,222,128,0.35)"
-                    : wp < 100   ? "rgba(74,222,128,0.60)"
-                    : "#4ADE80";
+                    ? (isFuture ? "#F3F4F6" : "#F9FAFB")
+                    : wp === 0   ? "#FEE2E2"
+                    : wp <= 25   ? "#FEF3C7"
+                    : wp <= 50   ? "#FDE68A"
+                    : wp <= 75   ? "#86EFAC"
+                    : wp < 100   ? "#34D399"
+                    : "#059669";
                   return (
                     <div key={wi} className="flex-1 group relative" style={{ minWidth: 0 }}>
                       <div className="rounded-md transition-all duration-150 group-hover:scale-110 group-hover:shadow-md"
                         style={{
                           height: 28,
                           background: cellBg,
-                          border: isCur ? `2px solid ${T.indigo}` : isFuture ? `1px dashed rgba(255,255,255,0.15)` : `1px solid transparent`,
+                          border: isCur ? `2px solid ${T.indigo}` : isFuture ? `1px dashed #E5E7EB` : `1px solid transparent`,
                         }} />
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
                         style={{ whiteSpace: "nowrap" }}>
@@ -547,15 +543,15 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
         {/* Footer legend */}
         <div className="px-5 py-2.5 flex items-center gap-4 flex-wrap" style={{ borderTop: `1px solid ${T.cardBorder}`, background: T.bg }}>
           {[
-            { color: "rgba(248,113,113,0.20)", label: "0%" },
-            { color: "rgba(245,158,11,0.40)", label: "25–50%" },
-            { color: "rgba(74,222,128,0.60)", label: "50–75%" },
-            { color: "#4ADE80", label: "100%" },
-            { color: "rgba(255,255,255,0.08)", label: "Chưa đến", dashed: true },
+            { color: "#FEE2E2", label: "0%" },
+            { color: "#FDE68A", label: "25–50%" },
+            { color: "#86EFAC", label: "50–75%" },
+            { color: "#059669", label: "100%" },
+            { color: "#F3F4F6", label: "Chưa đến", dashed: true },
           ].map(({ color, label, dashed }) => (
             <div key={label} className="flex items-center gap-1.5">
               <div className="w-3.5 h-3.5 rounded"
-                style={{ background: color, border: dashed ? "1px dashed rgba(255,255,255,0.20)" : `1px solid ${color}` }} />
+                style={{ background: color, border: dashed ? "1px dashed #D1D5DB" : `1px solid ${color}` }} />
               <span className="text-[9px]" style={{ color: T.textMuted }}>{label}</span>
             </div>
           ))}
@@ -755,8 +751,8 @@ export function GoalDetailDashboard({ plan }: { plan: TwelveWeekPlan }) {
               const yPos = PAD.t + (1 - y / 100) * chartH;
               return (
                 <g key={y}>
-                  <line x1={PAD.l} y1={yPos} x2={W - PAD.r} y2={yPos} stroke="rgba(255,255,255,0.10)" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
-                  <text x={PAD.l - 4} y={yPos + 4} textAnchor="end" fontSize="8" fill="rgba(255,255,255,0.35)">{y}%</text>
+                  <line x1={PAD.l} y1={yPos} x2={W - PAD.r} y2={yPos} stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
+                  <text x={PAD.l - 4} y={yPos + 4} textAnchor="end" fontSize="8" fill="#9CA3AF">{y}%</text>
                 </g>
               );
             })}
@@ -778,7 +774,7 @@ export function GoalDetailDashboard({ plan }: { plan: TwelveWeekPlan }) {
                       fill={pct === 100 ? T.green : isCurrent ? gc.text : T.textMuted} fontWeight="bold">{pct}%</text>
                   )}
                   <text x={x + barW / 2} y={H - PAD.b + 12} textAnchor="middle" fontSize="9"
-                    fill={isCurrent ? gc.text : "rgba(255,255,255,0.35)"} fontWeight={isCurrent ? "bold" : "normal"}>T{week}</text>
+                    fill={isCurrent ? gc.text : "#9CA3AF"} fontWeight={isCurrent ? "bold" : "normal"}>T{week}</text>
                 </g>
               );
             })}
