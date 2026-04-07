@@ -271,7 +271,7 @@ export default function QuickInteractionPanel({ lead, onClose }: QuickInteractio
   }
 
   return (
-    <div className="flex flex-col h-full bg-white border-l border-gray-200">
+    <div className="flex flex-col h-full bg-[rgba(255,255,255,0.07)] border-l border-gray-200">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <h2 className="font-semibold text-gray-900">Quick Interactions</h2>
@@ -324,7 +324,7 @@ export default function QuickInteractionPanel({ lead, onClose }: QuickInteractio
         {/* Call Tab */}
         {activeTab === "call" && (
           <div className="space-y-4">
-            <div className="bg-gray-50 p-3 rounded">
+            <div className="bg-[rgba(255,255,255,0.04)] p-3 rounded">
               <p className="text-xs text-gray-600 mb-1">Phone Number</p>
               <p className="font-mono text-lg text-gray-900">{lead.phone}</p>
             </div>
@@ -333,8 +333,8 @@ export default function QuickInteractionPanel({ lead, onClose }: QuickInteractio
             <div className="text-center">
               <div className={`text-sm font-medium mb-2 ${
                 callStatus === "in_progress" ? "text-green-600" :
-                callStatus === "ended" ? "text-gray-600" :
-                "text-gray-600"
+                callStatus === "ended" ? "text-[rgba(245,237,214,0.65)]" :
+                "text-[rgba(245,237,214,0.65)]"
               }`}>
                 {callStatus === "ready" && "Ready to call"}
                 {callStatus === "calling" && "Connecting..."}
@@ -418,7 +418,7 @@ export default function QuickInteractionPanel({ lead, onClose }: QuickInteractio
                 )}
 
                 {transcription && (
-                  <div className="bg-gray-50 p-3 rounded text-sm text-gray-700 border border-gray-200 max-h-32 overflow-y-auto">
+                  <div className="bg-[rgba(255,255,255,0.04)] p-3 rounded text-sm text-gray-700 border border-gray-200 max-h-32 overflow-y-auto">
                     {transcription}
                   </div>
                 )}
@@ -450,7 +450,7 @@ export default function QuickInteractionPanel({ lead, onClose }: QuickInteractio
                 type="text"
                 value={lead.phone}
                 readOnly
-                className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded bg-[rgba(255,255,255,0.04)] text-gray-600"
               />
             </div>
 
@@ -483,8 +483,8 @@ export default function QuickInteractionPanel({ lead, onClose }: QuickInteractio
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Recent Messages</h3>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {messageHistory.slice(0, 5).map(msg => (
-                    <div key={msg.id} className="text-xs bg-gray-50 p-2 rounded border border-gray-200">
-                      <p className="text-gray-600">{new Date(msg.timestamp).toLocaleString()}</p>
+                    <div key={msg.id} className="text-xs bg-[rgba(255,255,255,0.04)] p-2 rounded border border-gray-200">
+                      <p className="text-[rgba(245,237,214,0.65)]">{new Date(msg.timestamp).toLocaleString()}</p>
                       <p className="text-gray-900 mt-1">{msg.content}</p>
                     </div>
                   ))}
@@ -502,7 +502,7 @@ export default function QuickInteractionPanel({ lead, onClose }: QuickInteractio
             ) : (
               <>
                 {callHistory.map(call => (
-                  <div key={call.id} className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div key={call.id} className="bg-[rgba(255,255,255,0.04)] p-3 rounded border border-gray-200">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-xs text-gray-600">
@@ -532,7 +532,7 @@ export default function QuickInteractionPanel({ lead, onClose }: QuickInteractio
                 ))}
 
                 {messageHistory.map(msg => (
-                  <div key={msg.id} className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div key={msg.id} className="bg-[rgba(255,255,255,0.04)] p-3 rounded border border-gray-200">
                     <p className="text-xs text-gray-600">
                       {new Date(msg.timestamp).toLocaleString()}
                     </p>

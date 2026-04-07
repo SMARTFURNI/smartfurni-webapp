@@ -110,10 +110,10 @@ export default function StaffManagementClient({ initialStaff }: Props) {
 
       {/* Header */}
       <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between"
-        style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)" }}>
         <div>
           <h1 className="text-xl font-bold text-gray-900">Quản lý nhân viên</h1>
-          <p className="text-sm mt-0.5" style={{ color: "#6b7280" }}>
+          <p className="text-sm mt-0.5" style={{ color: "rgba(245,237,214,0.50)" }}>
             {activeCount}/{staff.length} nhân viên đang hoạt động
           </p>
         </div>
@@ -132,10 +132,10 @@ export default function StaffManagementClient({ initialStaff }: Props) {
           const Icon = ROLE_ICONS[role];
           return (
             <div key={role} className="rounded-xl p-3 text-center"
-              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
               <Icon size={18} className="mx-auto mb-1.5" style={{ color: ROLE_COLORS[role] }} />
               <div className="text-lg font-black text-gray-900">{count}</div>
-              <div className="text-[10px] font-medium" style={{ color: "#6b7280" }}>
+              <div className="text-[10px] font-medium" style={{ color: "rgba(245,237,214,0.50)" }}>
                 {ROLE_LABELS[role]}
               </div>
             </div>
@@ -145,13 +145,13 @@ export default function StaffManagementClient({ initialStaff }: Props) {
 
       {/* Staff Table */}
       <div className="px-8 pb-8">
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
           <table className="w-full">
             <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+              <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                 {["Nhân viên", "Cấp bậc", "Liên hệ", "Khu vực", "Trạng thái", "Đăng nhập lần cuối", "Thao tác"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider"
-                    style={{ color: "#9ca3af" }}>{h}</th>
+                    style={{ color: "rgba(245,237,214,0.40)" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -170,7 +170,7 @@ export default function StaffManagementClient({ initialStaff }: Props) {
                         </div>
                         <div>
                           <div className="text-sm font-semibold text-gray-900">{member.fullName}</div>
-                          <div className="text-[11px]" style={{ color: "#9ca3af" }}>@{member.username}</div>
+                          <div className="text-[11px]" style={{ color: "rgba(245,237,214,0.40)" }}>@{member.username}</div>
                         </div>
                       </div>
                     </td>
@@ -331,7 +331,7 @@ function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated:
           <Field label="Cấp bậc *">
             <select value={form.role} onChange={e => set("role", e.target.value)}
               className="w-full px-3 py-2 text-sm rounded-lg text-gray-900"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
               {(Object.keys(ROLE_LABELS) as StaffRole[]).filter(r => r !== "super_admin").map(r => (
                 <option key={r} value={r}>{ROLE_LABELS[r]}</option>
               ))}
@@ -362,12 +362,12 @@ function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         </Field>
 
         <Field label="Khu vực phụ trách (chọn nhiều)">
-          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 rounded-lg" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 rounded-lg" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
             {VIETNAM_PROVINCES.map(p => (
               <button key={p} type="button" onClick={() => toggleDistrict(p)}
                 className="px-2 py-0.5 rounded-md text-[11px] font-medium transition-all"
                 style={{
-                  background: form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.2)" : "#f3f4f6",
+                  background: form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.2)" : "rgba(255,255,255,0.04)",
                   color: form.assignedDistricts.includes(p) ? "#C9A84C" : "#6b7280",
                   border: `1px solid ${form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
                 }}>
@@ -380,7 +380,7 @@ function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose}
             className="flex-1 py-2.5 text-sm font-medium rounded-xl text-gray-900/50 hover:text-gray-900/80 transition-colors"
-            style={{ border: "1px solid #d1d5db" }}>Hủy</button>
+            style={{ border: "1px solid rgba(255,255,255,0.10)" }}>Hủy</button>
           <button type="submit" disabled={loading}
             className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-black transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
@@ -438,7 +438,7 @@ function EditStaffModal({ staff, onClose, onSaved }: { staff: StaffMember; onClo
           <Field label="Cấp bậc">
             <select value={form.role} onChange={e => set("role", e.target.value)}
               className="w-full px-3 py-2 text-sm rounded-lg text-gray-900"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
               {(Object.keys(ROLE_LABELS) as StaffRole[]).filter(r => r !== "super_admin").map(r => (
                 <option key={r} value={r}>{ROLE_LABELS[r]}</option>
               ))}
@@ -456,12 +456,12 @@ function EditStaffModal({ staff, onClose, onSaved }: { staff: StaffMember; onClo
           <DarkInput value={form.targetRevenue} onChange={v => set("targetRevenue", v)} type="number" />
         </Field>
         <Field label="Khu vực phụ trách">
-          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
             {VIETNAM_PROVINCES.map(p => (
               <button key={p} type="button" onClick={() => toggleDistrict(p)}
                 className="px-2 py-0.5 rounded-md text-[11px] font-medium transition-all"
                 style={{
-                  background: form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.2)" : "#f3f4f6",
+                  background: form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.2)" : "rgba(255,255,255,0.04)",
                   color: form.assignedDistricts.includes(p) ? "#C9A84C" : "#6b7280",
                   border: `1px solid ${form.assignedDistricts.includes(p) ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
                 }}>
@@ -473,7 +473,7 @@ function EditStaffModal({ staff, onClose, onSaved }: { staff: StaffMember; onClo
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose}
             className="flex-1 py-2.5 text-sm font-medium rounded-xl text-gray-900/50 hover:text-gray-900/80"
-            style={{ border: "1px solid #d1d5db" }}>Hủy</button>
+            style={{ border: "1px solid rgba(255,255,255,0.10)" }}>Hủy</button>
           <button type="submit" disabled={loading}
             className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-black flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
@@ -511,8 +511,8 @@ function PermissionModal({ staff, loading, onClose, onSave }: {
             <span className="text-sm font-semibold text-gray-900">Cấp bậc: {ROLE_LABELS[staff.role]}</span>
           </div>
           <button onClick={resetToDefault}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100"
-            style={{ color: "#6b7280" }}>
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-[rgba(255,255,255,0.08)]"
+            style={{ color: "rgba(245,237,214,0.50)" }}>
             <RefreshCw size={11} /> Đặt lại mặc định
           </button>
         </div>
@@ -520,12 +520,12 @@ function PermissionModal({ staff, loading, onClose, onSave }: {
         {PERMISSION_GROUPS.map(group => (
           <div key={group.label}>
             <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5"
-              style={{ color: "#9ca3af" }}>{group.label}</div>
+              style={{ color: "rgba(245,237,214,0.40)" }}>{group.label}</div>
             <div className="space-y-1.5">
               {group.keys.map(key => (
                 <button key={key} onClick={() => toggle(key)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all hover:bg-gray-50"
-                  style={{ border: "1px solid #e5e7eb" }}>
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all hover:bg-[rgba(255,255,255,0.05)]"
+                  style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
                   <span className="text-sm text-gray-900/70">{PERMISSION_LABELS[key]}</span>
                   <div className="w-9 h-5 rounded-full relative transition-all flex-shrink-0"
                     style={{ background: perms[key] ? "#C9A84C" : "#e5e7eb" }}>
@@ -541,7 +541,7 @@ function PermissionModal({ staff, loading, onClose, onSave }: {
         <div className="flex gap-3 pt-2">
           <button onClick={onClose}
             className="flex-1 py-2.5 text-sm font-medium rounded-xl text-gray-900/50 hover:text-gray-900/80"
-            style={{ border: "1px solid #d1d5db" }}>Hủy</button>
+            style={{ border: "1px solid rgba(255,255,255,0.10)" }}>Hủy</button>
           <button onClick={() => onSave(perms)} disabled={loading}
             className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-black flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
@@ -563,11 +563,11 @@ function ModalWrapper({ onClose, title, children, wide }: {
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className={`rounded-2xl w-full ${wide ? "max-w-2xl" : "max-w-lg"} max-h-[90vh] overflow-y-auto`}
-        style={{ background: "#ffffff", border: "1px solid #d1d5db", boxShadow: "0 25px 60px rgba(0,0,0,0.5)" }}>
+        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 25px 60px rgba(0,0,0,0.5)" }}>
         <div className="flex items-center justify-between px-6 py-4 sticky top-0 z-10 rounded-t-2xl"
-          style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb" }}>
+          style={{ background: "rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <h2 className="text-base font-bold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-900/40">
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-[rgba(255,255,255,0.08)] flex items-center justify-center text-gray-900/40">
             <X size={16} />
           </button>
         </div>
@@ -580,7 +580,7 @@ function ModalWrapper({ onClose, title, children, wide }: {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>{label}</label>
+      <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>{label}</label>
       {children}
     </div>
   );
@@ -592,6 +592,6 @@ function DarkInput({ value, onChange, placeholder, type = "text" }: {
   return (
     <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
       className="w-full px-3 py-2 text-sm rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none transition-all"
-      style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
+      style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }} />
   );
 }

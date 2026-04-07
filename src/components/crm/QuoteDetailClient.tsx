@@ -14,7 +14,7 @@ interface Props {
 }
 
 const STATUS_MAP = {
-  draft: { label: "Nháp", color: "#6b7280" },
+  draft: { label: "Nháp", color: "rgba(245,237,214,0.50)" },
   sent: { label: "Đã gửi", color: "#3b82f6" },
   accepted: { label: "Chấp nhận", color: "#22c55e" },
   rejected: { label: "Từ chối", color: "#ef4444" },
@@ -129,7 +129,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
   return (
     <div className="flex flex-col h-full" style={{ background: "#f0f2f5" }}>
       {/* Header */}
-      <div className="flex-shrink-0 bg-white px-6 py-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
+      <div className="flex-shrink-0 bg-transparent px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
             <Link href="/crm/quotes" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
@@ -142,12 +142,12 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
           <div className="flex items-center gap-2 flex-wrap">
             {/* Xuất PDF */}
             <button onClick={exportPdf} disabled={exportingPdf}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-[rgba(255,255,255,0.12)] text-gray-700 hover:bg-transparent disabled:opacity-50">
               <FileDown size={14} /> {exportingPdf ? "Đang xuất..." : "Xuất PDF"}
             </button>
             {/* Gửi Email */}
             <button onClick={() => { setEmailTo(lead?.email || ""); setEmailSubject(defaultEmailSubject); setEmailMessage(defaultEmailMessage); setEmailResult(null); setShowEmailModal(true); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-[rgba(255,255,255,0.12)] text-gray-700 hover:bg-transparent">
               <AtSign size={14} /> Gửi Email
             </button>
             {/* Gửi Zalo Personal */}
@@ -201,29 +201,29 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
                 )}
                 <div className="space-y-1 mt-1">
                   {company.address && (
-                    <div className="flex items-center gap-1.5 text-xs" style={{ color: "#9ca3af" }}>
+                    <div className="flex items-center gap-1.5 text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>
                       <MapPin size={11} className="flex-shrink-0" style={{ color: "#C9A84C" }} /> {company.address}
                     </div>
                   )}
                   <div className="flex items-center gap-3 flex-wrap">
                     {company.phone && (
-                      <div className="flex items-center gap-1 text-xs" style={{ color: "#9ca3af" }}>
+                      <div className="flex items-center gap-1 text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>
                         <Phone size={11} style={{ color: "#C9A84C" }} /> {company.phone}
                       </div>
                     )}
                     {company.email && (
-                      <div className="flex items-center gap-1 text-xs" style={{ color: "#9ca3af" }}>
+                      <div className="flex items-center gap-1 text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>
                         <Mail size={11} style={{ color: "#C9A84C" }} /> {company.email}
                       </div>
                     )}
                     {company.website && (
-                      <div className="flex items-center gap-1 text-xs" style={{ color: "#9ca3af" }}>
+                      <div className="flex items-center gap-1 text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>
                         <Globe size={11} style={{ color: "#C9A84C" }} /> {company.website}
                       </div>
                     )}
                   </div>
                   {company.taxCode && (
-                    <div className="text-xs" style={{ color: "#6b7280" }}>MST: {company.taxCode}</div>
+                    <div className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>MST: {company.taxCode}</div>
                   )}
                 </div>
               </div>
@@ -231,17 +231,17 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
               <div className="text-right flex-shrink-0">
                 <div className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#C9A84C", letterSpacing: "0.12em" }}>Báo giá</div>
                 <div className="text-xl font-black" style={{ color: "#ffffff" }}>{quote.quoteNumber}</div>
-                <div className="text-xs mt-1" style={{ color: "#9ca3af" }}>Ngày lập: {new Date(quote.createdAt).toLocaleDateString("vi-VN")}</div>
-                <div className="text-xs" style={{ color: "#9ca3af" }}>Hiệu lực đến: <span className="font-semibold" style={{ color: "#C9A84C" }}>{new Date(quote.validUntil).toLocaleDateString("vi-VN")}</span></div>
-                {quote.createdBy && <div className="text-xs mt-1" style={{ color: "#9ca3af" }}>Người lập: {quote.createdBy}</div>}
+                <div className="text-xs mt-1" style={{ color: "rgba(245,237,214,0.40)" }}>Ngày lập: {new Date(quote.createdAt).toLocaleDateString("vi-VN")}</div>
+                <div className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>Hiệu lực đến: <span className="font-semibold" style={{ color: "#C9A84C" }}>{new Date(quote.validUntil).toLocaleDateString("vi-VN")}</span></div>
+                {quote.createdBy && <div className="text-xs mt-1" style={{ color: "rgba(245,237,214,0.40)" }}>Người lập: {quote.createdBy}</div>}
               </div>
             </div>
 
             {/* Phần dưới: nền trắng cho thông tin khách hàng */}
-            <div className="bg-white px-6 py-5">
+            <div className="bg-transparent px-6 py-5">
             {/* Thông tin khách hàng */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              <div className="p-3 rounded-xl" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                   <User size={12} /> Thông tin khách hàng
                 </div>
@@ -293,10 +293,10 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
           </div>{/* end card */}
 
           {/* Bảng sản phẩm */}
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
+          <div className="bg-transparent rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                <tr style={{ background: "transparent", borderBottom: "2px solid #e5e7eb" }}>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Sản phẩm</th>
                   <th className="text-center px-3 py-3 text-xs font-semibold text-gray-500 uppercase w-16">SL</th>
                   <th className="text-right px-3 py-3 text-xs font-semibold text-gray-500 uppercase">Đơn giá</th>
@@ -385,24 +385,24 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
           {/* Ghi chú + Chữ ký */}
           <div className="grid grid-cols-2 gap-4">
             {quote.notes && (
-              <div className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
+              <div className="bg-transparent rounded-2xl p-5 shadow-sm" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
                 <h3 className="font-semibold text-gray-900 mb-2 text-sm">Điều khoản & Ghi chú</h3>
                 <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{quote.notes}</p>
               </div>
             )}
             {/* Chữ ký */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
+            <div className="bg-transparent rounded-2xl p-5 shadow-sm" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
               <div className="flex justify-between gap-4">
                 <div className="text-center flex-1">
                   <div className="text-xs font-semibold text-gray-500 uppercase mb-8">Đại diện bên bán</div>
-                  <div className="border-t border-gray-300 pt-2">
+                  <div className="border-t border-[rgba(255,255,255,0.12)] pt-2">
                     <div className="text-xs font-semibold text-gray-700">{company.representativeName || company.name}</div>
                     <div className="text-xs text-gray-500">{company.representativeTitle || "Đại diện"}</div>
                   </div>
                 </div>
                 <div className="text-center flex-1">
                   <div className="text-xs font-semibold text-gray-500 uppercase mb-8">Đại diện bên mua</div>
-                  <div className="border-t border-gray-300 pt-2">
+                  <div className="border-t border-[rgba(255,255,255,0.12)] pt-2">
                     <div className="text-xs font-semibold text-gray-700">{quote.leadName}</div>
                     <div className="text-xs text-gray-500">{lead?.company || ""}</div>
                   </div>
@@ -417,7 +417,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
       {/* Email Modal */}
       {showEmailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+          <div className="bg-transparent rounded-2xl p-6 w-full max-w-lg shadow-2xl">
             <div className="flex items-center gap-2 mb-4">
               <AtSign size={20} className="text-blue-600" />
               <h2 className="font-bold text-gray-900">Gửi báo giá qua Email</h2>
@@ -430,7 +430,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
                 type="email"
                 value={emailTo}
                 onChange={e => setEmailTo(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-3 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-2 focus:ring-blue-400"
                 placeholder="email@example.com"
               />
               {lead?.email && emailTo !== lead.email && (
@@ -447,7 +447,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
                 type="text"
                 value={emailSubject}
                 onChange={e => setEmailSubject(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-3 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-2 focus:ring-blue-400"
                 placeholder={defaultEmailSubject}
               />
             </div>
@@ -459,7 +459,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
                 value={emailMessage}
                 onChange={e => setEmailMessage(e.target.value)}
                 rows={5}
-                className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                className="w-full px-3 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                 placeholder="Lời nhắn cá nhân gửi kèm báo giá..."
               />
             </div>
@@ -477,7 +477,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
 
             <div className="flex gap-2">
               <button onClick={() => { setShowEmailModal(false); setEmailResult(null); }}
-                className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
+                className="flex-1 px-4 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-700 hover:bg-transparent">
                 {emailResult?.ok ? "Đóng" : "Huỷ"}
               </button>
               {!emailResult?.ok && (
@@ -494,7 +494,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
       {/* Zalo Modal */}
       {showZaloModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+          <div className="bg-transparent rounded-2xl p-6 w-full max-w-lg shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -538,11 +538,11 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
                     <p className="text-sm text-red-500 mb-4">{zaloSendResult.msg}</p>
                     <div className="flex gap-2">
                       <button onClick={() => setZaloSendResult(null)}
-                        className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
+                        className="flex-1 px-4 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-700 hover:bg-transparent">
                         Thử lại
                       </button>
                       <button onClick={() => { setShowZaloModal(false); setZaloSendResult(null); }}
-                        className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
+                        className="flex-1 px-4 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-700 hover:bg-transparent">
                         Đóng
                       </button>
                     </div>
@@ -568,13 +568,13 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
                   value={zaloMsg}
                   onChange={e => setZaloMsg(e.target.value)}
                   rows={8}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   placeholder="Nội dung tin nhắn Zalo..."
                 />
                 <p className="text-xs text-gray-400 mt-1">Link xem PDF báo giá sẽ được tự động thêm vào tin nhắn.</p>
                 <div className="flex gap-2 mt-4">
                   <button onClick={() => setShowZaloModal(false)}
-                    className="flex-1 px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
+                    className="flex-1 px-4 py-2 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-700 hover:bg-transparent">
                     Huỷ
                   </button>
                   <button onClick={sendZaloPersonal} disabled={sendingZalo}

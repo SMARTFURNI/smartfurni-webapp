@@ -113,7 +113,7 @@ function RuleCard({
   };
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         {/* Toggle */}
@@ -137,16 +137,16 @@ function RuleCard({
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold" style={{ color: "#111827" }}>{rule.name}</span>
-            <span className="text-xs" style={{ color: "#6b7280" }}>·</span>
-            <span className="text-xs" style={{ color: "#6b7280" }}>Khi chuyển sang</span>
+            <span className="text-sm font-semibold" style={{ color: "#f5edd6" }}>{rule.name}</span>
+            <span className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>·</span>
+            <span className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>Khi chuyển sang</span>
             <span className="text-xs px-2 py-0.5 rounded-full font-medium"
               style={{ background: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.2)" }}>
               {STAGE_LABEL[rule.triggerStage] ?? rule.triggerStage}
             </span>
           </div>
           {!expanded && (
-            <p className="text-xs mt-0.5 truncate" style={{ color: "#6b7280" }}>
+            <p className="text-xs mt-0.5 truncate" style={{ color: "rgba(245,237,214,0.50)" }}>
               {rule.subject || "Chưa có tiêu đề email"}
             </p>
           )}
@@ -156,7 +156,7 @@ function RuleCard({
         <div className="flex items-center gap-1 flex-shrink-0">
           <button onClick={() => setExpanded(!expanded)}
             className="p-1.5 rounded-lg transition-all hover:opacity-70"
-            style={{ color: "#9ca3af" }}>
+            style={{ color: "rgba(245,237,214,0.40)" }}>
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
           <button onClick={onDelete}
@@ -169,35 +169,35 @@ function RuleCard({
 
       {/* Expanded Editor */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t" style={{ borderColor: "#f3f4f6" }}>
+        <div className="px-4 pb-4 space-y-4 border-t" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
           <div className="pt-3 grid grid-cols-2 gap-3">
             {/* Tên quy tắc */}
             <div className="col-span-2">
-              <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>Tên quy tắc</label>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Tên quy tắc</label>
               <input value={rule.name} onChange={e => onChange({ ...rule, name: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#111827" }} />
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#f5edd6" }} />
             </div>
 
             {/* Giai đoạn kích hoạt */}
             <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>Giai đoạn kích hoạt</label>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Giai đoạn kích hoạt</label>
               <select value={rule.triggerStage} onChange={e => onChange({ ...rule, triggerStage: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#111827" }}>
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#f5edd6" }}>
                 {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
             </div>
 
             {/* Trì hoãn */}
             <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>Trì hoãn gửi</label>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Trì hoãn gửi</label>
               <div className="flex items-center gap-2">
                 <input type="number" min={0} max={1440} value={rule.delayMinutes}
                   onChange={e => onChange({ ...rule, delayMinutes: parseInt(e.target.value) || 0 })}
                   className="w-24 px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#111827" }} />
-                <span className="text-xs" style={{ color: "#6b7280" }}>phút (0 = gửi ngay)</span>
+                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#f5edd6" }} />
+                <span className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>phút (0 = gửi ngay)</span>
               </div>
             </div>
           </div>
@@ -218,7 +218,7 @@ function RuleCard({
 
           {/* Load template button */}
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold" style={{ color: "#374151" }}>Tiêu đề email</label>
+            <label className="block text-xs font-semibold" style={{ color: "rgba(245,237,214,0.85)" }}>Tiêu đề email</label>
             {DEFAULT_TEMPLATES[rule.triggerStage] && (
               <button onClick={loadTemplate}
                 className="text-xs px-2 py-1 rounded-lg transition-all hover:opacity-80"
@@ -230,15 +230,15 @@ function RuleCard({
           <input value={rule.subject} onChange={e => onChange({ ...rule, subject: e.target.value })}
             placeholder="VD: SmartFurni — Cảm ơn {{name}} đã quan tâm!"
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#111827" }} />
+            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#f5edd6" }} />
 
           {/* Body */}
           <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }}>Nội dung email</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Nội dung email</label>
             <textarea value={rule.body} onChange={e => onChange({ ...rule, body: e.target.value })}
               rows={8} placeholder="Nội dung email gửi đến khách hàng..."
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none font-mono"
-              style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#111827", lineHeight: "1.6" }} />
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#f5edd6", lineHeight: "1.6" }} />
           </div>
         </div>
       )}
@@ -253,8 +253,8 @@ function SmtpStatusBanner({ status }: { status: SmtpStatusInfo | null }) {
     return (
       <div className="flex items-center gap-2 p-3 rounded-xl"
         style={{ background: "rgba(156,163,175,0.08)", border: "1px solid rgba(156,163,175,0.2)" }}>
-        <RefreshCw size={13} className="animate-spin" style={{ color: "#9ca3af" }} />
-        <span className="text-xs" style={{ color: "#6b7280" }}>Đang kiểm tra cấu hình SMTP...</span>
+        <RefreshCw size={13} className="animate-spin" style={{ color: "rgba(245,237,214,0.40)" }} />
+        <span className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>Đang kiểm tra cấu hình SMTP...</span>
       </div>
     );
   }
@@ -287,7 +287,7 @@ function SmtpStatusBanner({ status }: { status: SmtpStatusInfo | null }) {
           <span className="text-xs font-medium" style={{ color: "#15803d" }}>
             SMTP đã cấu hình — Email Automation sẵn sàng hoạt động
           </span>
-          <p className="text-xs mt-0.5 truncate" style={{ color: "#6b7280" }}>
+          <p className="text-xs mt-0.5 truncate" style={{ color: "rgba(245,237,214,0.50)" }}>
             {status.host} · {status.user}
             {status.fromName && ` · Tên gửi: ${status.fromName}`}
           </p>
@@ -425,8 +425,8 @@ export default function EmailWorkflowAutomation() {
             <Mail size={16} style={{ color: "#a78bfa" }} />
           </div>
           <div>
-            <h2 className="text-sm font-bold" style={{ color: "#111827" }}>Email Automation</h2>
-            <p className="text-xs" style={{ color: "#6b7280" }}>Tự động gửi email theo giai đoạn khách hàng</p>
+            <h2 className="text-sm font-bold" style={{ color: "#f5edd6" }}>Email Automation</h2>
+            <p className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>Tự động gửi email theo giai đoạn khách hàng</p>
           </div>
         </div>
         <button onClick={save} disabled={saving}
@@ -442,7 +442,7 @@ export default function EmailWorkflowAutomation() {
 
       {/* Quick add by stage */}
       <div>
-        <p className="text-xs font-semibold mb-2" style={{ color: "#374151" }}>Thêm nhanh theo giai đoạn:</p>
+        <p className="text-xs font-semibold mb-2" style={{ color: "rgba(245,237,214,0.85)" }}>Thêm nhanh theo giai đoạn:</p>
         <div className="flex flex-wrap gap-2">
           {STAGES.map(s => (
             <button key={s.id} onClick={() => addRule(s.id)}
@@ -458,10 +458,10 @@ export default function EmailWorkflowAutomation() {
       <div className="space-y-3">
         {rules.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 rounded-2xl"
-            style={{ background: "#f9fafb", border: "2px dashed #e5e7eb" }}>
+            style={{ background: "transparent", border: "2px dashed #e5e7eb" }}>
             <Mail size={32} style={{ color: "#d1d5db" }} className="mb-3" />
-            <p className="text-sm font-medium" style={{ color: "#6b7280" }}>Chưa có quy tắc email nào</p>
-            <p className="text-xs mt-1 mb-4" style={{ color: "#9ca3af" }}>
+            <p className="text-sm font-medium" style={{ color: "rgba(245,237,214,0.50)" }}>Chưa có quy tắc email nào</p>
+            <p className="text-xs mt-1 mb-4" style={{ color: "rgba(245,237,214,0.40)" }}>
               Thêm quy tắc để tự động gửi email khi khách hàng chuyển giai đoạn
             </p>
             <button onClick={() => addRule()}
@@ -485,7 +485,7 @@ export default function EmailWorkflowAutomation() {
       {rules.length > 0 && (
         <button onClick={() => addRule()}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-80"
-          style={{ background: "#f9fafb", color: "#374151", border: "2px dashed #e5e7eb" }}>
+          style={{ background: "transparent", color: "rgba(245,237,214,0.85)", border: "2px dashed #e5e7eb" }}>
           <Plus size={14} /> Thêm quy tắc mới
         </button>
       )}
@@ -503,7 +503,7 @@ export default function EmailWorkflowAutomation() {
             "SMTP được lấy tự động từ cài đặt Email Marketing — không cần cấu hình lại",
             "Lịch sử gửi được ghi nhận trong tab Lịch sử gửi",
           ].map((t, i) => (
-            <li key={i} className="text-xs" style={{ color: "#1e40af" }}>· {t}</li>
+            <li key={i} className="text-xs" style={{ color: "#93c5fd" }}>· {t}</li>
           ))}
         </ul>
       </div>

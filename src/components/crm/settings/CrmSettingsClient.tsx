@@ -76,7 +76,7 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+      <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>
         {label}
       </label>
       <input
@@ -86,14 +86,14 @@ function InputField({
         placeholder={placeholder}
         className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
         style={{
-          background: "#ffffff",
-          border: "1px solid #d1d5db",
-          color: "#111827",
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          color: "#f5edd6",
         }}
         onFocus={e => { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(201,168,76,0.15)"; }}
         onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.boxShadow = "none"; }}
       />
-      {hint && <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>{hint}</p>}
+      {hint && <p className="text-xs mt-1" style={{ color: "rgba(245,237,214,0.40)" }}>{hint}</p>}
     </div>
   );
 }
@@ -105,7 +105,7 @@ function TextareaField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+      <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>
         {label}
       </label>
       <textarea
@@ -115,9 +115,9 @@ function TextareaField({
         placeholder={placeholder}
         className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all resize-none"
         style={{
-          background: "#ffffff",
-          border: "1px solid #d1d5db",
-          color: "#111827",
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          color: "#f5edd6",
         }}
         onFocus={e => { e.currentTarget.style.borderColor = "#C9A84C"; }}
         onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }}
@@ -134,8 +134,8 @@ function ToggleField({
   return (
     <div className="flex items-center justify-between py-2">
       <div>
-        <div className="text-sm font-medium" style={{ color: "#1f2937" }}>{label}</div>
-        {hint && <div className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{hint}</div>}
+        <div className="text-sm font-medium" style={{ color: "#f5edd6" }}>{label}</div>
+        {hint && <div className="text-xs mt-0.5" style={{ color: "rgba(245,237,214,0.50)" }}>{hint}</div>}
       </div>
       <button
         onClick={() => onChange(!value)}
@@ -209,7 +209,7 @@ function PipelineTab({ data, onChange }: { data: PipelineStage[]; onChange: (d: 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "#6b7280" }}>
+        <p className="text-sm" style={{ color: "rgba(245,237,214,0.50)" }}>
           Các giai đoạn hiển thị trên Kanban Board. Thứ tự từ trái sang phải.
         </p>
         <button
@@ -226,32 +226,32 @@ function PipelineTab({ data, onChange }: { data: PipelineStage[]; onChange: (d: 
           <div
             key={stage.id}
             className="flex items-start gap-3 p-4 rounded-xl"
-            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}
+            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}
           >
             <div className="flex items-center gap-2 mt-1">
-              <GripVertical size={16} style={{ color: "#9ca3af" }} />
-              <span className="text-xs font-bold w-5 text-center" style={{ color: "#9ca3af" }}>{idx + 1}</span>
+              <GripVertical size={16} style={{ color: "rgba(245,237,214,0.40)" }} />
+              <span className="text-xs font-bold w-5 text-center" style={{ color: "rgba(245,237,214,0.40)" }}>{idx + 1}</span>
             </div>
 
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs mb-1" style={{ color: "#6b7280" }}>Tên giai đoạn</label>
+                <label className="block text-xs mb-1" style={{ color: "rgba(245,237,214,0.50)" }}>Tên giai đoạn</label>
                 <input
                   value={stage.label}
                   onChange={e => update(idx, "label", e.target.value)}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
+                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1" style={{ color: "#6b7280" }}>Màu sắc</label>
+                <label className="block text-xs mb-1" style={{ color: "rgba(245,237,214,0.50)" }}>Màu sắc</label>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg flex-shrink-0" style={{ background: stage.color }} />
                   <ColorPicker value={stage.color} onChange={v => update(idx, "color", v)} />
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="block text-xs" style={{ color: "#6b7280" }}>Trạng thái đặc biệt</label>
+                <label className="block text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>Trạng thái đặc biệt</label>
                 <div className="flex gap-3">
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input type="checkbox" checked={stage.isWon} onChange={e => update(idx, "isWon", e.target.checked)}
@@ -270,7 +270,7 @@ function PipelineTab({ data, onChange }: { data: PipelineStage[]; onChange: (d: 
             <button
               onClick={() => remove(idx)}
               className="mt-1 p-1.5 rounded-lg transition-all hover:bg-red-500/20"
-              style={{ color: "#9ca3af" }}
+              style={{ color: "rgba(245,237,214,0.40)" }}
             >
               <Trash2 size={14} />
             </button>
@@ -293,7 +293,7 @@ function SourcesTab({ data, onChange }: { data: LeadSource[]; onChange: (d: Lead
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "#6b7280" }}>
+        <p className="text-sm" style={{ color: "rgba(245,237,214,0.50)" }}>
           Kênh tiếp thị để phân loại nguồn khách hàng trong CRM và báo cáo.
         </p>
         <button onClick={add} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
@@ -304,17 +304,17 @@ function SourcesTab({ data, onChange }: { data: LeadSource[]; onChange: (d: Lead
       <div className="space-y-2">
         {data.map((src, idx) => (
           <div key={src.id} className="flex items-center gap-3 p-3 rounded-xl"
-            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
             <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: src.color }} />
             <input
               value={src.label}
               onChange={e => update(idx, "label", e.target.value)}
               className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
             />
             <ColorPicker value={src.color} onChange={v => update(idx, "color", v)} />
             <button onClick={() => remove(idx)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-              style={{ color: "#9ca3af" }}>
+              style={{ color: "rgba(245,237,214,0.40)" }}>
               <Trash2 size={14} />
             </button>
           </div>
@@ -336,7 +336,7 @@ function LeadTypesTab({ data, onChange }: { data: LeadTypeConfig[]; onChange: (d
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "#6b7280" }}>
+        <p className="text-sm" style={{ color: "rgba(245,237,214,0.50)" }}>
           Phân loại khách hàng B2B để lọc và báo cáo theo nhóm.
         </p>
         <button onClick={add} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
@@ -347,7 +347,7 @@ function LeadTypesTab({ data, onChange }: { data: LeadTypeConfig[]; onChange: (d
       <div className="space-y-2">
         {data.map((type, idx) => (
           <div key={type.id} className="flex items-center gap-3 p-3 rounded-xl"
-            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
             <div className="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0"
               style={{ background: `${type.color}20`, color: type.color, border: `1px solid ${type.color}40` }}>
               {type.label}
@@ -356,11 +356,11 @@ function LeadTypesTab({ data, onChange }: { data: LeadTypeConfig[]; onChange: (d
               value={type.label}
               onChange={e => update(idx, "label", e.target.value)}
               className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
             />
             <ColorPicker value={type.color} onChange={v => update(idx, "color", v)} />
             <button onClick={() => remove(idx)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-              style={{ color: "#9ca3af" }}>
+              style={{ color: "rgba(245,237,214,0.40)" }}>
               <Trash2 size={14} />
             </button>
           </div>
@@ -386,40 +386,40 @@ function DiscountTierTable({ data, onChange }: { data: DiscountTierConfig[]; onC
           <Plus size={14} /> Thêm bậc
         </button>
       </div>
-      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ background: "#f9fafb" }}>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Nhãn</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Số lượng tối thiểu</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Chiết khấu (%)</th>
+            <tr style={{ background: "transparent" }}>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(245,237,214,0.50)" }}>Nhãn</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(245,237,214,0.50)" }}>Số lượng tối thiểu</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(245,237,214,0.50)" }}>Chiết khấu (%)</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {data.map((tier, idx) => (
-              <tr key={idx} style={{ borderTop: "1px solid #e5e7eb" }}>
+              <tr key={idx} style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                 <td className="px-4 py-3">
                   <input value={tier.label} onChange={e => update(idx, "label", e.target.value)}
                     className="w-full px-2 py-1 rounded text-sm outline-none"
-                    style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }} />
+                    style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
                 </td>
                 <td className="px-4 py-3">
                   <input type="number" value={tier.minQty} onChange={e => update(idx, "minQty", e.target.value)}
                     className="w-24 px-2 py-1 rounded text-sm outline-none"
-                    style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }} />
+                    style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <input type="number" value={tier.discountPct} onChange={e => update(idx, "discountPct", e.target.value)}
                       className="w-20 px-2 py-1 rounded text-sm outline-none"
-                      style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#C9A84C" }} />
+                      style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#C9A84C" }} />
                     <span className="text-xs font-bold" style={{ color: "#C9A84C" }}>%</span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <button onClick={() => remove(idx)} className="p-1.5 rounded hover:bg-red-500/20 transition-all"
-                    style={{ color: "#9ca3af" }}>
+                    style={{ color: "rgba(245,237,214,0.40)" }}>
                     <Trash2 size={14} />
                   </button>
                 </td>
@@ -529,22 +529,22 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
   return (
     <div className="space-y-4">
       {/* Sub-tab switcher */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f3f4f6", width: "fit-content" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "transparent", width: "fit-content" }}>
         <button onClick={() => handleSubTabChange("default")}
           className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
-          style={subTab === "default" ? { background: "#fff", color: "#C9A84C", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" } : { color: "#6b7280" }}>
+          style={subTab === "default" ? { background: "rgba(255,255,255,0.06)", color: "#C9A84C", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" } : { color: "rgba(245,237,214,0.50)" }}>
           Mặc định
         </button>
         <button onClick={() => handleSubTabChange("product")}
           className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
-          style={subTab === "product" ? { background: "#fff", color: "#C9A84C", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" } : { color: "#6b7280" }}>
+          style={subTab === "product" ? { background: "rgba(255,255,255,0.06)", color: "#C9A84C", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" } : { color: "rgba(245,237,214,0.50)" }}>
           Theo sản phẩm
         </button>
       </div>
 
       {subTab === "default" && (
         <div className="space-y-3">
-          <p className="text-sm" style={{ color: "#6b7280" }}>
+          <p className="text-sm" style={{ color: "rgba(245,237,214,0.50)" }}>
             Chiết khấu mặc định áp dụng cho tất cả sản phẩm khi tạo báo giá (trừ sản phẩm đã cài riêng).
           </p>
           <DiscountTierTable data={data} onChange={onChange} />
@@ -553,21 +553,21 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
 
       {subTab === "product" && (
         <div className="space-y-4">
-          <p className="text-sm" style={{ color: "#6b7280" }}>
+          <p className="text-sm" style={{ color: "rgba(245,237,214,0.50)" }}>
             Cài chiết khấu riêng cho từng sản phẩm. Sản phẩm có chiết khấu riêng sẽ không áp dụng chiết khấu mặc định.
           </p>
 
           {loadingProducts ? (
-            <div className="flex items-center gap-2 py-8 justify-center" style={{ color: "#9ca3af" }}>
+            <div className="flex items-center gap-2 py-8 justify-center" style={{ color: "rgba(245,237,214,0.40)" }}>
               <RefreshCw size={16} className="animate-spin" /> Đang tải sản phẩm...
             </div>
           ) : (
             <div className="flex gap-4">
               {/* Left: product list */}
               <div className="w-56 flex-shrink-0 space-y-1">
-                <div className="text-xs font-semibold mb-2" style={{ color: "#6b7280" }}>CHỌN SẢN PHẨM</div>
+                <div className="text-xs font-semibold mb-2" style={{ color: "rgba(245,237,214,0.50)" }}>CHỌN SẢN PHẨM</div>
                 {products.length === 0 ? (
-                  <div className="text-sm py-4 text-center" style={{ color: "#9ca3af" }}>Chưa có sản phẩm</div>
+                  <div className="text-sm py-4 text-center" style={{ color: "rgba(245,237,214,0.40)" }}>Chưa có sản phẩm</div>
                 ) : (
                   products.map(p => {
                     const hasOverride = productOverrides.some(o => o.productId === p.id);
@@ -576,10 +576,10 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
                         className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between gap-2"
                         style={selectedProductId === p.id
                           ? { background: "rgba(201,168,76,0.12)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }
-                          : { background: "#f9fafb", color: "#374151", border: "1px solid #e5e7eb" }}>
+                          : { background: "transparent", color: "rgba(245,237,214,0.85)", border: "1px solid rgba(255,255,255,0.10)" }}>
                         <div className="min-w-0">
                           <div className="font-medium truncate">{p.name}</div>
-                          <div className="text-xs" style={{ color: "#9ca3af" }}>{p.sku}</div>
+                          <div className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>{p.sku}</div>
                         </div>
                         {hasOverride && (
                           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#C9A84C" }} />
@@ -593,15 +593,15 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
               {/* Right: tier editor */}
               <div className="flex-1 min-w-0">
                 {!selectedProductId ? (
-                  <div className="flex items-center justify-center h-40 rounded-xl text-sm" style={{ color: "#9ca3af", border: "2px dashed #e5e7eb" }}>
+                  <div className="flex items-center justify-center h-40 rounded-xl text-sm" style={{ color: "rgba(245,237,214,0.40)", border: "2px dashed #e5e7eb" }}>
                     ← Chọn sản phẩm để cài chiết khấu riêng
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-semibold text-sm" style={{ color: "#111827" }}>{selectedProduct?.name}</div>
-                        <div className="text-xs" style={{ color: "#9ca3af" }}>{selectedProduct?.sku}</div>
+                        <div className="font-semibold text-sm" style={{ color: "#f5edd6" }}>{selectedProduct?.name}</div>
+                        <div className="text-xs" style={{ color: "rgba(245,237,214,0.40)" }}>{selectedProduct?.sku}</div>
                       </div>
                       <div className="flex items-center gap-2">
                         {selectedOverride && (
@@ -633,13 +633,13 @@ function DiscountTab({ data, onChange }: { data: DiscountTierConfig[]; onChange:
 
           {/* Summary of all product overrides */}
           {productOverrides.length > 0 && (
-            <div className="mt-4 p-4 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
-              <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>SẢN PHẨM CÓ CHIẾT KHẤU RIÊNG ({productOverrides.length})</div>
+            <div className="mt-4 p-4 rounded-xl" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              <div className="text-xs font-semibold mb-3" style={{ color: "rgba(245,237,214,0.50)" }}>SẢN PHẨM CÓ CHIẾT KHẤU RIÊNG ({productOverrides.length})</div>
               <div className="space-y-2">
                 {productOverrides.map(o => (
-                  <div key={o.productId} className="flex items-center justify-between p-2 rounded-lg" style={{ background: "#fff", border: "1px solid #e5e7eb" }}>
+                  <div key={o.productId} className="flex items-center justify-between p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)" }}>
                     <div>
-                      <span className="text-sm font-medium" style={{ color: "#374151" }}>{o.productName}</span>
+                      <span className="text-sm font-medium" style={{ color: "rgba(245,237,214,0.85)" }}>{o.productName}</span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {[...o.tiers].sort((a, b) => a.minQty - b.minQty).map((t, i) => (
                           <span key={i} className="px-2 py-0.5 rounded-full text-xs"
@@ -685,16 +685,16 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
       <SectionCard title="Endpoint & Xác thực" icon={Webhook}>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>
               Webhook URL (chỉ nhận POST)
             </label>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 rounded-lg text-sm font-mono"
-                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#C9A84C" }}>
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#C9A84C" }}>
                 {webhookUrl}
               </div>
               <button onClick={copyUrl} className="px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition-all hover:opacity-80"
-                style={{ background: copied ? "rgba(34,197,94,0.15)" : "#f3f4f6", color: copied ? "#22c55e" : "#6b7280", border: "1px solid #e5e7eb" }}>
+                style={{ background: copied ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.04)", color: copied ? "#22c55e" : "#6b7280", border: "1px solid rgba(255,255,255,0.10)" }}>
                 {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
                 {copied ? "Đã sao chép" : "Sao chép"}
               </button>
@@ -702,20 +702,20 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
           </div>
 
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>
               Webhook Secret (Header: x-webhook-secret)
             </label>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 rounded-lg text-sm font-mono"
-                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151" }}>
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
                 {showSecret ? data.secret : "•".repeat(Math.min(data.secret.length, 32))}
               </div>
-              <button onClick={() => setShowSecret(v => !v)} className="p-2 rounded-lg hover:bg-gray-100 transition-all"
-                style={{ color: "#6b7280" }}>
+              <button onClick={() => setShowSecret(v => !v)} className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-all"
+                style={{ color: "rgba(245,237,214,0.50)" }}>
                 {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
-              <button onClick={regenerateSecret} className="p-2 rounded-lg hover:bg-gray-100 transition-all"
-                style={{ color: "#6b7280" }} title="Tạo secret mới">
+              <button onClick={regenerateSecret} className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-all"
+                style={{ color: "rgba(245,237,214,0.50)" }} title="Tạo secret mới">
                 <RefreshCw size={16} />
               </button>
             </div>
@@ -761,12 +761,12 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
         <div className="space-y-5">
           {/* Toggle bật/tắt */}
           <div className="flex items-center justify-between p-3 rounded-xl"
-            style={{ background: data.fbEnabled ? "rgba(24,119,242,0.06)" : "#f9fafb", border: `1px solid ${data.fbEnabled ? "rgba(24,119,242,0.2)" : "#e5e7eb"}` }}>
+            style={{ background: data.fbEnabled ? "rgba(24,119,242,0.06)" : "transparent", border: `1px solid ${data.fbEnabled ? "rgba(24,119,242,0.2)" : "#e5e7eb"}` }}>
             <div>
               <p className="text-sm font-semibold" style={{ color: data.fbEnabled ? "#1877F2" : "#374151" }}>
                 {data.fbEnabled ? "✅ Đang hoạt động" : "⚪ Tắt"}
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(245,237,214,0.40)" }}>
                 {data.fbEnabled
                   ? "Lead từ Facebook sẽ tự động đổ vào Data Pool"
                   : "Bật để nhận lead từ Facebook Lead Ads"}
@@ -786,12 +786,12 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
 
           {/* Webhook URL để điền vào Facebook */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>
               Webhook URL (dán vào Facebook App → Webhooks)
             </label>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 rounded-lg text-xs font-mono truncate"
-                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#1877F2" }}>
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#1877F2" }}>
                 {typeof window !== "undefined" ? `${window.location.origin}/api/webhooks/facebook-lead` : "https://yourdomain.com/api/webhooks/facebook-lead"}
               </div>
               <button
@@ -799,8 +799,8 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
                   const url = `${window.location.origin}/api/webhooks/facebook-lead`;
                   navigator.clipboard.writeText(url);
                 }}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-all flex-shrink-0"
-                style={{ color: "#6b7280" }}
+                className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-all flex-shrink-0"
+                style={{ color: "rgba(245,237,214,0.50)" }}
                 title="Sao chép"
               >
                 <Copy size={14} />
@@ -810,12 +810,12 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
 
           {/* Verify Token */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>
               Verify Token (dán vào Facebook App → Webhooks → Verify Token)
             </label>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 rounded-lg text-sm font-mono"
-                style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151" }}>
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
                 {data.fbVerifyToken || "smartfurni_fb_webhook_2026"}
               </div>
               <button
@@ -824,16 +824,16 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
                   const token = "smartfurni_" + Array.from({ length: 20 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
                   onChange({ ...data, fbVerifyToken: token });
                 }}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-all"
-                style={{ color: "#6b7280" }}
+                className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-all"
+                style={{ color: "rgba(245,237,214,0.50)" }}
                 title="Tạo token mới"
               >
                 <RefreshCw size={14} />
               </button>
               <button
                 onClick={() => navigator.clipboard.writeText(data.fbVerifyToken || "smartfurni_fb_webhook_2026")}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-all"
-                style={{ color: "#6b7280" }}
+                className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-all"
+                style={{ color: "rgba(245,237,214,0.50)" }}
                 title="Sao chép"
               >
                 <Copy size={14} />
@@ -850,18 +850,18 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
               placeholder="123456789012345"
             />
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>App Secret</label>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>App Secret</label>
               <input
                 type="password"
                 value={data.fbAppSecret || ""}
                 onChange={e => onChange({ ...data, fbAppSecret: e.target.value })}
                 placeholder="••••••••••••"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#111827" }}
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "#f5edd6" }}
                 onFocus={e => { e.currentTarget.style.borderColor = "#1877F2"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(24,119,242,0.1)"; }}
                 onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.boxShadow = "none"; }}
               />
-              <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>Dùng để xác thực chữ ký webhook</p>
+              <p className="text-xs mt-1" style={{ color: "rgba(245,237,214,0.40)" }}>Dùng để xác thực chữ ký webhook</p>
             </div>
           </div>
 
@@ -885,12 +885,12 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
           <div className="p-4 rounded-xl space-y-2"
             style={{ background: "rgba(24,119,242,0.04)", border: "1px solid rgba(24,119,242,0.15)" }}>
             <p className="text-xs font-semibold" style={{ color: "#1877F2" }}>Hướng dẫn kết nối nhanh</p>
-            <ol className="text-xs space-y-1.5 list-decimal list-inside" style={{ color: "#6b7280" }}>
-              <li>Vào <strong style={{ color: "#374151" }}>Meta for Developers</strong> → Tạo App mới (loại Business)</li>
-              <li>Vào <strong style={{ color: "#374151" }}>App → Webhooks</strong> → Chọn sự kiện <code style={{ background: "#f3f4f6", padding: "1px 4px", borderRadius: 3 }}>leadgen</code></li>
-              <li>Dán <strong style={{ color: "#374151" }}>Webhook URL</strong> và <strong style={{ color: "#374151" }}>Verify Token</strong> ở trên vào Facebook</li>
-              <li>Sao chép <strong style={{ color: "#374151" }}>App ID</strong> và <strong style={{ color: "#374151" }}>App Secret</strong> từ trang App Dashboard</li>
-              <li>Bật toggle “Đang hoạt động” → Nhấn <strong style={{ color: "#374151" }}>Lưu cài đặt</strong></li>
+            <ol className="text-xs space-y-1.5 list-decimal list-inside" style={{ color: "rgba(245,237,214,0.50)" }}>
+              <li>Vào <strong style={{ color: "rgba(245,237,214,0.85)" }}>Meta for Developers</strong> → Tạo App mới (loại Business)</li>
+              <li>Vào <strong style={{ color: "rgba(245,237,214,0.85)" }}>App → Webhooks</strong> → Chọn sự kiện <code style={{ background: "transparent", padding: "1px 4px", borderRadius: 3 }}>leadgen</code></li>
+              <li>Dán <strong style={{ color: "rgba(245,237,214,0.85)" }}>Webhook URL</strong> và <strong style={{ color: "rgba(245,237,214,0.85)" }}>Verify Token</strong> ở trên vào Facebook</li>
+              <li>Sao chép <strong style={{ color: "rgba(245,237,214,0.85)" }}>App ID</strong> và <strong style={{ color: "rgba(245,237,214,0.85)" }}>App Secret</strong> từ trang App Dashboard</li>
+              <li>Bật toggle “Đang hoạt động” → Nhấn <strong style={{ color: "rgba(245,237,214,0.85)" }}>Lưu cài đặt</strong></li>
               <li>Test bằng cách gửi lead thử từ Facebook Lead Ads Manager</li>
             </ol>
           </div>
@@ -898,10 +898,10 @@ function WebhookTab({ data, onChange }: { data: CrmSettings["webhook"]; onChange
       </SectionCard>
 
       <SectionCard title="Hướng dẫn tích hợp Make.com / n8n" icon={FileText}>
-        <div className="space-y-3 text-sm" style={{ color: "#6b7280" }}>
-          <p>Gửi <strong className="text-gray-900">POST</strong> request đến webhook URL với header:</p>
+        <div className="space-y-3 text-sm" style={{ color: "rgba(245,237,214,0.50)" }}>
+          <p>Gửi <strong className="text-[#f5edd6]">POST</strong> request đến webhook URL với header:</p>
           <pre className="p-3 rounded-lg text-xs overflow-x-auto"
-            style={{ background: "rgba(0,0,0,0.3)", color: "#C9A84C", border: "1px solid #e5e7eb" }}>
+            style={{ background: "rgba(0,0,0,0.3)", color: "#C9A84C", border: "1px solid rgba(255,255,255,0.10)" }}>
 {`x-webhook-secret: ${data.secret}
 Content-Type: application/json
 
@@ -928,7 +928,7 @@ function NotificationsTab({ data, onChange }: { data: CrmSettings["notifications
       <SectionCard title="Cảnh báo quá hạn" icon={AlertCircle}>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>
               Ngưỡng quá hạn (ngày không tương tác)
             </label>
             <div className="flex items-center gap-3">
@@ -942,7 +942,7 @@ function NotificationsTab({ data, onChange }: { data: CrmSettings["notifications
                 {data.overdueThresholdDays} ngày
               </div>
             </div>
-            <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>
+            <p className="text-xs mt-1" style={{ color: "rgba(245,237,214,0.40)" }}>
               Thẻ KH sẽ hiện viền đỏ nếu không tương tác quá {data.overdueThresholdDays} ngày
             </p>
           </div>
@@ -952,7 +952,7 @@ function NotificationsTab({ data, onChange }: { data: CrmSettings["notifications
       <SectionCard title="Nhắc nhở lịch hẹn" icon={Bell}>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>
               Nhắc trước lịch hẹn (phút)
             </label>
             <div className="flex gap-2">
@@ -962,7 +962,7 @@ function NotificationsTab({ data, onChange }: { data: CrmSettings["notifications
                   onClick={() => onChange({ ...data, reminderBeforeMeetingMinutes: min })}
                   className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
                   style={{
-                    background: data.reminderBeforeMeetingMinutes === min ? "rgba(201,168,76,0.2)" : "#f3f4f6",
+                    background: data.reminderBeforeMeetingMinutes === min ? "rgba(201,168,76,0.2)" : "rgba(255,255,255,0.04)",
                     color: data.reminderBeforeMeetingMinutes === min ? "#C9A84C" : "#6b7280",
                     border: `1px solid ${data.reminderBeforeMeetingMinutes === min ? "rgba(201,168,76,0.4)" : "#e5e7eb"}`,
                   }}
@@ -1016,12 +1016,12 @@ function QuoteTab({ data, onChange }: { data: CrmSettings["quote"]; onChange: (d
             type="number"
           />
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>Đơn vị tiền tệ</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>Đơn vị tiền tệ</label>
             <select
               value={data.currency}
               onChange={e => onChange({ ...data, currency: e.target.value })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
             >
               <option value="VND">VND — Việt Nam Đồng</option>
               <option value="USD">USD — US Dollar</option>
@@ -1075,7 +1075,7 @@ function EmailTab({ data, onChange }: { data: CrmSettings["email"]; onChange: (d
           <InputField label="SMTP Port" value={data.smtpPort} onChange={v => onChange({ ...data, smtpPort: Number(v) })} type="number" placeholder="587" />
           <InputField label="SMTP Username" value={data.smtpUser} onChange={v => onChange({ ...data, smtpUser: v })} placeholder="user@gmail.com" />
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>SMTP Password</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>SMTP Password</label>
             <div className="flex items-center gap-2">
               <input
                 type={showPassword ? "text" : "password"}
@@ -1083,10 +1083,10 @@ function EmailTab({ data, onChange }: { data: CrmSettings["email"]; onChange: (d
                 onChange={e => onChange({ ...data, smtpPassword: e.target.value })}
                 placeholder="••••••••"
                 className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
               />
-              <button onClick={() => setShowPassword(v => !v)} className="p-2 rounded-lg hover:bg-gray-100 transition-all"
-                style={{ color: "#6b7280" }}>
+              <button onClick={() => setShowPassword(v => !v)} className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-all"
+                style={{ color: "rgba(245,237,214,0.50)" }}>
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
@@ -1184,7 +1184,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
   {
     name: "Xanh dương hiện đại",
     theme: {
-      pageBg: "#EFF6FF", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BFDBFE",
+      pageBg: "rgba(59,130,246,0.15)", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BFDBFE",
       kpiCardTitleColor: "#1E3A5F", kpiCardValueColor: "#1E3A5F", kpiCardMutedColor: "#64748B",
       kpiCustomerColor: "#2563EB", kpiPipelineColor: "#0EA5E9",
       kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
@@ -1192,7 +1192,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
       summaryCardBg: "#FFFFFF", summaryCardBorder: "#BFDBFE",
       sectionCardBg: "#FFFFFF", sectionCardBorder: "#BFDBFE",
       sectionHeaderColor: "#1E3A5F", sectionBodyColor: "#475467",
-      quickLinkBg: "#EFF6FF", quickLinkIconColor: "#2563EB",
+      quickLinkBg: "rgba(59,130,246,0.15)", quickLinkIconColor: "#2563EB",
       accentColor: "#2563EB", accentTextColor: "#FFFFFF",
     },
   },
@@ -1213,7 +1213,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
   {
     name: "Xanh lá tươi mát",
     theme: {
-      pageBg: "#F0FDF4", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BBF7D0",
+      pageBg: "rgba(34,197,94,0.10)", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BBF7D0",
       kpiCardTitleColor: "#14532D", kpiCardValueColor: "#14532D", kpiCardMutedColor: "#64748B",
       kpiCustomerColor: "#16A34A", kpiPipelineColor: "#CA8A04",
       kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
@@ -1221,7 +1221,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
       summaryCardBg: "#FFFFFF", summaryCardBorder: "#BBF7D0",
       sectionCardBg: "#FFFFFF", sectionCardBorder: "#BBF7D0",
       sectionHeaderColor: "#14532D", sectionBodyColor: "#475467",
-      quickLinkBg: "#F0FDF4", quickLinkIconColor: "#16A34A",
+      quickLinkBg: "rgba(34,197,94,0.10)", quickLinkIconColor: "#16A34A",
       accentColor: "#16A34A", accentTextColor: "#FFFFFF",
     },
   },
@@ -1302,7 +1302,7 @@ const COLOR_GROUPS: { title: string; fields: { key: keyof DashboardTheme; label:
 function ThemeColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
-      <span className="text-sm" style={{ color: "#374151" }}>{label}</span>
+      <span className="text-sm" style={{ color: "rgba(245,237,214,0.85)" }}>{label}</span>
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg border flex-shrink-0 shadow-sm" style={{ background: value, borderColor: "#d1d5db" }} />
         <input
@@ -1310,7 +1310,7 @@ function ThemeColorRow({ label, value, onChange }: { label: string; value: strin
           value={value}
           onChange={e => onChange(e.target.value)}
           className="w-24 text-xs px-2 py-1.5 rounded-lg border font-mono"
-          style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+          style={{ borderColor: "#e5e7eb", background: "transparent", color: "#f5edd6" }}
           placeholder="#RRGGBB"
         />
         <input
@@ -1330,8 +1330,8 @@ function ToggleRow({ label, desc, value, onChange }: { label: string; desc?: str
   return (
     <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
       <div>
-        <div className="text-sm font-medium" style={{ color: "#374151" }}>{label}</div>
-        {desc && <div className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>{desc}</div>}
+        <div className="text-sm font-medium" style={{ color: "rgba(245,237,214,0.85)" }}>{label}</div>
+        {desc && <div className="text-xs mt-0.5" style={{ color: "rgba(245,237,214,0.40)" }}>{desc}</div>}
       </div>
       <button
         onClick={() => onChange(!value)}
@@ -1355,12 +1355,12 @@ function SelectRow({ label, value, options, onChange }: {
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
-      <span className="text-sm" style={{ color: "#374151" }}>{label}</span>
+      <span className="text-sm" style={{ color: "rgba(245,237,214,0.85)" }}>{label}</span>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
         className="text-sm px-3 py-1.5 rounded-lg border"
-        style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+        style={{ borderColor: "#e5e7eb", background: "transparent", color: "#f5edd6" }}
       >
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -1426,7 +1426,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
     <div className="space-y-5">
       {/* Live preview */}
       <div className="rounded-2xl overflow-hidden border" style={{ borderColor: "#e5e7eb" }}>
-        <div className="px-4 py-3 text-xs font-semibold" style={{ background: "#f9fafb", color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>
+        <div className="px-4 py-3 text-xs font-semibold" style={{ background: "transparent", color: "rgba(245,237,214,0.50)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           XEM TRƯỚC — Màu hiện tại
         </div>
         <div className="p-4 flex gap-3 flex-wrap" style={{ background: data.pageBg }}>
@@ -1461,7 +1461,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
       </div>
 
       {/* Sub-tab navigation */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f3f4f6" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "transparent" }}>
         {GROUP_TABS.map(tab => (
           <button
             key={tab.id}
@@ -1482,14 +1482,14 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
       {activeGroup === "colors" && (
         <div className="space-y-4">
           <div>
-            <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>BỘ MÀU CÓ SẴN</div>
+            <div className="text-xs font-semibold mb-3" style={{ color: "rgba(245,237,214,0.50)" }}>BỘ MÀU CÓ SẴN</div>
             <div className="grid grid-cols-2 gap-2">
               {THEME_PRESETS.map(preset => (
                 <button
                   key={preset.name}
                   onClick={() => applyPreset(preset.theme)}
                   className="text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-90"
-                  style={{ background: preset.theme.kpiCardBg ?? "#fff", border: `2px solid ${preset.theme.accentColor ?? "#e5e7eb"}`, color: "#111827" }}
+                  style={{ background: preset.theme.kpiCardBg ?? "#fff", border: `2px solid ${preset.theme.accentColor ?? "#e5e7eb"}`, color: "#f5edd6" }}
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: preset.theme.accentColor ?? "#C9A84C" }} />
@@ -1527,7 +1527,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   onClick={() => set("kpiColumns", n)}
                   className="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all"
                   style={{
-                    background: data.kpiColumns === n ? "#C9A84C" : "#f9fafb",
+                    background: data.kpiColumns === n ? "#C9A84C" : "transparent",
                     color: data.kpiColumns === n ? "#fff" : "#374151",
                     borderColor: data.kpiColumns === n ? "#C9A84C" : "#e5e7eb",
                   }}
@@ -1549,7 +1549,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                     onClick={() => toggleKpiCard(id)}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all"
                     style={{
-                      background: isOn ? "rgba(201,168,76,0.1)" : "#f9fafb",
+                      background: isOn ? "rgba(201,168,76,0.1)" : "transparent",
                       borderColor: isOn ? "#C9A84C" : "#e5e7eb",
                       color: isOn ? "#C9A84C" : "#6b7280",
                     }}
@@ -1573,9 +1573,9 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   <div
                     key={id}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl"
-                    style={{ background: hidden ? "#fef2f2" : "#f9fafb", border: `1px solid ${hidden ? "#fecaca" : "#e5e7eb"}` }}
+                    style={{ background: hidden ? "#fef2f2" : "transparent", border: `1px solid ${hidden ? "#fecaca" : "#e5e7eb"}` }}
                   >
-                    <GripVertical size={14} style={{ color: "#9ca3af" }} />
+                    <GripVertical size={14} style={{ color: "rgba(245,237,214,0.40)" }} />
                     <span className="flex-1 text-xs font-medium" style={{ color: hidden ? "#ef4444" : "#374151" }}>
                       {SECTION_LABELS[id]}
                     </span>
@@ -1621,7 +1621,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   onClick={() => set("density", opt.value)}
                   className="flex-1 py-2 px-2 rounded-xl text-xs font-semibold border transition-all"
                   style={{
-                    background: data.density === opt.value ? "#C9A84C" : "#f9fafb",
+                    background: data.density === opt.value ? "#C9A84C" : "transparent",
                     color: data.density === opt.value ? "#fff" : "#374151",
                     borderColor: data.density === opt.value ? "#C9A84C" : "#e5e7eb",
                   }}
@@ -1646,9 +1646,9 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   onClick={() => set("fontFamily", opt.value)}
                   className="px-3 py-2.5 rounded-xl text-sm border transition-all text-left"
                   style={{
-                    background: data.fontFamily === opt.value ? "rgba(201,168,76,0.1)" : "#f9fafb",
+                    background: data.fontFamily === opt.value ? "rgba(201,168,76,0.1)" : "transparent",
                     borderColor: data.fontFamily === opt.value ? "#C9A84C" : "#e5e7eb",
-                    color: "#374151",
+                    color: "rgba(245,237,214,0.85)",
                   }}
                 >
                   <div className="font-semibold text-xs" style={{ color: data.fontFamily === opt.value ? "#C9A84C" : "#374151" }}>{opt.label}</div>
@@ -1670,12 +1670,12 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   onClick={() => set("kpiValueSize", opt.value)}
                   className="flex-1 py-3 rounded-xl border transition-all"
                   style={{
-                    background: data.kpiValueSize === opt.value ? "rgba(201,168,76,0.1)" : "#f9fafb",
+                    background: data.kpiValueSize === opt.value ? "rgba(201,168,76,0.1)" : "transparent",
                     borderColor: data.kpiValueSize === opt.value ? "#C9A84C" : "#e5e7eb",
                   }}
                 >
                   <div className={`${opt.size} font-bold`} style={{ color: data.kpiValueSize === opt.value ? "#C9A84C" : "#374151" }}>42</div>
-                  <div className="text-xs mt-1" style={{ color: "#9ca3af" }}>{opt.label}</div>
+                  <div className="text-xs mt-1" style={{ color: "rgba(245,237,214,0.40)" }}>{opt.label}</div>
                 </button>
               ))}
             </div>
@@ -1698,7 +1698,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   onClick={() => set("chartType", opt.value)}
                   className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
                   style={{
-                    background: data.chartType === opt.value ? "#C9A84C" : "#f9fafb",
+                    background: data.chartType === opt.value ? "#C9A84C" : "transparent",
                     color: data.chartType === opt.value ? "#fff" : "#374151",
                     borderColor: data.chartType === opt.value ? "#C9A84C" : "#e5e7eb",
                   }}
@@ -1717,7 +1717,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   onClick={() => set("chartMonths", n)}
                   className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
                   style={{
-                    background: data.chartMonths === n ? "#C9A84C" : "#f9fafb",
+                    background: data.chartMonths === n ? "#C9A84C" : "transparent",
                     color: data.chartMonths === n ? "#fff" : "#374151",
                     borderColor: data.chartMonths === n ? "#C9A84C" : "#e5e7eb",
                   }}
@@ -1740,7 +1740,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   onClick={() => set("funnelStyle", opt.value)}
                   className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
                   style={{
-                    background: data.funnelStyle === opt.value ? "#C9A84C" : "#f9fafb",
+                    background: data.funnelStyle === opt.value ? "#C9A84C" : "transparent",
                     color: data.funnelStyle === opt.value ? "#fff" : "#374151",
                     borderColor: data.funnelStyle === opt.value ? "#C9A84C" : "#e5e7eb",
                   }}
@@ -1763,7 +1763,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   onClick={() => set("chartPalette", opt.value)}
                   className="flex-1 py-2.5 px-2 rounded-xl border transition-all"
                   style={{
-                    background: data.chartPalette === opt.value ? "rgba(201,168,76,0.1)" : "#f9fafb",
+                    background: data.chartPalette === opt.value ? "rgba(201,168,76,0.1)" : "transparent",
                     borderColor: data.chartPalette === opt.value ? "#C9A84C" : "#e5e7eb",
                   }}
                 >
@@ -1791,13 +1791,13 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
             {data.tickerEnabled && (
               <>
                 <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <div className="text-sm mb-1.5" style={{ color: "#374151" }}>Nội dung ticker</div>
+                  <div className="text-sm mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>Nội dung ticker</div>
                   <input
                     type="text"
                     value={data.tickerText ?? ""}
                     onChange={e => set("tickerText", e.target.value)}
                     className="w-full text-sm px-3 py-2 rounded-lg border"
-                    style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+                    style={{ borderColor: "#e5e7eb", background: "transparent", color: "#f5edd6" }}
                     placeholder="Nhập thông báo nội bộ..."
                   />
                 </div>
@@ -1809,42 +1809,42 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
 
           <SectionCard title="Header thương hiệu" icon={Palette}>
             <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
-              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>Tên công ty trên header</div>
+              <div className="text-sm mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>Tên công ty trên header</div>
               <input
                 type="text"
                 value={data.headerCompanyName ?? ""}
                 onChange={e => set("headerCompanyName", e.target.value)}
                 className="w-full text-sm px-3 py-2 rounded-lg border"
-                style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+                style={{ borderColor: "#e5e7eb", background: "transparent", color: "#f5edd6" }}
                 placeholder="Mặc định: SmartFurni CRM"
               />
             </div>
             <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
-              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>URL logo (header)</div>
+              <div className="text-sm mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>URL logo (header)</div>
               <input
                 type="text"
                 value={data.headerLogoUrl ?? ""}
                 onChange={e => set("headerLogoUrl", e.target.value)}
                 className="w-full text-sm px-3 py-2 rounded-lg border"
-                style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+                style={{ borderColor: "#e5e7eb", background: "transparent", color: "#f5edd6" }}
                 placeholder="https://..."
               />
             </div>
             <div className="py-2.5" style={{ borderBottom: "1px solid #f3f4f6" }}>
-              <div className="text-sm mb-1.5" style={{ color: "#374151" }}>URL ảnh nền header</div>
+              <div className="text-sm mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>URL ảnh nền header</div>
               <input
                 type="text"
                 value={data.headerBgImageUrl ?? ""}
                 onChange={e => set("headerBgImageUrl", e.target.value)}
                 className="w-full text-sm px-3 py-2 rounded-lg border"
-                style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "#111827" }}
+                style={{ borderColor: "#e5e7eb", background: "transparent", color: "#f5edd6" }}
                 placeholder="https://... (tùy chọn)"
               />
             </div>
             <div className="py-2.5">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm" style={{ color: "#374151" }}>Opacity ảnh nền</span>
-                <span className="text-xs font-mono" style={{ color: "#9ca3af" }}>{Math.round((data.headerBgOpacity ?? 0.08) * 100)}%</span>
+                <span className="text-sm" style={{ color: "rgba(245,237,214,0.85)" }}>Opacity ảnh nền</span>
+                <span className="text-xs font-mono" style={{ color: "rgba(245,237,214,0.40)" }}>{Math.round((data.headerBgOpacity ?? 0.08) * 100)}%</span>
               </div>
               <input
                 type="range"
@@ -1876,7 +1876,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
                   onClick={() => set("refreshInterval", opt.value)}
                   className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
                   style={{
-                    background: data.refreshInterval === opt.value ? "#C9A84C" : "#f9fafb",
+                    background: data.refreshInterval === opt.value ? "#C9A84C" : "transparent",
                     color: data.refreshInterval === opt.value ? "#fff" : "#374151",
                     borderColor: data.refreshInterval === opt.value ? "#C9A84C" : "#e5e7eb",
                   }}
@@ -1925,13 +1925,13 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
 
 function SectionCard({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl p-5 space-y-4" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+    <div className="rounded-2xl p-5 space-y-4" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
       <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center"
           style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.2)" }}>
           <Icon size={14} style={{ color: "#C9A84C" }} />
         </div>
-        <h3 className="text-sm font-semibold" style={{ color: "#1f2937" }}>{title}</h3>
+        <h3 className="text-sm font-semibold" style={{ color: "#f5edd6" }}>{title}</h3>
       </div>
       {children}
     </div>
@@ -1998,12 +1998,12 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
   const activeTabData = TABS.find(t => t.id === activeTab)!;
 
   return (
-    <div className="flex h-full" style={{ background: "#ffffff", color: "#111827" }}>
+    <div className="flex h-full" style={{ background: "rgba(255,255,255,0.06)", color: "#f5edd6" }}>
       {/* Left sidebar */}
       <div className="w-64 flex-shrink-0 flex flex-col"
-        style={{ background: "#f8f9fb", borderRight: "1px solid #e5e7eb" }}>
+        style={{ background: "transparent", borderRight: "1px solid rgba(255,255,255,0.08)" }}>
         {/* Header */}
-        <div className="px-5 py-5" style={{ borderBottom: "1px solid #e5e7eb" }}>
+        <div className="px-5 py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center"
               style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
@@ -2011,7 +2011,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
             </div>
             <div>
               <div className="text-sm font-bold text-gray-900">Cài đặt CRM</div>
-              <div className="text-[10px]" style={{ color: "#9ca3af" }}>Cấu hình hệ thống</div>
+              <div className="text-[10px]" style={{ color: "rgba(245,237,214,0.40)" }}>Cấu hình hệ thống</div>
             </div>
           </div>
         </div>
@@ -2038,7 +2038,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
                     {tab.label}
                   </div>
                   <div className="text-[10px] mt-0.5"
-                    style={{ color: "#9ca3af" }}>
+                    style={{ color: "rgba(245,237,214,0.40)" }}>
                     {tab.desc}
                   </div>
                 </div>
@@ -2048,7 +2048,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
         </nav>
 
         {/* Save all */}
-        <div className="p-4" style={{ borderTop: "1px solid #e5e7eb" }}>
+        <div className="p-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <button
             onClick={saveAll}
             disabled={saving}
@@ -2065,10 +2065,10 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-4 flex-shrink-0"
-          style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)" }}>
           <div>
             <h1 className="text-lg font-bold text-gray-900">{activeTabData.label}</h1>
-            <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{activeTabData.desc}</p>
+            <p className="text-xs mt-0.5" style={{ color: "rgba(245,237,214,0.50)" }}>{activeTabData.desc}</p>
           </div>
           <div className="flex items-center gap-3">
             {error && (

@@ -78,7 +78,7 @@ export default function EmailCampaignDashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-[#C9A84C] mb-2">📧 Quản Lý Chiến Dịch Email</h1>
-            <p className="text-gray-400">Tạo và quản lý các chiến dịch email marketing tự động hoá</p>
+            <p className="text-[rgba(245,237,214,0.35)]">Tạo và quản lý các chiến dịch email marketing tự động hoá</p>
           </div>
           <button
             onClick={() => setShowNewForm(!showNewForm)}

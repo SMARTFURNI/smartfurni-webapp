@@ -26,7 +26,7 @@ function ScoreGauge({ score }: { score: number }) {
   return (
     <div className="flex flex-col items-center">
       <div className="relative w-32 h-16 overflow-hidden">
-        <div className="absolute inset-0 rounded-t-full border-8 border-gray-200" />
+        <div className="absolute inset-0 rounded-t-full border-8 border-[rgba(255,255,255,0.12)]" />
         <div
           className="absolute inset-0 rounded-t-full border-8 transition-all duration-700"
           style={{
@@ -110,14 +110,14 @@ export default function NpsClient() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-[rgba(255,255,255,0.12)]">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl font-semibold text-gray-900">Đánh giá NPS</h1>
             <p className="text-sm text-gray-500 mt-0.5">Khảo sát độ hài lòng khách hàng sau khi chốt đơn</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={load} className="p-2 rounded-lg bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors">
+            <button onClick={load} className="p-2 rounded-lg bg-transparent text-gray-500 hover:text-gray-900 transition-colors">
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
             </button>
             <button
@@ -130,7 +130,7 @@ export default function NpsClient() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+        <div className="flex gap-1 bg-transparent rounded-lg p-1 w-fit">
           {[
             { id: "overview", label: "Tổng quan", icon: <BarChart3 size={14} /> },
             { id: "surveys", label: "Danh sách", icon: <MessageSquare size={14} /> },
@@ -152,7 +152,7 @@ export default function NpsClient() {
         {tab === "overview" && stats && (
           <div className="space-y-6">
             {/* NPS Score */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-transparent rounded-2xl p-6 border border-[rgba(255,255,255,0.12)] shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-medium text-gray-900 mb-1">Điểm NPS tổng thể</h2>
@@ -162,12 +162,12 @@ export default function NpsClient() {
               </div>
               <div className="grid grid-cols-4 gap-4 mt-6">
                 {[
-                  { label: "Tổng khảo sát", value: stats.total, color: "text-gray-900" },
+                  { label: "Tổng khảo sát", value: stats.total, color: "text-[#f5edd6]" },
                   { label: "Đã hoàn thành", value: stats.completed, color: "text-emerald-400" },
                   { label: "Tỷ lệ phản hồi", value: `${stats.responseRate}%`, color: "text-blue-400" },
                   { label: "Điểm TB", value: stats.avgScore, color: "text-[#C9A84C]" },
                 ].map(s => (
-                  <div key={s.label} className="bg-gray-50 rounded-xl p-4 text-center border border-gray-200">
+                  <div key={s.label} className="bg-transparent rounded-xl p-4 text-center border border-[rgba(255,255,255,0.12)]">
                     <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
                     <div className="text-xs text-gray-500 mt-1">{s.label}</div>
                   </div>
@@ -196,7 +196,7 @@ export default function NpsClient() {
 
             {/* Trend */}
             {stats.trend.length > 0 && (
-              <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="bg-transparent rounded-2xl p-6 border border-[rgba(255,255,255,0.12)] shadow-sm">
                 <h3 className="text-sm font-medium text-gray-900 mb-4">Xu hướng điểm NPS theo tháng</h3>
                 <div className="flex items-end gap-3 h-32">
                   {stats.trend.map(t => {
@@ -205,7 +205,7 @@ export default function NpsClient() {
                     return (
                       <div key={t.month} className="flex-1 flex flex-col items-center gap-1">
                         <span className="text-xs font-medium" style={{ color }}>{t.score}</span>
-                        <div className="w-full bg-gray-100 rounded-t-sm overflow-hidden" style={{ height: "80px" }}>
+                        <div className="w-full bg-transparent rounded-t-sm overflow-hidden" style={{ height: "80px" }}>
                           <div className="w-full rounded-t-sm transition-all duration-700" style={{ height: `${pct}%`, backgroundColor: color, marginTop: `${100 - pct}%` }} />
                         </div>
                         <span className="text-xs text-gray-500">{t.month.slice(5)}</span>
@@ -226,7 +226,7 @@ export default function NpsClient() {
               <select
                 value={filterStatus}
                 onChange={e => setFilterStatus(e.target.value)}
-                className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
+                className="bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400/70"
               >
                 <option value="all">Tất cả trạng thái</option>
                 {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -243,7 +243,7 @@ export default function NpsClient() {
                 {filtered.map(s => {
                   const st = STATUS_MAP[s.status];
                   return (
-                    <div key={s.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:border-[#C9A84C]/30 transition-colors">
+                    <div key={s.id} className="bg-transparent rounded-xl p-4 border border-[rgba(255,255,255,0.12)] shadow-sm hover:border-[#C9A84C]/30 transition-colors">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -274,7 +274,7 @@ export default function NpsClient() {
                             </div>
                           )}
                           {s.feedback && (
-                            <div className="mt-2 text-sm text-gray-600 bg-gray-50 rounded-lg p-3 italic">
+                            <div className="mt-2 text-sm text-gray-600 bg-transparent rounded-lg p-3 italic">
                               &ldquo;{s.feedback}&rdquo;
                             </div>
                           )}
@@ -307,7 +307,7 @@ export default function NpsClient() {
         {/* Settings Tab */}
         {tab === "settings" && config && (
           <div className="max-w-2xl space-y-6">
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-transparent rounded-2xl p-6 border border-[rgba(255,255,255,0.12)] shadow-sm">
               <h3 className="text-base font-medium text-gray-900 mb-4">Cấu hình khảo sát NPS</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -329,7 +329,7 @@ export default function NpsClient() {
                       type="number" min={1} max={30}
                       value={config.sendAfterDays}
                       onChange={e => setConfig(c => c ? { ...c, sendAfterDays: Number(e.target.value) } : c)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50"
+                      className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50"
                     />
                   </div>
                   <div>
@@ -338,7 +338,7 @@ export default function NpsClient() {
                       type="number" min={1} max={14}
                       value={config.reminderAfterDays}
                       onChange={e => setConfig(c => c ? { ...c, reminderAfterDays: Number(e.target.value) } : c)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50"
+                      className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50"
                     />
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function NpsClient() {
                   <input
                     value={config.surveyTitle}
                     onChange={e => setConfig(c => c ? { ...c, surveyTitle: e.target.value } : c)}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50"
+                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50"
                   />
                 </div>
                 <div>
@@ -356,7 +356,7 @@ export default function NpsClient() {
                     value={config.surveyIntro}
                     onChange={e => setConfig(c => c ? { ...c, surveyIntro: e.target.value } : c)}
                     rows={3}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
+                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
                   />
                 </div>
                 <div>
@@ -365,7 +365,7 @@ export default function NpsClient() {
                     value={config.thankYouMessage}
                     onChange={e => setConfig(c => c ? { ...c, thankYouMessage: e.target.value } : c)}
                     rows={2}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
+                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#C9A84C]/50 resize-none"
                   />
                 </div>
                 <div>
@@ -399,9 +399,9 @@ export default function NpsClient() {
             </div>
 
             {/* Survey link preview */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-transparent rounded-2xl p-6 border border-[rgba(255,255,255,0.12)] shadow-sm">
               <h3 className="text-sm font-medium text-gray-900 mb-3">Link khảo sát mẫu</h3>
-              <div className="bg-white rounded-lg p-3 font-mono text-xs text-[#C9A84C] break-all">
+              <div className="bg-transparent rounded-lg p-3 font-mono text-xs text-[#C9A84C] break-all">
                 {typeof window !== "undefined" ? window.location.origin : "https://your-domain.com"}/nps/[survey-id]
               </div>
               <p className="text-xs text-gray-500 mt-2">Link này được gửi tự động qua Zalo/SMS sau khi hợp đồng được ký</p>
@@ -413,8 +413,8 @@ export default function NpsClient() {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <div className="bg-transparent border border-[rgba(255,255,255,0.12)] rounded-2xl w-full max-w-md">
+            <div className="p-6 border-b border-[rgba(255,255,255,0.12)] flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Tạo khảo sát NPS</h2>
               <button onClick={() => setShowCreateModal(false)} className="text-gray-500 hover:text-gray-900">✕</button>
             </div>
@@ -431,13 +431,13 @@ export default function NpsClient() {
                     value={(newSurvey as Record<string, string>)[f.key]}
                     onChange={e => setNewSurvey(p => ({ ...p, [f.key]: e.target.value }))}
                     placeholder={f.placeholder}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400/70"
+                    className="w-full bg-transparent border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none focus:border-amber-400/70"
                   />
                 </div>
               ))}
             </div>
-            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-              <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm hover:text-gray-900 transition-colors">Hủy</button>
+            <div className="p-6 border-t border-[rgba(255,255,255,0.12)] flex justify-end gap-3">
+              <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-lg bg-transparent text-gray-600 text-sm hover:text-gray-900 transition-colors">Hủy</button>
               <button
                 onClick={handleCreate}
                 disabled={saving || !newSurvey.leadName}

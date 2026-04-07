@@ -17,7 +17,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="crm-root flex h-screen overflow-hidden" style={{ background: "#f8f9fb" }}>
+    <div className="crm-root flex h-screen overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)" }}>
       <CrmSidebar
         isAdmin={session.isAdmin}
         staffRole={staffRole}

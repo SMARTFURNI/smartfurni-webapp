@@ -126,29 +126,29 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
   const isSelected = (d: Date) => selectedDate?.toDateString() === d.toDateString();
 
   return (
-    <div className="flex h-full" style={{ background: "#ffffff" }}>
+    <div className="flex h-full" style={{ background: "rgba(255,255,255,0.06)" }}>
       {/* Left: Calendar */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between"
-          style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)" }}>
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Calendar size={20} style={{ color: "#C9A84C" }} />
               Lịch hẹn
             </h1>
             <div className="flex items-center gap-1">
-              <button onClick={prevMonth} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
-                style={{ color: "#6b7280" }}><ChevronLeft size={14} /></button>
+              <button onClick={prevMonth} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-transparent transition-colors"
+                style={{ color: "rgba(245,237,214,0.50)" }}><ChevronLeft size={14} /></button>
               <span className="text-sm font-semibold text-gray-900 px-2 min-w-[120px] text-center">
                 {MONTHS_VI[month]} {year}
               </span>
-              <button onClick={nextMonth} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
-                style={{ color: "#6b7280" }}><ChevronRight size={14} /></button>
+              <button onClick={nextMonth} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-transparent transition-colors"
+                style={{ color: "rgba(245,237,214,0.50)" }}><ChevronRight size={14} /></button>
             </div>
             <button onClick={() => { setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1)); loadMonth(today.getFullYear(), today.getMonth()); setSelectedDate(today); }}
-              className="px-3 py-1 text-xs font-semibold rounded-lg transition-colors hover:bg-gray-100"
-              style={{ border: "1px solid #d1d5db", color: "#6b7280" }}>
+              className="px-3 py-1 text-xs font-semibold rounded-lg transition-colors hover:bg-transparent"
+              style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.50)" }}>
               Hôm nay
             </button>
           </div>
@@ -204,7 +204,7 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
                       </div>
                     ))}
                     {dayApts.length > 2 && (
-                      <div className="text-[9px] px-1" style={{ color: "#9ca3af" }}>
+                      <div className="text-[9px] px-1" style={{ color: "rgba(245,237,214,0.40)" }}>
                         +{dayApts.length - 2} khác
                       </div>
                     )}
@@ -218,17 +218,17 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
 
       {/* Right: Sidebar */}
       <div className="w-72 flex-shrink-0 flex flex-col overflow-hidden"
-        style={{ borderLeft: "1px solid #e5e7eb", background: "#f9fafb" }}>
+        style={{ borderLeft: "1px solid rgba(255,255,255,0.08)", background: "transparent" }}>
         {/* Selected day */}
-        <div className="p-4 flex-shrink-0" style={{ borderBottom: "1px solid #e5e7eb" }}>
-          <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>
+        <div className="p-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="text-xs font-semibold mb-3" style={{ color: "rgba(245,237,214,0.50)" }}>
             {selectedDate
               ? selectedDate.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" })
               : "Chọn ngày để xem lịch"}
           </div>
           {selectedDate && selectedDateAppointments.length === 0 && (
             <div className="text-center py-6">
-              <div className="text-xs mb-2" style={{ color: "#9ca3af" }}>Không có lịch hẹn</div>
+              <div className="text-xs mb-2" style={{ color: "rgba(245,237,214,0.40)" }}>Không có lịch hẹn</div>
               <button onClick={() => { setNewModalDate(selectedDate); setShowNewModal(true); }}
                 className="text-xs px-3 py-1.5 rounded-lg font-medium"
                 style={{ background: "rgba(201,168,76,0.1)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.2)" }}>
@@ -244,16 +244,16 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
                 <div key={apt.id}
                   onClick={() => setSelectedAppointment(apt)}
                   className="rounded-xl p-3 cursor-pointer hover:border-white/10 transition-all"
-                  style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderLeft: `3px solid ${typeColor}` }}>
+                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", borderLeft: `3px solid ${typeColor}` }}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-semibold text-gray-900 truncate">{apt.title}</div>
-                      <div className="text-[10px] mt-0.5" style={{ color: "#6b7280" }}>
+                      <div className="text-[10px] mt-0.5" style={{ color: "rgba(245,237,214,0.50)" }}>
                         {new Date(apt.startAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} –{" "}
                         {new Date(apt.endAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
                       </div>
                       {apt.leadName && (
-                        <div className="text-[10px] mt-0.5 truncate" style={{ color: "#9ca3af" }}>
+                        <div className="text-[10px] mt-0.5 truncate" style={{ color: "rgba(245,237,214,0.40)" }}>
                           {apt.leadName}
                         </div>
                       )}
@@ -271,11 +271,11 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
 
         {/* Upcoming */}
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>
+          <div className="text-xs font-semibold mb-3" style={{ color: "rgba(245,237,214,0.50)" }}>
             Sắp tới (7 ngày)
           </div>
           {upcoming.length === 0 ? (
-            <div className="text-xs text-center py-4" style={{ color: "#9ca3af" }}>
+            <div className="text-xs text-center py-4" style={{ color: "rgba(245,237,214,0.40)" }}>
               Không có lịch hẹn sắp tới
             </div>
           ) : (
@@ -288,7 +288,7 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
                   <div key={apt.id}
                     onClick={() => setSelectedAppointment(apt)}
                     className="rounded-xl p-3 cursor-pointer hover:border-white/10 transition-all"
-                    style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                    style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: typeColor }} />
                       <span className="text-[10px] font-semibold flex-shrink-0"
@@ -299,7 +299,7 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
                     </div>
                     <div className="text-xs font-medium text-gray-900 truncate">{apt.title}</div>
                     {apt.leadName && (
-                      <div className="text-[10px] mt-0.5 truncate" style={{ color: "#9ca3af" }}>
+                      <div className="text-[10px] mt-0.5 truncate" style={{ color: "rgba(245,237,214,0.40)" }}>
                         {apt.leadName}
                       </div>
                     )}
@@ -385,7 +385,7 @@ function NewAppointmentModal({ leads, defaultDate, onClose, onCreated }: {
           <DarkField label="Loại lịch hẹn">
             <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as AppointmentType }))}
               className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
               {(Object.entries(APPOINTMENT_TYPE_LABELS) as [AppointmentType, string][]).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
@@ -394,7 +394,7 @@ function NewAppointmentModal({ leads, defaultDate, onClose, onCreated }: {
           <DarkField label="Nhắc nhở">
             <select value={form.reminderMinutes} onChange={e => setForm(p => ({ ...p, reminderMinutes: parseInt(e.target.value) }))}
               className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
               <option value={15}>15 phút trước</option>
               <option value={30}>30 phút trước</option>
               <option value={60}>1 giờ trước</option>
@@ -406,18 +406,18 @@ function NewAppointmentModal({ leads, defaultDate, onClose, onCreated }: {
           <DarkField label="Bắt đầu *">
             <input type="datetime-local" value={form.startAt} onChange={e => setForm(p => ({ ...p, startAt: e.target.value }))}
               className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }} />
           </DarkField>
           <DarkField label="Kết thúc *">
             <input type="datetime-local" value={form.endAt} onChange={e => setForm(p => ({ ...p, endAt: e.target.value }))}
               className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }} />
           </DarkField>
         </div>
         <DarkField label="Khách hàng liên quan">
           <select value={form.leadId} onChange={e => setForm(p => ({ ...p, leadId: e.target.value }))}
             className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 focus:outline-none"
-            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
             <option value="">Không liên kết</option>
             {leads.map(l => <option key={l.id} value={l.id}>{l.name} — {l.company}</option>)}
           </select>
@@ -428,13 +428,13 @@ function NewAppointmentModal({ leads, defaultDate, onClose, onCreated }: {
         <DarkField label="Ghi chú">
           <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
             rows={2} placeholder="Nội dung cuộc họp, yêu cầu chuẩn bị..."
-            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none resize-none"
-            style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
+            className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none resize-none"
+            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }} />
         </DarkField>
         <div className="flex gap-3 pt-1">
           <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 text-sm font-medium rounded-xl hover:bg-white/5"
-            style={{ border: "1px solid #d1d5db", color: "#6b7280" }}>Hủy</button>
+            className="flex-1 py-2.5 text-sm font-medium rounded-xl hover:bg-transparent/5"
+            style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.50)" }}>Hủy</button>
           <button type="submit" disabled={loading}
             className="flex-1 py-2.5 text-sm font-bold rounded-xl text-black flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
@@ -463,10 +463,10 @@ function AppointmentDetailModal({ appointment: apt, onClose, onDelete, onUpdateS
       style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: "#ffffff", border: "1px solid #d1d5db", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
+        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
         {/* Header */}
         <div className="px-5 py-4 flex items-start justify-between gap-3"
-          style={{ borderBottom: "1px solid #e5e7eb", borderLeft: `4px solid ${typeColor}` }}>
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", borderLeft: `4px solid ${typeColor}` }}>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-bold text-gray-900 mb-1">{apt.title}</div>
             <div className="flex items-center gap-2">
@@ -481,8 +481,8 @@ function AppointmentDetailModal({ appointment: apt, onClose, onDelete, onUpdateS
               </span>
             </div>
           </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100 flex-shrink-0"
-            style={{ color: "#6b7280" }}><X size={14} /></button>
+          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-transparent flex-shrink-0"
+            style={{ color: "rgba(245,237,214,0.50)" }}><X size={14} /></button>
         </div>
 
         {/* Details */}
@@ -499,8 +499,8 @@ function AppointmentDetailModal({ appointment: apt, onClose, onDelete, onUpdateS
           <DetailRow icon={<User size={13} />} label="Phụ trách">{apt.assignedTo}</DetailRow>
           <DetailRow icon={<Bell size={13} />} label="Nhắc nhở">{apt.reminderMinutes} phút trước</DetailRow>
           {apt.notes && (
-            <div className="rounded-xl p-3" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
-              <div className="text-[10px] font-semibold mb-1" style={{ color: "#9ca3af" }}>GHI CHÚ</div>
+            <div className="rounded-xl p-3" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
+              <div className="text-[10px] font-semibold mb-1" style={{ color: "rgba(245,237,214,0.40)" }}>GHI CHÚ</div>
               <div className="text-xs text-gray-900 leading-relaxed">{apt.notes}</div>
             </div>
           )}
@@ -524,7 +524,7 @@ function AppointmentDetailModal({ appointment: apt, onClose, onDelete, onUpdateS
           )}
           <button onClick={() => onDelete(apt.id)}
             className="w-full py-2 text-xs font-medium rounded-xl flex items-center justify-center gap-2 transition-colors hover:bg-red-500/10"
-            style={{ border: "1px solid #e5e7eb", color: "#9ca3af" }}>
+            style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.40)" }}>
             <Trash2 size={12} /> Xóa lịch hẹn
           </button>
         </div>
@@ -536,9 +536,9 @@ function AppointmentDetailModal({ appointment: apt, onClose, onDelete, onUpdateS
 function DetailRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2">
-      <div className="mt-0.5 flex-shrink-0" style={{ color: "#9ca3af" }}>{icon}</div>
+      <div className="mt-0.5 flex-shrink-0" style={{ color: "rgba(245,237,214,0.40)" }}>{icon}</div>
       <div>
-        <div className="text-[10px] font-semibold mb-0.5" style={{ color: "#9ca3af" }}>{label}</div>
+        <div className="text-[10px] font-semibold mb-0.5" style={{ color: "rgba(245,237,214,0.40)" }}>{label}</div>
         <div className="text-xs text-gray-900">{children}</div>
       </div>
     </div>
@@ -551,12 +551,12 @@ function DarkModal({ title, onClose, children }: { title: string; onClose: () =>
       style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: "#ffffff", border: "1px solid #d1d5db", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
+        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
         <div className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: "1px solid #e5e7eb" }}>
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <h2 className="text-sm font-bold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100"
-            style={{ color: "#6b7280" }}><X size={14} /></button>
+          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-transparent"
+            style={{ color: "rgba(245,237,214,0.50)" }}><X size={14} /></button>
         </div>
         <div className="p-5 max-h-[80vh] overflow-y-auto">{children}</div>
       </div>
@@ -567,7 +567,7 @@ function DarkModal({ title, onClose, children }: { title: string; onClose: () =>
 function DarkField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[11px] font-semibold mb-1.5" style={{ color: "#6b7280" }}>{label}</label>
+      <label className="block text-[11px] font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>{label}</label>
       {children}
     </div>
   );
@@ -576,7 +576,7 @@ function DarkField({ label, children }: { label: string; children: React.ReactNo
 function DarkInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none"
-      style={{ background: "#f3f4f6", border: "1px solid #d1d5db" }} />
+      className="w-full px-3 py-2 text-sm rounded-xl text-gray-900 placeholder-[rgba(245,237,214,0.35)] focus:outline-none"
+      style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }} />
   );
 }

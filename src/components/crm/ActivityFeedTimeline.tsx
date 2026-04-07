@@ -50,7 +50,7 @@ export default function ActivityFeedTimeline({
 }: ActivityFeedTimelineProps) {
   if (activities.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+      <div className="bg-[rgba(255,255,255,0.07)] rounded-xl border border-gray-200 p-12 text-center">
         <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-600 font-medium">Không có tương tác nào được ghi lại</p>
         <p className="text-gray-500 text-sm mt-1">Bắt đầu ghi lại các tương tác với khách hàng</p>
@@ -59,7 +59,7 @@ export default function ActivityFeedTimeline({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-[rgba(255,255,255,0.07)] rounded-xl border border-gray-200 p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Lịch Sử Tương Tác</h2>
 
       <div className="space-y-6">
@@ -80,7 +80,7 @@ export default function ActivityFeedTimeline({
 
             {/* Content */}
             <div className="flex-1 pt-1">
-              <div className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+              <div className="bg-[rgba(255,255,255,0.04)] rounded-lg p-4 hover:bg-[rgba(255,255,255,0.08)] transition-colors">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="font-semibold text-gray-900">{activity.title}</h3>

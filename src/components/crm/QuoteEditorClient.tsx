@@ -182,7 +182,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
   return (
     <div className="flex flex-col h-full" style={{ background: "#f0f2f5" }}>
       {/* Header */}
-      <div className="flex-shrink-0 bg-white px-6 py-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
+      <div className="flex-shrink-0 bg-transparent px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-4">
           <button onClick={() => router.back()}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
@@ -195,12 +195,12 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-3xl mx-auto space-y-4">
           {/* Lead selector */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
+          <div className="bg-transparent rounded-2xl p-5 shadow-sm" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
             <h2 className="font-semibold text-gray-900 mb-3">Khách hàng</h2>
             <select
               value={selectedLead?.id || ""}
               onChange={e => setSelectedLead(leads.find(l => l.id === e.target.value) || null)}
-              className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-white">
+              className="w-full px-3 py-2.5 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 bg-transparent">
               <option value="">-- Chọn khách hàng --</option>
               {leads.map(l => (
                 <option key={l.id} value={l.id}>{l.name} {l.company ? `— ${l.company}` : ""}</option>
@@ -216,7 +216,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
           </div>
 
           {/* Items */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
+          <div className="bg-transparent rounded-2xl p-5 shadow-sm" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-900">Sản phẩm</h2>
               <button onClick={() => setShowProductPicker(true)}
@@ -246,7 +246,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
                   const hasSizes = product?.sizePricings && product.sizePricings.length > 0;
                   return (
                     <div key={idx} className="p-3 rounded-xl space-y-2"
-                      style={{ background: "#f9fafb", border: "1px solid #f3f4f6" }}>
+                      style={{ background: "transparent", border: "1px solid #f3f4f6" }}>
                       {/* Main row */}
                       <div className="grid grid-cols-12 gap-2 items-center">
                         <div className="col-span-4">
@@ -257,12 +257,12 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
                           )}
                         </div>
                         <div className="col-span-2 flex items-center justify-center">
-                          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                          <div className="flex items-center border border-[rgba(255,255,255,0.12)] rounded-lg overflow-hidden">
                             <button onClick={() => updateQty(idx, Math.max(1, item.qty - 1))}
-                              className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600">−</button>
+                              className="w-7 h-7 flex items-center justify-center hover:bg-transparent text-gray-600">−</button>
                             <span className="w-8 text-center text-sm font-medium">{item.qty}</span>
                             <button onClick={() => updateQty(idx, item.qty + 1)}
-                              className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600">+</button>
+                              className="w-7 h-7 flex items-center justify-center hover:bg-transparent text-gray-600">+</button>
                           </div>
                         </div>
                         <div className="col-span-2 text-right text-xs text-gray-600">{formatVND(item.unitPrice)}</div>
@@ -285,7 +285,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
                       {hasSizes && (
                         <div className="flex items-start gap-2 pt-2" style={{ borderTop: "1px dashed #e5e7eb" }}>
                           <div className="flex items-center gap-1 flex-shrink-0 mt-1">
-                            <Ruler size={11} className="text-gray-400" />
+                            <Ruler size={11} className="text-[rgba(245,237,214,0.35)]" />
                             <span className="text-xs text-gray-500">Kích thước:</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
@@ -330,7 +330,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
                       <span>Chiết khấu thêm</span>
                       <input type="number" min={0} max={50} value={extraDiscountPct}
                         onChange={e => setExtraDiscountPct(parseFloat(e.target.value) || 0)}
-                        className="w-16 px-2 py-1 text-xs rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-400 text-center" />
+                        className="w-16 px-2 py-1 text-xs rounded border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-1 focus:ring-amber-400 text-center" />
                       <span className="text-xs">%</span>
                     </div>
                     <span className="font-medium text-green-600">
@@ -353,14 +353,14 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
                       />
                       <span>VAT 8%</span>
                     </label>
-                    <span className={includeVat ? "font-medium text-gray-700" : "text-gray-400"}>
+                    <span className={includeVat ? "font-medium text-gray-700" : "text-[rgba(245,237,214,0.35)]"}>
                       {includeVat ? `+${formatVND(vatAmount)}` : "—"}
                     </span>
                   </div>
                   {/* Tổng cộng */}
                   <div className="flex justify-between text-base font-bold pt-2" style={{ borderTop: "2px solid #e5e7eb" }}>
                     <div>
-                      <div className="text-gray-900">Tổng cộng</div>
+                      <div className="text-[#f5edd6]">Tổng cộng</div>
                       {includeVat && <div className="text-[10px] font-normal text-gray-500">(bao gồm VAT 8%)</div>}
                     </div>
                     <span style={{ color: "#C9A84C" }}>{formatVND(total)}</span>
@@ -371,25 +371,25 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
           </div>
 
           {/* Settings */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: "1px solid #e5e7eb" }}>
+          <div className="bg-transparent rounded-2xl p-5 shadow-sm" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
             <h2 className="font-semibold text-gray-900 mb-4">Thông tin báo giá</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Hiệu lực đến</label>
                 <input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)}
-                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Người lập</label>
                 <input value={createdBy} onChange={e => setCreatedBy(e.target.value)}
-                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                   placeholder="Tên sales" />
               </div>
             </div>
             <div className="mt-4">
               <label className="block text-xs font-semibold text-gray-600 mb-1">Ghi chú</label>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
+                className="w-full px-3 py-2 text-sm text-gray-900 rounded-lg border border-[rgba(255,255,255,0.12)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
                 placeholder="Điều khoản, ghi chú thêm..." />
             </div>
           </div>
@@ -397,7 +397,7 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
           {/* Submit */}
           <div className="flex gap-3">
             <button onClick={() => router.back()}
-              className="flex-1 py-3 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium">
+              className="flex-1 py-3 text-sm rounded-xl border border-[rgba(255,255,255,0.12)] text-gray-600 hover:bg-transparent font-medium">
               Hủy
             </button>
             <button onClick={submit} disabled={loading || !selectedLead || items.length === 0}
@@ -415,12 +415,12 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.5)" }}
           onClick={e => { if (e.target === e.currentTarget) setShowProductPicker(false); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[70vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-5 py-4 sticky top-0 bg-white"
+          <div className="bg-transparent rounded-2xl shadow-2xl w-full max-w-md max-h-[70vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-5 py-4 sticky top-0 bg-transparent"
               style={{ borderBottom: "1px solid #f3f4f6" }}>
               <h3 className="font-bold text-gray-900">Chọn sản phẩm</h3>
               <button onClick={() => setShowProductPicker(false)}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center">×</button>
+                className="w-8 h-8 rounded-full hover:bg-transparent flex items-center justify-center">×</button>
             </div>
             <div className="p-3 space-y-2">
               {products.filter(p => p.isActive).map(p => {
@@ -431,16 +431,16 @@ export default function QuoteEditorClient({ products, leads, defaultLead, defaul
                   <button key={p.id} onClick={() => addProduct(p)}
                     className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-amber-50 transition-colors"
                     style={{ border: "1px solid #f3f4f6" }}>
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-transparent flex-shrink-0">
                       {p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" /> :
-                        <div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-gray-400" /></div>}
+                        <div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-[rgba(245,237,214,0.35)]" /></div>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm text-gray-900 truncate">{p.name}</div>
                       <div className="text-xs text-gray-500">{p.sku}</div>
                       {hasSizes && (
                         <div className="flex items-center gap-1 mt-0.5">
-                          <Ruler size={10} className="text-gray-400" />
+                          <Ruler size={10} className="text-[rgba(245,237,214,0.35)]" />
                           <span className="text-[10px] text-gray-400">{p.sizePricings!.length} kích thước</span>
                         </div>
                       )}

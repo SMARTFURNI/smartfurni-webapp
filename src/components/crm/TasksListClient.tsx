@@ -101,14 +101,14 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="bg-transparent rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <ClipboardList size={18} className="text-amber-600" />
             <h2 className="text-base font-semibold text-gray-900">Thêm công việc mới</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-transparent text-gray-500 transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -127,7 +127,7 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               placeholder="Ví dụ: Gọi điện tư vấn khách hàng..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
             />
           </div>
           <div>
@@ -137,7 +137,7 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
               value={form.leadName}
               onChange={e => setForm(f => ({ ...f, leadName: e.target.value }))}
               placeholder="Tên khách hàng (nếu có)"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -147,7 +147,7 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
                 type="date"
                 value={form.dueDate}
                 onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
               />
             </div>
             <div>
@@ -155,7 +155,7 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
               <select
                 value={form.priority}
                 onChange={e => setForm(f => ({ ...f, priority: e.target.value as CrmTask["priority"] }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
               >
                 <option value="high">🔴 Cao</option>
                 <option value="medium">🟡 Trung bình</option>
@@ -169,7 +169,7 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
               <select
                 value={form.assignedTo}
                 onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
               >
                 <option value="">— Chưa phân công —</option>
                 {staffList.map(s => (
@@ -180,7 +180,7 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
           ) : !isAdmin && currentUserName ? (
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Giao cho</label>
-              <div className="w-full px-3 py-2 text-sm rounded-lg border border-gray-100 bg-gray-50 text-gray-700 flex items-center gap-2">
+              <div className="w-full px-3 py-2 text-sm rounded-lg border border-gray-100 bg-transparent text-gray-700 flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">{currentUserName[0]}</span>
                 {currentUserName}
                 <span className="ml-auto text-xs text-gray-400">(bạn)</span>
@@ -191,7 +191,7 @@ function AddTaskModal({ onClose, onCreated, isAdmin, currentUserName, staffList 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors font-medium"
+              className="flex-1 px-4 py-2.5 border border-[rgba(255,255,255,0.12)] rounded-xl text-sm text-gray-600 hover:bg-transparent transition-colors font-medium"
             >
               Hủy
             </button>
@@ -255,13 +255,13 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, currentUserName = ""
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="bg-transparent rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <Edit3 size={18} className="text-amber-600" />
             <h2 className="text-base font-semibold text-gray-900">Chỉnh sửa công việc</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-transparent text-gray-500 transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -278,7 +278,7 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, currentUserName = ""
               type="text"
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
             />
           </div>
           <div>
@@ -287,7 +287,7 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, currentUserName = ""
               type="text"
               value={form.leadName}
               onChange={e => setForm(f => ({ ...f, leadName: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -297,7 +297,7 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, currentUserName = ""
                 type="date"
                 value={form.dueDate}
                 onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
               />
             </div>
             <div>
@@ -305,7 +305,7 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, currentUserName = ""
               <select
                 value={form.priority}
                 onChange={e => setForm(f => ({ ...f, priority: e.target.value as CrmTask["priority"] }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
               >
                 <option value="high">🔴 Cao</option>
                 <option value="medium">🟡 Trung bình</option>
@@ -319,7 +319,7 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, currentUserName = ""
               <select
                 value={form.assignedTo}
                 onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
               >
                 <option value="">— Chưa phân công —</option>
                 {staffList.map(s => (
@@ -330,7 +330,7 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, currentUserName = ""
           ) : !isAdmin && currentUserName ? (
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Giao cho</label>
-              <div className="w-full px-3 py-2 text-sm rounded-lg border border-gray-100 bg-gray-50 text-gray-700 flex items-center gap-2">
+              <div className="w-full px-3 py-2 text-sm rounded-lg border border-gray-100 bg-transparent text-gray-700 flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">{currentUserName[0]}</span>
                 {currentUserName}
                 <span className="ml-auto text-xs text-gray-400">(bạn)</span>
@@ -338,7 +338,7 @@ function EditTaskModal({ task, onClose, onUpdated, isAdmin, currentUserName = ""
             </div>
           ) : null}
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors font-medium">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-[rgba(255,255,255,0.12)] rounded-xl text-sm text-gray-600 hover:bg-transparent transition-colors font-medium">
               Hủy
             </button>
             <button
@@ -471,7 +471,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
       {/* Stats cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         {[
-          { label: "Tổng cộng", value: stats.total, color: "#6b7280", bg: "#f9fafb", icon: ClipboardList, filter: "all" },
+          { label: "Tổng cộng", value: stats.total, color: "rgba(245,237,214,0.50)", bg: "transparent", icon: ClipboardList, filter: "all" },
           { label: "Đang chờ", value: stats.pending, color: "#f59e0b", bg: "#fffbeb", icon: Clock, filter: "pending" },
           { label: "Hôm nay", value: stats.today, color: "#3b82f6", bg: "#eff6ff", icon: Calendar, filter: "today" },
           { label: "Quá hạn", value: stats.overdue, color: "#ef4444", bg: "#fef2f2", icon: AlertCircle, filter: "overdue" },
@@ -504,12 +504,12 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Tìm kiếm công việc, khách hàng..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+            className="w-full pl-9 pr-4 py-2.5 border border-[rgba(255,255,255,0.12)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
           />
         </div>
         <button
           onClick={() => setShowFilters(f => !f)}
-          className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${showFilters ? "bg-amber-50 border-amber-300 text-amber-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+          className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${showFilters ? "bg-amber-50 border-amber-300 text-amber-700" : "border-gray-200 text-gray-600 hover:bg-[rgba(255,255,255,0.05)]"}`}
         >
           <Filter size={14} />
           Lọc
@@ -521,7 +521,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
         </button>
         <button
           onClick={() => setSortDir(d => d === "asc" ? "desc" : "asc")}
-          className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[rgba(255,255,255,0.12)] text-sm text-gray-600 hover:bg-transparent transition-colors"
           title={sortDir === "asc" ? "Ngày tăng dần" : "Ngày giảm dần"}
         >
           {sortDir === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -531,13 +531,13 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3">
+        <div className="bg-transparent border border-[rgba(255,255,255,0.12)] rounded-xl p-4 mb-4 flex flex-wrap gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Độ ưu tiên</label>
             <select
               value={filterPriority}
               onChange={e => { setFilterPriority(e.target.value as CrmTask["priority"] | ""); setPage(1); }}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-amber-400"
+              className="px-3 py-1.5 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-amber-400"
             >
               <option value="">Tất cả</option>
               <option value="high">🔴 Cao</option>
@@ -551,7 +551,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
               <select
                 value={filterAssignee}
                 onChange={e => { setFilterAssignee(e.target.value); setPage(1); }}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-amber-400"
+                className="px-3 py-1.5 border border-[rgba(255,255,255,0.12)] rounded-lg text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-amber-400"
               >
                 <option value="">Tất cả</option>
                 {assignees.map(a => <option key={a} value={a}>{a}</option>)}
@@ -617,7 +617,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2 flex-wrap">
-                      <span className={`text-sm font-medium ${task.done ? "line-through text-gray-400" : "text-gray-900"}`}>
+                      <span className={`text-sm font-medium ${task.done ? "line-through text-gray-400" : "text-[#f5edd6]"}`}>
                         {task.title}
                       </span>
                       {/* Status badges */}
@@ -664,7 +664,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
                         </span>
                       )}
                       {/* Due date */}
-                      <span className={`flex items-center gap-1 text-xs ${overdue ? "text-red-600 font-medium" : today ? "text-blue-600 font-medium" : "text-gray-500"}`}>
+                      <span className={`flex items-center gap-1 text-xs ${overdue ? "text-red-600 font-medium" : today ? "text-blue-600 font-medium" : "text-[rgba(245,237,214,0.45)]"}`}>
                         <Calendar size={10} />
                         {formatDate(task.dueDate)}
                       </span>
@@ -706,7 +706,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(null)}
-                          className="px-2 py-1 text-xs border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                          className="px-2 py-1 text-xs border border-[rgba(255,255,255,0.12)] text-gray-600 rounded-lg hover:bg-transparent transition-colors"
                         >
                           Hủy
                         </button>
@@ -738,7 +738,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 text-sm border border-[rgba(255,255,255,0.12)] rounded-lg disabled:opacity-40 hover:bg-transparent transition-colors"
             >
               ← Trước
             </button>
@@ -748,7 +748,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 text-sm border border-[rgba(255,255,255,0.12)] rounded-lg disabled:opacity-40 hover:bg-transparent transition-colors"
             >
               Tiếp →
             </button>

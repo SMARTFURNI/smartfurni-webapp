@@ -44,7 +44,7 @@ const STAGES = [
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-2xl p-5 ${className}`}
-      style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+      style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
       {children}
     </div>
   );
@@ -71,10 +71,10 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>Điều kiện kích hoạt</label>
+        <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.85)" }}>Điều kiện kích hoạt</label>
         <select value={trigger.type} onChange={e => onChange({ type: e.target.value as TriggerType })}
           className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-          style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
           {(Object.entries(TRIGGER_LABELS) as [TriggerType, string][]).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
@@ -84,19 +84,19 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
       {trigger.type === "stage_changed" && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs mb-1" style={{ color: "#374151" }}>Từ giai đoạn</label>
+            <label className="block text-xs mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Từ giai đoạn</label>
             <select value={trigger.fromStage ?? ""} onChange={e => onChange({ ...trigger, fromStage: e.target.value || undefined })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
               <option value="">Bất kỳ</option>
               {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1" style={{ color: "#374151" }}>Sang giai đoạn</label>
+            <label className="block text-xs mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Sang giai đoạn</label>
             <select value={trigger.toStage ?? ""} onChange={e => onChange({ ...trigger, toStage: e.target.value || undefined })}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
               <option value="">Bất kỳ</option>
               {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
@@ -106,49 +106,49 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
 
       {(trigger.type === "no_activity_days") && (
         <div>
-          <label className="block text-xs mb-1" style={{ color: "#374151" }}>Số ngày không tương tác</label>
+          <label className="block text-xs mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Số ngày không tương tác</label>
           <input type="number" min={1} max={30} value={trigger.days ?? 3}
             onChange={e => onChange({ ...trigger, days: parseInt(e.target.value) })}
             className="w-32 px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
         </div>
       )}
 
       {trigger.type === "stage_duration" && (
         <div>
-          <label className="block text-xs mb-1" style={{ color: "#374151" }}>Số giờ ở giai đoạn</label>
+          <label className="block text-xs mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Số giờ ở giai đoạn</label>
           <div className="flex items-center gap-3">
             <select value={trigger.fromStage ?? ""} onChange={e => onChange({ ...trigger, fromStage: e.target.value || undefined })}
               className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
               <option value="">Chọn giai đoạn</option>
               {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
             <input type="number" min={1} value={trigger.hours ?? 24}
               onChange={e => onChange({ ...trigger, hours: parseInt(e.target.value) })}
               className="w-24 px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
-            <span className="text-xs" style={{ color: "#374151" }}>giờ</span>
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
+            <span className="text-xs" style={{ color: "rgba(245,237,214,0.85)" }}>giờ</span>
           </div>
         </div>
       )}
 
       {trigger.type === "value_threshold" && (
         <div>
-          <label className="block text-xs mb-1" style={{ color: "#374151" }}>Giá trị tối thiểu (VND)</label>
+          <label className="block text-xs mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Giá trị tối thiểu (VND)</label>
           <input type="number" value={trigger.minValue ?? 500000000}
             onChange={e => onChange({ ...trigger, minValue: parseInt(e.target.value) })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
         </div>
       )}
 
       {trigger.type === "lead_type_match" && (
         <div>
-          <label className="block text-xs mb-1" style={{ color: "#374151" }}>Phân loại KH</label>
+          <label className="block text-xs mb-1" style={{ color: "rgba(245,237,214,0.85)" }}>Phân loại KH</label>
           <select value={trigger.leadType ?? ""} onChange={e => onChange({ ...trigger, leadType: e.target.value })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
             <option value="architect">Kiến trúc sư</option>
             <option value="investor">Chủ đầu tư CHDV</option>
             <option value="dealer">Đại lý</option>
@@ -166,11 +166,11 @@ function ActionEditor({ action, onChange, onRemove }: {
 }) {
   return (
     <div className="p-3 rounded-xl space-y-3"
-      style={{ background: "#f9fafb", border: `1px solid ${ACTION_COLORS[action.type]}30` }}>
+      style={{ background: "transparent", border: `1px solid ${ACTION_COLORS[action.type]}30` }}>
       <div className="flex items-center justify-between">
         <select value={action.type} onChange={e => onChange({ type: e.target.value as ActionType })}
           className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none mr-2"
-          style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: ACTION_COLORS[action.type] }}>
+          style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: ACTION_COLORS[action.type] }}>
           {(Object.entries(ACTION_LABELS) as [ActionType, string][]).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
@@ -185,10 +185,10 @@ function ActionEditor({ action, onChange, onRemove }: {
         <div className="grid grid-cols-2 gap-2">
           <input placeholder="Tiêu đề task" value={action.taskTitle ?? ""} onChange={e => onChange({ ...action, taskTitle: e.target.value })}
             className="col-span-2 px-2 py-1.5 rounded text-xs outline-none"
-            style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
           <select value={action.taskPriority ?? "medium"} onChange={e => onChange({ ...action, taskPriority: e.target.value as "high" | "medium" | "low" })}
             className="px-2 py-1.5 rounded text-xs outline-none"
-            style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }}>
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
             <option value="high">Ưu tiên Cao</option>
             <option value="medium">Ưu tiên TB</option>
             <option value="low">Ưu tiên Thấp</option>
@@ -197,8 +197,8 @@ function ActionEditor({ action, onChange, onRemove }: {
             <input type="number" min={0} max={30} value={action.taskDueDays ?? 1}
               onChange={e => onChange({ ...action, taskDueDays: parseInt(e.target.value) })}
               className="w-16 px-2 py-1.5 rounded text-xs outline-none"
-              style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
-            <span className="text-xs" style={{ color: "#374151" }}>ngày sau</span>
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
+            <span className="text-xs" style={{ color: "rgba(245,237,214,0.85)" }}>ngày sau</span>
           </div>
         </div>
       )}
@@ -206,34 +206,34 @@ function ActionEditor({ action, onChange, onRemove }: {
       {action.type === "send_email" && (
         <input placeholder="Tiêu đề email" value={action.emailSubject ?? ""} onChange={e => onChange({ ...action, emailSubject: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
       )}
 
       {action.type === "send_email_workflow" && (
         <div className="space-y-2">
           <input placeholder="Tiêu đề email" value={action.emailSubject ?? ""} onChange={e => onChange({ ...action, emailSubject: e.target.value })}
             className="w-full px-2 py-1.5 rounded text-xs outline-none"
-            style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
-          <p className="text-xs" style={{ color: "#6b7280" }}>Nội dung email được cấu hình trong tab Email Workflow</p>
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
+          <p className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>Nội dung email được cấu hình trong tab Email Workflow</p>
         </div>
       )}
 
       {action.type === "add_tag" && (
         <input placeholder="Nhãn (VD: VIP, Hot, Tiềm năng)" value={action.tag ?? ""} onChange={e => onChange({ ...action, tag: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
       )}
 
       {action.type === "notify_manager" && (
         <input placeholder="Nội dung thông báo" value={action.notifyMessage ?? ""} onChange={e => onChange({ ...action, notifyMessage: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
       )}
 
       {action.type === "move_stage" && (
         <select value={action.targetStage ?? ""} onChange={e => onChange({ ...action, targetStage: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }}>
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
           <option value="">Chọn giai đoạn đích</option>
           {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
         </select>
@@ -242,7 +242,7 @@ function ActionEditor({ action, onChange, onRemove }: {
       {action.type === "send_webhook" && (
         <input placeholder="Webhook URL" value={action.webhookUrl ?? ""} onChange={e => onChange({ ...action, webhookUrl: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none font-mono"
-          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#C9A84C" }} />
+          style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#C9A84C" }} />
       )}
     </div>
   );
@@ -262,12 +262,12 @@ function RuleCard({ rule, onChange, onDelete }: {
     <div className="rounded-2xl overflow-hidden transition-all"
       style={{
         border: `1px solid ${rule.enabled ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
-        background: rule.enabled ? "rgba(201,168,76,0.03)" : "#f9fafb",
+        background: rule.enabled ? "rgba(201,168,76,0.03)" : "transparent",
       }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: rule.enabled ? "rgba(201,168,76,0.12)" : "#f3f4f6" }}>
+          style={{ background: rule.enabled ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)" }}>
           <TriggerIcon size={15} style={{ color: rule.enabled ? "#C9A84C" : "#9ca3af" }} />
         </div>
         <div className="flex-1 min-w-0">
@@ -282,14 +282,14 @@ function RuleCard({ rule, onChange, onDelete }: {
               </span>
             )}
           </div>
-          <p className="text-xs truncate mt-0.5" style={{ color: "#4b5563" }}>{rule.description}</p>
+          <p className="text-xs truncate mt-0.5" style={{ color: "rgba(245,237,214,0.65)" }}>{rule.description}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => onChange({ ...rule, enabled: !rule.enabled })}
             className="p-1.5 rounded-lg transition-all"
             style={{
-              background: rule.enabled ? "rgba(34,197,94,0.12)" : "#f3f4f6",
+              background: rule.enabled ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.04)",
               color: rule.enabled ? "#22c55e" : "#9ca3af",
             }}
             title={rule.enabled ? "Đang bật — click để tắt" : "Đang tắt — click để bật"}
@@ -297,11 +297,11 @@ function RuleCard({ rule, onChange, onDelete }: {
             {rule.enabled ? <Play size={13} /> : <Pause size={13} />}
           </button>
           <button onClick={() => setExpanded(v => !v)} className="p-1.5 rounded-lg hover:bg-white/5 transition-all"
-            style={{ color: "#9ca3af" }}>
+            style={{ color: "rgba(245,237,214,0.40)" }}>
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
           <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-            style={{ color: "#9ca3af" }}>
+            style={{ color: "rgba(245,237,214,0.40)" }}>
             <Trash2 size={13} />
           </button>
         </div>
@@ -309,7 +309,7 @@ function RuleCard({ rule, onChange, onDelete }: {
 
       {/* Expanded editor */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t" style={{ borderColor: "#f3f4f6" }}>
+        <div className="px-4 pb-4 space-y-4 border-t" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
           <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <input
@@ -317,14 +317,14 @@ function RuleCard({ rule, onChange, onDelete }: {
                 onChange={e => onChange({ ...rule, name: e.target.value })}
                 placeholder="Tên quy tắc"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none mb-2"
-                style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}
               />
               <input
                 value={rule.description}
                 onChange={e => onChange({ ...rule, description: e.target.value })}
                 placeholder="Mô tả quy tắc"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#6b7280" }}
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.50)" }}
               />
             </div>
             <TriggerEditor trigger={rule.trigger} onChange={t => onChange({ ...rule, trigger: t })} />
@@ -332,7 +332,7 @@ function RuleCard({ rule, onChange, onDelete }: {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold" style={{ color: "#374151" }}>
+              <span className="text-xs font-semibold" style={{ color: "rgba(245,237,214,0.85)" }}>
                 Hành động thực hiện ({rule.actions.length})
               </span>
               <button
@@ -347,7 +347,7 @@ function RuleCard({ rule, onChange, onDelete }: {
                 <div key={idx} className="flex items-start gap-1.5 flex-1 min-w-[260px]">
                   {idx > 0 && (
                     <div className="flex items-center mt-3 flex-shrink-0">
-                      <ArrowRight size={12} style={{ color: "#9ca3af" }} />
+                      <ArrowRight size={12} style={{ color: "rgba(245,237,214,0.40)" }} />
                     </div>
                   )}
                   <div className="flex-1">
@@ -398,30 +398,30 @@ function SlaTab({ config, onChange }: { config: SlaConfig; onChange: (c: SlaConf
           </button>
         </div>
         <div className="flex items-center gap-3">
-          <label className="text-xs" style={{ color: "#6b7280" }}>Phản hồi lần đầu trong vòng</label>
+          <label className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>Phản hồi lần đầu trong vòng</label>
           <input type="number" min={1} max={72} value={config.firstResponseHours}
             onChange={e => onChange({ ...config, firstResponseHours: parseInt(e.target.value) })}
             className="w-20 px-2 py-1.5 rounded text-sm text-center outline-none"
-            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#C9A84C" }} />
-          <label className="text-xs" style={{ color: "#6b7280" }}>giờ kể từ khi tạo lead</label>
+            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "#C9A84C" }} />
+          <label className="text-xs" style={{ color: "rgba(245,237,214,0.50)" }}>giờ kể từ khi tạo lead</label>
         </div>
       </Card>
 
-      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ background: "#f9fafb" }}>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Giai đoạn</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Tối đa (giờ)</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Cảnh báo (giờ)</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#6b7280" }}>Báo quản lý</th>
+            <tr style={{ background: "transparent" }}>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(245,237,214,0.50)" }}>Giai đoạn</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(245,237,214,0.50)" }}>Tối đa (giờ)</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(245,237,214,0.50)" }}>Cảnh báo (giờ)</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "rgba(245,237,214,0.50)" }}>Báo quản lý</th>
             </tr>
           </thead>
           <tbody>
             {config.stages.map((stage, idx) => (
-              <tr key={stage.stageId} style={{ borderTop: "1px solid #e5e7eb" }}>
+              <tr key={stage.stageId} style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                 <td className="px-4 py-3">
-                  <span className="text-sm font-medium" style={{ color: "#374151" }}>{stage.stageLabel}</span>
+                  <span className="text-sm font-medium" style={{ color: "rgba(245,237,214,0.85)" }}>{stage.stageLabel}</span>
                 </td>
                 <td className="px-4 py-3">
                   <input type="number" min={1} value={stage.maxHours}
@@ -473,7 +473,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
           </button>
         </div>
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>Phương thức mặc định</label>
+          <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(245,237,214,0.50)" }}>Phương thức mặc định</label>
           <div className="flex gap-2">
             {[
               { id: "round_robin", label: "Luân phiên" },
@@ -483,7 +483,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
               <button key={m.id} onClick={() => onChange({ ...config, defaultMode: m.id as AutoAssignConfig["defaultMode"] })}
                 className="px-4 py-2 rounded-lg text-xs font-medium transition-all"
                 style={{
-                  background: config.defaultMode === m.id ? "rgba(201,168,76,0.15)" : "#f9fafb",
+                  background: config.defaultMode === m.id ? "rgba(201,168,76,0.15)" : "transparent",
                   color: config.defaultMode === m.id ? "#C9A84C" : "#6b7280",
                   border: `1px solid ${config.defaultMode === m.id ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
                 }}>
@@ -495,7 +495,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
       </Card>
 
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold" style={{ color: "#4b5563" }}>
+        <p className="text-sm font-semibold" style={{ color: "rgba(245,237,214,0.65)" }}>
           Quy tắc phân công theo khu vực ({config.rules.length})
         </p>
         <button
@@ -524,7 +524,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
       <div className="space-y-2">
         {config.rules.map((rule, idx) => (
           <div key={rule.id} className="p-4 rounded-xl"
-            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs mb-1" style={{  }}>Tỉnh/Thành phố</label>
@@ -533,7 +533,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
                   updated[idx] = { ...updated[idx], province: e.target.value };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
               </div>
               <div>
                 <label className="block text-xs mb-1" style={{  }}>Nhân viên phụ trách</label>
@@ -542,7 +542,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
                   updated[idx] = { ...updated[idx], staffName: e.target.value };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }} />
               </div>
               <div>
                 <label className="block text-xs mb-1" style={{  }}>Loại KH</label>
@@ -551,7 +551,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
                   updated[idx] = { ...updated[idx], leadTypes: e.target.value ? [e.target.value] : [] };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }}>
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(245,237,214,0.85)" }}>
                   <option value="">Tất cả</option>
                   <option value="architect">Kiến trúc sư</option>
                   <option value="investor">Chủ đầu tư</option>
@@ -666,18 +666,18 @@ export default function AutomationSettingsClient() {
   ];
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64" style={{ color: "#9ca3af" }}>
+    <div className="flex items-center justify-center h-64" style={{ color: "rgba(245,237,214,0.40)" }}>
       <RefreshCw size={20} className="animate-spin mr-2" /> Đang tải...
     </div>
   );
 
   return (
-    <div className="space-y-5" style={{ color: "#111827" }}>
+    <div className="space-y-5" style={{ color: "#f5edd6" }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-gray-900">Tự động hóa CRM</h1>
-          <p className="text-xs mt-0.5" style={{ color: "#4b5563" }}>
+          <p className="text-xs mt-0.5" style={{ color: "rgba(245,237,214,0.65)" }}>
             Cấu hình quy tắc tự động, SLA và phân công nhân viên
           </p>
         </div>
@@ -698,7 +698,7 @@ export default function AutomationSettingsClient() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
@@ -722,7 +722,7 @@ export default function AutomationSettingsClient() {
       {activeTab === "rules" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm" style={{ color: "#374151" }}>
+            <p className="text-sm" style={{ color: "rgba(245,237,214,0.85)" }}>
               {rules.filter(r => r.enabled).length}/{rules.length} quy tắc đang hoạt động
             </p>
             <button onClick={addRule}
@@ -775,24 +775,24 @@ export default function AutomationSettingsClient() {
               { icon: Bell, color: "#22c55e", title: "Nhóm 4: Thông báo đa kênh", desc: "Gửi Zalo/Email/SMS theo template khi có sự kiện" },
             ].map(({ icon: Icon, color, title, desc }) => (
               <div key={title} className="p-4 rounded-xl flex items-start gap-3"
-                style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
                   <Icon size={15} style={{ color }} />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-900">{title}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{desc}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(245,237,214,0.50)" }}>{desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Nút chạy */}
-          <div className="p-5 rounded-2xl text-center" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+          <div className="p-5 rounded-2xl text-center" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
             <Activity size={28} className="mx-auto mb-3" style={{ color: "#C9A84C" }} />
             <h3 className="text-sm font-bold text-gray-900 mb-1">Chạy engine tự động hóa</h3>
-            <p className="text-xs mb-4" style={{ color: "#6b7280" }}>
+            <p className="text-xs mb-4" style={{ color: "rgba(245,237,214,0.50)" }}>
               Kiểm tra tất cả khách hàng và thực thi các quy tắc đang bật.
               Trên production, engine chạy tự động mỗi 30 phút qua cron job.
             </p>
@@ -822,16 +822,16 @@ export default function AutomationSettingsClient() {
                   { label: "Triggers thực thi", value: runResult.totalTriggered, color: "#22c55e" },
                   { label: "Thời gian chạy", value: `${Math.round((new Date(runResult.finishedAt).getTime() - new Date(runResult.startedAt).getTime()) / 1000)}s`, color: "#C9A84C" },
                 ].map(({ label, value, color }) => (
-                  <div key={label} className="p-3 rounded-xl text-center" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                  <div key={label} className="p-3 rounded-xl text-center" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
                     <p className="text-xl font-bold" style={{ color }}>{value}</p>
-                    <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "rgba(245,237,214,0.50)" }}>{label}</p>
                   </div>
                 ))}
               </div>
 
               {runResult.logs.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold" style={{ color: "#6b7280" }}>Chi tiết thực thi ({runResult.logs.length} mục)</p>
+                  <p className="text-xs font-semibold" style={{ color: "rgba(245,237,214,0.50)" }}>Chi tiết thực thi ({runResult.logs.length} mục)</p>
                   <div className="space-y-1.5 max-h-80 overflow-y-auto">
                     {runResult.logs.map((log, i) => (
                       <div key={i} className="p-3 rounded-xl"
@@ -846,7 +846,7 @@ export default function AutomationSettingsClient() {
                           </span>
                         </div>
                         {log.actionsExecuted.map((a, j) => (
-                          <p key={j} className="text-[11px] flex items-center gap-1" style={{ color: "#6b7280" }}>
+                          <p key={j} className="text-[11px] flex items-center gap-1" style={{ color: "rgba(245,237,214,0.50)" }}>
                             <CheckCircle2 size={10} style={{ color: "#22c55e" }} /> {a}
                           </p>
                         ))}
@@ -858,10 +858,10 @@ export default function AutomationSettingsClient() {
               )}
 
               {runResult.logs.length === 0 && (
-                <div className="p-6 rounded-xl text-center" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                <div className="p-6 rounded-xl text-center" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)" }}>
                   <CheckCircle2 size={24} className="mx-auto mb-2" style={{ color: "#22c55e" }} />
                   <p className="text-sm font-medium text-gray-900">Không có gì cần xử lý</p>
-                  <p className="text-xs mt-1" style={{ color: "#6b7280" }}>Tất cả khách hàng đều đang được chăm sóc tốt</p>
+                  <p className="text-xs mt-1" style={{ color: "rgba(245,237,214,0.50)" }}>Tất cả khách hàng đều đang được chăm sóc tốt</p>
                 </div>
               )}
             </div>

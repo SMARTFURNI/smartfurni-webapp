@@ -57,7 +57,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
     if (typeId === "architect") return { label: "Kiến trúc sư", color: "#8b5cf6" };
     if (typeId === "investor")  return { label: "Chủ đầu tư CHDV", color: "#3b82f6" };
     if (typeId === "dealer")    return { label: "Đại lý", color: "#f59e0b" };
-    return { label: typeId || "Không rõ", color: "#6b7280" };
+    return { label: typeId || "Không rõ", color: "rgba(245,237,214,0.50)" };
   }
   const [showAddModal, setShowAddModal] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("lastContactAt");
@@ -123,7 +123,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   return (
     <div className="flex flex-col h-full" style={{ background: "#f4f5f7" }}>
       {/* ── Header ── */}
-      <div className="flex-shrink-0 bg-white px-6 py-4" style={{ borderBottom: "1px solid #e8eaed" }}>
+      <div className="flex-shrink-0 bg-transparent px-6 py-4" style={{ borderBottom: "1px solid #e8eaed" }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Quản lý khách hàng</h1>
@@ -142,16 +142,16 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 placeholder="Tìm tên, công ty, SĐT..."
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
-                className="pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-400/30 w-52"
+                className="pl-9 pr-3 py-2 text-sm rounded-lg border border-[rgba(255,255,255,0.12)] bg-transparent focus:outline-none focus:ring-2 focus:ring-amber-400/30 w-52"
               />
             </div>
             <button
               onClick={() => setShowFilters(v => !v)}
               className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors"
               style={{
-                background: activeFilters > 0 ? "#fef3c7" : "#f9fafb",
+                background: activeFilters > 0 ? "#fef3c7" : "transparent",
                 borderColor: activeFilters > 0 ? "#f59e0b" : "#e5e7eb",
-                color: activeFilters > 0 ? "#92400e" : "#374151",
+                color: activeFilters > 0 ? "#fbbf24" : "#374151",
               }}>
               <Filter size={15} />
               Bộ lọc {activeFilters > 0 && `(${activeFilters})`}
@@ -171,7 +171,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             <select
               value={filterStage}
               onChange={e => { setFilterStage(e.target.value as LeadStage | ""); setPage(1); }}
-              className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
+              className="text-sm px-3 py-1.5 rounded-lg border border-[rgba(255,255,255,0.12)] bg-transparent focus:outline-none focus:ring-2 focus:ring-amber-400/30">
               <option value="">Tất cả giai đoạn</option>
               {(Object.keys(STAGE_LABELS) as LeadStage[]).map(s => (
                 <option key={s} value={s}>{STAGE_LABELS[s]}</option>
@@ -180,7 +180,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             <select
               value={filterType}
               onChange={e => { setFilterType(e.target.value as LeadType | ""); setPage(1); }}
-              className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
+              className="text-sm px-3 py-1.5 rounded-lg border border-[rgba(255,255,255,0.12)] bg-transparent focus:outline-none focus:ring-2 focus:ring-amber-400/30">
               <option value="">Tất cả loại</option>
               {leadTypes.map(lt => (
                 <option key={lt.id} value={lt.id}>{lt.label}</option>
@@ -205,7 +205,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
           { icon: Award, label: "Tỷ lệ chốt", value: `${winRate}%`, color: "#22c55e", sub: `${wonCount} đơn thành công` },
           { icon: AlertCircle, label: "Cần liên hệ", value: String(overdueCount), color: "#ef4444", sub: "Quá 3 ngày" },
         ].map(({ icon: Icon, label, value, color, sub }) => (
-          <div key={label} className="bg-white rounded-xl px-4 py-3 flex items-center gap-3" style={{ border: "1px solid #e8eaed" }}>
+          <div key={label} className="bg-transparent rounded-xl px-4 py-3 flex items-center gap-3" style={{ border: "1px solid #e8eaed" }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
               <Icon size={16} style={{ color }} />
             </div>
@@ -220,10 +220,10 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
 
       {/* ── Table ── */}
       <div className="flex-1 overflow-auto px-6 pb-6">
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+        <div className="bg-transparent rounded-2xl shadow-sm overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+              <tr style={{ background: "transparent", borderBottom: "2px solid #e5e7eb" }}>
                 <th className="text-left px-4 py-3">
                   <button onClick={() => toggleSort("name")} className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-800">
                     Khách hàng <SortIcon k="name" />
@@ -328,7 +328,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
 
                     {/* Last contact */}
                     <td className="px-4 py-3 hidden lg:table-cell">
-                      <span className={`text-xs whitespace-nowrap ${overdue ? "text-red-500 font-semibold" : "text-gray-500"}`}>
+                      <span className={`text-xs whitespace-nowrap ${overdue ? "text-red-500 font-semibold" : "text-[rgba(245,237,214,0.45)]"}`}>
                         {daysAgo === 0 ? "Hôm nay" : daysAgo === 1 ? "Hôm qua" : `${daysAgo} ngày trước`}
                       </span>
                     </td>
@@ -373,7 +373,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="px-3 py-1.5 text-xs rounded-lg border border-[rgba(255,255,255,0.12)] text-gray-600 hover:bg-transparent disabled:opacity-40 disabled:cursor-not-allowed">
                   ← Trước
                 </button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -394,7 +394,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="px-3 py-1.5 text-xs rounded-lg border border-[rgba(255,255,255,0.12)] text-gray-600 hover:bg-transparent disabled:opacity-40 disabled:cursor-not-allowed">
                   Sau →
                 </button>
               </div>
@@ -421,7 +421,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ background: "rgba(0,0,0,0.5)" }}
             onClick={e => { if (e.target === e.currentTarget) setConfirmDeleteId(null); }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div className="bg-transparent rounded-2xl shadow-2xl w-full max-w-sm p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                   <Trash2 size={18} className="text-red-500" />
@@ -431,13 +431,13 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                   <p className="text-sm text-gray-500 mt-0.5">Thao tác này không thể hoàn tác</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-700 mb-5 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-700 mb-5 p-3 bg-transparent rounded-lg">
                 Bạn có chắc muốn xóa <strong>{lead.name}</strong>? Tất cả hoạt động, báo giá và công việc liên quan cũng sẽ bị xóa.
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setConfirmDeleteId(null)}
-                  className="flex-1 py-2.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
+                  className="flex-1 py-2.5 text-sm rounded-lg border border-[rgba(255,255,255,0.12)] text-gray-600 hover:bg-transparent">
                   Hủy
                 </button>
                 <button

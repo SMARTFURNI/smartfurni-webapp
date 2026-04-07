@@ -9,7 +9,7 @@ import { formatVND } from "@/lib/crm-types";
 interface Props { initialQuotes: Quote[] }
 
 const STATUS_MAP = {
-  draft: { label: "Nháp", color: "#6b7280" },
+  draft: { label: "Nháp", color: "rgba(245,237,214,0.50)" },
   sent: { label: "Đã gửi", color: "#3b82f6" },
   accepted: { label: "Chấp nhận", color: "#22c55e" },
   rejected: { label: "Từ chối", color: "#ef4444" },
@@ -20,7 +20,7 @@ export default function QuotesListClient({ initialQuotes }: Props) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "#f0f2f5" }}>
-      <div className="flex-shrink-0 bg-white px-6 py-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
+      <div className="flex-shrink-0 bg-transparent px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Báo giá</h1>
@@ -35,7 +35,7 @@ export default function QuotesListClient({ initialQuotes }: Props) {
       </div>
 
       <div className="flex-1 overflow-auto p-6">
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+        <div className="bg-transparent rounded-2xl shadow-sm overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>
           {quotes.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
               <FileText size={40} className="mx-auto mb-3 opacity-20" />
@@ -44,7 +44,7 @@ export default function QuotesListClient({ initialQuotes }: Props) {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+                <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Số BG</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Khách hàng</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Ngày tạo</th>

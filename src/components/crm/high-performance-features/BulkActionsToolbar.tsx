@@ -247,7 +247,7 @@ export default function BulkActionsToolbar({
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setActiveModal("email")}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.07)] border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)] text-sm"
               disabled={loading}
             >
               <Mail size={16} />
@@ -256,7 +256,7 @@ export default function BulkActionsToolbar({
 
             <button
               onClick={() => setActiveModal("zalo")}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.07)] border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)] text-sm"
               disabled={loading}
             >
               <MessageCircle size={16} />
@@ -265,7 +265,7 @@ export default function BulkActionsToolbar({
 
             <button
               onClick={() => setActiveModal("stage")}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.07)] border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)] text-sm"
               disabled={loading}
             >
               <ArrowRight size={16} />
@@ -274,7 +274,7 @@ export default function BulkActionsToolbar({
 
             <button
               onClick={() => setActiveModal("assign")}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.07)] border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)] text-sm"
               disabled={loading}
             >
               <User size={16} />
@@ -283,7 +283,7 @@ export default function BulkActionsToolbar({
 
             <button
               onClick={() => setActiveModal("tag")}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.07)] border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)] text-sm"
               disabled={loading}
             >
               <Tag size={16} />
@@ -301,7 +301,7 @@ export default function BulkActionsToolbar({
 
             <button
               onClick={onClearSelection}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.07)] border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)] text-sm"
               disabled={loading}
             >
               <X size={16} />
@@ -313,7 +313,7 @@ export default function BulkActionsToolbar({
 
       {/* Email Modal */}
       {activeModal === "email" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="font-semibold text-gray-900">Send Email</h2>
@@ -353,7 +353,7 @@ export default function BulkActionsToolbar({
             <div className="flex gap-2 p-4 border-t">
               <button
                 onClick={() => setActiveModal(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)]"
               >
                 Cancel
               </button>
@@ -372,7 +372,7 @@ export default function BulkActionsToolbar({
 
       {/* Zalo Modal */}
       {activeModal === "zalo" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="font-semibold text-gray-900">Send Zalo Message</h2>
@@ -405,7 +405,7 @@ export default function BulkActionsToolbar({
             <div className="flex gap-2 p-4 border-t">
               <button
                 onClick={() => setActiveModal(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)]"
               >
                 Cancel
               </button>
@@ -424,7 +424,7 @@ export default function BulkActionsToolbar({
 
       {/* Stage Modal */}
       {activeModal === "stage" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="font-semibold text-gray-900">Change Stage</h2>
@@ -458,7 +458,7 @@ export default function BulkActionsToolbar({
             <div className="flex gap-2 p-4 border-t">
               <button
                 onClick={() => setActiveModal(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)]"
               >
                 Cancel
               </button>
@@ -477,7 +477,7 @@ export default function BulkActionsToolbar({
 
       {/* Assign Modal */}
       {activeModal === "assign" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="font-semibold text-gray-900">Assign To</h2>
@@ -511,7 +511,7 @@ export default function BulkActionsToolbar({
             <div className="flex gap-2 p-4 border-t">
               <button
                 onClick={() => setActiveModal(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)]"
               >
                 Cancel
               </button>
@@ -530,7 +530,7 @@ export default function BulkActionsToolbar({
 
       {/* Tag Modal */}
       {activeModal === "tag" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="font-semibold text-gray-900">Add Tag</h2>
@@ -559,7 +559,7 @@ export default function BulkActionsToolbar({
             <div className="flex gap-2 p-4 border-t">
               <button
                 onClick={() => setActiveModal(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-[rgba(255,255,255,0.05)]"
               >
                 Cancel
               </button>

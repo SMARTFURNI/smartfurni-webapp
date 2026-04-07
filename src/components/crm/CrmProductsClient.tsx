@@ -22,10 +22,10 @@ const T = {
   textSecondary: "#475569",
   textMuted: "#94A3B8",
   gold: "#C9A84C",
-  goldLight: "#FEF3C7",
+  goldLight: "rgba(245,158,11,0.15)",
   goldBorder: "#FDE68A",
   blue: "#3B82F6",
-  blueLight: "#EFF6FF",
+  blueLight: "rgba(59,130,246,0.15)",
   purple: "#8B5CF6",
   purpleLight: "#F5F3FF",
   green: "#10B981",
@@ -472,10 +472,10 @@ function ProductRow({ product: p, isSelected, onSelect, onEdit, onToggleActive, 
         )}
       </div>
       <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
-        <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors" style={{ color: T.textSecondary }}>
+        <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-colors" style={{ color: T.textSecondary }}>
           <Edit3 size={13} />
         </button>
-        <button onClick={onToggleActive} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+        <button onClick={onToggleActive} className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-colors"
           style={{ color: p.isActive ? T.textMuted : T.green }}>
           {p.isActive ? <EyeOff size={13} /> : <Eye size={13} />}
         </button>
@@ -568,7 +568,7 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
                     <button key={i} onClick={() => setSelectedSizeIdx(i)}
                       className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left"
                       style={{
-                        background: active ? "#FEF3C7" : "#F8FAFC",
+                        background: active ? "rgba(245,158,11,0.15)" : "#F8FAFC",
                         border: `1.5px solid ${active ? "#C9A84C" : "#E2E8F0"}`,
                         boxShadow: active ? "0 2px 10px rgba(201,168,76,0.25)" : "none",
                       }}>
@@ -744,8 +744,7 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden"
-        style={{ border: `1px solid ${T.cardBorder}` }}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden" style={{ background: "#fff", border: `1px solid ${T.cardBorder}` }}>
         {/* Modal header */}
         <div className="flex items-center justify-between px-6 py-4 flex-shrink-0"
           style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
@@ -761,7 +760,7 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
               {isEdit && <p className="text-xs" style={{ color: T.textMuted }}>{product.sku}</p>}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-[rgba(255,255,255,0.08)] transition-colors">
             <X size={16} style={{ color: T.textMuted }} />
           </button>
         </div>
@@ -913,7 +912,7 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
           {activeTab === "discount" && (
             <div className="space-y-3">
               {/* Default tiers banner */}
-              <div className="p-3 rounded-xl flex items-start gap-3" style={{ background: usingDefaultTiers ? "#F0FDF4" : T.goldLight, border: `1px solid ${usingDefaultTiers ? "#86EFAC" : T.goldBorder}` }}>
+              <div className="p-3 rounded-xl flex items-start gap-3" style={{ background: usingDefaultTiers ? "rgba(34,197,94,0.10)" : T.goldLight, border: `1px solid ${usingDefaultTiers ? "#86EFAC" : T.goldBorder}` }}>
                 <div className="flex-1">
                   <p className="text-xs font-semibold" style={{ color: usingDefaultTiers ? "#16A34A" : T.gold }}>
                     {usingDefaultTiers ? "✅ Đang dùng chiết khấu chung" : "⚡ Chiết khấu riêng cho sản phẩm này"}
@@ -1071,7 +1070,7 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
         {/* Footer */}
         <div className="flex gap-3 px-6 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
           <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 text-sm font-semibold rounded-xl border transition-all hover:bg-gray-50"
+            className="flex-1 py-2.5 text-sm font-semibold rounded-xl border transition-all hover:bg-[rgba(255,255,255,0.05)]"
             style={{ borderColor: T.cardBorder, color: T.textSecondary }}>
             Hủy
           </button>

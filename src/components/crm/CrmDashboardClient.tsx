@@ -47,7 +47,7 @@ interface Props {
 }
 
 const PRIORITY_CONFIG = {
-  high:   { color: "#DC2626", bg: "#FEF2F2", label: "Cao" },
+  high:   { color: "#DC2626", bg: "rgba(239,68,68,0.15)", label: "Cao" },
   medium: { color: "#D97706", bg: "#FFFBEB", label: "TB" },
   low:    { color: "#059669", bg: "#ECFDF5", label: "Thấp" },
 };
@@ -75,13 +75,13 @@ const T = {
   headerBg: "#FFFFFF", headerBorder: "#F2F4F7", divider: "#F2F4F7",
   textPrimary: "#101828", textSecondary: "#344054",
   textMuted: "#98A2B3", textLabel: "#667085",
-  gold: "#C9A84C", goldDark: "#9A7A2E", goldLight: "#FEF3C7", goldBg: "#FFFBEB",
+  gold: "#C9A84C", goldDark: "#9A7A2E", goldLight: "rgba(245,158,11,0.15)", goldBg: "#FFFBEB",
   indigo: "#4F46E5", indigoBg: "#EEF2FF", indigoLight: "#C7D2FE",
   green: "#059669", greenBg: "#ECFDF5",
-  red: "#DC2626", redBg: "#FEF2F2",
+  red: "#DC2626", redBg: "rgba(239,68,68,0.15)",
   orange: "#EA580C", orangeBg: "#FFF7ED",
-  purple: "#7C3AED", purpleBg: "#F5F3FF",
-  blue: "#2563EB", blueBg: "#EFF6FF",
+  purple: "#7C3AED", purpleBg: "rgba(139,92,246,0.15)",
+  blue: "#2563EB", blueBg: "rgba(59,130,246,0.15)",
 };
 
 // ── Revenue Chart (Doanh thu & Dự báo) ─────────────────────────────────────
@@ -506,7 +506,7 @@ function SharedPlanWidget({
             <p className="text-xs font-black truncate" style={{ color: "#059669" }}>Kế hoạch chung</p>
             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "#059669", color: "#fff" }}>TEAM</span>
           </div>
-          <p className="text-[10px] truncate" style={{ color: "#065F46" }}>Tuần {currentWeek}/12 • {overallPct}% hoàn thành</p>
+          <p className="text-[10px] truncate" style={{ color: "#4ade80" }}>Tuần {currentWeek}/12 • {overallPct}% hoàn thành</p>
         </div>
         <Link href="/crm/twelve-week-plan"
           className="text-[10px] font-semibold px-2 py-1 rounded-lg flex items-center gap-1"
@@ -532,13 +532,13 @@ function SharedPlanWidget({
         <div className="rounded-xl p-3" style={{ background: "#ECFDF5" }}>
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-bold" style={{ color: "#059669" }}>★ Tuần {currentWeek} (Hiện tại)</span>
-            <span className="text-[10px] font-black" style={{ color: thisWeekPct === 100 ? "#059669" : "#065F46" }}>{thisWeekPct}%</span>
+            <span className="text-[10px] font-black" style={{ color: thisWeekPct === 100 ? "#059669" : "#4ade80" }}>{thisWeekPct}%</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.5)" }}>
             <div className="h-full rounded-full transition-all"
               style={{ width: `${thisWeekPct}%`, background: thisWeekPct === 100 ? "#059669" : "#34D399" }} />
           </div>
-          <p className="text-[9px] mt-1" style={{ color: "#065F46" }}>{thisWeekDone}/{thisWeekTasks.length} công việc tuần này</p>
+          <p className="text-[9px] mt-1" style={{ color: "#4ade80" }}>{thisWeekDone}/{thisWeekTasks.length} công việc tuần này</p>
         </div>
 
         {/* Goals with tasks */}
@@ -607,7 +607,7 @@ function SharedPlanWidget({
         {isAdmin && (
           <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg" style={{ background: "#ECFDF5", border: "1px solid #D1FAE5" }}>
             <Info size={10} style={{ color: "#059669" }} />
-            <span className="text-[9px]" style={{ color: "#065F46" }}>Nhân viên thấy kế hoạch này trên dashboard của họ</span>
+            <span className="text-[9px]" style={{ color: "#4ade80" }}>Nhân viên thấy kế hoạch này trên dashboard của họ</span>
           </div>
         )}
       </div>
@@ -1375,12 +1375,12 @@ const DASHBOARD_DEFAULT_LEAD_TYPES: LeadTypeItem[] = [
 // ─── Gradient Presets ────────────────────────────────────────────────────────
 const GRADIENT_PRESETS = [
   { id: "default", name: "Mặc định", colors: ["#F7F8FA", "#FFFFFF"], accent: "#4F46E5", preview: "linear-gradient(135deg, #F7F8FA 0%, #EAECF0 100%)" },
-  { id: "sunset", name: "Hoàng hôn", colors: ["#FFF7ED", "#FEF3C7"], accent: "#EA580C", preview: "linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%)" },
-  { id: "ocean", name: "Biển xanh", colors: ["#EFF6FF", "#E0F2FE"], accent: "#2563EB", preview: "linear-gradient(135deg, #EFF6FF 0%, #E0F2FE 100%)" },
-  { id: "forest", name: "Rừng xanh", colors: ["#F0FDF4", "#DCFCE7"], accent: "#059669", preview: "linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)" },
-  { id: "lavender", name: "Oai hương", colors: ["#F5F3FF", "#EDE9FE"], accent: "#7C3AED", preview: "linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)" },
+  { id: "sunset", name: "Hoàng hôn", colors: ["#FFF7ED", "rgba(245,158,11,0.15)"], accent: "#EA580C", preview: "linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%)" },
+  { id: "ocean", name: "Biển xanh", colors: ["rgba(59,130,246,0.15)", "#E0F2FE"], accent: "#2563EB", preview: "linear-gradient(135deg, #EFF6FF 0%, #E0F2FE 100%)" },
+  { id: "forest", name: "Rừng xanh", colors: ["rgba(34,197,94,0.10)", "rgba(34,197,94,0.15)"], accent: "#059669", preview: "linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)" },
+  { id: "lavender", name: "Oai hương", colors: ["rgba(139,92,246,0.15)", "rgba(139,92,246,0.15)"], accent: "#7C3AED", preview: "linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)" },
   { id: "rose", name: "Hồng nhạt", colors: ["#FFF1F2", "#FFE4E6"], accent: "#E11D48", preview: "linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%)" },
-  { id: "gold", name: "Vàng SmartFurni", colors: ["#FFFBEB", "#FEF3C7"], accent: "#C9A84C", preview: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" },
+  { id: "gold", name: "Vàng SmartFurni", colors: ["#FFFBEB", "rgba(245,158,11,0.15)"], accent: "#C9A84C", preview: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" },
   { id: "midnight", name: "Nửa đêm", colors: ["#0F172A", "#1E293B"], accent: "#818CF8", preview: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)" },
   { id: "aurora", name: "Bắc cực quang", colors: ["#0F2027", "#203A43"], accent: "#34D399", preview: "linear-gradient(135deg, #0F2027 0%, #2C5364 100%)" },
 ];
@@ -1464,7 +1464,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     if (typeId === "architect") return { id: typeId, label: "Kiến trúc sư",    color: "#a78bfa" };
     if (typeId === "investor")  return { id: typeId, label: "Chủ đầu tư CHDV", color: "#60a5fa" };
     if (typeId === "dealer")    return { id: typeId, label: "Đại lý",           color: "#C9A84C" };
-    return { id: typeId, label: typeId || "Không rõ", color: "#6b7280" };
+    return { id: typeId, label: typeId || "Không rõ", color: "rgba(245,237,214,0.50)" };
   }
 
   // API data states — pre-loaded from server when available
@@ -2720,7 +2720,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                           <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{lead.company || STAGE_LABELS[lead.stage]}</div>
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md" style={{ background: "#FEE2E2" }}>
+                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md" style={{ background: "rgba(239,68,68,0.15)" }}>
                             <Clock size={9} style={{ color: T.red }} />
                             <span className="text-[10px] font-black" style={{ color: T.red }}>{daysAgo}n</span>
                           </div>

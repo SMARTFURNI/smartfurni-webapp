@@ -225,7 +225,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, i) =>
         part.toLowerCase() === query.toLowerCase()
-          ? <mark key={i} style={{ background: "#FDE68A", color: "#92400E", borderRadius: 3, padding: "0 2px" }}>{part}</mark>
+          ? <mark key={i} style={{ background: "#FDE68A", color: "#fbbf24", borderRadius: 3, padding: "0 2px" }}>{part}</mark>
           : part
       )}
     </>
@@ -757,7 +757,7 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
 
         {qrData?.qr && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 16, padding: "8px 0" }}>
-            <div style={{ background: "#fff", padding: 12, borderRadius: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", display: "inline-flex" }}>
+            <div style={{ background: "rgba(255,255,255,0.06)", padding: 12, borderRadius: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", display: "inline-flex" }}>
               <img src={qrData.qr} alt="QR Code" style={{ width: 200, height: 200, display: "block", borderRadius: 4 }} />
             </div>
             <div style={{ fontSize: 12, color: T.textMuted, marginTop: 10, textAlign: "center" }}>Quét bằng Zalo để đăng nhập</div>

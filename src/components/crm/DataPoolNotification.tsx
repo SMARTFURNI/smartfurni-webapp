@@ -152,7 +152,7 @@ export default function DataPoolNotification() {
           <div
             key={toast.notifId}
             style={{
-              background: "#ffffff",
+              background: "rgba(255,255,255,0.06)",
               borderRadius: 14,
               boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)",
               border: `1.5px solid ${srcConfig.border}22`,

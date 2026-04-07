@@ -38,7 +38,7 @@ export default function AnalyticsDashboard({
   return (
     <div className="space-y-6">
       {/* Sales Funnel */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-[rgba(255,255,255,0.07)] rounded-xl border border-gray-200 p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 Sales Funnel</h2>
 
         <div className="space-y-4">
@@ -88,7 +88,7 @@ export default function AnalyticsDashboard({
       </div>
 
       {/* Conversion by Source */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-[rgba(255,255,255,0.07)] rounded-xl border border-gray-200 p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">📈 Tỷ Lệ Chốt Theo Nguồn</h2>
 
         <div className="overflow-x-auto">
@@ -103,7 +103,7 @@ export default function AnalyticsDashboard({
             </thead>
             <tbody>
               {conversionBySource.map((source, index) => (
-                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <tr key={index} className="border-b border-gray-100 hover:bg-[rgba(255,255,255,0.05)] transition-colors">
                   <td className="py-3 px-4 font-medium text-gray-900">{source.source}</td>
                   <td className="py-3 px-4 text-center text-gray-700">{source.leads}</td>
                   <td className="py-3 px-4 text-center text-gray-700">{source.converted}</td>

@@ -48,7 +48,7 @@ export default function TeamPerformance({ teamMembers }: TeamPerformanceProps) {
   return (
     <div className="space-y-6">
       {/* Leaderboard */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-[rgba(255,255,255,0.07)] rounded-xl border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Trophy className="w-6 h-6" />
@@ -56,11 +56,11 @@ export default function TeamPerformance({ teamMembers }: TeamPerformanceProps) {
           </h2>
         </div>
 
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-[rgba(255,255,255,0.08)]">
           {sortedMembers.map((member, index) => (
             <div
               key={member.id}
-              className={`p-6 hover:bg-gray-50 transition-colors ${
+              className={`p-6 hover:bg-[rgba(255,255,255,0.05)] transition-colors ${
                 index === 0 ? 'bg-yellow-50' : index === 1 ? 'bg-gray-50' : ''
               }`}
             >
@@ -157,7 +157,7 @@ export default function TeamPerformance({ teamMembers }: TeamPerformanceProps) {
       </div>
 
       {/* Achievement Badges Info */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-[rgba(255,255,255,0.07)] rounded-xl border border-gray-200 p-6">
         <h3 className="text-xl font-bold text-gray-900 mb-4">🏆 Huy Hiệu Thành Tích</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Object.entries(badges).map(([key, badge]) => (
@@ -178,7 +178,7 @@ export default function TeamPerformance({ teamMembers }: TeamPerformanceProps) {
       </div>
 
       {/* Team Goals */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-[rgba(255,255,255,0.07)] rounded-xl border border-gray-200 p-6">
         <h3 className="text-xl font-bold text-gray-900 mb-4">🎯 Mục Tiêu Nhóm</h3>
         <div className="space-y-4">
           <div>

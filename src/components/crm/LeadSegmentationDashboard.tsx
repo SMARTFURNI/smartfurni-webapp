@@ -63,7 +63,7 @@ export default function LeadSegmentationDashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-[#C9A84C] mb-2">👥 Phân Loại Lead</h1>
-            <p className="text-gray-400">Tạo và quản lý các nhóm lead theo tags và điểm số</p>
+            <p className="text-[rgba(245,237,214,0.35)]">Tạo và quản lý các nhóm lead theo tags và điểm số</p>
           </div>
           <button
             onClick={() => setShowNewForm(!showNewForm)}

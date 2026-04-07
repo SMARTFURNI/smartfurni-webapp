@@ -19,7 +19,7 @@ const ROLE_LABELS: Record<string, string> = {
 const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
   super_admin: { bg: "#fef3c7", text: "#92400e" },
   manager: { bg: "#ede9fe", text: "#5b21b6" },
-  senior_sales: { bg: "#dbeafe", text: "#1e40af" },
+  senior_sales: { bg: "#dbeafe", text: "#93c5fd" },
   sales: { bg: "#dcfce7", text: "#166534" },
   support: { bg: "#fce7f3", text: "#9d174d" },
 };
@@ -114,7 +114,7 @@ export default function StaffProfileClient({ staff }: Props) {
     }
   }
 
-  const roleStyle = ROLE_COLORS[staff.role] ?? { bg: "#f3f4f6", text: "#374151" };
+  const roleStyle = ROLE_COLORS[staff.role] ?? { bg: "rgba(255,255,255,0.04)", text: "#374151" };
   const initials = staff.fullName
     .split(" ")
     .map(w => w[0])
@@ -174,7 +174,7 @@ export default function StaffProfileClient({ staff }: Props) {
         {/* Form thông tin cá nhân */}
         <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #e8eaed" }}>
           <div className="px-6 py-4 flex items-center gap-2.5" style={{ borderBottom: "1px solid #f0f0f0" }}>
-            <Edit3 size={16} className="text-gray-500" />
+            <Edit3 size={16} className="text-[rgba(245,237,214,0.45)]" />
             <h3 className="font-semibold text-gray-800">Thông tin cá nhân</h3>
           </div>
           <form onSubmit={handleSaveInfo} className="p-6 space-y-4">
@@ -189,7 +189,7 @@ export default function StaffProfileClient({ staff }: Props) {
                 value={form.fullName}
                 onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))}
                 required
-                className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-800 bg-gray-50 outline-none transition-all"
+                className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-800 bg-[rgba(255,255,255,0.04)] outline-none transition-all"
                 style={{ border: "1.5px solid #e5e7eb" }}
                 onFocus={e => (e.target.style.borderColor = "#C9A84C")}
                 onBlur={e => (e.target.style.borderColor = "#e5e7eb")}
@@ -207,7 +207,7 @@ export default function StaffProfileClient({ staff }: Props) {
                 type="email"
                 value={form.email}
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-800 bg-gray-50 outline-none transition-all"
+                className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-800 bg-[rgba(255,255,255,0.04)] outline-none transition-all"
                 style={{ border: "1.5px solid #e5e7eb" }}
                 onFocus={e => (e.target.style.borderColor = "#C9A84C")}
                 onBlur={e => (e.target.style.borderColor = "#e5e7eb")}
@@ -225,7 +225,7 @@ export default function StaffProfileClient({ staff }: Props) {
                 type="tel"
                 value={form.phone}
                 onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-800 bg-gray-50 outline-none transition-all"
+                className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-800 bg-[rgba(255,255,255,0.04)] outline-none transition-all"
                 style={{ border: "1.5px solid #e5e7eb" }}
                 onFocus={e => (e.target.style.borderColor = "#C9A84C")}
                 onBlur={e => (e.target.style.borderColor = "#e5e7eb")}
@@ -237,7 +237,7 @@ export default function StaffProfileClient({ staff }: Props) {
             <div className="grid grid-cols-2 gap-4 pt-1">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">Tên đăng nhập</label>
-                <div className="px-3 py-2.5 rounded-lg text-sm text-gray-500 bg-gray-100 font-mono"
+                <div className="px-3 py-2.5 rounded-lg text-sm text-gray-500 bg-[rgba(255,255,255,0.06)] font-mono"
                   style={{ border: "1.5px solid #e5e7eb" }}>
                   {staff.username}
                 </div>
@@ -245,7 +245,7 @@ export default function StaffProfileClient({ staff }: Props) {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">Vai trò</label>
-                <div className="px-3 py-2.5 rounded-lg text-sm text-gray-500 bg-gray-100"
+                <div className="px-3 py-2.5 rounded-lg text-sm text-gray-500 bg-[rgba(255,255,255,0.06)]"
                   style={{ border: "1.5px solid #e5e7eb" }}>
                   {ROLE_LABELS[staff.role] ?? staff.role}
                 </div>
@@ -282,7 +282,7 @@ export default function StaffProfileClient({ staff }: Props) {
         {/* Form đổi mật khẩu */}
         <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #e8eaed" }}>
           <div className="px-6 py-4 flex items-center gap-2.5" style={{ borderBottom: "1px solid #f0f0f0" }}>
-            <Key size={16} className="text-gray-500" />
+            <Key size={16} className="text-[rgba(245,237,214,0.45)]" />
             <h3 className="font-semibold text-gray-800">Đổi mật khẩu</h3>
           </div>
           <form onSubmit={handleChangePassword} className="p-6 space-y-4">
@@ -295,7 +295,7 @@ export default function StaffProfileClient({ staff }: Props) {
                   value={pwForm.currentPassword}
                   onChange={e => setPwForm(f => ({ ...f, currentPassword: e.target.value }))}
                   required
-                  className="w-full px-3 py-2.5 pr-10 rounded-lg text-sm text-gray-800 bg-gray-50 outline-none transition-all"
+                  className="w-full px-3 py-2.5 pr-10 rounded-lg text-sm text-gray-800 bg-[rgba(255,255,255,0.04)] outline-none transition-all"
                   style={{ border: "1.5px solid #e5e7eb" }}
                   onFocus={e => (e.target.style.borderColor = "#C9A84C")}
                   onBlur={e => (e.target.style.borderColor = "#e5e7eb")}
@@ -318,7 +318,7 @@ export default function StaffProfileClient({ staff }: Props) {
                   onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
                   required
                   minLength={6}
-                  className="w-full px-3 py-2.5 pr-10 rounded-lg text-sm text-gray-800 bg-gray-50 outline-none transition-all"
+                  className="w-full px-3 py-2.5 pr-10 rounded-lg text-sm text-gray-800 bg-[rgba(255,255,255,0.04)] outline-none transition-all"
                   style={{ border: "1.5px solid #e5e7eb" }}
                   onFocus={e => (e.target.style.borderColor = "#C9A84C")}
                   onBlur={e => (e.target.style.borderColor = "#e5e7eb")}
@@ -340,7 +340,7 @@ export default function StaffProfileClient({ staff }: Props) {
                   value={pwForm.confirmPassword}
                   onChange={e => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
                   required
-                  className="w-full px-3 py-2.5 pr-10 rounded-lg text-sm text-gray-800 bg-gray-50 outline-none transition-all"
+                  className="w-full px-3 py-2.5 pr-10 rounded-lg text-sm text-gray-800 bg-[rgba(255,255,255,0.04)] outline-none transition-all"
                   style={{ border: "1.5px solid #e5e7eb" }}
                   onFocus={e => (e.target.style.borderColor = "#C9A84C")}
                   onBlur={e => (e.target.style.borderColor = "#e5e7eb")}
