@@ -475,7 +475,7 @@ function mapSettingsRow(row: any): ContentSettings {
   return {
     id: row.id || "default",
     aiProvider: row.ai_provider || "gemini",
-    aiModel: row.ai_model || "gemini-2.0-flash",
+    aiModel: row.ai_model || "gemini-2.5-flash-preview-04-17",
     aiTemperature: Number(row.ai_temperature) || 0.7,
     aiMaxTokens: Number(row.ai_max_tokens) || 8192,
     promptTemplate: row.prompt_template || DEFAULT_PROMPT_TEMPLATE,
@@ -505,7 +505,7 @@ export async function loadContentSettings(): Promise<ContentSettings> {
     CREATE TABLE IF NOT EXISTS content_settings (
       id TEXT PRIMARY KEY DEFAULT 'default',
       ai_provider VARCHAR(50) DEFAULT 'gemini',
-      ai_model VARCHAR(100) DEFAULT 'gemini-2.0-flash',
+      ai_model VARCHAR(100) DEFAULT 'gemini-2.5-flash-preview-04-17',
       ai_temperature DECIMAL(3,2) DEFAULT 0.7,
       ai_max_tokens INT DEFAULT 8192,
       prompt_template TEXT,

@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
   const settings = getContentSettings();
   const promptTemplate = settings?.promptTemplate || DEFAULT_PROMPT_TEMPLATE;
   const systemContext = settings?.promptSystemContext || DEFAULT_SYSTEM_CONTEXT;
-  const modelName = settings?.aiModel || process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  const modelName = settings?.aiModel || process.env.GEMINI_MODEL || "gemini-2.5-flash-preview-04-17";
   const temperature = settings?.aiTemperature ?? 0.7;
   const brandName = settings?.brandName || "SmartFurni";
 

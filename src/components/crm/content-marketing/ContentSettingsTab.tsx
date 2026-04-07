@@ -30,14 +30,20 @@ interface ContentSettings {
   updatedAt: string;
 }
 
-const AI_MODELS: Record<string, { label: string; models: { value: string; label: string; desc: string }[] }> = {
+const AI_MODELS: Record<string, { label: string; models: { value: string; label: string; desc: string; badge?: string; badgeColor?: string }[] }> = {
   gemini: {
     label: "Google Gemini",
     models: [
-      { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash", desc: "Nhanh, tiết kiệm, phù hợp sản xuất hàng loạt" },
-      { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro", desc: "Chất lượng cao, phù hợp kịch bản phức tạp" },
-      { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash", desc: "Thế hệ mới, cân bằng tốc độ và chất lượng" },
-      { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Preview)", desc: "Mới nhất, hiệu suất cao nhất" },
+      { value: "gemini-2.5-flash-preview-04-17", label: "Gemini 2.5 Flash", desc: "Model hiện tại — thông minh nhất, 20 kịch bản/ngày (free)", badge: "⭐ Đang dùng", badgeColor: "amber" },
+      { value: "gemini-2.5-flash-lite-preview-06-17", label: "Gemini 2.5 Flash Lite", desc: "Không giới hạn số kịch bản/ngày — tốc độ cao, chất lượng tốt", badge: "⚡ Không giới hạn", badgeColor: "green" },
+      { value: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite", desc: "500 kịch bản/ngày (free) — giới hạn cao nhất trong free tier", badge: "🚀 500/ngày", badgeColor: "blue" },
+      { value: "gemini-3.1-flash", label: "Gemini 3.1 Flash", desc: "Thế hệ mới nhất, 20 kịch bản/ngày — chất lượng vượt trội", badge: "🆕 Mới", badgeColor: "purple" },
+      { value: "gemini-2.0-flash", label: "Gemini 2 Flash", desc: "Không giới hạn RPD — ổn định, phù hợp backup khi vượt giới hạn", badge: "∞ Không giới hạn", badgeColor: "green" },
+      { value: "gemini-2.0-flash-lite", label: "Gemini 2 Flash Lite", desc: "Nhanh nhất, không giới hạn RPD — dùng khi cần tốc độ", badge: "⚡ Nhanh nhất", badgeColor: "green" },
+      { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", desc: "Chất lượng cao nhất — phù hợp kịch bản dài, phức tạp (cần trả phí)", badge: "💎 Premium", badgeColor: "rose" },
+      { value: "gemini-3-flash", label: "Gemini 3 Flash", desc: "Tương đương 2.5 Flash, 20 kịch bản/ngày — thêm lựa chọn thay thế", badge: "🔄 Backup", badgeColor: "slate" },
+      { value: "gemma-3-27b-it", label: "Gemma 4 26B", desc: "Open source, 1.500 kịch bản/ngày — phù hợp sản xuất hàng loạt", badge: "🌐 1.5K/ngày", badgeColor: "teal" },
+      { value: "gemma-3-27b-it-large", label: "Gemma 4 31B", desc: "Mạnh nhất trong Gemma 4, 1.500 kịch bản/ngày — chất lượng cao", badge: "🌐 Mạnh nhất", badgeColor: "teal" },
     ],
   },
   openai: {
@@ -295,28 +301,54 @@ export default function ContentSettingsTab() {
         <div>
           <Label hint="Model cụ thể trong nhà cung cấp đã chọn">Model AI</Label>
           <div className="space-y-2">
-            {currentModels.map(m => (
-              <button
-                key={m.value}
-                onClick={() => update("aiModel", m.value)}
-                className={`w-full flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${
-                  settings.aiModel === m.value
-                    ? "border-amber-400 bg-amber-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className={`w-4 h-4 rounded-full border-2 mt-0.5 flex-shrink-0 ${
-                  settings.aiModel === m.value ? "border-amber-500 bg-amber-500" : "border-gray-300"
-                }`} />
-                <div>
-                  <div className="font-medium text-gray-800 text-sm">{m.label}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{m.desc}</div>
-                </div>
-                {settings.aiModel === m.value && (
-                  <span className="ml-auto text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Đang dùng</span>
-                )}
-              </button>
-            ))}
+            {currentModels.map(m => {
+              const badgeStyles: Record<string, { bg: string; text: string; border: string }> = {
+                amber:  { bg: "rgba(245,158,11,0.15)",  text: "#f59e0b",  border: "rgba(245,158,11,0.3)" },
+                green:  { bg: "rgba(34,197,94,0.15)",   text: "#22c55e",  border: "rgba(34,197,94,0.3)" },
+                blue:   { bg: "rgba(59,130,246,0.15)",  text: "#3b82f6",  border: "rgba(59,130,246,0.3)" },
+                purple: { bg: "rgba(168,85,247,0.15)",  text: "#a855f7",  border: "rgba(168,85,247,0.3)" },
+                rose:   { bg: "rgba(244,63,94,0.15)",   text: "#f43f5e",  border: "rgba(244,63,94,0.3)" },
+                slate:  { bg: "rgba(148,163,184,0.15)", text: "#94a3b8",  border: "rgba(148,163,184,0.3)" },
+                teal:   { bg: "rgba(20,184,166,0.15)",  text: "#14b8a6",  border: "rgba(20,184,166,0.3)" },
+              };
+              const bs = badgeStyles[m.badgeColor || "slate"];
+              const isActive = settings.aiModel === m.value;
+              return (
+                <button
+                  key={m.value}
+                  onClick={() => update("aiModel", m.value)}
+                  className="w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all"
+                  style={isActive ? {
+                    background: "rgba(245,158,11,0.1)",
+                    border: "1.5px solid rgba(245,158,11,0.5)",
+                  } : {
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  }}
+                >
+                  <div className="w-4 h-4 rounded-full border-2 mt-0.5 flex-shrink-0 transition-all"
+                    style={isActive ? { borderColor: "#f59e0b", background: "#f59e0b" } : { borderColor: "rgba(255,255,255,0.25)", background: "transparent" }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm" style={{ color: isActive ? "#f5edd6" : "rgba(255,255,255,0.75)" }}>{m.label}</div>
+                    <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{m.desc}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    {isActive && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                        style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.35)" }}>
+                        Đang dùng
+                      </span>
+                    )}
+                    {m.badge && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                        style={{ background: bs.bg, color: bs.text, border: `1px solid ${bs.border}` }}>
+                        {m.badge}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
