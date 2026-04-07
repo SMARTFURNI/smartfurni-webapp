@@ -221,20 +221,20 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
     }
   };
 
-  // Color tokens
+  // Color tokens — Dark Luxury Warm Theme (đồng bộ Content Marketing AI)
   const C = {
-    bg: "#0F172A",           // slate-900
-    bgHover: "#1E293B",      // slate-800
-    bgActive: "#1E3A5F",     // custom blue-navy
-    border: "#1E293B",       // slate-800
-    groupLabel: "#64748B",   // slate-500
-    text: "#94A3B8",         // slate-400
-    textActive: "#F1F5F9",   // slate-100
-    textHover: "#CBD5E1",    // slate-300
-    accent: "#C9A84C",       // gold
-    accentLight: "#FDE68A",  // gold light
-    activeIndicator: "#3B82F6", // blue-500
-    logo: "linear-gradient(135deg, #C9A84C 0%, #E2C97E 100%)",
+    bg: "#0f0e0a",              // near-black warm
+    bgHover: "rgba(255,255,255,0.06)",  // glass hover
+    bgActive: "rgba(245,158,11,0.12)",  // gold tint active
+    border: "rgba(255,255,255,0.08)",   // subtle warm border
+    groupLabel: "rgba(245,237,214,0.35)", // warm cream dim
+    text: "rgba(245,237,214,0.60)",     // warm cream muted
+    textActive: "#f5edd6",              // warm cream bright
+    textHover: "rgba(245,237,214,0.85)", // warm cream hover
+    accent: "#f59e0b",                  // amber gold
+    accentLight: "#fde68a",             // gold light
+    activeIndicator: "#f59e0b",         // gold indicator
+    logo: "linear-gradient(135deg, #f59e0b 0%, #fde68a 100%)",
   };
 
   return (
@@ -242,7 +242,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
       className="flex flex-col h-full transition-all duration-300 flex-shrink-0 relative select-none"
       style={{
         width: collapsed ? "60px" : "220px",
-        background: C.bg,
+        background: "linear-gradient(180deg, #0f0e0a 0%, #130f06 50%, #0f0c04 100%)",
         borderRight: `1px solid ${C.border}`,
       }}
     >
@@ -286,11 +286,11 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
       {!collapsed && !isAdmin && staffName && (
         <div
           className="mx-3 mt-3 px-3 py-2.5 rounded-xl flex items-center gap-2.5"
-          style={{ background: "#1E293B", border: `1px solid #334155` }}
+          style={{ background: "rgba(245,158,11,0.07)", border: `1px solid rgba(245,158,11,0.20)` }}
         >
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-            style={{ background: "linear-gradient(135deg, #3B82F6, #8B5CF6)", color: "#fff" }}
+            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#1a1200" }}
           >
             {(staffName[0] || "U").toUpperCase()}
           </div>
@@ -315,7 +315,9 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
               {/* Group label */}
               {!collapsed && (
                 <div
-                  className={`flex items-center gap-1 px-2 py-1.5 mb-0.5 ${group.collapsible ? "cursor-pointer rounded-lg hover:bg-slate-800" : ""}`}
+                  className={`flex items-center gap-1 px-2 py-1.5 mb-0.5 ${group.collapsible ? "cursor-pointer rounded-lg" : ""}`}
+                  onMouseEnter={group.collapsible ? e => ((e.currentTarget as HTMLElement).style.background = C.bgHover) : undefined}
+                  onMouseLeave={group.collapsible ? e => ((e.currentTarget as HTMLElement).style.background = "transparent") : undefined}
                   onClick={group.collapsible ? () => toggleGroup(group.label) : undefined}
                 >
                   <span
@@ -379,7 +381,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                     <div className="relative flex-shrink-0">
                       <item.icon
                         size={15}
-                        style={{ color: active ? "#93C5FD" : C.text }}
+                        style={{ color: active ? C.accent : C.text }}
                       />
                       {showBadge && collapsed && (
                         <span
@@ -465,12 +467,12 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
           className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all w-full"
           style={{ color: "#F87171", background: "transparent", border: "none", cursor: "pointer" }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = "#2D1515";
-            (e.currentTarget as HTMLElement).style.color = "#FCA5A5";
+            (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.10)";
+            (e.currentTarget as HTMLElement).style.color = "#fca5a5";
           }}
           onMouseLeave={e => {
             (e.currentTarget as HTMLElement).style.background = "transparent";
-            (e.currentTarget as HTMLElement).style.color = "#F87171";
+            (e.currentTarget as HTMLElement).style.color = "#f87171";
           }}
         >
           <LogOut size={15} style={{ flexShrink: 0 }} />
