@@ -156,7 +156,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
     <div className="flex flex-col h-full" style={{ background: DL.bg, minHeight: "100vh" }}>
       {/* ── Header ── */}
       <div className="flex-shrink-0 px-6 py-3.5 backdrop-blur-sm"
-        style={{ background: DL.header, borderBottom: `1px solid ${DL.border}` }}>
+        style={{ background: DL.header, borderBottom: `1px solid ${DL.border}`, overflow: "visible", position: "relative", zIndex: 100 }}>
         <div className="flex items-center gap-4 flex-wrap">
           <Link href="/crm/leads"
             className="flex items-center gap-1.5 text-sm transition-colors"
@@ -202,8 +202,8 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                 <ChevronDown size={13} />
               </button>
               {showStageMenu && (
-                <div className="absolute right-0 top-full mt-1.5 rounded-xl shadow-2xl z-50 py-1.5 min-w-[190px] backdrop-blur-xl"
-                  style={{ background: DL.modalBg, border: `1px solid ${DL.border}` }}>
+                <div className="absolute right-0 top-full mt-1.5 rounded-xl shadow-2xl py-1.5 min-w-[190px] backdrop-blur-xl"
+                  style={{ zIndex: 9999, background: DL.modalBg, border: `1px solid ${DL.border}` }}>
                   {(Object.keys(STAGE_LABELS) as LeadStage[]).map(s => (
                     <button key={s} onClick={() => changeStage(s)}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left transition-colors"
