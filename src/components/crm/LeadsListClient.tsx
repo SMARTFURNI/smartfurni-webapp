@@ -543,9 +543,13 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                   style={{ border: `1px solid ${C.border}`, color: C.textDim, background: "rgba(255,255,255,0.07)" }}>
                   ← Trước
                 </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const p = Math.max(1, Math.min(page - 2 + i, totalPages - 4 + i));
-                  return (
+                {(() => {
+                  const windowSize = Math.min(5, totalPages);
+                  const half = Math.floor(windowSize / 2);
+                  let start = Math.max(1, page - half);
+                  const end = Math.min(totalPages, start + windowSize - 1);
+                  if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
+                  return Array.from({ length: end - start + 1 }, (_, i) => start + i).map(p => (
                     <button key={p} onClick={() => setPage(p)}
                       className="w-8 h-8 text-xs rounded-xl transition-all"
                       style={{
@@ -556,8 +560,8 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                       }}>
                       {p}
                     </button>
-                  );
-                })}
+                  ));
+                })()}
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
