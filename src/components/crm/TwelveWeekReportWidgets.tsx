@@ -472,10 +472,10 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
                         style={{ whiteSpace: "nowrap" }}>
                         <div className="px-2 py-1 rounded-lg text-[10px] font-bold shadow-lg"
-                          style={{ background: T.textPrimary, color: "#fff" }}>
+                          style={{ background: "rgba(15,23,42,0.95)", color: "#f5edd6", border: "1px solid rgba(201,168,76,0.3)" }}>
                           T{wi + 1}: {p < 0 ? "Chưa có việc" : `${p}%`}
                         </div>
-                        <div className="w-1.5 h-1.5 mx-auto -mt-0.5 rotate-45" style={{ background: T.textPrimary }} />
+                        <div className="w-1.5 h-1.5 mx-auto -mt-0.5 rotate-45" style={{ background: "rgba(15,23,42,0.95)" }} />
                       </div>
                     </div>
                   );
@@ -524,10 +524,10 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
                         style={{ whiteSpace: "nowrap" }}>
                         <div className="px-2 py-1 rounded-lg text-[10px] font-bold shadow-lg"
-                          style={{ background: T.textPrimary, color: "#fff" }}>
+                          style={{ background: "rgba(15,23,42,0.95)", color: "#f5edd6", border: "1px solid rgba(201,168,76,0.3)" }}>
                           T{wi + 1}: {wp < 0 ? "Chưa có việc" : `${wp}%`}
                         </div>
-                        <div className="w-1.5 h-1.5 mx-auto -mt-0.5 rotate-45" style={{ background: T.textPrimary }} />
+                        <div className="w-1.5 h-1.5 mx-auto -mt-0.5 rotate-45" style={{ background: "rgba(15,23,42,0.95)" }} />
                       </div>
                     </div>
                   );
