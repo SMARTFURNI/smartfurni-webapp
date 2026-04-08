@@ -7,7 +7,7 @@ import {
   Calendar, Edit3, Trash2, Plus, CheckSquare, FileText,
   Clock, MessageSquare, Users, Send, FileCheck, Loader2,
   ChevronDown, AlertCircle, Tag, DollarSign, Home, X,
-  ShoppingCart, ExternalLink, Star, TrendingUp, Hash,
+  ShoppingCart, ExternalLink, Star, TrendingUp, Hash, Copy,
   PhoneCall, PhoneMissed, PhoneIncoming, Mic, Play, Pause, Volume2, Save,
   MessageCircle,
 } from "lucide-react";
@@ -99,6 +99,14 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
   const [showStageMenu, setShowStageMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [contactModal, setContactModal] = useState<'call' | 'zalo' | 'email' | null>(null);
+  const [contactCopied, setContactCopied] = useState(false);
+
+  const handleContactCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setContactCopied(true);
+    setTimeout(() => setContactCopied(false), 2000);
+  };
 
   const loadCallLogs = async () => {
     if (callLogsLoaded) return;
@@ -647,15 +655,52 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
               )}
 
               {/* Quick action buttons */}
-              <div className="flex items-center justify-between">
-                <CustomerContactActions lead={lead} />
+              <div className="grid grid-cols-4 gap-2">
+                <button onClick={() => setContactModal('call')}
+                  className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
+                  style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.20)" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(52,211,153,0.15)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(52,211,153,0.08)")}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(52,211,153,0.15)" }}>
+                    <Phone size={13} style={{ color: "#34d399" }} />
+                  </div>
+                  <span className="text-[10px] font-semibold" style={{ color: "#34d399" }}>Gọi</span>
+                </button>
+                <button onClick={() => setContactModal('zalo')}
+                  className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
+                  style={{ background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.20)" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(96,165,250,0.15)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(96,165,250,0.08)")}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(96,165,250,0.15)" }}>
+                    <MessageCircle size={13} style={{ color: "#60a5fa" }} />
+                  </div>
+                  <span className="text-[10px] font-semibold" style={{ color: "#60a5fa" }}>Zalo</span>
+                </button>
+                {lead.email ? (
+                  <button onClick={() => setContactModal('email')}
+                    className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
+                    style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.20)" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(167,139,250,0.15)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(167,139,250,0.08)")}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(167,139,250,0.15)" }}>
+                      <Mail size={13} style={{ color: "#a78bfa" }} />
+                    </div>
+                    <span className="text-[10px] font-semibold" style={{ color: "#a78bfa" }}>Email</span>
+                  </button>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 p-2 rounded-xl opacity-25" style={{ background: DL.surface, border: `1px solid ${DL.border}` }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: DL.surface }}>
+                      <Mail size={13} style={{ color: DL.textMuted }} />
+                    </div>
+                    <span className="text-[10px] font-semibold" style={{ color: DL.textMuted }}>Email</span>
+                  </div>
+                )}
                 <Link href={`/crm/quotes/new?leadId=${lead.id}`}
                   className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
                   style={{ background: `${DL.gold}0d`, border: `1px solid ${DL.gold}30` }}
                   onMouseEnter={e => (e.currentTarget.style.background = `${DL.gold}18`)}
                   onMouseLeave={e => (e.currentTarget.style.background = `${DL.gold}0d`)}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center"
-                    style={{ background: `${DL.gold}15` }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: `${DL.gold}15` }}>
                     <FileText size={13} style={{ color: DL.gold }} />
                   </div>
                   <span className="text-[10px] font-semibold" style={{ color: DL.gold }}>Báo giá</span>
@@ -729,6 +774,136 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
           onUpdated={updated => { setLead(updated); setShowEditLead(false); }}
         />
       )}
+      {/* Contact Action Modal */}
+      {contactModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+          onClick={() => setContactModal(null)}>
+          <div className="rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+            style={{ background: "rgba(18,14,0,0.97)", border: "1px solid rgba(255,255,255,0.10)" }}
+            onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-5 py-4 flex items-start justify-between"
+              style={{
+                background: contactModal === 'call' ? "rgba(74,222,128,0.12)" : contactModal === 'zalo' ? "rgba(96,165,250,0.12)" : "rgba(192,132,252,0.12)",
+                borderBottom: "1px solid rgba(255,255,255,0.07)"
+              }}>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5"
+                  style={{ color: contactModal === 'call' ? "#4ade80" : contactModal === 'zalo' ? "#60a5fa" : "#c084fc" }}>
+                  {contactModal === 'call' ? "☎️ Gọi Điện" : contactModal === 'zalo' ? "💬 Kết Bạn Zalo" : "✉️ Gửi Email"}
+                </p>
+                <p className="text-sm font-bold" style={{ color: "#f5edd6" }}>{lead.name}</p>
+                <p className="text-xs font-mono mt-0.5"
+                  style={{ color: contactModal === 'call' ? "#4ade80" : contactModal === 'zalo' ? "#60a5fa" : "#c084fc" }}>
+                  {contactModal === 'email' ? lead.email : lead.phone}
+                </p>
+              </div>
+              <button onClick={() => setContactModal(null)}
+                style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 6, padding: 6, cursor: "pointer", color: "#9ca3af", lineHeight: 0 }}>
+                <X size={14} />
+              </button>
+            </div>
+            {/* Actions */}
+            <div className="p-2">
+              {contactModal === 'call' && (
+                <>
+                  <button onClick={() => { window.location.href = `tel:${lead.phone}`; setContactModal(null); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(74,222,128,0.15)" }}>
+                      <Phone size={15} style={{ color: "#4ade80" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Gọi ngay</p>
+                      <p className="text-xs" style={{ color: "#9ca3af" }}>Khởi động ứng dụng gọi</p>
+                    </div>
+                    <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)" }}>→</span>
+                  </button>
+                  <button onClick={() => handleContactCopy(lead.phone)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: contactCopied ? "rgba(74,222,128,0.15)" : "rgba(245,158,11,0.15)" }}>
+                      <Copy size={15} style={{ color: contactCopied ? "#4ade80" : "#f59e0b" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>{contactCopied ? "✓ Đã sao chép" : "Sao chép số"}</p>
+                      <p className="text-xs" style={{ color: "#9ca3af" }}>Dán vào điện thoại</p>
+                    </div>
+                  </button>
+                </>
+              )}
+              {contactModal === 'zalo' && (
+                <>
+                  <button onClick={() => { window.open(`https://zalo.me/${lead.phone?.replace(/^0/, '84').replace(/^\+/, '')}`, '_blank'); setContactModal(null); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(96,165,250,0.15)" }}>
+                      <ExternalLink size={15} style={{ color: "#60a5fa" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Mở Zalo</p>
+                      <p className="text-xs" style={{ color: "#9ca3af" }}>Kết bạn trực tiếp</p>
+                    </div>
+                    <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)" }}>→</span>
+                  </button>
+                  <button onClick={() => handleContactCopy(lead.phone?.replace(/^0/, '84').replace(/^\+/, '') || lead.phone)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: contactCopied ? "rgba(74,222,128,0.15)" : "rgba(245,158,11,0.15)" }}>
+                      <Copy size={15} style={{ color: contactCopied ? "#4ade80" : "#f59e0b" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>{contactCopied ? "✓ Đã sao chép" : "Sao chép số"}</p>
+                      <p className="text-xs" style={{ color: "#9ca3af" }}>Dán vào Zalo</p>
+                    </div>
+                  </button>
+                </>
+              )}
+              {contactModal === 'email' && lead.email && (
+                <>
+                  <button onClick={() => { window.location.href = `mailto:${lead.email}`; setContactModal(null); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(192,132,252,0.15)" }}>
+                      <Mail size={15} style={{ color: "#c084fc" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Soạn email</p>
+                      <p className="text-xs" style={{ color: "#9ca3af" }}>Mở ứng dụng email</p>
+                    </div>
+                    <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)" }}>→</span>
+                  </button>
+                  <button onClick={() => handleContactCopy(lead.email || '')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: contactCopied ? "rgba(74,222,128,0.15)" : "rgba(245,158,11,0.15)" }}>
+                      <Copy size={15} style={{ color: contactCopied ? "#4ade80" : "#f59e0b" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>{contactCopied ? "✓ Đã sao chép" : "Sao chép email"}</p>
+                      <p className="text-xs" style={{ color: "#9ca3af" }}>Dán vào email</p>
+                    </div>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
