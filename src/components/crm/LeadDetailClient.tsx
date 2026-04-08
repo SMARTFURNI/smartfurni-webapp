@@ -12,6 +12,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog } from "@/lib/crm-types";
+import CustomerContactActions from "@/components/crm/high-performance-features/CustomerContactActions";
 import { formatDuration } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
@@ -647,57 +648,8 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
               )}
 
               {/* Quick action buttons */}
-              <div className="grid grid-cols-4 gap-2">
-                <a href={`tel:${lead.phone}`}
-                  className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
-                  style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.20)" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(52,211,153,0.15)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(52,211,153,0.08)")}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center"
-                    style={{ background: "rgba(52,211,153,0.15)" }}>
-                    <Phone size={13} style={{ color: "#34d399" }} />
-                  </div>
-                  <span className="text-[10px] font-semibold" style={{ color: "#34d399" }}>Gọi</span>
-                </a>
-                <a href={`https://zalo.me/${lead.phone?.replace(/^0/, '84').replace(/^\+/, '')}`}
-                  target="_blank" rel="noopener noreferrer"
-                  onClick={() => {
-                    fetch('/api/crm/zalo/call', {
-                      method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ phone: lead.phone, leadId: lead.id, leadName: lead.name, callType: 'audio', reasonCode: 101, source: 'zalo_link' }),
-                    }).catch(() => {});
-                  }}
-                  className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
-                  style={{ background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.20)" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(96,165,250,0.15)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(96,165,250,0.08)")}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center"
-                    style={{ background: "rgba(96,165,250,0.15)" }}>
-                    <MessageCircle size={13} style={{ color: "#60a5fa" }} />
-                  </div>
-                  <span className="text-[10px] font-semibold" style={{ color: "#60a5fa" }}>Zalo</span>
-                </a>
-                {lead.email ? (
-                  <a href={`mailto:${lead.email}`}
-                    className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
-                    style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.20)" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(167,139,250,0.15)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(167,139,250,0.08)")}>
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center"
-                      style={{ background: "rgba(167,139,250,0.15)" }}>
-                      <Mail size={13} style={{ color: "#a78bfa" }} />
-                    </div>
-                    <span className="text-[10px] font-semibold" style={{ color: "#a78bfa" }}>Email</span>
-                  </a>
-                ) : (
-                  <div className="flex flex-col items-center gap-1 p-2 rounded-xl opacity-25"
-                    style={{ background: DL.surface, border: `1px solid ${DL.border}` }}>
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: DL.surface }}>
-                      <Mail size={13} style={{ color: DL.textMuted }} />
-                    </div>
-                    <span className="text-[10px] font-semibold" style={{ color: DL.textMuted }}>Email</span>
-                  </div>
-                )}
+              <div className="flex items-center justify-between">
+                <CustomerContactActions lead={lead} />
                 <Link href={`/crm/quotes/new?leadId=${lead.id}`}
                   className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
                   style={{ background: `${DL.gold}0d`, border: `1px solid ${DL.gold}30` }}
