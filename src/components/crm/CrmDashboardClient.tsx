@@ -17,7 +17,7 @@ import { STAGE_LABELS, STAGE_COLORS, formatVND, isOverdue } from "@/lib/crm-type
 import type { DashboardTheme, DashboardSectionId } from "@/lib/crm-settings-store";
 import { DEFAULT_SETTINGS } from "@/lib/crm-settings-store";
 import AddLeadModal from "./AddLeadModal";
-import TwelveWeekPlanClient from "./TwelveWeekPlanClient";
+import { TwelveWeekReportDashboard, GoalDetailDashboard } from "./TwelveWeekReportWidgets";
 
 interface CurrentUser {
   name: string;
@@ -1850,10 +1850,22 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           </div>
         )}
 
-        {/* ── Kế hoạch 12 Tuần — giao diện đầy đủ ─────────────────────────── */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)" }}>
-          <TwelveWeekPlanClient />
-        </div>
+        {/* ── 12-Week KPI Row ──────────────────────────────────────────── */}
+        {isVisible("kpiCards") && <TwelveWeekKpiRow
+          leads={leads}
+          activeLeads={activeLeads}
+          overdueLeads={overdueLeads}
+          wonLeads={wonLeads}
+          totalValue={totalValue}
+          wonValue={wonValue}
+          stats={stats}
+          theme={theme}
+          fmtVal={fmtVal}
+          darkMode={darkMode}
+          dm={dm}
+          plan={twelveWeekPlan}
+          loadingPlan={loadingTwelveWeek}
+        />}
 
         {/* ── Personal Rank (staff only) ───────────────────────────────── */}
         {isVisible("leaderboard") && !currentUser?.isAdmin && myRank && (
@@ -1954,7 +1966,54 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           </Link>
         )}
 
-
+        {/* ── 12-Week Report Dashboard (replaces Progress Board) ──────────── */}
+        {isVisible("monthSummary") && (
+          <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+            <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
+                  <Crosshair size={15} style={{ color: "#4F46E5" }} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Báo cáo Kế hoạch 12 Tuần</p>
+                  <p className="text-[10px]" style={{ color: dm.textMuted }}>{twelveWeekPlan ? twelveWeekPlan.title : "Chưa có kế hoạch"}</p>
+                </div>
+              </div>
+              <Link href="/crm/twelve-week-plan"
+                className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
+                style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+                Chi tiết <ChevronRight size={12} />
+              </Link>
+            </div>
+            <div className="p-4 md:p-5">
+              {loadingTwelveWeek ? (
+                <div className="space-y-3 animate-pulse">
+                  <div className="h-32 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="h-48 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                    <div className="h-48 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                  </div>
+                  <div className="h-32 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                </div>
+              ) : !twelveWeekPlan ? (
+                <div className="text-center py-8">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "#EEF2FF" }}>
+                    <Crosshair size={24} style={{ color: "#4F46E5" }} />
+                  </div>
+                  <h3 className="text-base font-bold mb-2" style={{ color: dm.textPrimary }}>Chưa có kế hoạch 12 tuần</h3>
+                  <p className="text-sm mb-4" style={{ color: dm.textMuted }}>Tạo kế hoạch để theo dõi tiến độ mục tiêu và công việc hàng tuần</p>
+                  <Link href="/crm/twelve-week-plan"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: "#4F46E5" }}>
+                    <Plus size={16} /> Tạo kế hoạch ngay
+                  </Link>
+                </div>
+              ) : (
+                <TwelveWeekReportDashboard plan={twelveWeekPlan as Parameters<typeof TwelveWeekReportDashboard>[0]["plan"]} />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── Main Grid ─────────────────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-5">
@@ -1962,7 +2021,30 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           {/* Left col (2/3) */}
           <div className="xl:col-span-2 space-y-4 md:space-y-5">
 
-
+            {/* ── Goal Detail Report ──────────────────────────────────────────────────── */}
+            {isVisible("revenueChart") && twelveWeekPlan && (
+              <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+                <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
+                      <Flag size={16} style={{ color: "#4F46E5" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Báo cáo chi tiết từng mục tiêu</p>
+                      <p className="text-[10px]" style={{ color: dm.textMuted }}>Phân tích tiến độ và dự báo từng mục tiêu</p>
+                    </div>
+                  </div>
+                  <Link href="/crm/twelve-week-plan"
+                    className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                    style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+                    Chi tiết <ArrowUpRight size={12} />
+                  </Link>
+                </div>
+                <div className="p-4 md:p-5">
+                  <GoalDetailDashboard plan={twelveWeekPlan as Parameters<typeof GoalDetailDashboard>[0]["plan"]} />
+                </div>
+              </div>
+            )}
 
             {/* Conversion Funnel */}
             {isVisible("funnel") && <Section title="Conversion Funnel" icon={Filter} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
@@ -2508,6 +2590,18 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
           {/* Right col (1/3) */}
           <div className="space-y-4 md:space-y-5">
+
+            {/* 12 Week Plan Widget (của nhân viên) */}
+            <TwelveWeekWidget plan={twelveWeekPlan} loadingPlan={loadingTwelveWeek} />
+
+            {/* Kế hoạch 12 tuần chung của team (admin tạo, nhân viên cùng thực hiện) */}
+            <SharedPlanWidget
+              plan={sharedPlan as Parameters<typeof SharedPlanWidget>[0]["plan"]}
+              loading={loadingSharedPlan}
+              taskUpdating={sharedPlanTaskUpdating}
+              onToggleTask={toggleSharedPlanTask}
+              isAdmin={currentUser?.isAdmin ?? false}
+            />
 
             {/* Team Online (admin only) */}
             {isVisible("teamOnline") && currentUser?.isAdmin && teamOnline.length > 0 && (
