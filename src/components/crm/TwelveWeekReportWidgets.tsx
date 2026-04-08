@@ -14,25 +14,25 @@ import type { TwelveWeekPlan, GoalColor } from "@/lib/twelve-week-plan-store";
 
 // ── Theme (mirror of TwelveWeekPlanClient) ───────────────────────────────────
 const T = {
-  bg: "#F8F9FB", card: "#FFFFFF", cardBorder: "#E5E7EB",
-  cardShadow: "0 1px 4px rgba(0,0,0,0.06)",
-  textPrimary: "#111827", textSecondary: "#374151", textMuted: "#6B7280",
-  divider: "#F3F4F6",
-  indigo: "#4F46E5", indigoBg: "#EEF2FF", indigoLight: "#C7D2FE",
-  green: "#059669", greenBg: "#ECFDF5",
-  gold: "#D97706", goldBg: "#FFFBEB",
-  red: "#DC2626", redBg: "#FEF2F2",
-  purple: "#7C3AED", purpleBg: "#F5F3FF",
-  blue: "#2563EB", blueBg: "#EFF6FF",
+  bg: "rgba(255,255,255,0.03)", card: "rgba(255,255,255,0.05)", cardBorder: "rgba(255,255,255,0.09)",
+  cardShadow: "0 4px 24px rgba(0,0,0,0.4)",
+  textPrimary: "#f5edd6", textSecondary: "rgba(245,237,214,0.85)", textMuted: "rgba(255,255,255,0.45)",
+  divider: "rgba(255,255,255,0.07)",
+  indigo: "#8b5cf6", indigoBg: "rgba(139,92,246,0.13)", indigoLight: "rgba(139,92,246,0.25)",
+  green: "#22c55e", greenBg: "rgba(34,197,94,0.11)",
+  gold: "#C9A84C", goldBg: "rgba(201,168,76,0.13)",
+  red: "#f87171", redBg: "rgba(248,113,113,0.11)",
+  purple: "#a78bfa", purpleBg: "rgba(167,139,250,0.11)",
+  blue: "#60a5fa", blueBg: "rgba(96,165,250,0.11)",
 };
 
 const GOAL_COLORS: Record<GoalColor, { bg: string; text: string; border: string; label: string }> = {
-  indigo: { bg: "#EEF2FF", text: "#4F46E5", border: "#C7D2FE", label: "Indigo" },
-  green:  { bg: "#ECFDF5", text: "#059669", border: "#A7F3D0", label: "Xanh lá" },
-  gold:   { bg: "#FFFBEB", text: "#D97706", border: "#FDE68A", label: "Vàng" },
-  red:    { bg: "#FEF2F2", text: "#DC2626", border: "#FECACA", label: "Đỏ" },
-  purple: { bg: "#F5F3FF", text: "#7C3AED", border: "#DDD6FE", label: "Tím" },
-  blue:   { bg: "#EFF6FF", text: "#2563EB", border: "#BFDBFE", label: "Xanh dương" },
+  indigo: { bg: "rgba(139,92,246,0.13)",  text: "#8b5cf6", border: "rgba(139,92,246,0.3)",  label: "Indigo" },
+  green:  { bg: "rgba(34,197,94,0.11)",   text: "#22c55e", border: "rgba(34,197,94,0.3)",   label: "Xanh lá" },
+  gold:   { bg: "rgba(201,168,76,0.13)",  text: "#C9A84C", border: "rgba(201,168,76,0.3)",  label: "Vàng" },
+  red:    { bg: "rgba(248,113,113,0.11)", text: "#f87171", border: "rgba(248,113,113,0.3)", label: "Đỏ" },
+  purple: { bg: "rgba(167,139,250,0.11)", text: "#a78bfa", border: "rgba(167,139,250,0.3)", label: "Tím" },
+  blue:   { bg: "rgba(96,165,250,0.11)",  text: "#60a5fa", border: "rgba(96,165,250,0.3)",  label: "Xanh dương" },
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────────────────
@@ -306,12 +306,12 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   });
                   return (
                     <polygon key={pct} points={pts.map(p => `${p.x},${p.y}`).join(" ")}
-                      fill="none" stroke="#E5E7EB" strokeWidth="0.8" />
+                      fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />
                   );
                 })}
                 {goalStats.map((_, i) => {
                   const p = radarPointIdeal(i);
-                  return <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="#E5E7EB" strokeWidth="0.8" />;
+                  return <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />;
                 })}
                 <polygon points={idealRadarPoints.map(p => `${p.x},${p.y}`).join(" ")}
                   fill={`${T.indigo}08`} stroke={`${T.indigo}30`} strokeWidth="1" strokeDasharray="3 3" />
@@ -404,7 +404,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
           <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Heatmap tiến độ — 12 tuần × mục tiêu</span>
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[9px] font-medium" style={{ color: T.textMuted }}>0%</span>
-            {["#FEE2E2","#FEF3C7","#FDE68A","#86EFAC","#34D399","#059669"].map((c,i) => (
+            {["rgba(248,113,113,0.5)","rgba(251,191,36,0.5)","rgba(201,168,76,0.5)","rgba(134,239,172,0.5)","rgba(52,211,153,0.5)","#22c55e"].map((c,i) => (
               <div key={i} className="w-4 h-4 rounded" style={{ background: c }} />
             ))}
             <span className="text-[9px] font-medium" style={{ color: T.textMuted }}>100%</span>
@@ -448,13 +448,13 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   const isCur = wi + 1 === currentWeek;
                   const isFuture = wi + 1 > currentWeek;
                   const cellBg = p < 0
-                    ? (isFuture ? "#F3F4F6" : "#F9FAFB")
+                    ? (isFuture ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.06)")
                     : p === 0   ? "#FEE2E2"
                     : p <= 25   ? "#FEF3C7"
                     : p <= 50   ? "#FDE68A"
                     : p <= 75   ? "#86EFAC"
                     : p < 100   ? "#34D399"
-                    : "#059669";
+                    : "#22c55e";
                   return (
                     <div key={wi} className="flex-1 group relative" style={{ minWidth: 0 }}>
                       <div
@@ -465,7 +465,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                           border: isCur
                             ? `2px solid ${T.indigo}`
                             : isFuture
-                            ? `1px dashed #E5E7EB`
+                            ? `1px dashed rgba(255,255,255,0.12)`
                             : `1px solid transparent`,
                         }}
                       />
@@ -506,20 +506,20 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   const isCur = wi + 1 === currentWeek;
                   const isFuture = wi + 1 > currentWeek;
                   const cellBg = wp < 0
-                    ? (isFuture ? "#F3F4F6" : "#F9FAFB")
+                    ? (isFuture ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.06)")
                     : wp === 0   ? "#FEE2E2"
                     : wp <= 25   ? "#FEF3C7"
                     : wp <= 50   ? "#FDE68A"
                     : wp <= 75   ? "#86EFAC"
                     : wp < 100   ? "#34D399"
-                    : "#059669";
+                    : "#22c55e";
                   return (
                     <div key={wi} className="flex-1 group relative" style={{ minWidth: 0 }}>
                       <div className="rounded-md transition-all duration-150 group-hover:scale-110 group-hover:shadow-md"
                         style={{
                           height: 28,
                           background: cellBg,
-                          border: isCur ? `2px solid ${T.indigo}` : isFuture ? `1px dashed #E5E7EB` : `1px solid transparent`,
+                          border: isCur ? `2px solid ${T.indigo}` : isFuture ? `1px dashed rgba(255,255,255,0.12)` : `1px solid transparent`,
                         }} />
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
                         style={{ whiteSpace: "nowrap" }}>
@@ -546,8 +546,8 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
             { color: "#FEE2E2", label: "0%" },
             { color: "#FDE68A", label: "25–50%" },
             { color: "#86EFAC", label: "50–75%" },
-            { color: "#059669", label: "100%" },
-            { color: "#F3F4F6", label: "Chưa đến", dashed: true },
+            { color: "#22c55e", label: "100%" },
+            { color: "rgba(255,255,255,0.1)", label: "Chưa đến", dashed: true },
           ].map(({ color, label, dashed }) => (
             <div key={label} className="flex items-center gap-1.5">
               <div className="w-3.5 h-3.5 rounded"
@@ -751,7 +751,7 @@ export function GoalDetailDashboard({ plan }: { plan: TwelveWeekPlan }) {
               const yPos = PAD.t + (1 - y / 100) * chartH;
               return (
                 <g key={y}>
-                  <line x1={PAD.l} y1={yPos} x2={W - PAD.r} y2={yPos} stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
+                  <line x1={PAD.l} y1={yPos} x2={W - PAD.r} y2={yPos} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
                   <text x={PAD.l - 4} y={yPos + 4} textAnchor="end" fontSize="8" fill="#9CA3AF">{y}%</text>
                 </g>
               );
