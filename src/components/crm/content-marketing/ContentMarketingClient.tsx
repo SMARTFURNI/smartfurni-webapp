@@ -1134,22 +1134,16 @@ function ContentPlannerTab() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           {/* Filter */}
-          <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Lọc:</span>
-            <div className="relative">
-              <select
-                value={filterPlatform}
-                onChange={e => setFilterPlatform(e.target.value as ContentPlatform | "")}
-                className="text-sm font-semibold focus:outline-none cursor-pointer appearance-none pr-5"
-                style={{ color: "#f5edd6", background: "transparent" }}
-              >
-                <option value="" style={{ background: "#1a1200" }}>Tất cả ({totalVideos})</option>
-                <option value="tiktok" style={{ background: "#1a1200" }}>TikTok</option>
-                <option value="facebook" style={{ background: "#1a1200" }}>Facebook</option>
-                <option value="youtube" style={{ background: "#1a1200" }}>YouTube</option>
-              </select>
-              <ChevronDown size={12} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "rgba(255,255,255,0.4)" }} />
-            </div>
+          <div className="flex items-center gap-1.5">
+            {([["", `Tất cả (${totalVideos})`], ["tiktok", "TikTok"], ["facebook", "Facebook"], ["youtube", "YouTube"]] as [ContentPlatform | "", string][]).map(([val, label]) => (
+              <button key={val} onClick={() => setFilterPlatform(val)}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                style={filterPlatform === val
+                  ? { background: "rgba(201,168,76,0.18)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.35)" }
+                  : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {label}
+              </button>
+            ))}
           </div>
 
           <span className="text-xs hidden md:flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>
