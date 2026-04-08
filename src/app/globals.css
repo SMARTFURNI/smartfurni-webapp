@@ -118,32 +118,22 @@ section {
    The landing page uses dark theme (body bg #0D0B00, color #F5EDD6).
    CRM uses light theme. Override all body-inherited dark styles inside .crm-root.
 */
-.crm-root {
-  background-color: #f8f9fb !important;
-  color: #111827 !important;
+/* CRM dark luxury - input/select use inline styles from component */
+.crm-root input:-webkit-autofill,
+.crm-root input:-webkit-autofill:hover,
+.crm-root input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px rgba(255,255,255,0.07) inset !important;
+  -webkit-text-fill-color: #f5edd6 !important;
+  caret-color: #f5edd6;
 }
-.crm-root input,
-.crm-root textarea,
-.crm-root select {
-  color: #111827 !important;
-  background-color: #ffffff !important;
-}
-.crm-root input::placeholder,
-.crm-root textarea::placeholder {
-  color: #9ca3af !important;
-  opacity: 1 !important;
-}
-.crm-root label {
-  color: #374151 !important;
-}
-/* Scrollbar for CRM (light) */
+/* Scrollbar for CRM (dark) */
 .crm-root ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: rgba(255,255,255,0.03);
 }
 .crm-root ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgba(255,255,255,0.12);
   border-radius: 3px;
 }
 .crm-root ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgba(255,255,255,0.20);
 }
