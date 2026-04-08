@@ -168,7 +168,7 @@ export default function CustomerContactActions({
     border: `1px solid ${D.panelBorder}`,
     borderRadius: 14,
     boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)",
-    zIndex: 50,
+    zIndex: 9999,
     overflow: "hidden",
     backdropFilter: "blur(20px)",
   };
@@ -269,7 +269,7 @@ export default function CustomerContactActions({
 
       {/* Backdrop */}
       {activeMenu && (
-        <div className="fixed inset-0 z-40" onClick={() => setActiveMenu(null)} />
+        <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setActiveMenu(null)} />
       )}
 
       {/* Zalo Personal Add Friend Modal */}

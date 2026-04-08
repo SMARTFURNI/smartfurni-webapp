@@ -616,9 +616,8 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
         <div className="w-72 flex-shrink-0 p-4 overflow-y-auto hidden lg:block space-y-3">
 
           {/* Customer Profile Card */}
-          <div className="rounded-2xl overflow-hidden"
-            style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)" }}>
-            <div className="p-4" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(255,255,255,0.03))" }}>
+          <div className="rounded-2xl" style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)", overflow: "visible" }}>
+            <div className="p-4" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(255,255,255,0.03))", overflow: "visible", position: "relative" }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black flex-shrink-0"
                   style={{ background: `linear-gradient(135deg, ${TYPE_COLORS[lead.type]}, ${TYPE_COLORS[lead.type]}99)`, color: "#fff" }}>
