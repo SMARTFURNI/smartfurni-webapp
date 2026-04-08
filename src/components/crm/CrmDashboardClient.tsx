@@ -123,37 +123,37 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
             label: "Doanh thu tháng này",
             value: fmtVal(periodStats?.wonValue ?? stats.wonValueThisMonth),
             sub: growthPct !== 0 ? `${growthPct > 0 ? "+" : ""}${growthPct}% so tháng trước` : "So tháng trước",
-            subColor: growthPct >= 0 ? T.green : T.red,
+            subColor: growthPct >= 0 ? "#22c55e" : "#f87171",
             icon: "$",
-            color: theme.accentColor,
-            bg: theme.accentColor + "10",
-            border: theme.accentColor + "30",
+            color: "#C9A84C",
+            bg: "rgba(201,168,76,0.1)",
+            border: "rgba(201,168,76,0.3)",
           },
           {
             label: "KH mới tháng này",
             value: String(periodStats?.newLeads ?? stats.newLeadsThisMonth),
             sub: `Tổng ${stats.totalLeads} khách hàng`,
-            subColor: T.textMuted,
+            subColor: "rgba(255,255,255,0.4)",
             icon: "👥",
-            color: theme.kpiCustomerColor,
-            bg: theme.kpiCustomerColor + "10",
-            border: theme.kpiCustomerColor + "30",
+            color: "#60a5fa",
+            bg: "rgba(96,165,250,0.1)",
+            border: "rgba(96,165,250,0.3)",
           },
           {
             label: "Dự báo tháng tới",
             value: forecast ? `~${fmtVal(forecast.forecastValue)}` : "—",
             sub: forecast ? `Từ ${forecast.pipelineCount} deal trong pipeline` : "Chưa có dữ liệu",
-            subColor: T.textMuted,
+            subColor: "rgba(255,255,255,0.4)",
             icon: "📈",
-            color: T.indigo,
-            bg: T.indigoBg,
-            border: T.indigo + "30",
+            color: "#8b5cf6",
+            bg: "rgba(139,92,246,0.12)",
+            border: "#8b5cf6" + "30",
           },
         ].map(({ label, value, sub, subColor, icon, color, bg, border }) => (
           <div key={label} className="rounded-2xl p-3.5" style={{ background: bg, border: `1px solid ${border}` }}>
             <div className="flex items-center gap-1.5 mb-2">
               <span className="text-base leading-none">{icon}</span>
-              <span className="text-[11px] font-semibold" style={{ color: T.textMuted }}>{label}</span>
+              <span className="text-[11px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</span>
             </div>
             <div className="text-xl font-black tracking-tight" style={{ color }}>{value}</div>
             <div className="text-[10px] mt-1 font-medium" style={{ color: subColor }}>{sub}</div>
@@ -162,18 +162,18 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
       </div>
 
       {/* ── Bar Chart ── */}
-      <div className="rounded-2xl p-4" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+      <div className="rounded-2xl p-4" style={{ background: "#0f172a", border: `1px solid ${"rgba(255,255,255,0.08)"}` }}>
         {/* Y-axis labels */}
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Doanh thu (VNĐ)</span>
+          <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Doanh thu (VNĐ)</span>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: `linear-gradient(180deg, ${theme.accentColor}CC, ${theme.accentColor})` }} />
-              <span className="text-[10px]" style={{ color: T.textMuted }}>Thực tế</span>
+              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: `linear-gradient(180deg, ${"#C9A84C"}CC, ${"#C9A84C"})` }} />
+              <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Thực tế</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: T.indigoBg, border: `1.5px dashed ${T.indigo}` }} />
-              <span className="text-[10px]" style={{ color: T.textMuted }}>Dự báo</span>
+              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: "rgba(139,92,246,0.12)", border: `1.5px dashed ${"#8b5cf6"}` }} />
+              <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Dự báo</span>
             </div>
           </div>
         </div>
@@ -200,9 +200,9 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
                   style={{
                     opacity: isHovered ? 1 : 0,
                     transform: isHovered ? "translateY(0)" : "translateY(4px)",
-                    background: isForecast ? T.indigoBg : T.card,
-                    color: isForecast ? T.indigo : theme.accentColor,
-                    border: `1px solid ${isForecast ? T.indigo + "40" : theme.accentColor + "40"}`,
+                    background: isForecast ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.04)",
+                    color: isForecast ? "#8b5cf6" : "#C9A84C",
+                    border: `1px solid ${isForecast ? "#8b5cf6" + "40" : "rgba(201,168,76,0.4)"}`,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                     pointerEvents: "none",
                   }}
@@ -217,16 +217,16 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
                     style={{
                       height: barH,
                       background: isForecast
-                        ? `repeating-linear-gradient(135deg, ${T.indigo}25, ${T.indigo}25 4px, ${T.indigoBg} 4px, ${T.indigoBg} 8px)`
+                        ? `repeating-linear-gradient(135deg, ${"#8b5cf6"}25, ${"#8b5cf6"}25 4px, ${"rgba(139,92,246,0.12)"} 4px, ${"rgba(139,92,246,0.12)"} 8px)`
                         : isCurrent
-                        ? `linear-gradient(180deg, ${theme.accentColor}EE 0%, ${theme.accentColor} 100%)`
+                        ? `linear-gradient(180deg, ${"#C9A84C"}EE 0%, ${"#C9A84C"} 100%)`
                         : isHovered
-                        ? `linear-gradient(180deg, ${theme.accentColor}99 0%, ${theme.accentColor}CC 100%)`
-                        : `linear-gradient(180deg, ${theme.accentColor}45 0%, ${theme.accentColor}70 100%)`,
-                      border: isForecast ? `1.5px dashed ${T.indigo}80` : "none",
+                        ? `linear-gradient(180deg, ${"#C9A84C"}99 0%, ${"#C9A84C"}CC 100%)`
+                        : `linear-gradient(180deg, ${"#C9A84C"}45 0%, ${"#C9A84C"}70 100%)`,
+                      border: isForecast ? `1.5px dashed ${"#8b5cf6"}80` : "none",
                       transform: isHovered ? "scaleX(0.92)" : "scaleX(1)",
                       transformOrigin: "bottom",
-                      boxShadow: isCurrent ? `0 -2px 12px ${theme.accentColor}50` : "none",
+                      boxShadow: isCurrent ? `0 -2px 12px ${"#C9A84C"}50` : "none",
                     }}
                   >
                     {/* Shine effect for current month */}
@@ -242,7 +242,7 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
                 <span
                   className="text-[10px] font-bold"
                   style={{
-                    color: isForecast ? T.indigo : isCurrent ? theme.accentColor : T.textMuted,
+                    color: isForecast ? "#8b5cf6" : isCurrent ? "#C9A84C" : "rgba(255,255,255,0.4)",
                   }}
                 >
                   {m.label}{isForecast ? " *" : ""}
@@ -254,19 +254,19 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
 
         {/* SVG Trend Line */}
         {nonForecast.length >= 2 && (
-          <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${T.divider}` }}>
+          <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${"rgba(255,255,255,0.06)"}` }}>
             <div className="flex items-center gap-1.5 mb-2">
-              <TrendingUp size={11} style={{ color: T.indigo }} />
-              <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Xu hướng 6 tháng</span>
-              <span className="ml-auto text-[10px] font-bold" style={{ color: T.textMuted }}>
-                Tổng: <span style={{ color: T.textSecondary }}>{fmtVal(totalActual)}</span>
+              <TrendingUp size={11} style={{ color: "#8b5cf6" }} />
+              <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Xu hướng 6 tháng</span>
+              <span className="ml-auto text-[10px] font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                Tổng: <span style={{ color: "rgba(245,237,214,0.75)" }}>{fmtVal(totalActual)}</span>
               </span>
             </div>
             <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full" style={{ height: 40 }} preserveAspectRatio="none">
               <defs>
                 <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={T.indigo} stopOpacity="0.15" />
-                  <stop offset="100%" stopColor={T.indigo} stopOpacity="0" />
+                  <stop offset="0%" stopColor={"#8b5cf6"} stopOpacity="0.15" />
+                  <stop offset="100%" stopColor={"#8b5cf6"} stopOpacity="0" />
                 </linearGradient>
               </defs>
               {/* Area fill */}
@@ -278,7 +278,7 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
               <polyline
                 points={trendPts}
                 fill="none"
-                stroke={T.indigo}
+                stroke={"#8b5cf6"}
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -289,7 +289,7 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
                 const x = (i / Math.max(nonForecast.length - 1, 1)) * CHART_W;
                 const y = CHART_H - (m.actual / maxVal) * (CHART_H - 8) - 4;
                 return (
-                  <circle key={i} cx={x} cy={y} r="3" fill={T.indigo} opacity="0.8" />
+                  <circle key={i} cx={x} cy={y} r="3" fill={"#8b5cf6"} opacity="0.8" />
                 );
               })}
             </svg>
@@ -307,8 +307,8 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
 }) {
 
   const GOAL_COLORS_MAP: Record<string, string> = {
-    indigo: "#4F46E5", green: "#059669", gold: "#D97706",
-    red: "#DC2626", purple: "#7C3AED", blue: "#2563EB",
+    indigo: "#8b5cf6", green: "#22c55e", gold: "#C9A84C",
+    red: "#f87171", purple: "#a78bfa", blue: "#60a5fa",
   };
 
   function getCurrentWeek(startDate: string) {
@@ -317,25 +317,25 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
   }
 
   if (loadingPlan) return (
-    <div className="rounded-2xl p-4 animate-pulse" style={{ background: T.card, border: `1px solid ${T.cardBorder}` }}>
-      <div className="h-4 rounded w-1/2 mb-3" style={{ background: `${T.textMuted}20` }} />
-      <div className="h-2 rounded w-full mb-2" style={{ background: `${T.textMuted}10` }} />
-      <div className="h-2 rounded w-3/4" style={{ background: `${T.textMuted}10` }} />
+    <div className="rounded-2xl p-4 animate-pulse" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${"rgba(255,255,255,0.08)"}` }}>
+      <div className="h-4 rounded w-1/2 mb-3" style={{ background: `${"rgba(255,255,255,0.4)"}20` }} />
+      <div className="h-2 rounded w-full mb-2" style={{ background: `${"rgba(255,255,255,0.4)"}10` }} />
+      <div className="h-2 rounded w-3/4" style={{ background: `${"rgba(255,255,255,0.4)"}10` }} />
     </div>
   );
 
   if (!plan) return (
-    <div className="rounded-2xl p-4" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+    <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${"rgba(255,255,255,0.08)"}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#EEF2FF" }}>
-          <Crosshair size={14} style={{ color: "#4F46E5" }} />
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(139,92,246,0.15)" }}>
+          <Crosshair size={14} style={{ color: "#8b5cf6" }} />
         </div>
-        <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Kế hoạch 12 Tuần</span>
+        <span className="text-sm font-bold" style={{ color: "#f5edd6" }}>Kế hoạch 12 Tuần</span>
       </div>
-      <p className="text-xs mb-3" style={{ color: T.textMuted }}>Chưa có kế hoạch nào. Bắt đầu ngay!</p>
+      <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>Chưa có kế hoạch nào. Bắt đầu ngay!</p>
       <Link href="/crm/twelve-week-plan"
         className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-semibold text-white"
-        style={{ background: "#4F46E5" }}>
+        style={{ background: "#8b5cf6" }}>
         <Plus size={12} /> Tạo kế hoạch
       </Link>
     </div>
@@ -360,19 +360,19 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
   });
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: "1px solid #C7D2FE", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(139,92,246,0.25)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-2" style={{ background: "#EEF2FF", borderBottom: "1px solid #C7D2FE" }}>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#4F46E520" }}>
-          <Crosshair size={14} style={{ color: "#4F46E5" }} />
+      <div className="px-4 py-3 flex items-center gap-2" style={{ background: "rgba(139,92,246,0.1)", borderBottom: "1px solid rgba(139,92,246,0.2)" }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(139,92,246,0.2)" }}>
+          <Crosshair size={14} style={{ color: "#8b5cf6" }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-black truncate" style={{ color: "#4F46E5" }}>{plan.title}</p>
-          <p className="text-[10px]" style={{ color: "#6366F1" }}>Tuần {currentWeek}/12 • {overallPct}% hoàn thành</p>
+          <p className="text-xs font-black truncate" style={{ color: "#8b5cf6" }}>{plan.title}</p>
+          <p className="text-[10px]" style={{ color: "rgba(139,92,246,0.7)" }}>Tuần {currentWeek}/12 • {overallPct}% hoàn thành</p>
         </div>
         <Link href="/crm/twelve-week-plan"
           className="text-[10px] font-semibold px-2 py-1 rounded-lg flex items-center gap-1"
-          style={{ background: "#4F46E5", color: "#fff" }}>
+          style={{ background: "#8b5cf6", color: "#fff" }}>
           Xem <ChevronRight size={10} />
         </Link>
       </div>
@@ -381,39 +381,39 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
         {/* Overall progress */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Tiến độ tổng thể</span>
-            <span className="text-[10px] font-black" style={{ color: "#4F46E5" }}>{doneTasks}/{totalTasks} việc</span>
+            <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Tiến độ tổng thể</span>
+            <span className="text-[10px] font-black" style={{ color: "#8b5cf6" }}>{doneTasks}/{totalTasks} việc</span>
           </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: "#EEF2FF" }}>
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(139,92,246,0.12)" }}>
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${overallPct}%`, background: "linear-gradient(90deg, #4F46E5, #818CF8)" }} />
+              style={{ width: `${overallPct}%`, background: "linear-gradient(90deg, #8b5cf6, #a78bfa)" }} />
           </div>
         </div>
 
         {/* Current week */}
-        <div className="rounded-xl p-3" style={{ background: "#EEF2FF" }}>
+        <div className="rounded-xl p-3" style={{ background: "rgba(139,92,246,0.1)" }}>
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px] font-bold" style={{ color: "#4F46E5" }}>★ Tuần {currentWeek} (Hiện tại)</span>
-            <span className="text-[10px] font-black" style={{ color: thisWeekPct === 100 ? "#059669" : "#4F46E5" }}>{thisWeekPct}%</span>
+            <span className="text-[10px] font-bold" style={{ color: "#8b5cf6" }}>★ Tuần {currentWeek} (Hiện tại)</span>
+            <span className="text-[10px] font-black" style={{ color: thisWeekPct === 100 ? "#22c55e" : "#8b5cf6" }}>{thisWeekPct}%</span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.5)" }}>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
             <div className="h-full rounded-full transition-all"
-              style={{ width: `${thisWeekPct}%`, background: thisWeekPct === 100 ? "#059669" : "#4F46E5" }} />
+              style={{ width: `${thisWeekPct}%`, background: thisWeekPct === 100 ? "#22c55e" : "#8b5cf6" }} />
           </div>
-          <p className="text-[9px] mt-1" style={{ color: "#6366F1" }}>{thisWeekDone}/{thisWeekTasks.length} công việc tuần này</p>
+          <p className="text-[9px] mt-1" style={{ color: "rgba(139,92,246,0.7)" }}>{thisWeekDone}/{thisWeekTasks.length} công việc tuần này</p>
         </div>
 
         {/* 12-week mini bars */}
         <div>
-          <p className="text-[10px] font-semibold mb-1.5" style={{ color: T.textMuted }}>12 tuần</p>
+          <p className="text-[10px] font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>12 tuần</p>
           <div className="flex items-end gap-0.5 h-8">
             {weekBars.map((bar, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                <div className="w-full rounded-t overflow-hidden" style={{ height: 20, background: bar.isCurrent ? "#C7D2FE" : "#EEF2FF" }}>
+                <div className="w-full rounded-t overflow-hidden" style={{ height: 20, background: bar.isCurrent ? "rgba(139,92,246,0.25)" : "rgba(255,255,255,0.06)" }}>
                   <div className="w-full rounded-t transition-all"
-                    style={{ height: `${bar.pct}%`, background: bar.pct === 100 ? "#059669" : bar.isCurrent ? "#4F46E5" : "#818CF8" }} />
+                    style={{ height: `${bar.pct}%`, background: bar.pct === 100 ? "#22c55e" : bar.isCurrent ? "#8b5cf6" : "rgba(139,92,246,0.5)" }} />
                 </div>
-                {bar.isCurrent && <div className="w-1 h-1 rounded-full" style={{ background: "#D97706" }} />}
+                {bar.isCurrent && <div className="w-1 h-1 rounded-full" style={{ background: "#C9A84C" }} />}
               </div>
             ))}
           </div>
@@ -422,9 +422,9 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
         {/* Goals */}
         {plan.goals.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Mục tiêu</p>
+            <p className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Mục tiêu</p>
             {plan.goals.slice(0, 3).map((goal) => {
-              const gColor = GOAL_COLORS_MAP[goal.color] ?? "#4F46E5";
+              const gColor = GOAL_COLORS_MAP[goal.color] ?? "#8b5cf6";
               const gTasks = plan.tasks.filter((t) => t.goalId === goal.id && t.status !== "skipped");
               const gDone = plan.tasks.filter((t) => t.goalId === goal.id && t.status === "done");
               const gPct = gTasks.length > 0 ? Math.round((gDone.length / gTasks.length) * 100) : 0;
@@ -432,7 +432,7 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
                 <div key={goal.id}>
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: gColor }} />
-                    <span className="text-[10px] font-medium flex-1 truncate" style={{ color: T.textPrimary }}>{goal.title}</span>
+                    <span className="text-[10px] font-medium flex-1 truncate" style={{ color: "#f5edd6" }}>{goal.title}</span>
                     <span className="text-[10px] font-black" style={{ color: gColor }}>{gPct}%</span>
                   </div>
                   <div className="h-1 rounded-full overflow-hidden ml-3" style={{ background: `${gColor}20` }}>
@@ -442,7 +442,7 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
               );
             })}
             {plan.goals.length > 3 && (
-              <p className="text-[9px] text-center" style={{ color: T.textMuted }}>+{plan.goals.length - 3} mục tiêu khác</p>
+              <p className="text-[9px] text-center" style={{ color: "rgba(255,255,255,0.4)" }}>+{plan.goals.length - 3} mục tiêu khác</p>
             )}
           </div>
         )}
@@ -467,8 +467,8 @@ function SharedPlanWidget({
   const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
 
   const GOAL_COLORS_MAP: Record<string, string> = {
-    indigo: "#4F46E5", green: "#059669", gold: "#D97706",
-    red: "#DC2626", purple: "#7C3AED", blue: "#2563EB",
+    indigo: "#8b5cf6", green: "#22c55e", gold: "#C9A84C",
+    red: "#f87171", purple: "#a78bfa", blue: "#60a5fa",
   };
 
   function getCurrentWeek(startDate: string) {
@@ -477,10 +477,10 @@ function SharedPlanWidget({
   }
 
   if (loading) return (
-    <div className="rounded-2xl p-4 animate-pulse" style={{ background: T.card, border: `1px solid ${T.cardBorder}` }}>
-      <div className="h-4 rounded w-2/3 mb-3" style={{ background: `${T.textMuted}20` }} />
-      <div className="h-2 rounded w-full mb-2" style={{ background: `${T.textMuted}10` }} />
-      <div className="h-2 rounded w-3/4" style={{ background: `${T.textMuted}10` }} />
+    <div className="rounded-2xl p-4 animate-pulse" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${"rgba(255,255,255,0.08)"}` }}>
+      <div className="h-4 rounded w-2/3 mb-3" style={{ background: `${"rgba(255,255,255,0.4)"}20` }} />
+      <div className="h-2 rounded w-full mb-2" style={{ background: `${"rgba(255,255,255,0.4)"}10` }} />
+      <div className="h-2 rounded w-3/4" style={{ background: `${"rgba(255,255,255,0.4)"}10` }} />
     </div>
   );
 
@@ -495,22 +495,22 @@ function SharedPlanWidget({
   const thisWeekPct = thisWeekTasks.length > 0 ? Math.round((thisWeekDone / thisWeekTasks.length) * 100) : 0;
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: T.card, border: "1px solid #D1FAE5", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(34,197,94,0.25)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-2" style={{ background: "#ECFDF5", borderBottom: "1px solid #D1FAE5" }}>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#05966920" }}>
-          <Target size={14} style={{ color: "#059669" }} />
+      <div className="px-4 py-3 flex items-center gap-2" style={{ background: "rgba(34,197,94,0.1)", borderBottom: "1px solid rgba(34,197,94,0.2)" }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(34,197,94,0.2)" }}>
+          <Target size={14} style={{ color: "#22c55e" }} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="text-xs font-black truncate" style={{ color: "#059669" }}>Kế hoạch chung</p>
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "#059669", color: "#fff" }}>TEAM</span>
+            <p className="text-xs font-black truncate" style={{ color: "#22c55e" }}>Kế hoạch chung</p>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "#22c55e", color: "#0f172a" }}>TEAM</span>
           </div>
-          <p className="text-[10px] truncate" style={{ color: "#065F46" }}>Tuần {currentWeek}/12 • {overallPct}% hoàn thành</p>
+          <p className="text-[10px] truncate" style={{ color: "rgba(34,197,94,0.7)" }}>Tuần {currentWeek}/12 • {overallPct}% hoàn thành</p>
         </div>
         <Link href="/crm/twelve-week-plan"
           className="text-[10px] font-semibold px-2 py-1 rounded-lg flex items-center gap-1"
-          style={{ background: "#059669", color: "#fff" }}>
+          style={{ background: "#22c55e", color: "#0f172a" }}>
           Xem <ChevronRight size={10} />
         </Link>
       </div>
@@ -519,34 +519,34 @@ function SharedPlanWidget({
         {/* Overall progress */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Tiến độ tổng thể</span>
-            <span className="text-[10px] font-black" style={{ color: "#059669" }}>{doneTasks}/{totalTasks} việc</span>
+            <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Tiến độ tổng thể</span>
+            <span className="text-[10px] font-black" style={{ color: "#22c55e" }}>{doneTasks}/{totalTasks} việc</span>
           </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: "#ECFDF5" }}>
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(34,197,94,0.12)" }}>
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${overallPct}%`, background: "linear-gradient(90deg, #059669, #34D399)" }} />
+              style={{ width: `${overallPct}%`, background: "linear-gradient(90deg, #22c55e, #4ade80)" }} />
           </div>
         </div>
 
         {/* Current week tasks */}
-        <div className="rounded-xl p-3" style={{ background: "#ECFDF5" }}>
+        <div className="rounded-xl p-3" style={{ background: "rgba(34,197,94,0.1)" }}>
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px] font-bold" style={{ color: "#059669" }}>★ Tuần {currentWeek} (Hiện tại)</span>
-            <span className="text-[10px] font-black" style={{ color: thisWeekPct === 100 ? "#059669" : "#065F46" }}>{thisWeekPct}%</span>
+            <span className="text-[10px] font-bold" style={{ color: "#22c55e" }}>★ Tuần {currentWeek} (Hiện tại)</span>
+            <span className="text-[10px] font-black" style={{ color: thisWeekPct === 100 ? "#22c55e" : "rgba(34,197,94,0.7)" }}>{thisWeekPct}%</span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.5)" }}>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
             <div className="h-full rounded-full transition-all"
-              style={{ width: `${thisWeekPct}%`, background: thisWeekPct === 100 ? "#059669" : "#34D399" }} />
+              style={{ width: `${thisWeekPct}%`, background: thisWeekPct === 100 ? "#22c55e" : "#4ade80" }} />
           </div>
-          <p className="text-[9px] mt-1" style={{ color: "#065F46" }}>{thisWeekDone}/{thisWeekTasks.length} công việc tuần này</p>
+          <p className="text-[9px] mt-1" style={{ color: "rgba(34,197,94,0.7)" }}>{thisWeekDone}/{thisWeekTasks.length} công việc tuần này</p>
         </div>
 
         {/* Goals with tasks */}
         {plan.goals.length > 0 && (
           <div className="space-y-2">
-            <p className="text-[10px] font-semibold" style={{ color: T.textMuted }}>Mục tiêu & Công việc tuần này</p>
+            <p className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Mục tiêu & Công việc tuần này</p>
             {plan.goals.map(goal => {
-              const gColor = GOAL_COLORS_MAP[goal.color] ?? "#059669";
+              const gColor = GOAL_COLORS_MAP[goal.color] ?? "#22c55e";
               const gWeekTasks = plan.tasks.filter(t => t.goalId === goal.id && t.weekNumber === currentWeek && t.status !== "skipped");
               const gDone = gWeekTasks.filter(t => t.status === "done").length;
               const gPct = gWeekTasks.length > 0 ? Math.round((gDone / gWeekTasks.length) * 100) : 0;
@@ -581,7 +581,7 @@ function SharedPlanWidget({
                               onClick={() => onToggleTask(task.id, task.status)}
                               disabled={isUpdating}
                               className="flex-shrink-0 mt-0.5 rounded-md transition-all flex items-center justify-center"
-                              style={{ width: 16, height: 16, border: `2px solid ${isDone ? gColor : T.cardBorder}`, background: isDone ? gColor : "transparent", opacity: isUpdating ? 0.5 : 1 }}
+                              style={{ width: 16, height: 16, border: `2px solid ${isDone ? gColor : "rgba(255,255,255,0.08)"}`, background: isDone ? gColor : "transparent", opacity: isUpdating ? 0.5 : 1 }}
                             >
                               {isDone && (
                                 <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
@@ -589,7 +589,7 @@ function SharedPlanWidget({
                                 </svg>
                               )}
                             </button>
-                            <span className="text-[10px] leading-tight flex-1" style={{ color: isDone ? T.textMuted : T.textPrimary, textDecoration: isDone ? "line-through" : "none" }}>
+                            <span className="text-[10px] leading-tight flex-1" style={{ color: isDone ? "rgba(255,255,255,0.4)" : "#f5edd6", textDecoration: isDone ? "line-through" : "none" }}>
                               {task.title}
                             </span>
                           </div>
@@ -605,9 +605,9 @@ function SharedPlanWidget({
 
         {/* Admin note */}
         {isAdmin && (
-          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg" style={{ background: "#ECFDF5", border: "1px solid #D1FAE5" }}>
-            <Info size={10} style={{ color: "#059669" }} />
-            <span className="text-[9px]" style={{ color: "#065F46" }}>Nhân viên thấy kế hoạch này trên dashboard của họ</span>
+          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+            <Info size={10} style={{ color: "#22c55e" }} />
+            <span className="text-[9px]" style={{ color: "rgba(34,197,94,0.8)" }}>Nhân viên thấy kế hoạch này trên dashboard của họ</span>
           </div>
         )}
       </div>
@@ -644,10 +644,10 @@ function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalVal
       label: "Tiến độ 12 tuần",
       value: plan ? `${overallPct}%` : "—",
       sub: plan ? `${doneTasks}/${totalTasks} việc hoàn thành` : "Chưa có kế hoạch",
-      color: "#4F46E5",
-      colorBg: "#EEF2FF",
+      color: "#8b5cf6",
+      colorBg: "rgba(139,92,246,0.12)",
       badge: plan ? `Tuần ${currentWeek}/12` : undefined,
-      badgeColor: "#4F46E5",
+      badgeColor: "#8b5cf6",
       href: "/crm/twelve-week-plan",
     },
     {
@@ -655,10 +655,10 @@ function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalVal
       label: "Tuần hiện tại",
       value: plan ? `${thisWeekPct}%` : "—",
       sub: plan ? `${thisWeekDone}/${thisWeekTasks.length} việc tuần ${currentWeek}` : "Chưa có kế hoạch",
-      color: thisWeekPct >= 100 ? T.green : thisWeekPct >= 60 ? T.gold : T.red,
-      colorBg: thisWeekPct >= 100 ? T.greenBg : thisWeekPct >= 60 ? T.goldBg : T.redBg,
+      color: thisWeekPct >= 100 ? "#22c55e" : thisWeekPct >= 60 ? T.gold : "#f87171",
+      colorBg: thisWeekPct >= 100 ? "rgba(34,197,94,0.1)" : thisWeekPct >= 60 ? T.goldBg : "rgba(248,113,113,0.1)",
       badge: thisWeekPct >= 100 ? "Hoàn thành!" : `${thisWeekTasks.length - thisWeekDone} việc còn lại`,
-      badgeColor: thisWeekPct >= 100 ? T.green : T.gold,
+      badgeColor: thisWeekPct >= 100 ? "#22c55e" : T.gold,
       href: "/crm/twelve-week-plan",
     },
     {
@@ -666,10 +666,10 @@ function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalVal
       label: "Khách hàng",
       value: leads.length,
       sub: `${activeLeads.length} đang theo dõi`,
-      color: theme.kpiCustomerColor,
-      colorBg: theme.kpiCustomerColor + "18",
+      color: "#60a5fa",
+      colorBg: "rgba(96,165,250,0.12)",
       badge: `${wonLeads.length} đã chốt`,
-      badgeColor: T.green,
+      badgeColor: "#22c55e",
       href: "/crm/leads",
     },
     {
@@ -677,10 +677,10 @@ function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalVal
       label: "Cần liên hệ",
       value: overdueLeads.length,
       sub: "Quá 3 ngày không tương tác",
-      color: overdueLeads.length > 0 ? theme.kpiOverdueColor : T.green,
-      colorBg: overdueLeads.length > 0 ? theme.kpiOverdueColor + "18" : T.greenBg,
+      color: overdueLeads.length > 0 ? "#f87171" : "#22c55e",
+      colorBg: overdueLeads.length > 0 ? "rgba(248,113,113,0.12)" : "rgba(34,197,94,0.1)",
       badge: overdueLeads.length > 0 ? "Cần xử lý" : "Tốt",
-      badgeColor: overdueLeads.length > 0 ? theme.kpiOverdueColor : T.green,
+      badgeColor: overdueLeads.length > 0 ? "#f87171" : "#22c55e",
       href: "/crm/leads?filter=overdue",
     },
   ];
@@ -690,7 +690,7 @@ function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalVal
       {kpis.map(({ icon: Icon, label, value, sub, color, colorBg, badge, badgeColor, href }) => (
         <Link key={label} href={href}
           className="rounded-2xl p-3.5 md:p-5 relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 block"
-          style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+          style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
           <div className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-5 -translate-y-4 translate-x-4"
             style={{ background: color }} />
           <div className="flex items-start justify-between mb-3">
@@ -721,8 +721,8 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
   loadingPlan: boolean;
 }) {
   const GOAL_COLORS_MAP: Record<string, string> = {
-    indigo: "#4F46E5", green: "#059669", gold: "#D97706",
-    red: "#DC2626", purple: "#7C3AED", blue: "#2563EB",
+    indigo: "#8b5cf6", green: "#22c55e", gold: "#C9A84C",
+    red: "#f87171", purple: "#a78bfa", blue: "#60a5fa",
   };
 
   function getCurrentWeek(startDate: string) {
@@ -732,19 +732,19 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
 
   if (loadingPlan) return (
     <div className="rounded-2xl p-5 animate-pulse" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}` }}>
-      <div className="h-4 rounded w-1/3 mb-3" style={{ background: `${T.textMuted}20` }} />
+      <div className="h-4 rounded w-1/3 mb-3" style={{ background: `${"rgba(255,255,255,0.4)"}20` }} />
       <div className="grid grid-cols-3 gap-3">
-        {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl" style={{ background: `${T.textMuted}10` }} />)}
+        {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl" style={{ background: `${"rgba(255,255,255,0.4)"}10` }} />)}
       </div>
     </div>
   );
 
   if (!plan) return (
     <div className="rounded-2xl p-5 flex items-center justify-between"
-      style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+      style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
-          <Crosshair size={18} style={{ color: "#4F46E5" }} />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(139,92,246,0.15)" }}>
+          <Crosshair size={18} style={{ color: "#8b5cf6" }} />
         </div>
         <div>
           <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Kế hoạch 12 Tuần</p>
@@ -753,7 +753,7 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
       </div>
       <Link href="/crm/twelve-week-plan"
         className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-        style={{ background: "#4F46E5" }}>
+        style={{ background: "#8b5cf6" }}>
         <Plus size={14} /> Tạo kế hoạch
       </Link>
     </div>
@@ -766,7 +766,7 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
   const thisWeekTasks = plan.tasks.filter(t => t.weekNumber === currentWeek && t.status !== "skipped");
   const thisWeekDone = thisWeekTasks.filter(t => t.status === "done").length;
   const thisWeekPct = thisWeekTasks.length > 0 ? Math.round((thisWeekDone / thisWeekTasks.length) * 100) : 0;
-  const barColor = overallPct >= 80 ? T.green : overallPct >= 50 ? T.gold : "#4F46E5";
+  const barColor = overallPct >= 80 ? "#22c55e" : overallPct >= 50 ? T.gold : "#8b5cf6";
 
   // Helper format KPI value
   function fmtKpi(v: number, format: string): string {
@@ -786,7 +786,7 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
 
   // Lấy KPI chính của từng mục tiêu (KPI đầu tiên)
   const goalKpiCards = plan.goals.map(goal => {
-    const gColor = GOAL_COLORS_MAP[goal.color] ?? "#4F46E5";
+    const gColor = GOAL_COLORS_MAP[goal.color] ?? "#8b5cf6";
     const gTasks = plan.tasks.filter(t => t.goalId === goal.id && t.status !== "skipped");
     const gDone = plan.tasks.filter(t => t.goalId === goal.id && t.status === "done");
     const gPct = gTasks.length > 0 ? Math.round((gDone.length / gTasks.length) * 100) : 0;
@@ -799,12 +799,12 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
   });
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
       {/* Header */}
       <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
-            <Crosshair size={15} style={{ color: "#4F46E5" }} />
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(139,92,246,0.15)" }}>
+            <Crosshair size={15} style={{ color: "#8b5cf6" }} />
           </div>
           <div>
             <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Mục tiêu tuần {currentWeek}</p>
@@ -818,7 +818,7 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
           </div>
           <Link href="/crm/twelve-week-plan"
             className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
-            style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+            style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>
             Chi tiết <ChevronRight size={12} />
           </Link>
         </div>
@@ -865,7 +865,7 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
                   <div className="flex items-center justify-between">
                     <span className="text-[9px]" style={{ color: dm.textMuted }}>Lũy kế đến tuần {currentWeek}: {fmtKpi(cumTarget ?? 0, kpi.format)}</span>
                     {kpiPct !== null && (
-                      <span className="text-[9px] font-black" style={{ color: kpiPct >= 100 ? T.green : kpiPct >= 80 ? T.gold : T.red }}>
+                      <span className="text-[9px] font-black" style={{ color: kpiPct >= 100 ? "#22c55e" : kpiPct >= 80 ? T.gold : "#f87171" }}>
                         {kpiPct >= 100 ? "✓ Đúng hướng" : kpiPct >= 80 ? `Gần đạt (${kpiPct}%)` : `Cần tăng tốc (${kpiPct}%)`}
                       </span>
                     )}
@@ -905,9 +905,9 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
             <span className="text-[10px] font-semibold" style={{ color: dm.textMuted }}>Tiến độ tổng thể ({doneTasks}/{totalTasks} việc)</span>
             <span className="text-[10px] font-black" style={{ color: barColor }}>{overallPct}%</span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#EEF2FF" }}>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(139,92,246,0.12)" }}>
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${overallPct}%`, background: `linear-gradient(90deg, #4F46E5, ${barColor})` }} />
+              style={{ width: `${overallPct}%`, background: `linear-gradient(90deg, #8b5cf6, ${barColor})` }} />
           </div>
           <div className="flex justify-between mt-1">
             {Array.from({ length: 12 }, (_, i) => {
@@ -917,8 +917,8 @@ function TwelveWeekProgressBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loa
               const pct = wT > 0 ? Math.round((wD / wT) * 100) : 0;
               return (
                 <div key={w} className="flex flex-col items-center gap-0.5" style={{ width: `${100/12}%` }}>
-                  <div className="w-full rounded-sm" style={{ height: 3, background: w === currentWeek ? "#4F46E5" : pct === 100 ? T.green : pct > 0 ? "#818CF8" : "#E0E7FF" }} />
-                  <span className="text-[6px]" style={{ color: w === currentWeek ? "#4F46E5" : dm.textMuted }}>{w}</span>
+                  <div className="w-full rounded-sm" style={{ height: 3, background: w === currentWeek ? "#8b5cf6" : pct === 100 ? "#22c55e" : pct > 0 ? "rgba(139,92,246,0.5)" : "rgba(255,255,255,0.08)" }} />
+                  <span className="text-[6px]" style={{ color: w === currentWeek ? "#8b5cf6" : dm.textMuted }}>{w}</span>
                 </div>
               );
             })}
@@ -946,8 +946,8 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
   }, [plan, selectedGoal]);
 
   const GOAL_COLORS_MAP: Record<string, string> = {
-    indigo: "#4F46E5", green: "#059669", gold: "#D97706",
-    red: "#DC2626", purple: "#7C3AED", blue: "#2563EB",
+    indigo: "#8b5cf6", green: "#22c55e", gold: "#C9A84C",
+    red: "#f87171", purple: "#a78bfa", blue: "#60a5fa",
   };
 
   function getCurrentWeek(startDate: string) {
@@ -964,33 +964,33 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
   if (loadingPlan) return (
     <div className="rounded-2xl overflow-hidden animate-pulse" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}` }}>
       <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
-        <div className="w-9 h-9 rounded-xl" style={{ background: `${T.textMuted}15` }} />
+        <div className="w-9 h-9 rounded-xl" style={{ background: `${"rgba(255,255,255,0.4)"}15` }} />
         <div className="flex-1">
-          <div className="h-3.5 rounded w-1/3 mb-1.5" style={{ background: `${T.textMuted}20` }} />
-          <div className="h-2.5 rounded w-1/4" style={{ background: `${T.textMuted}10` }} />
+          <div className="h-3.5 rounded w-1/3 mb-1.5" style={{ background: `${"rgba(255,255,255,0.4)"}20` }} />
+          <div className="h-2.5 rounded w-1/4" style={{ background: `${"rgba(255,255,255,0.4)"}10` }} />
         </div>
       </div>
       <div className="p-5 space-y-3">
         <div className="flex gap-2">
-          {[1,2,3,4].map(i => <div key={i} className="h-8 rounded-xl flex-1" style={{ background: `${T.textMuted}10` }} />)}
+          {[1,2,3,4].map(i => <div key={i} className="h-8 rounded-xl flex-1" style={{ background: `${"rgba(255,255,255,0.4)"}10` }} />)}
         </div>
         <div className="grid grid-cols-6 gap-1.5">
-          {Array.from({length:12}).map((_,i) => <div key={i} className="h-14 rounded-lg" style={{ background: `${T.textMuted}08` }} />)}
+          {Array.from({length:12}).map((_,i) => <div key={i} className="h-14 rounded-lg" style={{ background: `${"rgba(255,255,255,0.4)"}08` }} />)}
         </div>
       </div>
     </div>
   );
 
   if (!plan) return (
-    <div className="rounded-2xl p-8 text-center" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "#EEF2FF" }}>
-        <Crosshair size={24} style={{ color: "#4F46E5" }} />
+    <div className="rounded-2xl p-8 text-center" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(139,92,246,0.15)" }}>
+        <Crosshair size={24} style={{ color: "#8b5cf6" }} />
       </div>
       <h3 className="text-base font-bold mb-2" style={{ color: dm.textPrimary }}>Chưa có kế hoạch 12 tuần</h3>
       <p className="text-sm mb-4" style={{ color: dm.textMuted }}>Tạo kế hoạch để theo dõi tiến độ mục tiêu và công việc hàng tuần</p>
       <Link href="/crm/twelve-week-plan"
         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-        style={{ background: "#4F46E5" }}>
+        style={{ background: "#8b5cf6" }}>
         <Plus size={16} /> Tạo kế hoạch ngay
       </Link>
     </div>
@@ -998,7 +998,7 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
 
   const currentWeek = getCurrentWeek(plan.startDate);
   const activeGoal = plan.goals.find(g => g.id === selectedGoal) ?? plan.goals[0];
-  const activeGoalColor = activeGoal ? (GOAL_COLORS_MAP[activeGoal.color] ?? "#4F46E5") : "#4F46E5";
+  const activeGoalColor = activeGoal ? (GOAL_COLORS_MAP[activeGoal.color] ?? "#8b5cf6") : "#8b5cf6";
 
   function fmtKpi(v: number, format: string): string {
     if (format === "currency") {
@@ -1034,12 +1034,12 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
   const activePct = activeTotal > 0 ? Math.round((activeDone / activeTotal) * 100) : 0;
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
       {/* Header */}
       <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
-            <Target size={16} style={{ color: "#4F46E5" }} />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(139,92,246,0.15)" }}>
+            <Target size={16} style={{ color: "#8b5cf6" }} />
           </div>
           <div>
             <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Mục tiêu tuần {currentWeek}</p>
@@ -1048,7 +1048,7 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
         </div>
         <Link href="/crm/twelve-week-plan"
           className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-          style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+          style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>
           Xem đầy đủ <ArrowUpRight size={12} />
         </Link>
       </div>
@@ -1057,7 +1057,7 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
         {/* Goal tabs */}
         <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
           {plan.goals.map(goal => {
-            const gColor = GOAL_COLORS_MAP[goal.color] ?? "#4F46E5";
+            const gColor = GOAL_COLORS_MAP[goal.color] ?? "#8b5cf6";
             const gTasks = plan.tasks.filter(t => t.goalId === goal.id && t.status !== "skipped");
             const gDone = plan.tasks.filter(t => t.goalId === goal.id && t.status === "done");
             const gPct = gTasks.length > 0 ? Math.round((gDone.length / gTasks.length) * 100) : 0;
@@ -1094,7 +1094,7 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
                 <span className="text-[10px]" style={{ color: dm.textMuted }}>
                   {currentWeekTasks.filter(t => t.status === "done").length}/{currentWeekTasks.filter(t => t.status !== "skipped").length} việc
                 </span>
-                <span className="text-xs font-black" style={{ color: activePct >= 80 ? T.green : activePct >= 50 ? T.gold : T.red }}>{activePct}%</span>
+                <span className="text-xs font-black" style={{ color: activePct >= 80 ? "#22c55e" : activePct >= 50 ? T.gold : "#f87171" }}>{activePct}%</span>
               </div>
             </div>
 
@@ -1112,7 +1112,7 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
                     </span>
                     <span className="text-[9px]" style={{ color: dm.textMuted }}>/ {fmtKpi(activeKpi.targetTotal, activeKpi.format)}</span>
                     {kpiProgress !== null && (
-                      <span className="text-[9px] font-black" style={{ color: kpiProgress >= 100 ? T.green : kpiProgress >= 80 ? T.gold : T.red }}>
+                      <span className="text-[9px] font-black" style={{ color: kpiProgress >= 100 ? "#22c55e" : kpiProgress >= 80 ? T.gold : "#f87171" }}>
                         {kpiProgress}%
                       </span>
                     )}
@@ -1122,7 +1122,7 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
                   <div className="flex-1">
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${activeGoalColor}12` }}>
                       <div className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${Math.min(100, kpiProgress ?? 0)}%`, background: kpiProgress && kpiProgress >= 100 ? T.green : activeGoalColor }} />
+                        style={{ width: `${Math.min(100, kpiProgress ?? 0)}%`, background: kpiProgress && kpiProgress >= 100 ? "#22c55e" : activeGoalColor }} />
                     </div>
                   </div>
                   <div className="flex-shrink-0 text-right">
@@ -1148,9 +1148,9 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
                 <div className="space-y-1.5">
                   {currentWeekTasks.slice(0, 5).map(task => (
                     <div key={task.id} className="flex items-center gap-2.5 p-2 rounded-lg"
-                      style={{ background: task.status === "done" ? `${T.green}08` : `${activeGoalColor}06`, border: `1px solid ${task.status === "done" ? T.green + "25" : activeGoalColor + "15"}` }}>
+                      style={{ background: task.status === "done" ? `${"#22c55e"}08` : `${activeGoalColor}06`, border: `1px solid ${task.status === "done" ? "#22c55e" + "25" : activeGoalColor + "15"}` }}>
                       <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ background: task.status === "done" ? T.green : `${activeGoalColor}15`, border: `1.5px solid ${task.status === "done" ? T.green : activeGoalColor}` }}>
+                        style={{ background: task.status === "done" ? "#22c55e" : `${activeGoalColor}15`, border: `1.5px solid ${task.status === "done" ? "#22c55e" : activeGoalColor}` }}>
                         {task.status === "done" && (
                           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
                             <path d="M1 3l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1184,16 +1184,16 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
             <p className="text-[10px] font-semibold mb-2" style={{ color: dm.textMuted }}>TẤT CẢ 12 TUẦN</p>
             <div className="grid grid-cols-6 gap-1">
               {weekData.map(({ week, done, total, pct, isCurrent, isPast, kpiTarget, kpi: wKpi }) => {
-                const bg = isCurrent ? `${activeGoalColor}15` : pct === 100 ? `${T.green}10` : isPast && total > 0 ? `${T.red}06` : `${dm.textMuted}06`;
-                const border = isCurrent ? activeGoalColor : pct === 100 ? T.green + "40" : isPast && pct < 100 && total > 0 ? T.red + "30" : "transparent";
+                const bg = isCurrent ? `${activeGoalColor}15` : pct === 100 ? `${"#22c55e"}10` : isPast && total > 0 ? `${"#f87171"}06` : `${dm.textMuted}06`;
+                const border = isCurrent ? activeGoalColor : pct === 100 ? "#22c55e" + "40" : isPast && pct < 100 && total > 0 ? "#f87171" + "30" : "transparent";
                 return (
                   <div key={week} className="rounded-lg p-1.5 transition-all"
                     style={{ background: bg, border: `1.5px solid ${border}` }}>
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-[8px] font-bold" style={{ color: isCurrent ? activeGoalColor : dm.textMuted }}>T{week}</span>
                       {isCurrent && <div className="w-1 h-1 rounded-full" style={{ background: activeGoalColor }} />}
-                      {isPast && pct === 100 && <span className="text-[7px]" style={{ color: T.green }}>✓</span>}
-                      {isPast && pct < 100 && total > 0 && <span className="text-[7px]" style={{ color: T.red }}>!</span>}
+                      {isPast && pct === 100 && <span className="text-[7px]" style={{ color: "#22c55e" }}>✓</span>}
+                      {isPast && pct < 100 && total > 0 && <span className="text-[7px]" style={{ color: "#f87171" }}>!</span>}
                     </div>
                     {kpiTarget !== null && wKpi ? (
                       <div className="text-[9px] font-black" style={{ color: isCurrent ? activeGoalColor : dm.textPrimary }}>
@@ -1204,7 +1204,7 @@ function TwelveWeekGoalsBoard({ dm, fmtVal, leads, wonLeads, stats, plan, loadin
                       <>
                         <div className="text-[7px]" style={{ color: dm.textMuted }}>{done}/{total}</div>
                         <div className="h-0.5 rounded-full mt-0.5 overflow-hidden" style={{ background: `${activeGoalColor}15` }}>
-                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct === 100 ? T.green : activeGoalColor }} />
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct === 100 ? "#22c55e" : activeGoalColor }} />
                         </div>
                       </>
                     ) : (
@@ -1276,38 +1276,38 @@ function NotificationBell({ currentUser }: { currentUser?: CurrentUser }) {
 
   const unread = items.filter(i => !i.read).length;
   const iconMap = { warning: AlertTriangle, info: Info, alert: Flame };
-  const colorMap = { warning: T.gold, info: T.blue, alert: T.red };
+  const colorMap = { warning: T.gold, info: "#60a5fa", alert: "#f87171" };
 
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
         className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-80"
-        style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}
+        style={{ background: "#0f172a", border: `1px solid ${"rgba(255,255,255,0.08)"}` }}
       >
-        <Bell size={16} style={{ color: T.textSecondary }} />
+        <Bell size={16} style={{ color: "rgba(245,237,214,0.75)" }} />
         {unread > 0 && (
           <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-            style={{ background: T.red }}>
+            style={{ background: "#f87171" }}>
             {unread > 9 ? "9+" : unread}
           </span>
         )}
       </button>
       {open && (
         <div className="absolute right-0 top-11 w-80 rounded-2xl overflow-hidden z-50"
-          style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: "0 8px 32px rgba(16,24,40,0.12)" }}>
+          style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${"rgba(255,255,255,0.08)"}`, boxShadow: "0 8px 32px rgba(16,24,40,0.12)" }}>
           <div className="px-4 py-3 flex items-center justify-between"
-            style={{ borderBottom: `1px solid ${T.divider}` }}>
-            <span className="text-sm font-bold" style={{ color: T.textPrimary }}>Thông báo</span>
-            {loading && <RefreshCw size={12} className="animate-spin" style={{ color: T.textMuted }} />}
+            style={{ borderBottom: `1px solid ${"rgba(255,255,255,0.06)"}` }}>
+            <span className="text-sm font-bold" style={{ color: "#f5edd6" }}>Thông báo</span>
+            {loading && <RefreshCw size={12} className="animate-spin" style={{ color: "rgba(255,255,255,0.4)" }} />}
           </div>
           {items.length === 0 ? (
             <div className="py-8 text-center">
-              <CheckCircle2 size={24} className="mx-auto mb-2 opacity-30" style={{ color: T.green }} />
-              <p className="text-xs" style={{ color: T.textMuted }}>Không có thông báo mới</p>
+              <CheckCircle2 size={24} className="mx-auto mb-2 opacity-30" style={{ color: "#22c55e" }} />
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Không có thông báo mới</p>
             </div>
           ) : (
-            <div className="divide-y" style={{ borderColor: T.divider }}>
+            <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
               {items.map(item => {
                 const Icon = iconMap[item.type];
                 const color = colorMap[item.type];
@@ -1320,10 +1320,10 @@ function NotificationBell({ currentUser }: { currentUser?: CurrentUser }) {
                       <Icon size={13} style={{ color }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold" style={{ color: T.textPrimary }}>{item.title}</p>
-                      <p className="text-[10px] mt-0.5 line-clamp-2" style={{ color: T.textMuted }}>{item.body}</p>
+                      <p className="text-xs font-semibold" style={{ color: "#f5edd6" }}>{item.title}</p>
+                      <p className="text-[10px] mt-0.5 line-clamp-2" style={{ color: "rgba(255,255,255,0.4)" }}>{item.body}</p>
                     </div>
-                    {!item.read && <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: T.blue }} />}
+                    {!item.read && <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: "#60a5fa" }} />}
                   </Link>
                 );
               })}
@@ -1343,23 +1343,23 @@ function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen =
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-2xl overflow-hidden"
-      style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+      style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${"rgba(255,255,255,0.08)"}`, boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between hover:opacity-90 transition-opacity"
-        style={{ borderBottom: open ? `1px solid ${T.divider}` : "none" }}
+        style={{ borderBottom: open ? `1px solid ${"rgba(255,255,255,0.06)"}` : "none" }}
       >
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: iconBg }}>
             <Icon size={14} style={{ color: iconColor }} />
           </div>
-          <span className="text-sm font-bold" style={{ color: T.textPrimary }}>{title}</span>
+          <span className="text-sm font-bold" style={{ color: "#f5edd6" }}>{title}</span>
           {badge && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ background: `${T.red}15`, color: T.red }}>{badge}</span>
+              style={{ background: `${"#f87171"}15`, color: "#f87171" }}>{badge}</span>
           )}
         </div>
-        {open ? <ChevronUp size={14} style={{ color: T.textMuted }} /> : <ChevronDown size={14} style={{ color: T.textMuted }} />}
+        {open ? <ChevronUp size={14} style={{ color: "rgba(255,255,255,0.4)" }} /> : <ChevronDown size={14} style={{ color: "rgba(255,255,255,0.4)" }} />}
       </button>
       {open && children}
     </div>
@@ -1651,7 +1651,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     ...overdueLeads.slice(0, 2).map(l => ({
       type: "overdue" as const, label: `Liên hệ ${l.name}`,
       sub: `Quá ${Math.floor((Date.now() - new Date(l.lastContactAt).getTime()) / 86400000)}n`,
-      href: `/crm/leads/${l.id}`, color: T.red, icon: Zap,
+      href: `/crm/leads/${l.id}`, color: "#f87171", icon: Zap,
     })),
     ...pendingTasks.slice(0, 2).map(t => ({
       type: "task" as const, label: t.title,
@@ -1659,38 +1659,42 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     })),
     ...staleDeals.slice(0, 2).map(d => ({
       type: "stale" as const, label: `Follow-up ${d.name}`,
-      sub: `${d.daysStale}n không liên hệ`, href: `/crm/leads/${d.id}`, color: T.orange, icon: AlertTriangle,
+      sub: `${d.daysStale}n không liên hệ`, href: `/crm/leads/${d.id}`, color: "#fb923c", icon: AlertTriangle,
     })),
   ].slice(0, 3);
 
   const fmtVal = (v: number) => v >= 1e9 ? `${(v/1e9).toFixed(1)}B` : v >= 1e6 ? `${(v/1e6).toFixed(0)}tr` : formatVND(v);
 
-  // Build effective theme (dark mode overrides theme settings)
-  // Active gradient preset
+  // Dark luxury theme — fixed, no light mode
+  // Active gradient preset kept for gradient picker UI only
   const activeGradient = GRADIENT_PRESETS.find(g => g.id === gradientPreset) ?? GRADIENT_PRESETS[0];
-  const isDarkGradient = ["midnight", "aurora"].includes(gradientPreset);
-  const effectiveDarkMode = darkMode || isDarkGradient;
+  const isDarkGradient = true; // always dark luxury
+  const effectiveDarkMode = true; // always dark luxury
 
-  const dm = effectiveDarkMode ? {
-    bg: "#0F172A", card: "#1E293B", cardBorder: "#334155",
-    textPrimary: "#F1F5F9", textSecondary: "#94A3B8", textMuted: "#64748B",
-    divider: "#1E293B", headerBg: "#1E293B", headerBorder: "#334155",
-    cardShadow: T.cardShadow,
-   } : {
-    bg: activeGradient.colors[0],
-    card: theme.kpiCardBg,
-    cardBorder: theme.kpiCardBorder,
-    textPrimary: theme.kpiCardTitleColor,
-    textSecondary: T.textSecondary,
-    textMuted: theme.kpiCardMutedColor,
-    divider: T.divider,
-    headerBg: theme.kpiCardBg,
-    headerBorder: theme.kpiCardBorder,
-    cardShadow: T.cardShadow,
+  // Dark luxury palette (matches Kế hoạch 12 Tuần)
+  const dm = {
+    bg: "#0f172a",
+    card: "rgba(255,255,255,0.04)",
+    cardBorder: "rgba(255,255,255,0.08)",
+    textPrimary: "#f5edd6",
+    textSecondary: "rgba(245,237,214,0.75)",
+    textMuted: "rgba(255,255,255,0.4)",
+    divider: "rgba(255,255,255,0.06)",
+    headerBg: "rgba(15,23,42,0.8)",
+    headerBorder: "rgba(255,255,255,0.08)",
+    cardShadow: "0 4px 24px rgba(0,0,0,0.4)",
+    // accent colors
+    indigo: "#8b5cf6", indigoBg: "rgba(139,92,246,0.12)",
+    green: "#22c55e", greenBg: "rgba(34,197,94,0.1)",
+    gold: "#C9A84C", goldBg: "rgba(201,168,76,0.12)",
+    red: "#f87171", redBg: "rgba(248,113,113,0.1)",
+    orange: "#fb923c", orangeBg: "rgba(251,146,60,0.1)",
+    blue: "#60a5fa", blueBg: "rgba(96,165,250,0.1)",
+    purple: "#a78bfa", purpleBg: "rgba(167,139,250,0.1)",
   };
   return (
     <div className="flex flex-col h-full overflow-y-auto transition-colors duration-300"
-      style={{ background: isDarkGradient ? activeGradient.preview : `linear-gradient(160deg, ${activeGradient.colors[0]} 0%, ${activeGradient.colors[1]} 100%)` }}>
+      style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)" }}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 px-4 md:px-8 py-3 md:py-5 flex items-center justify-between gap-2"
@@ -1703,7 +1707,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           </div>
           <div className="min-w-0">
             <div className="hidden md:flex items-center gap-2 mb-0.5">
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: T.green }} />
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#22c55e" }} />
               <span className="text-xs font-medium" style={{ color: dm.textMuted }}>{dateStr}</span>
             </div>
             <h1 className="text-sm md:text-xl font-bold leading-tight truncate" style={{ color: dm.textPrimary }}>
@@ -1784,7 +1788,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
           {overdueLeads.length > 0 && (
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
-              style={{ background: T.redBg, color: T.red, border: `1px solid #FECACA` }}>
+              style={{ background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)" }}>
               <AlertCircle size={13} />
               {overdueLeads.length} quá hạn
             </div>
@@ -1792,7 +1796,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
           <button onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold text-white shadow-sm active:scale-[0.98] transition-all"
-            style={{ background: `linear-gradient(135deg, ${T.indigo} 0%, #4338CA 100%)` }}>
+            style={{ background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)" }}>
             <Plus size={13} />
             <span className="hidden md:inline">Thêm KH</span>
             <span className="md:hidden">Thêm</span>
@@ -1815,18 +1819,18 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         {focusItems.length > 0 && (
           <div className="rounded-2xl px-5 py-4"
             style={{
-              background: darkMode ? "#1E293B" : T.card,
-              border: `1px solid ${darkMode ? "#334155" : T.cardBorder}`,
-              borderLeft: `3px solid ${T.indigo}`,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderLeft: "3px solid #8b5cf6",
               boxShadow: T.cardShadow,
             }}>
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: T.indigoBg }}>
-                <Crosshair size={11} style={{ color: T.indigo }} />
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(139,92,246,0.12)" }}>
+                <Crosshair size={11} style={{ color: "#8b5cf6" }} />
               </div>
-              <span className="text-xs font-bold" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>Focus hôm nay</span>
+              <span className="text-xs font-bold" style={{ color: "#f5edd6" }}>Focus hôm nay</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                style={{ background: T.indigoBg, color: T.indigo }}>
+                style={{ background: "rgba(139,92,246,0.12)", color: "#8b5cf6" }}>
                 {focusItems.length} việc ưu tiên
               </span>
             </div>
@@ -1834,16 +1838,16 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               {focusItems.map((item, i) => (
                 <Link key={i} href={item.href}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl hover:opacity-80 transition-opacity"
-                  style={{ background: darkMode ? "rgba(255,255,255,0.06)" : T.bg, border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : T.cardBorder}` }}>
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: `${item.color}18` }}>
                     <item.icon size={11} style={{ color: item.color }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold truncate" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>{item.label}</p>
-                    <p className="text-[10px] truncate" style={{ color: darkMode ? "rgba(255,255,255,0.4)" : T.textMuted }}>{item.sub}</p>
+                    <p className="text-xs font-semibold truncate" style={{ color: "#f5edd6" }}>{item.label}</p>
+                    <p className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{item.sub}</p>
                   </div>
-                  <ArrowRight size={11} style={{ color: darkMode ? "rgba(255,255,255,0.25)" : T.textMuted }} className="flex-shrink-0 ml-1" />
+                  <ArrowRight size={11} style={{ color: "rgba(255,255,255,0.25)" }} className="flex-shrink-0 ml-1" />
                 </Link>
               ))}
             </div>
@@ -1870,14 +1874,14 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         {/* ── Personal Rank (staff only) ───────────────────────────────── */}
         {isVisible("leaderboard") && !currentUser?.isAdmin && myRank && (
           <div className="rounded-2xl p-4 flex items-center gap-4"
-            style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: myRank.rank === 1 ? `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` : T.bg }}>
+              style={{ background: myRank.rank === 1 ? "linear-gradient(135deg, #C9A84C, #9A7A2E)" : "rgba(255,255,255,0.03)" }}>
               {myRank.rank === 1 ? "🥇" : myRank.rank === 2 ? "🥈" : myRank.rank === 3 ? "🥉" : `#${myRank.rank}`}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold" style={{ color: T.textPrimary }}>
+                <span className="text-sm font-bold" style={{ color: "#f5edd6" }}>
                   Hạng {myRank.rank}/{myRank.total} trong team
                 </span>
                 {myRank.rank === 1 && (
@@ -1886,18 +1890,18 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 )}
               </div>
               {myRank.rank > 1 && myRank.nextGap > 0 ? (
-                <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
                   Cần thêm <span className="font-bold" style={{ color: T.gold }}>{fmtVal(myRank.nextGap)}</span> để vượt {myRank.nextName}
                 </p>
               ) : (
-                <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>
-                  Doanh số của bạn: <span className="font-bold" style={{ color: T.green }}>{fmtVal(stats.staffPerformance.find(s => s.staffName === currentUser?.name)?.wonValue ?? 0)}</span>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  Doanh số của bạn: <span className="font-bold" style={{ color: "#22c55e" }}>{fmtVal(stats.staffPerformance.find(s => s.staffName === currentUser?.name)?.wonValue ?? 0)}</span>
                 </p>
               )}
             </div>
             <Link href="/crm/leads"
               className="flex items-center gap-1 text-xs font-semibold hover:opacity-80 transition-opacity"
-              style={{ color: T.indigo }}>
+              style={{ color: "#8b5cf6" }}>
               Xem KH <ArrowUpRight size={12} />
             </Link>
           </div>
@@ -1906,8 +1910,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           <Link href="/crm/data-pool"
             className="block rounded-2xl overflow-hidden transition-all hover:shadow-md"
             style={{
-              background: darkMode ? "#1E293B" : T.card,
-              border: `1px solid ${darkMode ? "#334155" : T.cardBorder}`,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
               borderLeft: `3px solid ${T.gold}`,
               boxShadow: T.cardShadow,
             }}>          <div className="px-6 py-4 flex items-center justify-between gap-4">
@@ -1916,25 +1920,25 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   style={{ background: `${T.gold}15`, border: `1px solid ${T.gold}30` }}>
                   <Database size={20} style={{ color: T.gold }} />
                   <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-                    style={{ background: theme.kpiOverdueColor, boxShadow: `0 0 0 2px ${darkMode ? "#1E293B" : "#FFFFFF"}` }}>
+                    style={{ background: "#f87171", boxShadow: "0 0 0 2px #0f172a" }}>
                     {poolStats.pending > 9 ? "9+" : poolStats.pending}
                   </span>
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="font-bold text-sm" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>Data Pool</span>
+                    <span className="font-bold text-sm" style={{ color: "#f5edd6" }}>Data Pool</span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black flex-shrink-0"
-                      style={{ background: theme.kpiOverdueColor, color: "#fff" }}>
+                      style={{ background: "#f87171", color: "#fff" }}>
                       {poolStats.pending} chờ nhận
                     </span>
                   </div>
-                  <p className="text-xs truncate" style={{ color: darkMode ? "rgba(241,245,249,0.6)" : T.textMuted }}>
+                  <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
                     <span className="font-bold" style={{ color: T.gold }}>{poolStats.pending}</span> data chưa có người nhận
                     {poolStats.bySource.length > 0 && (
-                      <span style={{ color: darkMode ? "rgba(255,255,255,0.35)" : T.textMuted }}>
+                      <span style={{ color: "rgba(255,255,255,0.4)" }}>
                         {" — "}{poolStats.bySource.slice(0, 2).map((s, i) => (
                           <span key={s.source}>{i > 0 && ", "}
-                            <span style={{ color: darkMode ? "rgba(255,255,255,0.65)" : T.textSecondary }}>
+                            <span style={{ color: "rgba(245,237,214,0.75)" }}>
                               {s.source === "facebook_lead" ? "Facebook" : s.source === "tiktok_lead" ? "TikTok" : s.source === "manual" ? "Nhập tay" : s.source}
                             </span> ({s.count})
                           </span>
@@ -1952,12 +1956,12 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             {poolStats.total > 0 && (
               <div className="px-6 pb-4">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px]" style={{ color: darkMode ? "rgba(255,255,255,0.35)" : T.textMuted }}>Tiến độ xử lý</span>
-                  <span className="text-[10px] font-semibold" style={{ color: darkMode ? "rgba(255,255,255,0.55)" : T.textSecondary }}>
+                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Tiến độ xử lý</span>
+                  <span className="text-[10px] font-semibold" style={{ color: "rgba(245,237,214,0.75)" }}>
                     {poolStats.claimed + poolStats.converted}/{poolStats.total} đã xử lý
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: darkMode ? "rgba(255,255,255,0.08)" : "#F3F4F6" }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
                   <div className="h-full rounded-full"
                     style={{ width: `${Math.round(((poolStats.claimed + poolStats.converted) / poolStats.total) * 100)}%`, background: T.gold, transition: "width 0.7s ease" }} />
                 </div>
@@ -1971,8 +1975,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
             <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
-                  <Crosshair size={15} style={{ color: "#4F46E5" }} />
+                <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(139,92,246,0.15)" }}>
+                  <Crosshair size={15} style={{ color: "#8b5cf6" }} />
                 </div>
                 <div>
                   <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Báo cáo Kế hoạch 12 Tuần</p>
@@ -1981,30 +1985,30 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               </div>
               <Link href="/crm/twelve-week-plan"
                 className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
-                style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+                style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>
                 Chi tiết <ChevronRight size={12} />
               </Link>
             </div>
             <div className="p-4 md:p-5">
               {loadingTwelveWeek ? (
                 <div className="space-y-3 animate-pulse">
-                  <div className="h-32 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                  <div className="h-32 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }} />
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="h-48 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
-                    <div className="h-48 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                    <div className="h-48 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }} />
+                    <div className="h-48 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }} />
                   </div>
-                  <div className="h-32 rounded-2xl" style={{ background: `${T.textMuted}08` }} />
+                  <div className="h-32 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }} />
                 </div>
               ) : !twelveWeekPlan ? (
                 <div className="text-center py-8">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "#EEF2FF" }}>
-                    <Crosshair size={24} style={{ color: "#4F46E5" }} />
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(139,92,246,0.15)" }}>
+                    <Crosshair size={24} style={{ color: "#8b5cf6" }} />
                   </div>
                   <h3 className="text-base font-bold mb-2" style={{ color: dm.textPrimary }}>Chưa có kế hoạch 12 tuần</h3>
                   <p className="text-sm mb-4" style={{ color: dm.textMuted }}>Tạo kế hoạch để theo dõi tiến độ mục tiêu và công việc hàng tuần</p>
                   <Link href="/crm/twelve-week-plan"
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-                    style={{ background: "#4F46E5" }}>
+                    style={{ background: "#8b5cf6" }}>
                     <Plus size={16} /> Tạo kế hoạch ngay
                   </Link>
                 </div>
@@ -2026,8 +2030,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               <div className="rounded-2xl overflow-hidden" style={{ background: dm.card, border: `1px solid ${dm.cardBorder}`, boxShadow: T.cardShadow }}>
                 <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${dm.cardBorder}` }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#EEF2FF" }}>
-                      <Flag size={16} style={{ color: "#4F46E5" }} />
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(139,92,246,0.15)" }}>
+                      <Flag size={16} style={{ color: "#8b5cf6" }} />
                     </div>
                     <div>
                       <p className="text-sm font-bold" style={{ color: dm.textPrimary }}>Báo cáo chi tiết từng mục tiêu</p>
@@ -2036,7 +2040,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   </div>
                   <Link href="/crm/twelve-week-plan"
                     className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ background: "#EEF2FF", color: "#4F46E5" }}>
+                    style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>
                     Chi tiết <ArrowUpRight size={12} />
                   </Link>
                 </div>
@@ -2047,7 +2051,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Conversion Funnel */}
-            {isVisible("funnel") && <Section title="Conversion Funnel" icon={Filter} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
+            {isVisible("funnel") && <Section title="Conversion Funnel" icon={Filter} iconColor={"#60a5fa"} iconBg={"rgba(96,165,250,0.12)"}>
               <div className="p-5">
                 <div className="space-y-2">
                   {(Object.keys(STAGE_LABELS) as Array<keyof typeof STAGE_LABELS>).map((stage, i) => {
@@ -2065,19 +2069,19 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                           style={{ background: STAGE_COLORS[stage] }}>{i + 1}</div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-semibold" style={{ color: T.textSecondary }}>{STAGE_LABELS[stage]}</span>
+                            <span className="text-xs font-semibold" style={{ color: "rgba(245,237,214,0.75)" }}>{STAGE_LABELS[stage]}</span>
                             <div className="flex items-center gap-3">
-                              <span className="text-xs font-bold" style={{ color: T.textPrimary }}>{count} KH</span>
+                              <span className="text-xs font-bold" style={{ color: "#f5edd6" }}>{count} KH</span>
                               {value > 0 && <span className="text-[10px] font-semibold" style={{ color: T.gold }}>{fmtVal(value)}</span>}
                               {i > 0 && count > 0 && (
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                  style={{ background: convPct >= 50 ? T.greenBg : T.bg, color: convPct >= 50 ? T.green : T.textMuted }}>
+                                  style={{ background: convPct >= 50 ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.03)", color: convPct >= 50 ? "#22c55e" : "rgba(255,255,255,0.4)" }}>
                                   {convPct}%
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="h-2 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                          <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
                             <div className="h-full rounded-full transition-all duration-700"
                               style={{ width: `${barW}%`, background: STAGE_COLORS[stage], opacity: count === 0 ? 0.15 : 1 }} />
                           </div>
@@ -2087,31 +2091,31 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   })}
                 </div>
                 <div className="mt-4 p-3 rounded-xl flex items-center justify-between"
-                  style={{ background: T.greenBg, border: `1px solid ${T.green}20` }}>
-                  <span className="text-xs font-semibold" style={{ color: T.green }}>Tỷ lệ chốt tổng thể</span>
-                  <span className="text-sm font-black" style={{ color: T.green }}>{stats.conversionRate}%</span>
+                  style={{ background: "rgba(34,197,94,0.1)", border: `1px solid ${"#22c55e"}20` }}>
+                  <span className="text-xs font-semibold" style={{ color: "#22c55e" }}>Tỷ lệ chốt tổng thể</span>
+                  <span className="text-sm font-black" style={{ color: "#22c55e" }}>{stats.conversionRate}%</span>
                 </div>
               </div>
             </Section>}
 
             {/* Stale Deals Alert */}
             {isVisible("staleDeals") && staleDeals.length > 0 && (
-              <Section title="Deal có nguy cơ mất" icon={AlertTriangle} iconColor={T.orange} iconBg={T.orangeBg}
+              <Section title="Deal có nguy cơ mất" icon={AlertTriangle} iconColor="#fb923c" iconBg="rgba(251,146,60,0.1)"
                 badge={`${staleDeals.length} deal`}>
                 <div className="p-4 space-y-2">
                   {staleDeals.map(deal => (
                     <Link key={deal.id} href={`/crm/leads/${deal.id}`}
                       className="flex items-center justify-between p-3 rounded-xl hover:opacity-90 transition-opacity"
-                      style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+                      style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${"rgba(255,255,255,0.08)"}` }}>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <div className="text-xs font-bold truncate" style={{ color: T.textPrimary }}>{deal.name}</div>
+                          <div className="text-xs font-bold truncate" style={{ color: "#f5edd6" }}>{deal.name}</div>
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
                             style={{ background: `${STAGE_COLORS[deal.stage as keyof typeof STAGE_COLORS]}15`, color: STAGE_COLORS[deal.stage as keyof typeof STAGE_COLORS] }}>
                             {STAGE_LABELS[deal.stage as keyof typeof STAGE_LABELS]}
                           </span>
                         </div>
-                        <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>
+                        <div className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
                           {deal.company} · {deal.assignedTo}
                         </div>
                       </div>
@@ -2119,11 +2123,11 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                         <div className="text-right">
                           <div className="text-xs font-bold" style={{ color: T.gold }}>{fmtVal(deal.expectedValue)}</div>
                           <div className="flex items-center gap-0.5 justify-end">
-                            <Clock size={9} style={{ color: T.orange }} />
-                            <span className="text-[10px] font-bold" style={{ color: T.orange }}>{deal.daysStale}n</span>
+                            <Clock size={9} style={{ color: "#fb923c" }} />
+                            <span className="text-[10px] font-bold" style={{ color: "#fb923c" }}>{deal.daysStale}n</span>
                           </div>
                         </div>
-                        <ChevronRight size={12} style={{ color: T.textMuted }} />
+                        <ChevronRight size={12} style={{ color: "rgba(255,255,255,0.4)" }} />
                       </div>
                     </Link>
                   ))}
@@ -2133,10 +2137,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
             {/* Source + Type row */}
             {isVisible("pipeline") && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-              <Section title="Nguồn khách hàng" icon={TrendingUp} iconColor={T.orange} iconBg={T.orangeBg}>
+              <Section title="Nguồn khách hàng" icon={TrendingUp} iconColor="#fb923c" iconBg="rgba(251,146,60,0.1)">
                 <div className="p-4 space-y-3">
                   {stats.bySource.length === 0 ? (
-                    <p className="text-xs text-center py-4" style={{ color: T.textMuted }}>Chưa có dữ liệu</p>
+                    <p className="text-xs text-center py-4" style={{ color: "rgba(255,255,255,0.4)" }}>Chưa có dữ liệu</p>
                   ) : stats.bySource.slice(0, 5).map(({ source, count, wonCount }) => {
                     const wr = count > 0 ? Math.round((wonCount / count) * 100) : 0;
                     const maxCount = Math.max(...stats.bySource.map(s => s.count), 1);
@@ -2146,17 +2150,17 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                            <span className="text-xs font-medium truncate max-w-[110px]" style={{ color: T.textSecondary }}>{source}</span>
+                            <span className="text-xs font-medium truncate max-w-[110px]" style={{ color: "rgba(245,237,214,0.75)" }}>{source}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px]" style={{ color: T.textMuted }}>{count} KH</span>
+                            <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>{count} KH</span>
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                              style={{ background: wr >= 30 ? T.greenBg : T.bg, color: wr >= 30 ? T.green : T.textMuted }}>
+                              style={{ background: wr >= 30 ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.03)", color: wr >= 30 ? "#22c55e" : "rgba(255,255,255,0.4)" }}>
                               {wr}%
                             </span>
                           </div>
                         </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
                           <div className="h-full rounded-full transition-all duration-700"
                             style={{ width: `${(count / maxCount) * 100}%`, background: color }} />
                         </div>
@@ -2166,7 +2170,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 </div>
               </Section>
 
-              <Section title="Phân loại khách" icon={PieChart} iconColor={T.purple} iconBg={T.purpleBg}>
+              <Section title="Phân loại khách" icon={PieChart} iconColor="#a78bfa" iconBg="rgba(167,139,250,0.1)">
                 <div className="p-4 space-y-3">
                   {leadTypes.map(lt => {
                     const typeLeads = leads.filter(l => l.type === lt.id);
@@ -2181,10 +2185,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-                            <span className="text-xs font-semibold" style={{ color: T.textPrimary }}>{lt.label}</span>
+                            <span className="text-xs font-semibold" style={{ color: "#f5edd6" }}>{lt.label}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-black" style={{ color: T.textPrimary }}>{count}</span>
+                            <span className="text-xs font-black" style={{ color: "#f5edd6" }}>{count}</span>
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                               style={{ background: `${color}18`, color }}>{pct}%</span>
                           </div>
@@ -2192,7 +2196,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${color}15` }}>
                           <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
                         </div>
-                        <div className="text-[10px] mt-1.5" style={{ color: T.textMuted }}>
+                        <div className="text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
                           {wonCount} đã chốt · {typeValue >= 1e6 ? `${(typeValue/1e6).toFixed(0)}tr` : formatVND(typeValue)}
                         </div>
                       </div>
@@ -2205,7 +2209,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             {/* ── Business Metrics Row ──────────────────────────────────── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
               {/* Sales Velocity + AOV */}
-              <Section title="Chỉ số bán hàng" icon={TrendingUp} iconColor={T.green} iconBg={T.greenBg}>
+              <Section title="Chỉ số bán hàng" icon={TrendingUp} iconColor="#22c55e" iconBg="rgba(34,197,94,0.1)">
                 <div className="p-4 space-y-3">
                   {(() => {
                     const wonLeadsAll = leads.filter(l => l.stage === "won");
@@ -2219,20 +2223,20 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                       ? Math.round((wonLeadsAll.length / (wonLeadsAll.length + lostLeads.length)) * 100) : 0;
                     const items = [
                       { label: "Giá trị đơn TB (AOV)", value: aov >= 1e6 ? `${(aov/1e6).toFixed(0)}tr` : aov > 0 ? formatVND(aov) : "—", icon: DollarSign, color: T.gold, sub: "Trung bình đơn đã chốt" },
-                      { label: "Tốc độ bán hàng", value: velocity >= 1e6 ? `${(velocity/1e6).toFixed(0)}tr/th` : velocity > 0 ? `${(velocity/1e3).toFixed(0)}k/th` : "—", icon: Zap, color: T.indigo, sub: "Doanh thu dự kiến/tháng" },
-                      { label: "Win Rate thực tế", value: `${winRate}%`, icon: Trophy, color: winRate >= 40 ? T.green : winRate >= 20 ? T.gold : T.red, sub: `${wonLeadsAll.length} chốt / ${lostLeads.length} mất` },
-                      { label: "Pipeline đang xử lý", value: activeCount, icon: Target, color: theme.accentColor, sub: `Tổng ${fmtVal(activeLeads.reduce((s,l) => s+(l.expectedValue||0),0))} giá trị` },
+                      { label: "Tốc độ bán hàng", value: velocity >= 1e6 ? `${(velocity/1e6).toFixed(0)}tr/th` : velocity > 0 ? `${(velocity/1e3).toFixed(0)}k/th` : "—", icon: Zap, color: "#8b5cf6", sub: "Doanh thu dự kiến/tháng" },
+                      { label: "Win Rate thực tế", value: `${winRate}%`, icon: Trophy, color: winRate >= 40 ? "#22c55e" : winRate >= 20 ? T.gold : "#f87171", sub: `${wonLeadsAll.length} chốt / ${lostLeads.length} mất` },
+                      { label: "Pipeline đang xử lý", value: activeCount, icon: Target, color: "#C9A84C", sub: `Tổng ${fmtVal(activeLeads.reduce((s,l) => s+(l.expectedValue||0),0))} giá trị` },
                     ];
                     return items.map(({ label, value, icon: Icon, color, sub }) => (
-                      <div key={label} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+                      <div key={label} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${"rgba(255,255,255,0.08)"}` }}>
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
                           <Icon size={14} style={{ color }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-medium" style={{ color: T.textMuted }}>{label}</div>
-                          <div className="text-sm font-black" style={{ color: T.textPrimary }}>{value}</div>
+                          <div className="text-[10px] font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</div>
+                          <div className="text-sm font-black" style={{ color: "#f5edd6" }}>{value}</div>
                         </div>
-                        <div className="text-[9px] text-right" style={{ color: T.textMuted }}>{sub}</div>
+                        <div className="text-[9px] text-right" style={{ color: "rgba(255,255,255,0.4)" }}>{sub}</div>
                       </div>
                     ));
                   })()}
@@ -2240,7 +2244,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               </Section>
 
               {/* Pipeline Health Score */}
-              <Section title="Sức khỏe Pipeline" icon={Activity} iconColor={T.indigo} iconBg={T.indigoBg}>
+              <Section title="Sức khỏe Pipeline" icon={Activity} iconColor="#8b5cf6" iconBg="rgba(139,92,246,0.12)">
                 <div className="p-4">
                   {(() => {
                     const totalPipeline = activeLeads.length;
@@ -2255,13 +2259,13 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                     const score = Math.max(0, Math.min(100, Math.round(
                       100 - staleRatio * 40 - overdueRatio * 30 + hotRatio * 20
                     )));
-                    const scoreColor = score >= 70 ? T.green : score >= 40 ? T.gold : T.red;
+                    const scoreColor = score >= 70 ? "#22c55e" : score >= 40 ? T.gold : "#f87171";
                     const scoreLabel = score >= 70 ? "Tốt" : score >= 40 ? "Trung bình" : "Cần cải thiện";
                     const metrics = [
-                      { label: "Deal nóng (sắp chốt)", value: hotLeads.length, color: T.green, icon: Flame },
+                      { label: "Deal nóng (sắp chốt)", value: hotLeads.length, color: "#22c55e", icon: Flame },
                       { label: "Deal giá trị cao (>500tr)", value: highValueLeads.length, color: T.gold, icon: Star },
-                      { label: "Deal có nguy cơ mất", value: staleCount, color: T.orange, icon: AlertTriangle },
-                      { label: "Quá hạn liên hệ", value: overdueCount, color: T.red, icon: Clock },
+                      { label: "Deal có nguy cơ mất", value: staleCount, color: "#fb923c", icon: AlertTriangle },
+                      { label: "Quá hạn liên hệ", value: overdueCount, color: "#f87171", icon: Clock },
                     ];
                     return (
                       <>
@@ -2269,20 +2273,20 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                         <div className="flex items-center gap-4 mb-4 p-3 rounded-2xl" style={{ background: `${scoreColor}08`, border: `1px solid ${scoreColor}20` }}>
                           <div className="relative w-16 h-16 flex-shrink-0">
                             <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
-                              <circle cx="32" cy="32" r="26" fill="none" stroke={T.bg} strokeWidth="8" />
+                              <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
                               <circle cx="32" cy="32" r="26" fill="none" stroke={scoreColor} strokeWidth="8"
                                 strokeDasharray={`${(score / 100) * 163.4} 163.4`}
                                 strokeLinecap="round" />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                               <span className="text-lg font-black leading-none" style={{ color: scoreColor }}>{score}</span>
-                              <span className="text-[8px] font-bold" style={{ color: T.textMuted }}>/100</span>
+                              <span className="text-[8px] font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>/100</span>
                             </div>
                           </div>
                           <div>
                             <div className="text-sm font-black" style={{ color: scoreColor }}>{scoreLabel}</div>
-                            <div className="text-[10px] mt-0.5" style={{ color: T.textMuted }}>Pipeline Health Score</div>
-                            <div className="text-[10px] mt-1" style={{ color: T.textMuted }}>{totalPipeline} deal đang xử lý</div>
+                            <div className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Pipeline Health Score</div>
+                            <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>{totalPipeline} deal đang xử lý</div>
                           </div>
                         </div>
                         {/* Breakdown */}
@@ -2291,7 +2295,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                             <div key={label} className="p-2.5 rounded-xl" style={{ background: `${color}08`, border: `1px solid ${color}18` }}>
                               <div className="flex items-center gap-1.5 mb-1">
                                 <Icon size={11} style={{ color }} />
-                                <span className="text-[9px] font-semibold" style={{ color: T.textMuted }}>{label}</span>
+                                <span className="text-[9px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</span>
                               </div>
                               <div className="text-xl font-black" style={{ color }}>{value}</div>
                             </div>
@@ -2305,7 +2309,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             </div>
 
             {/* ── Win/Loss Analysis ─────────────────────────────────────────── */}
-            <Section title="Phân tích Win/Loss" icon={PieChart} iconColor={T.purple} iconBg={T.purpleBg}>
+            <Section title="Phân tích Win/Loss" icon={PieChart} iconColor="#a78bfa" iconBg="rgba(167,139,250,0.1)">
               <div className="p-4">
                 {(() => {
                   const wonLeadsAll = leads.filter(l => l.stage === "won");
@@ -2328,64 +2332,64 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Win vs Loss */}
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: T.textMuted }}>Tổng kết</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>Tổng kết</div>
                         <div className="flex items-center gap-3 mb-3">
                           <div className="flex-1">
                             <div className="flex justify-between mb-1">
-                              <span className="text-[10px] font-semibold" style={{ color: T.green }}>Won</span>
-                              <span className="text-[10px] font-black" style={{ color: T.green }}>{wonPct}%</span>
+                              <span className="text-[10px] font-semibold" style={{ color: "#22c55e" }}>Won</span>
+                              <span className="text-[10px] font-black" style={{ color: "#22c55e" }}>{wonPct}%</span>
                             </div>
-                            <div className="h-3 rounded-full overflow-hidden" style={{ background: T.bg }}>
-                              <div className="h-full rounded-full" style={{ width: `${wonPct}%`, background: `linear-gradient(90deg, ${T.green}, #047857)` }} />
+                            <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+                              <div className="h-full rounded-full" style={{ width: `${wonPct}%`, background: "linear-gradient(90deg, #22c55e, #16a34a)" }} />
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 mb-4">
                           <div className="flex-1">
                             <div className="flex justify-between mb-1">
-                              <span className="text-[10px] font-semibold" style={{ color: T.red }}>Lost</span>
-                              <span className="text-[10px] font-black" style={{ color: T.red }}>{lostPct}%</span>
+                              <span className="text-[10px] font-semibold" style={{ color: "#f87171" }}>Lost</span>
+                              <span className="text-[10px] font-black" style={{ color: "#f87171" }}>{lostPct}%</span>
                             </div>
-                            <div className="h-3 rounded-full overflow-hidden" style={{ background: T.bg }}>
-                              <div className="h-full rounded-full" style={{ width: `${lostPct}%`, background: `linear-gradient(90deg, ${T.red}, #B91C1C)` }} />
+                            <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+                              <div className="h-full rounded-full" style={{ width: `${lostPct}%`, background: "linear-gradient(90deg, #f87171, #dc2626)" }} />
                             </div>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          <div className="p-3 rounded-xl text-center" style={{ background: T.greenBg, border: `1px solid ${T.green}20` }}>
-                            <div className="text-lg font-black" style={{ color: T.green }}>{wonLeadsAll.length}</div>
-                            <div className="text-[9px] font-semibold" style={{ color: T.green }}>Deal chốt</div>
-                            <div className="text-[9px] mt-0.5" style={{ color: T.textMuted }}>{fmtVal(wonVal)}</div>
+                          <div className="p-3 rounded-xl text-center" style={{ background: "rgba(34,197,94,0.1)", border: `1px solid ${"#22c55e"}20` }}>
+                            <div className="text-lg font-black" style={{ color: "#22c55e" }}>{wonLeadsAll.length}</div>
+                            <div className="text-[9px] font-semibold" style={{ color: "#22c55e" }}>Deal chốt</div>
+                            <div className="text-[9px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{fmtVal(wonVal)}</div>
                           </div>
-                          <div className="p-3 rounded-xl text-center" style={{ background: T.redBg, border: `1px solid ${T.red}20` }}>
-                            <div className="text-lg font-black" style={{ color: T.red }}>{lostLeads.length}</div>
-                            <div className="text-[9px] font-semibold" style={{ color: T.red }}>Deal mất</div>
-                            <div className="text-[9px] mt-0.5" style={{ color: T.textMuted }}>{fmtVal(lostVal)}</div>
+                          <div className="p-3 rounded-xl text-center" style={{ background: "rgba(248,113,113,0.1)", border: `1px solid ${"#f87171"}20` }}>
+                            <div className="text-lg font-black" style={{ color: "#f87171" }}>{lostLeads.length}</div>
+                            <div className="text-[9px] font-semibold" style={{ color: "#f87171" }}>Deal mất</div>
+                            <div className="text-[9px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{fmtVal(lostVal)}</div>
                           </div>
                         </div>
                       </div>
 
                       {/* Win rate by source */}
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: T.textMuted }}>Win Rate theo nguồn</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>Win Rate theo nguồn</div>
                         <div className="space-y-2.5">
                           {sourceWinData.length === 0 ? (
-                            <p className="text-xs text-center py-4" style={{ color: T.textMuted }}>Chưa có dữ liệu</p>
+                            <p className="text-xs text-center py-4" style={{ color: "rgba(255,255,255,0.4)" }}>Chưa có dữ liệu</p>
                           ) : sourceWinData.map(({ source, winRate, count, color }) => (
                             <div key={source}>
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-1.5">
                                   <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-                                  <span className="text-[10px] font-medium truncate max-w-[100px]" style={{ color: T.textSecondary }}>{source}</span>
+                                  <span className="text-[10px] font-medium truncate max-w-[100px]" style={{ color: "rgba(245,237,214,0.75)" }}>{source}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[9px]" style={{ color: T.textMuted }}>{count} KH</span>
-                                  <span className="text-[10px] font-black" style={{ color: winRate >= 40 ? T.green : winRate >= 20 ? T.gold : T.red }}>{winRate}%</span>
+                                  <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>{count} KH</span>
+                                  <span className="text-[10px] font-black" style={{ color: winRate >= 40 ? "#22c55e" : winRate >= 20 ? T.gold : "#f87171" }}>{winRate}%</span>
                                 </div>
                               </div>
-                              <div className="h-2 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                              <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
                                 <div className="h-full rounded-full transition-all duration-700"
-                                  style={{ width: `${winRate}%`, background: winRate >= 40 ? T.green : winRate >= 20 ? T.gold : T.red }} />
+                                  style={{ width: `${winRate}%`, background: winRate >= 40 ? "#22c55e" : winRate >= 20 ? T.gold : "#f87171" }} />
                               </div>
                             </div>
                           ))}
@@ -2399,20 +2403,20 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
             {/* Activity Heatmap */}
             {isVisible("heatmap") && Object.keys(heatmap).length > 0 && (
-              <Section title="Heatmap hoạt động" icon={Activity} iconColor={T.purple} iconBg={T.purpleBg}>
+              <Section title="Heatmap hoạt động" icon={Activity} iconColor="#a78bfa" iconBg="rgba(167,139,250,0.1)">
                 <div className="p-5">
                   <div className="flex gap-2">
                     <div className="flex flex-col gap-1 pt-6">
                       {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map(d => (
                         <div key={d} className="h-6 flex items-center text-[9px] font-semibold w-6"
-                          style={{ color: T.textMuted }}>{d}</div>
+                          style={{ color: "rgba(255,255,255,0.4)" }}>{d}</div>
                       ))}
                     </div>
                     <div className="flex-1 overflow-x-auto">
                       <div className="flex gap-1 mb-1">
                         {Array.from({ length: 24 }, (_, h) => (
                           <div key={h} className="flex-1 text-center text-[8px] font-medium"
-                            style={{ color: T.textMuted, minWidth: 16 }}>
+                            style={{ color: "rgba(255,255,255,0.4)", minWidth: 16 }}>
                             {h % 6 === 0 ? `${h}h` : ""}
                           </div>
                         ))}
@@ -2430,8 +2434,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                                   title={`${["CN","T2","T3","T4","T5","T6","T7"][day]} ${hour}h: ${val} hoạt động`}
                                   style={{
                                     minWidth: 16,
-                                    background: intensity === 0 ? T.bg : `rgba(79,70,229,${0.1 + intensity * 0.9})`,
-                                    border: `1px solid ${intensity > 0.5 ? T.indigo + "30" : "transparent"}`,
+                                    background: intensity === 0 ? "rgba(255,255,255,0.03)" : `rgba(139,92,246,${0.1 + intensity * 0.9})`,
+                                    border: `1px solid ${intensity > 0.5 ? "rgba(139,92,246,0.3)" : "transparent"}`,
                                   }} />
                               );
                             })}
@@ -2441,14 +2445,14 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                     </div>
                   </div>
                   <div className="flex items-center gap-3 mt-3">
-                    <span className="text-[10px]" style={{ color: T.textMuted }}>Ít</span>
+                    <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Ít</span>
                     <div className="flex gap-1">
                       {[0.1, 0.3, 0.5, 0.7, 0.9].map(i => (
                         <div key={i} className="w-4 h-4 rounded-sm"
                           style={{ background: `rgba(79,70,229,${i})` }} />
                       ))}
                     </div>
-                    <span className="text-[10px]" style={{ color: T.textMuted }}>Nhiều</span>
+                    <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Nhiều</span>
                   </div>
                 </div>
               </Section>
@@ -2456,9 +2460,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
             {/* Staff Performance (admin only) */}
             {isVisible("staffPerformance") && currentUser?.isAdmin && stats.staffPerformance.length > 0 && (
-              <Section title="Hiệu suất nhân viên" icon={Star} iconColor={T.gold} iconBg={T.goldBg}>
+              <Section title="Hiệu suất nhân viên" icon={Star} iconColor="#C9A84C" iconBg="rgba(201,168,76,0.12)">
                 <div className="px-6 py-2 grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wide"
-                  style={{ background: T.bg, borderBottom: `1px solid ${T.divider}`, color: T.textMuted }}>
+                  style={{ background: "rgba(255,255,255,0.03)", borderBottom: `1px solid ${"rgba(255,255,255,0.06)"}`, color: "rgba(255,255,255,0.4)" }}>
                   <div className="col-span-1">#</div>
                   <div className="col-span-3">Nhân viên</div>
                   <div className="col-span-2 text-center">KH</div>
@@ -2466,7 +2470,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   <div className="col-span-2 text-center">Tỷ lệ</div>
                   <div className="col-span-2 text-right">Doanh số</div>
                 </div>
-                <div className="divide-y" style={{ borderColor: T.divider }}>
+                <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                   {stats.staffPerformance.slice(0, 8).map((s, i) => {
                     const medals = ["🥇", "🥈", "🥉"];
                     const maxWonValue = Math.max(...stats.staffPerformance.map(x => x.wonValue), 1);
@@ -2476,28 +2480,28 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                       <div key={s.staffName}
                         className="px-6 py-3 grid grid-cols-12 gap-2 items-center hover:opacity-90 transition-opacity"
                         style={{ background: isTop ? T.goldBg : undefined }}>
-                        <div className="col-span-1 text-sm">{medals[i] ?? <span className="text-xs font-bold" style={{ color: T.textMuted }}>{i+1}</span>}</div>
+                        <div className="col-span-1 text-sm">{medals[i] ?? <span className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{i+1}</span>}</div>
                         <div className="col-span-3">
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0"
-                              style={{ background: isTop ? `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` : T.bg, color: isTop ? "white" : T.textMuted, border: isTop ? "none" : `1px solid ${T.cardBorder}` }}>
+                              style={{ background: isTop ? `linear-gradient(135deg, ${T.gold}, ${T.goldDark})` : "rgba(255,255,255,0.03)", color: isTop ? "white" : "rgba(255,255,255,0.4)", border: isTop ? "none" : `1px solid ${"rgba(255,255,255,0.08)"}` }}>
                               {s.staffName.charAt(0).toUpperCase()}
                             </div>
-                            <span className="text-xs font-semibold truncate" style={{ color: T.textPrimary }}>{s.staffName}</span>
+                            <span className="text-xs font-semibold truncate" style={{ color: "#f5edd6" }}>{s.staffName}</span>
                           </div>
                         </div>
-                        <div className="col-span-2 text-center"><span className="text-xs font-bold" style={{ color: T.textSecondary }}>{s.leadsCount}</span></div>
-                        <div className="col-span-2 text-center"><span className="text-xs font-bold" style={{ color: T.green }}>{s.wonCount}</span></div>
+                        <div className="col-span-2 text-center"><span className="text-xs font-bold" style={{ color: "rgba(245,237,214,0.75)" }}>{s.leadsCount}</span></div>
+                        <div className="col-span-2 text-center"><span className="text-xs font-bold" style={{ color: "#22c55e" }}>{s.wonCount}</span></div>
                         <div className="col-span-2 text-center">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                            style={{ background: s.conversionRate >= 40 ? T.greenBg : s.conversionRate >= 20 ? T.goldBg : T.bg, color: s.conversionRate >= 40 ? T.green : s.conversionRate >= 20 ? T.gold : T.textMuted }}>
+                            style={{ background: s.conversionRate >= 40 ? "rgba(34,197,94,0.1)" : s.conversionRate >= 20 ? T.goldBg : "rgba(255,255,255,0.03)", color: s.conversionRate >= 40 ? "#22c55e" : s.conversionRate >= 20 ? T.gold : "rgba(255,255,255,0.4)" }}>
                             {s.conversionRate}%
                           </span>
                         </div>
                         <div className="col-span-2 text-right">
-                          <div className="text-xs font-black" style={{ color: isTop ? T.gold : T.textPrimary }}>{fmtVal(s.wonValue)}</div>
-                          <div className="w-full h-1 rounded-full mt-1 overflow-hidden" style={{ background: T.bg }}>
-                            <div className="h-full rounded-full" style={{ width: `${barPct}%`, background: isTop ? `linear-gradient(90deg, ${T.gold}, ${T.goldDark})` : T.cardBorder }} />
+                          <div className="text-xs font-black" style={{ color: isTop ? T.gold : "#f5edd6" }}>{fmtVal(s.wonValue)}</div>
+                          <div className="w-full h-1 rounded-full mt-1 overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+                            <div className="h-full rounded-full" style={{ width: `${barPct}%`, background: isTop ? `linear-gradient(90deg, ${T.gold}, ${T.goldDark})` : "rgba(255,255,255,0.08)" }} />
                           </div>
                         </div>
                       </div>
@@ -2509,16 +2513,16 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
             {/* Recent Activities */}
             {isVisible("recentActivities") && stats.recentActivities.length > 0 && (
-              <Section title="Hoạt động gần đây" icon={Activity} iconColor={T.green} iconBg={T.greenBg} defaultOpen={false}>
-                <div className="divide-y" style={{ borderColor: T.divider }}>
+              <Section title="Hoạt động gần đây" icon={Activity} iconColor="#22c55e" iconBg="rgba(34,197,94,0.1)" defaultOpen={false}>
+                <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                   {stats.recentActivities.slice(0, 6).map((act) => {
                     const IconComp = ACTIVITY_TYPE_ICONS[act.type] || FileText;
                     const actColors: Record<string, { bg: string; color: string }> = {
-                      call: { bg: T.blueBg, color: T.blue }, meeting: { bg: T.purpleBg, color: T.purple },
-                      email: { bg: T.orangeBg, color: T.orange }, note: { bg: T.bg, color: T.textMuted },
-                      quote_sent: { bg: T.goldBg, color: T.gold }, contract: { bg: T.greenBg, color: T.green },
+                      call: { bg: "rgba(96,165,250,0.1)", color: "#60a5fa" }, meeting: { bg: "rgba(167,139,250,0.1)", color: "#a78bfa" },
+                      email: { bg: "rgba(251,146,60,0.1)", color: "#fb923c" }, note: { bg: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)" },
+                      quote_sent: { bg: T.goldBg, color: T.gold }, contract: { bg: "rgba(34,197,94,0.1)", color: "#22c55e" },
                     };
-                    const c = actColors[act.type] || { bg: T.bg, color: T.textMuted };
+                    const c = actColors[act.type] || { bg: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)" };
                     const timeAgo = (() => {
                       const diff = Date.now() - new Date(act.createdAt).getTime();
                       const mins = Math.floor(diff / 60000);
@@ -2533,10 +2537,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                           <IconComp size={13} style={{ color: c.color }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate" style={{ color: T.textPrimary }}>{act.title}</p>
-                          <p className="text-[10px] truncate mt-0.5" style={{ color: T.textMuted }}>{act.content}</p>
+                          <p className="text-xs font-semibold truncate" style={{ color: "#f5edd6" }}>{act.title}</p>
+                          <p className="text-[10px] truncate mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{act.content}</p>
                         </div>
-                        <div className="flex-shrink-0 text-[10px] mt-0.5" style={{ color: T.textMuted }}>{timeAgo}</div>
+                        <div className="flex-shrink-0 text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{timeAgo}</div>
                       </div>
                     );
                   })}
@@ -2545,26 +2549,26 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Recent Quotes */}
-            {isVisible("recentQuotes") && <Section title="Báo giá gần đây" icon={FileText} iconColor={T.green} iconBg={T.greenBg} defaultOpen={false}>
-              <div className="divide-y" style={{ borderColor: T.divider }}>
+            {isVisible("recentQuotes") && <Section title="Báo giá gần đây" icon={FileText} iconColor="#22c55e" iconBg="rgba(34,197,94,0.1)" defaultOpen={false}>
+              <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                 {quotes.length === 0 ? (
-                  <div className="text-center py-6" style={{ color: T.textMuted }}>
+                  <div className="text-center py-6" style={{ color: "rgba(255,255,255,0.4)" }}>
                     <FileText size={22} className="mx-auto mb-1.5 opacity-20" />
                     <p className="text-xs">Chưa có báo giá</p>
                   </div>
                 ) : quotes.slice(0, 4).map(q => {
                   const statusConfig = {
-                    draft: { label: "Nháp", color: T.textMuted, bg: T.bg },
-                    sent: { label: "Đã gửi", color: T.blue, bg: T.blueBg },
-                    accepted: { label: "Chấp nhận", color: T.green, bg: T.greenBg },
-                    rejected: { label: "Từ chối", color: T.red, bg: T.redBg },
+                    draft: { label: "Nháp", color: "rgba(255,255,255,0.4)", bg: "rgba(255,255,255,0.03)" },
+                    sent: { label: "Đã gửi", color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
+                    accepted: { label: "Chấp nhận", color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
+                    rejected: { label: "Từ chối", color: "#f87171", bg: "rgba(248,113,113,0.1)" },
                   }[q.status];
                   return (
                     <Link key={q.id} href={`/crm/quotes/${q.id}`}
                       className="flex items-center justify-between px-5 py-3 hover:opacity-90 transition-opacity">
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold" style={{ color: T.textPrimary }}>{q.quoteNumber}</div>
-                        <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{q.leadName}</div>
+                        <div className="text-xs font-bold" style={{ color: "#f5edd6" }}>{q.quoteNumber}</div>
+                        <div className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{q.leadName}</div>
                       </div>
                       <div className="text-right flex-shrink-0 ml-3">
                         <div className="text-xs font-bold" style={{ color: T.gold }}>{fmtVal(q.total)}</div>
@@ -2576,7 +2580,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 })}
               </div>
               {quotes.length > 0 && (
-                <div className="px-5 py-3" style={{ borderTop: `1px solid ${T.divider}` }}>
+                <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                   <Link href="/crm/quotes/new"
                     className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold hover:opacity-80 transition-opacity"
                     style={{ border: `1px dashed ${T.gold}`, color: T.gold }}>
@@ -2605,27 +2609,27 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
             {/* Team Online (admin only) */}
             {isVisible("teamOnline") && currentUser?.isAdmin && teamOnline.length > 0 && (
-              <Section title="Trạng thái team" icon={Wifi} iconColor={T.green} iconBg={T.greenBg}>
+              <Section title="Trạng thái team" icon={Wifi} iconColor="#22c55e" iconBg="rgba(34,197,94,0.1)">
                 <div className="p-4 space-y-2">
                   {teamOnline.slice(0, 6).map(member => (
                     <div key={member.id} className="flex items-center gap-3 p-2.5 rounded-xl"
-                      style={{ background: T.bg, border: `1px solid ${T.cardBorder}` }}>
+                      style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${"rgba(255,255,255,0.08)"}` }}>
                       <div className="relative flex-shrink-0">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white"
-                          style={{ background: member.online ? `linear-gradient(135deg, ${T.green}, #047857)` : T.cardBorder, color: member.online ? "white" : T.textMuted }}>
+                          style={{ background: member.online ? `linear-gradient(135deg, ${"#22c55e"}, #047857)` : "rgba(255,255,255,0.08)", color: member.online ? "white" : "rgba(255,255,255,0.4)" }}>
                           {member.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
-                          style={{ background: member.online ? T.green : member.loginedToday ? T.gold : T.cardBorder }} />
+                          style={{ background: member.online ? "#22c55e" : member.loginedToday ? T.gold : "rgba(255,255,255,0.08)" }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-semibold truncate" style={{ color: T.textPrimary }}>{member.name}</div>
-                        <div className="text-[10px]" style={{ color: T.textMuted }}>
+                        <div className="text-xs font-semibold truncate" style={{ color: "#f5edd6" }}>{member.name}</div>
+                        <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
                           {member.online ? "Đang online" : member.loginedToday ? "Đã đăng nhập hôm nay" : "Chưa đăng nhập"}
                         </div>
                       </div>
                       <div className="flex-shrink-0">
-                        {member.online ? <Wifi size={12} style={{ color: T.green }} /> : <WifiOff size={12} style={{ color: T.textMuted }} />}
+                        {member.online ? <Wifi size={12} style={{ color: "#22c55e" }} /> : <WifiOff size={12} style={{ color: "rgba(255,255,255,0.4)" }} />}
                       </div>
                     </div>
                   ))}
@@ -2634,17 +2638,17 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Today's Tasks */}
-            {isVisible("tasks") && <Section title="Việc hôm nay" icon={CheckSquare} iconColor={T.gold} iconBg={T.goldBg}
+            {isVisible("tasks") && <Section title="Việc hôm nay" icon={CheckSquare} iconColor="#C9A84C" iconBg="rgba(201,168,76,0.12)"
               badge={pendingTasks.length > 0 ? `${pendingTasks.length}` : undefined}>
               <div>
                 {tasks.length > 0 && (
                   <div className="px-5 pt-3 pb-1">
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
                       <div className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${(doneTasks.length / tasks.length) * 100}%`, background: `linear-gradient(90deg, ${T.green}, #047857)` }} />
+                        style={{ width: `${(doneTasks.length / tasks.length) * 100}%`, background: "linear-gradient(90deg, #22c55e, #16a34a)" }} />
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-[10px]" style={{ color: T.textMuted }}>{doneTasks.length}/{tasks.length} hoàn thành</span>
+                      <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>{doneTasks.length}/{tasks.length} hoàn thành</span>
                       <Link href="/crm/tasks" className="text-[10px] font-medium hover:opacity-80" style={{ color: T.gold }}>Xem tất cả</Link>
                     </div>
                   </div>
@@ -2652,17 +2656,17 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 <div className="p-4 space-y-2">
                   {tasks.length === 0 ? (
                     <div className="text-center py-6">
-                      <CheckCircle2 size={22} className="mx-auto mb-2 opacity-20" style={{ color: T.green }} />
-                      <p className="text-xs" style={{ color: T.textMuted }}>Không có việc hôm nay 🎉</p>
+                      <CheckCircle2 size={22} className="mx-auto mb-2 opacity-20" style={{ color: "#22c55e" }} />
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Không có việc hôm nay 🎉</p>
                     </div>
                   ) : tasks.map(task => {
                     const pc = PRIORITY_CONFIG[task.priority];
                     return (
                       <div key={task.id} className="flex items-start gap-2.5 p-3 rounded-xl transition-all"
-                        style={{ background: task.done ? T.bg : T.card, border: `1px solid ${task.done ? T.divider : T.cardBorder}` }}>
+                        style={{ background: task.done ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.04)", border: `1px solid ${task.done ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.08)"}` }}>
                         <button onClick={() => toggleTask(task)}
                           className="flex-shrink-0 mt-0.5 rounded-md transition-all flex items-center justify-center"
-                          style={{ width: 18, height: 18, border: `2px solid ${task.done ? T.green : T.cardBorder}`, background: task.done ? T.green : "transparent" }}>
+                          style={{ width: 18, height: 18, border: `2px solid ${task.done ? "#22c55e" : "rgba(255,255,255,0.08)"}`, background: task.done ? "#22c55e" : "transparent" }}>
                           {task.done && (
                             <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
                               <path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -2671,7 +2675,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                         </button>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold leading-snug"
-                            style={{ color: task.done ? T.textMuted : T.textPrimary, textDecoration: task.done ? "line-through" : "none" }}>
+                            style={{ color: task.done ? "rgba(255,255,255,0.4)" : "#f5edd6", textDecoration: task.done ? "line-through" : "none" }}>
                             {task.title}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -2683,13 +2687,13 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                               <div className="flex items-center gap-1 flex-shrink-0">
                                 <Link href={`tel:${task.leadId}`}
                                   className="w-5 h-5 rounded-md flex items-center justify-center hover:opacity-80"
-                                  style={{ background: T.blueBg }}>
-                                  <Phone size={9} style={{ color: T.blue }} />
+                                  style={{ background: "rgba(96,165,250,0.1)" }}>
+                                  <Phone size={9} style={{ color: "#60a5fa" }} />
                                 </Link>
                                 <Link href={`/crm/leads/${task.leadId}?tab=activities`}
                                   className="w-5 h-5 rounded-md flex items-center justify-center hover:opacity-80"
-                                  style={{ background: T.greenBg }}>
-                                  <FileText size={9} style={{ color: T.green }} />
+                                  style={{ background: "rgba(34,197,94,0.1)" }}>
+                                  <FileText size={9} style={{ color: "#22c55e" }} />
                                 </Link>
                               </div>
                             )}
@@ -2706,7 +2710,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
             {/* Overdue Alert */}
             {isVisible("overdue") && overdueLeads.length > 0 && (
-              <Section title="Cần liên hệ ngay" icon={Zap} iconColor={theme.kpiOverdueColor} iconBg={theme.kpiOverdueColor + "18"}
+              <Section title="Cần liên hệ ngay" icon={Zap} iconColor={"#f87171"} iconBg={"rgba(248,113,113,0.12)"}
                 badge={`${overdueLeads.length}`}>
                 <div className="p-3 space-y-2">
                   {overdueLeads.slice(0, 5).map(lead => {
@@ -2716,15 +2720,15 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                         className="flex items-center justify-between p-2.5 rounded-xl hover:opacity-90 transition-opacity"
                         style={{ border: "1px solid #FEE2E2" }}>
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-bold truncate" style={{ color: T.textPrimary }}>{lead.name}</div>
-                          <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{lead.company || STAGE_LABELS[lead.stage]}</div>
+                          <div className="text-xs font-bold truncate" style={{ color: "#f5edd6" }}>{lead.name}</div>
+                          <div className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{lead.company || STAGE_LABELS[lead.stage]}</div>
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
                           <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md" style={{ background: "#FEE2E2" }}>
-                            <Clock size={9} style={{ color: T.red }} />
-                            <span className="text-[10px] font-black" style={{ color: T.red }}>{daysAgo}n</span>
+                            <Clock size={9} style={{ color: "#f87171" }} />
+                            <span className="text-[10px] font-black" style={{ color: "#f87171" }}>{daysAgo}n</span>
                           </div>
-                          <ChevronRight size={12} style={{ color: T.textMuted }} />
+                          <ChevronRight size={12} style={{ color: "rgba(255,255,255,0.4)" }} />
                         </div>
                       </Link>
                     );
@@ -2734,13 +2738,13 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             )}
 
             {/* Quick Stats */}
-            {isVisible("quickStats") && <Section title="Thống kê nhanh" icon={Eye} iconColor={theme.kpiPipelineColor} iconBg={theme.kpiPipelineColor + "18"}>
+            {isVisible("quickStats") && <Section title="Thống kê nhanh" icon={Eye} iconColor={"#8b5cf6"} iconBg={"rgba(139,92,246,0.12)"}>
               <div className="p-4 space-y-2.5">
                 {[
-                  { label: "Đang thương thảo", value: (stats.byStage["negotiating"] || 0), color: theme.accentColor, bg: theme.accentColor + "12", icon: Target },
-                  { label: "Đã báo giá", value: (stats.byStage["quoted"] || 0), color: theme.kpiPipelineColor, bg: theme.kpiPipelineColor + "12", icon: FileText },
-                  { label: "Đã khảo sát", value: (stats.byStage["surveyed"] || 0), color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12", icon: Briefcase },
-                  { label: "Đã gửi Profile", value: (stats.byStage["profile_sent"] || 0), color: theme.kpiWonColor, bg: theme.kpiWonColor + "12", icon: Mail },
+                  { label: "Đang thương thảo", value: (stats.byStage["negotiating"] || 0), color: "#C9A84C", bg: "rgba(201,168,76,0.07)", icon: Target },
+                  { label: "Đã báo giá", value: (stats.byStage["quoted"] || 0), color: "#8b5cf6", bg: "rgba(139,92,246,0.07)", icon: FileText },
+                  { label: "Đã khảo sát", value: (stats.byStage["surveyed"] || 0), color: "#60a5fa", bg: "rgba(96,165,250,0.07)", icon: Briefcase },
+                  { label: "Đã gửi Profile", value: (stats.byStage["profile_sent"] || 0), color: "#22c55e", bg: "rgba(34,197,94,0.07)", icon: Mail },
                 ].map(({ label, value, color, bg, icon: Icon }) => (
                   <div key={label} className="flex items-center justify-between p-2.5 rounded-xl"
                     style={{ background: bg, border: `1px solid ${color}18` }}>
@@ -2748,7 +2752,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                       <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: `${color}18` }}>
                         <Icon size={12} style={{ color }} />
                       </div>
-                      <span className="text-xs font-medium" style={{ color: T.textSecondary }}>{label}</span>
+                      <span className="text-xs font-medium" style={{ color: "rgba(245,237,214,0.75)" }}>{label}</span>
                     </div>
                     <span className="text-sm font-black" style={{ color }}>{value}</span>
                   </div>
@@ -2757,17 +2761,17 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             </Section>}
 
             {/* Quick Links */}
-            {isVisible("quickLinks") && <Section title="Truy cập nhanh" icon={ArrowUpRight} iconColor={theme.kpiCustomerColor} iconBg={theme.kpiCustomerColor + "18"}>
+            {isVisible("quickLinks") && <Section title="Truy cập nhanh" icon={ArrowUpRight} iconColor={"#60a5fa"} iconBg={"rgba(96,165,250,0.12)"}>
               <div className="p-3 grid grid-cols-2 gap-2">
                 {[
-                  { href: "/crm/twelve-week-plan", label: "Kế hoạch 12T", icon: Crosshair, color: "#4F46E5", bg: "#EEF2FF" },
-                  { href: "/crm/leads", label: "Khách hàng", icon: Users, color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12" },
-                  { href: "/crm/kanban", label: "Kanban", icon: BarChart2, color: theme.accentColor, bg: theme.accentColor + "12" },
-                  { href: "/crm/quotes/new", label: "Báo giá mới", icon: FileText, color: theme.kpiWonColor, bg: theme.kpiWonColor + "12" },
-                  { href: "/crm/calendar", label: "Lịch hẹn", icon: Calendar, color: theme.kpiPipelineColor, bg: theme.kpiPipelineColor + "12" },
+                  { href: "/crm/twelve-week-plan", label: "Kế hoạch 12T", icon: Crosshair, color: "#8b5cf6", bg: "rgba(139,92,246,0.15)" },
+                  { href: "/crm/leads", label: "Khách hàng", icon: Users, color: "#60a5fa", bg: "rgba(96,165,250,0.07)" },
+                  { href: "/crm/kanban", label: "Kanban", icon: BarChart2, color: "#C9A84C", bg: "rgba(201,168,76,0.07)" },
+                  { href: "/crm/quotes/new", label: "Báo giá mới", icon: FileText, color: "#22c55e", bg: "rgba(34,197,94,0.07)" },
+                  { href: "/crm/calendar", label: "Lịch hẹn", icon: Calendar, color: "#8b5cf6", bg: "rgba(139,92,246,0.07)" },
                   ...(currentUser?.isAdmin ? [
-                    { href: "/crm/reports", label: "Báo cáo", icon: TrendingUp, color: theme.kpiCustomerColor, bg: theme.kpiCustomerColor + "12" },
-                    { href: "/crm/staff", label: "Nhân viên", icon: Award, color: theme.accentColor, bg: theme.accentColor + "12" },
+                    { href: "/crm/reports", label: "Báo cáo", icon: TrendingUp, color: "#60a5fa", bg: "rgba(96,165,250,0.07)" },
+                    { href: "/crm/staff", label: "Nhân viên", icon: Award, color: "#C9A84C", bg: "rgba(201,168,76,0.07)" },
                   ] : []),
                 ].map(({ href, label, icon: Icon, color, bg }) => (
                   <Link key={href} href={href}
@@ -2776,7 +2780,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: `${color}20` }}>
                       <Icon size={12} style={{ color }} />
                     </div>
-                    <span className="text-xs font-semibold" style={{ color: T.textSecondary }}>{label}</span>
+                    <span className="text-xs font-semibold" style={{ color: "rgba(245,237,214,0.75)" }}>{label}</span>
                   </Link>
                 ))}
               </div>
@@ -2801,8 +2805,8 @@ function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeCo
   return (
     <div className="rounded-2xl p-3.5 md:p-5 relative overflow-hidden transition-all hover:shadow-md"
       style={{
-        background: darkMode ? "#1E293B" : T.card,
-        border: urgent ? `1px solid ${color}40` : `1px solid ${T.cardBorder}`,
+        background: "rgba(255,255,255,0.04)",
+        border: urgent ? `1px solid ${color}40` : "1px solid rgba(255,255,255,0.08)",
         boxShadow: urgent ? `0 2px 8px ${color}15` : T.cardShadow,
       }}>
       {/* Top accent bar */}
@@ -2817,9 +2821,9 @@ function KpiCard({ icon: Icon, label, value, sub, color, colorBg, badge, badgeCo
           {urgent && <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: color }} />}
         </div>
       </div>
-      <div className="text-xl md:text-2xl font-black leading-none mb-1" style={{ color: darkMode ? "#F1F5F9" : T.textPrimary }}>{value}</div>
-      <div className="text-[11px] md:text-xs font-semibold mb-1" style={{ color: darkMode ? "#94A3B8" : T.textLabel }}>{label}</div>
-      <div className="text-[10px] truncate" style={{ color: T.textMuted }}>{sub}</div>
+      <div className="text-xl md:text-2xl font-black leading-none mb-1" style={{ color: "#f5edd6" }}>{value}</div>
+      <div className="text-[11px] md:text-xs font-semibold mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{label}</div>
+      <div className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{sub}</div>
       {badge && (
         <div className="mt-1.5 md:mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
           style={{ background: `${badgeColor}15`, color: badgeColor }}>
