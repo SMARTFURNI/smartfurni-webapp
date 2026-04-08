@@ -683,22 +683,24 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                 style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
               />
               {showTopicSuggestions && (
-                <div className="absolute z-30 top-full mt-2 left-0 right-0 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden"
-                  style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
+                <div className="absolute z-30 top-full mt-2 left-0 right-0 rounded-2xl shadow-2xl overflow-hidden"
+                  style={{ background: "rgba(15,23,42,0.97)", border: "1px solid rgba(201,168,76,0.25)", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
                   {topicHistory.length > 0 && (
                     <>
-                      <div className="px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <div className="px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                        <p className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
                           <History size={10} /> Đã dùng gần đây
                         </p>
                       </div>
-                      <div className="max-h-32 overflow-y-auto border-b border-gray-100">
+                      <div className="max-h-32 overflow-y-auto" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                         {topicHistory.map((s, i) => (
-                          <div key={i} className="flex items-center group hover:bg-amber-50/50 transition-colors">
+                          <div key={i} className="flex items-center group transition-colors" style={{ background: "transparent" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,168,76,0.1)")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                             <button type="button" onClick={() => { setTopic(s); setShowTopicSuggestions(false); }}
-                              className="flex-1 text-left px-4 py-2.5 text-sm text-gray-700 hover:text-amber-800">{s}</button>
+                              className="flex-1 text-left px-4 py-2.5 text-sm" style={{ color: "#f5edd6" }}>{s}</button>
                             <button type="button" onClick={e => { e.stopPropagation(); removeTopicHistory(s); }}
-                              className="px-3 py-2.5 text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                              className="px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "rgba(248,113,113,0.7)" }}>
                               <X size={11} />
                             </button>
                           </div>
@@ -706,8 +708,8 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                       </div>
                     </>
                   )}
-                  <div className="px-4 py-2.5 bg-amber-50/60 border-b border-amber-100">
-                    <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="px-4 py-2.5" style={{ background: "rgba(201,168,76,0.08)", borderBottom: "1px solid rgba(201,168,76,0.15)" }}>
+                    <p className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "#C9A84C" }}>
                       <Sparkles size={10} /> Gợi ý cho {PLATFORM_CONFIG[platform].label}
                     </p>
                   </div>
@@ -715,7 +717,9 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                     {TOPIC_SUGGESTIONS[platform].map((s, i) => (
                       <button key={i} type="button"
                         onClick={() => { setTopic(s); setShowTopicSuggestions(false); }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-800 transition-colors border-b border-gray-50 last:border-0">
+                        className="w-full text-left px-4 py-2.5 text-sm transition-colors" style={{ color: "#f5edd6", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,168,76,0.1)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                         {s}
                       </button>
                     ))}
@@ -761,22 +765,24 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                 style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }}
               />
               {showAudienceSuggestions && (
-                <div className="absolute z-30 top-full mt-2 left-0 right-0 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden"
-                  style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
+                <div className="absolute z-30 top-full mt-2 left-0 right-0 rounded-2xl shadow-2xl overflow-hidden"
+                  style={{ background: "rgba(15,23,42,0.97)", border: "1px solid rgba(96,165,250,0.25)", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
                   {audienceHistory.length > 0 && (
                     <>
-                      <div className="px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <div className="px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                        <p className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
                           <History size={10} /> Đã dùng gần đây
                         </p>
                       </div>
-                      <div className="max-h-32 overflow-y-auto border-b border-gray-100">
+                      <div className="max-h-32 overflow-y-auto" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                         {audienceHistory.map((s, i) => (
-                          <div key={i} className="flex items-center group hover:bg-blue-50/50 transition-colors">
+                          <div key={i} className="flex items-center group transition-colors" style={{ background: "transparent" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "rgba(96,165,250,0.1)")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                             <button type="button" onClick={() => { setTargetAudience(s); setShowAudienceSuggestions(false); }}
-                              className="flex-1 text-left px-4 py-2.5 text-sm text-gray-700 hover:text-blue-800">{s}</button>
+                              className="flex-1 text-left px-4 py-2.5 text-sm" style={{ color: "#f5edd6" }}>{s}</button>
                             <button type="button" onClick={e => { e.stopPropagation(); removeAudienceHistory(s); }}
-                              className="px-3 py-2.5 text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                              className="px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "rgba(248,113,113,0.7)" }}>
                               <X size={11} />
                             </button>
                           </div>
@@ -784,8 +790,8 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                       </div>
                     </>
                   )}
-                  <div className="px-4 py-2.5 bg-blue-50/60 border-b border-blue-100">
-                    <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="px-4 py-2.5" style={{ background: "rgba(96,165,250,0.08)", borderBottom: "1px solid rgba(96,165,250,0.15)" }}>
+                    <p className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "#60a5fa" }}>
                       <Target size={10} /> Gợi ý cho {PLATFORM_CONFIG[platform].label}
                     </p>
                   </div>
@@ -793,7 +799,9 @@ function AIScriptTab({ onScriptSaved }: { onScriptSaved: () => void }) {
                     {AUDIENCE_SUGGESTIONS[platform].map((s, i) => (
                       <button key={i} type="button"
                         onClick={() => { setTargetAudience(s); setShowAudienceSuggestions(false); }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-800 transition-colors border-b border-gray-50 last:border-0">
+                        className="w-full text-left px-4 py-2.5 text-sm transition-colors" style={{ color: "#f5edd6", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(96,165,250,0.1)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                         {s}
                       </button>
                     ))}
@@ -1132,8 +1140,8 @@ function ContentPlannerTab() {
               <select
                 value={filterPlatform}
                 onChange={e => setFilterPlatform(e.target.value as ContentPlatform | "")}
-                className="text-sm font-semibold focus:outline-none bg-transparent cursor-pointer appearance-none pr-5"
-                style={{ color: "#f5edd6" }}
+                className="text-sm font-semibold focus:outline-none cursor-pointer appearance-none pr-5"
+                style={{ color: "#f5edd6", background: "transparent" }}
               >
                 <option value="" style={{ background: "#1a1200" }}>Tất cả ({totalVideos})</option>
                 <option value="tiktok" style={{ background: "#1a1200" }}>TikTok</option>
@@ -1194,9 +1202,9 @@ function ContentPlannerTab() {
 
           <DragOverlay>
             {activeVideo && (
-              <div className="bg-white rounded-2xl border-2 border-amber-400 shadow-2xl p-3.5 opacity-95 rotate-2 w-52"
-                style={{ boxShadow: "0 20px 40px rgba(180,83,9,0.25)" }}>
-                <p className="text-xs font-bold text-gray-800 line-clamp-2 mb-2">{activeVideo.title}</p>
+              <div className="rounded-2xl border-2 p-3.5 opacity-95 rotate-2 w-52"
+                style={{ background: "rgba(15,23,42,0.97)", borderColor: "#C9A84C", boxShadow: "0 20px 40px rgba(201,168,76,0.3)" }}>
+                <p className="text-xs font-bold line-clamp-2 mb-2" style={{ color: "#f5edd6" }}>{activeVideo.title}</p>
                 <PlatformBadge platform={activeVideo.platform} />
               </div>
             )}
@@ -1273,18 +1281,24 @@ function PublishingCalendarTab() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <button onClick={prevMonth}
-            className="w-9 h-9 flex items-center justify-center rounded-2xl border-2 border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all">
-            <ChevronLeft size={16} className="text-gray-600" />
+            className="w-9 h-9 flex items-center justify-center rounded-2xl transition-all"
+            style={{ border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}>
+            <ChevronLeft size={16} />
           </button>
-          <h3 className="text-lg font-bold text-gray-800 min-w-[130px] text-center">
+          <h3 className="text-lg font-bold min-w-[130px] text-center" style={{ color: "#f5edd6" }}>
             {monthNames[month]} {year}
           </h3>
           <button onClick={nextMonth}
-            className="w-9 h-9 flex items-center justify-center rounded-2xl border-2 border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all">
-            <ChevronRight size={16} className="text-gray-600" />
+            className="w-9 h-9 flex items-center justify-center rounded-2xl transition-all"
+            style={{ border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}>
+            <ChevronRight size={16} />
           </button>
         </div>
-        <div className="flex items-center gap-4 text-xs font-semibold text-gray-400">
+        <div className="flex items-center gap-4 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>
           {(["tiktok", "facebook", "youtube"] as ContentPlatform[]).map(p => (
             <span key={p} className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: platformColors[p] }} />
@@ -1299,24 +1313,21 @@ function PublishingCalendarTab() {
           <Loader2 size={24} className="animate-spin text-amber-500" />
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-          <div className="grid grid-cols-7 border-b border-gray-50 bg-gray-50/80">
+        <div className="rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="grid grid-cols-7" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
             {dayNames.map(d => (
-              <div key={d} className="text-center text-xs font-bold text-gray-400 py-3.5 uppercase tracking-wider">{d}</div>
+              <div key={d} className="text-center text-xs font-bold py-3.5 uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>{d}</div>
             ))}
           </div>
           <div className="grid grid-cols-7">
             {days.map((day, idx) => {
-              if (!day) return <div key={`e-${idx}`} className="min-h-[96px] border-r border-b border-gray-50 bg-gray-50/20" />;
+              if (!day) return <div key={`e-${idx}`} className="min-h-[96px] p-2" style={{ borderRight: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.01)" }} />;
               const dayVideos = getVideosForDay(day);
               return (
-                <div key={day}
-                  className={`min-h-[96px] border-r border-b border-gray-50 p-2 transition-colors ${
-                    isToday(day) ? "bg-amber-50/60" : "hover:bg-gray-50/40"
-                  }`}>
-                  <div className={`text-xs font-bold mb-1.5 w-6 h-6 flex items-center justify-center rounded-full ${
-                    isToday(day) ? "text-white shadow-sm" : "text-gray-500"
-                  }`} style={isToday(day) ? { background: "linear-gradient(135deg, #d97706, #b45309)" } : {}}>
+                <div key={day} className="min-h-[96px] p-2 transition-colors"
+                  style={{ borderRight: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)", background: isToday(day) ? "rgba(201,168,76,0.08)" : "transparent" }}>
+                  <div className="text-xs font-bold mb-1.5 w-6 h-6 flex items-center justify-center rounded-full"
+                    style={isToday(day) ? { background: "linear-gradient(135deg, #d97706, #b45309)", color: "#fff" } : { color: "rgba(255,255,255,0.5)" }}>
                     {day}
                   </div>
                   <div className="space-y-0.5">
@@ -1333,7 +1344,7 @@ function PublishingCalendarTab() {
                       );
                     })}
                     {dayVideos.length > 3 && (
-                      <div className="text-[10px] text-gray-400 px-1 font-medium">+{dayVideos.length - 3} khác</div>
+                      <div className="text-[10px] px-1 font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>+{dayVideos.length - 3} khác</div>
                     )}
                   </div>
                 </div>
@@ -1351,13 +1362,14 @@ function PublishingCalendarTab() {
             const cfg = PLATFORM_CONFIG[p];
             const Icon = cfg.icon;
             return (
-              <div key={p} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-sm transition-shadow">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: cfg.bg }}>
+              <div key={p} className="rounded-2xl p-4 flex items-center gap-3 transition-all"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${cfg.color}18` }}>
                   <Icon size={18} style={{ color: cfg.color }} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 font-semibold">{cfg.label}</p>
-                  <p className="text-xl font-bold text-gray-800">{count}</p>
+                  <p className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>{cfg.label}</p>
+                  <p className="text-xl font-bold" style={{ color: "#f5edd6" }}>{count}</p>
                 </div>
               </div>
             );
@@ -1392,47 +1404,51 @@ function AddVideoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
-        style={{ boxShadow: "0 40px 80px rgba(0,0,0,0.2)" }}>
-        <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between"
-          style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fff 100%)" }}>
-          <h3 className="text-base font-bold text-gray-900 flex items-center gap-2.5">
+      <div className="rounded-3xl w-full max-w-md mx-4 overflow-hidden"
+        style={{ background: "linear-gradient(160deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)", border: "1px solid rgba(201,168,76,0.2)", boxShadow: "0 40px 80px rgba(0,0,0,0.7)" }}>
+        <div className="px-6 py-5 flex items-center justify-between"
+          style={{ background: "linear-gradient(135deg, rgba(201,168,76,0.12) 0%, rgba(15,23,42,0.95) 100%)", borderBottom: "1px solid rgba(201,168,76,0.15)" }}>
+          <h3 className="text-base font-bold flex items-center gap-2.5" style={{ color: "#f5edd6" }}>
             <div className="w-8 h-8 rounded-2xl flex items-center justify-center shadow-sm"
               style={{ background: "linear-gradient(135deg, #d97706, #b45309)" }}>
               <Plus size={14} className="text-white" />
             </div>
             Thêm ý tưởng video
           </h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl transition-colors" style={{ color: "rgba(255,255,255,0.4)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
             <X size={16} />
           </button>
         </div>
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-              Tiêu đề <span className="text-red-400 normal-case tracking-normal">*</span>
+            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>
+              Tiêu đề <span className="normal-case tracking-normal" style={{ color: "#f87171" }}>*</span>
             </label>
             <input value={title} onChange={e => setTitle(e.target.value)}
-              placeholder="VD: Review giường SmartFurni Pro 3000"
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all placeholder:text-gray-300" />
+              placeholder="VĐ: Review giường SmartFurni Pro 3000"
+              className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none transition-all"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }} />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Chủ đề</label>
+            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>Chủ đề</label>
             <input value={topic} onChange={e => setTopic(e.target.value)}
-              placeholder="VD: Giường điều chỉnh, sức khỏe cột sống..."
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all placeholder:text-gray-300" />
+              placeholder="VĐ: Giường điều chỉnh, sức khỏe cột sống..."
+              className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none transition-all"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }} />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Nền tảng</label>
+            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>Nền tảng</label>
             <div className="grid grid-cols-4 gap-2">
               {(["tiktok", "facebook", "youtube", "all"] as ContentPlatform[]).map(p => {
                 const cfg = PLATFORM_CONFIG[p];
                 return (
                   <button key={p} onClick={() => setPlatform(p)}
-                    className={`py-2.5 rounded-2xl text-xs font-bold border-2 transition-all ${
-                      platform === p ? "shadow-sm" : "border-gray-100 text-gray-400 hover:border-gray-200 bg-gray-50/50"
-                    }`}
-                    style={platform === p ? { borderColor: cfg.color, background: cfg.bg, color: cfg.color } : {}}>
+                    className="py-2.5 rounded-2xl text-xs font-bold transition-all"
+                    style={platform === p
+                      ? { borderWidth: 2, borderStyle: "solid", borderColor: cfg.color, background: `${cfg.color}18`, color: cfg.color }
+                      : { borderWidth: 2, borderStyle: "solid", borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)" }}>
                     {cfg.label}
                   </button>
                 );
@@ -1440,14 +1456,16 @@ function AddVideoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Ngày đăng dự kiến</label>
+            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>Ngày đăng dự kiến</label>
             <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 bg-gray-50/50 transition-all" />
+              className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none transition-all"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6", colorScheme: "dark" }} />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Ghi chú</label>
+            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>Ghi chú</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 resize-none bg-gray-50/50 transition-all placeholder:text-gray-300" />
+              className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none resize-none transition-all"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#f5edd6" }} />
           </div>
         </div>
         <div className="px-6 pb-6 flex gap-2.5">
@@ -1458,7 +1476,10 @@ function AddVideoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
             Lưu
           </button>
           <button onClick={onClose}
-            className="px-5 py-3 text-sm text-gray-500 border-2 border-gray-100 rounded-2xl hover:bg-gray-50 transition-all font-semibold">
+            className="px-5 py-3 text-sm rounded-2xl transition-all font-semibold"
+            style={{ color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}>
             Huỷ
           </button>
         </div>
