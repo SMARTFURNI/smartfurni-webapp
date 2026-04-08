@@ -252,7 +252,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
   return (
     <div className="space-y-4">
       {/* ── 1. Scorecard header ── */}
-      <div className="rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${T.indigoBg}, #F0FDF4)`, border: `1.5px solid ${T.indigoLight}` }}>
+      <div className="rounded-2xl p-5" style={{ background: `linear-gradient(135deg, rgba(139,92,246,0.12), rgba(201,168,76,0.08))`, border: `1.5px solid rgba(201,168,76,0.2)` }}>
         <div className="flex items-start gap-3 mb-4">
           <div className="p-2 rounded-xl" style={{ background: T.indigo }}>
             <Star size={18} color="#fff" />
@@ -278,7 +278,7 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
             { label: "Còn lại", value: String(totalPend), sub: `${weeksLeft} tuần còn lại`, color: T.gold },
             { label: "Bỏ qua", value: String(totalSkip), sub: "Công việc skipped", color: T.textMuted },
           ].map(({ label, value, sub, color }) => (
-            <div key={label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.7)", border: `1px solid ${T.cardBorder}` }}>
+            <div key={label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${T.cardBorder}` }}>
               <div className="text-xl font-black" style={{ color }}>{value}</div>
               <div className="text-[9px] font-semibold mt-0.5" style={{ color: T.textMuted }}>{label}</div>
               <div className="text-[8px]" style={{ color: T.textMuted }}>{sub}</div>
@@ -449,12 +449,12 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   const isFuture = wi + 1 > currentWeek;
                   const cellBg = p < 0
                     ? (isFuture ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.06)")
-                    : p === 0   ? "#FEE2E2"
-                    : p <= 25   ? "#FEF3C7"
-                    : p <= 50   ? "#FDE68A"
-                    : p <= 75   ? "#86EFAC"
-                    : p < 100   ? "#34D399"
-                    : "#22c55e";
+                    : p === 0   ? "rgba(248,113,113,0.25)"
+                    : p <= 25   ? "rgba(201,168,76,0.25)"
+                    : p <= 50   ? "rgba(201,168,76,0.45)"
+                    : p <= 75   ? "rgba(34,197,94,0.3)"
+                    : p < 100   ? "rgba(34,197,94,0.55)"
+                    : "rgba(34,197,94,0.8)";
                   return (
                     <div key={wi} className="flex-1 group relative" style={{ minWidth: 0 }}>
                       <div
@@ -507,12 +507,12 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
                   const isFuture = wi + 1 > currentWeek;
                   const cellBg = wp < 0
                     ? (isFuture ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.06)")
-                    : wp === 0   ? "#FEE2E2"
-                    : wp <= 25   ? "#FEF3C7"
-                    : wp <= 50   ? "#FDE68A"
-                    : wp <= 75   ? "#86EFAC"
-                    : wp < 100   ? "#34D399"
-                    : "#22c55e";
+                    : wp === 0   ? "rgba(248,113,113,0.25)"
+                    : wp <= 25   ? "rgba(201,168,76,0.25)"
+                    : wp <= 50   ? "rgba(201,168,76,0.45)"
+                    : wp <= 75   ? "rgba(34,197,94,0.3)"
+                    : wp < 100   ? "rgba(34,197,94,0.55)"
+                    : "rgba(34,197,94,0.8)";
                   return (
                     <div key={wi} className="flex-1 group relative" style={{ minWidth: 0 }}>
                       <div className="rounded-md transition-all duration-150 group-hover:scale-110 group-hover:shadow-md"
@@ -543,15 +543,15 @@ export function TwelveWeekReportDashboard({ plan }: { plan: TwelveWeekPlan }) {
         {/* Footer legend */}
         <div className="px-5 py-2.5 flex items-center gap-4 flex-wrap" style={{ borderTop: `1px solid ${T.cardBorder}`, background: T.bg }}>
           {[
-            { color: "#FEE2E2", label: "0%" },
-            { color: "#FDE68A", label: "25–50%" },
-            { color: "#86EFAC", label: "50–75%" },
-            { color: "#22c55e", label: "100%" },
+            { color: "rgba(248,113,113,0.25)", label: "0%" },
+            { color: "rgba(201,168,76,0.45)", label: "25–50%" },
+            { color: "rgba(34,197,94,0.3)", label: "50–75%" },
+            { color: "rgba(34,197,94,0.8)", label: "100%" },
             { color: "rgba(255,255,255,0.1)", label: "Chưa đến", dashed: true },
           ].map(({ color, label, dashed }) => (
             <div key={label} className="flex items-center gap-1.5">
               <div className="w-3.5 h-3.5 rounded"
-                style={{ background: color, border: dashed ? "1px dashed #D1D5DB" : `1px solid ${color}` }} />
+                style={{ background: color, border: dashed ? "1px dashed rgba(255,255,255,0.2)" : `1px solid ${color}` }} />
               <span className="text-[9px]" style={{ color: T.textMuted }}>{label}</span>
             </div>
           ))}
@@ -752,7 +752,7 @@ export function GoalDetailDashboard({ plan }: { plan: TwelveWeekPlan }) {
               return (
                 <g key={y}>
                   <line x1={PAD.l} y1={yPos} x2={W - PAD.r} y2={yPos} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" strokeDasharray={y === 0 ? "0" : "3 3"} />
-                  <text x={PAD.l - 4} y={yPos + 4} textAnchor="end" fontSize="8" fill="#9CA3AF">{y}%</text>
+                  <text x={PAD.l - 4} y={yPos + 4} textAnchor="end" fontSize="8" fill="rgba(255,255,255,0.35)">{y}%</text>
                 </g>
               );
             })}
@@ -774,7 +774,7 @@ export function GoalDetailDashboard({ plan }: { plan: TwelveWeekPlan }) {
                       fill={pct === 100 ? T.green : isCurrent ? gc.text : T.textMuted} fontWeight="bold">{pct}%</text>
                   )}
                   <text x={x + barW / 2} y={H - PAD.b + 12} textAnchor="middle" fontSize="9"
-                    fill={isCurrent ? gc.text : "#9CA3AF"} fontWeight={isCurrent ? "bold" : "normal"}>T{week}</text>
+                    fill={isCurrent ? gc.text : "rgba(255,255,255,0.35)"} fontWeight={isCurrent ? "bold" : "normal"}>T{week}</text>
                 </g>
               );
             })}

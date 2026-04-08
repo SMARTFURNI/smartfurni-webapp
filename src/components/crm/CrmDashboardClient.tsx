@@ -47,9 +47,9 @@ interface Props {
 }
 
 const PRIORITY_CONFIG = {
-  high:   { color: "#DC2626", bg: "#FEF2F2", label: "Cao" },
-  medium: { color: "#D97706", bg: "#FFFBEB", label: "TB" },
-  low:    { color: "#059669", bg: "#ECFDF5", label: "Thấp" },
+  high:   { color: "#f87171", bg: "rgba(248,113,113,0.13)", label: "Cao" },
+  medium: { color: "#C9A84C", bg: "rgba(201,168,76,0.13)",  label: "TB" },
+  low:    { color: "#22c55e", bg: "rgba(34,197,94,0.11)",   label: "Thấp" },
 };
 
 const ACTIVITY_TYPE_ICONS: Record<string, React.ElementType> = {
@@ -70,18 +70,18 @@ const SOURCE_COLORS: Record<string, string> = {
 };
 
 const T = {
-  bg: "#F7F8FA", card: "#FFFFFF", cardBorder: "#EAECF0",
-  cardShadow: "0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04)",
-  headerBg: "#FFFFFF", headerBorder: "#F2F4F7", divider: "#F2F4F7",
-  textPrimary: "#101828", textSecondary: "#344054",
-  textMuted: "#98A2B3", textLabel: "#667085",
-  gold: "#C9A84C", goldDark: "#9A7A2E", goldLight: "#FEF3C7", goldBg: "#FFFBEB",
-  indigo: "#4F46E5", indigoBg: "#EEF2FF", indigoLight: "#C7D2FE",
-  green: "#059669", greenBg: "#ECFDF5",
-  red: "#DC2626", redBg: "#FEF2F2",
-  orange: "#EA580C", orangeBg: "#FFF7ED",
-  purple: "#7C3AED", purpleBg: "#F5F3FF",
-  blue: "#2563EB", blueBg: "#EFF6FF",
+  bg: "rgba(255,255,255,0.03)", card: "rgba(255,255,255,0.05)", cardBorder: "rgba(255,255,255,0.09)",
+  cardShadow: "0 4px 24px rgba(0,0,0,0.4)",
+  headerBg: "rgba(255,255,255,0.04)", headerBorder: "rgba(255,255,255,0.07)", divider: "rgba(255,255,255,0.07)",
+  textPrimary: "#f5edd6", textSecondary: "rgba(245,237,214,0.85)",
+  textMuted: "rgba(255,255,255,0.45)", textLabel: "rgba(255,255,255,0.5)",
+  gold: "#C9A84C", goldDark: "#9A7A2E", goldLight: "rgba(201,168,76,0.25)", goldBg: "rgba(201,168,76,0.13)",
+  indigo: "#8b5cf6", indigoBg: "rgba(139,92,246,0.13)", indigoLight: "rgba(139,92,246,0.25)",
+  green: "#22c55e", greenBg: "rgba(34,197,94,0.11)",
+  red: "#f87171", redBg: "rgba(248,113,113,0.11)",
+  orange: "#fb923c", orangeBg: "rgba(251,146,60,0.11)",
+  purple: "#a78bfa", purpleBg: "rgba(167,139,250,0.11)",
+  blue: "#60a5fa", blueBg: "rgba(96,165,250,0.11)",
 };
 
 // ── Revenue Chart (Doanh thu & Dự báo) ─────────────────────────────────────
@@ -1336,11 +1336,12 @@ function NotificationBell({ currentUser }: { currentUser?: CurrentUser }) {
 }
 
 // ── Collapsible section ──────────────────────────────────────────────────────
-function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen = true, badge }: {
+function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen = true, badge, badgeColor }: {
   title: string; icon: React.ElementType; iconColor: string; iconBg: string;
-  children: React.ReactNode; defaultOpen?: boolean; badge?: string;
+  children: React.ReactNode; defaultOpen?: boolean; badge?: string; badgeColor?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const bc = badgeColor || iconColor;
   return (
     <div className="rounded-2xl overflow-hidden"
       style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${"rgba(255,255,255,0.08)"}`, boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}>
@@ -1356,7 +1357,7 @@ function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen =
           <span className="text-sm font-bold" style={{ color: "#f5edd6" }}>{title}</span>
           {badge && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ background: `${"#f87171"}15`, color: "#f87171" }}>{badge}</span>
+              style={{ background: `${bc}18`, color: bc }}>{badge}</span>
           )}
         </div>
         {open ? <ChevronUp size={14} style={{ color: "rgba(255,255,255,0.4)" }} /> : <ChevronDown size={14} style={{ color: "rgba(255,255,255,0.4)" }} />}
@@ -2660,7 +2661,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                       <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Không có việc hôm nay 🎉</p>
                     </div>
                   ) : tasks.map(task => {
-                    const pc = PRIORITY_CONFIG[task.priority];
+                    const pc = PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.medium;
                     return (
                       <div key={task.id} className="flex items-start gap-2.5 p-3 rounded-xl transition-all"
                         style={{ background: task.done ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.04)", border: `1px solid ${task.done ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.08)"}` }}>
@@ -2718,13 +2719,13 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                     return (
                       <Link key={lead.id} href={`/crm/leads/${lead.id}`}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:opacity-90 transition-opacity"
-                        style={{ border: "1px solid #FEE2E2" }}>
+                        style={{ border: "1px solid rgba(248,113,113,0.2)" }}>
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-bold truncate" style={{ color: "#f5edd6" }}>{lead.name}</div>
                           <div className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{lead.company || STAGE_LABELS[lead.stage]}</div>
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md" style={{ background: "#FEE2E2" }}>
+                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md" style={{ background: "rgba(248,113,113,0.13)" }}>
                             <Clock size={9} style={{ color: "#f87171" }} />
                             <span className="text-[10px] font-black" style={{ color: "#f87171" }}>{daysAgo}n</span>
                           </div>
