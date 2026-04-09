@@ -77,7 +77,10 @@ export async function POST(request: NextRequest) {
           {
             folder: "smartfurni/facebook-videos",
             resource_type: "video",
-            // Không transform, giữ nguyên chất lượng
+            // Chấp nhận tất cả định dạng video phổ biến
+            allowed_formats: ["mp4", "mov", "avi", "webm", "mkv", "flv", "wmv", "m4v", "3gp"],
+            // Convert sang mp4 để Facebook tương thích tốt nhất
+            format: "mp4",
           },
           (error, result) => {
             if (error) reject(error);
