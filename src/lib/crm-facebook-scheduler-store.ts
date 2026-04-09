@@ -26,6 +26,7 @@ export interface ScheduledPost {
   content: string;
   imageUrls: string[];       // Danh sách URL ảnh đính kèm
   videoIds?: Record<string, string>; // pageId -> Facebook video_id (đã upload)
+  uploadSessionIds?: Record<string, string>; // pageId -> Facebook upload_session_id (dùng để finish với published=true)
   linkUrl?: string;          // Link đính kèm (nếu có)
   pageIds: string[];         // Đăng lên các page nào (ID của FacebookPage)
   scheduledAt: string;       // ISO datetime - thời điểm đăng
@@ -286,11 +287,31 @@ export async function publishToFacebook(
       body.link = post.linkUrl;
     }
 
-    // Case 0: Có video đã upload → publish video lên feed
+    // Case 0: Có video đã upload
     const videoId = post.videoIds?.[page.pageId] || post.videoIds?.[page.id];
+    const uploadSessionId = post.uploadSessionIds?.[page.pageId] || post.uploadSessionIds?.[page.id];
     if (videoId) {
-      // Publish video đã upload (set published = true)
-      const videoPublishRes = await fetch(`https://graph.facebook.com/v19.0/${videoId}`, {
+      // Nếu có upload_session_id: finish phase với published=true (cách đúng nhất)
+      if (uploadSessionId) {
+        const finishRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/videos`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            upload_phase: "finish",
+            upload_session_id: uploadSessionId,
+            access_token: page.pageAccessToken,
+            published: true,
+            description: buildPostMessage(post),
+          }),
+        });
+        const finishData = await finishRes.json();
+        if (!finishData.error) {
+          return { success: true, postId: finishData.id || videoId };
+        }
+        // Nếu finish phase thất bại (session hết hạn), fallback sang update video
+      }
+      // Fallback: thử POST /{video_id} với published=true
+      const videoUpdateRes = await fetch(`https://graph.facebook.com/v19.0/${videoId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -299,25 +320,11 @@ export async function publishToFacebook(
           access_token: page.pageAccessToken,
         }),
       });
-      const videoPublishData = await videoPublishRes.json();
-      if (videoPublishData.error) {
-        // Fallback: thử post lên /feed với video_id
-        const feedRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/feed`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: buildPostMessage(post),
-            object_attachment: videoId,
-            access_token: page.pageAccessToken,
-          }),
-        });
-        const feedData = await feedRes.json();
-        if (feedData.error) {
-          return { success: false, error: `Video publish failed: ${feedData.error?.message || videoPublishData.error?.message}` };
-        }
-        return { success: true, postId: feedData.id };
+      const videoUpdateData = await videoUpdateRes.json();
+      if (!videoUpdateData.error) {
+        return { success: true, postId: videoUpdateData.id || videoId };
       }
-      return { success: true, postId: videoPublishData.id || videoId };
+      return { success: false, error: `Video publish failed: ${videoUpdateData.error?.message}` };
     }
 
     // Case 1: Không có ảnh → dùng /feed thông thường

@@ -13,14 +13,16 @@ export const maxDuration = 300;
 /**
  * POST /api/crm/facebook-scheduler/upload-video?pageId=xxx&fileName=xxx&fileSize=xxx
  * Upload video từ máy tính lên Facebook sử dụng Resumable Upload API
- * 
+ *
  * Body: raw binary video bytes (không dùng FormData để tránh giới hạn 4MB của Next.js)
  * Query params:
  *   - pageId: string (ID của FacebookPage trong DB)
  *   - fileName: string (tên file gốc)
  *   - fileSize: number (kích thước file bytes)
- * 
- * Response: { videoId: string, pageId: string }
+ *   - publishNow: "true" | "false" (có publish ngay không, mặc định false)
+ *   - description: string (nội dung bài đăng, dùng khi publishNow=true)
+ *
+ * Response: { videoId: string, pageId: string, published: boolean }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +38,8 @@ export async function POST(request: NextRequest) {
     const pageId = searchParams.get("pageId");
     const fileName = searchParams.get("fileName") || "video.mp4";
     const fileSizeParam = searchParams.get("fileSize");
+    const publishNow = searchParams.get("publishNow") === "true";
+    const description = searchParams.get("description") || "";
 
     if (!pageId) {
       return NextResponse.json({ error: "Thiếu pageId" }, { status: 400 });
@@ -95,8 +99,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { upload_session_id, start_offset, end_offset } = initData;
-    // video_id được trả về từ init phase (không phải finish phase)
-    const videoIdFromInit = initData.video_id;
+    // video_id được trả về từ init phase
+    const videoIdFromInit = initData.video_id as string;
 
     // ─── Bước 2: Upload video theo chunks ────────────────────────────────────
     let currentStart = parseInt(start_offset);
@@ -131,22 +135,28 @@ export async function POST(request: NextRequest) {
       currentStart = parseInt(chunkData.start_offset);
       currentEnd = parseInt(chunkData.end_offset);
 
-      // Nếu start_offset = end_offset = file_size thì đã upload xong
       if (currentStart >= actualSize) break;
     }
 
     // ─── Bước 3: Hoàn tất upload (finish phase) ──────────────────────────────
+    // Nếu publishNow=true: publish ngay với description trong finish phase
+    // Nếu publishNow=false: chỉ upload, không publish (dùng cho đăng lịch)
+    const finishBody: Record<string, unknown> = {
+      upload_phase: "finish",
+      upload_session_id,
+      access_token: accessToken,
+      published: publishNow,
+      title: fileName.replace(/\.[^.]+$/, ""),
+    };
+
+    if (publishNow && description) {
+      finishBody.description = description;
+    }
+
     const finishRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/videos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        upload_phase: "finish",
-        upload_session_id,
-        access_token: accessToken,
-        // Không publish ngay, chỉ upload để lấy video_id
-        published: false,
-        title: fileName.replace(/\.[^.]+$/, ""),
-      }),
+      body: JSON.stringify(finishBody),
     });
 
     const finishData = await finishRes.json();
@@ -158,14 +168,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Facebook trả về { success: true } ở finish phase, video_id đã có từ init phase
-    if (finishData.error) {
-      console.error("FB video upload finish error:", finishData);
-      return NextResponse.json(
-        { error: `Hoàn tất upload thất bại: ${finishData.error?.message || "Unknown error"}` },
-        { status: 500 }
-      );
-    }
+    // Facebook trả về { success: true } ở finish phase
+    // video_id đã có từ init phase
     const videoId = finishData.video_id || finishData.id || videoIdFromInit;
     if (!videoId) {
       return NextResponse.json({ error: "Không nhận được video ID từ Facebook" }, { status: 500 });
@@ -173,9 +177,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       videoId,
+      uploadSessionId: publishNow ? undefined : upload_session_id, // trả về session_id để dùng khi publish lịch
       pageId: fbPageId,
       fileName,
       fileSizeMB: (actualSize / 1024 / 1024).toFixed(1),
+      published: publishNow,
     });
 
   } catch (error) {

@@ -101,6 +101,7 @@ function PostFormModal({
   // Video upload state
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoIds, setVideoIds] = useState<Record<string, string>>(post?.videoIds ?? {});
+  const [uploadSessionIds, setUploadSessionIds] = useState<Record<string, string>>(post?.uploadSessionIds ?? {});
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
@@ -165,6 +166,7 @@ function PostFormModal({
 
     // Upload video lên từng page đã chọn
     const newVideoIds: Record<string, string> = {};
+    const newUploadSessionIds: Record<string, string> = {};
     const totalPages = selectedPageIds.length;
     let doneCount = 0;
 
@@ -188,6 +190,11 @@ function PostFormModal({
           // Lưu theo cả pageId (DB id) và fbPageId
           newVideoIds[pageId] = data.videoId;
           newVideoIds[data.pageId] = data.videoId;
+          // Lưu upload_session_id để dùng khi publish lịch
+          if (data.uploadSessionId) {
+            newUploadSessionIds[pageId] = data.uploadSessionId;
+            newUploadSessionIds[data.pageId] = data.uploadSessionId;
+          }
         } else {
           setVideoUploadError(data.error || "Upload thất bại");
           setUploadingVideo(false);
@@ -203,6 +210,7 @@ function PostFormModal({
     }
 
     setVideoIds(newVideoIds);
+    setUploadSessionIds(newUploadSessionIds);
     setVideoUploadDone(true);
     setUploadingVideo(false);
   };
@@ -221,6 +229,7 @@ function PostFormModal({
         content: content.trim(),
         imageUrls,
         videoIds: Object.keys(videoIds).length > 0 ? videoIds : undefined,
+        uploadSessionIds: Object.keys(uploadSessionIds).length > 0 ? uploadSessionIds : undefined,
         linkUrl: linkUrl.trim() || undefined,
         pageIds: selectedPageIds,
         scheduledAt: new Date(scheduledAt).toISOString(),
