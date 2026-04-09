@@ -216,7 +216,11 @@ function PostFormModal({
     if (!title.trim()) return alert("Vui lòng nhập tiêu đề bài");
     if (!content.trim()) return alert("Vui lòng nhập nội dung bài");
     if (selectedPageIds.length === 0) return alert("Vui lòng chọn ít nhất 1 Fanpage");
-    if (!scheduledAt) return alert("Vui lòng chọn thời gian đăng");
+    // Khi có video: đăng ngay lập tức (không cần chọn thời gian)
+    const finalScheduledAt = videoUploadDone
+      ? new Date().toISOString()
+      : scheduledAt;
+    if (!videoUploadDone && !scheduledAt) return alert("Vui lòng chọn thời gian đăng");
 
     setSaving(true);
     try {
@@ -230,7 +234,7 @@ function PostFormModal({
         uploadSessionIds: Object.keys(uploadSessionIds).length > 0 ? uploadSessionIds : undefined,
         linkUrl: linkUrl.trim() || undefined,
         pageIds: selectedPageIds,
-        scheduledAt: new Date(scheduledAt).toISOString(),
+        scheduledAt: new Date(finalScheduledAt).toISOString(),
         repeatType,
         repeatDays: repeatType === "custom_days" ? repeatDays : undefined,
         repeatEndDate: repeatType !== "none" && repeatEndDate ? new Date(repeatEndDate).toISOString() : undefined,
@@ -504,40 +508,48 @@ function PostFormModal({
             />
           </div>
 
-          {/* Thời gian đăng */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
-                <Clock size={12} className="inline mr-1" />
-                Thời gian đăng <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <input
-                type="datetime-local"
-                value={scheduledAt}
-                onChange={e => setScheduledAt(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #d1d5db", color: "#374151" }}
-              />
+          {/* Thời gian đăng - ẩn khi có video (video đăng ngay lập tức) */}
+          {!videoUploadDone && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
+                  <Clock size={12} className="inline mr-1" />
+                  Thời gian đăng <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={e => setScheduledAt(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                  style={{ border: "1px solid #d1d5db", color: "#374151" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
+                  <Repeat size={12} className="inline mr-1" />
+                  Lặp lại
+                </label>
+                <select
+                  value={repeatType}
+                  onChange={e => setRepeatType(e.target.value as RepeatType)}
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                  style={{ border: "1px solid #d1d5db", color: "#374151" }}>
+                  {(Object.entries(REPEAT_LABELS) as [RepeatType, string][]).map(([k, v]) => (
+                    <option key={k} value={k}>{v}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
-                <Repeat size={12} className="inline mr-1" />
-                Lặp lại
-              </label>
-              <select
-                value={repeatType}
-                onChange={e => setRepeatType(e.target.value as RepeatType)}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #d1d5db", color: "#374151" }}>
-                {(Object.entries(REPEAT_LABELS) as [RepeatType, string][]).map(([k, v]) => (
-                  <option key={k} value={k}>{v}</option>
-                ))}
-              </select>
+          )}
+          {videoUploadDone && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+              <Video size={14} />
+              <span>Bài đăng có video sẽ được <strong>đăng ngay lập tức</strong> lên Facebook Reels khi bấm "Tạo bài đăng".</span>
             </div>
-          </div>
+          )}
 
           {/* Tuỳ chỉnh ngày lặp */}
-          {repeatType === "custom_days" && (
+          {!videoUploadDone && repeatType === "custom_days" && (
             <div>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
                 Chọn ngày trong tuần
@@ -559,7 +571,7 @@ function PostFormModal({
           )}
 
           {/* Ngày kết thúc lặp */}
-          {repeatType !== "none" && (
+          {!videoUploadDone && repeatType !== "none" && (
             <div>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
                 Ngày kết thúc lặp lại (tuỳ chọn)
