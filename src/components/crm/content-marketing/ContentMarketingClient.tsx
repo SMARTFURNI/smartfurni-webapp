@@ -1490,6 +1490,7 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
   const [notes, setNotes] = useState(video.notes || "");
   const [scheduledAt, setScheduledAt] = useState(video.scheduledAt ? new Date(video.scheduledAt).toISOString().slice(0, 16) : "");
   const [publishedUrl, setPublishedUrl] = useState(video.publishedUrl || "");
+  const [driveUrl, setDriveUrl] = useState(video.driveUrl || "");
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -1515,7 +1516,7 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
       await fetch(`/api/crm/content/videos/${video.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, script: script || undefined, notes: notes || undefined, scheduledAt: scheduledAt || undefined, publishedUrl: publishedUrl || undefined }),
+        body: JSON.stringify({ title, script: script || undefined, notes: notes || undefined, scheduledAt: scheduledAt || undefined, publishedUrl: publishedUrl || undefined, driveUrl: driveUrl || undefined }),
       });
       setEditing(false);
       onUpdated();
@@ -1737,6 +1738,44 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
               <ExternalLink size={13} /> Xem bài đăng
             </a>
           ) : null}
+
+          {/* Drive URL section */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: "rgba(52,211,153,0.2)" }}>
+                <ExternalLink size={11} style={{ color: "#34d399" }} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: D.textMuted }}>Link Drive Video</span>
+              <div className="flex-1 h-px" style={{ background: D.divider }} />
+            </div>
+            {editing ? (
+              <input
+                value={driveUrl}
+                onChange={e => setDriveUrl(e.target.value)}
+                placeholder="https://drive.google.com/file/d/..."
+                className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none"
+                style={{ background: D.inputBg, border: `2px solid ${D.inputBorder}`, color: D.textPrimary }}
+              />
+            ) : driveUrl ? (
+              <div className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "rgba(52,211,153,0.07)", border: "1px solid rgba(52,211,153,0.2)" }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: "#34d399" }}>Video đã hoàn thành</p>
+                  <p className="text-xs truncate" style={{ color: D.textMuted }}>{driveUrl}</p>
+                </div>
+                <a
+                  href={driveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-opacity hover:opacity-80 flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg, #34d399, #059669)", color: "#fff" }}
+                >
+                  <ExternalLink size={11} /> Xem video
+                </a>
+              </div>
+            ) : (
+              <p className="text-sm italic rounded-2xl p-4" style={{ background: D.card, color: D.textMuted }}>Chưa có link Drive — nhấn Chỉnh sửa để thêm</p>
+            )}
+          </div>
 
           {/* Script section */}
           <div>

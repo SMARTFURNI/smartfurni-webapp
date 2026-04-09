@@ -30,6 +30,7 @@ export interface ContentVideo {
   thumbnailUrl?: string;
   videoUrl?: string;
   publishedUrl?: string;
+  driveUrl?: string;
   scheduledAt?: string;
   publishedAt?: string;
   viewsCount: number;
@@ -100,6 +101,7 @@ function mapVideoRow(row: any): ContentVideo {
     thumbnailUrl: row.thumbnail_url,
     videoUrl: row.video_url,
     publishedUrl: row.published_url,
+    driveUrl: row.drive_url,
     scheduledAt: row.scheduled_at?.toISOString(),
     publishedAt: row.published_at?.toISOString(),
     viewsCount: row.views_count || 0,
@@ -174,6 +176,7 @@ export async function loadContentMarketingFromDb(): Promise<void> {
         thumbnail_url TEXT,
         video_url TEXT,
         published_url TEXT,
+        drive_url TEXT,
         scheduled_at TIMESTAMP,
         published_at TIMESTAMP,
         views_count INT DEFAULT 0,
@@ -225,6 +228,9 @@ export async function loadContentMarketingFromDb(): Promise<void> {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Migration: thêm cột drive_url nếu chưa có
+    await query(`ALTER TABLE content_videos ADD COLUMN IF NOT EXISTS drive_url TEXT`).catch(() => {});
 
     const [videoRows, genRows, templateRows] = await Promise.all([
       query("SELECT * FROM content_videos ORDER BY created_at DESC LIMIT 500"),
@@ -329,7 +335,7 @@ export async function updateContentVideo(
     title: "title", topic: "topic", platform: "platform", status: "status",
     script: "script", scriptGeneratedBy: "script_generated_by", aiPrompt: "ai_prompt",
     durationSeconds: "duration_seconds", hashtags: "hashtags", notes: "notes",
-    thumbnailUrl: "thumbnail_url", videoUrl: "video_url", publishedUrl: "published_url",
+    thumbnailUrl: "thumbnail_url", videoUrl: "video_url", publishedUrl: "published_url", driveUrl: "drive_url",
     scheduledAt: "scheduled_at", publishedAt: "published_at",
     viewsCount: "views_count", likesCount: "likes_count",
     commentsCount: "comments_count", sharesCount: "shares_count",
