@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCrmAccess } from "@/lib/admin-auth";
-import { getFacebookPages, loadFacebookSchedulerFromDb } from "@/lib/crm-facebook-scheduler-store";
+import { getPages, loadFacebookSchedulerFromDb } from "@/lib/crm-facebook-scheduler-store";
 
 let loaded = false;
 async function ensureLoaded() {
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Tìm page access token
-    const pages = getFacebookPages();
+    const pages = getPages();
     const page = pages.find(p => p.id === pageId || p.pageId === pageId);
     if (!page) {
       return NextResponse.json({ error: "Không tìm thấy Fanpage" }, { status: 404 });
