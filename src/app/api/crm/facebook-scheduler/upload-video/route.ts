@@ -95,6 +95,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { upload_session_id, start_offset, end_offset } = initData;
+    // video_id được trả về từ init phase (không phải finish phase)
+    const videoIdFromInit = initData.video_id;
 
     // ─── Bước 2: Upload video theo chunks ────────────────────────────────────
     let currentStart = parseInt(start_offset);
@@ -156,7 +158,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const videoId = finishData.video_id || finishData.id;
+    // Facebook trả về { success: true } ở finish phase, video_id đã có từ init phase
+    if (finishData.error) {
+      console.error("FB video upload finish error:", finishData);
+      return NextResponse.json(
+        { error: `Hoàn tất upload thất bại: ${finishData.error?.message || "Unknown error"}` },
+        { status: 500 }
+      );
+    }
+    const videoId = finishData.video_id || finishData.id || videoIdFromInit;
     if (!videoId) {
       return NextResponse.json({ error: "Không nhận được video ID từ Facebook" }, { status: 500 });
     }
