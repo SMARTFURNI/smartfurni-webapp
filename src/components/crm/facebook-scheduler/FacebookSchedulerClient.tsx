@@ -167,8 +167,6 @@ function PostFormModal({
 
     // Upload video lên từng page đã chọn
     const newVideoIds: Record<string, string> = {};
-    const newVideoUrls: Record<string, string> = {};
-    const newUploadSessionIds: Record<string, string> = {};
     const totalPages = selectedPageIds.length;
     let doneCount = 0;
 
@@ -176,7 +174,14 @@ function PostFormModal({
       try {
         // Gửi raw binary (tránh giới hạn FormData của Next.js)
         const arrayBuffer = await file.arrayBuffer();
-        const params = new URLSearchParams({ pageId, fileName: file.name });
+        // Truyền description để publish ngay trong finish phase
+        const hashtagList = hashtags.split(/\s+/).filter((h: string) => h.trim()).map((h: string) => h.startsWith("#") ? h : `#${h}`);
+        const fullDescription = [content.trim(), hashtagList.join(" ")].filter(Boolean).join("\n\n");
+        const params = new URLSearchParams({
+          pageId,
+          fileName: file.name,
+          description: fullDescription,
+        });
 
         const res = await fetch(`/api/crm/facebook-scheduler/upload-video?${params}`, {
           method: "POST",
@@ -188,11 +193,6 @@ function PostFormModal({
           // Lưu theo cả pageId (DB id) và fbPageId
           newVideoIds[pageId] = data.videoId;
           newVideoIds[data.pageId] = data.videoId;
-          // Lưu Cloudinary URL để dùng khi publish lịch
-          if (data.videoUrl) {
-            newVideoUrls[pageId] = data.videoUrl;
-            newVideoUrls[data.pageId] = data.videoUrl;
-          }
         } else {
           setVideoUploadError(data.error || "Upload thất bại");
           setUploadingVideo(false);
@@ -208,8 +208,6 @@ function PostFormModal({
     }
 
     setVideoIds(newVideoIds);
-    setVideoUrls(newVideoUrls);
-    setUploadSessionIds(newUploadSessionIds);
     setVideoUploadDone(true);
     setUploadingVideo(false);
   };

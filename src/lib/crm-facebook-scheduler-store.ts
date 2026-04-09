@@ -289,44 +289,12 @@ export async function publishToFacebook(
     }
 
     // Case 0: Có video đã upload
+    // Video đã được publish lên Facebook ngay khi upload (published=true trong finish phase)
+    // videoId được lưu lại chỉ để tracking, không cần publish lại
     const videoId = post.videoIds?.[page.pageId] || post.videoIds?.[page.id];
-    const videoUrl = post.videoUrls?.[page.pageId] || post.videoUrls?.[page.id];
-    if (videoId || videoUrl) {
-      // Cách đúng: dùng file_url (Cloudinary URL) để đăng video lên Facebook
-      // Giống hệt cách đăng ảnh qua URL
-      const sourceUrl = videoUrl;
-      if (sourceUrl) {
-        const fbVideoRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/videos`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            file_url: sourceUrl,
-            description: buildPostMessage(post),
-            published: true,
-            access_token: page.pageAccessToken,
-          }),
-        });
-        const fbVideoData = await fbVideoRes.json();
-        if (!fbVideoData.error) {
-          return { success: true, postId: fbVideoData.id || videoId };
-        }
-        return { success: false, error: `Video publish failed: ${fbVideoData.error?.message}` };
-      }
-      // Fallback: nếu không có URL (bài cũ ), thử publish video_id trực tiếp
-      const videoUpdateRes = await fetch(`https://graph.facebook.com/v19.0/${videoId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          published: true,
-          description: buildPostMessage(post),
-          access_token: page.pageAccessToken,
-        }),
-      });
-      const videoUpdateData = await videoUpdateRes.json();
-      if (!videoUpdateData.error) {
-        return { success: true, postId: videoUpdateData.id || videoId };
-      }
-      return { success: false, error: `Video publish failed: ${videoUpdateData.error?.message}` };
+    if (videoId) {
+      // Video đã được publish ngay khi upload, trả về success với videoId
+      return { success: true, postId: videoId };
     }
 
     // Case 1: Không có ảnh → dùng /feed thông thường
