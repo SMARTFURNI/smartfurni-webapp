@@ -7,16 +7,18 @@ async function ensureLoaded() {
   if (!loaded) { await loadFacebookSchedulerFromDb(); loaded = true; }
 }
 
-// Tăng giới hạn body size cho route này
-export const maxDuration = 300; // 5 phút timeout
+// 5 phút timeout cho upload video lớn
+export const maxDuration = 300;
 
 /**
- * POST /api/crm/facebook-scheduler/upload-video
+ * POST /api/crm/facebook-scheduler/upload-video?pageId=xxx&fileName=xxx&fileSize=xxx
  * Upload video từ máy tính lên Facebook sử dụng Resumable Upload API
  * 
- * Body: FormData với:
- *   - file: File (video MP4/MOV, tối đa 200MB)
+ * Body: raw binary video bytes (không dùng FormData để tránh giới hạn 4MB của Next.js)
+ * Query params:
  *   - pageId: string (ID của FacebookPage trong DB)
+ *   - fileName: string (tên file gốc)
+ *   - fileSize: number (kích thước file bytes)
  * 
  * Response: { videoId: string, pageId: string }
  */
@@ -30,27 +32,27 @@ export async function POST(request: NextRequest) {
   await ensureLoaded();
 
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-    const pageId = formData.get("pageId") as string | null;
-
-    if (!file) {
-      return NextResponse.json({ error: "Không có file video" }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const pageId = searchParams.get("pageId");
+    const fileName = searchParams.get("fileName") || "video.mp4";
+    const fileSizeParam = searchParams.get("fileSize");
 
     if (!pageId) {
       return NextResponse.json({ error: "Thiếu pageId" }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/mpeg", "video/webm"];
-    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(mp4|mov|avi|mpeg|webm)$/i)) {
-      return NextResponse.json({ error: "Chỉ hỗ trợ video MP4, MOV, AVI, MPEG, WebM" }, { status: 400 });
+    if (!fileSizeParam) {
+      return NextResponse.json({ error: "Thiếu fileSize" }, { status: 400 });
+    }
+
+    const fileSize = parseInt(fileSizeParam);
+    if (isNaN(fileSize) || fileSize <= 0) {
+      return NextResponse.json({ error: "fileSize không hợp lệ" }, { status: 400 });
     }
 
     // Validate file size (tối đa 200MB)
     const maxSize = 200 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (fileSize > maxSize) {
       return NextResponse.json({ error: "Video quá lớn. Tối đa 200MB" }, { status: 400 });
     }
 
@@ -63,7 +65,14 @@ export async function POST(request: NextRequest) {
 
     const accessToken = page.pageAccessToken;
     const fbPageId = page.pageId;
-    const fileSize = file.size;
+
+    // Đọc raw binary từ request body (không bị giới hạn 4MB như FormData)
+    const videoArrayBuffer = await request.arrayBuffer();
+    if (!videoArrayBuffer || videoArrayBuffer.byteLength === 0) {
+      return NextResponse.json({ error: "Không nhận được dữ liệu video" }, { status: 400 });
+    }
+
+    const actualSize = videoArrayBuffer.byteLength;
 
     // ─── Bước 1: Khởi tạo Resumable Upload Session ───────────────────────────
     const initRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/videos`, {
@@ -71,7 +80,7 @@ export async function POST(request: NextRequest) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         upload_phase: "start",
-        file_size: fileSize,
+        file_size: actualSize,
         access_token: accessToken,
       }),
     });
@@ -88,12 +97,11 @@ export async function POST(request: NextRequest) {
     const { upload_session_id, start_offset, end_offset } = initData;
 
     // ─── Bước 2: Upload video theo chunks ────────────────────────────────────
-    const videoBytes = await file.arrayBuffer();
     let currentStart = parseInt(start_offset);
     let currentEnd = parseInt(end_offset);
 
-    while (currentStart < fileSize) {
-      const chunk = videoBytes.slice(currentStart, currentEnd);
+    while (currentStart < actualSize) {
+      const chunk = videoArrayBuffer.slice(currentStart, currentEnd);
       const chunkBlob = new Blob([chunk], { type: "application/octet-stream" });
 
       const chunkFormData = new FormData();
@@ -122,7 +130,7 @@ export async function POST(request: NextRequest) {
       currentEnd = parseInt(chunkData.end_offset);
 
       // Nếu start_offset = end_offset = file_size thì đã upload xong
-      if (currentStart >= fileSize) break;
+      if (currentStart >= actualSize) break;
     }
 
     // ─── Bước 3: Hoàn tất upload (finish phase) ──────────────────────────────
@@ -135,7 +143,7 @@ export async function POST(request: NextRequest) {
         access_token: accessToken,
         // Không publish ngay, chỉ upload để lấy video_id
         published: false,
-        title: file.name.replace(/\.[^.]+$/, ""),
+        title: fileName.replace(/\.[^.]+$/, ""),
       }),
     });
 
@@ -156,8 +164,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       videoId,
       pageId: fbPageId,
-      fileName: file.name,
-      fileSizeMB: (fileSize / 1024 / 1024).toFixed(1),
+      fileName,
+      fileSizeMB: (actualSize / 1024 / 1024).toFixed(1),
     });
 
   } catch (error) {

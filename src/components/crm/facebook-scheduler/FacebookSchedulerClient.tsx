@@ -170,13 +170,18 @@ function PostFormModal({
 
     for (const pageId of selectedPageIds) {
       try {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("pageId", pageId);
+        // Đọc file thành ArrayBuffer và gửi raw binary để tránh giới hạn FormData 4MB của Next.js
+        const arrayBuffer = await file.arrayBuffer();
+        const params = new URLSearchParams({
+          pageId,
+          fileName: file.name,
+          fileSize: file.size.toString(),
+        });
 
-        const res = await fetch("/api/crm/facebook-scheduler/upload-video", {
+        const res = await fetch(`/api/crm/facebook-scheduler/upload-video?${params}`, {
           method: "POST",
-          body: fd,
+          headers: { "Content-Type": "application/octet-stream" },
+          body: arrayBuffer,
         });
         const data = await res.json();
         if (data.videoId) {
