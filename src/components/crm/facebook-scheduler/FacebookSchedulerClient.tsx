@@ -174,14 +174,14 @@ function PostFormModal({
 
     for (const pageId of selectedPageIds) {
       try {
-        // Gửi FormData giống hệt cách upload ảnh
-        const fd = new FormData();
-        fd.append("file", file);
-        const params = new URLSearchParams({ pageId });
+        // Gửi raw binary (tránh giới hạn FormData của Next.js)
+        const arrayBuffer = await file.arrayBuffer();
+        const params = new URLSearchParams({ pageId, fileName: file.name });
 
         const res = await fetch(`/api/crm/facebook-scheduler/upload-video?${params}`, {
           method: "POST",
-          body: fd,
+          headers: { "Content-Type": "application/octet-stream" },
+          body: arrayBuffer,
         });
         const data = await res.json();
         if (data.videoId) {

@@ -21,9 +21,10 @@ export const maxDuration = 600;
  * POST /api/crm/facebook-scheduler/upload-video
  * Upload video từ máy tính lên Cloudinary, rồi đăng lên Facebook qua file_url
  *
- * Body: FormData với field "file" (video file)
+ * Body: raw binary video bytes (không dùng FormData để tránh giới hạn body size của Next.js)
  * Query params:
  *   - pageId: string (ID của FacebookPage trong DB)
+ *   - fileName: string (tên file gốc)
  *
  * Response: { videoId: string, videoUrl: string, pageId: string }
  */
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const pageId = searchParams.get("pageId");
+    const fileName = searchParams.get("fileName") || "video.mp4";
 
     if (!pageId) {
       return NextResponse.json({ error: "Thiếu pageId" }, { status: 400 });
@@ -54,23 +56,20 @@ export async function POST(request: NextRequest) {
     const accessToken = page.pageAccessToken;
     const fbPageId = page.pageId;
 
-    // Đọc FormData
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-
-    if (!file) {
-      return NextResponse.json({ error: "Không nhận được file video" }, { status: 400 });
+    // Đọc raw binary từ request body (không bị giới hạn 4MB như FormData)
+    const videoArrayBuffer = await request.arrayBuffer();
+    if (!videoArrayBuffer || videoArrayBuffer.byteLength === 0) {
+      return NextResponse.json({ error: "Không nhận được dữ liệu video" }, { status: 400 });
     }
 
     // Validate file size (tối đa 200MB)
     const maxSize = 200 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (videoArrayBuffer.byteLength > maxSize) {
       return NextResponse.json({ error: "Video quá lớn. Tối đa 200MB" }, { status: 400 });
     }
 
-    // ─── Bước 1: Upload lên Cloudinary ───────────────────────────────────────
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // ─── Bước 1: Upload lên Cloudinary ────────────────────────────────────────
+    const buffer = Buffer.from(videoArrayBuffer);
 
     const uploadResult = await new Promise<{ secure_url: string; public_id: string; duration?: number }>(
       (resolve, reject) => {
@@ -118,8 +117,8 @@ export async function POST(request: NextRequest) {
       videoId,
       videoUrl, // URL Cloudinary (để hiển thị preview)
       pageId: fbPageId,
-      fileName: file.name,
-      fileSizeMB: (file.size / 1024 / 1024).toFixed(1),
+      fileName,
+      fileSizeMB: (videoArrayBuffer.byteLength / 1024 / 1024).toFixed(1),
     });
 
   } catch (error) {
