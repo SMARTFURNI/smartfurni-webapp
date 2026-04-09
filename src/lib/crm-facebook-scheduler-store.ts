@@ -26,7 +26,8 @@ export interface ScheduledPost {
   content: string;
   imageUrls: string[];       // Danh sách URL ảnh đính kèm
   videoIds?: Record<string, string>; // pageId -> Facebook video_id (đã upload)
-  uploadSessionIds?: Record<string, string>; // pageId -> Facebook upload_session_id (dùng để finish với published=true)
+  videoUrls?: Record<string, string>; // pageId -> Cloudinary URL của video (dùng để đăng lại khi cần)
+  uploadSessionIds?: Record<string, string>; // pageId -> Facebook upload_session_id (không dùng nữa, giữ lại để tương thích)
   linkUrl?: string;          // Link đính kèm (nếu có)
   pageIds: string[];         // Đăng lên các page nào (ID của FacebookPage)
   scheduledAt: string;       // ISO datetime - thời điểm đăng
@@ -289,28 +290,29 @@ export async function publishToFacebook(
 
     // Case 0: Có video đã upload
     const videoId = post.videoIds?.[page.pageId] || post.videoIds?.[page.id];
-    const uploadSessionId = post.uploadSessionIds?.[page.pageId] || post.uploadSessionIds?.[page.id];
-    if (videoId) {
-      // Nếu có upload_session_id: finish phase với published=true (cách đúng nhất)
-      if (uploadSessionId) {
-        const finishRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/videos`, {
+    const videoUrl = post.videoUrls?.[page.pageId] || post.videoUrls?.[page.id];
+    if (videoId || videoUrl) {
+      // Cách đúng: dùng file_url (Cloudinary URL) để đăng video lên Facebook
+      // Giống hệt cách đăng ảnh qua URL
+      const sourceUrl = videoUrl;
+      if (sourceUrl) {
+        const fbVideoRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/videos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            upload_phase: "finish",
-            upload_session_id: uploadSessionId,
-            access_token: page.pageAccessToken,
-            published: true,
+            file_url: sourceUrl,
             description: buildPostMessage(post),
+            published: true,
+            access_token: page.pageAccessToken,
           }),
         });
-        const finishData = await finishRes.json();
-        if (!finishData.error) {
-          return { success: true, postId: finishData.id || videoId };
+        const fbVideoData = await fbVideoRes.json();
+        if (!fbVideoData.error) {
+          return { success: true, postId: fbVideoData.id || videoId };
         }
-        // Nếu finish phase thất bại (session hết hạn), fallback sang update video
+        return { success: false, error: `Video publish failed: ${fbVideoData.error?.message}` };
       }
-      // Fallback: thử POST /{video_id} với published=true
+      // Fallback: nếu không có URL (bài cũ ), thử publish video_id trực tiếp
       const videoUpdateRes = await fetch(`https://graph.facebook.com/v19.0/${videoId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

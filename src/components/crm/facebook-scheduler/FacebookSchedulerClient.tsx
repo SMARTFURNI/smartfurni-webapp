@@ -101,6 +101,7 @@ function PostFormModal({
   // Video upload state
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoIds, setVideoIds] = useState<Record<string, string>>(post?.videoIds ?? {});
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>(post?.videoUrls ?? {});
   const [uploadSessionIds, setUploadSessionIds] = useState<Record<string, string>>(post?.uploadSessionIds ?? {});
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
@@ -166,34 +167,31 @@ function PostFormModal({
 
     // Upload video lên từng page đã chọn
     const newVideoIds: Record<string, string> = {};
+    const newVideoUrls: Record<string, string> = {};
     const newUploadSessionIds: Record<string, string> = {};
     const totalPages = selectedPageIds.length;
     let doneCount = 0;
 
     for (const pageId of selectedPageIds) {
       try {
-        // Đọc file thành ArrayBuffer và gửi raw binary để tránh giới hạn FormData 4MB của Next.js
-        const arrayBuffer = await file.arrayBuffer();
-        const params = new URLSearchParams({
-          pageId,
-          fileName: file.name,
-          fileSize: file.size.toString(),
-        });
+        // Gửi FormData giống hệt cách upload ảnh
+        const fd = new FormData();
+        fd.append("file", file);
+        const params = new URLSearchParams({ pageId });
 
         const res = await fetch(`/api/crm/facebook-scheduler/upload-video?${params}`, {
           method: "POST",
-          headers: { "Content-Type": "application/octet-stream" },
-          body: arrayBuffer,
+          body: fd,
         });
         const data = await res.json();
         if (data.videoId) {
           // Lưu theo cả pageId (DB id) và fbPageId
           newVideoIds[pageId] = data.videoId;
           newVideoIds[data.pageId] = data.videoId;
-          // Lưu upload_session_id để dùng khi publish lịch
-          if (data.uploadSessionId) {
-            newUploadSessionIds[pageId] = data.uploadSessionId;
-            newUploadSessionIds[data.pageId] = data.uploadSessionId;
+          // Lưu Cloudinary URL để dùng khi publish lịch
+          if (data.videoUrl) {
+            newVideoUrls[pageId] = data.videoUrl;
+            newVideoUrls[data.pageId] = data.videoUrl;
           }
         } else {
           setVideoUploadError(data.error || "Upload thất bại");
@@ -210,6 +208,7 @@ function PostFormModal({
     }
 
     setVideoIds(newVideoIds);
+    setVideoUrls(newVideoUrls);
     setUploadSessionIds(newUploadSessionIds);
     setVideoUploadDone(true);
     setUploadingVideo(false);
@@ -229,6 +228,7 @@ function PostFormModal({
         content: content.trim(),
         imageUrls,
         videoIds: Object.keys(videoIds).length > 0 ? videoIds : undefined,
+        videoUrls: Object.keys(videoUrls).length > 0 ? videoUrls : undefined,
         uploadSessionIds: Object.keys(uploadSessionIds).length > 0 ? uploadSessionIds : undefined,
         linkUrl: linkUrl.trim() || undefined,
         pageIds: selectedPageIds,

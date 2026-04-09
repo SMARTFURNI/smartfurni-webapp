@@ -1,28 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { getPages, loadFacebookSchedulerFromDb } from "@/lib/crm-facebook-scheduler-store";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 let loaded = false;
 async function ensureLoaded() {
   if (!loaded) { await loadFacebookSchedulerFromDb(); loaded = true; }
 }
 
-// 5 phút timeout cho upload video lớn
-export const maxDuration = 300;
+// 10 phút timeout cho upload video lớn
+export const maxDuration = 600;
 
 /**
- * POST /api/crm/facebook-scheduler/upload-video?pageId=xxx&fileName=xxx&fileSize=xxx
- * Upload video từ máy tính lên Facebook sử dụng Resumable Upload API
+ * POST /api/crm/facebook-scheduler/upload-video
+ * Upload video từ máy tính lên Cloudinary, rồi đăng lên Facebook qua file_url
  *
- * Body: raw binary video bytes (không dùng FormData để tránh giới hạn 4MB của Next.js)
+ * Body: FormData với field "file" (video file)
  * Query params:
  *   - pageId: string (ID của FacebookPage trong DB)
- *   - fileName: string (tên file gốc)
- *   - fileSize: number (kích thước file bytes)
- *   - publishNow: "true" | "false" (có publish ngay không, mặc định false)
- *   - description: string (nội dung bài đăng, dùng khi publishNow=true)
  *
- * Response: { videoId: string, pageId: string, published: boolean }
+ * Response: { videoId: string, videoUrl: string, pageId: string }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -36,28 +39,9 @@ export async function POST(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const pageId = searchParams.get("pageId");
-    const fileName = searchParams.get("fileName") || "video.mp4";
-    const fileSizeParam = searchParams.get("fileSize");
-    const publishNow = searchParams.get("publishNow") === "true";
-    const description = searchParams.get("description") || "";
 
     if (!pageId) {
       return NextResponse.json({ error: "Thiếu pageId" }, { status: 400 });
-    }
-
-    if (!fileSizeParam) {
-      return NextResponse.json({ error: "Thiếu fileSize" }, { status: 400 });
-    }
-
-    const fileSize = parseInt(fileSizeParam);
-    if (isNaN(fileSize) || fileSize <= 0) {
-      return NextResponse.json({ error: "fileSize không hợp lệ" }, { status: 400 });
-    }
-
-    // Validate file size (tối đa 200MB)
-    const maxSize = 200 * 1024 * 1024;
-    if (fileSize > maxSize) {
-      return NextResponse.json({ error: "Video quá lớn. Tối đa 200MB" }, { status: 400 });
     }
 
     // Tìm page access token
@@ -70,118 +54,72 @@ export async function POST(request: NextRequest) {
     const accessToken = page.pageAccessToken;
     const fbPageId = page.pageId;
 
-    // Đọc raw binary từ request body (không bị giới hạn 4MB như FormData)
-    const videoArrayBuffer = await request.arrayBuffer();
-    if (!videoArrayBuffer || videoArrayBuffer.byteLength === 0) {
-      return NextResponse.json({ error: "Không nhận được dữ liệu video" }, { status: 400 });
+    // Đọc FormData
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+
+    if (!file) {
+      return NextResponse.json({ error: "Không nhận được file video" }, { status: 400 });
     }
 
-    const actualSize = videoArrayBuffer.byteLength;
+    // Validate file size (tối đa 200MB)
+    const maxSize = 200 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return NextResponse.json({ error: "Video quá lớn. Tối đa 200MB" }, { status: 400 });
+    }
 
-    // ─── Bước 1: Khởi tạo Resumable Upload Session ───────────────────────────
-    const initRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/videos`, {
+    // ─── Bước 1: Upload lên Cloudinary ───────────────────────────────────────
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const uploadResult = await new Promise<{ secure_url: string; public_id: string; duration?: number }>(
+      (resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "smartfurni/facebook-videos",
+            resource_type: "video",
+            // Không transform, giữ nguyên chất lượng
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result as { secure_url: string; public_id: string; duration?: number });
+          }
+        );
+        uploadStream.end(buffer);
+      }
+    );
+
+    const videoUrl = uploadResult.secure_url;
+
+    // ─── Bước 2: Đăng video lên Facebook qua file_url ────────────────────────
+    // Giống hệt cách đăng ảnh: Facebook tải video từ URL Cloudinary
+    const fbRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/videos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        upload_phase: "start",
-        file_size: actualSize,
+        file_url: videoUrl,
+        published: false, // Không publish ngay, chờ đến giờ đăng
         access_token: accessToken,
       }),
     });
 
-    const initData = await initRes.json();
-    if (initData.error || !initData.upload_session_id) {
-      console.error("FB video upload init error:", initData);
+    const fbData = await fbRes.json();
+    if (fbData.error || !fbData.id) {
+      console.error("FB video upload via URL error:", fbData);
       return NextResponse.json(
-        { error: `Không thể khởi tạo upload: ${initData.error?.message || "Unknown error"}` },
+        { error: `Không thể upload video lên Facebook: ${fbData.error?.message || "Unknown error"}` },
         { status: 500 }
       );
     }
 
-    const { upload_session_id, start_offset, end_offset } = initData;
-    // video_id được trả về từ init phase
-    const videoIdFromInit = initData.video_id as string;
-
-    // ─── Bước 2: Upload video theo chunks ────────────────────────────────────
-    let currentStart = parseInt(start_offset);
-    let currentEnd = parseInt(end_offset);
-
-    while (currentStart < actualSize) {
-      const chunk = videoArrayBuffer.slice(currentStart, currentEnd);
-      const chunkBlob = new Blob([chunk], { type: "application/octet-stream" });
-
-      const chunkFormData = new FormData();
-      chunkFormData.append("upload_phase", "transfer");
-      chunkFormData.append("upload_session_id", upload_session_id);
-      chunkFormData.append("start_offset", currentStart.toString());
-      chunkFormData.append("video_file_chunk", chunkBlob, "chunk");
-      chunkFormData.append("access_token", accessToken);
-
-      const chunkRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/videos`, {
-        method: "POST",
-        body: chunkFormData,
-      });
-
-      const chunkData = await chunkRes.json();
-      if (chunkData.error) {
-        console.error("FB video chunk upload error:", chunkData);
-        return NextResponse.json(
-          { error: `Upload chunk thất bại: ${chunkData.error?.message || "Unknown error"}` },
-          { status: 500 }
-        );
-      }
-
-      // Cập nhật offset cho chunk tiếp theo
-      currentStart = parseInt(chunkData.start_offset);
-      currentEnd = parseInt(chunkData.end_offset);
-
-      if (currentStart >= actualSize) break;
-    }
-
-    // ─── Bước 3: Hoàn tất upload (finish phase) ──────────────────────────────
-    // Nếu publishNow=true: publish ngay với description trong finish phase
-    // Nếu publishNow=false: chỉ upload, không publish (dùng cho đăng lịch)
-    const finishBody: Record<string, unknown> = {
-      upload_phase: "finish",
-      upload_session_id,
-      access_token: accessToken,
-      published: publishNow,
-      title: fileName.replace(/\.[^.]+$/, ""),
-    };
-
-    if (publishNow && description) {
-      finishBody.description = description;
-    }
-
-    const finishRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/videos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(finishBody),
-    });
-
-    const finishData = await finishRes.json();
-    if (finishData.error) {
-      console.error("FB video upload finish error:", finishData);
-      return NextResponse.json(
-        { error: `Hoàn tất upload thất bại: ${finishData.error?.message || "Unknown error"}` },
-        { status: 500 }
-      );
-    }
-
-    // Facebook trả về { success: true } ở finish phase
-    // video_id đã có từ init phase
-    const videoId = finishData.video_id || finishData.id || videoIdFromInit;
-    if (!videoId) {
-      return NextResponse.json({ error: "Không nhận được video ID từ Facebook" }, { status: 500 });
-    }
+    const videoId = fbData.id;
 
     return NextResponse.json({
       videoId,
-      uploadSessionId: publishNow ? undefined : upload_session_id, // trả về session_id để dùng khi publish lịch
+      videoUrl, // URL Cloudinary (để hiển thị preview)
       pageId: fbPageId,
-      fileName,
-      fileSizeMB: (actualSize / 1024 / 1024).toFixed(1),
-      published: publishNow,
+      fileName: file.name,
+      fileSizeMB: (file.size / 1024 / 1024).toFixed(1),
     });
 
   } catch (error) {
