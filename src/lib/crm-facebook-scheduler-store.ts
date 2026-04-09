@@ -25,6 +25,7 @@ export interface ScheduledPost {
   title: string;
   content: string;
   imageUrls: string[];       // Danh sách URL ảnh đính kèm
+  videoIds?: Record<string, string>; // pageId -> Facebook video_id (đã upload)
   linkUrl?: string;          // Link đính kèm (nếu có)
   pageIds: string[];         // Đăng lên các page nào (ID của FacebookPage)
   scheduledAt: string;       // ISO datetime - thời điểm đăng
@@ -285,6 +286,40 @@ export async function publishToFacebook(
       body.link = post.linkUrl;
     }
 
+    // Case 0: Có video đã upload → publish video lên feed
+    const videoId = post.videoIds?.[page.pageId] || post.videoIds?.[page.id];
+    if (videoId) {
+      // Publish video đã upload (set published = true)
+      const videoPublishRes = await fetch(`https://graph.facebook.com/v19.0/${videoId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          published: true,
+          description: buildPostMessage(post),
+          access_token: page.pageAccessToken,
+        }),
+      });
+      const videoPublishData = await videoPublishRes.json();
+      if (videoPublishData.error) {
+        // Fallback: thử post lên /feed với video_id
+        const feedRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/feed`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: buildPostMessage(post),
+            object_attachment: videoId,
+            access_token: page.pageAccessToken,
+          }),
+        });
+        const feedData = await feedRes.json();
+        if (feedData.error) {
+          return { success: false, error: `Video publish failed: ${feedData.error?.message || videoPublishData.error?.message}` };
+        }
+        return { success: true, postId: feedData.id };
+      }
+      return { success: true, postId: videoPublishData.id || videoId };
+    }
+
     // Case 1: Không có ảnh → dùng /feed thông thường
     if (post.imageUrls.length === 0) {
       const response = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/feed`, {
@@ -404,6 +439,7 @@ export async function scheduleNextRepeat(post: ScheduledPost): Promise<void> {
     title: post.title,
     content: post.content,
     imageUrls: post.imageUrls,
+    videoIds: post.videoIds,
     linkUrl: post.linkUrl,
     pageIds: post.pageIds,
     scheduledAt: nextDate.toISOString(),

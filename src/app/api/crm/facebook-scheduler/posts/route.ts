@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   await ensureLoaded();
   const body = await req.json();
   const {
-    title, content, imageUrls = [], linkUrl, pageIds,
+    title, content, imageUrls = [], videoIds, linkUrl, pageIds,
     scheduledAt, repeatType = "none", repeatDays, repeatEndDate,
     tags = [], hashtags = [],
   } = body;
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     title,
     content,
     imageUrls,
+    videoIds,
     linkUrl,
     pageIds,
     scheduledAt,

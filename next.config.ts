@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
       dynamic: 0,
       static: 0,
     },
+    // Tăng giới hạn body size cho upload video 200MB
+    serverActions: {
+      bodySizeLimit: "250mb",
+    },
   },
   // Externalize server-only packages (mysql2, pg, googleapis) from server bundle
   serverExternalPackages: ["mysql2", "pg", "pg-native", "googleapis", "google-auth-library", "zca-js", "sharp"],

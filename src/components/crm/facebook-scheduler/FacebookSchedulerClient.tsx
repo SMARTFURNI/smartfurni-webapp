@@ -5,6 +5,7 @@ import {
   CheckCircle2, AlertCircle, RefreshCw, Settings, BarChart2,
   Image, Link, Hash, ChevronDown, ChevronUp, Eye, Repeat,
   Play, Pause, FileText, Activity, X, Save, ExternalLink,
+  Video, Upload, CheckCircle,
 } from "lucide-react";
 import type {
   ScheduledPost, FacebookPage, PostLog, PostStatus, RepeatType,
@@ -97,6 +98,13 @@ function PostFormModal({
   const [hashtags, setHashtags] = useState(post?.hashtags?.join(" ") ?? "");
   const [saving, setSaving] = useState(false);
   const [charCount, setCharCount] = useState(content.length);
+  // Video upload state
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoIds, setVideoIds] = useState<Record<string, string>>(post?.videoIds ?? {});
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+  const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
+  const [videoUploadDone, setVideoUploadDone] = useState(Object.keys(post?.videoIds ?? {}).length > 0);
 
   const handleContentChange = (v: string) => {
     setContent(v);
@@ -143,6 +151,57 @@ function PostFormModal({
     setUploadingImages(false);
   };
 
+  const handleVideoUpload = async (file: File) => {
+    if (!file) return;
+    if (selectedPageIds.length === 0) {
+      setVideoUploadError("Vui lòng chọn Fanpage trước khi upload video");
+      return;
+    }
+    setVideoFile(file);
+    setUploadingVideo(true);
+    setVideoUploadError(null);
+    setVideoUploadDone(false);
+    setVideoUploadProgress(0);
+
+    // Upload video lên từng page đã chọn
+    const newVideoIds: Record<string, string> = {};
+    const totalPages = selectedPageIds.length;
+    let doneCount = 0;
+
+    for (const pageId of selectedPageIds) {
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("pageId", pageId);
+
+        const res = await fetch("/api/crm/facebook-scheduler/upload-video", {
+          method: "POST",
+          body: fd,
+        });
+        const data = await res.json();
+        if (data.videoId) {
+          // Lưu theo cả pageId (DB id) và fbPageId
+          newVideoIds[pageId] = data.videoId;
+          newVideoIds[data.pageId] = data.videoId;
+        } else {
+          setVideoUploadError(data.error || "Upload thất bại");
+          setUploadingVideo(false);
+          return;
+        }
+      } catch {
+        setVideoUploadError("Lỗi kết nối khi upload video");
+        setUploadingVideo(false);
+        return;
+      }
+      doneCount++;
+      setVideoUploadProgress(Math.round((doneCount / totalPages) * 100));
+    }
+
+    setVideoIds(newVideoIds);
+    setVideoUploadDone(true);
+    setUploadingVideo(false);
+  };
+
   const handleSubmit = async () => {
     if (!title.trim()) return alert("Vui lòng nhập tiêu đề bài");
     if (!content.trim()) return alert("Vui lòng nhập nội dung bài");
@@ -156,6 +215,7 @@ function PostFormModal({
         title: title.trim(),
         content: content.trim(),
         imageUrls,
+        videoIds: Object.keys(videoIds).length > 0 ? videoIds : undefined,
         linkUrl: linkUrl.trim() || undefined,
         pageIds: selectedPageIds,
         scheduledAt: new Date(scheduledAt).toISOString(),
@@ -346,6 +406,74 @@ function PostFormModal({
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Video đính kèm */}
+          <div>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
+              <Video size={12} className="inline mr-1" />
+              Video đính kèm (tuỳ chọn · tối đa 200MB)
+            </label>
+            {videoUploadDone ? (
+              <div className="flex items-center gap-3 rounded-lg px-4 py-3"
+                style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                <CheckCircle size={18} style={{ color: "#16a34a", flexShrink: 0 }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold" style={{ color: "#15803d" }}>Video đã upload thành công!</p>
+                  <p className="text-xs truncate" style={{ color: "#4ade80" }}>{videoFile?.name ?? "Video đã upload"}</p>
+                </div>
+                <button
+                  onClick={() => { setVideoIds({}); setVideoFile(null); setVideoUploadDone(false); }}
+                  className="text-xs px-2 py-1 rounded" style={{ color: "#dc2626", background: "#fee2e2" }}>
+                  Xoá
+                </button>
+              </div>
+            ) : (
+              <label
+                className="flex flex-col items-center justify-center w-full rounded-lg cursor-pointer transition-colors"
+                style={{
+                  border: `2px dashed ${uploadingVideo ? "#2563eb" : "#d1d5db"}`,
+                  background: uploadingVideo ? "#eff6ff" : "#fafafa",
+                  padding: "16px 12px",
+                  minHeight: 72,
+                  cursor: uploadingVideo ? "not-allowed" : "pointer",
+                }}
+              >
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/x-msvideo,video/mpeg,video/webm,.mp4,.mov,.avi,.mpeg,.webm"
+                  className="hidden"
+                  disabled={uploadingVideo}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleVideoUpload(f); }}
+                />
+                {uploadingVideo ? (
+                  <div className="flex flex-col items-center gap-2 w-full">
+                    <div className="flex items-center gap-2 text-xs" style={{ color: "#2563eb" }}>
+                      <Upload size={14} className="animate-bounce" />
+                      <span>Đang upload video lên Facebook... {videoUploadProgress}%</span>
+                    </div>
+                    <div className="w-full rounded-full" style={{ height: 6, background: "#e5e7eb" }}>
+                      <div
+                        className="rounded-full transition-all"
+                        style={{ height: 6, width: `${videoUploadProgress}%`, background: "#2563eb" }}
+                      />
+                    </div>
+                    <p className="text-xs" style={{ color: "#9ca3af" }}>Có thể mất vài phút với video lớn. Vui lòng không đóng trang.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "#374151" }}>
+                      <Video size={16} style={{ color: "#6b7280" }} />
+                      <span>Nhấn để chọn video từ máy tính</span>
+                    </div>
+                    <span className="text-xs" style={{ color: "#9ca3af" }}>MP4, MOV, AVI, WebM · Tối đa 200MB</span>
+                  </div>
+                )}
+              </label>
+            )}
+            {videoUploadError && (
+              <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{videoUploadError}</p>
             )}
           </div>
 
