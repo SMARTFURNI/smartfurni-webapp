@@ -64,6 +64,7 @@ export default function PriceListClient({ products }: Props) {
   );
   const [printFilter, setPrintFilter] = useState<PrintFilter>("all");
   const [showPrintMenu, setShowPrintMenu] = useState(false);
+  const [pendingPrint, setPendingPrint] = useState(false);
 
   const activeProducts = products.filter(p => p.isActive);
 
@@ -102,17 +103,21 @@ export default function PriceListClient({ products }: Props) {
     setExpandedProducts(new Set());
   };
 
-  // Hàm in: set filter → mở rộng tất cả → print → restore
+  // Trigger print sau khi state cập nhật
+  useEffect(() => {
+    if (pendingPrint) {
+      setPendingPrint(false);
+      window.print();
+    }
+  }, [pendingPrint, expandedProducts]);
+
   const handlePrint = (filter: PrintFilter) => {
     setPrintFilter(filter);
     setShowPrintMenu(false);
     // Mở rộng tất cả sản phẩm trước khi in
     setExpandedProducts(new Set(activeProducts.map(p => p.id)));
     setExpandedCategories(new Set(Object.keys(grouped)));
-    // Đợi state cập nhật rồi mới print
-    setTimeout(() => {
-      window.print();
-    }, 300);
+    setPendingPrint(true);
   };
 
   const today = new Date().toLocaleDateString("vi-VN", {
@@ -134,16 +139,14 @@ export default function PriceListClient({ products }: Props) {
       {/* ── Global Print Styles ── */}
       <style>{`
         @media print {
-          /* Ẩn toàn bộ layout CRM (sidebar, header ngoài) */
-          body > * { display: none !important; }
-          #price-list-print-root { display: block !important; }
-
-          /* Reset page */
           @page { margin: 15mm 12mm; size: A4 portrait; }
           html, body { background: white !important; color: #111 !important; }
 
-          /* Ẩn các element không cần in */
+          /* Ẩn sidebar và các element không cần in */
           .no-print { display: none !important; }
+          aside { display: none !important; }
+          nav { display: none !important; }
+          [data-sidebar] { display: none !important; }
 
           /* Card in */
           .print-card {
@@ -153,47 +156,8 @@ export default function PriceListClient({ products }: Props) {
             page-break-inside: avoid;
             margin-bottom: 12px;
           }
-
-          /* Category header in */
-          .print-cat-header {
-            break-before: auto;
-            page-break-before: auto;
-          }
-
-          /* Ảnh sản phẩm khi in */
-          .print-product-img {
-            background: #eee !important;
-          }
-
-          /* Text màu khi in */
-          .print-gold { color: #9A7A2E !important; }
-          .print-purple { color: #6d28d9 !important; }
-          .print-blue { color: #1d4ed8 !important; }
-          .print-text-primary { color: #111 !important; }
-          .print-text-secondary { color: #444 !important; }
-          .print-text-muted { color: #888 !important; }
-          .print-border { border-color: #ddd !important; }
-          .print-bg-light { background: #f5f5f5 !important; }
-          .print-table-row-even { background: #fafafa !important; }
-        }
-
-        /* Ẩn root khi không in */
-        #price-list-print-root { display: none; }
-        @media print {
-          #price-list-print-root { display: block !important; }
         }
       `}</style>
-
-      {/* ── Hidden Print Root (chỉ hiển thị khi in, không bị ảnh hưởng bởi sidebar) ── */}
-      <div id="price-list-print-root">
-        <PrintDocument
-          products={activeProducts}
-          grouped={grouped}
-          printCategories={printCategories}
-          printLabel={printLabel}
-          today={today}
-        />
-      </div>
 
       {/* ── Header ── */}
       <div className="no-print flex-shrink-0 px-6 py-4 flex items-center justify-between gap-4"
