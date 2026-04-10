@@ -104,11 +104,12 @@ export default function PriceListClient({ products }: Props) {
   };
 
   const handlePrint = (filter: PrintFilter) => {
-    setPrintFilter(filter);
     setShowPrintMenu(false);
-    setExpandedProducts(new Set(activeProducts.map(p => p.id)));
-    setExpandedCategories(new Set(Object.keys(grouped)));
-    setTimeout(() => window.print(), 400);
+    // Mở tab mới chứa trang in thuần (không có sidebar)
+    const url = filter === "all"
+      ? "/price-list-print"
+      : `/price-list-print?category=${filter}`;
+    window.open(url, "_blank");
   };
 
   const today = new Date().toLocaleDateString("vi-VN", {
