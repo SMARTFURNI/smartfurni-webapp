@@ -128,15 +128,16 @@ export default function PriceListClient({ products }: Props) {
           [data-sidebar] { display: none !important; }
           header { display: none !important; }
 
-          /* Đảm bảo content area chiếm toàn bộ trang */
-          body > * { margin: 0 !important; }
+          /* Ẩn phần xem thường, hiện phần in */
           .print-area {
+            display: block !important;
             position: fixed !important;
             top: 0 !important; left: 0 !important;
             width: 100% !important;
             background: white !important;
             color: #111 !important;
             z-index: 9999 !important;
+            overflow: visible !important;
           }
 
           /* Card in */
@@ -305,15 +306,21 @@ export default function PriceListClient({ products }: Props) {
         </div>
       </div>
 
-      {/* Click outside to close print menu */}
-      {showPrintMenu && (
-        <div className="fixed inset-0 z-40" onClick={() => setShowPrintMenu(false)} />
-      )}
+      {/* ── Print Document (chỉ hiện khi in) ── */}
+      <div className="print-area" style={{ display: "none" }}>
+        <PrintDocument
+          products={activeProducts}
+          grouped={grouped}
+          printCategories={printCategories}
+          printLabel="Tất cả sản phẩm"
+          today={today}
+        />
+      </div>
     </div>
   );
 }
 
-// ─── Print Document (render riêng, chỉ hiện khi in) ───────────────────────────
+// ─── Print Document (render riêng, chỉ hiện khi in) ─────────────────────────────────────────────────────
 function PrintDocument({
   products,
   grouped,
