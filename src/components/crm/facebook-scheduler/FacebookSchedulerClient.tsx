@@ -128,6 +128,80 @@ function PostFormModal({
     }
   };
 
+  // Upload video trực tiếp từ browser lên Facebook theo chunks (tránh Next.js body size limit)
+  const uploadVideoDirectToFacebook = async (
+    file: File,
+    fbPageId: string,
+    accessToken: string,
+    description: string,
+    onProgress: (msg: string) => void
+  ): Promise<string> => {
+    const fileSize = file.size;
+
+    // Bước 1: Khởi tạo upload session
+    onProgress(`Khởi tạo upload session...`);
+    const initRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/videos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ upload_phase: "start", file_size: fileSize, access_token: accessToken }),
+    });
+    const initData = await initRes.json();
+    if (initData.error || !initData.upload_session_id) {
+      throw new Error(`Khởi tạo upload thất bại: ${initData.error?.message || JSON.stringify(initData)}`);
+    }
+    const { upload_session_id, video_id: videoIdFromInit } = initData;
+    let currentStart = parseInt(initData.start_offset);
+    let currentEnd = parseInt(initData.end_offset);
+
+    // Bước 2: Upload từng chunk
+    let chunkNum = 0;
+    while (currentStart < fileSize) {
+      chunkNum++;
+      const chunkBlob = file.slice(currentStart, currentEnd);
+      const pct = Math.round(currentStart / fileSize * 100);
+      onProgress(`Đang upload video... ${pct}% (chunk ${chunkNum})`);
+
+      const chunkFormData = new FormData();
+      chunkFormData.append("upload_phase", "transfer");
+      chunkFormData.append("upload_session_id", upload_session_id);
+      chunkFormData.append("start_offset", currentStart.toString());
+      chunkFormData.append("video_file_chunk", chunkBlob, "chunk");
+      chunkFormData.append("access_token", accessToken);
+
+      const chunkRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/videos`, {
+        method: "POST",
+        body: chunkFormData,
+      });
+      const chunkData = await chunkRes.json();
+      if (chunkData.error) {
+        throw new Error(`Upload chunk ${chunkNum} thất bại: ${chunkData.error?.message || JSON.stringify(chunkData)}`);
+      }
+      currentStart = parseInt(chunkData.start_offset);
+      currentEnd = parseInt(chunkData.end_offset);
+      if (currentStart >= fileSize) break;
+    }
+
+    // Bước 3: Finish
+    onProgress(`Đang hoàn tất upload video...`);
+    const finishRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/videos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        upload_phase: "finish",
+        upload_session_id,
+        access_token: accessToken,
+        published: true,
+        description: description || file.name.replace(/\.[^.]+$/, ""),
+        title: file.name.replace(/\.[^.]+$/, ""),
+      }),
+    });
+    const finishData = await finishRes.json();
+    if (finishData.error) {
+      throw new Error(`Hoàn tất upload thất bại: ${finishData.error?.message || JSON.stringify(finishData)}`);
+    }
+    return finishData.id || finishData.video_id || videoIdFromInit;
+  };
+
   const handleSubmit = async () => {
     if (!content.trim()) return alert("Vui lòng nhập nội dung bài đăng");
     if (selectedPageIds.length === 0) return alert("Vui lòng chọn ít nhất 1 Fanpage");
@@ -136,29 +210,39 @@ function PostFormModal({
     setPublishResult(null);
     setUploadProgress(null);
     try {
-      // ─── Bước 1: Upload video (nếu có) qua raw binary route ───────────
-      // Dùng raw binary thay vì FormData để tránh timeout và memory issues
+      // ─── Bước 1: Upload video trực tiếp từ browser lên Facebook ──────
+      // Browser tự chia chunks và upload trực tiếp, không qua server
       const videoIds: Record<string, string> = {}; // pageId -> videoId
       if (videoFile) {
         for (const pageId of selectedPageIds) {
           const pageName = pages.find(p => p.id === pageId)?.pageName || pageId;
-          setUploadProgress(`Đang upload video lên ${pageName}... (có thể mất vài phút)`);
-          const uploadRes = await fetch(
-            `/api/crm/facebook-scheduler/upload-video?pageId=${encodeURIComponent(pageId)}&fileName=${encodeURIComponent(videoFile.name)}&description=${encodeURIComponent(content.trim())}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/octet-stream" },
-              body: videoFile,
-            }
-          );
-          const uploadData = await uploadRes.json();
-          if (!uploadRes.ok || uploadData.error) {
-            setPublishResult({ ok: false, results: [{ pageName, success: false, error: uploadData.error || "Upload video thất bại" }] });
+          setUploadProgress(`Đang chuẩn bị upload video lên ${pageName}...`);
+
+          // Lấy access token từ server (an toàn)
+          const tokenRes = await fetch(`/api/crm/facebook-scheduler/get-page-token?pageId=${encodeURIComponent(pageId)}`);
+          const tokenData = await tokenRes.json();
+          if (!tokenRes.ok || tokenData.error) {
+            setPublishResult({ ok: false, results: [{ pageName, success: false, error: tokenData.error || "Không lấy được token" }] });
             setSaving(false);
             setUploadProgress(null);
             return;
           }
-          videoIds[pageId] = uploadData.videoId;
+
+          try {
+            const videoId = await uploadVideoDirectToFacebook(
+              videoFile,
+              tokenData.fbPageId,
+              tokenData.accessToken,
+              content.trim(),
+              (msg) => setUploadProgress(`[${pageName}] ${msg}`)
+            );
+            videoIds[pageId] = videoId;
+          } catch (uploadErr) {
+            setPublishResult({ ok: false, results: [{ pageName, success: false, error: (uploadErr as Error).message }] });
+            setSaving(false);
+            setUploadProgress(null);
+            return;
+          }
         }
         setUploadProgress("Đã upload video xong, đang lưu log...");
       }
