@@ -200,10 +200,13 @@ export default function PriceListClient({ products }: Props) {
                   Chọn danh mục xuất
                 </div>
                 {/* Tất cả */}
-                <button
-                  onClick={() => handlePrint("all")}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
-                  style={{ borderBottom: `1px solid ${D.divider}` }}>
+                <a
+                  href="/price-list-print"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setShowPrintMenu(false)}
+                  className="flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/5"
+                  style={{ borderBottom: `1px solid ${D.divider}`, textDecoration: "none" }}>
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
                     style={{ background: D.goldDim }}>
                     📋
@@ -212,18 +215,21 @@ export default function PriceListClient({ products }: Props) {
                     <div className="text-sm font-semibold" style={{ color: D.textPrimary }}>Tất cả sản phẩm</div>
                     <div className="text-xs" style={{ color: D.textMuted }}>{activeProducts.length} sản phẩm · 2 danh mục</div>
                   </div>
-                </button>
+                </a>
                 {/* Từng danh mục */}
                 {categoryOrder.map(cat => {
                   const cfg = CATEGORY_CONFIG[cat];
                   const count = grouped[cat]?.length ?? 0;
                   if (!count) return null;
                   return (
-                    <button
+                    <a
                       key={cat}
-                      onClick={() => handlePrint(cat)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
-                      style={{ borderBottom: `1px solid ${D.divider}` }}>
+                      href={`/price-list-print?category=${cat}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowPrintMenu(false)}
+                      className="flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/5"
+                      style={{ borderBottom: `1px solid ${D.divider}`, textDecoration: "none" }}>
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
                         style={{ background: cfg.dim }}>
                         {cfg.icon}
@@ -232,7 +238,7 @@ export default function PriceListClient({ products }: Props) {
                         <div className="text-sm font-semibold" style={{ color: cfg.color }}>{cfg.label}</div>
                         <div className="text-xs" style={{ color: D.textMuted }}>{count} sản phẩm</div>
                       </div>
-                    </button>
+                    </a>
                   );
                 })}
               </div>
