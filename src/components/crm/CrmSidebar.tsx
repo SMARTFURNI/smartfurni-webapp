@@ -241,7 +241,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
 
   return (
     <aside
-      className="flex flex-col h-full transition-all duration-300 flex-shrink-0 relative select-none"
+      className="no-print flex flex-col h-full transition-all duration-300 flex-shrink-0 relative select-none"
       style={{
         width: collapsed ? "60px" : "220px",
         background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",

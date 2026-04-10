@@ -30,19 +30,31 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="crm-root flex h-screen overflow-hidden" style={{ background: "#0D0D0F" }}>
-      <CrmSidebar
-        isAdmin={session.isAdmin}
-        staffRole={staffRole}
-        staffName={staffName}
-        rolePermissions={rolePermissions}
-        roleName={roleName}
-      />
-      <main className="flex-1 overflow-auto min-w-0" style={{ background: "inherit" }}>
-        {children}
-      </main>
-      {/* Real-time notification khi có lead mới vào Data Pool */}
-      <DataPoolNotification />
-    </div>
+    <>
+      {/* Global print CSS — ẩn sidebar, fix layout khi in */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          .crm-root { display: block !important; height: auto !important; overflow: visible !important; }
+          .crm-root > aside { display: none !important; }
+          .crm-root > main { width: 100% !important; overflow: visible !important; height: auto !important; }
+          body, html { overflow: visible !important; height: auto !important; background: #fff !important; }
+        }
+      `}</style>
+      <div className="crm-root flex h-screen overflow-hidden" style={{ background: "#0D0D0F" }}>
+        <CrmSidebar
+          isAdmin={session.isAdmin}
+          staffRole={staffRole}
+          staffName={staffName}
+          rolePermissions={rolePermissions}
+          roleName={roleName}
+        />
+        <main className="flex-1 overflow-auto min-w-0" style={{ background: "inherit" }}>
+          {children}
+        </main>
+        {/* Real-time notification khi có lead mới vào Data Pool */}
+        <DataPoolNotification />
+      </div>
+    </>
   );
 }

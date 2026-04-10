@@ -159,6 +159,17 @@ export default function PriceListClient({ products }: Props) {
           /* Footer */
           .print-footer { background: #fef9ec !important; border: 1px solid #fbbf24 !important; }
           .print-footer * { color: #78350f !important; }
+
+          /* Print-only elements: hiện khi in */
+          .print-header-section { display: block !important; }
+          .print-header-section * { color: #ffffff !important; }
+          .print-cat-header { display: flex !important; }
+
+          /* Ẩn nút toggle category (button) khi in */
+          button.no-print { display: none !important; }
+
+          /* Đảm bảo tất cả sản phẩm hiện ra (không bị ẩn bởi isExpanded) */
+          .print-section > div:last-child { display: block !important; }
         }
       `}</style>
 
@@ -203,7 +214,7 @@ export default function PriceListClient({ products }: Props) {
       </div>
 
       {/* ── Print Header (chỉ hiện khi in) ── */}
-      <div className="hidden print:block print-header p-8 text-center" style={{ background: "#1a1a2e" }}>
+      <div className="print-header-section p-8 text-center" style={{ background: "#1a1a2e", display: "none" }}>
         <div className="text-3xl font-black text-white mb-1">SMARTFURNI</div>
         <div className="text-lg font-semibold" style={{ color: D.gold }}>BẢNG BÁO GIÁ SẢN PHẨM</div>
         <div className="text-sm text-gray-300 mt-1">Ngày: {today} · Giá chưa bao gồm VAT · Liên hệ để được báo giá tốt nhất</div>
@@ -270,8 +281,8 @@ export default function PriceListClient({ products }: Props) {
               </button>
 
               {/* Print-only category header */}
-              <div className="hidden print:flex items-center gap-3 mb-4 pb-2"
-                style={{ borderBottom: `2px solid ${cfg.color}` }}>
+              <div className="print-cat-header flex items-center gap-3 mb-4 pb-2"
+                style={{ borderBottom: `2px solid ${cfg.color}`, display: "none" }}>
                 <span className="text-2xl">{cfg.icon}</span>
                 <div>
                   <div className="text-xl font-bold" style={{ color: cfg.color }}>{cfg.label}</div>
