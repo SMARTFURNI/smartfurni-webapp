@@ -35,6 +35,7 @@ import {
   Share2,
   Clapperboard,
   Tag,
+  BookOpen,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { RolePermissions } from "@/lib/crm-roles-store";
@@ -101,6 +102,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Danh mục SP", href: "/crm/products", icon: Package },
       { label: "Bảng báo giá", href: "/crm/price-list", icon: Tag },
+      { label: "Catalogue", href: "/crm/catalogue", icon: BookOpen },
     ],
   },
   {
