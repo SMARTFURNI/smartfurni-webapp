@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { loadFacebookSchedulerFromDb, getPages, addPostLog, createPost, updatePost } from "@/lib/crm-facebook-scheduler-store";
-import { v2 as cloudinary } from "cloudinary";
 
-// Tăng timeout cho upload ảnh lớn (600 giây = 10 phút)
-export const maxDuration = 600;
+export const maxDuration = 120;
 export const dynamic = "force-dynamic";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 let loaded = false;
 async function ensureLoaded() {
@@ -20,22 +12,16 @@ async function ensureLoaded() {
 
 /**
  * POST /api/crm/facebook-scheduler/publish-direct
- * Đăng bài lên Facebook ngay lập tức (không cần lên lịch)
+ * Đăng bài lên Facebook ngay lập tức
  *
  * Nhận FormData:
- * - content: string (nội dung bài đăng)
- * - hashtags: string (hashtags cách nhau bằng dấu cách)
- * - pageIds: string (JSON array các page ID)
+ * - content: string
+ * - hashtags: string
+ * - pageIds: string (JSON array)
  * - linkUrl?: string
- * - images?: File[] (ảnh đính kèm từ file - upload lên Cloudinary)
+ * - videoIds?: string (JSON object: { pageId -> videoId } - video đã upload từ browser)
+ * - photoIds?: string (JSON object: { pageId -> photoId[] } - ảnh đã upload từ browser)
  * - imageUrls?: string[] (URL ảnh đính kèm trực tiếp)
- * - videoIds?: string (JSON object: { pageId -> videoId } - video đã upload qua upload-video route)
- *
- * Luồng:
- * 1. Nếu có videoIds → video đã upload trước, chỉ cần lưu log
- * 2. Nếu có ảnh file → upload lên Cloudinary → lấy URL → đăng lên /photos
- * 3. Nếu chỉ có text → đăng lên /feed
- * 4. Lưu log vào DB
  */
 export async function POST(request: NextRequest) {
   try {
@@ -53,11 +39,20 @@ export async function POST(request: NextRequest) {
     const linkUrl = (formData.get("linkUrl") as string) || "";
     const title = (formData.get("title") as string) || content.slice(0, 50) || "Bài đăng";
 
-    // Parse videoIds (video đã được upload trước qua upload-video route)
+    // videoIds: { pageId -> videoId } - video đã upload từ browser
     const videoIdsRaw = (formData.get("videoIds") as string) || "{}";
     let videoIds: Record<string, string> = {};
     try { videoIds = JSON.parse(videoIdsRaw); } catch { videoIds = {}; }
     const hasVideo = Object.keys(videoIds).length > 0;
+
+    // photoIds: { pageId -> photoId[] } - ảnh đã upload từ browser trực tiếp lên Facebook
+    const photoIdsRaw = (formData.get("photoIds") as string) || "{}";
+    let photoIds: Record<string, string[]> = {};
+    try { photoIds = JSON.parse(photoIdsRaw); } catch { photoIds = {}; }
+
+    // imageUrls: URL ảnh trực tiếp (không phải file)
+    const clientImageUrls = formData.getAll("imageUrls") as string[];
+    const imageUrls: string[] = clientImageUrls.filter(u => u && u.startsWith("http"));
 
     let pageIds: string[] = [];
     try { pageIds = JSON.parse(pageIdsRaw); } catch { pageIds = []; }
@@ -70,34 +65,9 @@ export async function POST(request: NextRequest) {
     }
 
     const pages = getPages();
-
-    // Xây dựng message đầy đủ
     const hashtagList = hashtags.split(/\s+/).filter(h => h.trim()).map(h => h.startsWith("#") ? h : `#${h}`);
     const fullMessage = [content.trim(), hashtagList.join(" ")].filter(Boolean).join("\n\n");
 
-    // ─── Xử lý ảnh (nếu có) ───────────────────────────────────────────────
-    const imageFiles = formData.getAll("images") as File[];
-    const clientImageUrls = formData.getAll("imageUrls") as string[];
-    const imageUrls: string[] = [...clientImageUrls.filter(u => u && u.startsWith("http"))];
-
-    for (const imageFile of imageFiles) {
-      if (!imageFile || !imageFile.size) continue;
-      const bytes = await imageFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "smartfurni/facebook-posts", resource_type: "image" },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result as { secure_url: string });
-          }
-        );
-        stream.end(buffer);
-      });
-      imageUrls.push(uploadResult.secure_url);
-    }
-
-    // ─── Kết quả đăng từng page ───────────────────────────────────────────
     const results: Array<{
       pageId: string;
       pageName: string;
@@ -114,111 +84,134 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        if (hasVideo) {
-          // ─── Video đã được upload trước qua upload-video route ────────────
-          // Chỉ cần lưu log, không cần upload lại
-          const videoId = videoIds[pageId];
-          if (!videoId) {
-            results.push({ pageId, pageName: page.pageName, success: false, error: "Không tìm thấy videoId cho page này" });
-            continue;
-          }
-          results.push({ pageId, pageName: page.pageName, success: true, fbPostId: videoId });
+        const { pageAccessToken, fbPageId } = page;
+        let fbPostId: string | undefined;
 
-        } else if (imageUrls.length === 0) {
-          // ─── Chỉ text → đăng lên /feed ────────────────────────────────
-          const body: Record<string, string> = {
-            message: fullMessage,
-            access_token: page.pageAccessToken,
-          };
-          if (linkUrl.trim()) body.link = linkUrl.trim();
+        if (hasVideo && videoIds[pageId]) {
+          // Video đã được upload từ browser - chỉ lưu log
+          fbPostId = videoIds[pageId];
+          results.push({ pageId, pageName: page.pageName, success: true, fbPostId });
 
-          const res = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/feed`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          const data = await res.json();
-          if (!res.ok || data.error) {
-            results.push({ pageId, pageName: page.pageName, success: false, error: data.error?.message || `HTTP ${res.status}` });
+        } else if (photoIds[pageId] && photoIds[pageId].length > 0) {
+          // Ảnh đã upload từ browser - đăng bài với attached_media
+          const pagePhotoIds = photoIds[pageId];
+          if (pagePhotoIds.length === 1) {
+            // 1 ảnh: đăng trực tiếp lên /photos với published=true
+            const postBody: Record<string, string> = {
+              caption: fullMessage,
+              published: "true",
+              access_token: pageAccessToken,
+            };
+            // Cần re-publish photo đã upload (unpublished) thành post
+            // Dùng /feed với attached_media
+            const feedBody: Record<string, unknown> = {
+              message: fullMessage,
+              attached_media: [{ media_fbid: pagePhotoIds[0] }],
+              access_token: pageAccessToken,
+            };
+            if (linkUrl) feedBody.link = linkUrl;
+            const feedRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/feed`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(feedBody),
+            });
+            const feedData = await feedRes.json();
+            if (feedData.error) throw new Error(feedData.error.message);
+            fbPostId = feedData.id;
           } else {
-            results.push({ pageId, pageName: page.pageName, success: true, fbPostId: data.id });
+            // Nhiều ảnh: attached_media
+            const feedBody: Record<string, unknown> = {
+              message: fullMessage,
+              attached_media: pagePhotoIds.map(pid => ({ media_fbid: pid })),
+              access_token: pageAccessToken,
+            };
+            if (linkUrl) feedBody.link = linkUrl;
+            const feedRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/feed`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(feedBody),
+            });
+            const feedData = await feedRes.json();
+            if (feedData.error) throw new Error(feedData.error.message);
+            fbPostId = feedData.id;
           }
+          results.push({ pageId, pageName: page.pageName, success: true, fbPostId });
 
-        } else if (imageUrls.length === 1) {
-          // ─── 1 ảnh → đăng lên /photos ─────────────────────────────────
-          const body: Record<string, unknown> = {
-            url: imageUrls[0],
-            message: fullMessage,
-            published: true,
-            access_token: page.pageAccessToken,
-          };
-          if (linkUrl.trim()) body.link = linkUrl.trim();
-
-          const res = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/photos`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          const data = await res.json();
-          if (!res.ok || data.error) {
-            results.push({ pageId, pageName: page.pageName, success: false, error: data.error?.message || `HTTP ${res.status}` });
-          } else {
-            results.push({ pageId, pageName: page.pageName, success: true, fbPostId: data.post_id || data.id });
-          }
-
-        } else {
-          // ─── Nhiều ảnh → upload unpublished rồi post feed ─────────────
-          const photoIds: string[] = [];
-          let photoError: string | null = null;
-
+        } else if (imageUrls.length > 0) {
+          // Ảnh từ URL - upload từng ảnh lên Facebook rồi attach
+          const uploadedPhotoIds: string[] = [];
           for (const imgUrl of imageUrls) {
-            const photoRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/photos`, {
+            const photoRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/photos`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 url: imgUrl,
                 published: false,
-                access_token: page.pageAccessToken,
+                access_token: pageAccessToken,
               }),
             });
             const photoData = await photoRes.json();
-            if (photoData.error || !photoData.id) {
-              photoError = `Upload ảnh thất bại: ${photoData.error?.message || "unknown"}`;
-              break;
+            if (!photoData.error && photoData.id) {
+              uploadedPhotoIds.push(photoData.id);
             }
-            photoIds.push(photoData.id);
           }
-
-          if (photoError) {
-            results.push({ pageId, pageName: page.pageName, success: false, error: photoError });
-            continue;
+          if (uploadedPhotoIds.length > 0) {
+            const feedBody: Record<string, unknown> = {
+              message: fullMessage,
+              attached_media: uploadedPhotoIds.map(pid => ({ media_fbid: pid })),
+              access_token: pageAccessToken,
+            };
+            if (linkUrl) feedBody.link = linkUrl;
+            const feedRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/feed`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(feedBody),
+            });
+            const feedData = await feedRes.json();
+            if (feedData.error) throw new Error(feedData.error.message);
+            fbPostId = feedData.id;
+          } else {
+            // Không upload được ảnh nào, đăng text thuần
+            const postBody: Record<string, unknown> = {
+              message: fullMessage,
+              access_token: pageAccessToken,
+            };
+            if (linkUrl) postBody.link = linkUrl;
+            const feedRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/feed`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(postBody),
+            });
+            const feedData = await feedRes.json();
+            if (feedData.error) throw new Error(feedData.error.message);
+            fbPostId = feedData.id;
           }
+          results.push({ pageId, pageName: page.pageName, success: true, fbPostId });
 
-          const feedBody: Record<string, unknown> = {
+        } else {
+          // Chỉ có text
+          const postBody: Record<string, unknown> = {
             message: fullMessage,
-            attached_media: photoIds.map(id => ({ media_fbid: id })),
-            access_token: page.pageAccessToken,
+            access_token: pageAccessToken,
           };
-          if (linkUrl.trim()) feedBody.link = linkUrl.trim();
-
-          const feedRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/feed`, {
+          if (linkUrl) postBody.link = linkUrl;
+          const feedRes = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/feed`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(feedBody),
+            body: JSON.stringify(postBody),
           });
           const feedData = await feedRes.json();
-          if (!feedRes.ok || feedData.error) {
-            results.push({ pageId, pageName: page.pageName, success: false, error: feedData.error?.message || `HTTP ${feedRes.status}` });
-          } else {
-            results.push({ pageId, pageName: page.pageName, success: true, fbPostId: feedData.id });
-          }
+          if (feedData.error) throw new Error(feedData.error.message);
+          fbPostId = feedData.id;
+          results.push({ pageId, pageName: page.pageName, success: true, fbPostId });
         }
+
       } catch (err) {
         results.push({ pageId, pageName: page.pageName, success: false, error: (err as Error).message });
       }
     }
 
-    // ─── Lưu vào DB để tracking ───────────────────────────────────────────
+    // Lưu vào DB
     const anySuccess = results.some(r => r.success);
     const allSuccess = results.every(r => r.success);
 
