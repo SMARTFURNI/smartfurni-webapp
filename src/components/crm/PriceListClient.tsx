@@ -101,7 +101,12 @@ export default function PriceListClient({ products }: Props) {
     setExpandedProducts(new Set());
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    // Mở rộng tất cả sản phẩm và danh mục trước khi in
+    setExpandedProducts(new Set(activeProducts.map(p => p.id)));
+    setExpandedCategories(new Set(Object.keys(grouped)));
+    setTimeout(() => window.print(), 400);
+  };
 
   const today = new Date().toLocaleDateString("vi-VN", {
     day: "2-digit", month: "2-digit", year: "numeric",
@@ -115,7 +120,11 @@ export default function PriceListClient({ products }: Props) {
         @media print {
           body { background: white !important; }
           .no-print { display: none !important; }
-          .print-page { background: white !important; color: #111 !important; }
+          aside { display: none !important; }
+          nav { display: none !important; }
+          header { display: none !important; }
+          [data-sidebar] { display: none !important; }
+          .print-page { background: white !important; color: #111 !important; width: 100% !important; margin: 0 !important; }
           .print-card { background: #f8f8f8 !important; border: 1px solid #ddd !important; break-inside: avoid; }
           .print-header { background: #1a1a2e !important; color: white !important; }
         }
