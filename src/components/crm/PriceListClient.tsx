@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Image from "next/image";
 import {
   Printer, ChevronDown, ChevronUp,
-  Package, Tag, Ruler, Phone, Mail, Globe, CheckCircle2,
+  Package, Ruler, Phone, Mail, Globe, CheckCircle2,
 } from "lucide-react";
 import type { CrmProduct, SizePricing } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
@@ -51,8 +51,6 @@ const CATEGORY_CONFIG: Record<CrmProduct["category"], {
   },
 };
 
-type PrintFilter = "all" | CrmProduct["category"];
-
 interface Props {
   products: CrmProduct[];
 }
@@ -62,8 +60,6 @@ export default function PriceListClient({ products }: Props) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(["ergonomic_bed", "sofa_bed"])
   );
-  const [printFilter, setPrintFilter] = useState<PrintFilter>("all");
-  const [showPrintMenu, setShowPrintMenu] = useState(false);
 
 
   const activeProducts = products.filter(p => p.isActive);
@@ -103,27 +99,18 @@ export default function PriceListClient({ products }: Props) {
     setExpandedProducts(new Set());
   };
 
-  const handlePrint = (filter: PrintFilter) => {
-    setShowPrintMenu(false);
-    // Mở tab mới chứa trang in thuần (không có sidebar)
-    const url = filter === "all"
-      ? "/price-list-print"
-      : `/price-list-print?category=${filter}`;
-    window.open(url, "_blank");
-  };
+  const handlePrint = useCallback(() => {
+    // Mở rộng tất cả trước khi in
+    setExpandedProducts(new Set(activeProducts.map(p => p.id)));
+    setExpandedCategories(new Set(Object.keys(grouped)));
+    setTimeout(() => window.print(), 300);
+  }, [activeProducts, grouped]);
 
   const today = new Date().toLocaleDateString("vi-VN", {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
 
-  // Danh mục sẽ hiển thị khi in
-  const printCategories = printFilter === "all"
-    ? categoryOrder
-    : [printFilter as CrmProduct["category"]];
-
-  const printLabel = printFilter === "all"
-    ? "Tất cả sản phẩm"
-    : CATEGORY_CONFIG[printFilter as CrmProduct["category"]]?.label ?? "";
+  const printCategories = categoryOrder;
 
   return (
     <div className="flex flex-col h-full overflow-y-auto" style={{ background: D.pageBg }}>
@@ -134,11 +121,23 @@ export default function PriceListClient({ products }: Props) {
           @page { margin: 15mm 12mm; size: A4 portrait; }
           html, body { background: white !important; color: #111 !important; }
 
-          /* Ẩn sidebar và các element không cần in */
+          /* Ẩn toàn bộ trừ nội dung báo giá */
           .no-print { display: none !important; }
           aside { display: none !important; }
           nav { display: none !important; }
           [data-sidebar] { display: none !important; }
+          header { display: none !important; }
+
+          /* Đảm bảo content area chiếm toàn bộ trang */
+          body > * { margin: 0 !important; }
+          .print-area {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important;
+            width: 100% !important;
+            background: white !important;
+            color: #111 !important;
+            z-index: 9999 !important;
+          }
 
           /* Card in */
           .print-card {
@@ -181,69 +180,14 @@ export default function PriceListClient({ products }: Props) {
             Mở rộng tất cả
           </button>
 
-          {/* Print dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowPrintMenu(v => !v)}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold"
-              style={{ background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, color: "#fff", boxShadow: D.goldGlow }}>
-              <Printer size={15} />
-              In / Xuất PDF
-              <ChevronDown size={13} />
-            </button>
-
-            {showPrintMenu && (
-              <div className="absolute right-0 top-full mt-1 z-50 rounded-xl overflow-hidden shadow-2xl min-w-[220px]"
-                style={{ background: "#1a1a2e", border: `1px solid ${D.borderGold}` }}>
-                <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: D.textMuted, borderBottom: `1px solid ${D.divider}` }}>
-                  Chọn danh mục xuất
-                </div>
-                {/* Tất cả */}
-                <a
-                  href="/price-list-print"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setShowPrintMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/5"
-                  style={{ borderBottom: `1px solid ${D.divider}`, textDecoration: "none" }}>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
-                    style={{ background: D.goldDim }}>
-                    📋
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold" style={{ color: D.textPrimary }}>Tất cả sản phẩm</div>
-                    <div className="text-xs" style={{ color: D.textMuted }}>{activeProducts.length} sản phẩm · 2 danh mục</div>
-                  </div>
-                </a>
-                {/* Từng danh mục */}
-                {categoryOrder.map(cat => {
-                  const cfg = CATEGORY_CONFIG[cat];
-                  const count = grouped[cat]?.length ?? 0;
-                  if (!count) return null;
-                  return (
-                    <a
-                      key={cat}
-                      href={`/price-list-print?category=${cat}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setShowPrintMenu(false)}
-                      className="flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/5"
-                      style={{ borderBottom: `1px solid ${D.divider}`, textDecoration: "none" }}>
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
-                        style={{ background: cfg.dim }}>
-                        {cfg.icon}
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold" style={{ color: cfg.color }}>{cfg.label}</div>
-                        <div className="text-xs" style={{ color: D.textMuted }}>{count} sản phẩm</div>
-                      </div>
-                    </a>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* Nút In / Xuất PDF đơn giản */}
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold cursor-pointer"
+            style={{ background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, color: "#fff", boxShadow: D.goldGlow }}>
+            <Printer size={15} />
+            In / Xuất PDF
+          </button>
         </div>
       </div>
 
