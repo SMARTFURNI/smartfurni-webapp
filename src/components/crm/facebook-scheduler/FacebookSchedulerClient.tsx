@@ -72,41 +72,24 @@ function PageBadge({ page }: { page: FacebookPage }) {
 // ─── Modal: Tạo/Sửa bài ──────────────────────────────────────────────────────
 
 function PostFormModal({
-  post, pages, onClose, onSave,
+  pages, onClose, onPublished,
 }: {
-  post?: ScheduledPost | null;
   pages: FacebookPage[];
   onClose: () => void;
-  onSave: (data: Partial<ScheduledPost>) => Promise<void>;
+  onPublished: () => void;
 }) {
-  const [title, setTitle] = useState(post?.title ?? "");
-  const [content, setContent] = useState(post?.content ?? "");
-  const [imageUrls, setImageUrls] = useState<string[]>(post?.imageUrls ?? []);
-  const [imageInput, setImageInput] = useState("");
-  const [uploadingImages, setUploadingImages] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [linkUrl, setLinkUrl] = useState(post?.linkUrl ?? "");
-  const [selectedPageIds, setSelectedPageIds] = useState<string[]>(post?.pageIds ?? (pages.length > 0 ? [pages[0].id] : []));
-  const [scheduledAt, setScheduledAt] = useState(
-    post?.scheduledAt
-      ? new Date(post.scheduledAt).toISOString().slice(0, 16)
-      : new Date(Date.now() + 3600000).toISOString().slice(0, 16)
-  );
-  const [repeatType, setRepeatType] = useState<RepeatType>(post?.repeatType ?? "none");
-  const [repeatDays, setRepeatDays] = useState<number[]>(post?.repeatDays ?? []);
-  const [repeatEndDate, setRepeatEndDate] = useState(post?.repeatEndDate?.slice(0, 10) ?? "");
-  const [hashtags, setHashtags] = useState(post?.hashtags?.join(" ") ?? "");
-  const [saving, setSaving] = useState(false);
-  const [charCount, setCharCount] = useState(content.length);
-  // Video upload state
+  const [content, setContent] = useState("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [imageUrlList, setImageUrlList] = useState<string[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoIds, setVideoIds] = useState<Record<string, string>>(post?.videoIds ?? {});
-  const [videoUrls, setVideoUrls] = useState<Record<string, string>>(post?.videoUrls ?? {});
-  const [uploadSessionIds, setUploadSessionIds] = useState<Record<string, string>>(post?.uploadSessionIds ?? {});
-  const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
-  const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
-  const [videoUploadDone, setVideoUploadDone] = useState(Object.keys(post?.videoIds ?? {}).length > 0);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [selectedPageIds, setSelectedPageIds] = useState<string[]>(pages.length > 0 ? [pages[0].id] : []);
+  const [hashtags, setHashtags] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [publishResult, setPublishResult] = useState<{ ok: boolean; results: Array<{ pageName: string; success: boolean; error?: string }> } | null>(null);
+  const [charCount, setCharCount] = useState(0);
 
   const handleContentChange = (v: string) => {
     setContent(v);
@@ -119,129 +102,69 @@ function PostFormModal({
     );
   };
 
-  const toggleDay = (day: number) => {
-    setRepeatDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort()
-    );
-  };
-
-  const addImage = () => {
-    if (imageInput.trim()) {
-      setImageUrls(prev => [...prev, imageInput.trim()]);
-      setImageInput("");
-    }
-  };
-
-  const handleFileUpload = async (files: FileList | null) => {
+  const handleImageFileSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    setUploadingImages(true);
-    setUploadError(null);
-    const uploaded: string[] = [];
-    for (const file of Array.from(files)) {
-      try {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/crm/facebook-scheduler/upload-image", { method: "POST", body: fd });
-        const data = await res.json();
-        if (data.url) uploaded.push(data.url);
-        else setUploadError(data.error || "Upload thất bại");
-      } catch {
-        setUploadError("Lỗi kết nối khi upload ảnh");
-      }
-    }
-    if (uploaded.length > 0) setImageUrls(prev => [...prev, ...uploaded]);
-    setUploadingImages(false);
+    const newFiles = Array.from(files);
+    setImageFiles(prev => [...prev, ...newFiles]);
+    newFiles.forEach(f => {
+      const url = URL.createObjectURL(f);
+      setImagePreviewUrls(prev => [...prev, url]);
+    });
   };
 
-  const handleVideoUpload = async (file: File) => {
-    if (!file) return;
-    if (selectedPageIds.length === 0) {
-      setVideoUploadError("Vui lòng chọn Fanpage trước khi upload video");
-      return;
+  const removeImageFile = (idx: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== idx));
+    setImagePreviewUrls(prev => {
+      URL.revokeObjectURL(prev[idx]);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
+  const addImageUrl = () => {
+    if (imageUrlInput.trim()) {
+      setImageUrlList(prev => [...prev, imageUrlInput.trim()]);
+      setImageUrlInput("");
     }
-    setVideoFile(file);
-    setUploadingVideo(true);
-    setVideoUploadError(null);
-    setVideoUploadDone(false);
-    setVideoUploadProgress(0);
-
-    // Upload video lên từng page đã chọn
-    const newVideoIds: Record<string, string> = {};
-    const totalPages = selectedPageIds.length;
-    let doneCount = 0;
-
-    for (const pageId of selectedPageIds) {
-      try {
-        // Gửi raw binary (tránh giới hạn FormData của Next.js)
-        const arrayBuffer = await file.arrayBuffer();
-        // Truyền description để publish ngay trong finish phase
-        const hashtagList = hashtags.split(/\s+/).filter((h: string) => h.trim()).map((h: string) => h.startsWith("#") ? h : `#${h}`);
-        const fullDescription = [content.trim(), hashtagList.join(" ")].filter(Boolean).join("\n\n");
-        const params = new URLSearchParams({
-          pageId,
-          fileName: file.name,
-          description: fullDescription,
-        });
-
-        const res = await fetch(`/api/crm/facebook-scheduler/upload-video?${params}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/octet-stream" },
-          body: arrayBuffer,
-        });
-        const data = await res.json();
-        if (data.videoId) {
-          // Lưu theo cả pageId (DB id) và fbPageId
-          newVideoIds[pageId] = data.videoId;
-          newVideoIds[data.pageId] = data.videoId;
-        } else {
-          setVideoUploadError(data.error || "Upload thất bại");
-          setUploadingVideo(false);
-          return;
-        }
-      } catch {
-        setVideoUploadError("Lỗi kết nối khi upload video");
-        setUploadingVideo(false);
-        return;
-      }
-      doneCount++;
-      setVideoUploadProgress(Math.round((doneCount / totalPages) * 100));
-    }
-
-    setVideoIds(newVideoIds);
-    setVideoUploadDone(true);
-    setUploadingVideo(false);
   };
 
   const handleSubmit = async () => {
-    if (!title.trim()) return alert("Vui lòng nhập tiêu đề bài");
-    if (!content.trim()) return alert("Vui lòng nhập nội dung bài");
+    if (!content.trim()) return alert("Vui lòng nhập nội dung bài đăng");
     if (selectedPageIds.length === 0) return alert("Vui lòng chọn ít nhất 1 Fanpage");
-    // Khi có video: đăng ngay lập tức (không cần chọn thời gian)
-    const finalScheduledAt = videoUploadDone
-      ? new Date().toISOString()
-      : scheduledAt;
-    if (!videoUploadDone && !scheduledAt) return alert("Vui lòng chọn thời gian đăng");
 
     setSaving(true);
+    setPublishResult(null);
     try {
-      const hashtagList = hashtags.split(/\s+/).filter(h => h.trim()).map(h => h.startsWith("#") ? h : `#${h}`);
-      await onSave({
-        title: title.trim(),
-        content: content.trim(),
-        imageUrls,
-        videoIds: Object.keys(videoIds).length > 0 ? videoIds : undefined,
-        videoUrls: Object.keys(videoUrls).length > 0 ? videoUrls : undefined,
-        uploadSessionIds: Object.keys(uploadSessionIds).length > 0 ? uploadSessionIds : undefined,
-        linkUrl: linkUrl.trim() || undefined,
-        pageIds: selectedPageIds,
-        scheduledAt: new Date(finalScheduledAt).toISOString(),
-        repeatType,
-        repeatDays: repeatType === "custom_days" ? repeatDays : undefined,
-        repeatEndDate: repeatType !== "none" && repeatEndDate ? new Date(repeatEndDate).toISOString() : undefined,
-        hashtags: hashtagList,
-        tags: [],
+      const fd = new FormData();
+      fd.append("content", content.trim());
+      fd.append("hashtags", hashtags.trim());
+      fd.append("pageIds", JSON.stringify(selectedPageIds));
+      fd.append("linkUrl", linkUrl.trim());
+      fd.append("title", content.trim().slice(0, 80));
+
+      // Ảnh từ file
+      for (const f of imageFiles) {
+        fd.append("images", f);
+      }
+      // Ảnh từ URL: upload qua Cloudinary trước
+      for (const url of imageUrlList) {
+        fd.append("imageUrls", url);
+      }
+      // Video
+      if (videoFile) {
+        fd.append("video", videoFile);
+      }
+
+      const res = await fetch("/api/crm/facebook-scheduler/publish-direct", {
+        method: "POST",
+        body: fd,
       });
-      onClose();
+      const data = await res.json();
+      setPublishResult(data);
+      if (data.ok && data.successCount > 0) {
+        onPublished();
+      }
+    } catch (err) {
+      setPublishResult({ ok: false, results: [{ pageName: "Lỗi", success: false, error: (err as Error).message }] });
     } finally {
       setSaving(false);
     }
@@ -260,7 +183,7 @@ function PostFormModal({
               <Facebook size={16} color="#fff" />
             </div>
             <h2 className="text-base font-bold text-gray-900">
-              {post ? "Chỉnh sửa bài đăng" : "Tạo bài đăng mới"}
+              Đăng bài lên Facebook
             </h2>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -268,21 +191,34 @@ function PostFormModal({
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
-          {/* Tiêu đề */}
-          <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
-              Tiêu đề nội bộ <span style={{ color: "#ef4444" }}>*</span>
-            </label>
-            <input
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="VD: Bài đăng thứ 2 tuần 1 - Giới thiệu sản phẩm"
-              className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ border: "1px solid #d1d5db", color: "#374151" }}
-            />
-          </div>
-
+         <div className="p-5 space-y-4">
+          {/* Kết quả đăng (hiển thị sau khi đăng) */}
+          {publishResult && (
+            <div className="rounded-xl p-4 space-y-2"
+              style={{ background: publishResult.results.some(r => r.success) ? "#f0fdf4" : "#fef2f2",
+                border: `1px solid ${publishResult.results.some(r => r.success) ? "#86efac" : "#fecaca"}` }}>
+              <p className="text-sm font-semibold" style={{ color: publishResult.results.some(r => r.success) ? "#15803d" : "#dc2626" }}>
+                {publishResult.results.some(r => r.success)
+                  ? `✅ Đã đăng thành công lên ${publishResult.results.filter(r => r.success).length} Fanpage!`
+                  : "❌ Đăng bài thất bại"}
+              </p>
+              {publishResult.results.map((r, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs">
+                  <span>{r.success ? "✅" : "❌"}</span>
+                  <span style={{ color: r.success ? "#15803d" : "#dc2626" }}>
+                    {r.pageName}: {r.success ? "Đăng thành công" : r.error}
+                  </span>
+                </div>
+              ))}
+              {publishResult.results.some(r => r.success) && (
+                <button onClick={onClose}
+                  className="mt-2 px-4 py-1.5 rounded-lg text-xs font-medium text-white"
+                  style={{ background: "#16a34a" }}>
+                  Đóng
+                </button>
+              )}
+            </div>
+          )}
           {/* Chọn Fanpage */}
           <div>
             <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
@@ -358,7 +294,7 @@ function PostFormModal({
               className="flex flex-col items-center justify-center w-full rounded-lg cursor-pointer transition-colors"
               style={{
                 border: "2px dashed #d1d5db",
-                background: uploadingImages ? "#f0f9ff" : "#fafafa",
+                background: "#fafafa",
                 padding: "16px 12px",
                 minHeight: 72,
               }}
@@ -368,56 +304,62 @@ function PostFormModal({
                 accept="image/*"
                 multiple
                 className="hidden"
-                disabled={uploadingImages}
-                onChange={e => handleFileUpload(e.target.files)}
+                onChange={e => handleImageFileSelect(e.target.files)}
               />
-              {uploadingImages ? (
-                <div className="flex items-center gap-2 text-xs" style={{ color: "#2563eb" }}>
-                  <RefreshCw size={14} className="animate-spin" />
-                  <span>Đang tải ảnh lên...</span>
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "#374151" }}>
+                  <Image size={16} style={{ color: "#6b7280" }} />
+                  <span>Nhấn để chọn ảnh từ máy tính</span>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center gap-1">
-                  <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "#374151" }}>
-                    <Image size={16} style={{ color: "#6b7280" }} />
-                    <span>Nhấn để chọn ảnh từ máy tính</span>
-                  </div>
-                  <span className="text-xs" style={{ color: "#9ca3af" }}>JPG, PNG, WEBP, GIF · Tối đa 10MB · Chọn nhiều ảnh cùng lúc</span>
-                </div>
-              )}
+                <span className="text-xs" style={{ color: "#9ca3af" }}>JPG, PNG, WEBP, GIF · Tối đa 10MB · Chọn nhiều ảnh cùng lúc</span>
+              </div>
             </label>
             {/* Hoặc nhập URL */}
             <div className="flex gap-2 mt-2">
               <input
-                value={imageInput}
-                onChange={e => setImageInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && addImage()}
+                value={imageUrlInput}
+                onChange={e => setImageUrlInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && addImageUrl()}
                 placeholder="Hoặc dán URL ảnh: https://example.com/image.jpg"
                 className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: "1px solid #d1d5db", color: "#374151" }}
               />
-              <button onClick={addImage}
+              <button onClick={addImageUrl}
                 className="px-3 py-2 rounded-lg text-xs font-medium"
                 style={{ background: "#f3f4f6", color: "#374151" }}>
                 Thêm
               </button>
             </div>
-            {uploadError && (
-              <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{uploadError}</p>
-            )}
-            {imageUrls.length > 0 && (
+            {/* Preview ảnh từ file */}
+            {imagePreviewUrls.length > 0 && (
               <div className="mt-2 grid grid-cols-3 gap-2">
-                {imageUrls.map((url, i) => (
+                {imagePreviewUrls.map((url, i) => (
                   <div key={i} className="relative group rounded-lg overflow-hidden"
                     style={{ aspectRatio: "1", background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt="" className="w-full h-full object-cover" />
                     <button
-                      onClick={() => setImageUrls(prev => prev.filter((_, j) => j !== i))}
+                      onClick={() => removeImageFile(i)}
                       className="absolute top-1 right-1 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{ background: "rgba(0,0,0,0.6)" }}
                     >
                       <X size={10} style={{ color: "#fff" }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Preview ảnh từ URL */}
+            {imageUrlList.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {imageUrlList.map((url, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs px-2 py-1 rounded-lg"
+                    style={{ background: "#f3f4f6", color: "#6b7280" }}>
+                    <Image size={11} />
+                    <span className="flex-1 truncate">{url}</span>
+                    <button onClick={() => setImageUrlList(prev => prev.filter((_, j) => j !== i))}
+                      style={{ color: "#dc2626" }}>
+                      <X size={11} />
                     </button>
                   </div>
                 ))}
@@ -431,68 +373,47 @@ function PostFormModal({
               <Video size={12} className="inline mr-1" />
               Video đính kèm (tuỳ chọn · tối đa 200MB)
             </label>
-            {videoUploadDone ? (
+            {videoFile ? (
               <div className="flex items-center gap-3 rounded-lg px-4 py-3"
                 style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
                 <CheckCircle size={18} style={{ color: "#16a34a", flexShrink: 0 }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold" style={{ color: "#15803d" }}>Video đã upload thành công!</p>
-                  <p className="text-xs truncate" style={{ color: "#4ade80" }}>{videoFile?.name ?? "Video đã upload"}</p>
+                  <p className="text-xs font-medium" style={{ color: "#15803d" }}>Video đã chọn</p>
+                  <p className="text-xs truncate" style={{ color: "#4ade80" }}>{videoFile.name}</p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>
+                    {(videoFile.size / 1024 / 1024).toFixed(1)} MB
+                  </p>
                 </div>
                 <button
-                  onClick={() => { setVideoIds({}); setVideoFile(null); setVideoUploadDone(false); }}
-                  className="text-xs px-2 py-1 rounded" style={{ color: "#dc2626", background: "#fee2e2" }}>
-                  Xoá
+                  onClick={() => setVideoFile(null)}
+                  className="p-1 rounded-full hover:bg-red-50"
+                  style={{ color: "#dc2626" }}>
+                  <X size={16} />
                 </button>
               </div>
             ) : (
               <label
-                className="flex flex-col items-center justify-center w-full rounded-lg cursor-pointer transition-colors"
-                style={{
-                  border: `2px dashed ${uploadingVideo ? "#2563eb" : "#d1d5db"}`,
-                  background: uploadingVideo ? "#eff6ff" : "#fafafa",
-                  padding: "16px 12px",
-                  minHeight: 72,
-                  cursor: uploadingVideo ? "not-allowed" : "pointer",
-                }}
-              >
+                className="flex flex-col items-center justify-center w-full rounded-lg cursor-pointer"
+                style={{ border: "2px dashed #d1d5db", background: "#fafafa", padding: "16px 12px", minHeight: 72 }}>
                 <input
                   type="file"
-                  accept="video/mp4,video/quicktime,video/x-msvideo,video/mpeg,video/webm,.mp4,.mov,.avi,.mpeg,.webm"
+                  accept="video/mp4,video/mov,video/avi,video/webm,video/*"
                   className="hidden"
-                  disabled={uploadingVideo}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleVideoUpload(f); }}
+                  onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) setVideoFile(f);
+                  }}
                 />
-                {uploadingVideo ? (
-                  <div className="flex flex-col items-center gap-2 w-full">
-                    <div className="flex items-center gap-2 text-xs" style={{ color: "#2563eb" }}>
-                      <Upload size={14} className="animate-bounce" />
-                      <span>Đang upload video lên Facebook... {videoUploadProgress}%</span>
-                    </div>
-                    <div className="w-full rounded-full" style={{ height: 6, background: "#e5e7eb" }}>
-                      <div
-                        className="rounded-full transition-all"
-                        style={{ height: 6, width: `${videoUploadProgress}%`, background: "#2563eb" }}
-                      />
-                    </div>
-                    <p className="text-xs" style={{ color: "#9ca3af" }}>Có thể mất vài phút với video lớn. Vui lòng không đóng trang.</p>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "#374151" }}>
+                    <Video size={16} style={{ color: "#6b7280" }} />
+                    <span>Nhấn để chọn video từ máy tính</span>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "#374151" }}>
-                      <Video size={16} style={{ color: "#6b7280" }} />
-                      <span>Nhấn để chọn video từ máy tính</span>
-                    </div>
-                    <span className="text-xs" style={{ color: "#9ca3af" }}>MP4, MOV, AVI, WebM · Tối đa 200MB</span>
-                  </div>
-                )}
+                  <span className="text-xs" style={{ color: "#9ca3af" }}>MP4, MOV, AVI, WebM · Tối đa 200MB</span>
+                </div>
               </label>
             )}
-            {videoUploadError && (
-              <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{videoUploadError}</p>
-            )}
           </div>
-
           {/* Link */}
           <div>
             <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
@@ -506,87 +427,8 @@ function PostFormModal({
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
               style={{ border: "1px solid #d1d5db", color: "#374151" }}
             />
-          </div>
-
-          {/* Thời gian đăng - ẩn khi có video (video đăng ngay lập tức) */}
-          {!videoUploadDone && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
-                  <Clock size={12} className="inline mr-1" />
-                  Thời gian đăng <span style={{ color: "#ef4444" }}>*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  value={scheduledAt}
-                  onChange={e => setScheduledAt(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ border: "1px solid #d1d5db", color: "#374151" }}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
-                  <Repeat size={12} className="inline mr-1" />
-                  Lặp lại
-                </label>
-                <select
-                  value={repeatType}
-                  onChange={e => setRepeatType(e.target.value as RepeatType)}
-                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ border: "1px solid #d1d5db", color: "#374151" }}>
-                  {(Object.entries(REPEAT_LABELS) as [RepeatType, string][]).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-          {videoUploadDone && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
-              <Video size={14} />
-              <span>Bài đăng có video sẽ được <strong>đăng ngay lập tức</strong> lên Facebook Reels khi bấm "Tạo bài đăng".</span>
-            </div>
-          )}
-
-          {/* Tuỳ chỉnh ngày lặp */}
-          {!videoUploadDone && repeatType === "custom_days" && (
-            <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
-                Chọn ngày trong tuần
-              </label>
-              <div className="flex gap-2">
-                {DAY_LABELS.map((label, i) => (
-                  <button key={i} onClick={() => toggleDay(i)}
-                    className="w-9 h-9 rounded-lg text-xs font-medium transition-all"
-                    style={{
-                      border: repeatDays.includes(i) ? "1.5px solid #C9A84C" : "1.5px solid #e5e7eb",
-                      background: repeatDays.includes(i) ? "rgba(201,168,76,0.1)" : "#f9fafb",
-                      color: repeatDays.includes(i) ? "#C9A84C" : "#6b7280",
-                    }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Ngày kết thúc lặp */}
-          {!videoUploadDone && repeatType !== "none" && (
-            <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#374151" }}>
-                Ngày kết thúc lặp lại (tuỳ chọn)
-              </label>
-              <input
-                type="date"
-                value={repeatEndDate}
-                onChange={e => setRepeatEndDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: "1px solid #d1d5db", color: "#374151" }}
-              />
-            </div>
-          )}
+           </div>
         </div>
-
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-5 border-t" style={{ borderColor: "#e5e7eb" }}>
           <button onClick={onClose}
@@ -595,10 +437,19 @@ function PostFormModal({
             Huỷ
           </button>
           <button onClick={handleSubmit} disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
             style={{ background: saving ? "#9ca3af" : "#1877f2" }}>
-            {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-            {post ? "Lưu thay đổi" : "Tạo bài đăng"}
+            {saving ? (
+              <>
+                <RefreshCw size={14} className="animate-spin" />
+                Đang đăng...
+              </>
+            ) : (
+              <>
+                <Send size={14} />
+                Đăng ngay
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -1027,10 +878,9 @@ function PostsTab({ pages }: { pages: FacebookPage[] }) {
       {/* Form modal */}
       {showForm && (
         <PostFormModal
-          post={editingPost}
           pages={pages}
           onClose={() => { setShowForm(false); setEditingPost(null); }}
-          onSave={handleSavePost}
+          onPublished={() => { loadPosts(); }}
         />
       )}
     </div>
