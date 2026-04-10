@@ -127,6 +127,9 @@ export default function PriceListClient({ products }: Props) {
           .print-page { background: white !important; color: #111 !important; width: 100% !important; margin: 0 !important; }
           .print-card { background: #f8f8f8 !important; border: 1px solid #ddd !important; break-inside: avoid; }
           .print-header { background: #1a1a2e !important; color: white !important; }
+          /* Bỏ giới hạn height và overflow của container khi in */
+          * { overflow: visible !important; height: auto !important; max-height: none !important; }
+          body, html { height: auto !important; overflow: visible !important; }
         }
       `}</style>
 
