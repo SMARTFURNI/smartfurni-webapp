@@ -118,20 +118,47 @@ export default function PriceListClient({ products }: Props) {
       {/* ── Print Styles ── */}
       <style>{`
         @media print {
-          /* Ép Chrome in màu nền và đồ họa */
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-          body { background: white !important; }
-          .no-print { display: none !important; }
-          aside { display: none !important; }
-          nav { display: none !important; }
-          header { display: none !important; }
-          [data-sidebar] { display: none !important; }
-          .print-page { background: white !important; color: #111 !important; width: 100% !important; margin: 0 !important; }
-          .print-card { background: #f8f8f8 !important; border: 1px solid #ddd !important; break-inside: avoid; }
-          .print-header { background: #1a1a2e !important; color: white !important; -webkit-print-color-adjust: exact !important; }
-          /* Bỏ giới hạn height và overflow của container khi in */
-          * { overflow: visible !important; height: auto !important; max-height: none !important; }
-          body, html { height: auto !important; overflow: visible !important; }
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+
+          /* Ẩn sidebar, nav, header */
+          aside, nav, header, [data-sidebar], .no-print { display: none !important; }
+
+          /* Bỏ giới hạn height/overflow */
+          *, body, html { overflow: visible !important; height: auto !important; max-height: none !important; }
+
+          /* Reset toàn bộ màu chữ sang đen để đọc được trên nền trắng */
+          * { color: #1a1a1a !important; background: transparent !important; border-color: #e5e7eb !important; }
+
+          /* Nền trang trắng */
+          body, html { background: #ffffff !important; }
+
+          /* Header in: nền tối, chữ trắng */
+          .print-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .print-header * { color: #ffffff !important; }
+          .print-header .print-gold { color: #C9A84C !important; }
+
+          /* Card sản phẩm */
+          .print-card { background: #f9f9f9 !important; border: 1px solid #d1d5db !important; break-inside: avoid; margin-bottom: 12px; }
+          .print-card * { color: #1a1a1a !important; }
+
+          /* Giá tiền vẫn màu vàng/cam nổi bật */
+          .print-price { color: #b45309 !important; font-weight: 700 !important; }
+
+          /* Category header */
+          .print-cat-label { font-weight: 700 !important; }
+
+          /* Ảnh sản phẩm */
+          .print-card img { display: block !important; }
+
+          /* Bảng giá */
+          .print-table { background: #f3f4f6 !important; }
+          .print-table * { color: #1a1a1a !important; }
+          .print-table-price { color: #b45309 !important; font-weight: 700 !important; }
+
+          /* Footer */
+          .print-footer { background: #fef9ec !important; border: 1px solid #fbbf24 !important; }
+          .print-footer * { color: #78350f !important; }
         }
       `}</style>
 
@@ -359,12 +386,12 @@ function ProductCard({
         <div className="relative w-28 h-28 md:w-36 md:h-36 flex-shrink-0 rounded-xl overflow-hidden"
           style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${D.border}` }}>
           {product.imageUrl ? (
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={product.imageUrl}
               alt={product.name}
-              fill
-              className="object-cover"
-              sizes="144px"
+              className="w-full h-full object-cover"
+              loading="eager"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-4xl">
@@ -405,7 +432,7 @@ function ProductCard({
               <div className="text-xs mb-0.5" style={{ color: D.textMuted }}>
                 {hasRange ? "Từ" : "Giá"}
               </div>
-              <div className="text-lg font-black" style={{ color: D.gold }}>
+              <div className="print-price text-lg font-black" style={{ color: D.gold }}>
                 {minPrice > 0 ? formatVND(minPrice) : "Liên hệ"}
               </div>
               {hasRange && (
@@ -500,7 +527,7 @@ function ProductCard({
                         <td className="px-4 py-3 font-mono text-xs" style={{ color: D.textMuted }}>
                           {sp.size}
                         </td>
-                        <td className="px-4 py-3 text-right font-bold" style={{ color: D.gold }}>
+                        <td className="print-table-price px-4 py-3 text-right font-bold" style={{ color: D.gold }}>
                           {sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}
                         </td>
                       </tr>
