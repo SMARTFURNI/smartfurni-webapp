@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
   Printer, ChevronDown, ChevronUp,
@@ -64,7 +64,7 @@ export default function PriceListClient({ products }: Props) {
   );
   const [printFilter, setPrintFilter] = useState<PrintFilter>("all");
   const [showPrintMenu, setShowPrintMenu] = useState(false);
-  const [pendingPrint, setPendingPrint] = useState(false);
+
 
   const activeProducts = products.filter(p => p.isActive);
 
@@ -103,21 +103,12 @@ export default function PriceListClient({ products }: Props) {
     setExpandedProducts(new Set());
   };
 
-  // Trigger print sau khi state cập nhật
-  useEffect(() => {
-    if (pendingPrint) {
-      setPendingPrint(false);
-      window.print();
-    }
-  }, [pendingPrint, expandedProducts]);
-
   const handlePrint = (filter: PrintFilter) => {
     setPrintFilter(filter);
     setShowPrintMenu(false);
-    // Mở rộng tất cả sản phẩm trước khi in
     setExpandedProducts(new Set(activeProducts.map(p => p.id)));
     setExpandedCategories(new Set(Object.keys(grouped)));
-    setPendingPrint(true);
+    setTimeout(() => window.print(), 400);
   };
 
   const today = new Date().toLocaleDateString("vi-VN", {
