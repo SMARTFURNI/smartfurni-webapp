@@ -210,41 +210,69 @@ function PostFormModal({
     setPublishResult(null);
     setUploadProgress(null);
     try {
-      // ─── Bước 1: Upload video trực tiếp từ browser lên Facebook ──────
-      // Browser tự chia chunks và upload trực tiếp, không qua server
+      // ─── Bước 1: Upload video trực tiếp từ browser lên Facebook (song song) ───
       const videoIds: Record<string, string> = {}; // pageId -> videoId
       if (videoFile) {
-        for (const pageId of selectedPageIds) {
-          const pageName = pages.find(p => p.id === pageId)?.pageName || pageId;
-          setUploadProgress(`Đang chuẩn bị upload video lên ${pageName}...`);
-
-          // Lấy access token từ server (an toàn)
-          const tokenRes = await fetch(`/api/crm/facebook-scheduler/get-page-token?pageId=${encodeURIComponent(pageId)}`);
-          const tokenData = await tokenRes.json();
-          if (!tokenRes.ok || tokenData.error) {
-            setPublishResult({ ok: false, results: [{ pageName, success: false, error: tokenData.error || "Không lấy được token" }] });
-            setSaving(false);
-            setUploadProgress(null);
-            return;
-          }
-
-          try {
-            const videoId = await uploadVideoDirectToFacebook(
-              videoFile,
-              tokenData.fbPageId,
-              tokenData.accessToken,
-              content.trim(),
-              (msg) => setUploadProgress(`[${pageName}] ${msg}`)
-            );
-            videoIds[pageId] = videoId;
-          } catch (uploadErr) {
-            setPublishResult({ ok: false, results: [{ pageName, success: false, error: (uploadErr as Error).message }] });
-            setSaving(false);
-            setUploadProgress(null);
-            return;
-          }
+        // Lấy tất cả token cùng lúc
+        const tokenResults = await Promise.all(
+          selectedPageIds.map(async (pageId) => {
+            const tokenRes = await fetch(`/api/crm/facebook-scheduler/get-page-token?pageId=${encodeURIComponent(pageId)}`);
+            const tokenData = await tokenRes.json();
+            return { pageId, tokenData, ok: tokenRes.ok && !tokenData.error };
+          })
+        );
+        const failedToken = tokenResults.find(r => !r.ok);
+        if (failedToken) {
+          const pageName = pages.find(p => p.id === failedToken.pageId)?.pageName || failedToken.pageId;
+          setPublishResult({ ok: false, results: [{ pageName, success: false, error: failedToken.tokenData.error || "Không lấy được token" }] });
+          setSaving(false);
+          setUploadProgress(null);
+          return;
         }
-        setUploadProgress("Đã upload video xong, đang lưu log...");
+
+        // Theo dõi tiến độ từng page riêng biệt
+        const progressMap: Record<string, string> = {};
+        const updateProgress = (pageId: string, msg: string) => {
+          progressMap[pageId] = msg;
+          const lines = Object.entries(progressMap).map(([pid, m]) => {
+            const pName = pages.find(p => p.id === pid)?.pageName || pid;
+            return `[${pName}] ${m}`;
+          });
+          setUploadProgress(lines.join(" | "));
+        };
+
+        // Upload song song tất cả các page
+        const uploadResults = await Promise.all(
+          tokenResults.map(async ({ pageId, tokenData }) => {
+            const pageName = pages.find(p => p.id === pageId)?.pageName || pageId;
+            try {
+              const videoId = await uploadVideoDirectToFacebook(
+                videoFile,
+                tokenData.fbPageId,
+                tokenData.accessToken,
+                content.trim(),
+                (msg) => updateProgress(pageId, msg)
+              );
+              return { pageId, videoId, success: true };
+            } catch (err) {
+              return { pageId, videoId: null, success: false, error: (err as Error).message };
+            }
+          })
+        );
+
+        const failedUpload = uploadResults.find(r => !r.success);
+        if (failedUpload) {
+          const pageName = pages.find(p => p.id === failedUpload.pageId)?.pageName || failedUpload.pageId;
+          setPublishResult({ ok: false, results: [{ pageName, success: false, error: failedUpload.error || "Upload video thất bại" }] });
+          setSaving(false);
+          setUploadProgress(null);
+          return;
+        }
+
+        for (const r of uploadResults) {
+          if (r.videoId) videoIds[r.pageId] = r.videoId;
+        }
+        setUploadProgress("Đã upload video xong tất cả các trang, đang lưu log...");
       }
 
       // ─── Bước 2: Đăng text + ảnh (hoặc chỉ lưu log nếu có video) ──────
