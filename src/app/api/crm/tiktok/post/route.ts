@@ -3,21 +3,25 @@ import { requireCrmAccess } from "@/lib/admin-auth";
 import { dbGetSetting } from "@/lib/db-store";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
-interface TikTokConnection {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-  openId: string;
-  displayName: string;
+interface TikTokSession {
+  sessionId: string;
+  msToken: string;
+  note: string;
+  savedAt: string;
 }
 
 /**
  * POST /api/crm/tiktok/post
- * Khởi tạo upload video lên TikTok
- * Body: { action: "init_upload", fileSize: number, chunkSize: number, totalChunks: number }
- *       { action: "publish", uploadId: string, title: string, privacy: string, disableComment: boolean, disableDuet: boolean }
+ *
+ * action = "init_upload"
+ *   Khởi tạo upload session qua TikTok web API (dùng sessionid cookie)
+ *   → trả về { uploadId, uploadUrl } để browser upload video trực tiếp
+ *
+ * action = "confirm_publish"
+ *   Xác nhận đăng bài sau khi browser đã upload video xong
+ *   → trả về { ok, shareId }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -26,73 +30,99 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const connection = await dbGetSetting<TikTokConnection>("tiktok_connection");
-  if (!connection || Date.now() > connection.expiresAt) {
-    return NextResponse.json({ error: "TikTok chưa kết nối hoặc token đã hết hạn" }, { status: 401 });
+  const session = await dbGetSetting<TikTokSession>("tiktok_session");
+  if (!session || !session.sessionId) {
+    return NextResponse.json({ error: "TikTok chưa được kết nối. Vui lòng nhập Session ID." }, { status: 401 });
   }
 
-  const { accessToken } = connection;
+  const { sessionId, msToken } = session;
+
+  // Cookie header dùng cho mọi request TikTok
+  const cookieHeader = `sessionid=${sessionId}${msToken ? `; msToken=${msToken}` : ""}`;
+
   const body = await request.json();
   const { action } = body;
 
-  if (action === "publish") {
-    // Khởi tạo Direct Post session - browser sẽ upload video trực tiếp lên uploadUrl
-    const { title, privacyLevel, disableComment, disableDuet, disableStitch, fileSize, chunkSize, totalChunks } = body;
+  // ── Bước 1: Khởi tạo upload session ─────────────────────────────────────────
+  if (action === "init_upload") {
+    const { fileSize } = body;
 
-    const publishRes = await fetch("https://open.tiktokapis.com/v2/post/publish/video/init/", {
+    // Lấy upload URL từ TikTok web API
+    const res = await fetch("https://www.tiktok.com/api/upload/video/init/", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json; charset=UTF-8",
+        "Content-Type": "application/json",
+        "Cookie": cookieHeader,
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Referer": "https://www.tiktok.com/upload",
+        "Origin": "https://www.tiktok.com",
       },
       body: JSON.stringify({
-        post_info: {
-          title: (title || "").substring(0, 2200),
-          privacy_level: privacyLevel || "PUBLIC_TO_EVERYONE",
-          disable_comment: disableComment || false,
-          disable_duet: disableDuet || false,
-          disable_stitch: disableStitch || false,
-        },
-        source_info: {
-          source: "FILE_UPLOAD",
-          video_size: fileSize || 0,
-          chunk_size: chunkSize || 0,
-          total_chunk_count: totalChunks || 1,
-        },
+        file_size: fileSize,
+        upload_type: "UPLOAD_TYPE_NORMAL",
       }),
     });
 
-    const publishData = await publishRes.json();
-    console.log("TikTok publish init response:", JSON.stringify(publishData));
+    const data = await res.json();
+    console.log("[TikTok init_upload]", JSON.stringify(data));
 
-    if (publishData.error?.code !== "ok") {
-      console.error("TikTok publish error:", publishData);
+    if (data.status_code !== 0 && data.status_code !== undefined) {
       return NextResponse.json({
         ok: false,
-        error: publishData.error?.message || "Không thể khởi tạo đăng bài TikTok",
-        raw: publishData,
+        error: data.status_msg || `Lỗi TikTok: ${data.status_code}`,
+        raw: data,
       }, { status: 400 });
     }
 
     return NextResponse.json({
       ok: true,
-      publishId: publishData.data?.publish_id,
-      uploadUrl: publishData.data?.upload_url,
+      uploadId: data.upload_id || data.data?.upload_id,
+      uploadUrl: data.upload_url || data.data?.upload_url,
+      raw: data,
     });
   }
 
-  if (action === "check_status") {
-    const { publishId } = body;
-    const statusRes = await fetch("https://open.tiktokapis.com/v2/post/publish/status/fetch/", {
+  // ── Bước 2: Xác nhận đăng bài ────────────────────────────────────────────────
+  if (action === "confirm_publish") {
+    const {
+      uploadId, title, privacyLevel,
+      disableComment, disableDuet, disableStitch,
+    } = body;
+
+    const res = await fetch("https://www.tiktok.com/api/upload/video/publish/", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json; charset=UTF-8",
+        "Content-Type": "application/json",
+        "Cookie": cookieHeader,
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Referer": "https://www.tiktok.com/upload",
+        "Origin": "https://www.tiktok.com",
       },
-      body: JSON.stringify({ publish_id: publishId }),
+      body: JSON.stringify({
+        upload_id: uploadId,
+        text: title || "",
+        privacy_level: privacyLevel || 0, // 0=public, 1=friends, 2=private
+        disable_comment: disableComment ? 1 : 0,
+        disable_duet: disableDuet ? 1 : 0,
+        disable_stitch: disableStitch ? 1 : 0,
+      }),
     });
-    const statusData = await statusRes.json();
-    return NextResponse.json(statusData);
+
+    const data = await res.json();
+    console.log("[TikTok confirm_publish]", JSON.stringify(data));
+
+    if (data.status_code !== 0 && data.status_code !== undefined) {
+      return NextResponse.json({
+        ok: false,
+        error: data.status_msg || `Lỗi TikTok: ${data.status_code}`,
+        raw: data,
+      }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      shareId: data.share_id || data.data?.share_id,
+    });
   }
 
   return NextResponse.json({ error: "Action không hợp lệ" }, { status: 400 });

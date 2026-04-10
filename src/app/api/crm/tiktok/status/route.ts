@@ -4,15 +4,11 @@ import { dbGetSetting } from "@/lib/db-store";
 
 export const dynamic = "force-dynamic";
 
-interface TikTokConnection {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-  openId: string;
-  displayName: string;
-  avatarUrl: string;
-  username: string;
-  connectedAt: string;
+interface TikTokSession {
+  sessionId: string;
+  msToken: string;
+  note: string;
+  savedAt: string;
 }
 
 export async function GET() {
@@ -22,21 +18,18 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const connection = await dbGetSetting<TikTokConnection>("tiktok_connection");
+  const session = await dbGetSetting<TikTokSession>("tiktok_session");
 
-  if (!connection) {
-    return NextResponse.json({ connected: false });
+  if (!session || !session.sessionId) {
+    return NextResponse.json({ connected: false, method: "cookie" });
   }
 
-  const isExpired = Date.now() > connection.expiresAt;
-
   return NextResponse.json({
-    connected: !isExpired,
-    expired: isExpired,
-    displayName: connection.displayName,
-    username: connection.username,
-    avatarUrl: connection.avatarUrl,
-    connectedAt: connection.connectedAt,
-    expiresAt: new Date(connection.expiresAt).toISOString(),
+    connected: true,
+    method: "cookie",
+    note: session.note || "",
+    savedAt: session.savedAt,
+    // Chỉ hiện 8 ký tự cuối để xác nhận, không lộ toàn bộ
+    sessionIdHint: `...${session.sessionId.slice(-8)}`,
   });
 }

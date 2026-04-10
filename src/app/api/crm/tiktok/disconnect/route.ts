@@ -11,8 +11,13 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Xóa token bằng cách lưu null
-  await dbSaveSetting("tiktok_connection", null);
+  // Xóa session cookie
+  await dbSaveSetting("tiktok_session", {
+    sessionId: "",
+    msToken: "",
+    note: "",
+    savedAt: "",
+  });
 
   return NextResponse.json({ ok: true });
 }
