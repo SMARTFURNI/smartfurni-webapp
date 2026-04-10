@@ -552,23 +552,25 @@ function PostFormModal({
             <button onClick={onClose} disabled={saving}
               className="px-4 py-2 rounded-lg text-sm font-medium"
               style={{ background: "#f3f4f6", color: saving ? "#9ca3af" : "#374151" }}>
-              Huỷ
+              {publishResult?.results.some(r => r.success) ? "Đóng" : "Huỷ"}
             </button>
-            <button onClick={handleSubmit} disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: saving ? "#9ca3af" : "#1877f2" }}>
-              {saving ? (
-                <>
-                  <RefreshCw size={14} className="animate-spin" />
-                  {videoFile ? "Đang upload video..." : "Đang đăng..."}
-                </>
-              ) : (
-                <>
-                  <Send size={14} />
-                  Đăng ngay
-                </>
-              )}
-            </button>
+            {!publishResult?.results.some(r => r.success) && (
+              <button onClick={handleSubmit} disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                style={{ background: saving ? "#9ca3af" : "#1877f2" }}>
+                {saving ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    {videoFile ? "Đang upload video..." : "Đang đăng..."}
+                  </>
+                ) : (
+                  <>
+                    <Send size={14} />
+                    Đăng ngay
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
