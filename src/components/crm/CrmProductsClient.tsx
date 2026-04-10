@@ -11,42 +11,42 @@ import {
 import type { CrmProduct, DiscountTier, SizePricing } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
 
-// ─── Dark Luxury Design Tokens ───────────────────────────────────────────────
+// ─── Dark Luxury Design Tokens (matches Dashboard: #0f172a → #1e1a0e → #1a1200) ─
 const D = {
-  // Backgrounds
-  pageBg: "#0D0D0F",
-  headerBg: "#111114",
-  cardBg: "#18181C",
-  cardBgHover: "#1E1E24",
-  surfaceBg: "#1C1C21",
-  filterBg: "#141418",
+  // Backgrounds — same gradient as CrmDashboard
+  pageBg: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)",
+  headerBg: "rgba(15,23,42,0.92)",
+  cardBg: "rgba(255,255,255,0.04)",
+  cardBgHover: "rgba(255,255,255,0.07)",
+  surfaceBg: "rgba(255,255,255,0.03)",
+  filterBg: "rgba(15,23,42,0.7)",
 
   // Borders
-  border: "#2A2A32",
-  borderHover: "#3A3A45",
+  border: "rgba(255,255,255,0.08)",
+  borderHover: "rgba(255,255,255,0.14)",
   borderGold: "rgba(201,168,76,0.45)",
 
   // Text
-  textPrimary: "#F0F0F5",
-  textSecondary: "#9090A8",
-  textMuted: "#5A5A6E",
+  textPrimary: "#f5edd6",
+  textSecondary: "rgba(245,237,214,0.75)",
+  textMuted: "rgba(255,255,255,0.4)",
 
   // Accent — Gold
   gold: "#C9A84C",
-  goldDim: "rgba(201,168,76,0.15)",
+  goldDim: "rgba(201,168,76,0.12)",
   goldGlow: "0 0 20px rgba(201,168,76,0.25)",
 
   // Semantic
-  purple: "#A78BFA",
+  purple: "#a78bfa",
   purpleDim: "rgba(167,139,250,0.12)",
-  blue: "#60A5FA",
+  blue: "#60a5fa",
   blueDim: "rgba(96,165,250,0.12)",
-  green: "#34D399",
-  greenDim: "rgba(52,211,153,0.12)",
-  red: "#F87171",
-  redDim: "rgba(248,113,113,0.12)",
-  indigo: "#818CF8",
-  indigoDim: "rgba(129,140,248,0.12)",
+  green: "#22c55e",
+  greenDim: "rgba(34,197,94,0.10)",
+  red: "#f87171",
+  redDim: "rgba(248,113,113,0.10)",
+  indigo: "#8b5cf6",
+  indigoDim: "rgba(139,92,246,0.12)",
 };
 
 const CATEGORY_MAP: Record<CrmProduct["category"], { label: string; color: string; dim: string; icon: string }> = {
@@ -100,7 +100,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
   }), [products]);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: D.pageBg }}>
+    <div className="flex flex-col h-full" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)" }}>
 
       {/* ── Header ── */}
       <div className="flex-shrink-0" style={{ background: D.headerBg, borderBottom: `1px solid ${D.border}` }}>
@@ -165,7 +165,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
 
       {/* ── Filter bar ── */}
       <div className="flex-shrink-0 flex items-center gap-3 px-6 py-3"
-        style={{ background: D.filterBg, borderBottom: `1px solid ${D.border}` }}>
+        style={{ background: "rgba(15,23,42,0.6)", borderBottom: `1px solid ${D.border}`, backdropFilter: "blur(8px)" }}>
         {/* Search */}
         <div className="relative flex-1 max-w-xs">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: D.textMuted }} />
@@ -255,7 +255,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
       </div>
 
       {/* ── Content ── */}
-      <div className="flex-1 overflow-y-auto p-5" style={{ background: D.pageBg }}>
+      <div className="flex-1 overflow-y-auto p-5">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"

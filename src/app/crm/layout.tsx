@@ -30,7 +30,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="crm-root flex h-screen overflow-hidden" style={{ background: "#f8f9fb" }}>
+    <div className="crm-root flex h-screen overflow-hidden" style={{ background: "#0D0D0F" }}>
       <CrmSidebar
         isAdmin={session.isAdmin}
         staffRole={staffRole}
@@ -38,7 +38,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         rolePermissions={rolePermissions}
         roleName={roleName}
       />
-      <main className="flex-1 overflow-auto min-w-0">
+      <main className="flex-1 overflow-auto min-w-0" style={{ background: "inherit" }}>
         {children}
       </main>
       {/* Real-time notification khi có lead mới vào Data Pool */}
