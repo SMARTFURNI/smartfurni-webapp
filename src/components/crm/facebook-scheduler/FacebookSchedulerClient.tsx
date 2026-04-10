@@ -88,6 +88,7 @@ function PostFormModal({
   const [selectedPageIds, setSelectedPageIds] = useState<string[]>(pages.length > 0 ? [pages[0].id] : []);
   const [hashtags, setHashtags] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [publishResult, setPublishResult] = useState<{ ok: boolean; results: Array<{ pageName: string; success: boolean; error?: string }> } | null>(null);
   const [charCount, setCharCount] = useState(0);
 
@@ -133,27 +134,51 @@ function PostFormModal({
 
     setSaving(true);
     setPublishResult(null);
+    setUploadProgress(null);
     try {
+      // ─── Bước 1: Upload video (nếu có) qua raw binary route ───────────
+      // Dùng raw binary thay vì FormData để tránh timeout và memory issues
+      const videoIds: Record<string, string> = {}; // pageId -> videoId
+      if (videoFile) {
+        for (const pageId of selectedPageIds) {
+          const pageName = pages.find(p => p.id === pageId)?.pageName || pageId;
+          setUploadProgress(`Đang upload video lên ${pageName}... (có thể mất vài phút)`);
+          const uploadRes = await fetch(
+            `/api/crm/facebook-scheduler/upload-video?pageId=${encodeURIComponent(pageId)}&fileName=${encodeURIComponent(videoFile.name)}&description=${encodeURIComponent(content.trim())}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/octet-stream" },
+              body: videoFile,
+            }
+          );
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || uploadData.error) {
+            setPublishResult({ ok: false, results: [{ pageName, success: false, error: uploadData.error || "Upload video thất bại" }] });
+            setSaving(false);
+            setUploadProgress(null);
+            return;
+          }
+          videoIds[pageId] = uploadData.videoId;
+        }
+        setUploadProgress("Đã upload video xong, đang lưu log...");
+      }
+
+      // ─── Bước 2: Đăng text + ảnh (hoặc chỉ lưu log nếu có video) ──────
       const fd = new FormData();
       fd.append("content", content.trim());
       fd.append("hashtags", hashtags.trim());
       fd.append("pageIds", JSON.stringify(selectedPageIds));
       fd.append("linkUrl", linkUrl.trim());
       fd.append("title", content.trim().slice(0, 80));
-
+      fd.append("videoIds", JSON.stringify(videoIds));
       // Ảnh từ file
       for (const f of imageFiles) {
         fd.append("images", f);
       }
-      // Ảnh từ URL: upload qua Cloudinary trước
+      // Ảnh từ URL
       for (const url of imageUrlList) {
         fd.append("imageUrls", url);
       }
-      // Video
-      if (videoFile) {
-        fd.append("video", videoFile);
-      }
-
       const res = await fetch("/api/crm/facebook-scheduler/publish-direct", {
         method: "POST",
         body: fd,
@@ -167,6 +192,7 @@ function PostFormModal({
       setPublishResult({ ok: false, results: [{ pageName: "Lỗi", success: false, error: (err as Error).message }] });
     } finally {
       setSaving(false);
+      setUploadProgress(null);
     }
   };
 
@@ -430,27 +456,36 @@ function PostFormModal({
            </div>
         </div>
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-5 border-t" style={{ borderColor: "#e5e7eb" }}>
-          <button onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm font-medium"
-            style={{ background: "#f3f4f6", color: "#374151" }}>
-            Huỷ
-          </button>
-          <button onClick={handleSubmit} disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-            style={{ background: saving ? "#9ca3af" : "#1877f2" }}>
-            {saving ? (
-              <>
-                <RefreshCw size={14} className="animate-spin" />
-                Đang đăng...
-              </>
-            ) : (
-              <>
-                <Send size={14} />
-                Đăng ngay
-              </>
-            )}
-          </button>
+        <div className="p-5 border-t" style={{ borderColor: "#e5e7eb" }}>
+          {uploadProgress && (
+            <div className="mb-3 flex items-center gap-2 text-xs rounded-lg px-3 py-2"
+              style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+              <RefreshCw size={12} className="animate-spin flex-shrink-0" />
+              <span>{uploadProgress}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-end gap-3">
+            <button onClick={onClose} disabled={saving}
+              className="px-4 py-2 rounded-lg text-sm font-medium"
+              style={{ background: "#f3f4f6", color: saving ? "#9ca3af" : "#374151" }}>
+              Huỷ
+            </button>
+            <button onClick={handleSubmit} disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ background: saving ? "#9ca3af" : "#1877f2" }}>
+              {saving ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin" />
+                  {videoFile ? "Đang upload video..." : "Đang đăng..."}
+                </>
+              ) : (
+                <>
+                  <Send size={14} />
+                  Đăng ngay
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

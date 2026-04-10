@@ -3,6 +3,10 @@ import { requireCrmAccess } from "@/lib/admin-auth";
 import { loadFacebookSchedulerFromDb, getPages, addPostLog, createPost, updatePost } from "@/lib/crm-facebook-scheduler-store";
 import { v2 as cloudinary } from "cloudinary";
 
+// Tăng timeout cho upload ảnh lớn (600 giây = 10 phút)
+export const maxDuration = 600;
+export const dynamic = "force-dynamic";
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -23,14 +27,14 @@ async function ensureLoaded() {
  * - hashtags: string (hashtags cách nhau bằng dấu cách)
  * - pageIds: string (JSON array các page ID)
  * - linkUrl?: string
- * - images?: File[] (ảnh đính kèm từ file)
- * - imageUrls?: string[] (URL ảnh đính kèm)
- * - video?: File (video đính kèm)
+ * - images?: File[] (ảnh đính kèm từ file - upload lên Cloudinary)
+ * - imageUrls?: string[] (URL ảnh đính kèm trực tiếp)
+ * - videoIds?: string (JSON object: { pageId -> videoId } - video đã upload qua upload-video route)
  *
  * Luồng:
- * 1. Nếu có ảnh file → upload lên Cloudinary → lấy URL
- * 2. Nếu có video → upload lên Facebook qua Resumable API (published=true)
- * 3. Nếu chỉ có text/ảnh → đăng lên /feed hoặc /photos
+ * 1. Nếu có videoIds → video đã upload trước, chỉ cần lưu log
+ * 2. Nếu có ảnh file → upload lên Cloudinary → lấy URL → đăng lên /photos
+ * 3. Nếu chỉ có text → đăng lên /feed
  * 4. Lưu log vào DB
  */
 export async function POST(request: NextRequest) {
@@ -48,6 +52,12 @@ export async function POST(request: NextRequest) {
     const pageIdsRaw = (formData.get("pageIds") as string) || "[]";
     const linkUrl = (formData.get("linkUrl") as string) || "";
     const title = (formData.get("title") as string) || content.slice(0, 50) || "Bài đăng";
+
+    // Parse videoIds (video đã được upload trước qua upload-video route)
+    const videoIdsRaw = (formData.get("videoIds") as string) || "{}";
+    let videoIds: Record<string, string> = {};
+    try { videoIds = JSON.parse(videoIdsRaw); } catch { videoIds = {}; }
+    const hasVideo = Object.keys(videoIds).length > 0;
 
     let pageIds: string[] = [];
     try { pageIds = JSON.parse(pageIdsRaw); } catch { pageIds = []; }
@@ -67,7 +77,6 @@ export async function POST(request: NextRequest) {
 
     // ─── Xử lý ảnh (nếu có) ───────────────────────────────────────────────
     const imageFiles = formData.getAll("images") as File[];
-    // URL ảnh từ client (không cần upload lên Cloudinary)
     const clientImageUrls = formData.getAll("imageUrls") as string[];
     const imageUrls: string[] = [...clientImageUrls.filter(u => u && u.startsWith("http"))];
 
@@ -88,10 +97,6 @@ export async function POST(request: NextRequest) {
       imageUrls.push(uploadResult.secure_url);
     }
 
-    // ─── Xử lý video (nếu có) ─────────────────────────────────────────────
-    const videoFile = formData.get("video") as File | null;
-    const hasVideo = videoFile && videoFile.size > 0;
-
     // ─── Kết quả đăng từng page ───────────────────────────────────────────
     const results: Array<{
       pageId: string;
@@ -110,86 +115,13 @@ export async function POST(request: NextRequest) {
 
       try {
         if (hasVideo) {
-          // ─── Upload video lên Facebook qua Resumable API ───────────────
-          const videoArrayBuffer = await videoFile.arrayBuffer();
-          const fileSize = videoArrayBuffer.byteLength;
-
-          if (fileSize > 200 * 1024 * 1024) {
-            results.push({ pageId, pageName: page.pageName, success: false, error: "Video quá lớn (tối đa 200MB)" });
+          // ─── Video đã được upload trước qua upload-video route ────────────
+          // Chỉ cần lưu log, không cần upload lại
+          const videoId = videoIds[pageId];
+          if (!videoId) {
+            results.push({ pageId, pageName: page.pageName, success: false, error: "Không tìm thấy videoId cho page này" });
             continue;
           }
-
-          // Bước 1: Khởi tạo upload session
-          const initRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/videos`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              upload_phase: "start",
-              file_size: fileSize,
-              access_token: page.pageAccessToken,
-            }),
-          });
-          const initData = await initRes.json();
-          if (initData.error || !initData.upload_session_id) {
-            results.push({ pageId, pageName: page.pageName, success: false, error: `Khởi tạo upload thất bại: ${initData.error?.message || "Unknown"}` });
-            continue;
-          }
-
-          const { upload_session_id, video_id: videoIdFromInit } = initData;
-          let currentStart = parseInt(initData.start_offset);
-          let currentEnd = parseInt(initData.end_offset);
-
-          // Bước 2: Upload chunks
-          let chunkError: string | null = null;
-          while (currentStart < fileSize) {
-            const chunk = videoArrayBuffer.slice(currentStart, currentEnd);
-            const chunkBlob = new Blob([chunk], { type: "application/octet-stream" });
-            const chunkFormData = new FormData();
-            chunkFormData.append("upload_phase", "transfer");
-            chunkFormData.append("upload_session_id", upload_session_id);
-            chunkFormData.append("start_offset", currentStart.toString());
-            chunkFormData.append("video_file_chunk", chunkBlob, "chunk");
-            chunkFormData.append("access_token", page.pageAccessToken);
-
-            const chunkRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/videos`, {
-              method: "POST",
-              body: chunkFormData,
-            });
-            const chunkData = await chunkRes.json();
-            if (chunkData.error) {
-              chunkError = chunkData.error?.message || "Upload chunk thất bại";
-              break;
-            }
-            currentStart = parseInt(chunkData.start_offset);
-            currentEnd = parseInt(chunkData.end_offset);
-            if (currentStart >= fileSize) break;
-          }
-
-          if (chunkError) {
-            results.push({ pageId, pageName: page.pageName, success: false, error: chunkError });
-            continue;
-          }
-
-          // Bước 3: Finish với published=true và description
-          const finishRes = await fetch(`https://graph.facebook.com/v19.0/${page.pageId}/videos`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              upload_phase: "finish",
-              upload_session_id,
-              access_token: page.pageAccessToken,
-              published: true,
-              description: fullMessage,
-              title: title.slice(0, 100),
-            }),
-          });
-          const finishData = await finishRes.json();
-          if (finishData.error) {
-            results.push({ pageId, pageName: page.pageName, success: false, error: `Hoàn tất upload thất bại: ${finishData.error?.message || "Unknown"}` });
-            continue;
-          }
-
-          const videoId = finishData.id || finishData.video_id || videoIdFromInit;
           results.push({ pageId, pageName: page.pageName, success: true, fbPostId: videoId });
 
         } else if (imageUrls.length === 0) {
