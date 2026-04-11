@@ -1255,28 +1255,35 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
           <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em" }}>4 / 4</div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
-          <ImageSlot src={img1} field="imageDataUrl" label="Góc chụp 1" style={{ aspectRatio: "1/1", width: "100%" }} />
-          <ImageSlot src={img2} field="image2DataUrl" label="Góc chụp 2" style={{ aspectRatio: "1/1", width: "100%" }} />
-          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ aspectRatio: "1/1", width: "100%" }} />
+        {/* Row 1: 2 ảnh góc nhỏ ngang nhau */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <ImageSlot src={img1} field="imageDataUrl" label="Góc chụp 1" style={{ aspectRatio: "4/3", width: "100%" }} />
+          <ImageSlot src={img2} field="image2DataUrl" label="Góc chụp 2" style={{ aspectRatio: "4/3", width: "100%" }} />
         </div>
 
-        <div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 12 }}>PHÂN KHÚC PHÙ HỢP</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {applications.map((app, i) => (
-              <div key={i} style={{ padding: "6px 14px", borderRadius: 20, background: colorDim, border: `1px solid ${color}30`, fontSize: 11, color: D.textSecondary }}>
-                {app}
-              </div>
-            ))}
-          </div>
-          {isEditing && (
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Phân khúc (mỗi dòng = 1 tag):</div>
-              <InlineText value={overrides?.body ?? defaultApplications.join("\n")} placeholder={defaultApplications.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
-                multiline style={{ fontSize: 12, color: D.textSecondary }} />
+        {/* Row 2: Ảnh phối cảnh + phân khúc */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, flex: 1, minHeight: 0 }}>
+          {/* Ảnh phối cảnh chiếm toàn bộ chiều cao còn lại */}
+          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ width: "100%", height: "100%", minHeight: 120 }} />
+
+          {/* Phân khúc phù hợp */}
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 10 }}>PHÂN KHÚC PHÙ HỢP</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {applications.map((app, i) => (
+                <div key={i} style={{ padding: "7px 14px", borderRadius: 20, background: colorDim, border: `1px solid ${color}30`, fontSize: 11, color: D.textSecondary }}>
+                  {app}
+                </div>
+              ))}
             </div>
-          )}
+            {isEditing && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Phân khúc (mỗi dòng = 1 tag):</div>
+                <InlineText value={overrides?.body ?? defaultApplications.join("\n")} placeholder={defaultApplications.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
+                  multiline style={{ fontSize: 12, color: D.textSecondary }} />
+              </div>
+            )}
+          </div>
         </div>
 
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
