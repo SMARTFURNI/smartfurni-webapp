@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Printer, Plus, Trash2, GripVertical, Eye, EyeOff,
   ChevronLeft, ChevronRight, LayoutGrid, Layers,
@@ -257,11 +257,15 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-interface Props { products: CrmProduct[] }
+interface Props { products: CrmProduct[]; initialSlides?: Slide[] | null }
 
-export default function CatalogueClient({ products }: Props) {
-  const [slides, setSlides] = useState<Slide[]>(() => buildDefaultSlides(products));
-  const [activeSlideId, setActiveSlideId] = useState<string>("cover");
+export default function CatalogueClient({ products, initialSlides }: Props) {
+  const [slides, setSlides] = useState<Slide[]>(() =>
+    initialSlides && initialSlides.length > 0 ? initialSlides : buildDefaultSlides(products)
+  );
+  const [activeSlideId, setActiveSlideId] = useState<string>(
+    initialSlides && initialSlides.length > 0 ? (initialSlides[0]?.id ?? "cover") : "cover"
+  );
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
@@ -269,20 +273,7 @@ export default function CatalogueClient({ products }: Props) {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Load saved state on mount ──
-  useEffect(() => {
-    fetch("/api/crm/catalogue-state")
-      .then(r => r.json())
-      .then(data => {
-        if (data?.slides && Array.isArray(data.slides) && data.slides.length > 0) {
-          setSlides(data.slides);
-          setActiveSlideId(data.slides[0]?.id ?? "cover");
-        }
-      })
-      .catch(() => {/* ignore */});
-  }, []);
-
-  // ── Auto-save with debounce (1.5s) ──
+   // ── Auto-save with debounce (1.5s) ──
   const saveSlides = useCallback((slidesToSave: Slide[]) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setSaveStatus("saving");
