@@ -44,6 +44,7 @@ type SlideType =
   | "product_intro"
   | "product_feature"
   | "product_pricing"
+  | "product_feature_pricing"
   | "product_gallery"
   | "why_smartfurni"
   | "warranty"
@@ -74,6 +75,7 @@ const SLIDE_LABELS: Record<SlideType, string> = {
   product_intro: "SP — Giới thiệu (1/4)",
   product_feature: "SP — Tính năng (2/4)",
   product_pricing: "SP — Bảng giá (3/4)",
+  product_feature_pricing: "SP — Tính năng & Giá (2/3)",
   product_gallery: "SP — Ảnh thực tế (4/4)",
   why_smartfurni: "Tại Sao Chọn SmartFurni",
   warranty: "Chính Sách Bảo Hành",
@@ -87,6 +89,7 @@ const SLIDE_ICONS: Record<SlideType, React.ElementType> = {
   product_intro: Star,
   product_feature: Package,
   product_pricing: Tag,
+  product_feature_pricing: Tag,
   product_gallery: LayoutGrid,
   why_smartfurni: Shield,
   warranty: CheckCircle2,
@@ -107,8 +110,7 @@ function buildDefaultSlides(products: CrmProduct[]): Slide[] {
     slides.push({ id: "cat_bed", type: "category_header", visible: true, category: "ergonomic_bed" });
     beds.forEach(p => {
       slides.push({ id: `intro_${p.id}`, type: "product_intro", visible: true, productId: p.id });
-      slides.push({ id: `feat_${p.id}`, type: "product_feature", visible: true, productId: p.id });
-      slides.push({ id: `price_${p.id}`, type: "product_pricing", visible: true, productId: p.id });
+      slides.push({ id: `featprice_${p.id}`, type: "product_feature_pricing", visible: true, productId: p.id });
       slides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
     });
   }
@@ -116,8 +118,7 @@ function buildDefaultSlides(products: CrmProduct[]): Slide[] {
     slides.push({ id: "cat_sofa", type: "category_header", visible: true, category: "sofa_bed" });
     sofas.forEach(p => {
       slides.push({ id: `intro_${p.id}`, type: "product_intro", visible: true, productId: p.id });
-      slides.push({ id: `feat_${p.id}`, type: "product_feature", visible: true, productId: p.id });
-      slides.push({ id: `price_${p.id}`, type: "product_pricing", visible: true, productId: p.id });
+      slides.push({ id: `featprice_${p.id}`, type: "product_feature_pricing", visible: true, productId: p.id });
       slides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
     });
   }
@@ -650,6 +651,7 @@ function SlideRenderer({ slide, product, products, today, isEditing, onUpdate }:
     case "product_intro": return product ? <SlideProductIntro product={product} {...props} /> : <SlideEmpty />;
     case "product_feature": return product ? <SlideProductFeature product={product} {...props} /> : <SlideEmpty />;
     case "product_pricing": return product ? <SlideProductPricing product={product} {...props} /> : <SlideEmpty />;
+    case "product_feature_pricing": return product ? <SlideProductFeaturePricing product={product} {...props} /> : <SlideEmpty />;
     case "product_gallery": return product ? <SlideProductGallery product={product} {...props} /> : <SlideEmpty />;
     case "why_smartfurni": return <SlideWhySmartFurni {...props} />;
     case "warranty": return <SlideWarranty {...props} />;
@@ -917,6 +919,90 @@ function SlideProductFeature({ product, overrides, isEditing, onUpdate }: { prod
   );
 }
 
+// ─── Slide: Product Feature + Pricing (combined) ────────────────────────────
+function SlideProductFeaturePricing({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
+  const isBed = product.category === "ergonomic_bed";
+  const color = isBed ? D.purple : D.blue;
+  const hasSizes = product.sizePricings && product.sizePricings.length > 0;
+  const specEntries = Object.entries(product.specs || {}).filter(([, v]) => v);
+  const bodyLines = overrides?.body?.split("\n").filter(Boolean) ?? [];
+  const featureLines = bodyLines.length > 0 ? bodyLines : specEntries.map(([k, v]) => `${k}: ${v}`);
+  const imageUrl = overrides?.imageDataUrl || product.imageSpec || product.imageUrl || product.imageAngle1;
+  return (
+    <SlideShell accentColor={color}>
+      <div style={{ flex: 1, padding: "28px 40px", display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+          <div style={{ width: 100, height: 100, borderRadius: 14, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: `1px solid ${color}30` }}>
+            <InlineImage src={imageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
+              style={{ width: 100, height: 100, objectFit: "cover" }}
+              placeholderStyle={{ width: 100, height: 100, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}
+              placeholderLabel={isBed ? "🛏️" : "🛋️"} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>
+              {isBed ? "GIƯỜNG CÔNG THÁI HỌC" : "SOFA GIƯỜNG ĐA NĂNG"}
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, marginBottom: 4, lineHeight: 1.25 }}>
+              <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+                style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
+            </h3>
+            <div style={{ fontSize: 11, fontFamily: "monospace", padding: "2px 8px", borderRadius: 6, display: "inline-block", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              {product.sku}
+            </div>
+          </div>
+        </div>
+        {/* Features / Specs */}
+        {featureLines.length > 0 && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>TÍNH NĂNG & THÔNG SỐ</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              {featureLines.slice(0, 6).map((line, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, borderRadius: 8, padding: "8px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div style={{ width: 4, height: 4, borderRadius: "50%", marginTop: 5, flexShrink: 0, background: color }} />
+                  <span style={{ fontSize: 11, color: D.textPrimary, lineHeight: 1.4 }}>{line}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Pricing */}
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>BẢNG GIÁ</div>
+          {hasSizes ? (
+            <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)" }}>
+              <div style={{ padding: "8px 16px", background: "rgba(201,168,76,0.1)", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 12 }}>
+                {["Kích thước", "Mã size", "Đơn giá (VNĐ)"].map((h, i) => (
+                  <div key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.5)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
+                ))}
+              </div>
+              {product.sizePricings!.map((sp: SizePricing, i: number) => (
+                <div key={i} style={{ padding: "9px 16px", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 12, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: D.textPrimary }}>{sp.label || sp.size}</div>
+                  <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(255,255,255,0.45)" }}>{sp.size}</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: D.gold, textAlign: "right" }}>{sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ borderRadius: 12, padding: "16px 20px", textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
+              <div style={{ fontSize: 28, fontWeight: 900, color: D.gold }}>
+                {product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ"}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Giá niêm yết chưa VAT</div>
+            </div>
+          )}
+        </div>
+        {/* Footer note */}
+        <div style={{ marginTop: "auto", borderRadius: 10, padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", lineHeight: 1.8 }}>
+            • Giá trên chưa bao gồm VAT (10%) &nbsp;•&nbsp; Giá có thể thay đổi mà không báo trước &nbsp;•&nbsp; Liên hệ để được báo giá dự án
+          </div>
+        </div>
+      </div>
+    </SlideShell>
+  );
+}
 // ─── Slide: Product Pricing ───────────────────────────────────────────────────
 function SlideProductPricing({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
   const hasSizes = product.sizePricings && product.sizePricings.length > 0;
