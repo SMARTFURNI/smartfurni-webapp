@@ -1243,8 +1243,8 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
 
   return (
     <SlideShell accentColor={color}>
-      {/* Wrapper chiếm toàn bộ chiều cao còn lại sau 2 border stripe */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "22px 40px 18px" }}>
+
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14, flexShrink: 0 }}>
           <div>
@@ -1257,32 +1257,34 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
           <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em", flexShrink: 0 }}>4 / 4</div>
         </div>
 
-        {/* Row 1: 2 ảnh góc — flex 1 */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10, flex: 1, minHeight: 0 }}>
-          <ImageSlot src={img1} field="imageDataUrl" label="Góc chụp 1" style={{ width: "100%", height: "100%" }} />
-          <ImageSlot src={img2} field="image2DataUrl" label="Góc chụp 2" style={{ width: "100%", height: "100%" }} />
+        {/* Row 1: 2 ảnh 1:1 nằm ngang */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14, flexShrink: 0 }}>
+          <ImageSlot src={img1} field="imageDataUrl" label="Góc chụp 1" style={{ aspectRatio: "1/1", width: "100%" }} />
+          <ImageSlot src={img2} field="image2DataUrl" label="Góc chụp 2" style={{ aspectRatio: "1/1", width: "100%" }} />
         </div>
 
-        {/* Row 2: Ảnh phối cảnh wide + phân khúc — flex 1.4 */}
-        <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 10, flex: 1.4, minHeight: 0 }}>
-          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ width: "100%", height: "100%" }} />
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 0 }}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 10 }}>PHÂN KHÚC PHÙ HỢP</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {applications.map((app, i) => (
-                <div key={i} style={{ padding: "6px 14px", borderRadius: 16, background: colorDim, border: `1px solid ${color}30`, fontSize: 10.5, color: D.textSecondary }}>
-                  {app}
-                </div>
-              ))}
-            </div>
-            {isEditing && (
-              <div style={{ marginTop: 10 }}>
-                <div style={{ fontSize: 9, color: D.textMuted, marginBottom: 4 }}>Phân khúc (mỗi dòng = 1 tag):</div>
-                <InlineText value={overrides?.body ?? defaultApplications.join("\n")} placeholder={defaultApplications.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
-                  multiline style={{ fontSize: 11, color: D.textSecondary }} />
+        {/* Phân khúc — nằm giữa trang */}
+        <div style={{ flexShrink: 0, marginBottom: 14 }}>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 8, textAlign: "center" }}>PHÂN KHÚC PHÙ HỢP</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+            {applications.map((app, i) => (
+              <div key={i} style={{ padding: "6px 16px", borderRadius: 20, background: colorDim, border: `1px solid ${color}30`, fontSize: 10.5, color: D.textSecondary }}>
+                {app}
               </div>
-            )}
+            ))}
           </div>
+          {isEditing && (
+            <div style={{ marginTop: 8, textAlign: "center" }}>
+              <div style={{ fontSize: 9, color: D.textMuted, marginBottom: 4 }}>Phân khúc (mỗi dòng = 1 tag):</div>
+              <InlineText value={overrides?.body ?? defaultApplications.join("\n")} placeholder={defaultApplications.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
+                multiline style={{ fontSize: 11, color: D.textSecondary }} />
+            </div>
+          )}
+        </div>
+
+        {/* Ảnh phối cảnh 4:3 full width — chiếm phần còn lại */}
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ width: "100%", height: "100%", minHeight: 120 }} />
         </div>
 
         {/* Footer */}
