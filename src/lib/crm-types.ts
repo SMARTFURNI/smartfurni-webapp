@@ -75,6 +75,10 @@ export interface CrmProduct {
   sku: string;
   description: string;
   imageUrl: string;
+  imageSpec?: string;    // Ảnh thông số kỹ thuật
+  imageAngle1?: string;  // Góc nhìn 1
+  imageAngle2?: string;  // Góc nhìn 2
+  imageScene?: string;   // Ảnh phối cảnh
   specs: Record<string, string>;
   basePrice: number;
   discountTiers: DiscountTier[];

@@ -30,7 +30,7 @@ const D = {
   blue: "#60a5fa",
   blueDim: "rgba(96,165,250,0.12)",
   divider: "rgba(255,255,255,0.06)",
-  slideBg: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 60%, #2a1800 100%)",
+  slideBg: "linear-gradient(160deg, #1c1a2e 0%, #241c08 55%, #2e2004 100%)",
 };
 
 const FONT_PRODUCT = "'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif";
@@ -225,7 +225,7 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
     return (
       <div style={{ position: "relative", display: "inline-block", ...style }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="eager" />
+        <img src={src} alt={alt ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center", display: "block" }} loading="eager" />
         {isEditing && (
           <div
             onClick={() => fileRef.current?.click()}
@@ -774,15 +774,15 @@ function SlideProductFeature({ product, overrides, isEditing, onUpdate }: { prod
   const color = isBed ? D.purple : D.blue;
   const specEntries = Object.entries(product.specs || {}).filter(([, v]) => v);
   const bodyLines = overrides?.body?.split("\n").filter(Boolean) ?? [];
-  const imageUrl = overrides?.imageDataUrl || product.imageUrl;
+  const imageUrl = overrides?.imageDataUrl || product.imageSpec || product.imageUrl || product.imageAngle1;
 
   return (
     <SlideShell accentColor={color}>
       <div style={{ flex: 1, padding: "36px 44px", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 20, marginBottom: 24 }}>
-          <div style={{ width: 140, height: 140, borderRadius: 18, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: `1px solid ${color}30` }}>
+          <div style={{ width: 140, height: 140, borderRadius: 18, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: `1px solid ${color}30`, aspectRatio: "1/1" }}>
             <InlineImage src={imageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
-              style={{ width: 140, height: 140 }}
+              style={{ width: 140, height: 140, objectFit: "cover", objectPosition: "center" }}
               placeholderStyle={{ width: 140, height: 140, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}
               placeholderLabel={isBed ? "🛏️" : "🛋️"} />
           </div>
@@ -865,7 +865,7 @@ function SlideProductFeature({ product, overrides, isEditing, onUpdate }: { prod
 // ─── Slide: Product Pricing ───────────────────────────────────────────────────
 function SlideProductPricing({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
   const hasSizes = product.sizePricings && product.sizePricings.length > 0;
-  const imageUrl = overrides?.imageDataUrl || product.imageUrl;
+  const imageUrl = overrides?.imageDataUrl || product.imageUrl || product.imageAngle1;
 
   return (
     <SlideShell>
@@ -1141,7 +1141,7 @@ function SlideProductIntro({ product, overrides, isEditing, onUpdate }: { produc
   const isBed = product.category === "ergonomic_bed";
   const color = isBed ? D.purple : D.blue;
   const colorDim = isBed ? D.purpleDim : D.blueDim;
-  const imageUrl = overrides?.imageDataUrl || product.imageUrl;
+  const imageUrl = overrides?.imageDataUrl || product.imageUrl || product.imageAngle1;
   const defaultHighlights = isBed
     ? ["Điều khiển điện không dây", "Nâng đầu 0–70°, nâng chân 0–45°", "Massage rung tích hợp", "Khung thép mạ kẽm bảo hành 5 năm"]
     : ["Gấp mở dễ dàng trong 30 giây", "Kết cấu khung thép chắc chắn", "Đệm foam cao cấp thoáng khí", "Tiết kiệm không gian tối đa"];
@@ -1167,7 +1167,7 @@ function SlideProductIntro({ product, overrides, isEditing, onUpdate }: { produc
           <div style={{ width: "42%", flexShrink: 0 }}>
             <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: 16, overflow: "hidden", background: colorDim, border: `1px solid ${color}30` }}>
               <InlineImage src={imageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
-                style={{ width: "100%", height: "100%" }}
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
                 placeholderStyle={{ width: "100%", height: "100%", minHeight: 200, background: colorDim, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
                 placeholderLabel="Ảnh sản phẩm" />
             </div>
@@ -1224,9 +1224,9 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
   const isBed = product.category === "ergonomic_bed";
   const color = isBed ? D.purple : D.blue;
   const colorDim = isBed ? D.purpleDim : D.blueDim;
-  const img1 = overrides?.imageDataUrl || product.imageUrl;
-  const img2 = overrides?.image2DataUrl;
-  const img3 = overrides?.image3DataUrl;
+  const img1 = overrides?.imageDataUrl || product.imageAngle1 || product.imageUrl;
+  const img2 = overrides?.image2DataUrl || product.imageAngle2 || product.imageScene || "";
+  const img3 = overrides?.image3DataUrl || product.imageScene || product.imageSpec || "";
   const defaultApplications = isBed
     ? ["Căn hộ cao cấp & Penthouse", "Biệt thự & nhà phố", "Khách sạn 4–5 sao", "Không gian cần sự tinh tế"]
     : ["Căn hộ studio & 1PN", "Căn hộ 2–3 phòng ngủ", "Homestay & căn hộ dịch vụ", "Không gian cần tối ưu diện tích"];
@@ -1255,12 +1255,10 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
           <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em" }}>4 / 4</div>
         </div>
 
-        <div style={{ display: "flex", gap: 12, height: 320, marginBottom: 18 }}>
-          <ImageSlot src={img1} field="imageDataUrl" label="Ảnh 1 — Ảnh chính" style={{ flex: "0 0 55%", height: "100%" }} />
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
-            <ImageSlot src={img2} field="image2DataUrl" label="Ảnh 2 — Không gian" style={{ flex: 1 }} />
-            <ImageSlot src={img3} field="image3DataUrl" label="Ảnh 3 — Chi tiết" style={{ flex: 1 }} />
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+          <ImageSlot src={img1} field="imageDataUrl" label="Góc chụp 1" style={{ aspectRatio: "1/1", width: "100%" }} />
+          <ImageSlot src={img2} field="image2DataUrl" label="Góc chụp 2" style={{ aspectRatio: "1/1", width: "100%" }} />
+          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ aspectRatio: "1/1", width: "100%" }} />
         </div>
 
         <div>

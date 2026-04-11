@@ -732,7 +732,7 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
 }) {
   const isEdit = !!product;
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"basic" | "specs" | "discount" | "size">("basic");
+  const [activeTab, setActiveTab] = useState<"basic" | "images" | "specs" | "discount" | "size">("basic");
   const [form, setForm] = useState({
     name: product?.name || "",
     sku: product?.sku || "",
@@ -743,6 +743,13 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
     isActive: product?.isActive ?? true,
   });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingExtraImage, setUploadingExtraImage] = useState<string | null>(null);
+  const [extraImages, setExtraImages] = useState({
+    imageSpec: product?.imageSpec || "",
+    imageAngle1: product?.imageAngle1 || "",
+    imageAngle2: product?.imageAngle2 || "",
+    imageScene: product?.imageScene || "",
+  });
   const [specs, setSpecs] = useState<{ key: string; value: string }[]>(
     product ? Object.entries(product.specs).map(([key, value]) => ({ key, value })) : [{ key: "", value: "" }]
   );
@@ -764,6 +771,19 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
         setF("imageUrl", url);
       }
     } finally { setUploadingImage(false); }
+  }
+
+  async function handleExtraImageUpload(key: keyof typeof extraImages, file: File) {
+    setUploadingExtraImage(key);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/crm/facebook-scheduler/upload-image", { method: "POST", body: fd });
+      if (res.ok) {
+        const { url } = await res.json();
+        setExtraImages(prev => ({ ...prev, [key]: url }));
+      }
+    } finally { setUploadingExtraImage(null); }
   }
 
   function addSpec() { setSpecs(prev => [...prev, { key: "", value: "" }]); }
@@ -796,6 +816,10 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
         category: form.category,
         description: form.description,
         imageUrl: form.imageUrl,
+        imageSpec: extraImages.imageSpec || undefined,
+        imageAngle1: extraImages.imageAngle1 || undefined,
+        imageAngle2: extraImages.imageAngle2 || undefined,
+        imageScene: extraImages.imageScene || undefined,
         basePrice: parseFloat(form.basePrice) || 0,
         isActive: form.isActive,
         specs: specsObj,
@@ -863,6 +887,7 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
           style={{ borderBottom: `1px solid ${D.border}` }}>
           {([
             ["basic", "Thông tin cơ bản"],
+            ["images", `Ảnh (${[form.imageUrl, extraImages.imageSpec, extraImages.imageAngle1, extraImages.imageAngle2, extraImages.imageScene].filter(Boolean).length}/5)`],
             ["specs", `Thông số (${specs.filter(s => s.key).length})`],
             ["discount", usingDefaultTiers ? "Chiết khấu (mặc định)" : `Chiết khấu (${tiers.filter(t => t.minQty > 0).length})`],
             ["size", `Kích thước (${sizePricings.filter(s => s.size.trim()).length})`],
@@ -959,6 +984,76 @@ function ProductModal({ product, onClose, onSaved, defaultTiers = [] }: {
                     style={{ left: form.isActive ? "calc(100% - 22px)" : "2px" }} />
                 </button>
               </div>
+            </div>
+          )}
+
+          {activeTab === "images" && (
+            <div className="space-y-4">
+              <p className="text-xs" style={{ color: D.textMuted }}>Mỗi sản phẩm có 5 ảnh: đại diện, thông số kỹ thuật, 2 góc chụp, phối cảnh. Ảnh tỉ lệ 1:1, căn giữa.</p>
+              {([
+                { key: "imageUrl" as const, label: "🖼️ Ảnh đại diện", desc: "Ảnh chính hiển thị trong danh sách và catalogue", isMain: true },
+                { key: "imageSpec" as const, label: "📐 Ảnh thông số kỹ thuật", desc: "Ảnh kích thước, sơ đồ cơ chế hoạt động" },
+                { key: "imageAngle1" as const, label: "📷 Góc chụp 1", desc: "Góc nhìn chính diện hoặc 3/4" },
+                { key: "imageAngle2" as const, label: "📷 Góc chụp 2", desc: "Góc nhìn khác (phía sau, cận cảnh chi tiết)" },
+                { key: "imageScene" as const, label: "🏠 Ảnh phối cảnh", desc: "Sản phẩm trong không gian thực tế" },
+              ]).map(({ key, label, desc, isMain }) => {
+                const isMainKey = isMain;
+                const currentUrl = isMainKey ? form.imageUrl : extraImages[key as keyof typeof extraImages];
+                const isUploading = isMainKey ? uploadingImage : uploadingExtraImage === key;
+                return (
+                  <div key={key}>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: D.textSecondary }}>{label}</label>
+                    <p className="text-[10px] mb-2" style={{ color: D.textMuted }}>{desc}</p>
+                    <div className="flex gap-3 items-start">
+                      {/* Square preview */}
+                      <label className="flex-shrink-0 cursor-pointer relative rounded-xl overflow-hidden border-2 border-dashed transition-all hover:opacity-80"
+                        style={{ width: 80, height: 80, borderColor: currentUrl ? D.borderGold : D.border, background: currentUrl ? "transparent" : D.surfaceBg }}>
+                        {isUploading ? (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Loader2 size={16} className="animate-spin" style={{ color: D.gold }} />
+                          </div>
+                        ) : currentUrl ? (
+                          <img src={currentUrl} alt="" className="w-full h-full" style={{ objectFit: "cover", objectPosition: "center" }} />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                            <Upload size={14} style={{ color: D.textMuted }} />
+                            <span className="text-[9px]" style={{ color: D.textMuted }}>Tải lên</span>
+                          </div>
+                        )}
+                        <input type="file" accept="image/*" className="hidden" onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          if (isMainKey) handleImageUpload(f);
+                          else handleExtraImageUpload(key as keyof typeof extraImages, f);
+                        }} />
+                      </label>
+                      {/* URL input */}
+                      <div className="flex-1 space-y-1.5">
+                        <input
+                          value={currentUrl}
+                          onChange={e => {
+                            if (isMainKey) setF("imageUrl", e.target.value);
+                            else setExtraImages(prev => ({ ...prev, [key]: e.target.value }));
+                          }}
+                          className={inputCls} style={inputStyle} {...inputFocus}
+                          placeholder="Dán URL ảnh hoặc click ô vuông để upload..."
+                        />
+                        {currentUrl && (
+                          <button type="button"
+                            onClick={() => {
+                              if (isMainKey) setF("imageUrl", "");
+                              else setExtraImages(prev => ({ ...prev, [key]: "" }));
+                            }}
+                            className="text-[10px] flex items-center gap-1 hover:opacity-70"
+                            style={{ color: D.red }}>
+                            <X size={10} /> Xóa ảnh
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 
