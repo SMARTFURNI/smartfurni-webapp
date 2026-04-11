@@ -42,10 +42,10 @@ type SlideType =
   | "cover"
   | "intro"
   | "category_header"
-  | "product_intro"    // Trang 1/4: Giới thiệu sản phẩm
-  | "product_feature" // Trang 2/4: Tính năng & thông số
-  | "product_pricing" // Trang 3/4: Bảng giá
-  | "product_gallery" // Trang 4/4: Ảnh thực tế
+  | "product_intro"
+  | "product_feature"
+  | "product_pricing"
+  | "product_gallery"
   | "why_smartfurni"
   | "warranty"
   | "contact";
@@ -54,9 +54,9 @@ interface SlideOverrides {
   title?: string;
   subtitle?: string;
   body?: string;
-  imageDataUrl?: string;  // Ảnh chính
-  image2DataUrl?: string; // Ảnh 2 (gallery)
-  image3DataUrl?: string; // Ảnh 3 (gallery)
+  imageDataUrl?: string;
+  image2DataUrl?: string;
+  image3DataUrl?: string;
 }
 
 interface Slide {
@@ -272,23 +272,23 @@ export default function CatalogueClient({ products }: Props) {
               <Layers size={12} /> Tiêu đề: Sofa Giường
             </button>
             {activeProducts.map(p => (
-              <div key={p.id} className="flex flex-wrap items-center gap-1">
+              <div key={p.id} className="flex flex-wrap items-center gap-1 w-full">
                 <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ background: D.goldDim, color: D.gold }}>{p.sku}</span>
                 <button onClick={() => addSlide("product_intro", p.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium"
                   style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                  <Star size={10} /> 1/4 Giới thiệu
+                  <Star size={10} /> 1/4
                 </button>
                 <button onClick={() => addSlide("product_feature", p.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium"
                   style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                  <Package size={10} /> 2/4 Tính năng
+                  <Package size={10} /> 2/4
                 </button>
                 <button onClick={() => addSlide("product_pricing", p.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium"
                   style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                  <Tag size={10} /> 3/4 Bảng giá
+                  <Tag size={10} /> 3/4
                 </button>
                 <button onClick={() => addSlide("product_gallery", p.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium"
                   style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                  <LayoutGrid size={10} /> 4/4 Ảnh thực tế
+                  <LayoutGrid size={10} /> 4/4
                 </button>
               </div>
             ))}
@@ -495,6 +495,7 @@ function SlideEditorModal({
     });
   };
 
+  const isGallery = slide.type === "product_gallery";
   const canEditImage = ["cover", "intro", "category_header", "product_intro", "product_feature", "product_pricing", "product_gallery"].includes(slide.type);
 
   return (
@@ -552,68 +553,45 @@ function SlideEditorModal({
 
           {/* Image upload */}
           {canEditImage && (
-            <div>
+            <div className="space-y-3">
               <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: D.textMuted }}>
-                {slide.type === "product_gallery" ? "Hình ảnh thực tế (tối đa 3 ảnh)" : "Hình ảnh slide"}
+                {isGallery ? "Ảnh thực tế (tối đa 3 ảnh)" : "Hình ảnh slide"}
               </label>
-              {/* Image 1 */}
-              <div className="flex items-start gap-3 mb-3">
-                {imageDataUrl ? (
-                  <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0" style={{ border: `1px solid ${D.borderGold}` }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={imageDataUrl} alt="preview" className="w-full h-full object-cover" />
-                    <button onClick={() => setImageDataUrl("")} className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.9)" }}><X size={10} color="#fff" /></button>
+              {[{ url: imageDataUrl, setter: setImageDataUrl, ref: fileInputRef, label: isGallery ? "Ảnh 1" : "Ảnh chính" },
+                ...(isGallery ? [
+                  { url: image2DataUrl, setter: setImage2DataUrl, ref: fileInput2Ref, label: "Ảnh 2" },
+                  { url: image3DataUrl, setter: setImage3DataUrl, ref: fileInput3Ref, label: "Ảnh 3" },
+                ] : [])].map(({ url, setter, ref, label }, idx) => (
+                <div key={idx} className="flex items-start gap-3">
+                  {url ? (
+                    <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0"
+                      style={{ border: `1px solid ${D.borderGold}` }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="preview" className="w-full h-full object-cover" />
+                      <button onClick={() => setter("")}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{ background: "rgba(239,68,68,0.9)" }}>
+                        <X size={10} color="#fff" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: "rgba(255,255,255,0.04)", border: `1px dashed ${D.border}` }}>
+                      <ImageIcon size={20} style={{ color: D.textMuted }} />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="text-[10px] mb-1" style={{ color: D.textMuted }}>{label}</div>
+                    <button onClick={() => ref.current?.click()}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium w-full justify-center"
+                      style={{ background: D.goldDim, border: `1px solid ${D.borderGold}`, color: D.gold }}>
+                      <Upload size={12} /> Chọn ảnh
+                    </button>
+                    <input ref={ref} type="file" accept="image/*" className="hidden" onChange={makeUploadHandler(setter)} />
                   </div>
-                ) : (
-                  <div className="w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.04)", border: `1px dashed ${D.border}` }}><ImageIcon size={20} style={{ color: D.textMuted }} /></div>
-                )}
-                <div className="flex-1">
-                  <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-full justify-center" style={{ background: D.goldDim, border: `1px solid ${D.borderGold}`, color: D.gold }}>
-                    <Upload size={12} /> {slide.type === "product_gallery" ? "Ảnh 1 (chính)" : "Chọn ảnh"}
-                  </button>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={makeUploadHandler(setImageDataUrl)} />
                 </div>
-              </div>
-              {/* Image 2 & 3 — only for gallery */}
-              {slide.type === "product_gallery" && (
-                <>
-                  <div className="flex items-start gap-3 mb-3">
-                    {image2DataUrl ? (
-                      <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0" style={{ border: `1px solid ${D.border}` }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={image2DataUrl} alt="preview2" className="w-full h-full object-cover" />
-                        <button onClick={() => setImage2DataUrl("")} className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.9)" }}><X size={10} color="#fff" /></button>
-                      </div>
-                    ) : (
-                      <div className="w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.04)", border: `1px dashed ${D.border}` }}><ImageIcon size={20} style={{ color: D.textMuted }} /></div>
-                    )}
-                    <div className="flex-1">
-                      <button onClick={() => fileInput2Ref.current?.click()} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-full justify-center" style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                        <Upload size={12} /> Ảnh 2
-                      </button>
-                      <input ref={fileInput2Ref} type="file" accept="image/*" className="hidden" onChange={makeUploadHandler(setImage2DataUrl)} />
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    {image3DataUrl ? (
-                      <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0" style={{ border: `1px solid ${D.border}` }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={image3DataUrl} alt="preview3" className="w-full h-full object-cover" />
-                        <button onClick={() => setImage3DataUrl("")} className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.9)" }}><X size={10} color="#fff" /></button>
-                      </div>
-                    ) : (
-                      <div className="w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.04)", border: `1px dashed ${D.border}` }}><ImageIcon size={20} style={{ color: D.textMuted }} /></div>
-                    )}
-                    <div className="flex-1">
-                      <button onClick={() => fileInput3Ref.current?.click()} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-full justify-center" style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                        <Upload size={12} /> Ảnh 3
-                      </button>
-                      <input ref={fileInput3Ref} type="file" accept="image/*" className="hidden" onChange={makeUploadHandler(setImage3DataUrl)} />
-                    </div>
-                  </div>
-                </>
-              )}
-              <p className="text-[10px] mt-2" style={{ color: D.textMuted }}>Hỗ trợ JPG, PNG, WebP. Ảnh lưu trong phiên làm việc.</p>
+              ))}
+              <p className="text-[10px]" style={{ color: D.textMuted }}>Hỗ trợ JPG, PNG, WebP. Ảnh lưu trong phiên làm việc này.</p>
             </div>
           )}
         </div>
@@ -1111,80 +1089,97 @@ function SlideContact({ today, overrides }: { today: string; overrides?: SlideOv
   );
 }
 
-// ─── Slide: Product Intro (1/4) ─────────────────────────────────────────────
+// ─── Slide: Empty ─────────────────────────────────────────────────────────────
+function SlideEmpty() {
+  return (
+    <SlideShell>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📄</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Slide trống</div>
+        </div>
+      </div>
+    </SlideShell>
+  );
+}
+
+// ─── Slide: Product Intro (1/4) ───────────────────────────────────────────────
 function SlideProductIntro({ product, overrides }: { product: CrmProduct; overrides?: SlideOverrides }) {
   const isBed = product.category === "ergonomic_bed";
   const color = isBed ? D.purple : D.blue;
   const colorDim = isBed ? D.purpleDim : D.blueDim;
   const imageUrl = overrides?.imageDataUrl || product.imageUrl;
+  const title = overrides?.title || product.name;
+  const subtitle = overrides?.subtitle || product.description || "Mô tả đang được cập nhật...";
   const highlights = overrides?.body?.split("\n").filter(Boolean) ?? (
     isBed
       ? ["Điều khiển điện không dây", "Nâng đầu 0–70°, nâng chân 0–45°", "Massage rung tích hợp", "Khung thép mạ kẽm bảo hành 5 năm"]
       : ["Gấp mở dễ dàng trong 30 giây", "Kết cấu khung thép chắc chắn", "Đệm foam cao cấp thoáng khí", "Tiết kiệm không gian tối đa"]
   );
-
+  const minPrice = product.sizePricings && product.sizePricings.length > 0
+    ? Math.min(...product.sizePricings.map(s => s.price))
+    : null;
   return (
     <SlideShell accentColor={color}>
-      {/* Top badge */}
-      <div style={{ padding: "28px 44px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: colorDim, border: `1px solid ${color}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-            {isBed ? "🛏️" : "🛋️"}
-          </div>
-          <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "32px 44px" }}>
+        {/* Top: category badge + page indicator */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, padding: "4px 12px", borderRadius: 20, background: colorDim, border: `1px solid ${color}40` }}>
               {isBed ? "GIƯỜNG CÔNG THÁI HỌC" : "SOFA GIƯỜNG ĐA NĂNG"}
             </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>{product.sku}</div>
+            <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.2em" }}>SKU: {product.sku}</div>
           </div>
+          <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em" }}>1 / 4</div>
         </div>
-        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontWeight: 600, letterSpacing: "0.15em" }}>01 / 04</div>
-      </div>
 
-      {/* Main content */}
-      <div style={{ flex: 1, display: "flex", gap: 0, padding: "24px 44px 28px" }}>
-        {/* Left: image */}
-        <div style={{ width: "48%", flexShrink: 0, borderRadius: 20, overflow: "hidden", background: "rgba(255,255,255,0.04)", border: `1px solid ${color}25`, marginRight: 28 }}>
-          {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="eager" />
-          ) : (
-            <div style={{ width: "100%", height: "100%", minHeight: 280, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
-              <div style={{ fontSize: 56 }}>{isBed ? "🛏️" : "🛋️"}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "0 16px" }}>Chưa có ảnh sản phẩm<br/>Click ✏️ để upload ảnh</div>
+        {/* Main content: image left + info right */}
+        <div style={{ flex: 1, display: "flex", gap: 36, alignItems: "flex-start" }}>
+          {/* Image */}
+          <div style={{ width: "42%", flexShrink: 0 }}>
+            <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: 16, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={imageUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <div style={{ textAlign: "center", color: D.textMuted }}>
+                  <div style={{ fontSize: 40, marginBottom: 8 }}>📷</div>
+                  <div style={{ fontSize: 11 }}>Chưa có ảnh</div>
+                  <div style={{ fontSize: 9, marginTop: 4 }}>Click ✏️ để upload</div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Right: info */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <h2 style={{ fontSize: 28, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.2, marginBottom: 10 }}>
-            {overrides?.title || product.name}
-          </h2>
-          <div style={{ width: 48, height: 2, background: `linear-gradient(90deg, ${color}, transparent)`, marginBottom: 14 }} />
-          <p style={{ fontSize: 13, lineHeight: 1.7, color: "rgba(245,237,214,0.65)", marginBottom: 20 }}>
-            {overrides?.subtitle || product.description || "Mô tả sản phẩm đang được cập nhật..."}
-          </p>
-
-          {/* Highlights */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {highlights.slice(0, 4).map((h, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", borderRadius: 10, background: colorDim, border: `1px solid ${color}20` }}>
-                <div style={{ width: 5, height: 5, borderRadius: "50%", flexShrink: 0, background: color }} />
-                <span style={{ fontSize: 12, color: "rgba(245,237,214,0.85)", fontWeight: 500 }}>{h}</span>
+            {minPrice && (
+              <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: colorDim, border: `1px solid ${color}30`, textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.2em", marginBottom: 4 }}>GIÁ TỪ</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color, fontFamily: FONT_PRODUCT }}>{formatVND(minPrice)}</div>
+                <div style={{ fontSize: 9, color: D.textMuted, marginTop: 2 }}>Chưa bao gồm VAT</div>
               </div>
-            ))}
+            )}
           </div>
 
-          {/* Price */}
-          <div style={{ marginTop: 20, padding: "12px 16px", borderRadius: 12, background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Giá tham khảo từ</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: D.gold, fontFamily: FONT_HEADING }}>
-              {product.sizePricings && product.sizePricings.length > 0
-                ? formatVND(Math.min(...product.sizePricings.map(s => s.price)))
-                : product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ báo giá"}
+          {/* Info */}
+          <div style={{ flex: 1 }}>
+            <h2 style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25, marginBottom: 12 }}>{title}</h2>
+            <div style={{ width: 48, height: 3, borderRadius: 2, background: `linear-gradient(90deg, ${color}, transparent)`, marginBottom: 16 }} />
+            <p style={{ fontSize: 13, color: D.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>{subtitle}</p>
+
+            {/* Highlights */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {highlights.slice(0, 5).map((h, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${D.border}` }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: D.textSecondary, lineHeight: 1.4 }}>{h}</span>
+                </div>
+              ))}
             </div>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: D.gold }}>SMARTFURNI</div>
+          <div style={{ fontSize: 9, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
         </div>
       </div>
     </SlideShell>
@@ -1195,97 +1190,67 @@ function SlideProductIntro({ product, overrides }: { product: CrmProduct; overri
 function SlideProductGallery({ product, overrides }: { product: CrmProduct; overrides?: SlideOverrides }) {
   const isBed = product.category === "ergonomic_bed";
   const color = isBed ? D.purple : D.blue;
+  const colorDim = isBed ? D.purpleDim : D.blueDim;
   const img1 = overrides?.imageDataUrl || product.imageUrl;
   const img2 = overrides?.image2DataUrl;
   const img3 = overrides?.image3DataUrl;
-  const applications = overrides?.body?.split("\n").filter(Boolean) ?? [
-    isBed ? "Căn hộ cao cấp & Penthouse" : "Căn hộ studio & 1PN",
-    isBed ? "Biệt thự & nhà phố" : "Căn hộ 2–3 phòng ngủ",
-    isBed ? "Khách sạn 4–5 sao" : "Homestay & căn hộ dịch vụ",
-    "Không gian cần tối ưu diện tích",
-  ];
+  const title = overrides?.title || product.name;
+  const applications = overrides?.body?.split("\n").filter(Boolean) ?? (
+    isBed
+      ? ["Căn hộ cao cấp & Penthouse", "Biệt thự & nhà phố", "Khách sạn 4–5 sao", "Không gian cần sự tinh tế"]
+      : ["Căn hộ studio & 1PN", "Căn hộ 2–3 phòng ngủ", "Homestay & căn hộ dịch vụ", "Không gian cần tối ưu diện tích"]
+  );
+
+  const ImageBox = ({ src, label }: { src?: string; label: string }) => (
+    <div style={{ flex: 1, borderRadius: 12, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, minHeight: 160, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
+      ) : (
+        <div style={{ textAlign: "center", color: D.textMuted, padding: 16 }}>
+          <div style={{ fontSize: 28, marginBottom: 6 }}>📷</div>
+          <div style={{ fontSize: 10 }}>{label}</div>
+          <div style={{ fontSize: 9, marginTop: 4, color: D.textMuted }}>Click ✏️ để upload</div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <SlideShell accentColor={color}>
-      <div style={{ flex: 1, padding: "28px 44px", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "28px 44px" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẾ & ỨNG DỤNG</div>
-            <h3 style={{ fontSize: 22, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }}>
-              {overrides?.title || product.name}
-            </h3>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }}>{title}</h3>
           </div>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontWeight: 600, letterSpacing: "0.15em" }}>04 / 04</div>
+          <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em" }}>4 / 4</div>
         </div>
 
         {/* Image grid */}
-        <div style={{ display: "grid", gridTemplateColumns: img2 || img3 ? "1fr 1fr" : "1fr", gap: 12, marginBottom: 20, flex: 1 }}>
-          {/* Main image */}
-          <div style={{ borderRadius: 16, overflow: "hidden", background: "rgba(255,255,255,0.04)", border: `1px solid ${color}25`, gridRow: img2 && img3 ? "span 2" : "auto" }}>
-            {img1 ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={img1} alt="gallery1" style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 160 }} loading="eager" />
-            ) : (
-              <div style={{ width: "100%", minHeight: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                <div style={{ fontSize: 36 }}>{isBed ? "🛏️" : "🛋️"}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textAlign: "center" }}>Ảnh 1 — Click ✏️ để upload</div>
-              </div>
-            )}
-          </div>
-          {/* Image 2 */}
-          {(img2 || !img1) && (
-            <div style={{ borderRadius: 16, overflow: "hidden", background: "rgba(255,255,255,0.04)", border: `1px dashed ${color}20` }}>
-              {img2 ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={img2} alt="gallery2" style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 100 }} loading="eager" />
-              ) : (
-                <div style={{ width: "100%", minHeight: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", textAlign: "center" }}>Ảnh 2 — Click ✏️</div>
-                </div>
-              )}
-            </div>
-          )}
-          {/* Image 3 */}
-          {(img3 || (!img1 && !img2)) && (
-            <div style={{ borderRadius: 16, overflow: "hidden", background: "rgba(255,255,255,0.04)", border: `1px dashed ${color}20` }}>
-              {img3 ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={img3} alt="gallery3" style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 100 }} loading="eager" />
-              ) : (
-                <div style={{ width: "100%", minHeight: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", textAlign: "center" }}>Ảnh 3 — Click ✏️</div>
-                </div>
-              )}
-            </div>
-          )}
+        <div style={{ display: "flex", gap: 12, flex: 1, marginBottom: 20 }}>
+          <ImageBox src={img1} label="Ảnh 1 — Ảnh chính" />
+          <ImageBox src={img2} label="Ảnh 2 — Không gian thực tế" />
+          <ImageBox src={img3} label="Ảnh 3 — Chi tiết sản phẩm" />
         </div>
 
         {/* Applications */}
         <div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 10 }}>PHÙ HỢP VỚI</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {applications.slice(0, 4).map((a, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, background: colorDim, border: `1px solid ${color}20` }}>
-                <div style={{ width: 4, height: 4, borderRadius: "50%", flexShrink: 0, background: color }} />
-                <span style={{ fontSize: 11, color: "rgba(245,237,214,0.8)" }}>{a}</span>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 12 }}>PHÂN KHÚC PHÙ HỢP</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {applications.map((app, i) => (
+              <div key={i} style={{ padding: "6px 14px", borderRadius: 20, background: colorDim, border: `1px solid ${color}30`, fontSize: 11, color: D.textSecondary }}>
+                {app}
               </div>
             ))}
           </div>
         </div>
-      </div>
-    </SlideShell>
-  );
-}
 
-// ─── Slide: Empty ─────────────────────────────────────────────────────────────
-function SlideEmpty() {
-  return (
-    <SlideShell>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📄</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Slide trống</div>
+        {/* Footer */}
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: D.gold }}>SMARTFURNI</div>
+          <div style={{ fontSize: 9, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
         </div>
       </div>
     </SlideShell>
