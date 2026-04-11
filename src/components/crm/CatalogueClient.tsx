@@ -1201,16 +1201,16 @@ function SlideProductGallery({ product, overrides }: { product: CrmProduct; over
       : ["Căn hộ studio & 1PN", "Căn hộ 2–3 phòng ngủ", "Homestay & căn hộ dịch vụ", "Không gian cần tối ưu diện tích"]
   );
 
-  const ImageBox = ({ src, label }: { src?: string; label: string }) => (
-    <div style={{ flex: 1, borderRadius: 12, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, minHeight: 160, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+  const ImageSlot = ({ src, label, style }: { src?: string; label: string; style?: React.CSSProperties }) => (
+    <div style={{ borderRadius: 12, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", ...style }}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
       ) : (
-        <div style={{ textAlign: "center", color: D.textMuted, padding: 16 }}>
-          <div style={{ fontSize: 28, marginBottom: 6 }}>📷</div>
-          <div style={{ fontSize: 10 }}>{label}</div>
-          <div style={{ fontSize: 9, marginTop: 4, color: D.textMuted }}>Click ✏️ để upload</div>
+        <div style={{ textAlign: "center", color: D.textMuted, padding: 12 }}>
+          <div style={{ fontSize: 24, marginBottom: 4 }}>📷</div>
+          <div style={{ fontSize: 9 }}>{label}</div>
+          <div style={{ fontSize: 8, marginTop: 3, color: D.textMuted }}>Click ✏️ để upload</div>
         </div>
       )}
     </div>
@@ -1220,19 +1220,23 @@ function SlideProductGallery({ product, overrides }: { product: CrmProduct; over
     <SlideShell accentColor={color}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "28px 44px" }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẾ & ỨNG DỤNG</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẼ & ỨNG DỤNG</div>
             <h3 style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }}>{title}</h3>
           </div>
           <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em" }}>4 / 4</div>
         </div>
 
-        {/* Image grid */}
-        <div style={{ display: "flex", gap: 12, flex: 1, marginBottom: 20 }}>
-          <ImageBox src={img1} label="Ảnh 1 — Ảnh chính" />
-          <ImageBox src={img2} label="Ảnh 2 — Không gian thực tế" />
-          <ImageBox src={img3} label="Ảnh 3 — Chi tiết sản phẩm" />
+        {/* Image grid: 1 large left + 2 stacked right */}
+        <div style={{ display: "flex", gap: 12, height: 320, marginBottom: 18 }}>
+          {/* Main image - left, full height */}
+          <ImageSlot src={img1} label="Ảnh 1 — Ảnh chính" style={{ flex: "0 0 55%", height: "100%" }} />
+          {/* Right column: 2 stacked images */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+            <ImageSlot src={img2} label="Ảnh 2 — Không gian thực tế" style={{ flex: 1 }} />
+            <ImageSlot src={img3} label="Ảnh 3 — Chi tiết sản phẩm" style={{ flex: 1 }} />
+          </div>
         </div>
 
         {/* Applications */}
