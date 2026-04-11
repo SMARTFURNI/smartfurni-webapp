@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, LayoutGrid, Layers,
   Package, Tag, Phone, Star, Award,
   CheckCircle2, Shield,
-  Edit3, X, RotateCcw, Upload, ImageIcon, Check,
+  Edit3, X, Upload, ImageIcon, Check,
 } from "lucide-react";
 import type { CrmProduct, SizePricing } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
@@ -451,10 +451,6 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
           {saveStatus === "error" && (
             <span className="text-xs" style={{ color: "#f87171" }}>Lỗi lưu</span>
           )}
-          <button onClick={resetSlides} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-            style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
-            <RotateCcw size={11} /> Đặt lại
-          </button>
           <button onClick={() => setShowAddPanel(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
             style={{ background: showAddPanel ? D.goldDim : D.cardBg, border: `1px solid ${showAddPanel ? D.borderGold : D.border}`, color: showAddPanel ? D.gold : D.textMuted }}>
             <Plus size={11} /> Thêm slide
