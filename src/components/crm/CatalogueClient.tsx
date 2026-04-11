@@ -1243,50 +1243,49 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
 
   return (
     <SlideShell accentColor={color}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "28px 44px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+      <div style={{ display: "flex", flexDirection: "column", padding: "24px 40px 20px", height: "100%", boxSizing: "border-box" }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16, flexShrink: 0 }}>
           <div>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẾ & ỨNG DỤNG</div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, margin: 0 }}>
               <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
+                style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
             </h3>
           </div>
-          <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em" }}>4 / 4</div>
+          <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em", flexShrink: 0 }}>4 / 4</div>
         </div>
 
-        {/* Row 1: 2 ảnh góc nhỏ ngang nhau */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-          <ImageSlot src={img1} field="imageDataUrl" label="Góc chụp 1" style={{ aspectRatio: "4/3", width: "100%" }} />
-          <ImageSlot src={img2} field="image2DataUrl" label="Góc chụp 2" style={{ aspectRatio: "4/3", width: "100%" }} />
+        {/* Row 1: 2 ảnh góc — chiều cao cố định */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10, flexShrink: 0 }}>
+          <ImageSlot src={img1} field="imageDataUrl" label="Góc chụp 1" style={{ height: 160, width: "100%" }} />
+          <ImageSlot src={img2} field="image2DataUrl" label="Góc chụp 2" style={{ height: 160, width: "100%" }} />
         </div>
 
-        {/* Row 2: Ảnh phối cảnh + phân khúc */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, flex: 1, minHeight: 0 }}>
-          {/* Ảnh phối cảnh chiếm toàn bộ chiều cao còn lại */}
-          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ width: "100%", height: "100%", minHeight: 120 }} />
-
-          {/* Phân khúc phù hợp */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 10 }}>PHÂN KHÚC PHÙ HỢP</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* Row 2: Ảnh phối cảnh wide + phân khúc — chiều cao cố định */}
+        <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 10, marginBottom: 14, flexShrink: 0 }}>
+          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ height: 200, width: "100%" }} />
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 0 }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 8 }}>PHÂN KHÚC PHÙ HỢP</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {applications.map((app, i) => (
-                <div key={i} style={{ padding: "7px 14px", borderRadius: 20, background: colorDim, border: `1px solid ${color}30`, fontSize: 11, color: D.textSecondary }}>
+                <div key={i} style={{ padding: "5px 12px", borderRadius: 16, background: colorDim, border: `1px solid ${color}30`, fontSize: 10, color: D.textSecondary }}>
                   {app}
                 </div>
               ))}
             </div>
             {isEditing && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Phân khúc (mỗi dòng = 1 tag):</div>
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 9, color: D.textMuted, marginBottom: 4 }}>Phân khúc (mỗi dòng = 1 tag):</div>
                 <InlineText value={overrides?.body ?? defaultApplications.join("\n")} placeholder={defaultApplications.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
-                  multiline style={{ fontSize: 12, color: D.textSecondary }} />
+                  multiline style={{ fontSize: 11, color: D.textSecondary }} />
               </div>
             )}
           </div>
         </div>
 
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        {/* Footer */}
+        <div style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: D.gold }}>SMARTFURNI</div>
           <div style={{ fontSize: 9, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
         </div>
