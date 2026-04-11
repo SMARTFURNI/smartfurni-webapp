@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Printer, Plus, Trash2, GripVertical, Eye, EyeOff,
   ChevronLeft, ChevronRight, LayoutGrid, Layers,
@@ -257,30 +257,27 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-interface Props { products: CrmProduct[] }
+interface Props { products: CrmProduct[]; initialSlides?: unknown[] | null }
 
-export default function CatalogueClient({ products }: Props) {
-  const [slides, setSlides] = useState<Slide[]>(() => buildDefaultSlides(products));
-  const [activeSlideId, setActiveSlideId] = useState<string>("cover");
+export default function CatalogueClient({ products, initialSlides }: Props) {
+  const [slides, setSlides] = useState<Slide[]>(() => {
+    if (initialSlides && Array.isArray(initialSlides) && initialSlides.length > 0) {
+      return initialSlides as Slide[];
+    }
+    return buildDefaultSlides(products);
+  });
+  const [activeSlideId, setActiveSlideId] = useState<string>(() => {
+    if (initialSlides && Array.isArray(initialSlides) && initialSlides.length > 0) {
+      return (initialSlides[0] as Slide)?.id ?? "cover";
+    }
+    return "cover";
+  });
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // ── Load saved state on mount ──
-  useEffect(() => {
-    fetch("/api/crm/catalogue-state")
-      .then(r => r.json())
-      .then(data => {
-        if (data?.slides && Array.isArray(data.slides) && data.slides.length > 0) {
-          setSlides(data.slides);
-          setActiveSlideId(data.slides[0]?.id ?? "cover");
-        }
-      })
-      .catch(() => {/* ignore */});
-  }, []);
 
   // ── Auto-save with debounce (1.5s) ──
   const saveSlides = useCallback((slidesToSave: Slide[]) => {
