@@ -488,12 +488,10 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
       <div className="catalogue-toolbar no-print flex items-center justify-between px-4 py-2.5 flex-shrink-0"
         style={{ background: D.headerBg, borderBottom: `1px solid ${D.border}` }}>
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: D.goldDim, border: `1px solid ${D.borderGold}` }}>
-            <span style={{ fontSize: 13, fontWeight: 900, color: D.gold }}>SF</span>
-          </div>
+          <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 36, width: "auto", objectFit: "contain" }} />
           <div>
             <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: D.gold }}>CATALOGUE ONLINE</div>
-            <div className="text-sm font-bold" style={{ color: D.textPrimary, fontFamily: FONT_HEADING }}>SmartFurni — Giường & Sofa Thông Minh</div>
+            <div className="text-sm font-bold" style={{ color: D.textPrimary, fontFamily: FONT_HEADING }}>Giường & Sofa Thông Minh</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -768,18 +766,9 @@ function SlideCover({ today, overrides, isEditing, onUpdate }: { today: string }
   return (
     <SlideShell>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 60px", textAlign: "center" }}>
-        <div style={{ width: 88, height: 88, borderRadius: 20, overflow: "hidden", marginBottom: 28, boxShadow: "0 0 40px rgba(201,168,76,0.4)", border: `2px solid ${D.borderGold}` }}>
-          <InlineImage
-            src={overrides?.imageDataUrl}
-            isEditing={isEditing}
-            onUpload={v => onUpdate("imageDataUrl", v)}
-            onRemove={() => onUpdate("imageDataUrl", "")}
-            style={{ width: 88, height: 88, borderRadius: 20 }}
-            placeholderStyle={{ width: 88, height: 88, background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, borderRadius: 20 }}
-            placeholderLabel="SF"
-          />
+        <div style={{ marginBottom: 28 }}>
+          <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 120, width: "auto", objectFit: "contain" }} />
         </div>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase", color: D.gold, marginBottom: 12 }}>SMARTFURNI</div>
         <h1 style={{ fontSize: 52, fontWeight: 900, color: D.textPrimary, lineHeight: 1.1, marginBottom: 16, fontFamily: FONT_HEADING, width: "100%" }}>
           <InlineText value={overrides?.title ?? ""} placeholder="CATALOGUE\nSẢN PHẨM" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
             style={{ fontSize: 52, fontWeight: 900, color: D.textPrimary, lineHeight: 1.1, fontFamily: FONT_HEADING, textAlign: "center" }} />
@@ -1304,11 +1293,8 @@ function SlideContact({ today, overrides, isEditing, onUpdate }: { today: string
   return (
     <SlideShell>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 60px", textAlign: "center" }}>
-        <div style={{ width: 64, height: 64, borderRadius: 16, overflow: "hidden", marginBottom: 20, boxShadow: "0 0 30px rgba(201,168,76,0.3)", border: `2px solid ${D.borderGold}` }}>
-          <InlineImage src={overrides?.imageDataUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
-            style={{ width: 64, height: 64 }}
-            placeholderStyle={{ width: 64, height: 64, background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, display: "flex", alignItems: "center", justifyContent: "center" }}
-            placeholderLabel="SF" />
+        <div style={{ marginBottom: 20 }}>
+          <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 80, width: "auto", objectFit: "contain" }} />
         </div>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>LIÊN HỆ</div>
         <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, marginBottom: 8, width: "100%" }}>
@@ -1437,15 +1423,14 @@ function SlideProductIntro({ product, overrides, isEditing, onUpdate }: { produc
         </div>
 
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: D.gold }}>SMARTFURNI</div>
+           <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 20, width: "auto", objectFit: "contain", opacity: 0.85 }} />
           <div style={{ fontSize: 9, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
         </div>
       </div>
     </SlideShell>
   );
 }
-
-// ─── Slide: Product Gallery (4/4) ─────────────────────────────────────────────
+// ─── Slide: product_gallery (4/4) ─────────────────────────────────────────────
 function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
   const isBed = product.category === "ergonomic_bed";
   const color = isBed ? D.purple : D.blue;
@@ -1515,7 +1500,7 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
 
         {/* Footer */}
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: D.gold }}>SMARTFURNI</div>
+          <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 20, width: "auto", objectFit: "contain", opacity: 0.85 }} />
           <div style={{ fontSize: 9, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
         </div>
       </div>
