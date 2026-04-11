@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, LayoutGrid, Layers,
   Package, Tag, Phone, Star, Award,
   CheckCircle2, Shield,
-  Edit3, X, Upload, ImageIcon, Check,
+  Edit3, X, Upload, ImageIcon, Check, RefreshCw,
 } from "lucide-react";
 import type { CrmProduct, SizePricing } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
@@ -349,6 +349,64 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
     setActiveSlideId(newSlide.id);
     setShowAddPanel(false);
   };
+  // ── Sync slides with current products ──
+  const syncWithProducts = useCallback(() => {
+    setSlides(prev => {
+      const existingProductIds = new Set(prev.filter(s => s.productId).map(s => s.productId!));
+      const active = products.filter(p => p.isActive);
+      const newProducts = active.filter(p => !existingProductIds.has(p.id));
+      const removedIds = new Set(
+        [...existingProductIds].filter(id => !active.find(p => p.id === id))
+      );
+
+      // Hide slides for removed products
+      let next = prev.map(s =>
+        s.productId && removedIds.has(s.productId) ? { ...s, visible: false } : s
+      );
+
+      // Add slides for new products, inserted before warranty/contact
+      if (newProducts.length > 0) {
+        const insertIdx = next.findIndex(s => s.type === "warranty" || s.type === "contact");
+        const insertAt = insertIdx >= 0 ? insertIdx : next.length;
+        const newSlides: Slide[] = [];
+        const beds = newProducts.filter(p => p.category === "ergonomic_bed");
+        const sofas = newProducts.filter(p => p.category === "sofa_bed");
+        // Add category header if first product of that category
+        const hasBedHeader = next.some(s => s.type === "category_header" && s.category === "ergonomic_bed");
+        const hasSofaHeader = next.some(s => s.type === "category_header" && s.category === "sofa_bed");
+        if (beds.length > 0 && !hasBedHeader) {
+          newSlides.push({ id: "cat_bed", type: "category_header", visible: true, category: "ergonomic_bed" });
+        }
+        beds.forEach(p => {
+          newSlides.push({ id: `intro_${p.id}`, type: "product_intro", visible: true, productId: p.id });
+          newSlides.push({ id: `featprice_${p.id}`, type: "product_feature_pricing", visible: true, productId: p.id });
+          newSlides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
+        });
+        if (sofas.length > 0 && !hasSofaHeader) {
+          newSlides.push({ id: "cat_sofa", type: "category_header", visible: true, category: "sofa_bed" });
+        }
+        sofas.forEach(p => {
+          newSlides.push({ id: `intro_${p.id}`, type: "product_intro", visible: true, productId: p.id });
+          newSlides.push({ id: `featprice_${p.id}`, type: "product_feature_pricing", visible: true, productId: p.id });
+          newSlides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
+        });
+        next = [...next.slice(0, insertAt), ...newSlides, ...next.slice(insertAt)];
+      }
+
+      const changed = newProducts.length > 0 || removedIds.size > 0;
+      if (changed) saveSlides(next);
+
+      const added = newProducts.length;
+      const hidden = removedIds.size;
+      if (added > 0 || hidden > 0) {
+        alert(`Đồng bộ hoàn tất: thêm ${added} sản phẩm mới${hidden > 0 ? `, ẩn ${hidden} sản phẩm đã xóa` : ""}.`);
+      } else {
+        alert("Đã đồng bộ — không có thay đổi.");
+      }
+      return next;
+    });
+  }, [products, saveSlides]);
+
   const resetSlides = () => {
     const fresh = buildDefaultSlides(products);
     setSlides(fresh);
@@ -451,6 +509,11 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
           {saveStatus === "error" && (
             <span className="text-xs" style={{ color: "#f87171" }}>Lỗi lưu</span>
           )}
+          <button onClick={syncWithProducts} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+            style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}
+            title="Đồng bộ sản phẩm mới từ danh mục">
+            <RefreshCw size={11} /> Đồng bộ
+          </button>
           <button onClick={() => setShowAddPanel(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
             style={{ background: showAddPanel ? D.goldDim : D.cardBg, border: `1px solid ${showAddPanel ? D.borderGold : D.border}`, color: showAddPanel ? D.gold : D.textMuted }}>
             <Plus size={11} /> Thêm slide
