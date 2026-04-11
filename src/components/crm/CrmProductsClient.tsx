@@ -369,10 +369,10 @@ function ProductCard({ product: p, isSelected, onSelect, onEdit, onToggleActive,
       onClick={onSelect}
     >
       {/* Image */}
-      <div className="relative overflow-hidden flex-shrink-0" style={{ aspectRatio: "4/3", background: D.surfaceBg }}>
+      <div className="relative overflow-hidden flex-shrink-0" style={{ aspectRatio: "1/1", background: D.surfaceBg }}>
         {p.imageUrl ? (
-          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover"
-            style={{ transition: "transform 0.4s ease", transform: hovered ? "scale(1.07)" : "scale(1)" }} />
+          <img src={p.imageUrl} alt={p.name} className="w-full h-full"
+            style={{ objectFit: "cover", objectPosition: "center center", transition: "transform 0.4s ease", transform: hovered ? "scale(1.07)" : "scale(1)" }} />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2">
             <span className="text-5xl opacity-20">{cat.icon}</span>
@@ -506,7 +506,7 @@ function ProductRow({ product: p, isSelected, onSelect, onEdit, onToggleActive, 
     >
       <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0" style={{ background: D.surfaceBg }}>
         {p.imageUrl ? (
-          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+          <img src={p.imageUrl} alt={p.name} className="w-full h-full" style={{ objectFit: "cover", objectPosition: "center center" }} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-xl opacity-30">{cat.icon}</div>
         )}
@@ -606,10 +606,10 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
       {/* Body */}
       <div className="flex">
         {/* Left: image */}
-        <div className="flex-shrink-0 relative" style={{ width: 340, height: 340, background: D.surfaceBg }}>
+        <div className="flex-shrink-0 relative overflow-hidden" style={{ width: 340, height: 340, background: D.surfaceBg }}>
           {p.imageUrl ? (
             <img src={p.imageUrl} alt={p.name}
-              style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", padding: "12px" }} />
+              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center", display: "block" }} />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <span className="text-8xl opacity-10">{cat.icon}</span>
