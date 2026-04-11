@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Printer, Plus, Trash2, GripVertical, Eye, EyeOff,
   ChevronLeft, ChevronRight, LayoutGrid, Layers,
@@ -266,6 +266,38 @@ export default function CatalogueClient({ products }: Props) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Load saved state on mount ──
+  useEffect(() => {
+    fetch("/api/crm/catalogue-state")
+      .then(r => r.json())
+      .then(data => {
+        if (data?.slides && Array.isArray(data.slides) && data.slides.length > 0) {
+          setSlides(data.slides);
+          setActiveSlideId(data.slides[0]?.id ?? "cover");
+        }
+      })
+      .catch(() => {/* ignore */});
+  }, []);
+
+  // ── Auto-save with debounce (1.5s) ──
+  const saveSlides = useCallback((slidesToSave: Slide[]) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setSaveStatus("saving");
+    saveTimerRef.current = setTimeout(() => {
+      fetch("/api/crm/catalogue-state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slides: slidesToSave }),
+      })
+        .then(r => r.json())
+        .then(d => setSaveStatus(d.ok ? "saved" : "error"))
+        .catch(() => setSaveStatus("error"))
+        .finally(() => { setTimeout(() => setSaveStatus("idle"), 2000); });
+    }, 1500);
+  }, []);
 
   const activeProducts = products.filter(p => p.isActive);
   const visibleSlides = slides.filter(s => s.visible);
@@ -276,21 +308,43 @@ export default function CatalogueClient({ products }: Props) {
   const today = new Date().toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   // ── Slide management ──
-  const toggleVisible = (id: string) => setSlides(prev => prev.map(s => s.id === id ? { ...s, visible: !s.visible } : s));
+  const toggleVisible = (id: string) => setSlides(prev => {
+    const next = prev.map(s => s.id === id ? { ...s, visible: !s.visible } : s);
+    saveSlides(next);
+    return next;
+  });
   const removeSlide = (id: string) => {
-    setSlides(prev => prev.filter(s => s.id !== id));
+    setSlides(prev => {
+      const next = prev.filter(s => s.id !== id);
+      saveSlides(next);
+      return next;
+    });
     if (activeSlideId === id) setActiveSlideId(slides[0]?.id ?? "");
   };
   const addSlide = (type: SlideType, productId?: string, category?: "ergonomic_bed" | "sofa_bed") => {
     const newSlide: Slide = { id: `${type}_${Date.now()}`, type, visible: true, productId, category };
-    setSlides(prev => [...prev, newSlide]);
+    setSlides(prev => {
+      const next = [...prev, newSlide];
+      saveSlides(next);
+      return next;
+    });
     setActiveSlideId(newSlide.id);
     setShowAddPanel(false);
   };
-  const resetSlides = () => { setSlides(buildDefaultSlides(products)); setActiveSlideId("cover"); setIsEditing(false); };
+  const resetSlides = () => {
+    const fresh = buildDefaultSlides(products);
+    setSlides(fresh);
+    setActiveSlideId("cover");
+    setIsEditing(false);
+    saveSlides(fresh);
+  };
   const updateSlideOverrides = useCallback((id: string, overrides: Partial<SlideOverrides>) => {
-    setSlides(prev => prev.map(s => s.id === id ? { ...s, overrides: { ...s.overrides, ...overrides } } : s));
-  }, []);
+    setSlides(prev => {
+      const next = prev.map(s => s.id === id ? { ...s, overrides: { ...s.overrides, ...overrides } } : s);
+      saveSlides(next);
+      return next;
+    });
+  }, [saveSlides]);
 
   // ── Drag & Drop ──
   const handleDragStart = (id: string) => setDragId(id);
@@ -306,6 +360,7 @@ export default function CatalogueClient({ products }: Props) {
       return arr;
     });
     setDragId(null); setDragOverId(null);
+    setSlides(prev => { saveSlides(prev); return prev; });
   };
 
   // ── Navigate ──
@@ -369,6 +424,15 @@ export default function CatalogueClient({ products }: Props) {
           <span className="text-xs px-2 py-1 rounded-lg" style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
             {visibleSlides.length} trang
           </span>
+          {saveStatus === "saving" && (
+            <span className="text-xs" style={{ color: D.textMuted }}>Đang lưu...</span>
+          )}
+          {saveStatus === "saved" && (
+            <span className="text-xs" style={{ color: "#22c55e" }}>✓ Đã lưu</span>
+          )}
+          {saveStatus === "error" && (
+            <span className="text-xs" style={{ color: "#f87171" }}>Lỗi lưu</span>
+          )}
           <button onClick={resetSlides} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
             style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
             <RotateCcw size={11} /> Đặt lại
