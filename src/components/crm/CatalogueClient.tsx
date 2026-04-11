@@ -1282,9 +1282,9 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
           )}
         </div>
 
-        {/* Ảnh phối cảnh 4:3 full width — chiếm phần còn lại */}
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ width: "100%", height: "100%", minHeight: 120 }} />
+        {/* Ảnh phối cảnh 1:1 full width */}
+        <div style={{ width: "100%", aspectRatio: "1/1", flexShrink: 0 }}>
+          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ width: "100%", height: "100%" }} />
         </div>
 
         {/* Footer */}
