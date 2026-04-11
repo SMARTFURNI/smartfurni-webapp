@@ -257,12 +257,38 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
   );
 }
 
+// ─── Migrate old slides (feature+pricing → feature_pricing) ─────────────────
+function migrateSlides(slides: Slide[]): Slide[] {
+  const result: Slide[] = [];
+  let i = 0;
+  while (i < slides.length) {
+    const s = slides[i];
+    const next = slides[i + 1];
+    if (
+      s.type === "product_feature" &&
+      next?.type === "product_pricing" &&
+      s.productId === next.productId
+    ) {
+      // Merge: keep feature's overrides, add pricing overrides under pricingOverrides
+      result.push({
+        ...s,
+        id: `featprice_${s.productId}`,
+        type: "product_feature_pricing",
+      });
+      i += 2; // skip both
+    } else {
+      result.push(s);
+      i++;
+    }
+  }
+  return result;
+}
 // ─── Main Component ───────────────────────────────────────────────────────────
 interface Props { products: CrmProduct[]; initialSlides?: Slide[] | null }
 
 export default function CatalogueClient({ products, initialSlides }: Props) {
   const [slides, setSlides] = useState<Slide[]>(() =>
-    initialSlides && initialSlides.length > 0 ? initialSlides : buildDefaultSlides(products)
+    initialSlides && initialSlides.length > 0 ? migrateSlides(initialSlides) : buildDefaultSlides(products)
   );
   const [activeSlideId, setActiveSlideId] = useState<string>(
     initialSlides && initialSlides.length > 0 ? (initialSlides[0]?.id ?? "cover") : "cover"
