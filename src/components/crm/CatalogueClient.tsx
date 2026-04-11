@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, LayoutGrid, Layers,
   Package, Tag, Phone, Star, Award,
   CheckCircle2, Shield,
-  Edit3, X, RotateCcw, Upload, ImageIcon, Save,
+  Edit3, X, RotateCcw, Upload, ImageIcon, Check,
 } from "lucide-react";
 import type { CrmProduct, SizePricing } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
@@ -33,7 +33,6 @@ const D = {
   slideBg: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 60%, #2a1800 100%)",
 };
 
-// ─── Font: dùng system-ui sans-serif cho tên sản phẩm ─────────────────────────
 const FONT_PRODUCT = "'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif";
 const FONT_HEADING = "'Inter', 'SF Pro Display', system-ui, sans-serif";
 
@@ -127,6 +126,136 @@ function buildDefaultSlides(products: CrmProduct[]): Slide[] {
   return slides;
 }
 
+// ─── Inline Edit Helpers ──────────────────────────────────────────────────────
+interface InlineTextProps {
+  value: string;
+  placeholder?: string;
+  isEditing: boolean;
+  onCommit: (v: string) => void;
+  style?: React.CSSProperties;
+  multiline?: boolean;
+  className?: string;
+}
+
+function InlineText({ value, placeholder, isEditing, onCommit, style, multiline, className }: InlineTextProps) {
+  const [local, setLocal] = useState(value);
+
+  // sync when value changes from outside
+  const prevValue = useRef(value);
+  if (prevValue.current !== value) {
+    prevValue.current = value;
+    setLocal(value);
+  }
+
+  if (!isEditing) {
+    return <span style={style} className={className}>{value || placeholder || ""}</span>;
+  }
+
+  const inputStyle: React.CSSProperties = {
+    ...style,
+    background: "rgba(201,168,76,0.08)",
+    border: "1.5px solid rgba(201,168,76,0.5)",
+    borderRadius: 6,
+    outline: "none",
+    padding: "2px 6px",
+    width: "100%",
+    boxSizing: "border-box",
+    resize: multiline ? "vertical" : "none",
+    cursor: "text",
+    fontFamily: style?.fontFamily ?? FONT_HEADING,
+    fontSize: style?.fontSize,
+    fontWeight: style?.fontWeight,
+    color: style?.color ?? D.textPrimary,
+    lineHeight: style?.lineHeight,
+    letterSpacing: style?.letterSpacing,
+    textTransform: style?.textTransform as React.CSSProperties["textTransform"],
+  };
+
+  if (multiline) {
+    return (
+      <textarea
+        value={local}
+        placeholder={placeholder}
+        onChange={e => setLocal(e.target.value)}
+        onBlur={() => onCommit(local)}
+        rows={3}
+        style={inputStyle}
+        onClick={e => e.stopPropagation()}
+      />
+    );
+  }
+  return (
+    <input
+      type="text"
+      value={local}
+      placeholder={placeholder}
+      onChange={e => setLocal(e.target.value)}
+      onBlur={() => onCommit(local)}
+      onKeyDown={e => { if (e.key === "Enter") { e.currentTarget.blur(); } }}
+      style={inputStyle}
+      onClick={e => e.stopPropagation()}
+    />
+  );
+}
+
+interface InlineImageProps {
+  src?: string;
+  alt?: string;
+  isEditing: boolean;
+  onUpload: (dataUrl: string) => void;
+  onRemove: () => void;
+  style?: React.CSSProperties;
+  placeholderStyle?: React.CSSProperties;
+  placeholderLabel?: string;
+}
+
+function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placeholderStyle, placeholderLabel }: InlineImageProps) {
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => onUpload(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  if (src) {
+    return (
+      <div style={{ position: "relative", display: "inline-block", ...style }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={alt ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="eager" />
+        {isEditing && (
+          <div
+            onClick={() => fileRef.current?.click()}
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", gap: 6 }}>
+            <Upload size={20} color={D.gold} />
+            <span style={{ fontSize: 10, color: D.gold, fontWeight: 600 }}>Đổi ảnh</span>
+            <button
+              onClick={e => { e.stopPropagation(); onRemove(); }}
+              style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "rgba(239,68,68,0.9)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <X size={11} color="#fff" />
+            </button>
+          </div>
+        )}
+        <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={isEditing ? () => fileRef.current?.click() : undefined}
+      style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: isEditing ? "pointer" : "default", ...placeholderStyle }}>
+      <ImageIcon size={28} style={{ color: D.textMuted, marginBottom: 6 }} />
+      <span style={{ fontSize: 10, color: D.textMuted }}>{placeholderLabel ?? "Chưa có ảnh"}</span>
+      {isEditing && <span style={{ fontSize: 9, color: D.gold, marginTop: 4 }}>Click để upload</span>}
+      {isEditing && <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />}
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 interface Props { products: CrmProduct[] }
 
@@ -136,13 +265,13 @@ export default function CatalogueClient({ products }: Props) {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
-  const [editingSlide, setEditingSlide] = useState<Slide | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const activeProducts = products.filter(p => p.isActive);
   const visibleSlides = slides.filter(s => s.visible);
   const activeSlide = slides.find(s => s.id === activeSlideId) ?? slides[0];
   const activeIndex = visibleSlides.findIndex(s => s.id === activeSlideId);
-  const getProduct = (id?: string) => activeProducts.find(p => p.id === id);
+  const getProduct = useCallback((id?: string) => activeProducts.find(p => p.id === id), [activeProducts]);
 
   const today = new Date().toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
@@ -158,10 +287,10 @@ export default function CatalogueClient({ products }: Props) {
     setActiveSlideId(newSlide.id);
     setShowAddPanel(false);
   };
-  const resetSlides = () => { setSlides(buildDefaultSlides(products)); setActiveSlideId("cover"); };
-  const updateSlideOverrides = (id: string, overrides: SlideOverrides) => {
+  const resetSlides = () => { setSlides(buildDefaultSlides(products)); setActiveSlideId("cover"); setIsEditing(false); };
+  const updateSlideOverrides = useCallback((id: string, overrides: Partial<SlideOverrides>) => {
     setSlides(prev => prev.map(s => s.id === id ? { ...s, overrides: { ...s.overrides, ...overrides } } : s));
-  };
+  }, []);
 
   // ── Drag & Drop ──
   const handleDragStart = (id: string) => setDragId(id);
@@ -183,6 +312,16 @@ export default function CatalogueClient({ products }: Props) {
   const goNext = () => { const idx = visibleSlides.findIndex(s => s.id === activeSlideId); if (idx < visibleSlides.length - 1) setActiveSlideId(visibleSlides[idx + 1].id); };
   const goPrev = () => { const idx = visibleSlides.findIndex(s => s.id === activeSlideId); if (idx > 0) setActiveSlideId(visibleSlides[idx - 1].id); };
 
+  // ── Inline update helpers ──
+  const updateField = useCallback((field: keyof SlideOverrides, value: string) => {
+    if (!activeSlide) return;
+    updateSlideOverrides(activeSlide.id, { [field]: value || undefined });
+  }, [activeSlide, updateSlideOverrides]);
+
+  const slideUpdater = useCallback((id: string) => (field: keyof SlideOverrides, value: string) => {
+    updateSlideOverrides(id, { [field]: value || undefined });
+  }, [updateSlideOverrides]);
+
   return (
     <div className="flex flex-col h-full" style={{ background: D.pageBg }}>
 
@@ -198,98 +337,75 @@ export default function CatalogueClient({ products }: Props) {
           body, html { overflow: visible !important; height: auto !important; background: #fff !important; margin: 0 !important; padding: 0 !important; }
           .catalogue-print-area { display: block !important; width: 100% !important; }
           .catalogue-slide-print {
-            width: 210mm !important;
-            height: 297mm !important;
-            page-break-after: always !important;
-            break-after: page !important;
-            overflow: hidden !important;
-            display: flex !important;
-            flex-direction: column !important;
-            margin: 0 auto !important;
-            box-sizing: border-box !important;
+            page-break-after: always;
+            break-after: page;
+            width: 210mm;
+            min-height: 297mm;
+            overflow: hidden;
           }
-          .catalogue-slide-print:last-child { page-break-after: avoid !important; break-after: avoid !important; }
-          .catalogue-preview-area { display: none !important; }
+          .catalogue-slide-print:last-child { page-break-after: avoid; break-after: avoid; }
         }
         @media screen {
-          .catalogue-print-area { display: none !important; }
+          .catalogue-print-area { display: none; }
         }
+        .inline-edit-hint { opacity: 0; transition: opacity 0.15s; }
+        .slide-editing .inline-edit-hint { opacity: 1; }
+        .slide-editing [data-editable]:hover { outline: 1.5px dashed rgba(201,168,76,0.5); border-radius: 4px; cursor: text; }
       `}</style>
 
       {/* ── Toolbar ── */}
-      <div className="catalogue-toolbar no-print flex-shrink-0 px-5 py-3 flex items-center justify-between gap-3"
+      <div className="catalogue-toolbar no-print flex items-center justify-between px-4 py-2.5 flex-shrink-0"
         style={{ background: D.headerBg, borderBottom: `1px solid ${D.border}` }}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs"
-            style={{ background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, color: "#fff" }}>SF</div>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: D.goldDim, border: `1px solid ${D.borderGold}` }}>
+            <span style={{ fontSize: 13, fontWeight: 900, color: D.gold }}>SF</span>
+          </div>
           <div>
-            <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: D.gold }}>Catalogue Online</div>
+            <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: D.gold }}>CATALOGUE ONLINE</div>
             <div className="text-sm font-bold" style={{ color: D.textPrimary, fontFamily: FONT_HEADING }}>SmartFurni — Giường & Sofa Thông Minh</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: D.goldDim, color: D.gold, border: `1px solid ${D.borderGold}` }}>
+          <span className="text-xs px-2 py-1 rounded-lg" style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
             {visibleSlides.length} trang
           </span>
           <button onClick={resetSlides} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
             style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
-            <RotateCcw size={12} /> Đặt lại
+            <RotateCcw size={11} /> Đặt lại
           </button>
-          <button onClick={() => setShowAddPanel(!showAddPanel)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-            style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-            <Plus size={12} /> Thêm slide
+          <button onClick={() => setShowAddPanel(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+            style={{ background: showAddPanel ? D.goldDim : D.cardBg, border: `1px solid ${showAddPanel ? D.borderGold : D.border}`, color: showAddPanel ? D.gold : D.textMuted }}>
+            <Plus size={11} /> Thêm slide
           </button>
-          <button onClick={() => window.print()} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold"
-            style={{ background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, color: "#fff", boxShadow: D.goldGlow }}>
-            <Printer size={14} /> Xuất PDF
+          <button onClick={() => window.print()} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold"
+            style={{ background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, color: "#fff" }}>
+            <Printer size={11} /> Xuất PDF
           </button>
         </div>
       </div>
 
       {/* ── Add Slide Panel ── */}
       {showAddPanel && (
-        <div className="no-print flex-shrink-0 px-5 py-3 border-b" style={{ background: "rgba(13,11,26,0.99)", borderColor: D.border }}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold" style={{ color: D.textPrimary }}>Thêm slide mới</span>
-            <button onClick={() => setShowAddPanel(false)} style={{ color: D.textMuted }}><X size={16} /></button>
-          </div>
+        <div className="no-print px-4 py-3 flex-shrink-0" style={{ background: "rgba(8,7,18,0.95)", borderBottom: `1px solid ${D.border}` }}>
+          <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: D.textMuted }}>Thêm slide</div>
           <div className="flex flex-wrap gap-2">
-            {(["cover", "intro", "why_smartfurni", "warranty", "contact"] as SlideType[]).map(type => {
-              const Icon = SLIDE_ICONS[type];
-              return (
-                <button key={type} onClick={() => addSlide(type)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-                  style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                  <Icon size={12} /> {SLIDE_LABELS[type]}
-                </button>
-              );
-            })}
-            <button onClick={() => addSlide("category_header", undefined, "ergonomic_bed")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-              style={{ background: D.purpleDim, border: `1px solid ${D.purple}40`, color: D.purple }}>
-              <Layers size={12} /> Tiêu đề: Giường CTH
-            </button>
-            <button onClick={() => addSlide("category_header", undefined, "sofa_bed")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-              style={{ background: D.blueDim, border: `1px solid ${D.blue}40`, color: D.blue }}>
-              <Layers size={12} /> Tiêu đề: Sofa Giường
-            </button>
+            {(["cover", "intro", "why_smartfurni", "warranty", "contact"] as SlideType[]).map(t => (
+              <button key={t} onClick={() => addSlide(t)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
+                {SLIDE_LABELS[t]}
+              </button>
+            ))}
+            <div style={{ width: "100%", height: 1, background: D.divider, margin: "4px 0" }} />
             {activeProducts.map(p => (
-              <div key={p.id} className="flex flex-wrap items-center gap-1 w-full">
-                <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ background: D.goldDim, color: D.gold }}>{p.sku}</span>
-                <button onClick={() => addSlide("product_intro", p.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium"
-                  style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                  <Star size={10} /> 1/4
-                </button>
-                <button onClick={() => addSlide("product_feature", p.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium"
-                  style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                  <Package size={10} /> 2/4
-                </button>
-                <button onClick={() => addSlide("product_pricing", p.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium"
-                  style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                  <Tag size={10} /> 3/4
-                </button>
-                <button onClick={() => addSlide("product_gallery", p.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium"
-                  style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textSecondary }}>
-                  <LayoutGrid size={10} /> 4/4
-                </button>
+              <div key={p.id} className="flex items-center gap-1">
+                {(["product_intro", "product_feature", "product_pricing", "product_gallery"] as SlideType[]).map(t => (
+                  <button key={t} onClick={() => addSlide(t, p.id)}
+                    className="px-2 py-1 rounded text-[10px] font-medium"
+                    style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
+                    {p.sku} · {t === "product_intro" ? "1/4" : t === "product_feature" ? "2/4" : t === "product_pricing" ? "3/4" : "4/4"}
+                  </button>
+                ))}
               </div>
             ))}
           </div>
@@ -318,7 +434,7 @@ export default function CatalogueClient({ products }: Props) {
                   onDragOver={(e) => handleDragOver(e, slide.id)}
                   onDrop={() => handleDrop(slide.id)}
                   onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                  onClick={() => setActiveSlideId(slide.id)}
+                  onClick={() => { setActiveSlideId(slide.id); setIsEditing(false); }}
                   className="group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all"
                   style={{
                     background: isActive ? D.goldDim : isDragOver ? "rgba(255,255,255,0.06)" : "transparent",
@@ -337,10 +453,6 @@ export default function CatalogueClient({ products }: Props) {
                     {product && <div className="text-[9px] truncate" style={{ color: D.textMuted }}>{product.sku}</div>}
                   </div>
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); setEditingSlide(slide); }}
-                      className="w-5 h-5 rounded flex items-center justify-center" style={{ color: D.gold }}>
-                      <Edit3 size={9} />
-                    </button>
                     <button onClick={(e) => { e.stopPropagation(); toggleVisible(slide.id); }}
                       className="w-5 h-5 rounded flex items-center justify-center" style={{ color: D.textMuted }}>
                       {slide.visible ? <Eye size={9} /> : <EyeOff size={9} />}
@@ -360,7 +472,7 @@ export default function CatalogueClient({ products }: Props) {
         <div className="catalogue-preview-area flex-1 flex flex-col items-center justify-start overflow-auto py-4 px-6"
           style={{ background: "rgba(5,4,12,0.7)" }}>
           {/* Navigation */}
-          <div className="flex items-center gap-4 mb-4 flex-shrink-0">
+          <div className="flex items-center gap-3 mb-4 flex-shrink-0">
             <button onClick={goPrev} disabled={activeIndex <= 0}
               className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30"
               style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
@@ -372,19 +484,35 @@ export default function CatalogueClient({ products }: Props) {
               style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
               <ChevronRight size={16} />
             </button>
-            <button onClick={() => activeSlide && setEditingSlide(activeSlide)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-              style={{ background: D.goldDim, border: `1px solid ${D.borderGold}`, color: D.gold }}>
-              <Edit3 size={11} /> Chỉnh sửa slide
-            </button>
+            {isEditing ? (
+              <button onClick={() => setIsEditing(false)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                style={{ background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, color: "#fff" }}>
+                <Check size={11} /> Xong chỉnh sửa
+              </button>
+            ) : (
+              <button onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+                style={{ background: D.goldDim, border: `1px solid ${D.borderGold}`, color: D.gold }}>
+                <Edit3 size={11} /> Chỉnh sửa slide
+              </button>
+            )}
           </div>
 
-          {/* Slide preview — scroll nội dung đầy đủ */}
-          <div className="w-full rounded-xl overflow-hidden shadow-2xl flex-shrink-0"
+          {isEditing && (
+            <div className="mb-3 px-3 py-2 rounded-lg text-xs flex-shrink-0 flex items-center gap-2"
+              style={{ background: "rgba(201,168,76,0.08)", border: `1px solid ${D.borderGold}`, color: D.gold, maxWidth: 680, width: "100%" }}>
+              <Edit3 size={12} />
+              <span>Đang chỉnh sửa — Click vào bất kỳ văn bản nào để sửa trực tiếp. Click vào ảnh để thay đổi.</span>
+            </div>
+          )}
+
+          {/* Slide preview */}
+          <div className={`w-full rounded-xl overflow-hidden shadow-2xl flex-shrink-0 ${isEditing ? "slide-editing" : ""}`}
             style={{
               maxWidth: 680,
-              border: `1px solid ${D.borderGold}`,
-              boxShadow: `0 0 40px rgba(201,168,76,0.1)`,
+              border: `1px solid ${isEditing ? D.gold : D.borderGold}`,
+              boxShadow: isEditing ? `0 0 40px rgba(201,168,76,0.25)` : `0 0 40px rgba(201,168,76,0.1)`,
             }}>
             {activeSlide && (
               <SlideRenderer
@@ -392,6 +520,8 @@ export default function CatalogueClient({ products }: Props) {
                 product={getProduct(activeSlide.productId)}
                 products={activeProducts}
                 today={today}
+                isEditing={isEditing}
+                onUpdate={(field, value) => updateField(field, value)}
               />
             )}
           </div>
@@ -415,13 +545,12 @@ export default function CatalogueClient({ products }: Props) {
             {visibleSlides.map((slide, idx) => {
               const isActive = slide.id === activeSlideId;
               return (
-                <div key={slide.id} onClick={() => setActiveSlideId(slide.id)}
+                <div key={slide.id} onClick={() => { setActiveSlideId(slide.id); setIsEditing(false); }}
                   className="cursor-pointer rounded-lg overflow-hidden"
                   style={{ border: `2px solid ${isActive ? D.gold : "transparent"}`, boxShadow: isActive ? D.goldGlow : "none" }}>
-                  {/* Thumbnail: scale down slide */}
                   <div style={{ position: "relative", width: "100%", paddingBottom: "141.4%", overflow: "hidden", background: D.pageBg }}>
                     <div style={{ position: "absolute", top: 0, left: 0, width: "560%", height: "560%", transform: "scale(0.179)", transformOrigin: "top left", pointerEvents: "none" }}>
-                      <SlideRenderer slide={slide} product={getProduct(slide.productId)} products={activeProducts} today={today} />
+                      <SlideRenderer slide={slide} product={getProduct(slide.productId)} products={activeProducts} today={today} isEditing={false} onUpdate={() => {}} />
                     </div>
                   </div>
                   <div className="text-center py-0.5 text-[9px]"
@@ -439,209 +568,52 @@ export default function CatalogueClient({ products }: Props) {
       <div className="catalogue-print-area">
         {visibleSlides.map((slide) => (
           <div key={slide.id} className="catalogue-slide-print">
-            <SlideRenderer slide={slide} product={getProduct(slide.productId)} products={activeProducts} today={today} />
+            <SlideRenderer slide={slide} product={getProduct(slide.productId)} products={activeProducts} today={today} isEditing={false} onUpdate={() => {}} />
           </div>
         ))}
-      </div>
-
-      {/* ── Slide Editor Modal ── */}
-      {editingSlide && (
-        <SlideEditorModal
-          slide={editingSlide}
-          product={getProduct(editingSlide.productId)}
-          onSave={(overrides) => { updateSlideOverrides(editingSlide.id, overrides); setEditingSlide(null); }}
-          onClose={() => setEditingSlide(null)}
-        />
-      )}
-    </div>
-  );
-}
-
-// ─── Slide Editor Modal ───────────────────────────────────────────────────────
-function SlideEditorModal({
-  slide, product, onSave, onClose,
-}: {
-  slide: Slide;
-  product?: CrmProduct;
-  onSave: (overrides: SlideOverrides) => void;
-  onClose: () => void;
-}) {
-  const [title, setTitle] = useState(slide.overrides?.title ?? "");
-  const [subtitle, setSubtitle] = useState(slide.overrides?.subtitle ?? "");
-  const [body, setBody] = useState(slide.overrides?.body ?? "");
-  const [imageDataUrl, setImageDataUrl] = useState(slide.overrides?.imageDataUrl ?? "");
-  const [image2DataUrl, setImage2DataUrl] = useState(slide.overrides?.image2DataUrl ?? "");
-  const [image3DataUrl, setImage3DataUrl] = useState(slide.overrides?.image3DataUrl ?? "");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileInput2Ref = useRef<HTMLInputElement>(null);
-  const fileInput3Ref = useRef<HTMLInputElement>(null);
-
-  const makeUploadHandler = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setter(ev.target?.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const handleSave = () => {
-    onSave({
-      title: title || undefined,
-      subtitle: subtitle || undefined,
-      body: body || undefined,
-      imageDataUrl: imageDataUrl || undefined,
-      image2DataUrl: image2DataUrl || undefined,
-      image3DataUrl: image3DataUrl || undefined,
-    });
-  };
-
-  const isGallery = slide.type === "product_gallery";
-  const canEditImage = ["cover", "intro", "category_header", "product_intro", "product_feature", "product_pricing", "product_gallery"].includes(slide.type);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl"
-        style={{ background: "#0f0d1f", border: `1px solid ${D.borderGold}` }}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${D.border}` }}>
-          <div>
-            <div className="text-xs uppercase tracking-widest mb-0.5" style={{ color: D.gold }}>Chỉnh sửa slide</div>
-            <div className="text-base font-bold" style={{ color: D.textPrimary, fontFamily: FONT_HEADING }}>
-              {SLIDE_LABELS[slide.type]}
-              {product && <span className="ml-2 text-sm font-normal" style={{ color: D.textMuted }}>— {product.sku}</span>}
-            </div>
-          </div>
-          <button onClick={onClose} style={{ color: D.textMuted }}><X size={20} /></button>
-        </div>
-
-        {/* Body */}
-        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* Title */}
-          <div>
-            <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: D.textMuted }}>
-              Tiêu đề (để trống = dùng mặc định)
-            </label>
-            <input value={title} onChange={e => setTitle(e.target.value)}
-              placeholder={product?.name ?? "Tiêu đề slide..."}
-              className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${D.border}`, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
-          </div>
-
-          {/* Subtitle */}
-          <div>
-            <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: D.textMuted }}>
-              Phụ đề / Mô tả ngắn
-            </label>
-            <input value={subtitle} onChange={e => setSubtitle(e.target.value)}
-              placeholder="Mô tả ngắn..."
-              className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${D.border}`, color: D.textPrimary }} />
-          </div>
-
-          {/* Body */}
-          <div>
-            <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: D.textMuted }}>
-              Nội dung chi tiết (mỗi dòng = 1 gạch đầu dòng)
-            </label>
-            <textarea value={body} onChange={e => setBody(e.target.value)}
-              placeholder={"Tính năng 1\nTính năng 2\nTính năng 3"}
-              rows={5}
-              className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${D.border}`, color: D.textPrimary }} />
-          </div>
-
-          {/* Image upload */}
-          {canEditImage && (
-            <div className="space-y-3">
-              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: D.textMuted }}>
-                {isGallery ? "Ảnh thực tế (tối đa 3 ảnh)" : "Hình ảnh slide"}
-              </label>
-              {[{ url: imageDataUrl, setter: setImageDataUrl, ref: fileInputRef, label: isGallery ? "Ảnh 1" : "Ảnh chính" },
-                ...(isGallery ? [
-                  { url: image2DataUrl, setter: setImage2DataUrl, ref: fileInput2Ref, label: "Ảnh 2" },
-                  { url: image3DataUrl, setter: setImage3DataUrl, ref: fileInput3Ref, label: "Ảnh 3" },
-                ] : [])].map(({ url, setter, ref, label }, idx) => (
-                <div key={idx} className="flex items-start gap-3">
-                  {url ? (
-                    <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0"
-                      style={{ border: `1px solid ${D.borderGold}` }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt="preview" className="w-full h-full object-cover" />
-                      <button onClick={() => setter("")}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
-                        style={{ background: "rgba(239,68,68,0.9)" }}>
-                        <X size={10} color="#fff" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: "rgba(255,255,255,0.04)", border: `1px dashed ${D.border}` }}>
-                      <ImageIcon size={20} style={{ color: D.textMuted }} />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="text-[10px] mb-1" style={{ color: D.textMuted }}>{label}</div>
-                    <button onClick={() => ref.current?.click()}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium w-full justify-center"
-                      style={{ background: D.goldDim, border: `1px solid ${D.borderGold}`, color: D.gold }}>
-                      <Upload size={12} /> Chọn ảnh
-                    </button>
-                    <input ref={ref} type="file" accept="image/*" className="hidden" onChange={makeUploadHandler(setter)} />
-                  </div>
-                </div>
-              ))}
-              <p className="text-[10px]" style={{ color: D.textMuted }}>Hỗ trợ JPG, PNG, WebP. Ảnh lưu trong phiên làm việc này.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4" style={{ borderTop: `1px solid ${D.border}` }}>
-          <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium"
-            style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
-            Huỷ
-          </button>
-          <button onClick={handleSave} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold"
-            style={{ background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, color: "#fff" }}>
-            <Save size={14} /> Lưu thay đổi
-          </button>
-        </div>
       </div>
     </div>
   );
 }
 
 // ─── Slide Renderer ───────────────────────────────────────────────────────────
-function SlideRenderer({ slide, product, products, today }: {
-  slide: Slide; product?: CrmProduct; products: CrmProduct[]; today: string;
-}) {
+interface SlideRendererProps {
+  slide: Slide;
+  product?: CrmProduct;
+  products: CrmProduct[];
+  today: string;
+  isEditing: boolean;
+  onUpdate: (field: keyof SlideOverrides, value: string) => void;
+}
+
+function SlideRenderer({ slide, product, products, today, isEditing, onUpdate }: SlideRendererProps) {
+  const props = { overrides: slide.overrides, isEditing, onUpdate };
   switch (slide.type) {
-    case "cover": return <SlideCover today={today} overrides={slide.overrides} />;
-    case "intro": return <SlideIntro overrides={slide.overrides} />;
-    case "category_header": return <SlideCategoryHeader category={slide.category!} overrides={slide.overrides} />;
-    case "product_intro": return product ? <SlideProductIntro product={product} overrides={slide.overrides} /> : <SlideEmpty />;
-    case "product_feature": return product ? <SlideProductFeature product={product} overrides={slide.overrides} /> : <SlideEmpty />;
-    case "product_pricing": return product ? <SlideProductPricing product={product} overrides={slide.overrides} /> : <SlideEmpty />;
-    case "product_gallery": return product ? <SlideProductGallery product={product} overrides={slide.overrides} /> : <SlideEmpty />;
-    case "why_smartfurni": return <SlideWhySmartFurni overrides={slide.overrides} />;
-    case "warranty": return <SlideWarranty overrides={slide.overrides} />;
-    case "contact": return <SlideContact today={today} overrides={slide.overrides} />;
+    case "cover": return <SlideCover today={today} {...props} />;
+    case "intro": return <SlideIntro {...props} />;
+    case "category_header": return <SlideCategoryHeader category={slide.category!} {...props} />;
+    case "product_intro": return product ? <SlideProductIntro product={product} {...props} /> : <SlideEmpty />;
+    case "product_feature": return product ? <SlideProductFeature product={product} {...props} /> : <SlideEmpty />;
+    case "product_pricing": return product ? <SlideProductPricing product={product} {...props} /> : <SlideEmpty />;
+    case "product_gallery": return product ? <SlideProductGallery product={product} {...props} /> : <SlideEmpty />;
+    case "why_smartfurni": return <SlideWhySmartFurni {...props} />;
+    case "warranty": return <SlideWarranty {...props} />;
+    case "contact": return <SlideContact today={today} {...props} />;
     default: return <SlideEmpty />;
   }
+}
+
+// ─── Shared props type ────────────────────────────────────────────────────────
+interface SlideProps {
+  overrides?: SlideOverrides;
+  isEditing: boolean;
+  onUpdate: (field: keyof SlideOverrides, value: string) => void;
 }
 
 // ─── Shared Slide Shell ───────────────────────────────────────────────────────
 function SlideShell({ accentColor = D.gold, children }: { accentColor?: string; children: React.ReactNode }) {
   return (
-    <div style={{
-      width: "100%",
-      minHeight: "297mm",
-      display: "flex",
-      flexDirection: "column",
-      background: D.slideBg,
-      fontFamily: FONT_HEADING,
-    }}>
+    <div style={{ width: "100%", minHeight: "297mm", display: "flex", flexDirection: "column", background: D.slideBg, fontFamily: FONT_HEADING }}>
       <div style={{ height: 5, flexShrink: 0, background: `linear-gradient(90deg, ${accentColor}, #f5edd6, ${accentColor})` }} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>{children}</div>
       <div style={{ height: 4, flexShrink: 0, background: `linear-gradient(90deg, ${accentColor}, #f5edd6, ${accentColor})` }} />
@@ -650,28 +622,34 @@ function SlideShell({ accentColor = D.gold, children }: { accentColor?: string; 
 }
 
 // ─── Slide: Cover ─────────────────────────────────────────────────────────────
-function SlideCover({ today, overrides }: { today: string; overrides?: SlideOverrides }) {
+function SlideCover({ today, overrides, isEditing, onUpdate }: { today: string } & SlideProps) {
   return (
     <SlideShell>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 60px", textAlign: "center" }}>
-        {overrides?.imageDataUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={overrides.imageDataUrl} alt="cover" style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 20, marginBottom: 28, border: `2px solid ${D.borderGold}` }} />
-        ) : (
-          <div style={{ width: 88, height: 88, borderRadius: 20, background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 28, boxShadow: "0 0 40px rgba(201,168,76,0.4)" }}>
-            <span style={{ fontSize: 32, fontWeight: 900, color: "#fff", fontFamily: FONT_HEADING }}>SF</span>
-          </div>
-        )}
+        <div style={{ width: 88, height: 88, borderRadius: 20, overflow: "hidden", marginBottom: 28, boxShadow: "0 0 40px rgba(201,168,76,0.4)", border: `2px solid ${D.borderGold}` }}>
+          <InlineImage
+            src={overrides?.imageDataUrl}
+            isEditing={isEditing}
+            onUpload={v => onUpdate("imageDataUrl", v)}
+            onRemove={() => onUpdate("imageDataUrl", "")}
+            style={{ width: 88, height: 88, borderRadius: 20 }}
+            placeholderStyle={{ width: 88, height: 88, background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, borderRadius: 20 }}
+            placeholderLabel="SF"
+          />
+        </div>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase", color: D.gold, marginBottom: 12 }}>SMARTFURNI</div>
-        <h1 style={{ fontSize: 52, fontWeight: 900, color: D.textPrimary, lineHeight: 1.1, marginBottom: 16, fontFamily: FONT_HEADING }}>
-          {overrides?.title || "CATALOGUE\nSẢN PHẨM"}
+        <h1 style={{ fontSize: 52, fontWeight: 900, color: D.textPrimary, lineHeight: 1.1, marginBottom: 16, fontFamily: FONT_HEADING, width: "100%" }}>
+          <InlineText value={overrides?.title ?? ""} placeholder="CATALOGUE\nSẢN PHẨM" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+            style={{ fontSize: 52, fontWeight: 900, color: D.textPrimary, lineHeight: 1.1, fontFamily: FONT_HEADING, textAlign: "center" }} />
         </h1>
         <div style={{ width: 80, height: 2, background: `linear-gradient(90deg, transparent, ${D.gold}, transparent)`, marginBottom: 20 }} />
-        <p style={{ fontSize: 18, fontWeight: 500, color: "rgba(245,237,214,0.8)", marginBottom: 8 }}>
-          {overrides?.subtitle || "Giường Công Thái Học & Sofa Giường Đa Năng"}
+        <p style={{ fontSize: 18, fontWeight: 500, color: "rgba(245,237,214,0.8)", marginBottom: 8, width: "100%" }}>
+          <InlineText value={overrides?.subtitle ?? ""} placeholder="Giường Công Thái Học & Sofa Giường Đa Năng" isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
+            style={{ fontSize: 18, fontWeight: 500, color: "rgba(245,237,214,0.8)", textAlign: "center" }} />
         </p>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
-          {overrides?.body || "Công nghệ điều khiển điện thông minh — Thiết kế sang trọng hiện đại"}
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", width: "100%" }}>
+          <InlineText value={overrides?.body ?? ""} placeholder="Công nghệ điều khiển điện thông minh — Thiết kế sang trọng hiện đại" isEditing={isEditing} onCommit={v => onUpdate("body", v)}
+            style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", textAlign: "center" }} />
         </p>
       </div>
       <div style={{ padding: "0 48px 32px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
@@ -689,19 +667,24 @@ function SlideCover({ today, overrides }: { today: string; overrides?: SlideOver
 }
 
 // ─── Slide: Intro ─────────────────────────────────────────────────────────────
-function SlideIntro({ overrides }: { overrides?: SlideOverrides }) {
-  const bodyLines = overrides?.body?.split("\n").filter(Boolean) ?? [];
+function SlideIntro({ overrides, isEditing, onUpdate }: SlideProps) {
+  const defaultBody = "🏆 Chất lượng cao cấp — Vật liệu nhập khẩu, kiểm định nghiêm ngặt\n⚡ Công nghệ thông minh — Điều khiển điện, kết nối app di động\n🛡️ Bảo hành dài hạn — Khung cơ 5 năm, motor điện 3 năm\n🚚 Giao hàng & lắp đặt — Miễn phí trong bán kính 30km TP.HCM";
+  const bodyLines = (overrides?.body ?? defaultBody).split("\n").filter(Boolean);
   return (
     <SlideShell>
       <div style={{ flex: 1, padding: "40px 48px", display: "flex", flexDirection: "column" }}>
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>VỀ CHÚNG TÔI</div>
-          <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>{overrides?.title || "Thương Hiệu SmartFurni"}</h2>
+          <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
+            <InlineText value={overrides?.title ?? ""} placeholder="Thương Hiệu SmartFurni" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+              style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
+          </h2>
           <div style={{ width: 56, height: 2, background: D.gold, marginTop: 12 }} />
         </div>
         <div style={{ borderRadius: 16, padding: "20px 24px", marginBottom: 24, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
           <p style={{ fontSize: 15, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }}>
-            {overrides?.subtitle || "SmartFurni là thương hiệu nội thất thông minh tiên phong tại Việt Nam, chuyên cung cấp giường công thái học điều khiển điện và sofa giường đa năng cao cấp. Chúng tôi mang đến giải pháp nghỉ ngơi tối ưu cho không gian sống hiện đại."}
+            <InlineText value={overrides?.subtitle ?? ""} placeholder="SmartFurni là thương hiệu nội thất thông minh tiên phong tại Việt Nam..." isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
+              style={{ fontSize: 15, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }} />
           </p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
@@ -713,20 +696,27 @@ function SlideIntro({ overrides }: { overrides?: SlideOverrides }) {
           ))}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          {(bodyLines.length > 0 ? bodyLines : ["🏆 Chất lượng cao cấp — Vật liệu nhập khẩu, kiểm định nghiêm ngặt", "⚡ Công nghệ thông minh — Điều khiển điện, kết nối app di động", "🛡️ Bảo hành dài hạn — Khung cơ 5 năm, motor điện 3 năm", "🚚 Giao hàng & lắp đặt — Miễn phí trong bán kính 30km TP.HCM"]).map(line => (
-            <div key={line} style={{ display: "flex", alignItems: "flex-start", gap: 10, borderRadius: 12, padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          {bodyLines.map((line, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, borderRadius: 12, padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
               <span style={{ fontSize: 18, flexShrink: 0 }}>{line.split(" ")[0]}</span>
               <span style={{ fontSize: 12, color: "rgba(245,237,214,0.75)", lineHeight: 1.5 }}>{line.replace(/^[^\s]+\s/, "")}</span>
             </div>
           ))}
         </div>
+        {isEditing && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Chỉnh sửa nội dung (mỗi dòng = 1 mục):</div>
+            <InlineText value={overrides?.body ?? defaultBody} placeholder={defaultBody} isEditing={true} onCommit={v => onUpdate("body", v)}
+              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+          </div>
+        )}
       </div>
     </SlideShell>
   );
 }
 
 // ─── Slide: Category Header ───────────────────────────────────────────────────
-function SlideCategoryHeader({ category, overrides }: { category: "ergonomic_bed" | "sofa_bed"; overrides?: SlideOverrides }) {
+function SlideCategoryHeader({ category, overrides, isEditing, onUpdate }: { category: "ergonomic_bed" | "sofa_bed" } & SlideProps) {
   const isBed = category === "ergonomic_bed";
   const color = isBed ? D.purple : D.blue;
   const colorDim = isBed ? D.purpleDim : D.blueDim;
@@ -738,23 +728,27 @@ function SlideCategoryHeader({ category, overrides }: { category: "ergonomic_bed
   const defaultFeatures = isBed
     ? ["Điều khiển điện không dây", "Nâng đầu 0–70°, nâng chân 0–45°", "Massage rung tích hợp", "Khung thép mạ kẽm bảo hành 5 năm", "Điều khiển từ xa & app"]
     : ["Gấp mở dễ dàng trong 30 giây", "Kết cấu khung thép chắc chắn", "Đệm foam cao cấp thoáng khí", "Tiết kiệm không gian tối đa", "Phù hợp căn hộ 30–80m²"];
-  const bodyLines = overrides?.body?.split("\n").filter(Boolean) ?? defaultFeatures;
+  const bodyLines = (overrides?.body ?? defaultFeatures.join("\n")).split("\n").filter(Boolean);
 
   return (
     <SlideShell accentColor={color}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 60px", textAlign: "center" }}>
-        {overrides?.imageDataUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={overrides.imageDataUrl} alt="category" style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 20, marginBottom: 24, border: `2px solid ${color}40` }} />
-        ) : (
-          <div style={{ width: 96, height: 96, borderRadius: 24, background: colorDim, border: `2px solid ${color}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44, marginBottom: 24 }}>
-            {icon}
-          </div>
-        )}
+        <div style={{ width: 96, height: 96, borderRadius: 24, overflow: "hidden", background: colorDim, border: `2px solid ${color}40`, marginBottom: 24 }}>
+          <InlineImage src={overrides?.imageDataUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
+            style={{ width: 96, height: 96 }}
+            placeholderStyle={{ width: 96, height: 96, background: colorDim, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}
+            placeholderLabel={icon} />
+        </div>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase", color, marginBottom: 12 }}>DÒNG SẢN PHẨM</div>
-        <h2 style={{ fontSize: 42, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, marginBottom: 16 }}>{overrides?.title || defaultTitle}</h2>
+        <h2 style={{ fontSize: 42, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, marginBottom: 16, width: "100%" }}>
+          <InlineText value={overrides?.title ?? ""} placeholder={defaultTitle} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+            style={{ fontSize: 42, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, textAlign: "center" }} />
+        </h2>
         <div style={{ width: 72, height: 2, background: `linear-gradient(90deg, transparent, ${color}, transparent)`, marginBottom: 20 }} />
-        <p style={{ fontSize: 15, maxWidth: 440, color: "rgba(245,237,214,0.7)", marginBottom: 36 }}>{overrides?.subtitle || defaultSubtitle}</p>
+        <p style={{ fontSize: 15, maxWidth: 440, color: "rgba(245,237,214,0.7)", marginBottom: 36, width: "100%" }}>
+          <InlineText value={overrides?.subtitle ?? ""} placeholder={defaultSubtitle} isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
+            style={{ fontSize: 15, color: "rgba(245,237,214,0.7)", textAlign: "center" }} />
+        </p>
         <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 10 }}>
           {bodyLines.map((f, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, borderRadius: 12, padding: "10px 18px", background: colorDim, border: `1px solid ${color}25` }}>
@@ -763,16 +757,21 @@ function SlideCategoryHeader({ category, overrides }: { category: "ergonomic_bed
             </div>
           ))}
         </div>
+        {isEditing && (
+          <div style={{ marginTop: 16, width: "100%", maxWidth: 440 }}>
+            <InlineText value={overrides?.body ?? defaultFeatures.join("\n")} placeholder={defaultFeatures.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
+              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+          </div>
+        )}
       </div>
     </SlideShell>
   );
 }
 
 // ─── Slide: Product Feature ───────────────────────────────────────────────────
-function SlideProductFeature({ product, overrides }: { product: CrmProduct; overrides?: SlideOverrides }) {
+function SlideProductFeature({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
   const isBed = product.category === "ergonomic_bed";
   const color = isBed ? D.purple : D.blue;
-  const colorDim = isBed ? D.purpleDim : D.blueDim;
   const specEntries = Object.entries(product.specs || {}).filter(([, v]) => v);
   const bodyLines = overrides?.body?.split("\n").filter(Boolean) ?? [];
   const imageUrl = overrides?.imageDataUrl || product.imageUrl;
@@ -780,35 +779,31 @@ function SlideProductFeature({ product, overrides }: { product: CrmProduct; over
   return (
     <SlideShell accentColor={color}>
       <div style={{ flex: 1, padding: "36px 44px", display: "flex", flexDirection: "column" }}>
-        {/* Header row */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 20, marginBottom: 24 }}>
           <div style={{ width: 140, height: 140, borderRadius: 18, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: `1px solid ${color}30` }}>
-            {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageUrl} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="eager" />
-            ) : (
-              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>
-                {isBed ? "🛏️" : "🛋️"}
-              </div>
-            )}
+            <InlineImage src={imageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
+              style={{ width: 140, height: 140 }}
+              placeholderStyle={{ width: 140, height: 140, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}
+              placeholderLabel={isBed ? "🛏️" : "🛋️"} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 6 }}>
               {isBed ? "GIƯỜNG CÔNG THÁI HỌC" : "SOFA GIƯỜNG ĐA NĂNG"}
             </div>
             <h3 style={{ fontSize: 24, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, marginBottom: 6, lineHeight: 1.25 }}>
-              {overrides?.title || product.name}
+              <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+                style={{ fontSize: 24, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
             </h3>
             <div style={{ fontSize: 11, fontFamily: "monospace", padding: "2px 8px", borderRadius: 6, display: "inline-block", marginBottom: 10, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
               {product.sku}
             </div>
             <p style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(245,237,214,0.7)" }}>
-              {overrides?.subtitle || product.description}
+              <InlineText value={overrides?.subtitle ?? ""} placeholder={product.description ?? "Mô tả sản phẩm..."} isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
+                style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(245,237,214,0.7)" }} />
             </p>
           </div>
         </div>
 
-        {/* Custom body lines or specs */}
         {bodyLines.length > 0 ? (
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>TÍNH NĂNG NỔI BẬT</div>
@@ -838,7 +833,14 @@ function SlideProductFeature({ product, overrides }: { product: CrmProduct; over
           </div>
         ) : null}
 
-        {/* Price bar */}
+        {isEditing && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Tính năng nổi bật (mỗi dòng = 1 mục, để trống = dùng thông số kỹ thuật):</div>
+            <InlineText value={overrides?.body ?? ""} placeholder={"Tính năng 1\nTính năng 2\nTính năng 3"} isEditing={true} onCommit={v => onUpdate("body", v)}
+              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+          </div>
+        )}
+
         <div style={{ marginTop: "auto", borderRadius: 16, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.25)" }}>
           <div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Giá tham khảo từ</div>
@@ -861,32 +863,32 @@ function SlideProductFeature({ product, overrides }: { product: CrmProduct; over
 }
 
 // ─── Slide: Product Pricing ───────────────────────────────────────────────────
-function SlideProductPricing({ product, overrides }: { product: CrmProduct; overrides?: SlideOverrides }) {
-  const isBed = product.category === "ergonomic_bed";
+function SlideProductPricing({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
   const hasSizes = product.sizePricings && product.sizePricings.length > 0;
   const imageUrl = overrides?.imageDataUrl || product.imageUrl;
 
   return (
     <SlideShell>
       <div style={{ flex: 1, padding: "36px 44px", display: "flex", flexDirection: "column" }}>
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
           {imageUrl && (
             <div style={{ width: 72, height: 72, borderRadius: 14, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(201,168,76,0.3)" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imageUrl} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="eager" />
+              <InlineImage src={imageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
+                style={{ width: 72, height: 72 }}
+                placeholderStyle={{ width: 72, height: 72, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}
+                placeholderLabel="Ảnh" />
             </div>
           )}
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 4 }}>BẢNG GIÁ</div>
             <h3 style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.2 }}>
-              {overrides?.title || product.name}
+              <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+                style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
             </h3>
             <div style={{ fontSize: 12, fontFamily: "monospace", color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{product.sku}</div>
           </div>
         </div>
 
-        {/* Pricing Table */}
         {hasSizes ? (
           <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 20, border: "1px solid rgba(201,168,76,0.2)" }}>
             <div style={{ padding: "12px 20px", background: "rgba(201,168,76,0.1)", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 16 }}>
@@ -913,7 +915,6 @@ function SlideProductPricing({ product, overrides }: { product: CrmProduct; over
           </div>
         )}
 
-        {/* Discount Tiers */}
         {product.discountTiers && product.discountTiers.length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>CHIẾT KHẤU THEO SỐ LƯỢNG</div>
@@ -928,8 +929,15 @@ function SlideProductPricing({ product, overrides }: { product: CrmProduct; over
           </div>
         )}
 
-        {/* Custom body */}
-        {overrides?.body && (
+        {isEditing && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Ghi chú thêm (mỗi dòng = 1 dòng):</div>
+            <InlineText value={overrides?.body ?? ""} placeholder={"Ghi chú 1\nGhi chú 2"} isEditing={true} onCommit={v => onUpdate("body", v)}
+              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+          </div>
+        )}
+
+        {overrides?.body && !isEditing && (
           <div style={{ marginBottom: 16 }}>
             {overrides.body.split("\n").filter(Boolean).map((line, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -940,7 +948,6 @@ function SlideProductPricing({ product, overrides }: { product: CrmProduct; over
           </div>
         )}
 
-        {/* Notes */}
         <div style={{ marginTop: "auto", borderRadius: 12, padding: "14px 18px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.8 }}>
             • Giá trên chưa bao gồm VAT (10%) &nbsp;•&nbsp; Giá có thể thay đổi mà không báo trước &nbsp;•&nbsp; Liên hệ để được báo giá dự án
@@ -952,7 +959,7 @@ function SlideProductPricing({ product, overrides }: { product: CrmProduct; over
 }
 
 // ─── Slide: Why SmartFurni ────────────────────────────────────────────────────
-function SlideWhySmartFurni({ overrides }: { overrides?: SlideOverrides }) {
+function SlideWhySmartFurni({ overrides, isEditing, onUpdate }: SlideProps) {
   const defaultReasons = [
     ["🏆", "Chất lượng vượt trội", "Vật liệu nhập khẩu cao cấp, quy trình sản xuất đạt chuẩn ISO, kiểm định nghiêm ngặt từng sản phẩm trước khi xuất xưởng."],
     ["⚡", "Công nghệ thông minh", "Hệ thống điều khiển điện tử tiên tiến, điều chỉnh góc nâng chính xác, kết nối điều khiển từ xa và ứng dụng di động."],
@@ -971,7 +978,10 @@ function SlideWhySmartFurni({ overrides }: { overrides?: SlideOverrides }) {
       <div style={{ flex: 1, padding: "36px 44px", display: "flex", flexDirection: "column" }}>
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>LÝ DO LỰA CHỌN</div>
-          <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>{overrides?.title || "Tại Sao Chọn SmartFurni?"}</h2>
+          <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
+            <InlineText value={overrides?.title ?? ""} placeholder="Tại Sao Chọn SmartFurni?" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+              style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
+          </h2>
           <div style={{ width: 56, height: 2, background: D.gold, marginTop: 10 }} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, flex: 1 }}>
@@ -983,14 +993,20 @@ function SlideWhySmartFurni({ overrides }: { overrides?: SlideOverrides }) {
             </div>
           ))}
         </div>
+        {isEditing && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Mỗi dòng: emoji — Tiêu đề — Mô tả (để trống = dùng mặc định)</div>
+            <InlineText value={overrides?.body ?? ""} placeholder={"🏆 — Chất lượng vượt trội — Mô tả...\n⚡ — Công nghệ thông minh — Mô tả..."} isEditing={true} onCommit={v => onUpdate("body", v)}
+              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+          </div>
+        )}
       </div>
     </SlideShell>
   );
 }
 
 // ─── Slide: Warranty ─────────────────────────────────────────────────────────
-function SlideWarranty({ overrides }: { overrides?: SlideOverrides }) {
-  const bodyLines = overrides?.body?.split("\n").filter(Boolean) ?? [];
+function SlideWarranty({ overrides, isEditing, onUpdate }: SlideProps) {
   const defaultTerms = [
     "Sản phẩm được sử dụng đúng mục đích và hướng dẫn sử dụng",
     "Không tự ý tháo lắp, sửa chữa hoặc thay thế linh kiện",
@@ -998,14 +1014,17 @@ function SlideWarranty({ overrides }: { overrides?: SlideOverrides }) {
     "Ngoài phạm vi: hỗ trợ kỹ thuật từ xa hoặc gửi linh kiện thay thế",
     "Xuất trình hóa đơn mua hàng khi yêu cầu bảo hành",
   ];
-  const terms = bodyLines.length > 0 ? bodyLines : defaultTerms;
+  const terms = (overrides?.body ?? defaultTerms.join("\n")).split("\n").filter(Boolean);
 
   return (
     <SlideShell>
       <div style={{ flex: 1, padding: "36px 44px", display: "flex", flexDirection: "column" }}>
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>CAM KẾT</div>
-          <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>{overrides?.title || "Chính Sách Bảo Hành"}</h2>
+          <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
+            <InlineText value={overrides?.title ?? ""} placeholder="Chính Sách Bảo Hành" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+              style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
+          </h2>
           <div style={{ width: 56, height: 2, background: D.gold, marginTop: 10 }} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
@@ -1027,6 +1046,13 @@ function SlideWarranty({ overrides }: { overrides?: SlideOverrides }) {
             </div>
           ))}
         </div>
+        {isEditing && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Điều kiện bảo hành (mỗi dòng = 1 điều kiện):</div>
+            <InlineText value={overrides?.body ?? defaultTerms.join("\n")} placeholder={defaultTerms.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
+              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+          </div>
+        )}
         <div style={{ borderRadius: 16, padding: "14px 20px", display: "flex", alignItems: "center", gap: 16, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
           <span style={{ fontSize: 28 }}>📞</span>
           <div>
@@ -1041,7 +1067,7 @@ function SlideWarranty({ overrides }: { overrides?: SlideOverrides }) {
 }
 
 // ─── Slide: Contact ───────────────────────────────────────────────────────────
-function SlideContact({ today, overrides }: { today: string; overrides?: SlideOverrides }) {
+function SlideContact({ today, overrides, isEditing, onUpdate }: { today: string } & SlideProps) {
   const contacts = [
     { icon: "📞", label: "Hotline", value: "1800 6868", sub: "Miễn phí · Thứ 2–7, 8:00–18:00" },
     { icon: "✉️", label: "Email", value: "sales@smartfurni.vn", sub: "Phản hồi trong 2 giờ làm việc" },
@@ -1052,16 +1078,17 @@ function SlideContact({ today, overrides }: { today: string; overrides?: SlideOv
   return (
     <SlideShell>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 60px", textAlign: "center" }}>
-        {overrides?.imageDataUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={overrides.imageDataUrl} alt="contact" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 16, marginBottom: 20, border: `2px solid ${D.borderGold}` }} />
-        ) : (
-          <div style={{ width: 64, height: 64, borderRadius: 16, background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, boxShadow: "0 0 30px rgba(201,168,76,0.3)" }}>
-            <span style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: FONT_HEADING }}>SF</span>
-          </div>
-        )}
+        <div style={{ width: 64, height: 64, borderRadius: 16, overflow: "hidden", marginBottom: 20, boxShadow: "0 0 30px rgba(201,168,76,0.3)", border: `2px solid ${D.borderGold}` }}>
+          <InlineImage src={overrides?.imageDataUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
+            style={{ width: 64, height: 64 }}
+            placeholderStyle={{ width: 64, height: 64, background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, display: "flex", alignItems: "center", justifyContent: "center" }}
+            placeholderLabel="SF" />
+        </div>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>LIÊN HỆ</div>
-        <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, marginBottom: 8 }}>{overrides?.title || "Thông Tin Liên Hệ"}</h2>
+        <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, marginBottom: 8, width: "100%" }}>
+          <InlineText value={overrides?.title ?? ""} placeholder="Thông Tin Liên Hệ" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+            style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, textAlign: "center" }} />
+        </h2>
         <div style={{ width: 56, height: 2, background: D.gold, marginBottom: 28 }} />
         <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
           {contacts.map(c => (
@@ -1075,9 +1102,15 @@ function SlideContact({ today, overrides }: { today: string; overrides?: SlideOv
             </div>
           ))}
         </div>
-        <div style={{ borderRadius: 16, padding: "16px 28px", textAlign: "center", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: D.gold, marginBottom: 4 }}>{overrides?.subtitle || "Nhận báo giá ngay hôm nay"}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{overrides?.body || "Liên hệ để được tư vấn miễn phí và nhận ưu đãi đặc biệt"}</div>
+        <div style={{ borderRadius: 16, padding: "16px 28px", textAlign: "center", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)", width: "100%", maxWidth: 440 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: D.gold, marginBottom: 4 }}>
+            <InlineText value={overrides?.subtitle ?? ""} placeholder="Nhận báo giá ngay hôm nay" isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
+              style={{ fontSize: 13, fontWeight: 600, color: D.gold, textAlign: "center" }} />
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+            <InlineText value={overrides?.body ?? ""} placeholder="Liên hệ để được tư vấn miễn phí và nhận ưu đãi đặc biệt" isEditing={isEditing} onCommit={v => onUpdate("body", v)}
+              style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", textAlign: "center" }} />
+          </div>
         </div>
       </div>
       <div style={{ padding: "0 48px 20px", textAlign: "center" }}>
@@ -1104,25 +1137,22 @@ function SlideEmpty() {
 }
 
 // ─── Slide: Product Intro (1/4) ───────────────────────────────────────────────
-function SlideProductIntro({ product, overrides }: { product: CrmProduct; overrides?: SlideOverrides }) {
+function SlideProductIntro({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
   const isBed = product.category === "ergonomic_bed";
   const color = isBed ? D.purple : D.blue;
   const colorDim = isBed ? D.purpleDim : D.blueDim;
   const imageUrl = overrides?.imageDataUrl || product.imageUrl;
-  const title = overrides?.title || product.name;
-  const subtitle = overrides?.subtitle || product.description || "Mô tả đang được cập nhật...";
-  const highlights = overrides?.body?.split("\n").filter(Boolean) ?? (
-    isBed
-      ? ["Điều khiển điện không dây", "Nâng đầu 0–70°, nâng chân 0–45°", "Massage rung tích hợp", "Khung thép mạ kẽm bảo hành 5 năm"]
-      : ["Gấp mở dễ dàng trong 30 giây", "Kết cấu khung thép chắc chắn", "Đệm foam cao cấp thoáng khí", "Tiết kiệm không gian tối đa"]
-  );
+  const defaultHighlights = isBed
+    ? ["Điều khiển điện không dây", "Nâng đầu 0–70°, nâng chân 0–45°", "Massage rung tích hợp", "Khung thép mạ kẽm bảo hành 5 năm"]
+    : ["Gấp mở dễ dàng trong 30 giây", "Kết cấu khung thép chắc chắn", "Đệm foam cao cấp thoáng khí", "Tiết kiệm không gian tối đa"];
+  const highlights = (overrides?.body ?? defaultHighlights.join("\n")).split("\n").filter(Boolean);
   const minPrice = product.sizePricings && product.sizePricings.length > 0
     ? Math.min(...product.sizePricings.map(s => s.price))
     : null;
+
   return (
     <SlideShell accentColor={color}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "32px 44px" }}>
-        {/* Top: category badge + page indicator */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, padding: "4px 12px", borderRadius: 20, background: colorDim, border: `1px solid ${color}40` }}>
@@ -1133,21 +1163,13 @@ function SlideProductIntro({ product, overrides }: { product: CrmProduct; overri
           <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em" }}>1 / 4</div>
         </div>
 
-        {/* Main content: image left + info right */}
         <div style={{ flex: 1, display: "flex", gap: 36, alignItems: "flex-start" }}>
-          {/* Image */}
           <div style={{ width: "42%", flexShrink: 0 }}>
-            <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: 16, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={imageUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                <div style={{ textAlign: "center", color: D.textMuted }}>
-                  <div style={{ fontSize: 40, marginBottom: 8 }}>📷</div>
-                  <div style={{ fontSize: 11 }}>Chưa có ảnh</div>
-                  <div style={{ fontSize: 9, marginTop: 4 }}>Click ✏️ để upload</div>
-                </div>
-              )}
+            <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: 16, overflow: "hidden", background: colorDim, border: `1px solid ${color}30` }}>
+              <InlineImage src={imageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
+                style={{ width: "100%", height: "100%" }}
+                placeholderStyle={{ width: "100%", height: "100%", minHeight: 200, background: colorDim, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
+                placeholderLabel="Ảnh sản phẩm" />
             </div>
             {minPrice && (
               <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: colorDim, border: `1px solid ${color}30`, textAlign: "center" }}>
@@ -1158,13 +1180,17 @@ function SlideProductIntro({ product, overrides }: { product: CrmProduct; overri
             )}
           </div>
 
-          {/* Info */}
           <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25, marginBottom: 12 }}>{title}</h2>
+            <h2 style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25, marginBottom: 12 }}>
+              <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+                style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
+            </h2>
             <div style={{ width: 48, height: 3, borderRadius: 2, background: `linear-gradient(90deg, ${color}, transparent)`, marginBottom: 16 }} />
-            <p style={{ fontSize: 13, color: D.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>{subtitle}</p>
+            <p style={{ fontSize: 13, color: D.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>
+              <InlineText value={overrides?.subtitle ?? ""} placeholder={product.description ?? "Mô tả sản phẩm..."} isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
+                style={{ fontSize: 13, color: D.textSecondary, lineHeight: 1.7 }} />
+            </p>
 
-            {/* Highlights */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {highlights.slice(0, 5).map((h, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${D.border}` }}>
@@ -1173,10 +1199,17 @@ function SlideProductIntro({ product, overrides }: { product: CrmProduct; overri
                 </div>
               ))}
             </div>
+
+            {isEditing && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Điểm nổi bật (mỗi dòng = 1 điểm):</div>
+                <InlineText value={overrides?.body ?? defaultHighlights.join("\n")} placeholder={defaultHighlights.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
+                  multiline style={{ fontSize: 12, color: D.textSecondary }} />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Footer */}
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: D.gold }}>SMARTFURNI</div>
           <div style={{ fontSize: 9, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
@@ -1187,59 +1220,49 @@ function SlideProductIntro({ product, overrides }: { product: CrmProduct; overri
 }
 
 // ─── Slide: Product Gallery (4/4) ─────────────────────────────────────────────
-function SlideProductGallery({ product, overrides }: { product: CrmProduct; overrides?: SlideOverrides }) {
+function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
   const isBed = product.category === "ergonomic_bed";
   const color = isBed ? D.purple : D.blue;
   const colorDim = isBed ? D.purpleDim : D.blueDim;
   const img1 = overrides?.imageDataUrl || product.imageUrl;
   const img2 = overrides?.image2DataUrl;
   const img3 = overrides?.image3DataUrl;
-  const title = overrides?.title || product.name;
-  const applications = overrides?.body?.split("\n").filter(Boolean) ?? (
-    isBed
-      ? ["Căn hộ cao cấp & Penthouse", "Biệt thự & nhà phố", "Khách sạn 4–5 sao", "Không gian cần sự tinh tế"]
-      : ["Căn hộ studio & 1PN", "Căn hộ 2–3 phòng ngủ", "Homestay & căn hộ dịch vụ", "Không gian cần tối ưu diện tích"]
-  );
+  const defaultApplications = isBed
+    ? ["Căn hộ cao cấp & Penthouse", "Biệt thự & nhà phố", "Khách sạn 4–5 sao", "Không gian cần sự tinh tế"]
+    : ["Căn hộ studio & 1PN", "Căn hộ 2–3 phòng ngủ", "Homestay & căn hộ dịch vụ", "Không gian cần tối ưu diện tích"];
+  const applications = (overrides?.body ?? defaultApplications.join("\n")).split("\n").filter(Boolean);
 
-  const ImageSlot = ({ src, label, style }: { src?: string; label: string; style?: React.CSSProperties }) => (
+  const ImageSlot = ({ src, field, label, style }: { src?: string; field: keyof SlideOverrides; label: string; style?: React.CSSProperties }) => (
     <div style={{ borderRadius: 12, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", ...style }}>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
-      ) : (
-        <div style={{ textAlign: "center", color: D.textMuted, padding: 12 }}>
-          <div style={{ fontSize: 24, marginBottom: 4 }}>📷</div>
-          <div style={{ fontSize: 9 }}>{label}</div>
-          <div style={{ fontSize: 8, marginTop: 3, color: D.textMuted }}>Click ✏️ để upload</div>
-        </div>
-      )}
+      <InlineImage src={src} isEditing={isEditing} onUpload={v => onUpdate(field, v)} onRemove={() => onUpdate(field, "")}
+        style={{ width: "100%", height: "100%", position: "absolute", inset: 0 } as React.CSSProperties}
+        placeholderStyle={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12 }}
+        placeholderLabel={label} />
     </div>
   );
 
   return (
     <SlideShell accentColor={color}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "28px 44px" }}>
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẼ & ỨNG DỤNG</div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }}>{title}</h3>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẾ & ỨNG DỤNG</div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }}>
+              <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+                style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
+            </h3>
           </div>
           <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em" }}>4 / 4</div>
         </div>
 
-        {/* Image grid: 1 large left + 2 stacked right */}
         <div style={{ display: "flex", gap: 12, height: 320, marginBottom: 18 }}>
-          {/* Main image - left, full height */}
-          <ImageSlot src={img1} label="Ảnh 1 — Ảnh chính" style={{ flex: "0 0 55%", height: "100%" }} />
-          {/* Right column: 2 stacked images */}
+          <ImageSlot src={img1} field="imageDataUrl" label="Ảnh 1 — Ảnh chính" style={{ flex: "0 0 55%", height: "100%" }} />
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
-            <ImageSlot src={img2} label="Ảnh 2 — Không gian thực tế" style={{ flex: 1 }} />
-            <ImageSlot src={img3} label="Ảnh 3 — Chi tiết sản phẩm" style={{ flex: 1 }} />
+            <ImageSlot src={img2} field="image2DataUrl" label="Ảnh 2 — Không gian" style={{ flex: 1 }} />
+            <ImageSlot src={img3} field="image3DataUrl" label="Ảnh 3 — Chi tiết" style={{ flex: 1 }} />
           </div>
         </div>
 
-        {/* Applications */}
         <div>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 12 }}>PHÂN KHÚC PHÙ HỢP</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -1249,9 +1272,15 @@ function SlideProductGallery({ product, overrides }: { product: CrmProduct; over
               </div>
             ))}
           </div>
+          {isEditing && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Phân khúc (mỗi dòng = 1 tag):</div>
+              <InlineText value={overrides?.body ?? defaultApplications.join("\n")} placeholder={defaultApplications.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
+                multiline style={{ fontSize: 12, color: D.textSecondary }} />
+            </div>
+          )}
         </div>
 
-        {/* Footer */}
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: D.gold }}>SMARTFURNI</div>
           <div style={{ fontSize: 9, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
