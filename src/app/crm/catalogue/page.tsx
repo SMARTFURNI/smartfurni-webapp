@@ -5,10 +5,10 @@ import CatalogueClient from "@/components/crm/CatalogueClient";
 export const dynamic = "force-dynamic";
 
 export default async function CataloguePage() {
-  await requireCrmAccess();
+  const session = await requireCrmAccess();
   const [products, savedSlides] = await Promise.all([
     getCrmProducts(),
     loadCatalogueState(),
   ]);
-  return <CatalogueClient products={products} initialSlides={savedSlides} />;
+  return <CatalogueClient products={products} initialSlides={savedSlides} isAdmin={session.isAdmin} />;
 }

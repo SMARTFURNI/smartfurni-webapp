@@ -308,9 +308,9 @@ function migrateSlides(slides: Slide[]): Slide[] {
   return result;
 }
 // ─── Main Component ───────────────────────────────────────────────────────────
-interface Props { products: CrmProduct[]; initialSlides?: Slide[] | null }
+interface Props { products: CrmProduct[]; initialSlides?: Slide[] | null; isAdmin?: boolean }
 
-export default function CatalogueClient({ products, initialSlides }: Props) {
+export default function CatalogueClient({ products, initialSlides, isAdmin = false }: Props) {
   const [slides, setSlides] = useState<Slide[]>(() =>
     initialSlides && initialSlides.length > 0 ? migrateSlides(initialSlides) : buildDefaultSlides(products)
   );
@@ -548,24 +548,28 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
           <span className="text-xs px-2 py-1 rounded-lg" style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
             {visibleSlides.length} trang
           </span>
-          {saveStatus === "saving" && (
+          {isAdmin && saveStatus === "saving" && (
             <span className="text-xs" style={{ color: D.textMuted }}>Đang lưu...</span>
           )}
-          {saveStatus === "saved" && (
+          {isAdmin && saveStatus === "saved" && (
             <span className="text-xs" style={{ color: "#22c55e" }}>✓ Đã lưu</span>
           )}
-          {saveStatus === "error" && (
+          {isAdmin && saveStatus === "error" && (
             <span className="text-xs" style={{ color: "#f87171" }}>Lỗi lưu</span>
           )}
-          <button onClick={syncWithProducts} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-            style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}
-            title="Đồng bộ sản phẩm mới từ danh mục">
-            <RefreshCw size={11} /> Đồng bộ
-          </button>
-          <button onClick={() => setShowAddPanel(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-            style={{ background: showAddPanel ? D.goldDim : D.cardBg, border: `1px solid ${showAddPanel ? D.borderGold : D.border}`, color: showAddPanel ? D.gold : D.textMuted }}>
-            <Plus size={11} /> Thêm slide
-          </button>
+          {isAdmin && (
+            <button onClick={syncWithProducts} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}
+              title="Đồng bộ sản phẩm mới từ danh mục">
+              <RefreshCw size={11} /> Đồng bộ
+            </button>
+          )}
+          {isAdmin && (
+            <button onClick={() => setShowAddPanel(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ background: showAddPanel ? D.goldDim : D.cardBg, border: `1px solid ${showAddPanel ? D.borderGold : D.border}`, color: showAddPanel ? D.gold : D.textMuted }}>
+              <Plus size={11} /> Thêm slide
+            </button>
+          )}
           <button onClick={() => window.print()} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold"
             style={{ background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, color: "#fff" }}>
             <Printer size={11} /> Xuất PDF
@@ -574,7 +578,7 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
       </div>
 
       {/* ── Add Slide Panel ── */}
-      {showAddPanel && (
+      {isAdmin && showAddPanel && (
         <div className="no-print px-4 py-3 flex-shrink-0" style={{ background: "rgba(8,7,18,0.95)", borderBottom: `1px solid ${D.border}` }}>
           <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: D.textMuted }}>Thêm slide</div>
           <div className="flex flex-wrap gap-2">
@@ -618,11 +622,11 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
               const isActive = slide.id === activeSlideId;
               const isDragOver = dragOverId === slide.id;
               return (
-                <div key={slide.id} draggable
-                  onDragStart={() => handleDragStart(slide.id)}
-                  onDragOver={(e) => handleDragOver(e, slide.id)}
-                  onDrop={() => handleDrop(slide.id)}
-                  onDragEnd={() => { setDragId(null); setDragOverId(null); }}
+                <div key={slide.id} draggable={isAdmin}
+                  onDragStart={isAdmin ? () => handleDragStart(slide.id) : undefined}
+                  onDragOver={isAdmin ? (e) => handleDragOver(e, slide.id) : undefined}
+                  onDrop={isAdmin ? () => handleDrop(slide.id) : undefined}
+                  onDragEnd={isAdmin ? () => { setDragId(null); setDragOverId(null); } : undefined}
                   onClick={() => { setActiveSlideId(slide.id); setIsEditing(false); }}
                   className="group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all"
                   style={{
@@ -630,7 +634,7 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
                     border: `1px solid ${isActive ? D.borderGold : "transparent"}`,
                     opacity: slide.visible ? 1 : 0.4,
                   }}>
-                  <GripVertical size={11} style={{ color: D.textMuted, flexShrink: 0 }} className="cursor-grab" />
+                  {isAdmin && <GripVertical size={11} style={{ color: D.textMuted, flexShrink: 0 }} className="cursor-grab" />}
                   <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
                     style={{ background: isActive ? D.goldDim : "rgba(255,255,255,0.06)" }}>
                     <Icon size={10} style={{ color: isActive ? D.gold : D.textMuted }} />
@@ -641,16 +645,18 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
                     </div>
                     {product && <div className="text-[9px] truncate" style={{ color: D.textMuted }}>{product.sku}</div>}
                   </div>
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); toggleVisible(slide.id); }}
-                      className="w-5 h-5 rounded flex items-center justify-center" style={{ color: D.textMuted }}>
-                      {slide.visible ? <Eye size={9} /> : <EyeOff size={9} />}
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); removeSlide(slide.id); }}
-                      className="w-5 h-5 rounded flex items-center justify-center" style={{ color: "#ef4444" }}>
-                      <Trash2 size={9} />
-                    </button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={(e) => { e.stopPropagation(); toggleVisible(slide.id); }}
+                        className="w-5 h-5 rounded flex items-center justify-center" style={{ color: D.textMuted }}>
+                        {slide.visible ? <Eye size={9} /> : <EyeOff size={9} />}
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); removeSlide(slide.id); }}
+                        className="w-5 h-5 rounded flex items-center justify-center" style={{ color: "#ef4444" }}>
+                        <Trash2 size={9} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -673,7 +679,7 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
               style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}>
               <ChevronRight size={16} />
             </button>
-            {isEditing ? (
+            {isAdmin && (isEditing ? (
               <button onClick={() => setIsEditing(false)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
                 style={{ background: `linear-gradient(135deg, ${D.gold}, ${D.goldDark})`, color: "#fff" }}>
@@ -685,10 +691,10 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
                 style={{ background: D.goldDim, border: `1px solid ${D.borderGold}`, color: D.gold }}>
                 <Edit3 size={11} /> Chỉnh sửa slide
               </button>
-            )}
+            ))}
           </div>
 
-          {isEditing && (
+          {isAdmin && isEditing && (
             <div className="mb-3 px-3 py-2 rounded-lg text-xs flex-shrink-0 flex items-center gap-2"
               style={{ background: "rgba(201,168,76,0.08)", border: `1px solid ${D.borderGold}`, color: D.gold, maxWidth: 680, width: "100%" }}>
               <Edit3 size={12} />
@@ -709,7 +715,7 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
                 product={getProduct(activeSlide.productId)}
                 products={activeProducts}
                 today={today}
-                isEditing={isEditing}
+                isEditing={isAdmin && isEditing}
                 onUpdate={(field, value) => updateField(field, value)}
               />
             )}
