@@ -1001,82 +1001,111 @@ function SlideProductFeaturePricing({ product, overrides, isEditing, onUpdate }:
   const specEntries = Object.entries(product.specs || {}).filter(([, v]) => v);
   const bodyLines = overrides?.body?.split("\n").filter(Boolean) ?? [];
   const featureLines = bodyLines.length > 0 ? bodyLines : specEntries.map(([k, v]) => `${k}: ${v}`);
-  const imageUrl = overrides?.imageDataUrl || product.imageSpec || product.imageUrl || product.imageAngle1;
+  const mainImageUrl = overrides?.imageDataUrl || product.imageSpec || product.imageUrl || product.imageAngle1;
+  const specImageUrl = (overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || product.imageAngle1;
   return (
     <SlideShell accentColor={color}>
-      <div style={{ flex: 1, padding: "28px 40px", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ flex: 1, padding: "22px 36px", display: "flex", flexDirection: "column", gap: 12 }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-          <div style={{ width: 100, height: 100, borderRadius: 14, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: `1px solid ${color}30` }}>
-            <InlineImage src={imageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
-              style={{ width: 100, height: 100, objectFit: "cover" }}
-              placeholderStyle={{ width: 100, height: 100, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+          <div style={{ width: 80, height: 80, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: `1px solid ${color}30` }}>
+            <InlineImage src={mainImageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
+              style={{ width: 80, height: 80, objectFit: "cover" }}
+              placeholderStyle={{ width: 80, height: 80, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}
               placeholderLabel={isBed ? "🛏️" : "🛋️"} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 3 }}>
               {isBed ? "GIƯỜNG CÔNG THÁI HỌC" : "SOFA GIƯỜNG ĐA NĂNG"}
             </div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, marginBottom: 4, lineHeight: 1.25 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, marginBottom: 4, lineHeight: 1.2 }}>
               <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
+                style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.2 }} />
             </h3>
-            <div style={{ fontSize: 11, fontFamily: "monospace", padding: "2px 8px", borderRadius: 6, display: "inline-block", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ fontSize: 10, fontFamily: "monospace", padding: "2px 8px", borderRadius: 6, display: "inline-block", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
               {product.sku}
             </div>
           </div>
         </div>
-        {/* Features / Specs */}
-        {featureLines.length > 0 && (
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>TÍNH NĂNG & THÔNG SỐ</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-              {featureLines.slice(0, 6).map((line, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, borderRadius: 8, padding: "8px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <div style={{ width: 4, height: 4, borderRadius: "50%", marginTop: 5, flexShrink: 0, background: color }} />
-                  <span style={{ fontSize: 11, color: D.textPrimary, lineHeight: 1.4 }}>{line}</span>
+
+        {/* 2 cột: Tính năng + Ảnh thông số */}
+        <div style={{ display: "flex", gap: 14, flex: 1, minHeight: 0 }}>
+          {/* Cột trái: Features + Pricing */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
+            {/* Features / Specs */}
+            {featureLines.length > 0 && (
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 7 }}>TÍNH NĂNG & THÔNG SỐ</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {featureLines.slice(0, 10).map((line, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, borderRadius: 7, padding: "7px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div style={{ width: 5, height: 5, borderRadius: "50%", marginTop: 4, flexShrink: 0, background: color }} />
+                      <span style={{ fontSize: 12, fontWeight: 500, color: D.textPrimary, lineHeight: 1.4 }}>{line}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                {isEditing && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 9, color: D.textMuted, marginBottom: 4 }}>Tính năng (mỗi dòng = 1 mục, tối đa 10):</div>
+                    <InlineText value={overrides?.body ?? specEntries.map(([k, v]) => `${k}: ${v}`).join("\n")} placeholder="Nhập tính năng..." isEditing={true} onCommit={v => onUpdate("body", v)}
+                      multiline style={{ fontSize: 12, color: D.textSecondary }} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pricing */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 7 }}>BẢNG GIÁ</div>
+              {hasSizes ? (
+                <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid rgba(201,168,76,0.25)" }}>
+                  <div style={{ padding: "7px 14px", background: "rgba(201,168,76,0.12)", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 10 }}>
+                    {["Kích thước", "Mã size", "Đơn giá (VNĐ)"].map((h, i) => (
+                      <div key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.5)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
+                    ))}
+                  </div>
+                  {product.sizePricings!.map((sp: SizePricing, i: number) => (
+                    <div key={i} style={{ padding: "8px 14px", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 10, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary }}>{sp.label || sp.size}</div>
+                      <div style={{ fontSize: 11, fontFamily: "monospace", color: "rgba(255,255,255,0.45)" }}>{sp.size}</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: D.gold, textAlign: "right" }}>{sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ borderRadius: 10, padding: "12px 16px", textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: D.gold }}>
+                    {product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ"}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>Giá niêm yết chưa VAT</div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer note */}
+            <div style={{ borderRadius: 8, padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", marginTop: "auto" }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", lineHeight: 1.7 }}>
+                • Giá chưa bao gồm VAT (10%) &nbsp;•&nbsp; Giá có thể thay đổi mà không báo trước &nbsp;•&nbsp; Liên hệ để được báo giá dự án
+              </div>
             </div>
           </div>
-        )}
-        {/* Pricing */}
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>BẢNG GIÁ</div>
-          {hasSizes ? (
-            <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)" }}>
-              <div style={{ padding: "8px 16px", background: "rgba(201,168,76,0.1)", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 12 }}>
-                {["Kích thước", "Mã size", "Đơn giá (VNĐ)"].map((h, i) => (
-                  <div key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.5)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
-                ))}
-              </div>
-              {product.sizePricings!.map((sp: SizePricing, i: number) => (
-                <div key={i} style={{ padding: "9px 16px", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 12, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: D.textPrimary }}>{sp.label || sp.size}</div>
-                  <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(255,255,255,0.45)" }}>{sp.size}</div>
-                  <div style={{ fontSize: 13, fontWeight: 900, color: D.gold, textAlign: "right" }}>{sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}</div>
-                </div>
-              ))}
+
+          {/* Cột phải: Ảnh thông số 1:1 kín */}
+          <div style={{ width: "38%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 7 }}>ẢNH THÔNG SỐ</div>
+            <div style={{ flex: 1, borderRadius: 10, overflow: "hidden", background: "rgba(255,255,255,0.04)", border: `1px solid ${color}25` }}>
+              <InlineImage src={specImageUrl} isEditing={isEditing} onUpload={v => onUpdate("specImageDataUrl" as any, v)} onRemove={() => onUpdate("specImageDataUrl" as any, "")}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                placeholderStyle={{ width: "100%", height: "100%", minHeight: 200, background: "rgba(255,255,255,0.04)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
+                placeholderLabel="Ảnh thông số kỹ thuật" />
             </div>
-          ) : (
-            <div style={{ borderRadius: 12, padding: "16px 20px", textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: D.gold }}>
-                {product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ"}
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Giá niêm yết chưa VAT</div>
-            </div>
-          )}
-        </div>
-        {/* Footer note */}
-        <div style={{ marginTop: "auto", borderRadius: 10, padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", lineHeight: 1.8 }}>
-            • Giá trên chưa bao gồm VAT (10%) &nbsp;•&nbsp; Giá có thể thay đổi mà không báo trước &nbsp;•&nbsp; Liên hệ để được báo giá dự án
           </div>
         </div>
       </div>
     </SlideShell>
   );
 }
+
 // ─── Slide: Product Pricing ───────────────────────────────────────────────────
 function SlideProductPricing({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
   const hasSizes = product.sizePricings && product.sizePricings.length > 0;
