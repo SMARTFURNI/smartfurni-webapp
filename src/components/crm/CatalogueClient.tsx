@@ -760,6 +760,7 @@ function SlideRenderer({ slide, product, products, today, isEditing, onUpdate }:
     case "product_pricing": return product ? <SlideProductPricing product={product} {...props} /> : <SlideEmpty />;
     case "product_feature_pricing": return product ? <SlideProductFeaturePricing product={product} {...props} /> : <SlideEmpty />;
     case "product_gallery": return product ? <SlideProductGallery product={product} {...props} /> : <SlideEmpty />;
+    case "product_full": return product ? <SlideProductFull product={product} {...props} /> : <SlideEmpty />;
     case "why_smartfurni": return <SlideWhySmartFurni {...props} />;
     case "warranty": return <SlideWarranty {...props} />;
     case "contact": return <SlideContact today={today} {...props} />;
