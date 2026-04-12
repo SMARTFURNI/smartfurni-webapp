@@ -45,6 +45,7 @@ type SlideType =
   | "product_feature"
   | "product_pricing"
   | "product_feature_pricing"
+  | "product_full"
   | "product_gallery"
   | "why_smartfurni"
   | "warranty"
@@ -76,7 +77,8 @@ const SLIDE_LABELS: Record<SlideType, string> = {
   product_feature: "SP — Tính năng (2/4)",
   product_pricing: "SP — Bảng giá (3/4)",
   product_feature_pricing: "SP — Tính năng & Giá (2/3)",
-  product_gallery: "SP — Ảnh thực tế (4/4)",
+  product_full: "SP — Giới thiệu & Giá (1/2)",
+  product_gallery: "SP — Ảnh thực tế (2/2)",
   why_smartfurni: "Tại Sao Chọn SmartFurni",
   warranty: "Chính Sách Bảo Hành",
   contact: "Thông Tin Liên Hệ",
@@ -90,6 +92,7 @@ const SLIDE_ICONS: Record<SlideType, React.ElementType> = {
   product_feature: Package,
   product_pricing: Tag,
   product_feature_pricing: Tag,
+  product_full: Package,
   product_gallery: LayoutGrid,
   why_smartfurni: Shield,
   warranty: CheckCircle2,
@@ -109,16 +112,14 @@ function buildDefaultSlides(products: CrmProduct[]): Slide[] {
   if (beds.length > 0) {
     slides.push({ id: "cat_bed", type: "category_header", visible: true, category: "ergonomic_bed" });
     beds.forEach(p => {
-      slides.push({ id: `intro_${p.id}`, type: "product_intro", visible: true, productId: p.id });
-      slides.push({ id: `featprice_${p.id}`, type: "product_feature_pricing", visible: true, productId: p.id });
+      slides.push({ id: `full_${p.id}`, type: "product_full", visible: true, productId: p.id });
       slides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
     });
   }
   if (sofas.length > 0) {
     slides.push({ id: "cat_sofa", type: "category_header", visible: true, category: "sofa_bed" });
     sofas.forEach(p => {
-      slides.push({ id: `intro_${p.id}`, type: "product_intro", visible: true, productId: p.id });
-      slides.push({ id: `featprice_${p.id}`, type: "product_feature_pricing", visible: true, productId: p.id });
+      slides.push({ id: `full_${p.id}`, type: "product_full", visible: true, productId: p.id });
       slides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
     });
   }
@@ -257,26 +258,49 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
   );
 }
 
-// ─── Migrate old slides (feature+pricing → feature_pricing) ─────────────────
+// ─── Migrate old slides → product_full ───────────────────────────────────────
 function migrateSlides(slides: Slide[]): Slide[] {
   const result: Slide[] = [];
   let i = 0;
   while (i < slides.length) {
     const s = slides[i];
     const next = slides[i + 1];
+    const next2 = slides[i + 2];
+    // Migrate: intro + featprice + gallery → product_full + gallery
     if (
+      s.type === "product_intro" &&
+      next?.type === "product_feature_pricing" &&
+      s.productId === next.productId
+    ) {
+      result.push({ ...s, id: `full_${s.productId}`, type: "product_full" });
+      i += 2;
+    }
+    // Migrate: intro + feature + pricing → product_full
+    else if (
+      s.type === "product_intro" &&
+      next?.type === "product_feature" &&
+      next2?.type === "product_pricing" &&
+      s.productId === next.productId &&
+      s.productId === next2.productId
+    ) {
+      result.push({ ...s, id: `full_${s.productId}`, type: "product_full" });
+      i += 3;
+    }
+    // Migrate: feature + pricing → product_full
+    else if (
       s.type === "product_feature" &&
       next?.type === "product_pricing" &&
       s.productId === next.productId
     ) {
-      // Merge: keep feature's overrides, add pricing overrides under pricingOverrides
-      result.push({
-        ...s,
-        id: `featprice_${s.productId}`,
-        type: "product_feature_pricing",
-      });
-      i += 2; // skip both
-    } else {
+      result.push({ ...s, id: `full_${s.productId}`, type: "product_full" });
+      i += 2;
+    }
+    // Migrate: feature_pricing → product_full
+    else if (s.type === "product_feature_pricing") {
+      result.push({ ...s, id: `full_${s.productId}`, type: "product_full" });
+      i++;
+    }
+    else {
       result.push(s);
       i++;
     }
@@ -899,6 +923,144 @@ function SlideCategoryHeader({ category, overrides, isEditing, onUpdate }: { cat
   );
 }
 
+// ─── Slide: Product Full (intro + features + pricing combined) ───────────────
+function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
+  const isBed = product.category === "ergonomic_bed";
+  const color = isBed ? D.purple : D.blue;
+  const hasSizes = product.sizePricings && product.sizePricings.length > 0;
+  const specEntries = Object.entries(product.specs || {}).filter(([, v]) => v);
+  const bodyLines = overrides?.body?.split("\n").filter(Boolean) ?? [];
+  const featureLines = bodyLines.length > 0 ? bodyLines : specEntries.map(([k, v]) => `${k}: ${v}`);
+  const mainImageUrl = overrides?.imageDataUrl || product.imageUrl || product.imageAngle1;
+  const minPrice = hasSizes
+    ? Math.min(...product.sizePricings!.map((s: SizePricing) => s.price))
+    : product.basePrice;
+
+  return (
+    <SlideShell accentColor={color}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+        {/* ── TOP BAND: header strip ── */}
+        <div style={{ padding: "14px 28px 10px", flexShrink: 0, borderBottom: `1px solid ${color}22` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color }}>
+              {isBed ? "GIƯỜNG CÔNG THÁI HỌC" : "SOFA GIƯỜNG ĐA NĂNG"}
+            </div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>SKU: {product.sku}</div>
+          </div>
+        </div>
+
+        {/* ── MAIN BODY ── */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 28px 16px", gap: 0, overflow: "hidden" }}>
+
+          {/* ── SECTION 1: Image + Name + Price ── */}
+          <div style={{ display: "flex", gap: 16, paddingTop: 14, paddingBottom: 14, flexShrink: 0, borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
+            {/* Left: product image */}
+            <div style={{ width: 160, height: 130, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.04)", border: `1px solid ${color}30` }}>
+              <InlineImage
+                src={mainImageUrl}
+                isEditing={isEditing}
+                onUpload={v => onUpdate("imageDataUrl", v)}
+                onRemove={() => onUpdate("imageDataUrl", "")}
+                style={{ width: 160, height: 130, objectFit: "cover" }}
+                placeholderStyle={{ width: 160, height: 130, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}
+                placeholderLabel={isBed ? "🛏️" : "🛋️"}
+              />
+            </div>
+            {/* Right: name + price */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25, marginBottom: 6 }}>
+                  <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+                    style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
+                </h3>
+                <p style={{ fontSize: 11, lineHeight: 1.5, color: "rgba(245,237,214,0.6)", marginBottom: 8 }}>
+                  <InlineText value={overrides?.subtitle ?? ""} placeholder={product.description ?? ""} isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
+                    style={{ fontSize: 11, lineHeight: 1.5, color: "rgba(245,237,214,0.6)" }} />
+                </p>
+              </div>
+              {/* Price badge */}
+              <div style={{ display: "inline-flex", alignItems: "baseline", gap: 6, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 10, padding: "8px 14px" }}>
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>Giá từ</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: D.gold, fontFamily: FONT_HEADING }}>
+                  {minPrice > 0 ? formatVND(minPrice) : "Liên hệ"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── SECTION 2: Features grid ── */}
+          {featureLines.length > 0 && (
+            <div style={{ paddingTop: 12, paddingBottom: 12, flexShrink: 0, borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>TÍNH NĂNG & THÔNG SỐ</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
+                {featureLines.slice(0, 10).map((line, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 7, borderRadius: 7, padding: "6px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", marginTop: 4, flexShrink: 0, background: color }} />
+                    <span style={{ fontSize: 12, fontWeight: 500, color: D.textPrimary, lineHeight: 1.4 }}>{line}</span>
+                  </div>
+                ))}
+              </div>
+              {isEditing && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 9, color: D.textMuted, marginBottom: 4 }}>Tính năng (mỗi dòng = 1 mục, tối đa 10):</div>
+                  <InlineText value={overrides?.body ?? specEntries.map(([k, v]) => `${k}: ${v}`).join("\n")} placeholder="Nhập tính năng..." isEditing={true} onCommit={v => onUpdate("body", v)}
+                    multiline style={{ fontSize: 12, color: D.textSecondary }} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── SECTION 3: Pricing table ── */}
+          <div style={{ paddingTop: 12, flexShrink: 0 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>BẢNG GIÁ</div>
+            {hasSizes ? (
+              <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)" }}>
+                <div style={{ padding: "6px 14px", background: "rgba(201,168,76,0.1)", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr" }}>
+                  {["KÍCH THƯỚC", "MÃ SIZE", "ĐƠN GIÁ (VNĐ)"].map((h, i) => (
+                    <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", color: "rgba(255,255,255,0.45)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
+                  ))}
+                </div>
+                {product.sizePricings!.map((sp: SizePricing, i: number) => (
+                  <div key={i} style={{ padding: "7px 14px", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary }}>{sp.label || sp.size}</div>
+                    <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(255,255,255,0.4)" }}>{sp.size}</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: D.gold, textAlign: "right" }}>{sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ borderRadius: 10, padding: "10px 16px", textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
+                <div style={{ fontSize: 26, fontWeight: 900, color: D.gold }}>{product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ"}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Giá niêm yết chưa VAT</div>
+              </div>
+            )}
+            <div style={{ marginTop: 5, fontSize: 9, color: "rgba(255,255,255,0.3)" }}>
+              • Giá chưa bao gồm VAT (10%) &nbsp;•&nbsp; Giá có thể thay đổi mà không báo trước
+            </div>
+          </div>
+
+          {/* ── SECTION 4: Spec image fills remaining space ── */}
+          <div style={{ flex: 1, minHeight: 80, display: "flex", flexDirection: "column", paddingTop: 12 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 6, flexShrink: 0 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
+            <div style={{ flex: 1, borderRadius: 10, overflow: "hidden", background: "rgba(255,255,255,0.03)", border: `1px solid ${color}20` }}>
+              <InlineImage
+                src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2}
+                isEditing={isEditing}
+                onUpload={v => onUpdate("specImageDataUrl" as any, v)}
+                onRemove={() => onUpdate("specImageDataUrl" as any, "")}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                placeholderStyle={{ width: "100%", height: "100%", minHeight: 80, background: "rgba(255,255,255,0.03)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}
+                placeholderLabel="Ảnh thông số kỹ thuật"
+              />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </SlideShell>
+  );
+}
 // ─── Slide: Product Feature ───────────────────────────────────────────────────
 function SlideProductFeature({ product, overrides, isEditing, onUpdate }: { product: CrmProduct } & SlideProps) {
   const isBed = product.category === "ergonomic_bed";
