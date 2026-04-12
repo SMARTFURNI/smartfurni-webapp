@@ -388,33 +388,59 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
         s.productId && removedIds.has(s.productId) ? { ...s, visible: false } : s
       );
 
-      // Add slides for new products, inserted before warranty/contact
+      // Add slides for new products — insert each product's slides AFTER the last slide
+      // belonging to the same category (or after the category header if no products yet)
       if (newProducts.length > 0) {
-        const insertIdx = next.findIndex(s => s.type === "warranty" || s.type === "contact");
-        const insertAt = insertIdx >= 0 ? insertIdx : next.length;
-        const newSlides: Slide[] = [];
-        const beds = newProducts.filter(p => p.category === "ergonomic_bed");
-        const sofas = newProducts.filter(p => p.category === "sofa_bed");
-        // Add category header if first product of that category
-        const hasBedHeader = next.some(s => s.type === "category_header" && s.category === "ergonomic_bed");
-        const hasSofaHeader = next.some(s => s.type === "category_header" && s.category === "sofa_bed");
-        if (beds.length > 0 && !hasBedHeader) {
-          newSlides.push({ id: "cat_bed", type: "category_header", visible: true, category: "ergonomic_bed" });
+        const newBeds = newProducts.filter(p => p.category === "ergonomic_bed");
+        const newSofas = newProducts.filter(p => p.category === "sofa_bed");
+
+        // Helper: find the index AFTER the last slide of a given category
+        const findInsertAfterCategory = (cat: "ergonomic_bed" | "sofa_bed") => {
+          // Find last index of a slide that belongs to this category
+          let lastIdx = -1;
+          for (let i = next.length - 1; i >= 0; i--) {
+            const s = next[i];
+            if (s.type === "category_header" && s.category === cat) { lastIdx = i; break; }
+            if (s.productId) {
+              const prod = active.find(p => p.id === s.productId);
+              if (prod && prod.category === cat) { lastIdx = i; break; }
+            }
+          }
+          if (lastIdx >= 0) return lastIdx + 1;
+          // No existing slides for this category — insert before warranty/contact
+          const beforeEnd = next.findIndex(s => s.type === "warranty" || s.type === "contact");
+          return beforeEnd >= 0 ? beforeEnd : next.length;
+        };
+
+        // Insert sofa slides first (so bed insertions don't shift sofa indices unexpectedly)
+        // Actually insert beds first, then sofas — each time recalculate position
+        if (newBeds.length > 0) {
+          const hasBedHeader = next.some(s => s.type === "category_header" && s.category === "ergonomic_bed");
+          const bedSlides: Slide[] = [];
+          if (!hasBedHeader) {
+            bedSlides.push({ id: "cat_bed", type: "category_header", visible: true, category: "ergonomic_bed" });
+          }
+          newBeds.forEach(p => {
+            bedSlides.push({ id: `full_${p.id}`, type: "product_full", visible: true, productId: p.id });
+            bedSlides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
+          });
+          const insertAt = findInsertAfterCategory("ergonomic_bed");
+          next = [...next.slice(0, insertAt), ...bedSlides, ...next.slice(insertAt)];
         }
-        beds.forEach(p => {
-          newSlides.push({ id: `intro_${p.id}`, type: "product_intro", visible: true, productId: p.id });
-          newSlides.push({ id: `featprice_${p.id}`, type: "product_feature_pricing", visible: true, productId: p.id });
-          newSlides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
-        });
-        if (sofas.length > 0 && !hasSofaHeader) {
-          newSlides.push({ id: "cat_sofa", type: "category_header", visible: true, category: "sofa_bed" });
+
+        if (newSofas.length > 0) {
+          const hasSofaHeader = next.some(s => s.type === "category_header" && s.category === "sofa_bed");
+          const sofaSlides: Slide[] = [];
+          if (!hasSofaHeader) {
+            sofaSlides.push({ id: "cat_sofa", type: "category_header", visible: true, category: "sofa_bed" });
+          }
+          newSofas.forEach(p => {
+            sofaSlides.push({ id: `full_${p.id}`, type: "product_full", visible: true, productId: p.id });
+            sofaSlides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
+          });
+          const insertAt = findInsertAfterCategory("sofa_bed");
+          next = [...next.slice(0, insertAt), ...sofaSlides, ...next.slice(insertAt)];
         }
-        sofas.forEach(p => {
-          newSlides.push({ id: `intro_${p.id}`, type: "product_intro", visible: true, productId: p.id });
-          newSlides.push({ id: `featprice_${p.id}`, type: "product_feature_pricing", visible: true, productId: p.id });
-          newSlides.push({ id: `gallery_${p.id}`, type: "product_gallery", visible: true, productId: p.id });
-        });
-        next = [...next.slice(0, insertAt), ...newSlides, ...next.slice(insertAt)];
       }
 
       const changed = newProducts.length > 0 || removedIds.size > 0;
@@ -423,7 +449,7 @@ export default function CatalogueClient({ products, initialSlides }: Props) {
       const added = newProducts.length;
       const hidden = removedIds.size;
       if (added > 0 || hidden > 0) {
-        alert(`Đồng bộ hoàn tất: thêm ${added} sản phẩm mới${hidden > 0 ? `, ẩn ${hidden} sản phẩm đã xóa` : ""}.`);
+        alert(`Đồng bộ hoàn tất: thêm ${added} sản phẩm mới${hidden > 0 ? `, ẩn ${hidden} sản phẩm đã xóa` : ""}`);
       } else {
         alert("Đã đồng bộ — không có thay đổi.");
       }
