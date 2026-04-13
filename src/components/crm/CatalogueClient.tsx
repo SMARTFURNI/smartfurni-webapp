@@ -985,49 +985,73 @@ function SlideCover({ today, overrides, isEditing, onUpdate }: { today: string }
 }
 
 // ─── Slide: Intro ─────────────────────────────────────────────────────────────
+const SHOWROOM_DEFAULT_IMG = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663305063350/uQGftdPVABiTalLy.png";
+
 function SlideIntro({ overrides, isEditing, onUpdate }: SlideProps) {
   const defaultBody = "🏆 Chất lượng cao cấp — Vật liệu nhập khẩu, kiểm định nghiêm ngặt\n⚡ Công nghệ thông minh — Điều khiển điện, kết nối app di động\n🛡️ Bảo hành dài hạn — Khung cơ 5 năm, motor điện 3 năm\n🚚 Giao hàng & lắp đặt — Miễn phí trong bán kính 30km TP.HCM";
   const bodyLines = (overrides?.body ?? defaultBody).split("\n").filter(Boolean);
+  const showroomImg = (overrides as any)?.showroomImageDataUrl || SHOWROOM_DEFAULT_IMG;
   return (
     <SlideShell>
-      <div style={{ flex: 1, padding: "40px 48px", display: "flex", flexDirection: "column" }}>
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>VỀ CHÚNG TÔI</div>
-          <h2 style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
-            <InlineText value={overrides?.title ?? ""} placeholder="Thương Hiệu SmartFurni" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-              style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
-          </h2>
-          <div style={{ width: 56, height: 2, background: D.gold, marginTop: 12 }} />
-        </div>
-        <div style={{ borderRadius: 16, padding: "20px 24px", marginBottom: 24, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
-          <p style={{ fontSize: 17, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }}>
-            <InlineText value={overrides?.subtitle ?? ""} placeholder="SmartFurni là thương hiệu nội thất thông minh tiên phong tại Việt Nam..." isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-              style={{ fontSize: 17, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }} />
-          </p>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
-          {[["5+", "Năm kinh nghiệm"], ["1000+", "Khách hàng tin dùng"], ["8", "Dòng sản phẩm"]].map(([v, l]) => (
-            <div key={l} style={{ textAlign: "center", borderRadius: 14, padding: "16px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: D.gold, marginBottom: 4 }}>{v}</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{l}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          {bodyLines.map((line, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, borderRadius: 12, padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{line.split(" ")[0]}</span>
-              <span style={{ fontSize: 14, color: "rgba(245,237,214,0.75)", lineHeight: 1.5 }}>{line.replace(/^[^\s]+\s/, "")}</span>
-            </div>
-          ))}
-        </div>
-        {isEditing && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 12, color: D.textMuted, marginBottom: 6 }}>Chỉnh sửa nội dung (mỗi dòng = 1 mục):</div>
-            <InlineText value={overrides?.body ?? defaultBody} placeholder={defaultBody} isEditing={true} onCommit={v => onUpdate("body", v)}
-              multiline style={{ fontSize: 14, color: D.textSecondary }} />
+      <div style={{ flex: 1, padding: "32px 40px", display: "flex", flexDirection: "row", gap: 28 }}>
+        {/* LEFT: text content */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>VỀ CHÚNG TÔI</div>
+            <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
+              <InlineText value={overrides?.title ?? ""} placeholder="Thương Hiệu SmartFurni" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
+                style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
+            </h2>
+            <div style={{ width: 56, height: 2, background: D.gold, marginTop: 10 }} />
           </div>
-        )}
+          {/* Ô giới thiệu mở rộng */}
+          <div style={{ borderRadius: 14, padding: "14px 18px", marginBottom: 16, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
+            <p style={{ fontSize: 15, lineHeight: 1.75, color: "rgba(245,237,214,0.85)", margin: 0 }}>
+              <InlineText value={overrides?.subtitle ?? ""} placeholder="SmartFurni là thương hiệu nội thất thông minh tiên phong tại Việt Nam..." isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
+                style={{ fontSize: 15, lineHeight: 1.75, color: "rgba(245,237,214,0.85)" }} />
+            </p>
+          </div>
+          {/* Stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+            {[["5+", "Năm kinh nghiệm"], ["1000+", "Khách hàng tin dùng"], ["8", "Dòng sản phẩm"]].map(([v, l]) => (
+              <div key={l} style={{ textAlign: "center", borderRadius: 12, padding: "12px 6px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: D.gold, marginBottom: 3 }}>{v}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          {/* Feature bullets — 1 cột để hiển thị hết chữ */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+            {bodyLines.map((line, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, borderRadius: 10, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{line.split(" ")[0]}</span>
+                <span style={{ fontSize: 13, color: "rgba(245,237,214,0.75)", lineHeight: 1.5 }}>{line.replace(/^[^\s]+\s/, "")}</span>
+              </div>
+            ))}
+          </div>
+          {isEditing && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: D.textMuted, marginBottom: 6 }}>Chỉnh sửa nội dung (mỗi dòng = 1 mục):</div>
+              <InlineText value={overrides?.body ?? defaultBody} placeholder={defaultBody} isEditing={true} onCommit={v => onUpdate("body", v)}
+                multiline style={{ fontSize: 14, color: D.textSecondary }} />
+            </div>
+          )}
+        </div>
+        {/* RIGHT: showroom image */}
+        <div style={{ width: 260, flexShrink: 0, display: "flex", flexDirection: "column" }}>
+          <div style={{ flex: 1, borderRadius: 16, overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)" }}>
+            <InlineImage
+              src={showroomImg}
+              alt="SmartFurni Showroom"
+              isEditing={isEditing}
+              onUpload={v => onUpdate("showroomImageDataUrl" as any, v)}
+              onRemove={() => onUpdate("showroomImageDataUrl" as any, "")}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              placeholderStyle={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.04)" }}
+              placeholderLabel="Ảnh showroom"
+            />
+          </div>
+        </div>
       </div>
     </SlideShell>
   );
