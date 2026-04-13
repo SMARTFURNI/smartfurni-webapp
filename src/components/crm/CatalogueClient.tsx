@@ -1019,10 +1019,10 @@ function SlideIntro({ overrides, isEditing, onUpdate }: SlideProps) {
             <div style={{ width: 48, height: 2, background: D.gold, marginTop: 8 }} />
           </div>
           {/* Intro text box */}
-          <div style={{ borderRadius: 12, padding: "12px 16px", marginBottom: 14, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)", flexShrink: 0 }}>
-            <p style={{ fontSize: 13, lineHeight: 1.7, color: "rgba(245,237,214,0.85)", margin: 0 }}>
+          <div style={{ borderRadius: 12, padding: "14px 18px", marginBottom: 14, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)", flexShrink: 0 }}>
+            <p style={{ fontSize: 15, lineHeight: 1.75, color: "rgba(245,237,214,0.9)", margin: 0 }}>
               <InlineText value={overrides?.subtitle ?? ""} placeholder="SmartFurni là thương hiệu nội thất thông minh tiên phong tại Việt Nam..." isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-                style={{ fontSize: 13, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }} />
+                style={{ fontSize: 15, lineHeight: 1.75, color: "rgba(245,237,214,0.9)" }} />
             </p>
           </div>
           {/* Stats row */}
@@ -1033,6 +1033,31 @@ function SlideIntro({ overrides, isEditing, onUpdate }: SlideProps) {
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{l}</div>
               </div>
             ))}
+          </div>
+
+          {/* Showroom info */}
+          <div style={{ marginTop: 12, borderRadius: 12, padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: D.gold, marginBottom: 10 }}>HỆ THỐNG SHOWROOM</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: D.gold }}>Showroom TP.HCM</div>
+                <div style={{ fontSize: 11, color: "rgba(245,237,214,0.7)", lineHeight: 1.45 }}>74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: D.gold }}>Showroom Hà Nội</div>
+                <div style={{ fontSize: 11, color: "rgba(245,237,214,0.7)", lineHeight: 1.45 }}>B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 20, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13 }}>📞</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: D.gold }}>028.7122.0818</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13 }}>🌐</span>
+                <span style={{ fontSize: 12, color: "rgba(245,237,214,0.7)" }}>smartfurni.vn</span>
+              </div>
+            </div>
           </div>
 
         </div>
