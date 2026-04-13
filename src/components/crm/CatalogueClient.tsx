@@ -1112,16 +1112,14 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
             </div>
           </div>
 
-          {/* ── SECTION 4: Spec image fills remaining space ── */}
-          <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", paddingTop: 8 }}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, flexShrink: 0 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
-            <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}>
-              <img
-                src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
-                alt="Ảnh thông số kỹ thuật"
-                style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "contain", display: "block", borderRadius: 10, border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}
-              />
-            </div>
+          {/* ── SECTION 4: Spec image (16:9 landscape) ── */}
+          <div style={{ flexShrink: 0, paddingTop: 8 }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>ẢNH THÔNG SỐ KỸ THUẪT</div>
+            <img
+              src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
+              alt="Ảnh thông số kỹ thuật"
+              style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "contain", display: "block", borderRadius: 10, border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}
+            />
           </div>
 
         </div>
@@ -1687,17 +1685,14 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
   const img1 = overrides?.imageDataUrl || product.imageAngle1 || product.imageUrl;
   const img2 = overrides?.image2DataUrl || product.imageAngle2 || product.imageScene || "";
   const img3 = overrides?.image3DataUrl || product.imageScene || product.imageSpec || "";
-  const defaultApplications = isBed
-    ? ["Căn hộ cao cấp & Penthouse", "Biệt thự & nhà phố", "Khách sạn 4–5 sao", "Không gian cần sự tinh tế"]
-    : ["Căn hộ studio & 1PN", "Căn hộ 2–3 phòng ngủ", "Homestay & căn hộ dịch vụ", "Không gian cần tối ưu diện tích"];
-  const applications = (overrides?.body ?? defaultApplications.join("\n")).split("\n").filter(Boolean);
+  const img4 = (overrides as any)?.image4DataUrl || product.imageSpec || "";
 
-  const ImageSlot = ({ src, field, label, style }: { src?: string; field: keyof SlideOverrides; label: string; style?: React.CSSProperties }) => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...style }}>
+  const ImageSlot = ({ src, label }: { src?: string; label: string }) => (
+    <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, aspectRatio: "4 / 3" }}>
       {src ? (
-        <img src={src} alt={label} style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block", borderRadius: 12 }} />
+        <img src={src} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", borderRadius: 12 }} />
       ) : (
-        <div style={{ width: "100%", aspectRatio: "1 / 1", borderRadius: 12, background: colorDim, border: `1px solid ${color}30`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12, color: D.textMuted, fontSize: 10 }}>
+        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: D.textMuted, fontSize: 10 }}>
           <ImageIcon size={24} style={{ marginBottom: 6 }} />
           <span>{label}</span>
         </div>
@@ -1707,48 +1702,26 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
 
   return (
     <SlideShell accentColor={color}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "22px 40px 18px" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "18px 28px 16px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14, flexShrink: 0 }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẾ & ỨNG DỤNG</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẾC</div>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, margin: 0 }}>
               <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
                 style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
             </h3>
           </div>
-          <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em", flexShrink: 0 }}>4 / 4</div>
+          <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em", flexShrink: 0 }}>2 / 2</div>
         </div>
 
-        {/* Row 1: 2 ảnh 1:1 nằm ngang */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14, flexShrink: 0 }}>
-          <ImageSlot src={img1} field="imageDataUrl" label="Góc chụp 1" style={{ aspectRatio: "1/1", width: "100%" }} />
-          <ImageSlot src={img2} field="image2DataUrl" label="Góc chụp 2" style={{ aspectRatio: "1/1", width: "100%" }} />
-        </div>
-
-        {/* Phân khúc — nằm giữa trang */}
-        <div style={{ flexShrink: 0, marginBottom: 14 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 8, textAlign: "center" }}>PHÂN KHÚC PHÙ HỢP</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-            {applications.map((app, i) => (
-              <div key={i} style={{ padding: "6px 16px", borderRadius: 20, background: colorDim, border: `1px solid ${color}30`, fontSize: 10.5, color: D.textSecondary }}>
-                {app}
-              </div>
-            ))}
-          </div>
-          {isEditing && (
-            <div style={{ marginTop: 8, textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: D.textMuted, marginBottom: 4 }}>Phân khúc (mỗi dòng = 1 tag):</div>
-              <InlineText value={overrides?.body ?? defaultApplications.join("\n")} placeholder={defaultApplications.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
-                multiline style={{ fontSize: 11, color: D.textSecondary }} />
-            </div>
-          )}
-        </div>
-
-        {/* Ảnh phối cảnh — giới hạn chiều cao để không tràn trang */}
-        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-          <ImageSlot src={img3} field="image3DataUrl" label="Phối cảnh" style={{ width: "100%", height: "100%" }} />
+        {/* Grid 2×2: 4 ảnh tỷ lệ 4:3 */}
+        <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 12 }}>
+          <ImageSlot src={img1} label="Góc chụp 1" />
+          <ImageSlot src={img2} label="Góc chụp 2" />
+          <ImageSlot src={img3} label="Phối cảnh 1" />
+          <ImageSlot src={img4} label="Phối cảnh 2" />
         </div>
 
         {/* Footer */}
