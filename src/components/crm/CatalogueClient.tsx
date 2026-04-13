@@ -246,10 +246,10 @@ function ImageCropModal({ src, onSave, onClose }: { src: string; onSave: (dataUr
             <X size={20} />
           </button>
         </div>
-        <div style={{ maxHeight: "60vh", overflow: "auto", display: "flex", justifyContent: "center", background: "rgba(0,0,0,0.3)", borderRadius: 10 }}>
+        <div style={{ overflow: "auto", display: "flex", justifyContent: "center", background: "rgba(0,0,0,0.3)", borderRadius: 10, maxHeight: "70vh" }}>
           <ReactCrop crop={crop} onChange={c => setCrop(c)} style={{ maxWidth: "100%" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img ref={imgRef} src={src} alt="crop" onLoad={onImageLoad} style={{ maxWidth: "100%", maxHeight: "55vh", display: "block" }} />
+            <img ref={imgRef} src={src} alt="crop" onLoad={onImageLoad} style={{ maxWidth: "100%", display: "block" }} />
           </ReactCrop>
         </div>
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -1206,11 +1206,18 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
           {/* ── SECTION 4: Spec image (1:1, centered, 60% width) ── */}
           <div style={{ flexShrink: 0, paddingTop: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, alignSelf: "flex-start" }}>ẢNH THÔNG SỐ KỸ THUẪT</div>
-            <img
-              src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
-              alt="Ảnh thông số kỹ thuật"
-              style={{ width: "60%", aspectRatio: "1 / 1", objectFit: "contain", display: "block", borderRadius: 10, border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}
-            />
+            <div style={{ width: "60%", aspectRatio: "1 / 1", borderRadius: 10, overflow: "hidden", border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}>
+              <InlineImage
+                src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
+                alt="Ảnh thông số kỹ thuật"
+                isEditing={isEditing}
+                onUpload={v => onUpdate("specImageDataUrl" as any, v)}
+                onRemove={() => onUpdate("specImageDataUrl" as any, "")}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                placeholderStyle={{ width: "100%", aspectRatio: "1 / 1", display: "flex", alignItems: "center", justifyContent: "center" }}
+                placeholderLabel="Ảnh thông số"
+              />
+            </div>
           </div>
 
         </div>
@@ -1783,14 +1790,18 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
 
   const ImageSlot = ({ src, field, label, style }: { src?: string; field: keyof SlideOverrides; label: string; style?: React.CSSProperties }) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...style }}>
-      {src ? (
-        <img src={src} alt={label} style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", display: "block", borderRadius: 12 }} />
-      ) : (
-        <div style={{ width: "100%", aspectRatio: "4 / 3", borderRadius: 12, background: colorDim, border: `1px solid ${color}30`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12, color: D.textMuted, fontSize: 10 }}>
-          <ImageIcon size={24} style={{ marginBottom: 6 }} />
-          <span>{label}</span>
-        </div>
-      )}
+      <div style={{ width: "100%", aspectRatio: "4 / 3", borderRadius: 12, overflow: "hidden", border: `1px solid ${color}30`, background: colorDim }}>
+        <InlineImage
+          src={src}
+          alt={label}
+          isEditing={isEditing}
+          onUpload={v => onUpdate(field, v)}
+          onRemove={() => onUpdate(field, "")}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          placeholderStyle={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12, color: D.textMuted, fontSize: 10 }}
+          placeholderLabel={label}
+        />
+      </div>
     </div>
   );
 
