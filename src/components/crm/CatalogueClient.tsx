@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 import {
   Printer, Plus, Trash2, GripVertical, Eye, EyeOff,
   ChevronLeft, ChevronRight, LayoutGrid, Layers,
@@ -200,6 +202,65 @@ function InlineText({ value, placeholder, isEditing, onCommit, style, multiline,
   );
 }
 
+// ─── Image Crop Modal ───────────────────────────────────────────────────────
+function ImageCropModal({ src, onSave, onClose }: { src: string; onSave: (dataUrl: string) => void; onClose: () => void }) {
+  const [crop, setCrop] = useState<Crop>();
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    const c = centerCrop(makeAspectCrop({ unit: "%", width: 90 }, width / height, width, height), width, height);
+    setCrop(c);
+  };
+
+  const handleSave = () => {
+    const image = imgRef.current;
+    if (!image || !crop) return;
+    const canvas = document.createElement("canvas");
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    const pixelCrop = {
+      x: (crop.unit === "%" ? (crop.x / 100) * image.width : crop.x) * scaleX,
+      y: (crop.unit === "%" ? (crop.y / 100) * image.height : crop.y) * scaleY,
+      width: (crop.unit === "%" ? (crop.width / 100) * image.width : crop.width) * scaleX,
+      height: (crop.unit === "%" ? (crop.height / 100) * image.height : crop.height) * scaleY,
+    };
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+    onSave(canvas.toDataURL("image/jpeg", 0.92));
+    onClose();
+  };
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{ background: "#1c1a2e", borderRadius: 16, padding: 24, maxWidth: 720, width: "100%", border: "1px solid rgba(201,168,76,0.3)", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#f5edd6" }}>Cắt ảnh</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <X size={20} />
+          </button>
+        </div>
+        <div style={{ maxHeight: "60vh", overflow: "auto", display: "flex", justifyContent: "center", background: "rgba(0,0,0,0.3)", borderRadius: 10 }}>
+          <ReactCrop crop={crop} onChange={c => setCrop(c)} style={{ maxWidth: "100%" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img ref={imgRef} src={src} alt="crop" onLoad={onImageLoad} style={{ maxWidth: "100%", maxHeight: "55vh", display: "block" }} />
+          </ReactCrop>
+        </div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ padding: "8px 20px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: 13 }}>Hủy</button>
+          <button onClick={handleSave} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#C9A84C", color: "#0d0b1a", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>Lưu ảnh đã cắt</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface InlineImageProps {
   src?: string;
   alt?: string;
@@ -213,48 +274,78 @@ interface InlineImageProps {
 
 function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placeholderStyle, placeholderLabel }: InlineImageProps) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => onUpload(ev.target?.result as string);
+    reader.onload = ev => {
+      const dataUrl = ev.target?.result as string;
+      setCropSrc(dataUrl); // open crop modal after upload
+    };
     reader.readAsDataURL(file);
     e.target.value = "";
   };
 
   if (src) {
     return (
-      <div style={{ position: "relative", display: "block", overflow: "hidden", ...style }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center", display: "block" }} loading="eager" />
-        {isEditing && (
-          <div
-            onClick={() => fileRef.current?.click()}
-            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", gap: 6 }}>
-            <Upload size={20} color={D.gold} />
-            <span style={{ fontSize: 10, color: D.gold, fontWeight: 600 }}>Đổi ảnh</span>
-            <button
-              onClick={e => { e.stopPropagation(); onRemove(); }}
-              style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "rgba(239,68,68,0.9)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <X size={11} color="#fff" />
-            </button>
-          </div>
+      <>
+        <div style={{ position: "relative", display: "block", overflow: "hidden", ...style }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt={alt ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center", display: "block" }} loading="eager" />
+          {isEditing && (
+            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <button
+                onClick={() => fileRef.current?.click()}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer" }}>
+                <Upload size={18} color={D.gold} />
+                <span style={{ fontSize: 9, color: D.gold, fontWeight: 600 }}>Đổi ảnh</span>
+              </button>
+              <button
+                onClick={() => setCropSrc(src)}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer" }}>
+                <Edit3 size={16} color="#a78bfa" />
+                <span style={{ fontSize: 9, color: "#a78bfa", fontWeight: 600 }}>Cắt ảnh</span>
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); onRemove(); }}
+                style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "rgba(239,68,68,0.9)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <X size={11} color="#fff" />
+              </button>
+            </div>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+        </div>
+        {cropSrc && (
+          <ImageCropModal
+            src={cropSrc}
+            onSave={dataUrl => { onUpload(dataUrl); setCropSrc(null); }}
+            onClose={() => setCropSrc(null)}
+          />
         )}
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
-      </div>
+      </>
     );
   }
 
   return (
-    <div
-      onClick={isEditing ? () => fileRef.current?.click() : undefined}
-      style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: isEditing ? "pointer" : "default", ...placeholderStyle }}>
-      <ImageIcon size={28} style={{ color: D.textMuted, marginBottom: 6 }} />
-      <span style={{ fontSize: 10, color: D.textMuted }}>{placeholderLabel ?? "Chưa có ảnh"}</span>
-      {isEditing && <span style={{ fontSize: 9, color: D.gold, marginTop: 4 }}>Click để upload</span>}
-      {isEditing && <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />}
-    </div>
+    <>
+      <div
+        onClick={isEditing ? () => fileRef.current?.click() : undefined}
+        style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: isEditing ? "pointer" : "default", ...placeholderStyle }}>
+        <ImageIcon size={28} style={{ color: D.textMuted, marginBottom: 6 }} />
+        <span style={{ fontSize: 10, color: D.textMuted }}>{placeholderLabel ?? "Chưa có ảnh"}</span>
+        {isEditing && <span style={{ fontSize: 9, color: D.gold, marginTop: 4 }}>Click để upload</span>}
+        {isEditing && <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />}
+      </div>
+      {cropSrc && (
+        <ImageCropModal
+          src={cropSrc}
+          onSave={dataUrl => { onUpload(dataUrl); setCropSrc(null); }}
+          onClose={() => setCropSrc(null)}
+        />
+      )}
+    </>
   );
 }
 
