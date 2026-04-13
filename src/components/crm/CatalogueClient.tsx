@@ -1094,17 +1094,13 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
           </div>
 
           {/* ── SECTION 4: Spec image fills remaining space ── */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", paddingTop: 8, minHeight: 0 }}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, flexShrink: 0 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
-            <div style={{ flex: 1, borderRadius: 10, overflow: "hidden", background: "rgba(255,255,255,0.03)", border: `1px solid ${color}20`, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <InlineImage
-                src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2}
-                isEditing={isEditing}
-                onUpload={v => onUpdate("specImageDataUrl" as any, v)}
-                onRemove={() => onUpdate("specImageDataUrl" as any, "")}
-                style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
-                placeholderStyle={{ width: "100%", height: "100%", background: "rgba(255,255,255,0.03)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}
-                placeholderLabel="Ảnh thông số kỹ thuật"
+          <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", paddingTop: 8 }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
+            <div style={{ borderRadius: 10, overflow: "hidden", background: "rgba(255,255,255,0.03)", border: `1px solid ${color}20`, padding: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img
+                src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
+                alt="Ảnh thông số kỹ thuật"
+                style={{ maxWidth: "100%", maxHeight: 180, objectFit: "contain", display: "block", borderRadius: 6 }}
               />
             </div>
           </div>
@@ -1678,11 +1674,15 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
   const applications = (overrides?.body ?? defaultApplications.join("\n")).split("\n").filter(Boolean);
 
   const ImageSlot = ({ src, field, label, style }: { src?: string; field: keyof SlideOverrides; label: string; style?: React.CSSProperties }) => (
-    <div style={{ borderRadius: 12, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center", ...style }}>
-      <InlineImage src={src} isEditing={isEditing} onUpload={v => onUpdate(field, v)} onRemove={() => onUpdate(field, "")}
-        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" } as React.CSSProperties}
-        placeholderStyle={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12 }}
-        placeholderLabel={label} />
+    <div style={{ borderRadius: 12, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center", padding: 6, ...style }}>
+      {src ? (
+        <img src={src} alt={label} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block", borderRadius: 8 }} />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12, color: D.textMuted, fontSize: 10 }}>
+          <ImageIcon size={24} style={{ marginBottom: 6 }} />
+          <span>{label}</span>
+        </div>
+      )}
     </div>
   );
 
