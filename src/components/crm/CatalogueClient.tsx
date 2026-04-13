@@ -1034,22 +1034,7 @@ function SlideIntro({ overrides, isEditing, onUpdate }: SlideProps) {
               </div>
             ))}
           </div>
-          {/* Feature bullets — 2 cột */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, flex: 1 }}>
-            {bodyLines.map((line, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, borderRadius: 10, padding: "9px 11px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{line.split(" ")[0]}</span>
-                <span style={{ fontSize: 12, color: "rgba(245,237,214,0.75)", lineHeight: 1.45 }}>{line.replace(/^[^\s]+\s/, "")}</span>
-              </div>
-            ))}
-          </div>
-          {isEditing && (
-            <div style={{ marginTop: 10, flexShrink: 0 }}>
-              <div style={{ fontSize: 11, color: D.textMuted, marginBottom: 4 }}>Chỉnh sửa nội dung (mỗi dòng = 1 mục):</div>
-              <InlineText value={overrides?.body ?? defaultBody} placeholder={defaultBody} isEditing={true} onCommit={v => onUpdate("body", v)}
-                multiline style={{ fontSize: 13, color: D.textSecondary }} />
-            </div>
-          )}
+
         </div>
       </div>
     </SlideShell>
