@@ -1115,11 +1115,11 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
           {/* ── SECTION 4: Spec image fills remaining space ── */}
           <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", paddingTop: 8 }}>
             <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, flexShrink: 0 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
-            <div style={{ flex: 1, minHeight: 0, borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${color}20`, padding: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}>
               <img
                 src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
                 alt="Ảnh thông số kỹ thuật"
-                style={{ maxWidth: "calc(100% - 0px)", maxHeight: "100%", objectFit: "contain", display: "block", borderRadius: 6 }}
+                style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "contain", display: "block", borderRadius: 10, border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}
               />
             </div>
           </div>
@@ -1693,11 +1693,11 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
   const applications = (overrides?.body ?? defaultApplications.join("\n")).split("\n").filter(Boolean);
 
   const ImageSlot = ({ src, field, label, style }: { src?: string; field: keyof SlideOverrides; label: string; style?: React.CSSProperties }) => (
-    <div style={{ borderRadius: 12, overflow: "hidden", background: colorDim, border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center", padding: 5, ...style }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...style }}>
       {src ? (
-        <img src={src} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", borderRadius: 8 }} />
+        <img src={src} alt={label} style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block", borderRadius: 12 }} />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12, color: D.textMuted, fontSize: 10 }}>
+        <div style={{ width: "100%", aspectRatio: "1 / 1", borderRadius: 12, background: colorDim, border: `1px solid ${color}30`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12, color: D.textMuted, fontSize: 10 }}>
           <ImageIcon size={24} style={{ marginBottom: 6 }} />
           <span>{label}</span>
         </div>
