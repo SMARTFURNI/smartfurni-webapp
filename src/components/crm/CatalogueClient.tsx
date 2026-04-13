@@ -241,7 +241,7 @@ function ImageCropModal({ src, onSave, onClose }: { src: string; onSave: (dataUr
     >
       <div style={{ background: "#1c1a2e", borderRadius: 16, padding: 24, maxWidth: 720, width: "100%", border: "1px solid rgba(201,168,76,0.3)", display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: "#f5edd6" }}>Cắt ảnh</span>
+          <span style={{ fontSize: 17, fontWeight: 700, color: "#f5edd6" }}>Cắt ảnh</span>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <X size={20} />
           </button>
@@ -253,8 +253,8 @@ function ImageCropModal({ src, onSave, onClose }: { src: string; onSave: (dataUr
           </ReactCrop>
         </div>
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ padding: "8px 20px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: 13 }}>Hủy</button>
-          <button onClick={handleSave} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#C9A84C", color: "#0d0b1a", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>Lưu ảnh đã cắt</button>
+          <button onClick={onClose} style={{ padding: "8px 20px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: 15 }}>Hủy</button>
+          <button onClick={handleSave} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#C9A84C", color: "#0d0b1a", cursor: "pointer", fontSize: 15, fontWeight: 700 }}>Lưu ảnh đã cắt</button>
         </div>
       </div>
     </div>
@@ -300,13 +300,13 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
                 onClick={() => fileRef.current?.click()}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer" }}>
                 <Upload size={18} color={D.gold} />
-                <span style={{ fontSize: 9, color: D.gold, fontWeight: 600 }}>Đổi ảnh</span>
+                <span style={{ fontSize: 11, color: D.gold, fontWeight: 600 }}>Đổi ảnh</span>
               </button>
               <button
                 onClick={() => setCropSrc(src)}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer" }}>
                 <Edit3 size={16} color="#a78bfa" />
-                <span style={{ fontSize: 9, color: "#a78bfa", fontWeight: 600 }}>Cắt ảnh</span>
+                <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600 }}>Cắt ảnh</span>
               </button>
               <button
                 onClick={e => { e.stopPropagation(); onRemove(); }}
@@ -334,8 +334,8 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
         onClick={isEditing ? () => fileRef.current?.click() : undefined}
         style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: isEditing ? "pointer" : "default", ...placeholderStyle }}>
         <ImageIcon size={28} style={{ color: D.textMuted, marginBottom: 6 }} />
-        <span style={{ fontSize: 10, color: D.textMuted }}>{placeholderLabel ?? "Chưa có ảnh"}</span>
-        {isEditing && <span style={{ fontSize: 9, color: D.gold, marginTop: 4 }}>Click để upload</span>}
+        <span style={{ fontSize: 12, color: D.textMuted }}>{placeholderLabel ?? "Chưa có ảnh"}</span>
+        {isEditing && <span style={{ fontSize: 11, color: D.gold, marginTop: 4 }}>Click để upload</span>}
         {isEditing && <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />}
       </div>
       {cropSrc && (
@@ -956,28 +956,28 @@ function SlideCover({ today, overrides, isEditing, onUpdate }: { today: string }
         <div style={{ marginBottom: 28 }}>
           <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 120, width: "auto", objectFit: "contain" }} />
         </div>
-        <h1 style={{ fontSize: 52, fontWeight: 900, color: D.textPrimary, lineHeight: 1.1, marginBottom: 16, fontFamily: FONT_HEADING, width: "100%" }}>
+        <h1 style={{ fontSize: 54, fontWeight: 900, color: D.textPrimary, lineHeight: 1.1, marginBottom: 16, fontFamily: FONT_HEADING, width: "100%" }}>
           <InlineText value={overrides?.title ?? ""} placeholder="CATALOGUE\nSẢN PHẨM" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-            style={{ fontSize: 52, fontWeight: 900, color: D.textPrimary, lineHeight: 1.1, fontFamily: FONT_HEADING, textAlign: "center" }} />
+            style={{ fontSize: 54, fontWeight: 900, color: D.textPrimary, lineHeight: 1.1, fontFamily: FONT_HEADING, textAlign: "center" }} />
         </h1>
         <div style={{ width: 80, height: 2, background: `linear-gradient(90deg, transparent, ${D.gold}, transparent)`, marginBottom: 20 }} />
-        <p style={{ fontSize: 18, fontWeight: 500, color: "rgba(245,237,214,0.8)", marginBottom: 8, width: "100%" }}>
+        <p style={{ fontSize: 20, fontWeight: 500, color: "rgba(245,237,214,0.8)", marginBottom: 8, width: "100%" }}>
           <InlineText value={overrides?.subtitle ?? ""} placeholder="Giường Công Thái Học & Sofa Giường Đa Năng" isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-            style={{ fontSize: 18, fontWeight: 500, color: "rgba(245,237,214,0.8)", textAlign: "center" }} />
+            style={{ fontSize: 20, fontWeight: 500, color: "rgba(245,237,214,0.8)", textAlign: "center" }} />
         </p>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", width: "100%" }}>
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.4)", width: "100%" }}>
           <InlineText value={overrides?.body ?? ""} placeholder="Công nghệ điều khiển điện thông minh — Thiết kế sang trọng hiện đại" isEditing={isEditing} onCommit={v => onUpdate("body", v)}
-            style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", textAlign: "center" }} />
+            style={{ fontSize: 15, color: "rgba(255,255,255,0.4)", textAlign: "center" }} />
         </p>
       </div>
       <div style={{ padding: "0 48px 32px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>Ngày phát hành</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: D.gold }}>{today}</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>Ngày phát hành</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: D.gold }}>{today}</div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>Phiên bản</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(245,237,214,0.6)" }}>2025 Edition</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>Phiên bản</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(245,237,214,0.6)" }}>2025 Edition</div>
         </div>
       </div>
     </SlideShell>
@@ -992,40 +992,40 @@ function SlideIntro({ overrides, isEditing, onUpdate }: SlideProps) {
     <SlideShell>
       <div style={{ flex: 1, padding: "40px 48px", display: "flex", flexDirection: "column" }}>
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>VỀ CHÚNG TÔI</div>
-          <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
+          <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>VỀ CHÚNG TÔI</div>
+          <h2 style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
             <InlineText value={overrides?.title ?? ""} placeholder="Thương Hiệu SmartFurni" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-              style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
+              style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
           </h2>
           <div style={{ width: 56, height: 2, background: D.gold, marginTop: 12 }} />
         </div>
         <div style={{ borderRadius: 16, padding: "20px 24px", marginBottom: 24, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
-          <p style={{ fontSize: 15, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }}>
+          <p style={{ fontSize: 17, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }}>
             <InlineText value={overrides?.subtitle ?? ""} placeholder="SmartFurni là thương hiệu nội thất thông minh tiên phong tại Việt Nam..." isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-              style={{ fontSize: 15, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }} />
+              style={{ fontSize: 17, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }} />
           </p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
           {[["5+", "Năm kinh nghiệm"], ["1000+", "Khách hàng tin dùng"], ["8", "Dòng sản phẩm"]].map(([v, l]) => (
             <div key={l} style={{ textAlign: "center", borderRadius: 14, padding: "16px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div style={{ fontSize: 26, fontWeight: 900, color: D.gold, marginBottom: 4 }}>{v}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{l}</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: D.gold, marginBottom: 4 }}>{v}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{l}</div>
             </div>
           ))}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {bodyLines.map((line, i) => (
             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, borderRadius: 12, padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>{line.split(" ")[0]}</span>
-              <span style={{ fontSize: 12, color: "rgba(245,237,214,0.75)", lineHeight: 1.5 }}>{line.replace(/^[^\s]+\s/, "")}</span>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>{line.split(" ")[0]}</span>
+              <span style={{ fontSize: 14, color: "rgba(245,237,214,0.75)", lineHeight: 1.5 }}>{line.replace(/^[^\s]+\s/, "")}</span>
             </div>
           ))}
         </div>
         {isEditing && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Chỉnh sửa nội dung (mỗi dòng = 1 mục):</div>
+            <div style={{ fontSize: 12, color: D.textMuted, marginBottom: 6 }}>Chỉnh sửa nội dung (mỗi dòng = 1 mục):</div>
             <InlineText value={overrides?.body ?? defaultBody} placeholder={defaultBody} isEditing={true} onCommit={v => onUpdate("body", v)}
-              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+              multiline style={{ fontSize: 14, color: D.textSecondary }} />
           </div>
         )}
       </div>
@@ -1054,31 +1054,31 @@ function SlideCategoryHeader({ category, overrides, isEditing, onUpdate }: { cat
         <div style={{ width: 96, height: 96, borderRadius: 24, overflow: "hidden", background: colorDim, border: `2px solid ${color}40`, marginBottom: 24 }}>
           <InlineImage src={overrides?.imageDataUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
             style={{ width: 96, height: 96 }}
-            placeholderStyle={{ width: 96, height: 96, background: colorDim, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}
+            placeholderStyle={{ width: 96, height: 96, background: colorDim, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 46 }}
             placeholderLabel={icon} />
         </div>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase", color, marginBottom: 12 }}>DÒNG SẢN PHẨM</div>
-        <h2 style={{ fontSize: 42, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, marginBottom: 16, width: "100%" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase", color, marginBottom: 12 }}>DÒNG SẢN PHẨM</div>
+        <h2 style={{ fontSize: 44, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, marginBottom: 16, width: "100%" }}>
           <InlineText value={overrides?.title ?? ""} placeholder={defaultTitle} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-            style={{ fontSize: 42, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, textAlign: "center" }} />
+            style={{ fontSize: 44, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, textAlign: "center" }} />
         </h2>
         <div style={{ width: 72, height: 2, background: `linear-gradient(90deg, transparent, ${color}, transparent)`, marginBottom: 20 }} />
-        <p style={{ fontSize: 15, maxWidth: 440, color: "rgba(245,237,214,0.7)", marginBottom: 36, width: "100%" }}>
+        <p style={{ fontSize: 17, maxWidth: 440, color: "rgba(245,237,214,0.7)", marginBottom: 36, width: "100%" }}>
           <InlineText value={overrides?.subtitle ?? ""} placeholder={defaultSubtitle} isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-            style={{ fontSize: 15, color: "rgba(245,237,214,0.7)", textAlign: "center" }} />
+            style={{ fontSize: 17, color: "rgba(245,237,214,0.7)", textAlign: "center" }} />
         </p>
         <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 10 }}>
           {bodyLines.map((f, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, borderRadius: 12, padding: "10px 18px", background: colorDim, border: `1px solid ${color}25` }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: color }} />
-              <span style={{ fontSize: 13, color: "rgba(245,237,214,0.85)" }}>{f}</span>
+              <span style={{ fontSize: 15, color: "rgba(245,237,214,0.85)" }}>{f}</span>
             </div>
           ))}
         </div>
         {isEditing && (
           <div style={{ marginTop: 16, width: "100%", maxWidth: 440 }}>
             <InlineText value={overrides?.body ?? defaultFeatures.join("\n")} placeholder={defaultFeatures.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
-              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+              multiline style={{ fontSize: 14, color: D.textSecondary }} />
           </div>
         )}
       </div>
@@ -1106,10 +1106,10 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
         {/* ── TOP BAND: header strip ── */}
         <div style={{ padding: "10px 24px 8px", flexShrink: 0, borderBottom: `1px solid ${color}22` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color }}>
               {isBed ? "GIƯỜNG CÔNG THÁI HỌC" : "SOFA GIƯỜNG ĐA NĂNG"}
             </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>SKU: {product.sku}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>SKU: {product.sku}</div>
           </div>
         </div>
 
@@ -1126,26 +1126,26 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
                 onUpload={v => onUpdate("imageDataUrl", v)}
                 onRemove={() => onUpdate("imageDataUrl", "")}
                 style={{ width: 150, height: 150, objectFit: "cover" }}
-                placeholderStyle={{ width: 150, height: 150, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}
+                placeholderStyle={{ width: 150, height: 150, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 38 }}
                 placeholderLabel={isBed ? "🛏️" : "🛋️"}
               />
             </div>
             {/* Right: name + desc + price */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
               <div>
-                <h3 style={{ fontSize: 17, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25, marginBottom: 6 }}>
+                <h3 style={{ fontSize: 19, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25, marginBottom: 6 }}>
                   <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                    style={{ fontSize: 17, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
+                    style={{ fontSize: 19, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
                 </h3>
-                <p style={{ fontSize: 11, lineHeight: 1.45, color: "rgba(245,237,214,0.6)", marginBottom: 10 }}>
+                <p style={{ fontSize: 13, lineHeight: 1.45, color: "rgba(245,237,214,0.6)", marginBottom: 10 }}>
                   <InlineText value={overrides?.subtitle ?? ""} placeholder={product.description ?? ""} isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-                    style={{ fontSize: 11, lineHeight: 1.45, color: "rgba(245,237,214,0.6)" }} />
+                    style={{ fontSize: 13, lineHeight: 1.45, color: "rgba(245,237,214,0.6)" }} />
                 </p>
               </div>
               {/* Price badge */}
               <div style={{ display: "inline-flex", alignItems: "baseline", gap: 8, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 10, padding: "8px 14px", alignSelf: "flex-start" }}>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>Giá từ</span>
-                <span style={{ fontSize: 20, fontWeight: 900, color: D.gold, fontFamily: FONT_HEADING }}>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>Giá từ</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: D.gold, fontFamily: FONT_HEADING }}>
                   {minPrice > 0 ? formatVND(minPrice) : "Liên hệ"}
                 </span>
               </div>
@@ -1155,20 +1155,20 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
           {/* ── SECTION 2: Features grid ── */}
           {featureLines.length > 0 && (
             <div style={{ paddingTop: 8, paddingBottom: 8, flexShrink: 0, borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
-              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>TÍNH NĂNG & THÔNG SỐ</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>TÍNH NĂNG & THÔNG SỐ</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
                 {featureLines.slice(0, 8).map((line, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6, borderRadius: 6, padding: "4px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                     <div style={{ width: 4, height: 4, borderRadius: "50%", marginTop: 4, flexShrink: 0, background: color }} />
-                    <span style={{ fontSize: 10, fontWeight: 500, color: D.textPrimary, lineHeight: 1.35 }}>{line}</span>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: D.textPrimary, lineHeight: 1.35 }}>{line}</span>
                   </div>
                 ))}
               </div>
               {isEditing && (
                 <div style={{ marginTop: 8 }}>
-                  <div style={{ fontSize: 9, color: D.textMuted, marginBottom: 4 }}>Tính năng (mỗi dòng = 1 mục, tối đa 10):</div>
+                  <div style={{ fontSize: 11, color: D.textMuted, marginBottom: 4 }}>Tính năng (mỗi dòng = 1 mục, tối đa 10):</div>
                   <InlineText value={overrides?.body ?? specEntries.map(([k, v]) => `${k}: ${v}`).join("\n")} placeholder="Nhập tính năng..." isEditing={true} onCommit={v => onUpdate("body", v)}
-                    multiline style={{ fontSize: 12, color: D.textSecondary }} />
+                    multiline style={{ fontSize: 14, color: D.textSecondary }} />
                 </div>
               )}
             </div>
@@ -1176,36 +1176,36 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
 
           {/* ── SECTION 3: Pricing table ── */}
           <div style={{ paddingTop: 8, flexShrink: 0 }}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>BẢNG GIÁ</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>BẢNG GIÁ</div>
             {hasSizes ? (
               <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)" }}>
                 <div style={{ padding: "5px 12px", background: "rgba(201,168,76,0.1)", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr" }}>
                   {["KÍCH THƯỚC", "MÃ SIZE", "ĐƠN GIÁ (VNĐ)"].map((h, i) => (
-                    <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", color: "rgba(255,255,255,0.45)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
+                    <div key={h} style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", color: "rgba(255,255,255,0.45)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
                   ))}
                 </div>
                 {product.sizePricings!.map((sp: SizePricing, i: number) => (
                   <div key={i} style={{ padding: "5px 12px", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: D.textPrimary }}>{sp.label || sp.size}</div>
-                    <div style={{ fontSize: 9, fontFamily: "monospace", color: "rgba(255,255,255,0.4)" }}>{sp.size}</div>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: D.gold, textAlign: "right" }}>{sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary }}>{sp.label || sp.size}</div>
+                    <div style={{ fontSize: 11, fontFamily: "monospace", color: "rgba(255,255,255,0.4)" }}>{sp.size}</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: D.gold, textAlign: "right" }}>{sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}</div>
                   </div>
                 ))}
               </div>
             ) : (
               <div style={{ borderRadius: 10, padding: "10px 16px", textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
-                <div style={{ fontSize: 26, fontWeight: 900, color: D.gold }}>{product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ"}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Giá niêm yết chưa VAT</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: D.gold }}>{product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ"}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Giá niêm yết chưa VAT</div>
               </div>
             )}
-            <div style={{ marginTop: 5, fontSize: 9, color: "rgba(255,255,255,0.3)" }}>
+            <div style={{ marginTop: 5, fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
               • Giá chưa bao gồm VAT (10%) &nbsp;•&nbsp; Giá có thể thay đổi mà không báo trước
             </div>
           </div>
 
           {/* ── SECTION 4: Spec image (1:1, centered, 60% width) ── */}
           <div style={{ flexShrink: 0, paddingTop: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, alignSelf: "flex-start" }}>ẢNH THÔNG SỐ KỸ THUẪT</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, alignSelf: "flex-start" }}>ẢNH THÔNG SỐ KỸ THUẪT</div>
             <div style={{ width: "60%", aspectRatio: "1 / 1", borderRadius: 10, overflow: "hidden", border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}>
               <InlineImage
                 src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
@@ -1240,49 +1240,49 @@ function SlideProductFeature({ product, overrides, isEditing, onUpdate }: { prod
           <div style={{ width: 140, height: 140, borderRadius: 18, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: `1px solid ${color}30`, aspectRatio: "1/1" }}>
             <InlineImage src={imageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
               style={{ width: 140, height: 140, objectFit: "cover", objectPosition: "center" }}
-              placeholderStyle={{ width: 140, height: 140, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}
+              placeholderStyle={{ width: 140, height: 140, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 46 }}
               placeholderLabel={isBed ? "🛏️" : "🛋️"} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 6 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 6 }}>
               {isBed ? "GIƯỜNG CÔNG THÁI HỌC" : "SOFA GIƯỜNG ĐA NĂNG"}
             </div>
-            <h3 style={{ fontSize: 24, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, marginBottom: 6, lineHeight: 1.25 }}>
+            <h3 style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, marginBottom: 6, lineHeight: 1.25 }}>
               <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                style={{ fontSize: 24, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
+                style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
             </h3>
-            <div style={{ fontSize: 11, fontFamily: "monospace", padding: "2px 8px", borderRadius: 6, display: "inline-block", marginBottom: 10, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ fontSize: 13, fontFamily: "monospace", padding: "2px 8px", borderRadius: 6, display: "inline-block", marginBottom: 10, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
               {product.sku}
             </div>
-            <p style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(245,237,214,0.7)" }}>
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: "rgba(245,237,214,0.7)" }}>
               <InlineText value={overrides?.subtitle ?? ""} placeholder={product.description ?? "Mô tả sản phẩm..."} isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-                style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(245,237,214,0.7)" }} />
+                style={{ fontSize: 15, lineHeight: 1.6, color: "rgba(245,237,214,0.7)" }} />
             </p>
           </div>
         </div>
 
         {bodyLines.length > 0 ? (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>TÍNH NĂNG NỔI BẬT</div>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>TÍNH NĂNG NỔI BẬT</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {bodyLines.map((line, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, borderRadius: 10, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                   <div style={{ width: 4, height: 4, borderRadius: "50%", marginTop: 5, flexShrink: 0, background: color }} />
-                  <span style={{ fontSize: 12, color: D.textPrimary }}>{line}</span>
+                  <span style={{ fontSize: 14, color: D.textPrimary }}>{line}</span>
                 </div>
               ))}
             </div>
           </div>
         ) : specEntries.length > 0 ? (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>THÔNG SỐ KỸ THUẬT</div>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>THÔNG SỐ KỸ THUẬT</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {specEntries.map(([key, val]) => (
                 <div key={key} style={{ display: "flex", alignItems: "flex-start", gap: 8, borderRadius: 10, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                   <div style={{ width: 4, height: 4, borderRadius: "50%", marginTop: 5, flexShrink: 0, background: color }} />
                   <div>
-                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>{key}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: D.textPrimary }}>{val}</div>
+                    <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>{key}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: D.textPrimary }}>{val}</div>
                   </div>
                 </div>
               ))}
@@ -1292,24 +1292,24 @@ function SlideProductFeature({ product, overrides, isEditing, onUpdate }: { prod
 
         {isEditing && (
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Tính năng nổi bật (mỗi dòng = 1 mục, để trống = dùng thông số kỹ thuật):</div>
+            <div style={{ fontSize: 12, color: D.textMuted, marginBottom: 6 }}>Tính năng nổi bật (mỗi dòng = 1 mục, để trống = dùng thông số kỹ thuật):</div>
             <InlineText value={overrides?.body ?? ""} placeholder={"Tính năng 1\nTính năng 2\nTính năng 3"} isEditing={true} onCommit={v => onUpdate("body", v)}
-              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+              multiline style={{ fontSize: 14, color: D.textSecondary }} />
           </div>
         )}
 
         <div style={{ marginTop: "auto", borderRadius: 16, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.25)" }}>
           <div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Giá tham khảo từ</div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: D.gold, fontFamily: FONT_HEADING }}>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Giá tham khảo từ</div>
+            <div style={{ fontSize: 26, fontWeight: 900, color: D.gold, fontFamily: FONT_HEADING }}>
               {product.sizePricings && product.sizePricings.length > 0
                 ? formatVND(Math.min(...product.sizePricings.map(s => s.price)))
                 : product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ"}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Bảo hành</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: D.textPrimary }}>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Bảo hành</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: D.textPrimary }}>
               {isBed ? "Khung 5 năm · Motor 3 năm" : "Khung 3 năm · Đệm 1 năm"}
             </div>
           </div>
@@ -1337,18 +1337,18 @@ function SlideProductFeaturePricing({ product, overrides, isEditing, onUpdate }:
           <div style={{ width: 72, height: 72, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: `1px solid ${color}30` }}>
             <InlineImage src={mainImageUrl} isEditing={isEditing} onUpload={v => onUpdate("imageDataUrl", v)} onRemove={() => onUpdate("imageDataUrl", "")}
               style={{ width: 72, height: 72, objectFit: "cover" }}
-              placeholderStyle={{ width: 72, height: 72, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}
+              placeholderStyle={{ width: 72, height: 72, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}
               placeholderLabel={isBed ? "🛏️" : "🛋️"} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 3 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 3 }}>
               {isBed ? "GIƯỜNG CÔNG THÁI HỌC" : "SOFA GIƯỜNG ĐA NĂNG"}
             </div>
-            <h3 style={{ fontSize: 17, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, marginBottom: 4, lineHeight: 1.2 }}>
+            <h3 style={{ fontSize: 19, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, marginBottom: 4, lineHeight: 1.2 }}>
               <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                style={{ fontSize: 17, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.2 }} />
+                style={{ fontSize: 19, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.2 }} />
             </h3>
-            <div style={{ fontSize: 9, fontFamily: "monospace", padding: "2px 8px", borderRadius: 6, display: "inline-block", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ fontSize: 11, fontFamily: "monospace", padding: "2px 8px", borderRadius: 6, display: "inline-block", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
               {product.sku}
             </div>
           </div>
@@ -1357,20 +1357,20 @@ function SlideProductFeaturePricing({ product, overrides, isEditing, onUpdate }:
         {/* Tính năng & Thông số — 2 cột grid */}
         {featureLines.length > 0 && (
           <div style={{ flexShrink: 0 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>TÍNH NĂNG & THÔNG SỐ</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>TÍNH NĂNG & THÔNG SỐ</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
               {featureLines.slice(0, 10).map((line, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 7, borderRadius: 6, padding: "6px 9px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                   <div style={{ width: 5, height: 5, borderRadius: "50%", marginTop: 4, flexShrink: 0, background: color }} />
-                  <span style={{ fontSize: 12, fontWeight: 500, color: D.textPrimary, lineHeight: 1.4 }}>{line}</span>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: D.textPrimary, lineHeight: 1.4 }}>{line}</span>
                 </div>
               ))}
             </div>
             {isEditing && (
               <div style={{ marginTop: 6 }}>
-                <div style={{ fontSize: 9, color: D.textMuted, marginBottom: 3 }}>Tính năng (mỗi dòng = 1 mục, tối đa 10):</div>
+                <div style={{ fontSize: 11, color: D.textMuted, marginBottom: 3 }}>Tính năng (mỗi dòng = 1 mục, tối đa 10):</div>
                 <InlineText value={overrides?.body ?? specEntries.map(([k, v]) => `${k}: ${v}`).join("\n")} placeholder="Nhập tính năng..." isEditing={true} onCommit={v => onUpdate("body", v)}
-                  multiline style={{ fontSize: 12, color: D.textSecondary }} />
+                  multiline style={{ fontSize: 14, color: D.textSecondary }} />
               </div>
             )}
           </div>
@@ -1378,38 +1378,38 @@ function SlideProductFeaturePricing({ product, overrides, isEditing, onUpdate }:
 
         {/* Bảng giá */}
         <div style={{ flexShrink: 0 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>BẢNG GIÁ</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>BẢNG GIÁ</div>
           {hasSizes ? (
             <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid rgba(201,168,76,0.25)" }}>
               <div style={{ padding: "6px 14px", background: "rgba(201,168,76,0.12)", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 10 }}>
                 {["Kích thước", "Mã size", "Đơn giá (VNĐ)"].map((h, i) => (
-                  <div key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.5)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
+                  <div key={h} style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.5)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
                 ))}
               </div>
               {product.sizePricings!.map((sp: SizePricing, i: number) => (
                 <div key={i} style={{ padding: "7px 14px", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 10, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary }}>{sp.label || sp.size}</div>
-                  <div style={{ fontSize: 11, fontFamily: "monospace", color: "rgba(255,255,255,0.45)" }}>{sp.size}</div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: D.gold, textAlign: "right" }}>{sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary }}>{sp.label || sp.size}</div>
+                  <div style={{ fontSize: 13, fontFamily: "monospace", color: "rgba(255,255,255,0.45)" }}>{sp.size}</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: D.gold, textAlign: "right" }}>{sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}</div>
                 </div>
               ))}
             </div>
           ) : (
             <div style={{ borderRadius: 10, padding: "10px 16px", textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: D.gold }}>
+              <div style={{ fontSize: 26, fontWeight: 900, color: D.gold }}>
                 {product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ"}
               </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Giá niêm yết chưa VAT</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Giá niêm yết chưa VAT</div>
             </div>
           )}
-          <div style={{ marginTop: 5, fontSize: 9, color: "rgba(255,255,255,0.3)", lineHeight: 1.6 }}>
+          <div style={{ marginTop: 5, fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.6 }}>
             • Giá chưa bao gồm VAT (10%) &nbsp;•&nbsp; Giá có thể thay đổi mà không báo trước
           </div>
         </div>
 
         {/* Ảnh thông số 1:1 — kín phần còn lại */}
         <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 6, flexShrink: 0 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 6, flexShrink: 0 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
           <div style={{ flex: 1, borderRadius: 10, overflow: "hidden", background: "rgba(255,255,255,0.04)", border: `1px solid ${color}25` }}>
             <InlineImage src={specImageUrl} isEditing={isEditing} onUpload={v => onUpdate("specImageDataUrl" as any, v)} onRemove={() => onUpdate("specImageDataUrl" as any, "")}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -1440,12 +1440,12 @@ function SlideProductPricing({ product, overrides, isEditing, onUpdate }: { prod
             </div>
           )}
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 4 }}>BẢNG GIÁ</div>
-            <h3 style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.2 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 4 }}>BẢNG GIÁ</div>
+            <h3 style={{ fontSize: 28, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.2 }}>
               <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
+                style={{ fontSize: 28, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
             </h3>
-            <div style={{ fontSize: 12, fontFamily: "monospace", color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{product.sku}</div>
+            <div style={{ fontSize: 14, fontFamily: "monospace", color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{product.sku}</div>
           </div>
         </div>
 
@@ -1453,14 +1453,14 @@ function SlideProductPricing({ product, overrides, isEditing, onUpdate }: { prod
           <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 20, border: "1px solid rgba(201,168,76,0.2)" }}>
             <div style={{ padding: "12px 20px", background: "rgba(201,168,76,0.1)", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 16 }}>
               {["Kích thước", "Mã size", "Đơn giá (VNĐ)"].map((h, i) => (
-                <div key={h} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.5)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
+                <div key={h} style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.5)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
               ))}
             </div>
             {product.sizePricings!.map((sp: SizePricing, i: number) => (
               <div key={i} style={{ padding: "12px 20px", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr", gap: 16, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: D.textPrimary }}>{sp.label || sp.size}</div>
-                <div style={{ fontSize: 11, fontFamily: "monospace", color: "rgba(255,255,255,0.45)" }}>{sp.size}</div>
-                <div style={{ fontSize: 15, fontWeight: 900, color: D.gold, textAlign: "right" }}>
+                <div style={{ fontSize: 16, fontWeight: 600, color: D.textPrimary }}>{sp.label || sp.size}</div>
+                <div style={{ fontSize: 13, fontFamily: "monospace", color: "rgba(255,255,255,0.45)" }}>{sp.size}</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: D.gold, textAlign: "right" }}>
                   {sp.price > 0 ? formatVND(sp.price) : "Liên hệ"}
                 </div>
               </div>
@@ -1468,21 +1468,21 @@ function SlideProductPricing({ product, overrides, isEditing, onUpdate }: { prod
           </div>
         ) : (
           <div style={{ borderRadius: 16, padding: "24px", marginBottom: 20, textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
-            <div style={{ fontSize: 34, fontWeight: 900, color: D.gold, marginBottom: 4 }}>
+            <div style={{ fontSize: 36, fontWeight: 900, color: D.gold, marginBottom: 4 }}>
               {product.basePrice > 0 ? formatVND(product.basePrice) : "Liên hệ"}
             </div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Giá niêm yết chưa VAT</div>
+            <div style={{ fontSize: 15, color: "rgba(255,255,255,0.4)" }}>Giá niêm yết chưa VAT</div>
           </div>
         )}
 
         {product.discountTiers && product.discountTiers.length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>CHIẾT KHẤU THEO SỐ LƯỢNG</div>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>CHIẾT KHẤU THEO SỐ LƯỢNG</div>
             <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(product.discountTiers.length, 4)}, 1fr)`, gap: 10 }}>
               {product.discountTiers.map((tier, i) => (
                 <div key={i} style={{ borderRadius: 12, padding: "12px 8px", textAlign: "center", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: D.gold }}>{tier.discountPct}%</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{tier.label}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: D.gold }}>{tier.discountPct}%</div>
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{tier.label}</div>
                 </div>
               ))}
             </div>
@@ -1491,9 +1491,9 @@ function SlideProductPricing({ product, overrides, isEditing, onUpdate }: { prod
 
         {isEditing && (
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Ghi chú thêm (mỗi dòng = 1 dòng):</div>
+            <div style={{ fontSize: 12, color: D.textMuted, marginBottom: 6 }}>Ghi chú thêm (mỗi dòng = 1 dòng):</div>
             <InlineText value={overrides?.body ?? ""} placeholder={"Ghi chú 1\nGhi chú 2"} isEditing={true} onCommit={v => onUpdate("body", v)}
-              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+              multiline style={{ fontSize: 14, color: D.textSecondary }} />
           </div>
         )}
 
@@ -1502,14 +1502,14 @@ function SlideProductPricing({ product, overrides, isEditing, onUpdate }: { prod
             {overrides.body.split("\n").filter(Boolean).map((line, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                 <div style={{ width: 4, height: 4, borderRadius: "50%", background: D.gold, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: "rgba(245,237,214,0.75)" }}>{line}</span>
+                <span style={{ fontSize: 14, color: "rgba(245,237,214,0.75)" }}>{line}</span>
               </div>
             ))}
           </div>
         )}
 
         <div style={{ marginTop: "auto", borderRadius: 12, padding: "14px 18px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.8 }}>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.8 }}>
             • Giá trên chưa bao gồm VAT (10%) &nbsp;•&nbsp; Giá có thể thay đổi mà không báo trước &nbsp;•&nbsp; Liên hệ để được báo giá dự án
           </div>
         </div>
@@ -1537,27 +1537,27 @@ function SlideWhySmartFurni({ overrides, isEditing, onUpdate }: SlideProps) {
     <SlideShell>
       <div style={{ flex: 1, padding: "36px 44px", display: "flex", flexDirection: "column" }}>
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>LÝ DO LỰA CHỌN</div>
-          <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>LÝ DO LỰA CHỌN</div>
+          <h2 style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
             <InlineText value={overrides?.title ?? ""} placeholder="Tại Sao Chọn SmartFurni?" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-              style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
+              style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
           </h2>
           <div style={{ width: 56, height: 2, background: D.gold, marginTop: 10 }} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, flex: 1 }}>
           {reasons.map((r, i) => (
             <div key={i} style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{r[0]}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: D.textPrimary }}>{r[1]}</div>
-              {r[2] && <div style={{ fontSize: 11, lineHeight: 1.6, color: "rgba(255,255,255,0.5)" }}>{r[2]}</div>}
+              <div style={{ fontSize: 26, marginBottom: 8 }}>{r[0]}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: D.textPrimary }}>{r[1]}</div>
+              {r[2] && <div style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(255,255,255,0.5)" }}>{r[2]}</div>}
             </div>
           ))}
         </div>
         {isEditing && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Mỗi dòng: emoji — Tiêu đề — Mô tả (để trống = dùng mặc định)</div>
+            <div style={{ fontSize: 12, color: D.textMuted, marginBottom: 6 }}>Mỗi dòng: emoji — Tiêu đề — Mô tả (để trống = dùng mặc định)</div>
             <InlineText value={overrides?.body ?? ""} placeholder={"🏆 — Chất lượng vượt trội — Mô tả...\n⚡ — Công nghệ thông minh — Mô tả..."} isEditing={true} onCommit={v => onUpdate("body", v)}
-              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+              multiline style={{ fontSize: 14, color: D.textSecondary }} />
           </div>
         )}
       </div>
@@ -1580,45 +1580,45 @@ function SlideWarranty({ overrides, isEditing, onUpdate }: SlideProps) {
     <SlideShell>
       <div style={{ flex: 1, padding: "36px 44px", display: "flex", flexDirection: "column" }}>
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>CAM KẾT</div>
-          <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>CAM KẾT</div>
+          <h2 style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
             <InlineText value={overrides?.title ?? ""} placeholder="Chính Sách Bảo Hành" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-              style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
+              style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
           </h2>
           <div style={{ width: 56, height: 2, background: D.gold, marginTop: 10 }} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
           {[["5", "Khung cơ", "Khung thép mạ kẽm, hàn điểm công nghiệp"], ["3", "Motor điện", "Động cơ nâng đầu & nâng chân độc lập"], ["1", "Đệm & vải", "Đệm foam cao cấp, vải bọc chống bẩn"]].map(([y, l, d]) => (
             <div key={l} style={{ borderRadius: 16, padding: "20px 12px", textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
-              <div style={{ fontSize: 40, fontWeight: 900, color: D.gold }}>{y}</div>
-              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: D.gold, marginBottom: 6 }}>NĂM</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary, marginBottom: 4 }}>{l}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{d}</div>
+              <div style={{ fontSize: 42, fontWeight: 900, color: D.gold }}>{y}</div>
+              <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", color: D.gold, marginBottom: 6 }}>NĂM</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary, marginBottom: 4 }}>{l}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{d}</div>
             </div>
           ))}
         </div>
         <div style={{ borderRadius: 16, padding: "18px 22px", marginBottom: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary, marginBottom: 12 }}>Điều kiện bảo hành</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary, marginBottom: 12 }}>Điều kiện bảo hành</div>
           {terms.map((t, i) => (
             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: D.gold, flexShrink: 0, marginTop: 5 }} />
-              <span style={{ fontSize: 12, color: "rgba(245,237,214,0.7)", lineHeight: 1.5 }}>{t}</span>
+              <span style={{ fontSize: 14, color: "rgba(245,237,214,0.7)", lineHeight: 1.5 }}>{t}</span>
             </div>
           ))}
         </div>
         {isEditing && (
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Điều kiện bảo hành (mỗi dòng = 1 điều kiện):</div>
+            <div style={{ fontSize: 12, color: D.textMuted, marginBottom: 6 }}>Điều kiện bảo hành (mỗi dòng = 1 điều kiện):</div>
             <InlineText value={overrides?.body ?? defaultTerms.join("\n")} placeholder={defaultTerms.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
-              multiline style={{ fontSize: 12, color: D.textSecondary }} />
+              multiline style={{ fontSize: 14, color: D.textSecondary }} />
           </div>
         )}
         <div style={{ borderRadius: 16, padding: "14px 20px", display: "flex", alignItems: "center", gap: 16, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
-          <span style={{ fontSize: 28 }}>📞</span>
+          <span style={{ fontSize: 30 }}>📞</span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: D.textPrimary }}>Hotline hỗ trợ kỹ thuật</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: D.gold }}>1800 6868</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Thứ 2 – Thứ 7, 8:00 – 18:00</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary }}>Hotline hỗ trợ kỹ thuật</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: D.gold }}>1800 6868</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Thứ 2 – Thứ 7, 8:00 – 18:00</div>
           </div>
         </div>
       </div>
@@ -1641,37 +1641,37 @@ function SlideContact({ today, overrides, isEditing, onUpdate }: { today: string
         <div style={{ marginBottom: 20 }}>
           <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 80, width: "auto", objectFit: "contain" }} />
         </div>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>LIÊN HỆ</div>
-        <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, marginBottom: 8, width: "100%" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>LIÊN HỆ</div>
+        <h2 style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, marginBottom: 8, width: "100%" }}>
           <InlineText value={overrides?.title ?? ""} placeholder="Thông Tin Liên Hệ" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-            style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, textAlign: "center" }} />
+            style={{ fontSize: 36, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, textAlign: "center" }} />
         </h2>
         <div style={{ width: 56, height: 2, background: D.gold, marginBottom: 28 }} />
         <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
           {contacts.map(c => (
             <div key={c.label} style={{ display: "flex", alignItems: "center", gap: 16, borderRadius: 16, padding: "14px 20px", textAlign: "left", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <span style={{ fontSize: 24, flexShrink: 0 }}>{c.icon}</span>
+              <span style={{ fontSize: 26, flexShrink: 0 }}>{c.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>{c.label}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary, fontFamily: FONT_HEADING }}>{c.value}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{c.sub}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>{c.label}</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: D.textPrimary, fontFamily: FONT_HEADING }}>{c.value}</div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>{c.sub}</div>
               </div>
             </div>
           ))}
         </div>
         <div style={{ borderRadius: 16, padding: "16px 28px", textAlign: "center", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)", width: "100%", maxWidth: 440 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: D.gold, marginBottom: 4 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: D.gold, marginBottom: 4 }}>
             <InlineText value={overrides?.subtitle ?? ""} placeholder="Nhận báo giá ngay hôm nay" isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-              style={{ fontSize: 13, fontWeight: 600, color: D.gold, textAlign: "center" }} />
+              style={{ fontSize: 15, fontWeight: 600, color: D.gold, textAlign: "center" }} />
           </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>
             <InlineText value={overrides?.body ?? ""} placeholder="Liên hệ để được tư vấn miễn phí và nhận ưu đãi đặc biệt" isEditing={isEditing} onCommit={v => onUpdate("body", v)}
-              style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", textAlign: "center" }} />
+              style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", textAlign: "center" }} />
           </div>
         </div>
       </div>
       <div style={{ padding: "0 48px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
           © {new Date().getFullYear()} SmartFurni · Catalogue phát hành ngày {today} · Giá chưa bao gồm VAT
         </div>
       </div>
@@ -1685,8 +1685,8 @@ function SlideEmpty() {
     <SlideShell>
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📄</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Slide trống</div>
+          <div style={{ fontSize: 42, marginBottom: 12 }}>📄</div>
+          <div style={{ fontSize: 15, color: "rgba(255,255,255,0.4)" }}>Slide trống</div>
         </div>
       </div>
     </SlideShell>
@@ -1712,12 +1712,12 @@ function SlideProductIntro({ product, overrides, isEditing, onUpdate }: { produc
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "32px 44px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, padding: "4px 12px", borderRadius: 20, background: colorDim, border: `1px solid ${color}40` }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, padding: "4px 12px", borderRadius: 20, background: colorDim, border: `1px solid ${color}40` }}>
               {isBed ? "GIƯỜNG CÔNG THÁI HỌC" : "SOFA GIƯỜNG ĐA NĂNG"}
             </div>
-            <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.2em" }}>SKU: {product.sku}</div>
+            <div style={{ fontSize: 11, color: D.textMuted, letterSpacing: "0.2em" }}>SKU: {product.sku}</div>
           </div>
-          <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em" }}>1 / 4</div>
+          <div style={{ fontSize: 11, color: D.textMuted, letterSpacing: "0.15em" }}>1 / 4</div>
         </div>
 
         <div style={{ flex: 1, display: "flex", gap: 36, alignItems: "flex-start" }}>
@@ -1730,38 +1730,38 @@ function SlideProductIntro({ product, overrides, isEditing, onUpdate }: { produc
             </div>
             {minPrice && (
               <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: colorDim, border: `1px solid ${color}30`, textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.2em", marginBottom: 4 }}>GIÁ TỪ</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color, fontFamily: FONT_PRODUCT }}>{formatVND(minPrice)}</div>
-                <div style={{ fontSize: 9, color: D.textMuted, marginTop: 2 }}>Chưa bao gồm VAT</div>
+                <div style={{ fontSize: 11, color: D.textMuted, letterSpacing: "0.2em", marginBottom: 4 }}>GIÁ TỪ</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color, fontFamily: FONT_PRODUCT }}>{formatVND(minPrice)}</div>
+                <div style={{ fontSize: 11, color: D.textMuted, marginTop: 2 }}>Chưa bao gồm VAT</div>
               </div>
             )}
           </div>
 
           <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25, marginBottom: 12 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25, marginBottom: 12 }}>
               <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                style={{ fontSize: 26, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
+                style={{ fontSize: 28, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
             </h2>
             <div style={{ width: 48, height: 3, borderRadius: 2, background: `linear-gradient(90deg, ${color}, transparent)`, marginBottom: 16 }} />
-            <p style={{ fontSize: 13, color: D.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>
+            <p style={{ fontSize: 15, color: D.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>
               <InlineText value={overrides?.subtitle ?? ""} placeholder={product.description ?? "Mô tả sản phẩm..."} isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-                style={{ fontSize: 13, color: D.textSecondary, lineHeight: 1.7 }} />
+                style={{ fontSize: 15, color: D.textSecondary, lineHeight: 1.7 }} />
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {highlights.slice(0, 5).map((h, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${D.border}` }}>
                   <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: D.textSecondary, lineHeight: 1.4 }}>{h}</span>
+                  <span style={{ fontSize: 14, color: D.textSecondary, lineHeight: 1.4 }}>{h}</span>
                 </div>
               ))}
             </div>
 
             {isEditing && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Điểm nổi bật (mỗi dòng = 1 điểm):</div>
+                <div style={{ fontSize: 12, color: D.textMuted, marginBottom: 6 }}>Điểm nổi bật (mỗi dòng = 1 điểm):</div>
                 <InlineText value={overrides?.body ?? defaultHighlights.join("\n")} placeholder={defaultHighlights.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
-                  multiline style={{ fontSize: 12, color: D.textSecondary }} />
+                  multiline style={{ fontSize: 14, color: D.textSecondary }} />
               </div>
             )}
           </div>
@@ -1769,7 +1769,7 @@ function SlideProductIntro({ product, overrides, isEditing, onUpdate }: { produc
 
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
            <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 20, width: "auto", objectFit: "contain", opacity: 0.85 }} />
-          <div style={{ fontSize: 9, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
+          <div style={{ fontSize: 11, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
         </div>
       </div>
     </SlideShell>
@@ -1798,7 +1798,7 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
           onUpload={v => onUpdate(field, v)}
           onRemove={() => onUpdate(field, "")}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          placeholderStyle={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12, color: D.textMuted, fontSize: 10 }}
+          placeholderStyle={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12, color: D.textMuted, fontSize: 12 }}
           placeholderLabel={label}
         />
       </div>
@@ -1812,13 +1812,13 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14, flexShrink: 0 }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẾC & ỨNG DỤNG</div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, margin: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color, marginBottom: 4 }}>ẢNH THỰC TẾC & ỨNG DỤNG</div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, margin: 0 }}>
               <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                style={{ fontSize: 18, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
+                style={{ fontSize: 20, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT }} />
             </h3>
           </div>
-          <div style={{ fontSize: 9, color: D.textMuted, letterSpacing: "0.15em", flexShrink: 0 }}>4 / 4</div>
+          <div style={{ fontSize: 11, color: D.textMuted, letterSpacing: "0.15em", flexShrink: 0 }}>4 / 4</div>
         </div>
 
         {/* Row 1: 2 ảnh 4:3 nằm ngang */}
@@ -1829,19 +1829,19 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
 
         {/* Phân khúc — nằm giữa trang */}
         <div style={{ flexShrink: 0, marginBottom: 14 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 8, textAlign: "center" }}>PHÂN KHÚC PHÙ HỢP</div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: D.textMuted, marginBottom: 8, textAlign: "center" }}>PHÂN KHÚC PHÙ HỢP</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
             {applications.map((app, i) => (
-              <div key={i} style={{ padding: "6px 16px", borderRadius: 20, background: colorDim, border: `1px solid ${color}30`, fontSize: 10.5, color: D.textSecondary }}>
+              <div key={i} style={{ padding: "6px 16px", borderRadius: 20, background: colorDim, border: `1px solid ${color}30`, fontSize: 12.5, color: D.textSecondary }}>
                 {app}
               </div>
             ))}
           </div>
           {isEditing && (
             <div style={{ marginTop: 8, textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: D.textMuted, marginBottom: 4 }}>Phân khúc (mỗi dòng = 1 tag):</div>
+              <div style={{ fontSize: 11, color: D.textMuted, marginBottom: 4 }}>Phân khúc (mỗi dòng = 1 tag):</div>
               <InlineText value={overrides?.body ?? defaultApplications.join("\n")} placeholder={defaultApplications.join("\n")} isEditing={true} onCommit={v => onUpdate("body", v)}
-                multiline style={{ fontSize: 11, color: D.textSecondary }} />
+                multiline style={{ fontSize: 13, color: D.textSecondary }} />
             </div>
           )}
         </div>
@@ -1854,7 +1854,7 @@ function SlideProductGallery({ product, overrides, isEditing, onUpdate }: { prod
         {/* Footer */}
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${D.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 20, width: "auto", objectFit: "contain", opacity: 0.85 }} />
-          <div style={{ fontSize: 9, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
+          <div style={{ fontSize: 11, color: D.textMuted }}>smartfurni.vn · Giường & Sofa Thông Minh</div>
         </div>
       </div>
     </SlideShell>
