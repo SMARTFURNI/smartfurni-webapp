@@ -993,64 +993,63 @@ function SlideIntro({ overrides, isEditing, onUpdate }: SlideProps) {
   const showroomImg = (overrides as any)?.showroomImageDataUrl || SHOWROOM_DEFAULT_IMG;
   return (
     <SlideShell>
-      <div style={{ flex: 1, padding: "32px 40px", display: "flex", flexDirection: "row", gap: 28 }}>
-        {/* LEFT: text content */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 8 }}>VỀ CHÚNG TÔI</div>
-            <h2 style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* TOP: showroom image 16:9 full width */}
+        <div style={{ width: "100%", aspectRatio: "16 / 9", flexShrink: 0, overflow: "hidden", position: "relative" }}>
+          <InlineImage
+            src={showroomImg}
+            alt="SmartFurni Showroom"
+            isEditing={isEditing}
+            onUpload={v => onUpdate("showroomImageDataUrl" as any, v)}
+            onRemove={() => onUpdate("showroomImageDataUrl" as any, "")}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            placeholderStyle={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.04)", fontSize: 40 }}
+            placeholderLabel="🏠"
+          />
+        </div>
+        {/* BOTTOM: text content */}
+        <div style={{ flex: 1, padding: "20px 40px 16px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Header */}
+          <div style={{ marginBottom: 14, flexShrink: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: D.gold, marginBottom: 6 }}>VỀ CHÚNG TÔI</div>
+            <h2 style={{ fontSize: 28, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING, margin: 0 }}>
               <InlineText value={overrides?.title ?? ""} placeholder="Thương Hiệu SmartFurni" isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                style={{ fontSize: 34, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
+                style={{ fontSize: 28, fontWeight: 900, color: D.textPrimary, fontFamily: FONT_HEADING }} />
             </h2>
-            <div style={{ width: 56, height: 2, background: D.gold, marginTop: 10 }} />
+            <div style={{ width: 48, height: 2, background: D.gold, marginTop: 8 }} />
           </div>
-          {/* Ô giới thiệu mở rộng */}
-          <div style={{ borderRadius: 14, padding: "14px 18px", marginBottom: 16, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
-            <p style={{ fontSize: 15, lineHeight: 1.75, color: "rgba(245,237,214,0.85)", margin: 0 }}>
+          {/* Intro text box */}
+          <div style={{ borderRadius: 12, padding: "12px 16px", marginBottom: 14, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)", flexShrink: 0 }}>
+            <p style={{ fontSize: 13, lineHeight: 1.7, color: "rgba(245,237,214,0.85)", margin: 0 }}>
               <InlineText value={overrides?.subtitle ?? ""} placeholder="SmartFurni là thương hiệu nội thất thông minh tiên phong tại Việt Nam..." isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-                style={{ fontSize: 15, lineHeight: 1.75, color: "rgba(245,237,214,0.85)" }} />
+                style={{ fontSize: 13, lineHeight: 1.7, color: "rgba(245,237,214,0.85)" }} />
             </p>
           </div>
-          {/* Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+          {/* Stats row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14, flexShrink: 0 }}>
             {[["5+", "Năm kinh nghiệm"], ["1000+", "Khách hàng tin dùng"], ["8", "Dòng sản phẩm"]].map(([v, l]) => (
-              <div key={l} style={{ textAlign: "center", borderRadius: 12, padding: "12px 6px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div style={{ fontSize: 24, fontWeight: 900, color: D.gold, marginBottom: 3 }}>{v}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{l}</div>
+              <div key={l} style={{ textAlign: "center", borderRadius: 10, padding: "10px 6px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: D.gold, marginBottom: 2 }}>{v}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{l}</div>
               </div>
             ))}
           </div>
-          {/* Feature bullets — 1 cột để hiển thị hết chữ */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+          {/* Feature bullets — 2 cột */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, flex: 1 }}>
             {bodyLines.map((line, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, borderRadius: 10, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <span style={{ fontSize: 18, flexShrink: 0 }}>{line.split(" ")[0]}</span>
-                <span style={{ fontSize: 13, color: "rgba(245,237,214,0.75)", lineHeight: 1.5 }}>{line.replace(/^[^\s]+\s/, "")}</span>
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, borderRadius: 10, padding: "9px 11px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{line.split(" ")[0]}</span>
+                <span style={{ fontSize: 12, color: "rgba(245,237,214,0.75)", lineHeight: 1.45 }}>{line.replace(/^[^\s]+\s/, "")}</span>
               </div>
             ))}
           </div>
           {isEditing && (
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 12, color: D.textMuted, marginBottom: 6 }}>Chỉnh sửa nội dung (mỗi dòng = 1 mục):</div>
+            <div style={{ marginTop: 10, flexShrink: 0 }}>
+              <div style={{ fontSize: 11, color: D.textMuted, marginBottom: 4 }}>Chỉnh sửa nội dung (mỗi dòng = 1 mục):</div>
               <InlineText value={overrides?.body ?? defaultBody} placeholder={defaultBody} isEditing={true} onCommit={v => onUpdate("body", v)}
-                multiline style={{ fontSize: 14, color: D.textSecondary }} />
+                multiline style={{ fontSize: 13, color: D.textSecondary }} />
             </div>
           )}
-        </div>
-        {/* RIGHT: showroom image */}
-        <div style={{ width: 260, flexShrink: 0, display: "flex", flexDirection: "column" }}>
-          <div style={{ flex: 1, borderRadius: 16, overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)" }}>
-            <InlineImage
-              src={showroomImg}
-              alt="SmartFurni Showroom"
-              isEditing={isEditing}
-              onUpload={v => onUpdate("showroomImageDataUrl" as any, v)}
-              onRemove={() => onUpdate("showroomImageDataUrl" as any, "")}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              placeholderStyle={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.04)" }}
-              placeholderLabel="Ảnh showroom"
-            />
-          </div>
         </div>
       </div>
     </SlideShell>
