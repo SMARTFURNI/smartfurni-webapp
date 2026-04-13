@@ -1093,17 +1093,17 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
             </div>
           </div>
 
-          {/* ── SECTION 4: Spec image fills remaining space ── */}
-          <div style={{ flex: 1, minHeight: 60, display: "flex", flexDirection: "column", paddingTop: 8 }}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, flexShrink: 0 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
-            <div style={{ flex: 1, borderRadius: 10, overflow: "hidden", background: "rgba(255,255,255,0.03)", border: `1px solid ${color}20` }}>
+          {/* ── SECTION 4: Spec image ── */}
+          <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", paddingTop: 8 }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
+            <div style={{ height: 160, borderRadius: 10, overflow: "hidden", background: "rgba(255,255,255,0.03)", border: `1px solid ${color}20` }}>
               <InlineImage
                 src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2}
                 isEditing={isEditing}
                 onUpload={v => onUpdate("specImageDataUrl" as any, v)}
                 onRemove={() => onUpdate("specImageDataUrl" as any, "")}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                placeholderStyle={{ width: "100%", height: "100%", minHeight: 80, background: "rgba(255,255,255,0.03)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                placeholderStyle={{ width: "100%", height: "100%", background: "rgba(255,255,255,0.03)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}
                 placeholderLabel="Ảnh thông số kỹ thuật"
               />
             </div>
