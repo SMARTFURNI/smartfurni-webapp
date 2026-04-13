@@ -538,13 +538,18 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
             position: relative;
             box-sizing: border-box;
           }
+          /* Scale slide 794px → 210mm khi in */
+          .catalogue-slide-print > div {
+            width: 210mm !important;
+            height: 297mm !important;
+            min-width: 210mm !important;
+            min-height: 297mm !important;
+            max-width: 210mm !important;
+            max-height: 297mm !important;
+            transform: none !important;
+          }
           .catalogue-slide-print:first-child { page-break-before: avoid; break-before: avoid; }
           .catalogue-slide-print:last-child { page-break-after: avoid; break-after: avoid; }
-          /* Đảm bảo nội dung bên trong slide không bị cắt */
-          .catalogue-slide-print > * {
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
         }
         @media screen {
           .catalogue-print-area { display: none; }
@@ -722,23 +727,37 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
             </div>
           )}
 
-          {/* Slide preview */}
-          <div className={`w-full rounded-xl overflow-hidden shadow-2xl flex-shrink-0 ${isEditing ? "slide-editing" : ""}`}
+          {/* Slide preview — scale 794×1123 down to fit container */}
+          <div className={`flex-shrink-0 ${isEditing ? "slide-editing" : ""}`}
             style={{
-              maxWidth: 680,
+              width: 560,
+              height: Math.round(560 * 1123 / 794),
+              position: "relative",
+              borderRadius: 12,
+              overflow: "hidden",
               border: `1px solid ${isEditing ? D.gold : D.borderGold}`,
               boxShadow: isEditing ? `0 0 40px rgba(201,168,76,0.25)` : `0 0 40px rgba(201,168,76,0.1)`,
             }}>
-            {activeSlide && (
-              <SlideRenderer
-                slide={activeSlide}
-                product={getProduct(activeSlide.productId)}
-                products={activeProducts}
-                today={today}
-                isEditing={isAdmin && isEditing}
-                onUpdate={(field, value) => updateField(field, value)}
-              />
-            )}
+            <div style={{
+              position: "absolute",
+              top: 0, left: 0,
+              width: 794,
+              height: 1123,
+              transform: `scale(${560 / 794})`,
+              transformOrigin: "top left",
+              pointerEvents: isAdmin && isEditing ? "auto" : "none",
+            }}>
+              {activeSlide && (
+                <SlideRenderer
+                  slide={activeSlide}
+                  product={getProduct(activeSlide.productId)}
+                  products={activeProducts}
+                  today={today}
+                  isEditing={isAdmin && isEditing}
+                  onUpdate={(field, value) => updateField(field, value)}
+                />
+              )}
+            </div>
           </div>
 
           <div className="mt-3 text-xs flex-shrink-0" style={{ color: D.textMuted }}>
@@ -830,7 +849,7 @@ interface SlideProps {
 // ─── Shared Slide Shell ───────────────────────────────────────────────────────
 function SlideShell({ accentColor = D.gold, children }: { accentColor?: string; children: React.ReactNode }) {
   return (
-    <div style={{ width: "100%", height: "297mm", maxHeight: "297mm", display: "flex", flexDirection: "column", background: D.slideBg, fontFamily: FONT_HEADING, overflow: "hidden", boxSizing: "border-box" }}>
+    <div style={{ width: 794, height: 1123, minWidth: 794, minHeight: 1123, maxWidth: 794, maxHeight: 1123, display: "flex", flexDirection: "column", background: D.slideBg, fontFamily: FONT_HEADING, overflow: "hidden", boxSizing: "border-box" }}>
       <div style={{ height: 5, flexShrink: 0, background: `linear-gradient(90deg, ${accentColor}, #f5edd6, ${accentColor})` }} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>{children}</div>
       <div style={{ height: 4, flexShrink: 0, background: `linear-gradient(90deg, ${accentColor}, #f5edd6, ${accentColor})` }} />
