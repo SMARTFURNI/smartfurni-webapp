@@ -126,6 +126,7 @@ export default function DataPoolNotification() {
 
   return (
     <div
+      className="no-print"
       style={{
         position: "fixed",
         top: 20,

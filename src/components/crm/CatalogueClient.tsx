@@ -511,20 +511,40 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
         @media print {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+          /* Ẩn tất cả UI không liên quan */
           .no-print, .catalogue-toolbar, .catalogue-panel, .catalogue-sidebar { display: none !important; }
           aside, nav, header, [data-sidebar] { display: none !important; }
           .crm-root > aside { display: none !important; }
           .crm-root > main { width: 100% !important; overflow: visible !important; height: auto !important; }
+          /* Ẩn tất cả phần tử fixed/floating (icon chat, scroll-to-top, notification...) */
+          *[class*="fixed"], *[style*="position: fixed"], *[style*="position:fixed"] { display: none !important; }
           body, html { overflow: visible !important; height: auto !important; background: #fff !important; margin: 0 !important; padding: 0 !important; }
-          .catalogue-print-area { display: block !important; width: 100% !important; }
+          /* Reset page size */
+          @page { size: A4 portrait; margin: 0; }
+          .catalogue-print-area { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
           .catalogue-slide-print {
+            /* Mỗi slide chiếm đúng 1 trang A4 */
+            page-break-before: always;
+            break-before: page;
             page-break-after: always;
             break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
             width: 210mm;
-            min-height: 297mm;
+            height: 297mm;
+            max-height: 297mm;
             overflow: hidden;
+            display: block;
+            position: relative;
+            box-sizing: border-box;
           }
+          .catalogue-slide-print:first-child { page-break-before: avoid; break-before: avoid; }
           .catalogue-slide-print:last-child { page-break-after: avoid; break-after: avoid; }
+          /* Đảm bảo nội dung bên trong slide không bị cắt */
+          .catalogue-slide-print > * {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
         }
         @media screen {
           .catalogue-print-area { display: none; }
