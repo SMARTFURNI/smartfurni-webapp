@@ -1114,7 +1114,7 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
         </div>
 
         {/* ── MAIN BODY ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 24px 10px", gap: 0, overflow: "hidden" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 32px 10px", gap: 0, overflow: "hidden" }}>
 
           {/* ── SECTION 1: Image (1:1) + Name + Price ── */}
           <div style={{ display: "flex", gap: 16, paddingTop: 10, paddingBottom: 10, flexShrink: 0, borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
@@ -1203,10 +1203,10 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
             </div>
           </div>
 
-          {/* ── SECTION 4: Spec image (1:1, centered, 60% width) ── */}
+          {/* ── SECTION 4: Spec image (1:1, centered, 70% width) ── */}
           <div style={{ flexShrink: 0, paddingTop: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, alignSelf: "flex-start" }}>ẢNH THÔNG SỐ KỸ THUẪT</div>
-            <div style={{ width: "60%", aspectRatio: "1 / 1", borderRadius: 10, overflow: "hidden", border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}>
+            <div style={{ width: "70%", aspectRatio: "1 / 1", borderRadius: 10, overflow: "hidden", border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}>
               <InlineImage
                 src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
                 alt="Ảnh thông số kỹ thuật"
