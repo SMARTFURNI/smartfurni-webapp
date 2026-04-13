@@ -1004,38 +1004,38 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
         </div>
 
         {/* ── MAIN BODY ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 24px 12px", gap: 0, overflow: "hidden" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 24px 10px", gap: 0, overflow: "hidden" }}>
 
-          {/* ── SECTION 1: Image + Name + Price ── */}
-          <div style={{ display: "flex", gap: 14, paddingTop: 10, paddingBottom: 10, flexShrink: 0, borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
-            {/* Left: product image */}
-            <div style={{ width: 140, height: 110, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.04)", border: `1px solid ${color}30` }}>
+          {/* ── SECTION 1: Image (1:1) + Name + Price ── */}
+          <div style={{ display: "flex", gap: 16, paddingTop: 10, paddingBottom: 10, flexShrink: 0, borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
+            {/* Left: product image 1:1 */}
+            <div style={{ width: 150, height: 150, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.04)", border: `1px solid ${color}30` }}>
               <InlineImage
                 src={mainImageUrl}
                 isEditing={isEditing}
                 onUpload={v => onUpdate("imageDataUrl", v)}
                 onRemove={() => onUpdate("imageDataUrl", "")}
-                style={{ width: 140, height: 110, objectFit: "cover" }}
-                placeholderStyle={{ width: 140, height: 110, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}
+                style={{ width: 150, height: 150, objectFit: "cover" }}
+                placeholderStyle={{ width: 150, height: 150, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}
                 placeholderLabel={isBed ? "🛏️" : "🛋️"}
               />
             </div>
-            {/* Right: name + price */}
+            {/* Right: name + desc + price */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
               <div>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.2, marginBottom: 4 }}>
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25, marginBottom: 6 }}>
                   <InlineText value={overrides?.title ?? ""} placeholder={product.name} isEditing={isEditing} onCommit={v => onUpdate("title", v)}
-                    style={{ fontSize: 16, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.2 }} />
+                    style={{ fontSize: 17, fontWeight: 800, color: D.textPrimary, fontFamily: FONT_PRODUCT, lineHeight: 1.25 }} />
                 </h3>
-                <p style={{ fontSize: 10, lineHeight: 1.4, color: "rgba(245,237,214,0.6)", marginBottom: 6 }}>
+                <p style={{ fontSize: 11, lineHeight: 1.45, color: "rgba(245,237,214,0.6)", marginBottom: 10 }}>
                   <InlineText value={overrides?.subtitle ?? ""} placeholder={product.description ?? ""} isEditing={isEditing} onCommit={v => onUpdate("subtitle", v)}
-                    style={{ fontSize: 11, lineHeight: 1.5, color: "rgba(245,237,214,0.6)" }} />
+                    style={{ fontSize: 11, lineHeight: 1.45, color: "rgba(245,237,214,0.6)" }} />
                 </p>
               </div>
               {/* Price badge */}
-              <div style={{ display: "inline-flex", alignItems: "baseline", gap: 6, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 8, padding: "6px 12px" }}>
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>Giá từ</span>
-                <span style={{ fontSize: 18, fontWeight: 900, color: D.gold, fontFamily: FONT_HEADING }}>
+              <div style={{ display: "inline-flex", alignItems: "baseline", gap: 8, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 10, padding: "8px 14px", alignSelf: "flex-start" }}>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>Giá từ</span>
+                <span style={{ fontSize: 20, fontWeight: 900, color: D.gold, fontFamily: FONT_HEADING }}>
                   {minPrice > 0 ? formatVND(minPrice) : "Liên hệ"}
                 </span>
               </div>
@@ -1093,10 +1093,10 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
             </div>
           </div>
 
-          {/* ── SECTION 4: Spec image ── */}
-          <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", paddingTop: 8 }}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
-            <div style={{ height: 160, borderRadius: 10, overflow: "hidden", background: "rgba(255,255,255,0.03)", border: `1px solid ${color}20` }}>
+          {/* ── SECTION 4: Spec image fills remaining space ── */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", paddingTop: 8, minHeight: 0 }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, flexShrink: 0 }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
+            <div style={{ flex: 1, borderRadius: 10, overflow: "hidden", background: "rgba(255,255,255,0.03)", border: `1px solid ${color}20`, minHeight: 0 }}>
               <InlineImage
                 src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2}
                 isEditing={isEditing}
