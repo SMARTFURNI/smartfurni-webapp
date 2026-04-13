@@ -1112,13 +1112,13 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
             </div>
           </div>
 
-          {/* ── SECTION 4: Spec image (16:9 landscape) ── */}
-          <div style={{ flexShrink: 0, paddingTop: 8 }}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>ẢNH THÔNG SỐ KỸ THUẪT</div>
+          {/* ── SECTION 4: Spec image (1:1, centered, 60% width) ── */}
+          <div style={{ flexShrink: 0, paddingTop: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, alignSelf: "flex-start" }}>ẢNH THÔNG SỐ KỸ THUẪT</div>
             <img
               src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
               alt="Ảnh thông số kỹ thuật"
-              style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "contain", display: "block", borderRadius: 10, border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}
+              style={{ width: "60%", aspectRatio: "1 / 1", objectFit: "contain", display: "block", borderRadius: 10, border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}
             />
           </div>
 
