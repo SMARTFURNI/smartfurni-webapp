@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, LayoutGrid, Layers,
   Package, Tag, Phone, Star, Award,
   CheckCircle2, Shield,
-  Edit3, X, Upload, ImageIcon, Check, RefreshCw,
+  Edit3, X, Upload, ImageIcon, Check, RefreshCw, Download,
 } from "lucide-react";
 import type { CrmProduct, SizePricing } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
@@ -413,7 +413,9 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [isExporting, setIsExporting] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const slideRef = useRef<HTMLDivElement>(null);
 
    // ── Auto-save with debounce (1.5s) ──
   const saveSlides = useCallback((slidesToSave: Slide[]) => {
@@ -584,6 +586,39 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
   const goNext = () => { const idx = visibleSlides.findIndex(s => s.id === activeSlideId); if (idx < visibleSlides.length - 1) setActiveSlideId(visibleSlides[idx + 1].id); };
   const goPrev = () => { const idx = visibleSlides.findIndex(s => s.id === activeSlideId); if (idx > 0) setActiveSlideId(visibleSlides[idx - 1].id); };
 
+  // ── Export current slide as PNG ──
+  const exportSlidePng = useCallback(async () => {
+    if (!slideRef.current || isExporting) return;
+    setIsExporting(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      // Temporarily reset transform to capture at full 794×1123 resolution
+      const el = slideRef.current;
+      const prevTransform = el.style.transform;
+      el.style.transform = "none";
+      const dataUrl = await toPng(el, {
+        width: 794,
+        height: 1123,
+        pixelRatio: 2,
+        cacheBust: true,
+        style: { transform: "none", transformOrigin: "top left" },
+      });
+      el.style.transform = prevTransform;
+      // Download
+      const product = getProduct(activeSlide?.productId);
+      const slideName = product ? `${product.sku}_${SLIDE_LABELS[activeSlide?.type ?? "cover"]}` : SLIDE_LABELS[activeSlide?.type ?? "cover"];
+      const link = document.createElement("a");
+      link.download = `${slideName.replace(/[^a-zA-Z0-9\u00C0-\u024F_-]/g, "_")}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Export PNG failed:", err);
+      alert("Xuất PNG thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [activeSlide, getProduct, isExporting]);
+
   // ── Inline update helpers ──
   const updateField = useCallback((field: keyof SlideOverrides, value: string) => {
     if (!activeSlide) return;
@@ -648,6 +683,7 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
         .inline-edit-hint { opacity: 0; transition: opacity 0.15s; }
         .slide-editing .inline-edit-hint { opacity: 1; }
         .slide-editing [data-editable]:hover { outline: 1.5px dashed rgba(201,168,76,0.5); border-radius: 4px; cursor: text; }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       {/* ── Toolbar ── */}
@@ -808,6 +844,18 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
                 <Edit3 size={11} /> Chỉnh sửa slide
               </button>
             ))}
+            <button
+              onClick={exportSlidePng}
+              disabled={isExporting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50"
+              style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" }}
+              title="Xuất slide hiện tại thành ảnh PNG">
+              {isExporting ? (
+                <><span style={{ display: "inline-block", width: 11, height: 11, border: "2px solid #a5b4fc", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> Đang xuất...</>
+              ) : (
+                <><Download size={11} /> Xuất PNG</>
+              )}
+            </button>
           </div>
 
           {isAdmin && isEditing && (
@@ -829,7 +877,7 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
               border: `1px solid ${isEditing ? D.gold : D.borderGold}`,
               boxShadow: isEditing ? `0 0 40px rgba(201,168,76,0.25)` : `0 0 40px rgba(201,168,76,0.1)`,
             }}>
-            <div style={{
+            <div ref={slideRef} style={{
               position: "absolute",
               top: 0, left: 0,
               width: 794,
