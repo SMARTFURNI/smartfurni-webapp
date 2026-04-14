@@ -1229,13 +1229,30 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
             </div>
           )}
 
-          {/* ── SECTION 3: Pricing table ── */}
+          {/* ── SECTION 3 (moved): Spec image (1:1, centered, 70% width) ── */}
+          <div style={{ flexShrink: 0, paddingTop: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, alignSelf: "flex-start" }}>ẢNH THÔNG SỐ KỸ THUẬT</div>
+            <div style={{ width: "70%", aspectRatio: "1 / 1", borderRadius: 10, overflow: "hidden", border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}>
+              <InlineImage
+                src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
+                alt="Ảnh thông số kỹ thuật"
+                isEditing={isEditing}
+                onUpload={v => onUpdate("specImageDataUrl" as any, v)}
+                onRemove={() => onUpdate("specImageDataUrl" as any, "")}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                placeholderStyle={{ width: "100%", aspectRatio: "1 / 1", display: "flex", alignItems: "center", justifyContent: "center" }}
+                placeholderLabel="Ảnh thông số"
+              />
+            </div>
+          </div>
+
+          {/* ── SECTION 4 (moved): Pricing table ── */}
           <div style={{ paddingTop: 8, flexShrink: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>BẢNG GIÁ</div>
             {hasSizes ? (
               <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)" }}>
                 <div style={{ padding: "5px 12px", background: "rgba(201,168,76,0.1)", display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr" }}>
-                  {["KÍCH THƯỚC", "MÃ SIZE", "ĐƠN GIÁ (VNĐ)"].map((h, i) => (
+                  {["KÍCH THƯỜC", "MÃ SIZE", "ĐƠN GIÁ (VNĐ)"].map((h, i) => (
                     <div key={h} style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", color: "rgba(255,255,255,0.45)", textAlign: i === 2 ? "right" : "left" }}>{h}</div>
                   ))}
                 </div>
@@ -1255,23 +1272,6 @@ function SlideProductFull({ product, overrides, isEditing, onUpdate }: { product
             )}
             <div style={{ marginTop: 5, fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
               • Giá chưa bao gồm VAT (10%) &nbsp;•&nbsp; Giá có thể thay đổi mà không báo trước
-            </div>
-          </div>
-
-          {/* ── SECTION 4: Spec image (1:1, centered, 70% width) ── */}
-          <div style={{ flexShrink: 0, paddingTop: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 5, alignSelf: "flex-start" }}>ẢNH THÔNG SỐ KỸ THUẪT</div>
-            <div style={{ width: "70%", aspectRatio: "1 / 1", borderRadius: 10, overflow: "hidden", border: `1px solid ${color}20`, background: "rgba(255,255,255,0.03)" }}>
-              <InlineImage
-                src={(overrides as any)?.specImageDataUrl || product.imageSpec || product.imageAngle2 || ""}
-                alt="Ảnh thông số kỹ thuật"
-                isEditing={isEditing}
-                onUpload={v => onUpdate("specImageDataUrl" as any, v)}
-                onRemove={() => onUpdate("specImageDataUrl" as any, "")}
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                placeholderStyle={{ width: "100%", aspectRatio: "1 / 1", display: "flex", alignItems: "center", justifyContent: "center" }}
-                placeholderLabel="Ảnh thông số"
-              />
             </div>
           </div>
 
