@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, LayoutGrid, Layers,
   Package, Tag, Phone, Star, Award,
   CheckCircle2, Shield,
-  Edit3, X, Upload, ImageIcon, Check, RefreshCw, Download,
+  Edit3, X, Upload, ImageIcon, Check, RefreshCw, Download, RotateCcw,
 } from "lucide-react";
 import type { CrmProduct, SizePricing } from "@/lib/crm-types";
 import { formatVND } from "@/lib/crm-types";
@@ -414,8 +414,25 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
   const [isEditing, setIsEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [isExporting, setIsExporting] = useState(false);
+  const [undoStack, setUndoStack] = useState<Slide[][]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null); // slide id to delete
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slideRef = useRef<HTMLDivElement>(null);
+
+  // Push current slides to undo stack before any destructive change
+  const pushUndo = useCallback((currentSlides: Slide[]) => {
+    setUndoStack(prev => [...prev.slice(-19), currentSlides]); // keep last 20 states
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    setUndoStack(prev => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setSlides(last);
+      saveSlides(last);
+      return prev.slice(0, -1);
+    });
+  }, [saveSlides]);
 
    // ── Auto-save with debounce (1.5s) ──
   const saveSlides = useCallback((slidesToSave: Slide[]) => {
@@ -450,11 +467,13 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
   });
   const removeSlide = (id: string) => {
     setSlides(prev => {
+      pushUndo(prev); // save state before deletion
       const next = prev.filter(s => s.id !== id);
       saveSlides(next);
       return next;
     });
     if (activeSlideId === id) setActiveSlideId(slides[0]?.id ?? "");
+    setConfirmDelete(null);
   };
   const addSlide = (type: SlideType, productId?: string, category?: "ergonomic_bed" | "sofa_bed") => {
     const newSlide: Slide = { id: `${type}_${Date.now()}`, type, visible: true, productId, category };
@@ -559,11 +578,12 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
   };
   const updateSlideOverrides = useCallback((id: string, overrides: Partial<SlideOverrides>) => {
     setSlides(prev => {
+      pushUndo(prev); // save state before edit
       const next = prev.map(s => s.id === id ? { ...s, overrides: { ...s.overrides, ...overrides } } : s);
       saveSlides(next);
       return next;
     });
-  }, [saveSlides]);
+  }, [saveSlides, pushUndo]);
 
   // ── Drag & Drop ──
   const handleDragStart = (id: string) => setDragId(id);
@@ -709,6 +729,14 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
           {isAdmin && saveStatus === "error" && (
             <span className="text-xs" style={{ color: "#f87171" }}>Lỗi lưu</span>
           )}
+          {isAdmin && undoStack.length > 0 && (
+            <button onClick={handleUndo}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)", color: "#a5b4fc" }}
+              title={`Hoàn tác (${undoStack.length} bước)`}>
+              <RotateCcw size={11} /> Hoàn tác
+            </button>
+          )}
           {isAdmin && (
             <button onClick={syncWithProducts} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
               style={{ background: D.cardBg, border: `1px solid ${D.border}`, color: D.textMuted }}
@@ -803,8 +831,9 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
                         className="w-5 h-5 rounded flex items-center justify-center" style={{ color: D.textMuted }}>
                         {slide.visible ? <Eye size={9} /> : <EyeOff size={9} />}
                       </button>
-                      <button onClick={(e) => { e.stopPropagation(); removeSlide(slide.id); }}
-                        className="w-5 h-5 rounded flex items-center justify-center" style={{ color: "#ef4444" }}>
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(slide.id); }}
+                        className="w-5 h-5 rounded flex items-center justify-center" style={{ color: "#ef4444" }}
+                        title="Xóa slide">
                         <Trash2 size={9} />
                       </button>
                     </div>
@@ -939,6 +968,53 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
           </div>
         ))}
       </div>
+
+      {/* ── Confirm Delete Modal ── */}
+      {confirmDelete && (() => {
+        const slideToDelete = slides.find(s => s.id === confirmDelete);
+        const product = getProduct(slideToDelete?.productId);
+        const label = slideToDelete ? SLIDE_LABELS[slideToDelete.type] : "slide";
+        const name = product ? `${product.sku} — ${label}` : label;
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: "rgba(0,0,0,0.7)" }}
+            onClick={() => setConfirmDelete(null)}>
+            <div
+              className="rounded-2xl p-6 flex flex-col gap-4"
+              style={{ background: D.cardBg, border: `1px solid ${D.border}`, minWidth: 320, maxWidth: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(239,68,68,0.15)" }}>
+                  <Trash2 size={18} style={{ color: "#ef4444" }} />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm" style={{ color: D.textPrimary }}>Xóa slide?</div>
+                  <div className="text-xs mt-0.5" style={{ color: D.textMuted }}>Thao tác này sẽ xóa slide:</div>
+                </div>
+              </div>
+              <div className="px-3 py-2 rounded-lg text-sm font-medium" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#fca5a5" }}>
+                {name}
+              </div>
+              <div className="text-xs" style={{ color: D.textMuted }}>Bạn có thể hoàn tác bằng nút <span style={{ color: "#a5b4fc" }}>Hoàn tác</span> sau khi xóa.</div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="px-4 py-2 rounded-lg text-xs font-medium"
+                  style={{ background: D.surface, border: `1px solid ${D.border}`, color: D.textMuted }}>
+                  Hủy
+                </button>
+                <button
+                  onClick={() => removeSlide(confirmDelete)}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold"
+                  style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "#fff" }}>
+                  Xác nhận xóa
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
