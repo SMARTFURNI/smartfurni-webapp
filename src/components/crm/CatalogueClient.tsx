@@ -1790,17 +1790,25 @@ function SlideWarranty({ overrides, isEditing, onUpdate }: SlideProps) {
           <div style={{ width: 56, height: 2, background: D.gold, marginTop: 10 }} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
-          {[["5", "Khung cơ", "Khung thép mạ kẽm, hàn điểm công nghiệp"], ["3", "Motor điện", "Động cơ nâng đầu & nâng chân độc lập"], ["1", "Đệm & vải", "Đệm foam cao cấp, vải bọc chống bẩn"]].map(([y, l, d]) => (
-            <div key={l} style={{ borderRadius: 16, padding: "20px 12px", textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
-              <div style={{ fontSize: 42, fontWeight: 900, color: D.gold }}>{y}</div>
+          {[
+            { key: "w1", yearKey: "w1_year", labelKey: "w1_label", descKey: "w1_desc", defaultYear: "5", defaultLabel: "Khung cơ", defaultDesc: "Khung thép mạ kẽm, hàn điểm công nghiệp" },
+            { key: "w2", yearKey: "w2_year", labelKey: "w2_label", descKey: "w2_desc", defaultYear: "3", defaultLabel: "Motor điện", defaultDesc: "Động cơ nâng đầu & nâng chân độc lập" },
+            { key: "w3", yearKey: "w3_year", labelKey: "w3_label", descKey: "w3_desc", defaultYear: "1", defaultLabel: "Đệm & vải", defaultDesc: "Đệm foam cao cấp, vải bọc chống bẩn" },
+          ].map(({ key, yearKey, labelKey, descKey, defaultYear, defaultLabel, defaultDesc }) => (
+            <div key={key} style={{ borderRadius: 16, padding: "20px 12px", textAlign: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
+              <InlineText value={overrides?.[yearKey] ?? ""} placeholder={defaultYear} isEditing={isEditing} onCommit={v => onUpdate(yearKey, v)}
+                style={{ fontSize: 42, fontWeight: 900, color: D.gold, textAlign: "center", display: "block" }} />
               <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", color: D.gold, marginBottom: 6 }}>NĂM</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary, marginBottom: 4 }}>{l}</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{d}</div>
+              <InlineText value={overrides?.[labelKey] ?? ""} placeholder={defaultLabel} isEditing={isEditing} onCommit={v => onUpdate(labelKey, v)}
+                style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary, marginBottom: 4, textAlign: "center", display: "block" }} />
+              <InlineText value={overrides?.[descKey] ?? ""} placeholder={defaultDesc} isEditing={isEditing} onCommit={v => onUpdate(descKey, v)}
+                style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", textAlign: "center", display: "block" }} />
             </div>
           ))}
         </div>
         <div style={{ borderRadius: 16, padding: "18px 22px", marginBottom: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary, marginBottom: 12 }}>Điều kiện bảo hành</div>
+          <InlineText value={overrides?.terms_title ?? ""} placeholder="Điều kiện bảo hành" isEditing={isEditing} onCommit={v => onUpdate("terms_title", v)}
+            style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary, marginBottom: 12, display: "block" }} />
           {terms.map((t, i) => (
             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: D.gold, flexShrink: 0, marginTop: 5 }} />
@@ -1818,9 +1826,12 @@ function SlideWarranty({ overrides, isEditing, onUpdate }: SlideProps) {
         <div style={{ borderRadius: 16, padding: "14px 20px", display: "flex", alignItems: "center", gap: 16, background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
           <span style={{ fontSize: 30 }}>📞</span>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary }}>Hotline hỗ trợ kỹ thuật</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: D.gold }}>1800 6868</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Thứ 2 – Thứ 7, 8:00 – 18:00</div>
+            <InlineText value={overrides?.hotline_label ?? ""} placeholder="Hotline hỗ trợ kỹ thuật" isEditing={isEditing} onCommit={v => onUpdate("hotline_label", v)}
+              style={{ fontSize: 15, fontWeight: 700, color: D.textPrimary, display: "block" }} />
+            <InlineText value={overrides?.hotline_number ?? ""} placeholder="1800 6868" isEditing={isEditing} onCommit={v => onUpdate("hotline_number", v)}
+              style={{ fontSize: 22, fontWeight: 900, color: D.gold, display: "block" }} />
+            <InlineText value={overrides?.hotline_hours ?? ""} placeholder="Thứ 2 – Thứ 7, 8:00 – 18:00" isEditing={isEditing} onCommit={v => onUpdate("hotline_hours", v)}
+              style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", display: "block" }} />
           </div>
         </div>
       </div>
@@ -1830,11 +1841,11 @@ function SlideWarranty({ overrides, isEditing, onUpdate }: SlideProps) {
 
 // ─── Slide: Contact ───────────────────────────────────────────────────────────
 function SlideContact({ today, overrides, isEditing, onUpdate }: { today: string } & SlideProps) {
-  const contacts = [
-    { icon: "📞", label: "Hotline", value: "1800 6868", sub: "Miễn phí · Thứ 2–7, 8:00–18:00" },
-    { icon: "✉️", label: "Email", value: "sales@smartfurni.vn", sub: "Phản hồi trong 2 giờ làm việc" },
-    { icon: "🌐", label: "Website", value: "smartfurni.vn", sub: "Xem thêm sản phẩm & khuyến mãi" },
-    { icon: "📍", label: "Showroom", value: "TP. Hồ Chí Minh", sub: "Đặt lịch tham quan miễn phí" },
+  const contactItems = [
+    { icon: "📞", labelKey: "c1_label", valueKey: "c1_value", subKey: "c1_sub", defaultLabel: "Hotline", defaultValue: "1800 6868", defaultSub: "Miễn phí · Thứ 2–7, 8:00–18:00" },
+    { icon: "✉️", labelKey: "c2_label", valueKey: "c2_value", subKey: "c2_sub", defaultLabel: "Email", defaultValue: "sales@smartfurni.vn", defaultSub: "Phản hồi trong 2 giờ làm việc" },
+    { icon: "🌐", labelKey: "c3_label", valueKey: "c3_value", subKey: "c3_sub", defaultLabel: "Website", defaultValue: "smartfurni.vn", defaultSub: "Xem thêm sản phẩm & khuyến mãi" },
+    { icon: "📍", labelKey: "c4_label", valueKey: "c4_value", subKey: "c4_sub", defaultLabel: "Showroom", defaultValue: "TP. Hồ Chí Minh", defaultSub: "Đặt lịch tham quan miễn phí" },
   ];
 
   return (
@@ -1850,13 +1861,16 @@ function SlideContact({ today, overrides, isEditing, onUpdate }: { today: string
         </h2>
         <div style={{ width: 56, height: 2, background: D.gold, marginBottom: 28 }} />
         <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
-          {contacts.map(c => (
-            <div key={c.label} style={{ display: "flex", alignItems: "center", gap: 16, borderRadius: 16, padding: "14px 20px", textAlign: "left", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          {contactItems.map(c => (
+            <div key={c.labelKey} style={{ display: "flex", alignItems: "center", gap: 16, borderRadius: 16, padding: "14px 20px", textAlign: "left", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <span style={{ fontSize: 26, flexShrink: 0 }}>{c.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>{c.label}</div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: D.textPrimary, fontFamily: FONT_HEADING }}>{c.value}</div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>{c.sub}</div>
+                <InlineText value={overrides?.[c.labelKey] ?? ""} placeholder={c.defaultLabel} isEditing={isEditing} onCommit={v => onUpdate(c.labelKey, v)}
+                  style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 2, display: "block" }} />
+                <InlineText value={overrides?.[c.valueKey] ?? ""} placeholder={c.defaultValue} isEditing={isEditing} onCommit={v => onUpdate(c.valueKey, v)}
+                  style={{ fontSize: 17, fontWeight: 700, color: D.textPrimary, fontFamily: FONT_HEADING, display: "block" }} />
+                <InlineText value={overrides?.[c.subKey] ?? ""} placeholder={c.defaultSub} isEditing={isEditing} onCommit={v => onUpdate(c.subKey, v)}
+                  style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", display: "block" }} />
               </div>
             </div>
           ))}
