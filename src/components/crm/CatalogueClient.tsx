@@ -419,22 +419,7 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slideRef = useRef<HTMLDivElement>(null);
 
-  // Push current slides to undo stack before any destructive change
-  const pushUndo = useCallback((currentSlides: Slide[]) => {
-    setUndoStack(prev => [...prev.slice(-19), currentSlides]); // keep last 20 states
-  }, []);
-
-  const handleUndo = useCallback(() => {
-    setUndoStack(prev => {
-      if (prev.length === 0) return prev;
-      const last = prev[prev.length - 1];
-      setSlides(last);
-      saveSlides(last);
-      return prev.slice(0, -1);
-    });
-  }, [saveSlides]);
-
-   // ── Auto-save with debounce (1.5s) ──
+  // ── Auto-save with debounce (1.5s) ──
   const saveSlides = useCallback((slidesToSave: Slide[]) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setSaveStatus("saving");
@@ -450,6 +435,21 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
         .finally(() => { setTimeout(() => setSaveStatus("idle"), 2000); });
     }, 1500);
   }, []);
+
+  // Push current slides to undo stack before any destructive change
+  const pushUndo = useCallback((currentSlides: Slide[]) => {
+    setUndoStack(prev => [...prev.slice(-19), currentSlides]); // keep last 20 states
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    setUndoStack(prev => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setSlides(last);
+      saveSlides(last);
+      return prev.slice(0, -1);
+    });
+  }, [saveSlides]);
 
   const activeProducts = products.filter(p => p.isActive);
   const visibleSlides = slides.filter(s => s.visible);
