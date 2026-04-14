@@ -1027,10 +1027,20 @@ function SlideIntro({ overrides, isEditing, onUpdate }: SlideProps) {
           </div>
           {/* Stats row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14, flexShrink: 0 }}>
-            {[["5+", "Năm kinh nghiệm"], ["1000+", "Khách hàng tin dùng"], ["8", "Dòng sản phẩm"]].map(([v, l]) => (
-              <div key={l} style={{ textAlign: "center", borderRadius: 10, padding: "10px 6px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: D.gold, marginBottom: 2 }}>{v}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{l}</div>
+            {([
+              [(overrides as any)?.stat1Value ?? "5+", (overrides as any)?.stat1Label ?? "Năm kinh nghiệm", "stat1Value", "stat1Label"],
+              [(overrides as any)?.stat2Value ?? "1000+", (overrides as any)?.stat2Label ?? "Khách hàng tin dùng", "stat2Value", "stat2Label"],
+              [(overrides as any)?.stat3Value ?? "8", (overrides as any)?.stat3Label ?? "Dòng sản phẩm", "stat3Value", "stat3Label"],
+            ] as [string, string, string, string][]).map(([v, l, vKey, lKey]) => (
+              <div key={lKey} style={{ textAlign: "center", borderRadius: 10, padding: "10px 6px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: D.gold, marginBottom: 2 }}>
+                  <InlineText value={v} placeholder={v} isEditing={isEditing} onCommit={val => onUpdate(vKey as any, val)}
+                    style={{ fontSize: 22, fontWeight: 900, color: D.gold, textAlign: "center" }} />
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
+                  <InlineText value={l} placeholder={l} isEditing={isEditing} onCommit={val => onUpdate(lKey as any, val)}
+                    style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", textAlign: "center" }} />
+                </div>
               </div>
             ))}
           </div>
@@ -1041,21 +1051,33 @@ function SlideIntro({ overrides, isEditing, onUpdate }: SlideProps) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: D.gold }}>Showroom TP.HCM</div>
-                <div style={{ fontSize: 11, color: "rgba(245,237,214,0.7)", lineHeight: 1.45 }}>74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức</div>
+                <div style={{ fontSize: 11, color: "rgba(245,237,214,0.7)", lineHeight: 1.45 }}>
+                  <InlineText value={(overrides as any)?.showroomHcm ?? "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức"} placeholder="Địa chỉ HCM" isEditing={isEditing} onCommit={v => onUpdate("showroomHcm" as any, v)}
+                    style={{ fontSize: 11, color: "rgba(245,237,214,0.7)", lineHeight: 1.45 }} />
+                </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: D.gold }}>Showroom Hà Nội</div>
-                <div style={{ fontSize: 11, color: "rgba(245,237,214,0.7)", lineHeight: 1.45 }}>B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông</div>
+                <div style={{ fontSize: 11, color: "rgba(245,237,214,0.7)", lineHeight: 1.45 }}>
+                  <InlineText value={(overrides as any)?.showroomHn ?? "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông"} placeholder="Địa chỉ HN" isEditing={isEditing} onCommit={v => onUpdate("showroomHn" as any, v)}
+                    style={{ fontSize: 11, color: "rgba(245,237,214,0.7)", lineHeight: 1.45 }} />
+                </div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 20, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 13 }}>📞</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: D.gold }}>028.7122.0818</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: D.gold }}>
+                  <InlineText value={(overrides as any)?.hotline ?? "028.7122.0818"} placeholder="Hotline" isEditing={isEditing} onCommit={v => onUpdate("hotline" as any, v)}
+                    style={{ fontSize: 12, fontWeight: 700, color: D.gold }} />
+                </span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 13 }}>🌐</span>
-                <span style={{ fontSize: 12, color: "rgba(245,237,214,0.7)" }}>smartfurni.vn</span>
+                <span style={{ fontSize: 12, color: "rgba(245,237,214,0.7)" }}>
+                  <InlineText value={(overrides as any)?.website ?? "smartfurni.vn"} placeholder="Website" isEditing={isEditing} onCommit={v => onUpdate("website" as any, v)}
+                    style={{ fontSize: 12, color: "rgba(245,237,214,0.7)" }} />
+                </span>
               </div>
             </div>
           </div>
