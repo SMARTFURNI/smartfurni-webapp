@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, memo } from "react";
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import {
@@ -915,24 +915,18 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: D.textMuted }}>Xem trước</span>
           </div>
           <div className="flex-1 overflow-y-auto py-2 px-2 space-y-2">
-            {visibleSlides.map((slide, idx) => {
-              const isActive = slide.id === activeSlideId;
-              return (
-                <div key={slide.id} onClick={() => { setActiveSlideId(slide.id); setIsEditing(false); }}
-                  className="cursor-pointer rounded-lg overflow-hidden"
-                  style={{ border: `2px solid ${isActive ? D.gold : "transparent"}`, boxShadow: isActive ? D.goldGlow : "none" }}>
-                  <div style={{ position: "relative", width: "100%", paddingBottom: "141.4%", overflow: "hidden", background: D.pageBg }}>
-                    <div style={{ position: "absolute", top: 0, left: 0, width: "560%", height: "560%", transform: "scale(0.179)", transformOrigin: "top left", pointerEvents: "none" }}>
-                      <SlideRenderer slide={slide} product={getProduct(slide.productId)} products={activeProducts} today={today} isEditing={false} onUpdate={() => {}} />
-                    </div>
-                  </div>
-                  <div className="text-center py-0.5 text-[9px]"
-                    style={{ background: "rgba(0,0,0,0.6)", color: isActive ? D.gold : D.textMuted }}>
-                    {idx + 1}
-                  </div>
-                </div>
-              );
-            })}
+            {visibleSlides.map((slide, idx) => (
+              <SlideThumbnail
+                key={slide.id}
+                slide={slide}
+                product={getProduct(slide.productId)}
+                products={activeProducts}
+                today={today}
+                isActive={slide.id === activeSlideId}
+                idx={idx}
+                onClick={() => { setActiveSlideId(slide.id); setIsEditing(false); }}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -949,7 +943,36 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
   );
 }
 
-// ─── Slide Renderer ───────────────────────────────────────────────────────────
+// ─── Slide Thumbnail (memoized — only re-renders when its own slide data changes) ─────────────────────────────────────────────────────────────────────────────
+const SlideThumbnail = memo(function SlideThumbnail({
+  slide, product, products, today, isActive, idx, onClick,
+}: {
+  slide: Slide;
+  product?: CrmProduct;
+  products: CrmProduct[];
+  today: string;
+  isActive: boolean;
+  idx: number;
+  onClick: () => void;
+}) {
+  return (
+    <div onClick={onClick}
+      className="cursor-pointer rounded-lg overflow-hidden"
+      style={{ border: `2px solid ${isActive ? D.gold : "transparent"}`, boxShadow: isActive ? D.goldGlow : "none" }}>
+      <div style={{ position: "relative", width: "100%", paddingBottom: "141.4%", overflow: "hidden", background: D.pageBg }}>
+        <div style={{ position: "absolute", top: 0, left: 0, width: "560%", height: "560%", transform: "scale(0.179)", transformOrigin: "top left", pointerEvents: "none" }}>
+          <SlideRenderer slide={slide} product={product} products={products} today={today} isEditing={false} onUpdate={() => {}} />
+        </div>
+      </div>
+      <div className="text-center py-0.5 text-[9px]"
+        style={{ background: "rgba(0,0,0,0.6)", color: isActive ? D.gold : D.textMuted }}>
+        {idx + 1}
+      </div>
+    </div>
+  );
+});
+
+// ─── Slide Renderer ─────────────────────────────────────────────────────────────────────────────
 interface SlideRendererProps {
   slide: Slide;
   product?: CrmProduct;
