@@ -1124,7 +1124,8 @@ function SlideCover({ today, overrides, isEditing, onUpdate }: { today: string }
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>Phiên bản</div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(245,237,214,0.6)" }}>2025 Edition</div>
+          <InlineText value={overrides?.edition ?? ""} placeholder="2025 Edition" isEditing={isEditing} onCommit={v => onUpdate("edition", v)}
+            style={{ fontSize: 15, fontWeight: 600, color: "rgba(245,237,214,0.6)", textAlign: "right" }} />
         </div>
       </div>
     </SlideShell>
