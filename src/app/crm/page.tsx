@@ -14,57 +14,56 @@ export const dynamic = "force-dynamic";
 export default async function CrmDashboardPage() {
   const session = await requireCrmAccess();
 
-  // Lấy thông tin nhân viên đang đăng nhập
-  let currentStaff = null;
-  if (session.isAdmin) {
-    const { getStaffByUsername } = await import("@/lib/crm-staff-store");
-    currentStaff = await getStaffByUsername("admin");
-  } else if (session.staffId) {
-    currentStaff = await getStaffById(session.staffId);
-  }
+  // === BƯỚC 1: Lấy staff info + cookies SONG SONG ===
+  const [currentStaff, cookieStore] = await Promise.all([
+    session.isAdmin
+      ? import("@/lib/crm-staff-store").then(m => m.getStaffByUsername("admin"))
+      : session.staffId
+        ? getStaffById(session.staffId)
+        : Promise.resolve(null),
+    cookies(),
+  ]);
 
   const staffName = currentStaff?.fullName ?? "";
   const staffRole = currentStaff?.role ?? "sales";
   const staffUsername = currentStaff?.username ?? "";
   const staffId = currentStaff?.id ?? null;
 
-  // Kiểm tra permission leads_view_all từ DB
+  // === BƯỚC 2: Lấy role permissions + staff preferences SONG SONG ===
+  const [roleData, staffPrefsRow] = await Promise.all([
+    (!session.isAdmin && staffRole)
+      ? getRoleById(staffRole).catch(() => null)
+      : Promise.resolve(null),
+    (!session.isAdmin && session.staffId)
+      ? queryOne<{ data: string }>("SELECT data FROM crm_staff WHERE id = $1", [session.staffId]).catch(() => null)
+      : Promise.resolve(null),
+  ]);
+
+  // Tính canViewAll từ roleData
   let canViewAll = session.isAdmin;
-  if (!session.isAdmin && staffRole) {
-    const roleData = await getRoleById(staffRole).catch(() => null);
-    if (roleData?.permissions?.leads_view_all) {
-      canViewAll = true;
-    }
+  if (!session.isAdmin && roleData?.permissions?.leads_view_all) {
+    canViewAll = true;
   }
 
-  // Đọc darkMode và gradientPreset preference theo tài khoản
+  // Đọc darkMode và gradientPreset preference
   let initialDarkMode = false;
   let initialGradientPreset = "default";
   try {
     if (session.isAdmin) {
-      // Admin: đọc từ cookie sf_admin_theme
-      const cookieStore = await cookies();
       initialDarkMode = cookieStore.get("sf_admin_theme")?.value === "dark";
       initialGradientPreset = cookieStore.get("sf_admin_gradient")?.value ?? "default";
-    } else if (session.staffId) {
-      // Nhân viên: đọc từ data JSONB của crm_staff
-      const row = await queryOne<{ data: string }>(
-        "SELECT data FROM crm_staff WHERE id = $1",
-        [session.staffId]
-      );
-      if (row) {
-        const data = typeof row.data === "string" ? JSON.parse(row.data) : row.data as Record<string, unknown>;
-        const prefs = (data?.preferences as Record<string, unknown>) ?? {};
-        initialDarkMode = prefs.darkMode === true;
-        initialGradientPreset = (prefs.gradientPreset as string) ?? "default";
-      }
+    } else if (staffPrefsRow) {
+      const data = typeof staffPrefsRow.data === "string" ? JSON.parse(staffPrefsRow.data) : staffPrefsRow.data as Record<string, unknown>;
+      const prefs = (data?.preferences as Record<string, unknown>) ?? {};
+      initialDarkMode = prefs.darkMode === true;
+      initialGradientPreset = (prefs.gradientPreset as string) ?? "default";
     }
   } catch { /* ignore, default to light */ }
 
   // canViewAll (admin hoặc leader): xem tất cả; còn lại chỉ xem leads được giao cho mình
   const staffFilter = (!canViewAll && staffName) ? { assignedTo: staffName } : undefined;
 
-  // Pre-load tất cả dữ liệu song song để giảm thời gian chờ
+  // === BƯỚC 3: Pre-load tất cả dữ liệu song song ===
   const [leads, tasks, quotes, stats, crmSettings, allPlans, poolStats] = await Promise.all([
     getLeads(staffFilter),
     getTasks({ dueToday: true, ...(staffFilter ?? {}) }),

@@ -182,6 +182,12 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
   const [collapsed, setCollapsed] = useState(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({ "Tự động hóa & Bảo mật": true });
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+
+  // Reset navigatingTo khi pathname thay đổi (trang đã load xong)
+  useEffect(() => {
+    setNavigatingTo(null);
+  }, [pathname]);
 
   useEffect(() => {
     let mounted = true;
@@ -353,13 +359,16 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                   <Link
                     key={item.href}
                     href={item.href}
-                    prefetch={false}
+                    prefetch={true}
                     title={collapsed ? item.label : undefined}
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all mb-0.5 group relative"
                     style={{
                       background: active ? C.bgActive : "transparent",
                       color: active ? C.textActive : C.text,
+                      opacity: navigatingTo && navigatingTo !== item.href ? 0.5 : 1,
+                      transition: "opacity 0.15s, background 0.15s",
                     }}
+                    onClick={() => { if (!active) setNavigatingTo(item.href); }}
                     onMouseEnter={e => {
                       if (!active) {
                         (e.currentTarget as HTMLElement).style.background = C.bgHover;
@@ -383,10 +392,17 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
 
                     {/* Icon */}
                     <div className="relative flex-shrink-0">
-                      <item.icon
-                        size={15}
-                        style={{ color: active ? C.accent : C.text }}
-                      />
+                      {navigatingTo === item.href ? (
+                        <svg className="animate-spin" width={15} height={15} viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke={C.accent} strokeWidth="3" strokeOpacity="0.3" />
+                          <path fill={C.accent} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                      ) : (
+                        <item.icon
+                          size={15}
+                          style={{ color: active ? C.accent : C.text }}
+                        />
+                      )}
                       {showBadge && collapsed && (
                         <span
                           className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
@@ -398,7 +414,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                     {/* Label */}
                     {!collapsed && (
                       <>
-                        <span className="truncate flex-1 text-[13px] font-medium">{item.label}</span>
+                        <span className="truncate flex-1 text-[13px] font-medium" style={{ color: navigatingTo === item.href ? C.accent : undefined }}>{item.label}</span>
                         {showBadge && (
                           <span
                             className="flex-shrink-0 min-w-[20px] h-4 px-1.5 rounded-full text-[9px] font-bold text-white flex items-center justify-center"
