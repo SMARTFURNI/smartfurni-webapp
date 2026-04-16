@@ -119,12 +119,62 @@ export default function ItySoftphone({
   const jssipRef = useRef<unknown>(null); // JsSIP UA instance
   const sessionRef = useRef<unknown>(null); // Current SIP session
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const ringbackRef = useRef<HTMLAudioElement | null>(null); // Ringback tone
   // Refs để track thông tin cuộc gọi hiện tại (dùng trong callbacks)
   const callPhoneRef = useRef<string>("");
   const callLeadIdRef = useRef<string | undefined>(undefined);
   const callLeadNameRef = useRef<string | undefined>(undefined);
   const callStartTimeRef = useRef<string>("");
   const callIdRef = useRef<string | null>(null);
+
+  // Khởi tạo ringback tone audio
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Tạo ringback tone bằng Web Audio API (không cần file audio)
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    // Tạo oscillator giả lập tiếng chuông VN (425Hz, on 1s, off 4s)
+    let oscillator: OscillatorNode | null = null;
+    let gainNode: GainNode | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const startRingback = () => {
+      if (ctx.state === "suspended") ctx.resume();
+      const playBeep = () => {
+        oscillator = ctx.createOscillator();
+        gainNode = ctx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.frequency.value = 425;
+        oscillator.type = "sine";
+        gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.8);
+      };
+      playBeep();
+      intervalId = setInterval(playBeep, 4000);
+    };
+
+    const stopRingback = () => {
+      if (intervalId) { clearInterval(intervalId); intervalId = null; }
+      if (oscillator) { try { oscillator.stop(); } catch { /* ok */ } oscillator = null; }
+    };
+
+    // Expose start/stop via ref object
+    ringbackRef.current = { start: startRingback, stop: stopRingback } as unknown as HTMLAudioElement;
+
+    return () => { stopRingback(); ctx.close(); };
+  }, []);
+
+  // Start/stop ringback tone theo callState
+  useEffect(() => {
+    const rb = ringbackRef.current as unknown as { start: () => void; stop: () => void } | null;
+    if (callState === "ringing") {
+      rb?.start();
+    } else {
+      rb?.stop();
+    }
+  }, [callState]);
 
   // Load cấu hình ITY
   useEffect(() => {
@@ -243,6 +293,11 @@ export default function ItySoftphone({
           // Gán userfield = leadId hoặc callId để liên kết cuộc gọi với lead trong CRM
           const userfield = defaultLeadId || currentCallId || `crm_${Date.now()}`;
           request.setHeader("X-userfield", userfield);
+        });
+
+        session.on("progress", () => {
+          // 183 Session Progress — điện thoại đầu kia đang đổ chuông
+          setCallState("ringing");
         });
 
         session.on("accepted", () => {
