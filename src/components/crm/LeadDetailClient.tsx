@@ -110,18 +110,30 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
   };
 
   const loadCallLogs = async () => {
-    if (callLogsLoaded) return;
     setCallLogsLoading(true);
     try {
       const res = await fetch(`/api/crm/call-logs?leadId=${initialLead.id}&limit=50`);
-      if (res.ok) { const data = await res.json(); setCallLogs(data); }
-    } finally { setCallLogsLoading(false); setCallLogsLoaded(true); }
+      if (res.ok) { const data = await res.json(); setCallLogs(data); setCallLogsLoaded(true); }
+    } finally { setCallLogsLoading(false); }
   };
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
     if (tab === "calls") loadCallLogs();
   };
+
+  // Lắng nghe event ity:call-saved để reload call logs sau khi gọi xong
+  useEffect(() => {
+    const handleCallSaved = () => {
+      if (activeTab === "calls") {
+        setTimeout(() => loadCallLogs(), 1000);
+      } else {
+        setCallLogsLoaded(false); // Force reload khi chuyển sang tab
+      }
+    };
+    window.addEventListener("ity:call-saved", handleCallSaved);
+    return () => window.removeEventListener("ity:call-saved", handleCallSaved);
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveCallNote = async (callId: string) => {
     setSavingNote(callId);

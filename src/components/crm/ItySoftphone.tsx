@@ -119,6 +119,12 @@ export default function ItySoftphone({
   const jssipRef = useRef<unknown>(null); // JsSIP UA instance
   const sessionRef = useRef<unknown>(null); // Current SIP session
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  // Refs để track thông tin cuộc gọi hiện tại (dùng trong callbacks)
+  const callPhoneRef = useRef<string>("");
+  const callLeadIdRef = useRef<string | undefined>(undefined);
+  const callLeadNameRef = useRef<string | undefined>(undefined);
+  const callStartTimeRef = useRef<string>("");
+  const callIdRef = useRef<string | null>(null);
 
   // Load cấu hình ITY
   useEffect(() => {
@@ -239,15 +245,69 @@ export default function ItySoftphone({
           request.setHeader("X-userfield", userfield);
         });
 
-        session.on("accepted", () => setCallState("active"));
+        session.on("accepted", () => {
+          setCallState("active");
+          // Cập nhật startTime khi cuộc gọi được chấp nhận
+          if (!callStartTimeRef.current) callStartTimeRef.current = new Date().toISOString();
+        });
         session.on("ended", () => {
           setCallState("ended");
-          onCallEnded?.(currentCallId || "", callDuration);
+          // Lấy duration từ timer (callDuration không accessible trong closure, dùng timestamp)
+          const dur = callStartTimeRef.current
+            ? Math.round((Date.now() - new Date(callStartTimeRef.current).getTime()) / 1000)
+            : 0;
+          onCallEnded?.(callIdRef.current || "", dur);
+          // Tự động lưu call log vào DB
+          if (callIdRef.current && callPhoneRef.current) {
+            fetch("/api/crm/ity/call-completed", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                callid: callIdRef.current,
+                phone: callPhoneRef.current,
+                duration: dur,
+                billsec: dur,
+                status: "ANSWERED",
+                direction: "outbound",
+                extension: "89866001",
+                start_stamp: callStartTimeRef.current || new Date().toISOString(),
+                end_stamp: new Date().toISOString(),
+                userfield: callLeadIdRef.current || "",
+                recording: "",
+                secret: "smartfurni2026",
+              }),
+            }).then(r => r.json()).then(d => {
+              console.log("[ITY] Call log saved (ended):", d);
+              // Notify các component khác để reload call logs
+              window.dispatchEvent(new CustomEvent("ity:call-saved", { detail: d }));
+            }).catch(e => console.error("[ITY] Failed to save call log:", e));
+          }
           setTimeout(() => setCallState("idle"), 3000);
         });
-        session.on("failed", () => {
+        session.on("failed", (e: { cause?: string }) => {
           setCallState("error");
-          setErrorMsg("Cuộc gọi thất bại");
+          const cause = e?.cause || "Unknown";
+          setErrorMsg(`Cuộc gọi thất bại: ${cause}`);
+          // Lưu call log với trạng thái failed
+          if (callIdRef.current && callPhoneRef.current) {
+            fetch("/api/crm/ity/call-completed", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                callid: callIdRef.current,
+                phone: callPhoneRef.current,
+                duration: 0,
+                billsec: 0,
+                status: cause === "Rejected" ? "BUSY" : "NO ANSWER",
+                direction: "outbound",
+                extension: "89866001",
+                start_stamp: callStartTimeRef.current || new Date().toISOString(),
+                end_stamp: new Date().toISOString(),
+                userfield: callLeadIdRef.current || "",
+                secret: "smartfurni2026",
+              }),
+            }).catch(() => {});
+          }
           setTimeout(() => setCallState("idle"), 3000);
         });
 
@@ -269,6 +329,48 @@ export default function ItySoftphone({
       setErrorMsg("Lỗi khởi tạo webphone. Vui lòng dùng Click-to-Call.");
     }
   }, [config, currentCallId, callDuration, onCallEnded]);
+
+  // Hàm lưu call log vào DB sau khi cuộc gọi kết thúc
+  const saveCallLog = useCallback(async (params: {
+    callId: string;
+    phone: string;
+    duration: number;
+    status: "answered" | "missed" | "failed";
+    leadId?: string;
+    leadName?: string;
+    startedAt: string;
+    direction?: "inbound" | "outbound";
+    recordingUrl?: string;
+    note?: string;
+  }) => {
+    try {
+      const res = await fetch("/api/crm/ity/call-completed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callid: params.callId,
+          phone: params.phone,
+          duration: params.duration,
+          billsec: params.duration,
+          status: params.status === "answered" ? "ANSWERED" : params.status === "missed" ? "NO ANSWER" : "FAILED",
+          direction: params.direction || "outbound",
+          extension: config?.extension || "101",
+          start_stamp: params.startedAt,
+          end_stamp: new Date().toISOString(),
+          userfield: params.leadId || "",
+          recording: params.recordingUrl || "",
+          note: params.note || "",
+          // Secret để bypass auth
+          secret: process.env.NEXT_PUBLIC_ITY_WEBHOOK_SECRET || "smartfurni2026",
+        }),
+      });
+      const data = await res.json();
+      console.log("[ITY Softphone] Call log saved:", data);
+      return data;
+    } catch (err) {
+      console.error("[ITY Softphone] Failed to save call log:", err);
+    }
+  }, [config]);
 
   // Gọi qua Click-to-Call API
   const handleClick2Call = async () => {
@@ -352,7 +454,14 @@ export default function ItySoftphone({
         const domain = process.env.NEXT_PUBLIC_ITY_DOMAIN || config?.domain || "c89866.ity.vn";
         const target = `sip:${cleanedPhone}@${domain}`;
         const callId = `webphone_${Date.now()}`;
+        const startedAt = new Date().toISOString();
         setCurrentCallId(callId);
+        // Lưu vào refs để dùng trong session callbacks
+        callIdRef.current = callId;
+        callPhoneRef.current = cleanedPhone;
+        callStartTimeRef.current = startedAt;
+        callLeadIdRef.current = defaultLeadId;
+        callLeadNameRef.current = defaultLeadName;
 
         try {
           ua.call(target, {
@@ -377,24 +486,37 @@ export default function ItySoftphone({
 
   // Kết thúc cuộc gọi
   const handleHangup = async () => {
-    // Kết thúc JsSIP session nếu có
+    const duration = callDuration;
+    const callIdSnapshot = callIdRef.current;
+    const phoneSnapshot = callPhoneRef.current;
+    const startedAtSnapshot = callStartTimeRef.current;
+    const leadIdSnapshot = callLeadIdRef.current;
+    const wasActive = callState === "active";
+
+    // Kết thúc JsSIP session nếu có (session.on("ended") sẽ được gọi tự động)
     if (sessionRef.current) {
       try {
         (sessionRef.current as { terminate: () => void }).terminate();
+        // session.on("ended") sẽ tự lưu call log
+        sessionRef.current = null;
+        return; // Để session.on("ended") xử lý
       } catch { /* ignore */ }
       sessionRef.current = null;
     }
 
-    const duration = callDuration;
     setCallState("ended");
     onCallEnded?.(currentCallId || "", duration);
 
-    // Lưu ghi chú nếu có
-    if (note.trim() && currentCallId) {
-      await fetch("/api/crm/call-logs", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: currentCallId, note: note.trim() }),
+    // Lưu call log nếu chưa được lưu bởi session.on("ended")
+    if (callIdSnapshot && phoneSnapshot) {
+      await saveCallLog({
+        callId: callIdSnapshot,
+        phone: phoneSnapshot,
+        duration,
+        status: wasActive ? "answered" : "missed",
+        leadId: leadIdSnapshot,
+        startedAt: startedAtSnapshot || new Date().toISOString(),
+        note: note.trim() || undefined,
       }).catch(() => {});
     }
 
@@ -402,6 +524,12 @@ export default function ItySoftphone({
       setCallState("idle");
       setNote("");
       setCurrentCallId(null);
+      // Reset refs
+      callIdRef.current = null;
+      callPhoneRef.current = "";
+      callStartTimeRef.current = "";
+      callLeadIdRef.current = undefined;
+      callLeadNameRef.current = undefined;
     }, 3000);
   };
 

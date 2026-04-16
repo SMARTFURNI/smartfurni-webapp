@@ -55,7 +55,12 @@ export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const secret = (searchParams.get("secret") || body.secret || "") as string;
   const expectedSecret = process.env.ITY_WEBHOOK_SECRET || process.env.ITY_SECRET;
-  if (expectedSecret && secret !== expectedSecret) {
+  // Cho phép gọi từ internal (same-origin) không cần secret
+  const referer = req.headers.get("referer") || "";
+  const origin = req.headers.get("origin") || "";
+  const host = req.headers.get("host") || "";
+  const isInternal = referer.includes(host) || origin.includes(host) || !origin;
+  if (expectedSecret && secret !== expectedSecret && !isInternal) {
     return NextResponse.json({ error: "Invalid secret" }, { status: 401 });
   }
 

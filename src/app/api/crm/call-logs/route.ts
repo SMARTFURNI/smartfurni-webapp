@@ -15,8 +15,9 @@ export async function GET(req: NextRequest) {
     offset: Number(searchParams.get("offset") ?? 0),
   };
 
-  // Nhân viên chỉ xem được cuộc gọi của mình
-  if (!session.isAdmin && session.staffId) {
+  // Nhân viên chỉ xem được cuộc gọi của mình, trừ khi query theo leadId (xem lịch sử khách hàng)
+  const queryLeadId = searchParams.get("leadId");
+  if (!session.isAdmin && session.staffId && !queryLeadId) {
     filters.staffId = session.staffId;
   } else if (searchParams.get("staffId")) {
     filters.staffId = searchParams.get("staffId")!;
