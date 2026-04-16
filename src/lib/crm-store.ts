@@ -593,15 +593,18 @@ export async function createCallLog(input: Omit<CallLog, "id" | "createdAt" | "u
 
   // Auto-link lead by phone number if not provided
   if (!log.leadId) {
-    const phone = log.direction === "outbound" ? log.receiverNumber : log.callerNumber;
-    const matchRows = await query<{ id: string; data: { name: string } | string }>(
-      `SELECT id, data->>'name' as name FROM crm_leads WHERE data->>'phone' = $1 OR data->>'zaloPhone' = $1 LIMIT 1`,
-      [phone]
-    );
-    if (matchRows[0]) {
-      log.leadId = matchRows[0].id;
-      const d = matchRows[0].data;
-      log.leadName = typeof d === "string" ? JSON.parse(d).name : (d as { name: string }).name;
+    try {
+      const phone = log.direction === "outbound" ? log.receiverNumber : log.callerNumber;
+      const matchRows = await query<{ id: string; name: string }>(
+        `SELECT id, data->>'name' as name FROM crm_leads WHERE data->>'phone' = $1 OR data->>'zaloPhone' = $1 LIMIT 1`,
+        [phone]
+      );
+      if (matchRows[0]) {
+        log.leadId = matchRows[0].id;
+        log.leadName = matchRows[0].name || undefined;
+      }
+    } catch {
+      // Auto-link thất bại không ảnh hưởng đến việc lưu call log
     }
   }
 
