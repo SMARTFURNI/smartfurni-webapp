@@ -136,8 +136,10 @@ export async function POST(req: NextRequest) {
       leadId: callLog.leadId,
     });
   } catch (err) {
-    console.error("[ITY call-completed] Error:", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const errStack = err instanceof Error ? err.stack : undefined;
+    console.error("[ITY call-completed] Error:", errMsg, errStack);
+    return NextResponse.json({ error: "Internal error", detail: errMsg }, { status: 500 });
   }
 }
 
