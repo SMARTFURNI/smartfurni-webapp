@@ -14,6 +14,7 @@ import {
 } from "@/lib/crm-types";
 import AddLeadModal from "./AddLeadModal";
 import CustomerContactActions from "./high-performance-features/CustomerContactActions";
+import { ItyCallButton } from "./ItySoftphone";
 
 interface LeadTypeItem { id: string; label: string; color?: string; }
 interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; initialLeadTypes?: LeadTypeItem[]; }
@@ -400,6 +401,9 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                             )}
                             <div className="flex items-center gap-1 text-[11px] mt-0.5" style={{ color: C.textMuted }}>
                               <Phone size={9} /> {lead.phone}
+                              {lead.phone && (
+                                <ItyCallButton phone={lead.phone} leadId={lead.id} leadName={lead.name} size="sm" />
+                              )}
                             </div>
                           </div>
                         </div>

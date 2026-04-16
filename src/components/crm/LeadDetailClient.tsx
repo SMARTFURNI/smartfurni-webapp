@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog } from "@/lib/crm-types";
 import CustomerContactActions from "@/components/crm/high-performance-features/CustomerContactActions";
+import { ItyCallButton } from "@/components/crm/ItySoftphone";
 import { formatDuration } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
@@ -808,6 +809,31 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
             <div className="p-2">
               {contactModal === 'call' && (
                 <>
+                  {/* ITY Click-to-Call */}
+                  <button
+                    onClick={async () => {
+                      const res = await fetch("/api/crm/ity/click2call", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ phone: lead.phone, leadId: lead.id, leadName: lead.name }),
+                      });
+                      const data = await res.json();
+                      if (data.success) setContactModal(null);
+                      else alert(data.error || "Lỗi kết nối ITY");
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,168,76,0.08)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(201,168,76,0.15)" }}>
+                      <Phone size={15} style={{ color: "#C9A84C" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Gọi qua ITY Tổng đài</p>
+                      <p className="text-xs" style={{ color: "#9ca3af" }}>Click-to-call — máy lẻ tự đổ chuông</p>
+                    </div>
+                    <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)" }}>→</span>
+                  </button>
                   <button onClick={() => { window.location.href = `tel:${lead.phone}`; setContactModal(null); }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                     style={{ background: "transparent" }}

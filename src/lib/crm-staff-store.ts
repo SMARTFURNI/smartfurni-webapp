@@ -50,6 +50,7 @@ export interface StaffMember {
   email: string;
   phone: string;
   zaloPhone?: string;       // Số Zalo cá nhân để khách hàng kết bạn
+  sipExtension?: string;    // Máy lẻ ITY (SIP Extension) — dùng cho click-to-call
   role: StaffRole;
   status: StaffStatus;
   permissions: StaffPermissions;

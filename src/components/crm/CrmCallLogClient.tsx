@@ -877,9 +877,85 @@ export default function CrmCallLogClient({ initialLogs, isAdmin, staffId }: Prop
         {/* ── Webhook Tab ── */}
         {activeTab === "webhook" && (
           <div className="space-y-4">
+            {/* ITY Integration Guide */}
             <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
               <h2 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ color: T.textPrimary }}>
-                <Zap size={16} style={{ color: T.primary }} /> Tích hợp Tổng đài ảo
+                <Zap size={16} style={{ color: "#C9A84C" }} />
+                <span style={{ color: "#C9A84C" }}>Tổng đài ITY — Hướng dẫn tích hợp</span>
+              </h2>
+              {/* Status card */}
+              <div className="rounded-xl p-4 mb-4" style={{ background: "#FFFBEB", border: "1px solid #FDE68A" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-400" />
+                  <p className="text-xs font-bold" style={{ color: "#92400E" }}>Cấu hình biến môi trường trong .env</p>
+                </div>
+                <pre className="text-xs font-mono p-3 rounded-lg overflow-x-auto" style={{ background: "#1e1b4b", color: "#c7d2fe" }}>
+{`# ITY Tổng đài Configuration
+ITY_DOMAIN=c90408.ity.vn
+ITY_CUSTOMER=89866001
+ITY_SECRET=<secret_key_từ_ITY>
+ITY_WSS=wss://vpbx.ity.vn:7443
+ITY_WEBHOOK_SECRET=<mật_khẩu_webhook>
+ITY_DEFAULT_EXTENSION=101
+
+# SIP/Webphone (tùy chọn)
+ITY_SIP_USER=89866001
+ITY_SIP_PASSWORD=<mật_khẩu_SIP>
+ITY_SIP_DOMAIN=c90408.ity.vn`}
+                </pre>
+              </div>
+              {/* Webhook URLs */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold" style={{ color: T.textSecondary }}>Cấu hình Webhook URL trên ITY Portal</p>
+                {[
+                  { label: "Cuộc gọi đến (Incoming)", url: "/api/crm/ity/incoming-call", method: "GET", color: "#059669" },
+                  { label: "Cuộc gọi ra (Outgoing)", url: "/api/crm/ity/outgoing-call", method: "GET", color: "#3b82f6" },
+                  { label: "Kết thúc cuộc gọi (Call Completed)", url: "/api/crm/ity/call-completed", method: "POST", color: "#8b5cf6" },
+                ].map(item => (
+                  <div key={item.url} className="rounded-xl p-3" style={{ background: T.grayBg, border: `1px solid ${T.divider}` }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: `${item.color}20`, color: item.color }}>{item.method}</span>
+                      <p className="text-xs font-semibold" style={{ color: T.textPrimary }}>{item.label}</p>
+                    </div>
+                    <code className="text-xs font-mono" style={{ color: item.color }}>{item.url}?secret=&#123;ITY_WEBHOOK_SECRET&#125;</code>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Click-to-Call guide */}
+            <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: T.textPrimary }}>
+                <Phone size={16} style={{ color: T.primary }} /> Click-to-Call API
+              </h2>
+              <div className="rounded-xl p-4" style={{ background: T.primaryBg, border: `1px solid ${T.primaryLight}` }}>
+                <p className="text-xs font-semibold mb-2" style={{ color: T.primary }}>Endpoint (từ CRM)</p>
+                <code className="text-sm font-mono block p-3 rounded-lg" style={{ background: "#1e1b4b", color: "#c7d2fe" }}>
+                  POST /api/crm/ity/click2call
+                </code>
+              </div>
+              <div className="mt-3 rounded-xl p-4" style={{ background: T.grayBg, border: `1px solid ${T.divider}` }}>
+                <p className="text-xs font-semibold mb-2" style={{ color: T.textSecondary }}>Body JSON</p>
+                <pre className="text-xs font-mono p-3 rounded-lg overflow-x-auto" style={{ background: "#1e1b4b", color: "#c7d2fe" }}>
+{`{
+  "phone": "0901234567",
+  "leadId": "lead_abc123",
+  "leadName": "Nguyễn Văn A",
+  "extension": "101"  // máy lẻ nhân viên
+}`}
+                </pre>
+              </div>
+              <div className="mt-3 flex items-start gap-3 p-3 rounded-xl" style={{ background: T.goldBg, border: `1px solid ${T.gold}30` }}>
+                <Info size={14} style={{ color: T.gold, flexShrink: 0, marginTop: 1 }} />
+                <p className="text-xs" style={{ color: T.textSecondary }}>
+                  ITY sẽ gọi đến máy lẻ của nhân viên trước, sau đó kết nối với số khách hàng.
+                  Nhân viên cần cấu hình số máy lẻ (extension) trong hồ sơ tài khoản.
+                </p>
+              </div>
+            </div>
+            {/* Original generic webhook */}
+            <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <h2 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ color: T.textPrimary }}>
+                <Zap size={16} style={{ color: T.primary }} /> Tích hợp Tổng đài khác (Generic)
               </h2>
               <div className="space-y-4">
                 <div className="rounded-xl p-4" style={{ background: T.primaryBg, border: `1px solid ${T.primaryLight}` }}>

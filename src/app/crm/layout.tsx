@@ -4,6 +4,7 @@ import { getRoleById } from "@/lib/crm-roles-store";
 import type { RolePermissions } from "@/lib/crm-roles-store";
 import CrmSidebar from "@/components/crm/CrmSidebar";
 import DataPoolNotification from "@/components/crm/DataPoolNotification";
+import ItySoftphone from "@/components/crm/ItySoftphone";
 export const dynamic = "force-dynamic";
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
@@ -54,6 +55,8 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         </main>
         {/* Real-time notification khi có lead mới vào Data Pool */}
         <DataPoolNotification />
+        {/* ITY Softphone — floating widget gọi điện trực tiếp trên CRM */}
+        <ItySoftphone />
       </div>
     </>
   );

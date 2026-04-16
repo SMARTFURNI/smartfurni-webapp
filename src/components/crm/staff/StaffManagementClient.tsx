@@ -381,7 +381,7 @@ function AddStaffModal({
 }) {
   const [form, setForm] = useState({
     username: "", password: "", fullName: "", email: "", phone: "",
-    role: "sales", targetRevenue: "", assignedDistricts: [] as string[],
+    role: "sales", targetRevenue: "", assignedDistricts: [] as string[], sipExtension: "",
   });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -443,9 +443,14 @@ function AddStaffModal({
           <Field label="Số điện thoại"><DarkInput value={form.phone} onChange={v => set("phone", v)} placeholder="0901234567" /></Field>
           <Field label="Email"><DarkInput value={form.email} onChange={v => set("email", v)} placeholder="email@company.vn" type="email" /></Field>
         </div>
-        <Field label="Doanh số mục tiêu / tháng">
-          <DarkInput value={form.targetRevenue} onChange={v => set("targetRevenue", v)} placeholder="500000000" type="number" />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Doanh số mục tiêu / tháng">
+            <DarkInput value={form.targetRevenue} onChange={v => set("targetRevenue", v)} placeholder="500000000" type="number" />
+          </Field>
+          <Field label="Máy lẻ ITY (SIP Extension)">
+            <DarkInput value={form.sipExtension || ""} onChange={v => set("sipExtension", v)} placeholder="101" />
+          </Field>
+        </div>
         <Field label="Khu vực phụ trách (chọn nhiều)">
           <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 rounded-lg" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
             {VIETNAM_PROVINCES.map(p => (
@@ -491,6 +496,7 @@ function EditStaffModal({
     fullName: staff.fullName, email: staff.email, phone: staff.phone,
     role: staff.role, targetRevenue: staff.targetRevenue.toString(),
     assignedDistricts: staff.assignedDistricts,
+    sipExtension: staff.sipExtension || "",
     newPassword: "",
   });
   const [loading, setLoading] = useState(false);
@@ -512,6 +518,7 @@ function EditStaffModal({
       fullName: form.fullName, email: form.email, phone: form.phone,
       role: form.role, targetRevenue: parseFloat(form.targetRevenue) || 0,
       assignedDistricts: form.assignedDistricts,
+      sipExtension: form.sipExtension,
     };
     if (form.newPassword) payload.newPassword = form.newPassword;
     const updated = await fetch(`/api/crm/staff/${staff.id}`, {
@@ -538,9 +545,14 @@ function EditStaffModal({
         <Field label="Đổi mật khẩu (để trống nếu không đổi)">
           <DarkInput value={form.newPassword} onChange={v => set("newPassword", v)} placeholder="Mật khẩu mới..." type="password" />
         </Field>
-        <Field label="Doanh số mục tiêu / tháng">
-          <DarkInput value={form.targetRevenue} onChange={v => set("targetRevenue", v)} type="number" />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Doanh số mục tiêu / tháng">
+            <DarkInput value={form.targetRevenue} onChange={v => set("targetRevenue", v)} type="number" />
+          </Field>
+          <Field label="Máy lẻ ITY (SIP Extension)">
+            <DarkInput value={form.sipExtension || ""} onChange={v => set("sipExtension", v)} placeholder="101" />
+          </Field>
+        </div>
         <Field label="Khu vực phụ trách">
           <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
             {VIETNAM_PROVINCES.map(p => (
