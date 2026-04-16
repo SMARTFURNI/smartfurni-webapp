@@ -522,6 +522,7 @@ export async function initCallLogSchema(): Promise<void> {
       status TEXT NOT NULL DEFAULT 'answered',
       duration INTEGER DEFAULT 0,
       recording_url TEXT,
+      note TEXT,
       provider TEXT DEFAULT 'manual',
       started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       ended_at TIMESTAMPTZ,
@@ -530,6 +531,8 @@ export async function initCallLogSchema(): Promise<void> {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  // Migration: thêm cột note nếu chưa có (cho các DB đã tạo trước)
+  try { await query(`ALTER TABLE crm_call_logs ADD COLUMN IF NOT EXISTS note TEXT`); } catch { /* ok */ }
   try { await query(`CREATE INDEX IF NOT EXISTS idx_call_logs_staff ON crm_call_logs(staff_id)`); } catch { /* ok */ }
   try { await query(`CREATE INDEX IF NOT EXISTS idx_call_logs_lead ON crm_call_logs(lead_id)`); } catch { /* ok */ }
   try { await query(`CREATE INDEX IF NOT EXISTS idx_call_logs_started ON crm_call_logs(started_at DESC)`); } catch { /* ok */ }
