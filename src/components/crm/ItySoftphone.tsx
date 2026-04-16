@@ -133,6 +133,24 @@ export default function ItySoftphone({
     if (defaultPhone) setPhone(defaultPhone);
   }, [defaultPhone]);
 
+  // Lắng nghe custom event ity:call từ các nút gọi bên ngoài
+  useEffect(() => {
+    const handleItyCallEvent = (e: Event) => {
+      const detail = (e as CustomEvent<{ phone: string; leadId?: string; leadName?: string }>).detail;
+      if (!detail?.phone) return;
+      setPhone(detail.phone);
+      setIsOpen(true);
+      setCallMode("webphone");
+      // Tự động gọi sau khi set phone (delay nhỏ để state update)
+      setTimeout(() => {
+        const callBtn = document.getElementById("ity-webphone-call-btn");
+        if (callBtn) callBtn.click();
+      }, 300);
+    };
+    window.addEventListener("ity:call", handleItyCallEvent);
+    return () => window.removeEventListener("ity:call", handleItyCallEvent);
+  }, []);
+
   // Timer đếm thời gian cuộc gọi
   useEffect(() => {
     if (callState === "active") {
@@ -571,6 +589,7 @@ export default function ItySoftphone({
                 )}
 
                 <button
+                  id="ity-webphone-call-btn"
                   onClick={callMode === "click2call" ? handleClick2Call : handleWebphoneCall}
                   disabled={!phone.trim()}
                   style={{
@@ -756,33 +775,17 @@ export function ItyCallButton({
   const [done, setDone] = useState(false);
   const [error, setError] = useState(false);
 
-  const handleCall = async (e: React.MouseEvent) => {
+  const handleCall = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (calling || done) return;
-
-    setCalling(true);
-    setError(false);
-
-    try {
-      const res = await fetch("/api/crm/ity/click2call", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleanPhone(phone), leadId, leadName }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || "Lỗi");
-
-      setDone(true);
-      onCallStarted?.();
-      setTimeout(() => setDone(false), 3000);
-    } catch {
-      setError(true);
-      setTimeout(() => setError(false), 3000);
-    } finally {
-      setCalling(false);
-    }
+    // Dispatch custom event để ItySoftphone widget nhận và gọi qua Webphone
+    window.dispatchEvent(new CustomEvent("ity:call", {
+      detail: { phone: cleanPhone(phone), leadId, leadName }
+    }));
+    setDone(true);
+    onCallStarted?.();
+    setTimeout(() => setDone(false), 2000);
   };
 
   const iconSize = size === "sm" ? 12 : 15;

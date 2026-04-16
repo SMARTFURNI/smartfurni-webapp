@@ -809,17 +809,14 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
             <div className="p-2">
               {contactModal === 'call' && (
                 <>
-                  {/* ITY Click-to-Call */}
+                  {/* ITY Webphone Call */}
                   <button
-                    onClick={async () => {
-                      const res = await fetch("/api/crm/ity/click2call", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ phone: lead.phone, leadId: lead.id, leadName: lead.name }),
-                      });
-                      const data = await res.json();
-                      if (data.success) setContactModal(null);
-                      else alert(data.error || "Lỗi kết nối ITY");
+                    onClick={() => {
+                      // Dispatch event để ItySoftphone widget nhận và gọi qua Webphone
+                      window.dispatchEvent(new CustomEvent("ity:call", {
+                        detail: { phone: lead.phone, leadId: lead.id, leadName: lead.name }
+                      }));
+                      setContactModal(null);
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                     style={{ background: "transparent" }}
@@ -830,7 +827,7 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                     </div>
                     <div>
                       <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Gọi qua ITY Tổng đài</p>
-                      <p className="text-xs" style={{ color: "#9ca3af" }}>Click-to-call — máy lẻ tự đổ chuông</p>
+                      <p className="text-xs" style={{ color: "#9ca3af" }}>Webphone — gọi trực tiếp trên trình duyệt</p>
                     </div>
                     <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)" }}>→</span>
                   </button>
