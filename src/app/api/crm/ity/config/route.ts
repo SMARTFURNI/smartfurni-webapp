@@ -29,7 +29,7 @@ export async function GET() {
     const sipDomain = process.env.ITY_SIP_DOMAIN || ityDomain;
 
     return NextResponse.json({
-      enabled: !!(itySecret && sipPassword),
+      enabled: !!(sipPassword),  // Webphone chỉ cần SIP password, không cần ITY_SECRET
       sipConfig: {
         uri: `sip:${extension}@${sipDomain}`,
         wsServers: [ityWss],
@@ -43,7 +43,7 @@ export async function GET() {
         hackIpInContact: false,
       },
       webphoneEnabled: !!(sipPassword),
-      click2callEnabled: !!(itySecret),
+      click2callEnabled: !!(itySecret),  // Click2Call qua máy lẻ cần ITY_SECRET từ portal
       domain: ityDomain,
       wss: ityWss,
       extension,

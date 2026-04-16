@@ -162,16 +162,22 @@ export default function ItySoftphone({
         setErrorMsg("Không lấy được thông tin đăng nhập SIP.");
         return;
       }
-      const { password, uri } = await pwRes.json();
+      const { password, uri, authorizationUser } = await pwRes.json();
 
-      const socket = new JsSIP.WebSocketInterface(config.sipConfig.wsServers as string);
+      // wsServers có thể là string hoặc array
+      const wsUrl = Array.isArray(config.sipConfig.wsServers)
+        ? (config.sipConfig.wsServers as string[])[0]
+        : config.sipConfig.wsServers as string;
+      const socket = new JsSIP.WebSocketInterface(wsUrl);
       const ua = new JsSIP.UA({
         sockets: [socket],
         uri,
         password,
+        authorization_user: authorizationUser || uri.split(":")[1]?.split("@")[0],
         display_name: config.sipConfig.displayName as string,
         register: true,
         session_timers: false,
+        register_expires: 600,
       });
 
       ua.on("registered", () => {
@@ -290,6 +296,66 @@ export default function ItySoftphone({
       setTimeout(() => setCallState("idle"), 4000);
     }
   };
+
+  // Gọi qua Webphone (JsSIP)
+  const handleWebphoneCall = useCallback(async () => {
+    if (!phone.trim()) {
+      setErrorMsg("Vui lòng nhập số điện thoại");
+      return;
+    }
+    const cleanedPhone = cleanPhone(phone.trim());
+    setCallState("connecting");
+    setErrorMsg("");
+
+    try {
+      // Khởi tạo JsSIP nếu chưa có
+      if (!jssipRef.current) {
+        await initJsSIP();
+      }
+
+      // Đợi JsSIP đăng ký xong rồi gọi
+      const tryCall = (retries = 0) => {
+        const ua = jssipRef.current as {
+          isRegistered: () => boolean;
+          call: (target: string, options: Record<string, unknown>) => unknown;
+        } | null;
+
+        if (!ua) {
+          setCallState("error");
+          setErrorMsg("Không khởi tạo được webphone");
+          return;
+        }
+
+        if (!ua.isRegistered() && retries < 10) {
+          setTimeout(() => tryCall(retries + 1), 500);
+          return;
+        }
+
+        const domain = process.env.NEXT_PUBLIC_ITY_DOMAIN || config?.domain || "c89866.ity.vn";
+        const target = `sip:${cleanedPhone}@${domain}`;
+        const callId = `webphone_${Date.now()}`;
+        setCurrentCallId(callId);
+
+        try {
+          ua.call(target, {
+            mediaConstraints: { audio: true, video: false },
+            rtcOfferConstraints: { offerToReceiveAudio: true, offerToReceiveVideo: false },
+          });
+          onCallStarted?.(callId, cleanedPhone);
+        } catch (callErr) {
+          setCallState("error");
+          setErrorMsg(callErr instanceof Error ? callErr.message : "Lỗi gọi");
+          setTimeout(() => setCallState("idle"), 4000);
+        }
+      };
+
+      setTimeout(() => tryCall(), 300);
+    } catch (err) {
+      setCallState("error");
+      setErrorMsg(err instanceof Error ? err.message : "Lỗi kết nối webphone");
+      setTimeout(() => setCallState("idle"), 4000);
+    }
+  }, [phone, config, initJsSIP, onCallStarted, currentCallId]);
 
   // Kết thúc cuộc gọi
   const handleHangup = async () => {
@@ -505,7 +571,7 @@ export default function ItySoftphone({
                 )}
 
                 <button
-                  onClick={callMode === "click2call" ? handleClick2Call : initJsSIP}
+                  onClick={callMode === "click2call" ? handleClick2Call : handleWebphoneCall}
                   disabled={!phone.trim()}
                   style={{
                     width: "100%", padding: "11px 0",

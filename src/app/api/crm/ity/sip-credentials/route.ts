@@ -17,16 +17,21 @@ export async function GET() {
 
     const sipPassword = process.env.ITY_SIP_PASSWORD;
     const sipDomain = process.env.ITY_SIP_DOMAIN || process.env.ITY_DOMAIN || "c89866.ity.vn";
-    const extension = session.extension || process.env.ITY_DEFAULT_EXTENSION || "101";
+    const ityCustomer = process.env.ITY_CUSTOMER || "89866001";
+    // Extension của nhân viên (nếu có), nếu không dùng customer ID
+    const extension = session.extension || process.env.ITY_DEFAULT_EXTENSION || "";
+    // SIP user: nếu có extension thì dùng extension, nếu không dùng customer ID
+    const sipUser = extension || ityCustomer;
 
     if (!sipPassword) {
       return NextResponse.json({ error: "SIP password chưa được cấu hình" }, { status: 503 });
     }
 
     return NextResponse.json({
-      uri: `sip:${extension}@${sipDomain}`,
+      uri: `sip:${sipUser}@${sipDomain}`,
       password: sipPassword,
-      extension,
+      extension: sipUser,
+      authorizationUser: sipUser,
     });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

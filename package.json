@@ -33,7 +33,8 @@
     "resend": "^6.9.4",
     "sharp": "^0.33.0",
     "tailwind-merge": "^2.6.0",
-    "zca-js": "^2.0.0"
+    "zca-js": "^2.0.0",
+    "jssip": "^3.10.0"
   },
   "devDependencies": {
     "@types/node": "^22",
