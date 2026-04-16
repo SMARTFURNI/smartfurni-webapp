@@ -98,7 +98,7 @@ export default function ItySoftphone({
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [callState, setCallState] = useState<CallState>("idle");
-  const [callMode, setCallMode] = useState<CallMode>("click2call");
+  const [callMode, setCallMode] = useState<CallMode>("webphone");
   const [phone, setPhone] = useState(defaultPhone);
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
