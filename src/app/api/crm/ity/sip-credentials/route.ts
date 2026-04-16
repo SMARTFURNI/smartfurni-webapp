@@ -16,7 +16,7 @@ export async function GET() {
     const session = await requireCrmAccess();
 
     const sipPassword = process.env.ITY_SIP_PASSWORD;
-    const sipDomain = process.env.ITY_SIP_DOMAIN || process.env.ITY_DOMAIN || "c90408.ity.vn";
+    const sipDomain = process.env.ITY_SIP_DOMAIN || process.env.ITY_DOMAIN || "c89866.ity.vn";
     const extension = session.extension || process.env.ITY_DEFAULT_EXTENSION || "101";
 
     if (!sipPassword) {

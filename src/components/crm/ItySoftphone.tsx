@@ -206,6 +206,15 @@ export default function ItySoftphone({
           setPhone(callerPhone);
         }
 
+        // Theo spec ITY: thêm X-userfield header để gắn cuộc gọi với lead/đơn hàng
+        // Trường này sẽ được trả lại trong {userfield} của call log webhook
+        session.on("sending", (sendData: { request: { getHeader: (h: string) => string; setHeader: (h: string, v: string) => void } }) => {
+          const request = sendData.request;
+          // Gán userfield = leadId hoặc callId để liên kết cuộc gọi với lead trong CRM
+          const userfield = defaultLeadId || currentCallId || `crm_${Date.now()}`;
+          request.setHeader("X-userfield", userfield);
+        });
+
         session.on("accepted", () => setCallState("active"));
         session.on("ended", () => {
           setCallState("ended");

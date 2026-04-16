@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Lấy cấu hình ITY từ env
-    const ityDomain = process.env.ITY_DOMAIN || "c90408.ity.vn";
+    const ityDomain = process.env.ITY_DOMAIN || "c89866.ity.vn";
     const itySecret = process.env.ITY_SECRET;
     const ityCustomer = process.env.ITY_CUSTOMER || "89866001";
 
@@ -44,12 +44,13 @@ export async function POST(req: NextRequest) {
     const staffExtension = extension || session.extension || "101";
     const callUserfield = userfield || leadId || `lead_${Date.now()}`;
 
-    // Gọi API click2call của ITY
-    const ityUrl = `https://${ityDomain}/wsapi/${ityCustomer}/click2call.php?secret=${itySecret}&extension=${staffExtension}&phone=${encodeURIComponent(phone)}&userfield=${encodeURIComponent(callUserfield)}`;
+    // Gọi API click2call của ITY theo đúng spec:
+    // GET https://{ip_tong_dai}/wsapi/{customer}/click2call.php?secret=...&extension=...&phone=...&domain=...&userfield=...
+    const ityHost = process.env.ITY_HOST || "vpbx.ity.vn";
+    const ityUrl = `https://${ityHost}/wsapi/${ityCustomer}/click2call.php?secret=${itySecret}&extension=${staffExtension}&phone=${encodeURIComponent(phone)}&domain=${encodeURIComponent(ityDomain)}&userfield=${encodeURIComponent(callUserfield)}`;
 
     const ityRes = await fetch(ityUrl, {
       method: "GET",
-      headers: { "Accept": "application/json" },
       signal: AbortSignal.timeout(10000),
     }).catch(() => null);
 

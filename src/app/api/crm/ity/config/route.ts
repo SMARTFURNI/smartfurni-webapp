@@ -15,7 +15,7 @@ export async function GET() {
     const session = await requireCrmAccess();
 
     // Cấu hình ITY từ env
-    const ityDomain = process.env.ITY_DOMAIN || "c90408.ity.vn";
+    const ityDomain = process.env.ITY_DOMAIN || "c89866.ity.vn";
     const ityWss = process.env.ITY_WSS || "wss://vpbx.ity.vn:7443";
     const ityCustomer = process.env.ITY_CUSTOMER || "89866001";
     const itySecret = process.env.ITY_SECRET;
@@ -49,10 +49,13 @@ export async function GET() {
       extension,
       staffId: session.staffId,
       staffName: session.name,
+      // URL webhook ITY gọi vào CRM (theo spec: /wsapi/{customer}/call_answered)
+      // Cấu hình trên ITY Portal: POST https://{domain_crm}/api/crm/ity/call-completed?secret={ITY_WEBHOOK_SECRET}
       webhookUrls: {
-        incomingCall: `/api/crm/ity/incoming-call`,
-        outgoingCall: `/api/crm/ity/outgoing-call`,
         callCompleted: `/api/crm/ity/call-completed`,
+        // Format chuẩn ITY: https://{domain_crm}/wsapi/${ityCustomer}/call_answered?secret={secret}
+        // CRM cũng hỗ trợ format này qua alias route
+        callAnswered: `/wsapi/${ityCustomer}/call_answered`,
       },
     });
   } catch (err) {
