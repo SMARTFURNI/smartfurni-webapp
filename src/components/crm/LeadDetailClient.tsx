@@ -366,7 +366,14 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                     <div className="space-y-3">
                       {activities.map((act, idx) => {
                         const Icon = ACTIVITY_TYPE_ICONS[act.type];
-                        const color = ACTIVITY_COLORS[act.type];
+                        // Phân biệt màu cho activity "Gọi điện" dựa vào nội dung
+                        let color = ACTIVITY_COLORS[act.type];
+                        if (act.type === "call" && act.content) {
+                          if (act.content.startsWith("Thành công")) color = "#22c55e";      // xanh lá
+                          else if (act.content.startsWith("Không nghe") || act.content.startsWith("Không ngập")) color = "#f97316"; // cam
+                          else if (act.content.startsWith("Bận")) color = "#f59e0b";        // vàng
+                          else if (act.content.startsWith("Thất bại")) color = "#f87171";  // đỏ
+                        }
                         return (
                           <div key={act.id} className="flex gap-3">
                             <div className="flex flex-col items-center">

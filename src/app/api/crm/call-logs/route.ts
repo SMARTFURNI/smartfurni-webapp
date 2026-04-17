@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   // Tự động tạo activity "Gọi điện" trong Lịch sử tương tác nếu có leadId
   if (log.leadId) {
     try {
-      const statusLabel = callStatus === "answered" ? "Thành công" : callStatus === "missed" ? "Không ngập máy" : callStatus === "busy" ? "Bận" : "Thất bại";
+      const statusLabel = callStatus === "answered" ? "Thành công" : callStatus === "missed" ? "Không nghe máy" : callStatus === "busy" ? "Bận" : "Thất bại";
       const durationText = callDuration > 0 ? ` • ${formatDuration(callDuration)}` : "";
       const staffText = resolvedStaffName ? ` • ${resolvedStaffName}` : "";
       await createActivity({
