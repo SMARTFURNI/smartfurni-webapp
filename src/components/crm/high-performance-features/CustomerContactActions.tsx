@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MessageCircle, Phone, Mail, Copy, CheckCircle2, ExternalLink, X, UserPlus } from 'lucide-react';
+import { MessageCircle, Phone, Mail, Copy, CheckCircle2, ExternalLink, X, UserPlus, PhoneCall } from 'lucide-react';
 import type { Lead } from '@/lib/crm-types';
 import ZaloPersonalAddFriendModal from '@/components/crm/ZaloPersonalAddFriendModal';
 
@@ -52,6 +52,12 @@ export default function CustomerContactActions({
   const handleOpenZalo = () => { window.open(zaloLink, '_blank'); setActiveMenu(null); };
   const handleCopyZaloPhone = () => { navigator.clipboard.writeText(normalizedPhone); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const handleCall = () => { window.location.href = `tel:${lead.phone}`; setActiveMenu(null); };
+  const handleCallViaTongDai = () => {
+    window.dispatchEvent(new CustomEvent("ity:call", {
+      detail: { phone: lead.phone, leadId: lead.id, leadName: lead.name }
+    }));
+    setActiveMenu(null);
+  };
   const handleCopyPhone = () => { navigator.clipboard.writeText(lead.phone); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const handleSendEmail = () => { window.location.href = `mailto:${lead.email}`; setActiveMenu(null); };
   const handleCopyEmail = () => { navigator.clipboard.writeText(lead.email); setCopied(true); setTimeout(() => setCopied(false), 2000); };
@@ -231,6 +237,7 @@ export default function CustomerContactActions({
               </div>
             </div>
             <div style={{ padding: "6px 6px" }}>
+              <DropdownItem onClick={handleCallViaTongDai} iconBg="rgba(74,222,128,0.20)" iconColor={D.callColor} icon={PhoneCall} title="Gọi qua tổng đài" subtitle="Webphone ITY" arrow />
               <DropdownItem onClick={handleCall} iconBg={D.callIconBg} iconColor={D.callColor} icon={Phone} title="Gọi ngay" subtitle="Khởi động ứng dụng gọi" arrow />
               <DropdownItem onClick={handleCopyPhone} iconBg={copied ? "rgba(74,222,128,0.15)" : D.copyIconBg} iconColor={copied ? D.callColor : D.goldColor} icon={copied ? CheckCircle2 : Copy} title={copied ? "✓ Đã sao chép" : "Sao chép số"} subtitle="Dán vào điện thoại" />
             </div>
