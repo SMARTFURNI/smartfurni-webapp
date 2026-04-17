@@ -125,15 +125,13 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
   // Lắng nghe event ity:call-saved để reload call logs sau khi gọi xong
   useEffect(() => {
     const handleCallSaved = () => {
-      if (activeTab === "calls") {
-        setTimeout(() => loadCallLogs(), 1000);
-      } else {
-        setCallLogsLoaded(false); // Force reload khi chuyển sang tab
-      }
+      // Tự động chuyển sang tab calls và load data ngay lập tức
+      setActiveTab("calls");
+      setTimeout(() => loadCallLogs(), 800);
     };
     window.addEventListener("ity:call-saved", handleCallSaved);
     return () => window.removeEventListener("ity:call-saved", handleCallSaved);
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveCallNote = async (callId: string) => {
     setSavingNote(callId);
