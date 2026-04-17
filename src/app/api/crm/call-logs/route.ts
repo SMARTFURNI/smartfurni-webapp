@@ -1,6 +1,7 @@
 import { getCrmSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getCallLogs, createCallLog, updateCallLog, deleteCallLog } from "@/lib/crm-store";
+import { getStaffById } from "@/lib/crm-staff-store";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,19 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
+  // Tự động lookup staffName từ DB nếu chưa có (trường hợp JsSIP lưu tự động)
+  const resolvedStaffId = body.staffId ?? session.staffId;
+  let resolvedStaffName = body.staffName;
+  if (!resolvedStaffName && resolvedStaffId) {
+    try {
+      const staff = await getStaffById(resolvedStaffId);
+      resolvedStaffName = staff?.fullName;
+    } catch { /* bỏ qua lỗi lookup */ }
+  }
+  // Nếu là admin (không có staffId), dùng tên admin mặc định
+  if (!resolvedStaffName && session.isAdmin) {
+    resolvedStaffName = "Admin";
+  }
   const log = await createCallLog({
     callId: body.callId ?? `manual_${Date.now()}`,
     callerNumber: body.callerNumber ?? "",
@@ -47,8 +61,8 @@ export async function POST(req: NextRequest) {
     status: body.status ?? "answered",
     duration: Number(body.duration ?? 0),
     recordingUrl: body.recordingUrl,
-    staffId: body.staffId ?? session.staffId,
-    staffName: body.staffName,
+    staffId: resolvedStaffId,
+    staffName: resolvedStaffName,
     leadId: body.leadId,
     leadName: body.leadName,
     note: body.note,

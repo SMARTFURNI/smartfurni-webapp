@@ -126,6 +126,7 @@ export default function ItySoftphone({
   const callLeadNameRef = useRef<string | undefined>(undefined);
   const callStartTimeRef = useRef<string>("");
   const callIdRef = useRef<string | null>(null);
+  const callSavedRef = useRef<boolean>(false); // Flag chống lưu 2 lần
 
   // Khởi tạo ringback tone audio
   useEffect(() => {
@@ -312,8 +313,9 @@ export default function ItySoftphone({
             ? Math.round((Date.now() - new Date(callStartTimeRef.current).getTime()) / 1000)
             : 0;
           onCallEnded?.(callIdRef.current || "", dur);
-          // Tự động lưu call log vào DB qua /api/crm/call-logs (có session cookie)
-          if (callPhoneRef.current) {
+          // Chống lưu 2 lần: kiểm tra flag trước khi lưu
+          if (callPhoneRef.current && !callSavedRef.current) {
+            callSavedRef.current = true;
             fetch("/api/crm/call-logs", {
               method: "POST",
               credentials: "include",
@@ -586,6 +588,7 @@ export default function ItySoftphone({
         callStartTimeRef.current = startedAt;
         callLeadIdRef.current = defaultLeadId;
         callLeadNameRef.current = defaultLeadName;
+        callSavedRef.current = false; // Reset flag chống lưu 2 lần
 
         try {
           ua.call(target, {
