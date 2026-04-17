@@ -1,7 +1,8 @@
 import { getCrmSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getCallLogs, createCallLog, updateCallLog, deleteCallLog } from "@/lib/crm-store";
+import { getCallLogs, createCallLog, updateCallLog, deleteCallLog, createActivity } from "@/lib/crm-store";
 import { getStaffById } from "@/lib/crm-staff-store";
+import { formatDuration } from "@/lib/crm-types";
 
 export const dynamic = "force-dynamic";
 
@@ -53,13 +54,15 @@ export async function POST(req: NextRequest) {
   if (!resolvedStaffName && session.isAdmin) {
     resolvedStaffName = "Admin";
   }
+  const callDuration = Number(body.duration ?? 0);
+  const callStatus = body.status ?? "answered";
   const log = await createCallLog({
     callId: body.callId ?? `manual_${Date.now()}`,
     callerNumber: body.callerNumber ?? "",
     receiverNumber: body.receiverNumber ?? "",
     direction: body.direction ?? "outbound",
-    status: body.status ?? "answered",
-    duration: Number(body.duration ?? 0),
+    status: callStatus,
+    duration: callDuration,
     recordingUrl: body.recordingUrl,
     staffId: resolvedStaffId,
     staffName: resolvedStaffName,
@@ -70,6 +73,27 @@ export async function POST(req: NextRequest) {
     startedAt: body.startedAt ?? new Date().toISOString(),
     endedAt: body.endedAt,
   });
+
+  // Tự động tạo activity "Gọi điện" trong Lịch sử tương tác nếu có leadId
+  if (log.leadId) {
+    try {
+      const statusLabel = callStatus === "answered" ? "Thành công" : callStatus === "missed" ? "Không ngập máy" : callStatus === "busy" ? "Bận" : "Thất bại";
+      const durationText = callDuration > 0 ? ` • ${formatDuration(callDuration)}` : "";
+      const staffText = resolvedStaffName ? ` • ${resolvedStaffName}` : "";
+      await createActivity({
+        leadId: log.leadId,
+        type: "call",
+        title: "Gọi điện",
+        content: `${statusLabel}${durationText}${staffText}`,
+        createdBy: resolvedStaffName ?? resolvedStaffId ?? "Hệ thống",
+        attachments: [],
+      });
+    } catch (e) {
+      // Không để lỗi tạo activity ảnh hưởng đến việc lưu call log
+      console.error("[call-logs] Failed to create activity:", e);
+    }
+  }
+
   return NextResponse.json(log, { status: 201 });
 }
 

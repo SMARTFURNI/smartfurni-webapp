@@ -138,12 +138,22 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
     fetchCallLogsCount();
   }, [initialLead.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Lắng nghe event ity:call-saved để reload call logs sau khi gọi xong
+  // Lắng nghe event ity:call-saved để reload call logs và activities sau khi gọi xong
   useEffect(() => {
     const handleCallSaved = () => {
       // Tự động chuyển sang tab calls và load data ngay lập tức
       setActiveTab("calls");
       setTimeout(() => loadCallLogs(), 800);
+      // Reload activities để hiển thị activity "Gọi điện" mới trong Lịch sử tương tác
+      setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/crm/activities?leadId=${initialLead.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            setActivities(data);
+          }
+        } catch { /* bỏ qua lỗi */ }
+      }, 1200);
     };
     window.addEventListener("ity:call-saved", handleCallSaved);
     return () => window.removeEventListener("ity:call-saved", handleCallSaved);
