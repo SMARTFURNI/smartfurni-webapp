@@ -594,10 +594,25 @@ export async function createCallLog(input: Omit<CallLog, "id" | "createdAt" | "u
   // Auto-link lead by phone number if not provided
   if (!log.leadId) {
     try {
-      const phone = log.direction === "outbound" ? log.receiverNumber : log.callerNumber;
+      const rawPhone = log.direction === "outbound" ? log.receiverNumber : log.callerNumber;
+      // Normalize: +84916717662 -> 0916717662, 84916717662 -> 0916717662
+      function normalizeVN(p: string): string {
+        if (!p) return p;
+        const digits = p.replace(/\D/g, ""); // chỉ giữ số
+        if (digits.startsWith("84") && digits.length >= 11) return "0" + digits.slice(2);
+        if (digits.startsWith("0") && digits.length === 10) return digits;
+        return digits;
+      }
+      const normalized = normalizeVN(rawPhone);
+      // Tìm theo cả 2 format: 0916717662 và +84916717662
+      const plus84 = normalized.startsWith("0") ? "+84" + normalized.slice(1) : normalized;
       const matchRows = await query<{ id: string; name: string }>(
-        `SELECT id, data->>'name' as name FROM crm_leads WHERE data->>'phone' = $1 OR data->>'zaloPhone' = $1 LIMIT 1`,
-        [phone]
+        `SELECT id, data->>'name' as name FROM crm_leads 
+         WHERE data->>'phone' = $1 OR data->>'phone' = $2
+            OR data->>'zaloPhone' = $1 OR data->>'zaloPhone' = $2
+            OR REGEXP_REPLACE(data->>'phone', '[^0-9]', '', 'g') = REGEXP_REPLACE($1, '[^0-9]', '', 'g')
+         LIMIT 1`,
+        [normalized, plus84]
       );
       if (matchRows[0]) {
         log.leadId = matchRows[0].id;

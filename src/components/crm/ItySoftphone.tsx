@@ -366,14 +366,41 @@ export default function ItySoftphone({
           setTimeout(() => setCallState("idle"), 3000);
         });
 
-        // Kết nối audio
-        session.on("peerconnection", (e: { peerconnection: RTCPeerConnection }) => {
-          const pc = e.peerconnection;
+        // Kết nối audio - xử lý race condition và browser autoplay policy
+        function attachRemoteAudio(pc: RTCPeerConnection) {
+          function tryAttach(stream: MediaStream) {
+            const audioEl = remoteAudioRef.current;
+            if (!audioEl) return;
+            audioEl.srcObject = stream;
+            audioEl.volume = 1.0;
+            // Bắt buộc play() vì browser có thể block autoPlay
+            audioEl.play().catch((err) => {
+              console.warn("[ITY] Remote audio play() blocked:", err);
+            });
+          }
+
+          // Lắng nghe track mới (cho các track đến sau)
           pc.addEventListener("track", (trackEvent: RTCTrackEvent) => {
-            if (remoteAudioRef.current && trackEvent.streams[0]) {
-              remoteAudioRef.current.srcObject = trackEvent.streams[0];
+            if (trackEvent.track.kind === "audio" && trackEvent.streams[0]) {
+              tryAttach(trackEvent.streams[0]);
             }
           });
+
+          // Fallback: kiểm tra receivers đã có sẵn (trường hợp track đã fire trước khi listener đăng ký)
+          pc.addEventListener("iceconnectionstatechange", () => {
+            if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+              const receivers = pc.getReceivers();
+              const audioReceiver = receivers.find(r => r.track?.kind === "audio");
+              if (audioReceiver?.track) {
+                const stream = new MediaStream([audioReceiver.track]);
+                tryAttach(stream);
+              }
+            }
+          });
+        }
+
+        session.on("peerconnection", (e: { peerconnection: RTCPeerConnection }) => {
+          attachRemoteAudio(e.peerconnection);
         });
       });
 
@@ -646,8 +673,8 @@ export default function ItySoftphone({
 
   return (
     <>
-      {/* Remote audio element */}
-      <audio ref={remoteAudioRef} autoPlay style={{ display: "none" }} />
+      {/* Remote audio element - phải có playsInline cho iOS và autoPlay cho desktop */}
+      <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: "none" }} />
 
       {/* Softphone Widget */}
       <div style={{
