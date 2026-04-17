@@ -122,6 +122,22 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
     if (tab === "calls") loadCallLogs();
   };
 
+  // Fetch call logs count khi component mount để hiển thị badge ngay lập tức
+  useEffect(() => {
+    const fetchCallLogsCount = async () => {
+      try {
+        const res = await fetch(`/api/crm/call-logs?leadId=${initialLead.id}&limit=50`);
+        if (res.ok) {
+          const data = await res.json();
+          setCallLogs(data);
+        }
+      } catch {
+        // Bỏ qua lỗi, badge sẽ hiện sau khi user click vào tab
+      }
+    };
+    fetchCallLogsCount();
+  }, [initialLead.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Lắng nghe event ity:call-saved để reload call logs sau khi gọi xong
   useEffect(() => {
     const handleCallSaved = () => {
