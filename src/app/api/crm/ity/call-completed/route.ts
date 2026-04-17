@@ -22,6 +22,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createCallLog, updateCallLog, initCallLogSchema } from "@/lib/crm-store";
+import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -107,19 +108,73 @@ export async function POST(req: NextRequest) {
     // Xây dựng note chi tiết từ các fields ITY
     const noteParts: string[] = [];
     if (hotline) noteParts.push(`Hotline: ${hotline}`);
-    if (hangupBy) noteParts.push(`Ngắt bởi: ${hangupBy}`);
+    if (hangupBy) noteParts.push(`Nắt bởi: ${hangupBy}`);
     if (hangupCause) noteParts.push(`Lý do: ${hangupCause}`);
     if (mos) noteParts.push(`Chất lượng (MOS): ${mos}`);
     if (userfield) noteParts.push(`Userfield: ${userfield}`);
     const note = noteParts.join(" | ") || undefined;
 
+    const receiverPhone = direction === "outbound" ? phone : extension;
+    const callerNum = direction === "outbound" ? extension : phone;
+
+    // --- Gộp với bản ghi JsSIP đã lưu trước đó ---
+    // Tìm bản ghi có cùng số điện thoại + thời gian gần nhau (±5 phút) + chưa có recording_url
+    const normalizePhone = (p: string) => p.replace(/\D/g, "").replace(/^84/, "0");
+    const normalizedReceiver = normalizePhone(receiverPhone);
+    const plus84Receiver = normalizedReceiver.startsWith("0") ? "+84" + normalizedReceiver.slice(1) : normalizedReceiver;
+    const startedAtDate = new Date(startedAt);
+    const windowStart = new Date(startedAtDate.getTime() - 5 * 60 * 1000).toISOString();
+    const windowEnd = new Date(startedAtDate.getTime() + 5 * 60 * 1000).toISOString();
+
+    const existingRows = await query<{ id: string; data: string }>(
+      `SELECT id, data FROM crm_call_logs
+       WHERE (receiver_number = $1 OR receiver_number = $2
+           OR caller_number = $1 OR caller_number = $2)
+         AND started_at BETWEEN $3 AND $4
+         AND (recording_url IS NULL OR recording_url = '')
+         AND provider = 'jssip'
+       ORDER BY started_at DESC
+       LIMIT 1`,
+      [normalizedReceiver, plus84Receiver, windowStart, windowEnd]
+    );
+
+    if (existingRows.length > 0) {
+      // Gộp: UPDATE bản ghi JsSIP với thông tin từ webhook ITY
+      const existingId = existingRows[0].id;
+      const existingData = typeof existingRows[0].data === "string"
+        ? JSON.parse(existingRows[0].data)
+        : existingRows[0].data;
+      const mergedData = {
+        ...existingData,
+        callId: callid, // Cập nhật sang callId của ITY
+        recordingUrl: recordingUrl || existingData.recordingUrl,
+        duration: billsec > 0 ? billsec : (existingData.duration ?? 0),
+        status: mapItyStatus(ityStatus),
+        note: note || existingData.note,
+        provider: "ity",
+        endedAt,
+        updatedAt: new Date().toISOString(),
+      };
+      await query(
+        `UPDATE crm_call_logs
+         SET call_id = $1, recording_url = $2, duration = $3, status = $4, note = $5,
+             provider = 'ity', ended_at = $6, data = $7, updated_at = NOW()
+         WHERE id = $8`,
+        [callid, recordingUrl || null, mergedData.duration, mergedData.status,
+         mergedData.note ?? null, endedAt, JSON.stringify(mergedData), existingId]
+      );
+      console.log(`[ITY call-completed] MERGED into existing JsSIP record ${existingId}, CallID: ${callid}`);
+      return NextResponse.json({ status: "ok", id: existingId, callId: callid, merged: true });
+    }
+
+    // Không tìm thấy bản ghi JsSIP → tạo mới bình thường
     const callLog = await createCallLog({
       callId: callid,
-      callerNumber: direction === "outbound" ? extension : phone,
-      receiverNumber: direction === "outbound" ? phone : extension,
+      callerNumber: callerNum,
+      receiverNumber: receiverPhone,
       direction,
       status: mapItyStatus(ityStatus),
-      duration: billsec, // Dùng billsec (thời gian đàm thoại thực sự)
+      duration: billsec,
       recordingUrl: recordingUrl || undefined,
       provider: "ity",
       startedAt,
@@ -127,7 +182,7 @@ export async function POST(req: NextRequest) {
       note,
     });
 
-    console.log(`[ITY call-completed] CallID: ${callid}, Status: ${ityStatus}, Duration: ${billsec}s, Recording: ${recordingUrl || "none"}`);
+    console.log(`[ITY call-completed] NEW record, CallID: ${callid}, Status: ${ityStatus}, Duration: ${billsec}s, Recording: ${recordingUrl || "none"}`);
 
     return NextResponse.json({
       status: "ok",
