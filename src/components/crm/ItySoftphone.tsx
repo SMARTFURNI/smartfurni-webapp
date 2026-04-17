@@ -366,41 +366,83 @@ export default function ItySoftphone({
           setTimeout(() => setCallState("idle"), 3000);
         });
 
-        // Kết nối audio - xử lý race condition và browser autoplay policy
-        function attachRemoteAudio(pc: RTCPeerConnection) {
-          function tryAttach(stream: MediaStream) {
+        // Kết nối remote audio - đa tầng fallback để đảm bảo nghe được tiếng khách hàng
+        function tryAttachAudio(pc: RTCPeerConnection) {
+          function attachStream(stream: MediaStream) {
             const audioEl = remoteAudioRef.current;
-            if (!audioEl) return;
+            if (!audioEl) {
+              console.warn("[ITY] remoteAudioRef is null");
+              return;
+            }
+            if (audioEl.srcObject === stream) return; // Đã attach rồi
+            console.log("[ITY] Attaching remote audio stream", stream.id);
             audioEl.srcObject = stream;
             audioEl.volume = 1.0;
-            // Bắt buộc play() vì browser có thể block autoPlay
-            audioEl.play().catch((err) => {
-              console.warn("[ITY] Remote audio play() blocked:", err);
+            audioEl.muted = false;
+            audioEl.play().then(() => {
+              console.log("[ITY] Remote audio playing OK");
+            }).catch((err) => {
+              console.warn("[ITY] Remote audio play() failed:", err);
             });
           }
 
-          // Lắng nghe track mới (cho các track đến sau)
-          pc.addEventListener("track", (trackEvent: RTCTrackEvent) => {
-            if (trackEvent.track.kind === "audio" && trackEvent.streams[0]) {
-              tryAttach(trackEvent.streams[0]);
+          // Method 1: Lắng nghe track event (trường hợp track chưa đến)
+          pc.addEventListener("track", (ev: RTCTrackEvent) => {
+            console.log("[ITY] RTCPeerConnection track event:", ev.track.kind);
+            if (ev.track.kind === "audio") {
+              const stream = ev.streams[0] || new MediaStream([ev.track]);
+              attachStream(stream);
             }
           });
 
-          // Fallback: kiểm tra receivers đã có sẵn (trường hợp track đã fire trước khi listener đăng ký)
+          // Method 2: Fallback khi ICE connected - lấy từ getReceivers()
           pc.addEventListener("iceconnectionstatechange", () => {
+            console.log("[ITY] ICE state:", pc.iceConnectionState);
             if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
               const receivers = pc.getReceivers();
-              const audioReceiver = receivers.find(r => r.track?.kind === "audio");
-              if (audioReceiver?.track) {
-                const stream = new MediaStream([audioReceiver.track]);
-                tryAttach(stream);
+              const audioRx = receivers.find(r => r.track?.kind === "audio");
+              if (audioRx?.track) {
+                const stream = new MediaStream([audioRx.track]);
+                attachStream(stream);
               }
             }
           });
+
+          // Method 3: Fallback khi connectionstatechange
+          pc.addEventListener("connectionstatechange", () => {
+            console.log("[ITY] Connection state:", pc.connectionState);
+            if (pc.connectionState === "connected") {
+              const receivers = pc.getReceivers();
+              const audioRx = receivers.find(r => r.track?.kind === "audio");
+              if (audioRx?.track) {
+                const stream = new MediaStream([audioRx.track]);
+                attachStream(stream);
+              }
+            }
+          });
+
+          // Method 4: Polling fallback - kiểm tra mỗi 500ms trong 10s
+          let pollCount = 0;
+          const poll = setInterval(() => {
+            pollCount++;
+            if (pollCount > 20) { clearInterval(poll); return; }
+            const receivers = pc.getReceivers();
+            const audioRx = receivers.find(r => r.track?.kind === "audio" && r.track.readyState === "live");
+            if (audioRx?.track) {
+              const stream = new MediaStream([audioRx.track]);
+              attachStream(stream);
+              clearInterval(poll);
+            }
+          }, 500);
         }
 
+        // Ưu tiên dùng session.connection nếu đã có sẵn
+        if (session.connection) {
+          tryAttachAudio(session.connection);
+        }
+        // Lắng nghe peerconnection event (cho trường hợp connection chưa sẵn)
         session.on("peerconnection", (e: { peerconnection: RTCPeerConnection }) => {
-          attachRemoteAudio(e.peerconnection);
+          tryAttachAudio(e.peerconnection);
         });
       });
 
