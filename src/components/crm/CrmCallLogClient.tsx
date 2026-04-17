@@ -12,7 +12,7 @@ import {
   Clock, User, Users, TrendingUp, BarChart2,
   ChevronDown, ChevronUp, X, Check, Edit3, Trash2,
   Mic, MicOff, Calendar, ArrowUpRight, Info,
-  FileText, ExternalLink, Zap,
+  FileText, ExternalLink, Zap, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import type { CallLog, CallAnalytics, CallStatus } from "@/lib/crm-types";
 import {
@@ -542,6 +542,43 @@ function AnalyticsPanel({ analytics }: { analytics: CallAnalytics | null }) {
   );
 }
 
+// ── Pagination Component ─────────────────────────────────────────────────────
+function Pagination({ page, totalPages, onPage }: { page: number; totalPages: number; onPage: (p: number) => void }) {
+  if (totalPages <= 1) return null;
+  const pages: (number | "...")[] = [];
+  if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); }
+  else {
+    pages.push(1);
+    if (page > 3) pages.push("...");
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+    if (page < totalPages - 2) pages.push("...");
+    pages.push(totalPages);
+  }
+  return (
+    <div className="flex items-center justify-center gap-1 py-4">
+      <button onClick={() => onPage(page - 1)} disabled={page === 1}
+        className="p-1.5 rounded-lg transition-colors disabled:opacity-30"
+        style={{ color: T.primary, background: T.primaryBg }}>
+        <ChevronLeft size={14} />
+      </button>
+      {pages.map((p, i) => p === "..." ? (
+        <span key={`dot-${i}`} className="px-2 text-xs" style={{ color: T.textMuted }}>…</span>
+      ) : (
+        <button key={p} onClick={() => onPage(p as number)}
+          className="w-8 h-8 rounded-lg text-xs font-semibold transition-colors"
+          style={{ background: page === p ? T.primary : T.primaryBg, color: page === p ? "#fff" : T.primary }}>
+          {p}
+        </button>
+      ))}
+      <button onClick={() => onPage(page + 1)} disabled={page === totalPages}
+        className="p-1.5 rounded-lg transition-colors disabled:opacity-30"
+        style={{ color: T.primary, background: T.primaryBg }}>
+        <ChevronRight size={14} />
+      </button>
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 interface Props {
   initialLogs: CallLog[];
@@ -618,8 +655,68 @@ export default function CrmCallLogClient({ initialLogs, isAdmin, staffId }: Prop
     if (res.ok) setLogs(prev => prev.filter(l => l.id !== id));
   };
 
-  // Unique staff list for filter
-  const staffList = Array.from(new Map(logs.filter(l => l.staffId).map(l => [l.staffId, l.staffName ?? l.staffId])).entries());
+  // Pagination
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(logs.length / PAGE_SIZE));
+  const pagedLogs = logs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page khi filter thay đổi
+  useEffect(() => { setPage(1); }, [search, filterStatus, filterStaff, dateFrom, dateTo]);
+
+  // Staff list — fetch từ API để có tên đầy đủ
+  const [staffList, setStaffList] = useState<[string, string][]>([]);
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetch("/api/crm/staff").then(r => r.ok ? r.json() : []).then((data: { id: string; fullName: string }[]) => {
+      setStaffList(data.map(s => [s.id, s.fullName]));
+    }).catch(() => {
+      // fallback: lấy từ logs
+      setStaffList(Array.from(new Map(logs.filter(l => l.staffId && l.staffName).map(l => [l.staffId!, l.staffName!])).entries()));
+    });
+  }, [isAdmin, logs]);
+
+  // Báo cáo theo ngày/tuần/tháng
+  const [reportPeriod, setReportPeriod] = useState<"today" | "week" | "month">("today");
+  const [reportLogs, setReportLogs] = useState<CallLog[]>([]);
+  const [reportLoading, setReportLoading] = useState(false);
+
+  const fetchReport = useCallback(async (period: "today" | "week" | "month") => {
+    setReportLoading(true);
+    try {
+      const now = new Date();
+      let from = today();
+      let to = today();
+      if (period === "week") {
+        const d = new Date(now); d.setDate(d.getDate() - d.getDay() + 1);
+        from = d.toISOString().slice(0, 10);
+      } else if (period === "month") {
+        from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      }
+      const res = await fetch(`/api/crm/call-logs?dateFrom=${from}&dateTo=${to}&limit=500`);
+      if (res.ok) setReportLogs(await res.json());
+    } finally { setReportLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchReport(reportPeriod); }, [reportPeriod, fetchReport]);
+
+  // Tính báo cáo
+  const reportStats = {
+    total: reportLogs.length,
+    answered: reportLogs.filter(l => l.status === "answered").length,
+    missed: reportLogs.filter(l => l.status === "missed").length,
+    totalDuration: reportLogs.reduce((s, l) => s + (l.duration ?? 0), 0),
+    byStaff: Object.entries(
+      reportLogs.reduce((acc, l) => {
+        const key = l.staffName ?? l.staffId ?? "Không rõ";
+        if (!acc[key]) acc[key] = { total: 0, answered: 0, duration: 0 };
+        acc[key].total++;
+        if (l.status === "answered") acc[key].answered++;
+        acc[key].duration += l.duration ?? 0;
+        return acc;
+      }, {} as Record<string, { total: number; answered: number; duration: number }>)
+    ).sort((a, b) => b[1].total - a[1].total),
+  };
 
   const totalDuration = analytics?.totalDuration ?? 0;
   const answerRate = analytics?.answerRate ?? 0;
@@ -774,7 +871,7 @@ export default function CrmCallLogClient({ initialLogs, isAdmin, staffId }: Prop
                 </div>
               ) : (
                 <div className="divide-y" style={{ borderColor: T.divider }}>
-                  {logs.map(log => (
+                  {pagedLogs.map(log => (
                     <div key={log.id}
                       className="grid gap-2 px-4 py-3 items-center hover:bg-indigo-50/30 transition-colors cursor-pointer group"
                       style={{ gridTemplateColumns: "1fr 1.2fr 1fr 80px 100px 80px 80px" }}
@@ -847,6 +944,75 @@ export default function CrmCallLogClient({ initialLogs, isAdmin, staffId }: Prop
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              {/* Pagination */}
+              <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+            </div>
+
+            {/* Báo cáo theo ngày/tuần/tháng */}
+            <div className="rounded-2xl p-5" style={{ background: T.card, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-sm flex items-center gap-2" style={{ color: T.textPrimary }}>
+                  <TrendingUp size={16} style={{ color: T.primary }} /> Báo cáo cuộc gọi
+                </h2>
+                <div className="flex gap-1">
+                  {(["today", "week", "month"] as const).map(p => (
+                    <button key={p} onClick={() => setReportPeriod(p)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                      style={{ background: reportPeriod === p ? T.primary : T.grayBg, color: reportPeriod === p ? "#fff" : T.textMuted }}>
+                      {p === "today" ? "Hôm nay" : p === "week" ? "Tuần này" : "Tháng này"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {reportLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw size={20} className="animate-spin" style={{ color: T.primary }} />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Summary stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { label: "Tổng cuộc gọi", value: reportStats.total, color: T.primary },
+                      { label: "Thành công", value: reportStats.answered, color: T.green },
+                      { label: "Nhỡ", value: reportStats.missed, color: T.red },
+                      { label: "Tổng thời lượng", value: formatDuration(reportStats.totalDuration), color: T.gold },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="rounded-xl p-3 text-center" style={{ background: T.grayBg, border: `1px solid ${T.divider}` }}>
+                        <p className="text-xl font-bold" style={{ color }}>{value}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: T.textMuted }}>{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {/* By staff */}
+                  {reportStats.byStaff.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold mb-2" style={{ color: T.textSecondary }}>Theo nhân viên</p>
+                      <div className="space-y-2">
+                        {reportStats.byStaff.map(([name, stat]) => (
+                          <div key={name} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: T.grayBg, border: `1px solid ${T.divider}` }}>
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: T.primary }}>
+                              {name[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold truncate" style={{ color: T.textPrimary }}>{name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: T.divider }}>
+                                  <div className="h-full rounded-full" style={{ width: `${reportStats.total > 0 ? (stat.total / reportStats.total) * 100 : 0}%`, background: T.primary }} />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-xs font-bold" style={{ color: T.textPrimary }}>{stat.total} cuộc</p>
+                              <p className="text-[10px]" style={{ color: T.green }}>{stat.answered} thành công · {formatDuration(stat.duration)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

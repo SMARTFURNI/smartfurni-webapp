@@ -123,15 +123,15 @@ export async function POST(req: NextRequest) {
     const normalizedReceiver = normalizePhone(receiverPhone);
     const plus84Receiver = normalizedReceiver.startsWith("0") ? "+84" + normalizedReceiver.slice(1) : normalizedReceiver;
     const startedAtDate = new Date(startedAt);
-    const windowStart = new Date(startedAtDate.getTime() - 5 * 60 * 1000).toISOString();
-    const windowEnd = new Date(startedAtDate.getTime() + 5 * 60 * 1000).toISOString();
+    // Nới rộng window ±10 phút để xử lý lệch múi giờ hoặc delay webhook
+    const windowStart = new Date(startedAtDate.getTime() - 10 * 60 * 1000).toISOString();
+    const windowEnd = new Date(startedAtDate.getTime() + 10 * 60 * 1000).toISOString();
 
     const existingRows = await query<{ id: string; data: string }>(
       `SELECT id, data FROM crm_call_logs
        WHERE (receiver_number = $1 OR receiver_number = $2
            OR caller_number = $1 OR caller_number = $2)
          AND started_at BETWEEN $3 AND $4
-         AND (recording_url IS NULL OR recording_url = '')
          AND provider = 'jssip'
        ORDER BY started_at DESC
        LIMIT 1`,
