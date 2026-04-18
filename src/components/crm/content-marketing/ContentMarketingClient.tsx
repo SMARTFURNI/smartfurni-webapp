@@ -12,6 +12,8 @@ import {
   Zap, Target, Mic, Timer, FileText, ChevronDown, Printer, Download,
 } from "lucide-react";
 import ContentSettingsTab from "./ContentSettingsTab";
+import FacebookTabWrapper from "./FacebookTabWrapper";
+import TikTokTabWrapper from "./TikTokTabWrapper";
 import {
   DndContext,
   DragOverlay,
@@ -1834,15 +1836,16 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function ContentMarketingClient() {
-  const [activeTab, setActiveTab] = useState<"generator" | "planner" | "calendar" | "settings">("generator");
+  const [activeTab, setActiveTab] = useState<"generator" | "planner" | "facebook" | "tiktok" | "settings">("generator");
   const [refreshKey, setRefreshKey] = useState(0);
   const [savedToast, setSavedToast] = useState(false);
 
   const tabs = [
-    { id: "generator" as const, label: "AI Script Generator", icon: Wand2,      desc: "Tạo kịch bản bằng AI" },
+    { id: "generator" as const, label: "AI Script Generator", icon: Wand2,       desc: "Tạo kịch bản bằng AI" },
     { id: "planner" as const,   label: "Kế hoạch Content",    icon: LayoutGrid,  desc: "Quản lý pipeline" },
-    { id: "calendar" as const,  label: "Lịch đăng bài",       icon: Calendar,    desc: "Xem theo tháng" },
-    { id: "settings" as const,  label: "Cài đặt",             icon: Settings,    desc: "Admin only" },
+    { id: "facebook" as const,  label: "Đăng Facebook",        icon: Facebook,    desc: "Đăng bài lên Fanpage" },
+    { id: "tiktok" as const,    label: "Đăng TikTok",          icon: Smartphone,  desc: "Đăng video TikTok" },
+    { id: "settings" as const,  label: "Cài đặt",              icon: Settings,    desc: "Admin only" },
   ];
 
   return (
@@ -1904,7 +1907,8 @@ export function ContentMarketingClient() {
           }} />
         )}
         {activeTab === "planner" && <ContentPlannerTab key={refreshKey} />}
-        {activeTab === "calendar" && <PublishingCalendarTab key={refreshKey} />}
+        {activeTab === "facebook" && <FacebookTabWrapper />}
+        {activeTab === "tiktok" && <TikTokTabWrapper />}
         {activeTab === "settings" && <ContentSettingsTab />}
       </div>
     </div>

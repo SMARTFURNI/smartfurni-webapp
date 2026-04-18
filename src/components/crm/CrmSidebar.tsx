@@ -120,7 +120,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "AI Agent", href: "/crm/ai-agent", icon: Bot, superAdminOnly: true, permissionKey: "ai_agent_view" },
       { label: "Automation Rules", href: "/crm/automation", icon: Zap, superAdminOnly: true, permissionKey: "automation_view" },
-      { label: "Lịch đăng bài FB", href: "/crm/facebook-scheduler", icon: Share2, superAdminOnly: true, permissionKey: "facebook_scheduler_view" },
       { label: "Nhật ký hoạt động", href: "/crm/audit", icon: Shield, superAdminOnly: true, permissionKey: "audit_logs_view" },
       { label: "Quản lý Vai trò", href: "/crm/roles", icon: Shield, superAdminOnly: true, permissionKey: "permissions_manage" },
       { label: "Phân quyền & API Keys", href: "/crm/permissions", icon: Key, superAdminOnly: true, permissionKey: "permissions_manage" },
