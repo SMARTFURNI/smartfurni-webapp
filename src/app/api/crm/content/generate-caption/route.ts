@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
   const modelChain = [primaryModel, ...fallbackList.filter(m => m !== primaryModel)];
 
   const platformGuide: Record<string, string> = {
-    facebook: "Facebook Fanpage (caption dài 150-300 từ, storytelling, emotional, dùng emoji vừa phải, kết thúc bằng CTA rõ ràng, thêm hashtag liên quan)",
-    tiktok: "TikTok (caption ngắn 50-100 từ, hook mạnh, năng động, trending hashtag, CTA ngắn gọn)",
+    facebook: "Facebook Fanpage (caption dài 150-300 từ, storytelling, emotional, dùng emoji vừa phải, kết thúc bằng CTA rõ ràng)",
+    tiktok: "TikTok (caption ngắn 50-100 từ, hook mạnh, năng động, CTA ngắn gọn)",
   };
 
   const toneGuide: Record<string, string> = {
@@ -92,30 +92,31 @@ export async function POST(req: NextRequest) {
     educational: "giáo dục, chia sẻ kiến thức, hữu ích",
   };
 
-  // Tiêu đề luôn viết hoa
-  const uppercaseTitle = title ? title.toUpperCase() : "";
-
-  const hashtagStr = hashtags.length > 0 ? `\nHashtag gợi ý: ${hashtags.map((h: string) => `#${h}`).join(" ")}` : "";
+  const hashtagHint = hashtags.length > 0
+    ? `\nHashtag tham khảo từ kịch bản: ${hashtags.map((h: string) => `#${h}`).join(" ")}`
+    : "";
 
   const prompt = `Bạn là chuyên gia marketing nội thất thông minh cho thương hiệu ${brandName}.
 
 Hãy viết caption bài đăng ${platformGuide[platform] || platformGuide.facebook} với giọng điệu ${toneGuide[tone] || toneGuide.professional}.
 
 Thông tin kịch bản:
-- Tiêu đề video (VIẾT HOA, dùng làm dòng đầu tiên của caption): ${uppercaseTitle || "(không có)"}
+- Tiêu đề kịch bản gốc (chỉ để tham khảo nội dung, KHÔNG dùng làm tiêu đề bài đăng): ${title || "(không có)"}
 - Nội dung kịch bản:
 ${script ? script.slice(0, 2000) : "(không có kịch bản, hãy tạo dựa trên tiêu đề)"}
-${hashtagStr}
+${hashtagHint}
 
-Yêu cầu quan trọng:
-1. Dòng đầu tiên PHẢI là tiêu đề viết HOA TOÀN BỘ: "${uppercaseTitle || "TIÊU ĐỀ BÀI ĐĂNG"}"
-2. Viết nội dung caption hoàn chỉnh bên dưới tiêu đề
-3. Phù hợp với nền tảng ${platform === "facebook" ? "Facebook" : "TikTok"}
-4. Thêm emoji phù hợp (không quá nhiều)
-5. Kết thúc bằng CTA (call-to-action) rõ ràng TRƯỚC phần hashtag
-6. Thêm 5-10 hashtag liên quan ở cuối
-7. KHÔNG thêm thông tin liên hệ hay địa chỉ công ty (sẽ được thêm tự động)
-8. Chỉ trả về caption, không giải thích thêm`;
+Yêu cầu bắt buộc — trả về đúng định dạng sau:
+
+[DÒNG 1] Tiêu đề bài đăng: Tự sáng tạo một tiêu đề BÁN HÀNG ĐẬP MẮT, VIẾT HOA TOÀN BỘ, tóm gọn điểm nhấn chính của nội dung kịch bản (KHÔNG copy tiêu đề kịch bản gốc, phải là tiêu đề mới sáng tạo, thu hút click)
+
+[DÒNG 2 trở đi] Nội dung caption: Viết nội dung bài đăng hoàn chỉnh bên dưới tiêu đề, phù hợp nền tảng ${platform === "facebook" ? "Facebook" : "TikTok"}, có emoji vừa phải, kết thúc bằng CTA rõ ràng
+
+[CUỐI CÙNG] Hashtag: Tạo 8-12 hashtag LIÊN QUAN TRỰC TIẾP đến nội dung bài đăng vừa viết (không chỉ hashtag chung chung), mỗi hashtag bắt đầu bằng #, viết liền nhau trên một dòng
+
+Lưu ý:
+- KHÔNG thêm thông tin liên hệ hay địa chỉ công ty (sẽ được thêm tự động)
+- Chỉ trả về caption theo đúng định dạng trên, không giải thích thêm`;
 
   const startTime = Date.now();
   const genAI = new GoogleGenerativeAI(apiKey);
