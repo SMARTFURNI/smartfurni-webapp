@@ -31,6 +31,18 @@ function isModelNotFoundError(msg: string) {
   return msg.includes("404") || msg.includes("not found") || msg.includes("MODEL_NOT_FOUND");
 }
 
+// Footer cố định luôn được thêm vào cuối mỗi caption
+const SMARTFURNI_FOOTER = `
+📩 [NHẬN BÁO GIÁ DỰ ÁN NGAY] – Inbox để được tư vấn kích thước phù hợp nhất với căn hộ của bạn.
+
+🏢 CÔNG TY CỔ PHẦN SMARTFURNI
+📍 Showroom HCM: 74 Nguyễn Thị Nhung, KĐT Vạn Phúc city, TP. Thủ Đức, TP. Hồ Chí Minh
+📍 Showroom HN: B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông, TP. Hà Nội
+🏭 XƯỞNG SẢN XUẤT: 202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn, HCM
+📞 Hotline: 028.7122.0818
+💬 Zalo: https://zalo.me/0918326552
+🌐 Website: https://smartfurni.vn`;
+
 export async function POST(req: NextRequest) {
   await ensureLoaded();
   const session = await getSession();
@@ -80,6 +92,9 @@ export async function POST(req: NextRequest) {
     educational: "giáo dục, chia sẻ kiến thức, hữu ích",
   };
 
+  // Tiêu đề luôn viết hoa
+  const uppercaseTitle = title ? title.toUpperCase() : "";
+
   const hashtagStr = hashtags.length > 0 ? `\nHashtag gợi ý: ${hashtags.map((h: string) => `#${h}`).join(" ")}` : "";
 
   const prompt = `Bạn là chuyên gia marketing nội thất thông minh cho thương hiệu ${brandName}.
@@ -87,18 +102,20 @@ export async function POST(req: NextRequest) {
 Hãy viết caption bài đăng ${platformGuide[platform] || platformGuide.facebook} với giọng điệu ${toneGuide[tone] || toneGuide.professional}.
 
 Thông tin kịch bản:
-- Tiêu đề video: ${title || "(không có)"}
+- Tiêu đề video (VIẾT HOA, dùng làm dòng đầu tiên của caption): ${uppercaseTitle || "(không có)"}
 - Nội dung kịch bản:
 ${script ? script.slice(0, 2000) : "(không có kịch bản, hãy tạo dựa trên tiêu đề)"}
 ${hashtagStr}
 
-Yêu cầu:
-1. Viết caption hoàn chỉnh, sẵn sàng đăng ngay
-2. Phù hợp với nền tảng ${platform === "facebook" ? "Facebook" : "TikTok"}
-3. Thêm emoji phù hợp (không quá nhiều)
-4. Kết thúc bằng CTA (call-to-action) rõ ràng
-5. Thêm 5-10 hashtag liên quan ở cuối
-6. Chỉ trả về caption, không giải thích thêm`;
+Yêu cầu quan trọng:
+1. Dòng đầu tiên PHẢI là tiêu đề viết HOA TOÀN BỘ: "${uppercaseTitle || "TIÊU ĐỀ BÀI ĐĂNG"}"
+2. Viết nội dung caption hoàn chỉnh bên dưới tiêu đề
+3. Phù hợp với nền tảng ${platform === "facebook" ? "Facebook" : "TikTok"}
+4. Thêm emoji phù hợp (không quá nhiều)
+5. Kết thúc bằng CTA (call-to-action) rõ ràng TRƯỚC phần hashtag
+6. Thêm 5-10 hashtag liên quan ở cuối
+7. KHÔNG thêm thông tin liên hệ hay địa chỉ công ty (sẽ được thêm tự động)
+8. Chỉ trả về caption, không giải thích thêm`;
 
   const startTime = Date.now();
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -113,7 +130,9 @@ Yêu cầu:
         generationConfig: { temperature, maxOutputTokens: 2048 },
       });
       const result = await model.generateContent(prompt);
-      const caption = result.response.text();
+      const aiCaption = result.response.text().trim();
+      // Ghép caption AI + footer cố định
+      const caption = aiCaption + "\n" + SMARTFURNI_FOOTER;
       const generationTimeMs = Date.now() - startTime;
       return NextResponse.json({
         success: true,
