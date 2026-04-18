@@ -6,7 +6,9 @@ export default function FacebookTabWrapper() {
   return (
     <div>
       <ScriptToPostBanner platform="facebook" />
-      <FacebookSchedulerClient />
+      <div className="rounded-2xl overflow-hidden" style={{ background: "#fff", padding: "24px", boxShadow: "0 1px 8px rgba(0,0,0,0.08)" }}>
+        <FacebookSchedulerClient />
+      </div>
     </div>
   );
 }
