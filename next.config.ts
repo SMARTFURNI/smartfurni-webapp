@@ -11,11 +11,12 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  // Tắt Next.js Client Router Cache để tránh các trang auth bị cache
   experimental: {
+    // Bật Client Router Cache: dynamic 30s giúp sidebar chuyển trang nhanh
+    // Trang auth dùng middleware redirect nên không bị ảnh hưởng bởi cache
     staleTimes: {
-      dynamic: 0,
-      static: 0,
+      dynamic: 30,
+      static: 180,
     },
     // Tăng giới hạn body size cho upload video 200MB
     serverActions: {

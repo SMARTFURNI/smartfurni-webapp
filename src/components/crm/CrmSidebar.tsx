@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Kanban,
@@ -178,7 +178,11 @@ interface CrmSidebarProps {
 
 export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staffName, rolePermissions = null, roleName }: CrmSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  // Optimistic active: cập nhật ngay khi click, không chờ pathname thay đổi
+  const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
+  const activePath = optimisticPath ?? pathname;
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({ "Tự động hóa & Bảo mật": true });
 
@@ -199,10 +203,16 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
   }, []);
 
   function isActive(href: string, exact?: boolean) {
-    if (!pathname) return false;
-    if (exact) return pathname === href;
-    return pathname.startsWith(href);
+    const path = activePath;
+    if (!path) return false;
+    if (exact) return path === href;
+    return path.startsWith(href);
   }
+
+  // Reset optimistic khi pathname thực sự thay đổi
+  useEffect(() => {
+    setOptimisticPath(null);
+  }, [pathname]);
 
   function toggleGroup(label: string) {
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -352,12 +362,15 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                   <Link
                     key={item.href}
                     href={item.href}
-                    prefetch={false}
+                    prefetch={true}
                     title={collapsed ? item.label : undefined}
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all mb-0.5 group relative"
                     style={{
                       background: active ? C.bgActive : "transparent",
                       color: active ? C.textActive : C.text,
+                    }}
+                    onClick={() => {
+                      if (!active) setOptimisticPath(item.href);
                     }}
                     onMouseEnter={e => {
                       if (!active) {
