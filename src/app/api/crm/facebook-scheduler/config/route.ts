@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminSession, getCrmSession } from "@/lib/admin-auth";
 import {
   getSchedulerConfig, updateSchedulerConfig,
   loadFacebookSchedulerFromDb,
@@ -11,8 +11,9 @@ async function ensureLoaded() {
 }
 
 // GET /api/crm/facebook-scheduler/config
+// Nhân viên cũng cần đọc config để hiển thị UI scheduler
 export async function GET() {
-  const session = await getAdminSession();
+  const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await ensureLoaded();
   return NextResponse.json(getSchedulerConfig());

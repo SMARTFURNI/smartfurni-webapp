@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminSession, getCrmSession } from "@/lib/admin-auth";
 import {
   getPages, addPage, updatePage, deletePage,
   loadFacebookSchedulerFromDb,
@@ -11,14 +11,15 @@ async function ensureLoaded() {
 }
 
 // GET /api/crm/facebook-scheduler/pages
+// Cho phép cả admin và nhân viên đọc danh sách Fanpage (dùng chung)
 export async function GET() {
-  const session = await getAdminSession();
+  const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await ensureLoaded();
   return NextResponse.json(getPages());
 }
 
-// POST /api/crm/facebook-scheduler/pages — Thêm page mới
+// POST /api/crm/facebook-scheduler/pages — Thêm page mới (chỉ admin)
 export async function POST(req: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(page);
 }
 
-// PUT /api/crm/facebook-scheduler/pages — Cập nhật page
+// PUT /api/crm/facebook-scheduler/pages — Cập nhật page (chỉ admin)
 export async function PUT(req: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -52,7 +53,7 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json(updated);
 }
 
-// DELETE /api/crm/facebook-scheduler/pages?id=xxx
+// DELETE /api/crm/facebook-scheduler/pages?id=xxx (chỉ admin)
 export async function DELETE(req: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
