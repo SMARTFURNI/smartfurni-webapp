@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     description:
       "Mở rộng danh mục sản phẩm với Giường Công Thái Học Điều Chỉnh Điện SmartFurni. Biên lợi nhuận cao, hỗ trợ trưng bày toàn diện.",
     type: "website",
-    url: "https://smartfurni.vn/lp/doi-tac-showroom-nem",
-    images: [{ url: "https://smartfurni.vn/og-b2b.jpg", width: 1200, height: 630 }],
+    url: "https://smartfurni-webapp-production.up.railway.app/lp/doi-tac-showroom-nem",
+    images: [{ url: "https://smartfurni-webapp-production.up.railway.app/og-b2b.jpg", width: 1200, height: 630 }],
   },
   robots: { index: true, follow: true },
 };
