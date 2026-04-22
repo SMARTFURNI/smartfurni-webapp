@@ -869,23 +869,14 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
   const [slides] = useState<Slide[]>(initialSlides);
   const [products] = useState<CrmProduct[]>(initialProducts);
   const [activeIdx, setActiveIdx] = useState(0);
-  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
   const mainAreaRef = useRef<HTMLDivElement>(null);
   const today = new Date().toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const visibleSlides = slides.filter(s => s.visible !== false);
 
-  // Measure main area to compute scale
-  useEffect(() => {
-    const el = mainAreaRef.current;
-    if (!el) return;
-    const obs = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect;
-      setContainerSize({ w: width, h: height });
-    });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+  // Force re-render after mount so ResizeObserver fires
+  const [, forceUpdate] = useState(0);
+  useEffect(() => { forceUpdate(n => n + 1); }, []);
 
   const getProduct = useCallback((productId?: string) => {
     if (!productId) return undefined;
@@ -926,19 +917,22 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
     );
   }
 
-  // Slide native dimensions (A4)
+  // Slide native dimensions (A4 portrait)
   const SLIDE_W = 794;
   const SLIDE_H = 1123;
-  // Nav bar height estimate (px) for scale calculation
-  const NAV_H = 60; // nav buttons + hint text
-  const PAD_V = 48; // 24px top + 24px bottom padding
 
-  // Compute scale to fit both width and height of the available area
-  const availW = containerSize.w > 0 ? containerSize.w - 64 : 560; // minus horizontal padding
-  const availH = containerSize.h > 0 ? containerSize.h - NAV_H - PAD_V : 700;
+  // Read actual container dimensions from DOM (after mount forceUpdate fires)
+  const el = mainAreaRef.current;
+  const rawW = el ? el.clientWidth : (typeof window !== "undefined" ? window.innerWidth - 120 : 800);
+  const rawH = el ? el.clientHeight : (typeof window !== "undefined" ? window.innerHeight - 115 : 600);
+
+  // No extra padding subtraction — the container itself is the slide area
+  const availW = Math.max(rawW, 200);
+  const availH = Math.max(rawH, 200);
+
   const scaleByW = availW / SLIDE_W;
   const scaleByH = availH / SLIDE_H;
-  const scale = Math.min(scaleByW, scaleByH, 1); // never upscale
+  const scale = Math.min(scaleByW, scaleByH); // fit fully within container
   const displayW = Math.round(SLIDE_W * scale);
   const displayH = Math.round(SLIDE_H * scale);
 
@@ -963,7 +957,9 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0, flexDirection: "column" }}>
+        {/* Slide + Sidebar row */}
+        <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
         {/* Thumbnail sidebar */}
         <div ref={thumbRef} style={{ width: 120, flexShrink: 0, background: "rgba(8,7,18,0.9)", borderRight: "1px solid rgba(255,255,255,0.06)", overflowY: "auto", overflowX: "hidden", padding: "12px 10px", display: "flex", flexDirection: "column", gap: 8, height: "100%" }}>
           {visibleSlides.map((slide, idx) => (
@@ -980,61 +976,58 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
           ))}
         </div>
 
-        {/* Main slide area */}
-        <div ref={mainAreaRef} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "24px 32px", overflow: "hidden", minHeight: 0 }}>
+        {/* Main slide area - only the slide, no nav buttons here */}
+        <div ref={mainAreaRef} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", minHeight: 0 }}>
           {activeSlide && (
-            <>
+            <div style={{
+              width: displayW,
+              height: displayH,
+              position: "relative",
+              borderRadius: 12,
+              overflow: "hidden",
+              border: `1px solid rgba(201,168,76,0.2)`,
+              boxShadow: "0 0 40px rgba(201,168,76,0.1)",
+              flexShrink: 0,
+            }}>
               <div style={{
-                width: displayW,
-                height: displayH,
-                position: "relative",
-                borderRadius: 12,
-                overflow: "hidden",
-                border: `1px solid rgba(201,168,76,0.2)`,
-                boxShadow: "0 0 40px rgba(201,168,76,0.1)",
-                flexShrink: 0,
+                position: "absolute", top: 0, left: 0,
+                width: SLIDE_W, height: SLIDE_H,
+                transform: `scale(${scale})`,
+                transformOrigin: "top left",
+                pointerEvents: "none",
               }}>
-                <div style={{
-                  position: "absolute", top: 0, left: 0,
-                  width: SLIDE_W, height: SLIDE_H,
-                  transform: `scale(${scale})`,
-                  transformOrigin: "top left",
-                  pointerEvents: "none",
-                }}>
-                  <SlideRenderer
-                    slide={activeSlide}
-                    product={getProduct(activeSlide.productId)}
-                    products={products}
-                    today={today}
-                  />
-                </div>
+                <SlideRenderer
+                  slide={activeSlide}
+                  product={getProduct(activeSlide.productId)}
+                  products={products}
+                  today={today}
+                />
               </div>
-
-              {/* Navigation buttons */}
-              <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 20 }}>
-                <button
-                  onClick={() => setActiveIdx(i => Math.max(i - 1, 0))}
-                  disabled={activeIdx === 0}
-                  style={{ padding: "8px 20px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: activeIdx === 0 ? "rgba(255,255,255,0.2)" : D.textPrimary, cursor: activeIdx === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 600 }}
-                >
-                  ← Trước
-                </button>
-                <span style={{ fontSize: 13, color: D.textMuted, minWidth: 80, textAlign: "center" }}>
-                  {activeIdx + 1} / {visibleSlides.length}
-                </span>
-                <button
-                  onClick={() => setActiveIdx(i => Math.min(i + 1, visibleSlides.length - 1))}
-                  disabled={activeIdx === visibleSlides.length - 1}
-                  style={{ padding: "8px 20px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: activeIdx === visibleSlides.length - 1 ? "rgba(255,255,255,0.2)" : D.textPrimary, cursor: activeIdx === visibleSlides.length - 1 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 600 }}
-                >
-                  Tiếp →
-                </button>
-              </div>
-              <div style={{ marginTop: 8, fontSize: 12, color: "rgba(255,255,255,0.2)" }}>
-                Dùng phím ← → để điều hướng
-              </div>
-            </>
+            </div>
           )}
+        </div>
+        </div>{/* end slide+sidebar row */}
+
+        {/* Navigation bar - fixed height at bottom */}
+        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 16, padding: "12px 0", borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,7,18,0.9)" }}>
+          <button
+            onClick={() => setActiveIdx(i => Math.max(i - 1, 0))}
+            disabled={activeIdx === 0}
+            style={{ padding: "8px 20px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: activeIdx === 0 ? "rgba(255,255,255,0.2)" : D.textPrimary, cursor: activeIdx === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 600 }}
+          >
+            ← Trước
+          </button>
+          <span style={{ fontSize: 13, color: D.textMuted, minWidth: 80, textAlign: "center" }}>
+            {activeIdx + 1} / {visibleSlides.length}
+          </span>
+          <button
+            onClick={() => setActiveIdx(i => Math.min(i + 1, visibleSlides.length - 1))}
+            disabled={activeIdx === visibleSlides.length - 1}
+            style={{ padding: "8px 20px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: activeIdx === visibleSlides.length - 1 ? "rgba(255,255,255,0.2)" : D.textPrimary, cursor: activeIdx === visibleSlides.length - 1 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 600 }}
+          >
+            Tiếp →
+          </button>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginLeft: 8 }}>Dùng phím ← → để điều hướng</span>
         </div>
       </div>
     </div>
