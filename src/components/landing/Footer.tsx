@@ -36,7 +36,9 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
             <img
               src="/smartfurni-logo-transparent.png"
               alt={footer.companyName}
-              style={{ height: 36, width: "auto", objectFit: "contain" }}
+              width={64}
+              height={36}
+              style={{ height: 36, width: 64, objectFit: "contain", display: "block" }}
             />
           </Link>
 
@@ -83,9 +85,11 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
             <Link href="/" className="flex items-center gap-2 mb-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/smartfurni-logo-transparent.png"
-                alt={footer.companyName}
-                style={{ height: 48, width: "auto", objectFit: "contain" }}
+              src="/smartfurni-logo-transparent.png"
+              alt={footer.companyName}
+              width={85}
+              height={48}
+              style={{ height: 48, width: 85, objectFit: "contain", display: "block" }}
               />
             </Link>
             {footer.tagline && (

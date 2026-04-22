@@ -6,6 +6,8 @@ import FloatingSupport from "@/components/landing/FloatingSupport";
 import ScrollToTop from "@/components/landing/ScrollToTop";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { initDbOnce } from "@/lib/db-init";
+import { Suspense } from "react";
+import NavigationProgress from "@/components/NavigationProgress";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         className="antialiased"
       >
         <CartProvider>
+          <Suspense fallback={null}><NavigationProgress /></Suspense>
           {children}
           <FloatingSupport />
           <ScrollToTop />

@@ -184,6 +184,7 @@ function DropdownMenu({
 // ─── Main Navbar ──────────────────────────────────────────────────
 export default function Navbar({ theme }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [b2bOpen, setB2bOpen] = useState(false);
@@ -211,8 +212,11 @@ export default function Navbar({ theme }: NavbarProps) {
   const maxWidth = theme?.layout.maxWidth ?? 1280;
 
   useEffect(() => {
+    setMounted(true);
+    // Set initial scroll state immediately to avoid CLS on first render
+    setScrolled(window.scrollY > 40);
     const onScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -228,7 +232,8 @@ export default function Navbar({ theme }: NavbarProps) {
     return pathname.startsWith(href.replace("/#", "/").split("#")[0]);
   };
 
-  const navBg = scrolled || mobileOpen
+  // Before mount: always show solid bg to avoid CLS flash (transparent → solid)
+  const navBg = (!mounted || scrolled || mobileOpen)
     ? { backgroundColor: `${bgColor}f8`, backdropFilter: "blur(16px)", borderBottomColor: `${primary}30` }
     : { backgroundColor: "transparent" };
 
@@ -251,7 +256,10 @@ export default function Navbar({ theme }: NavbarProps) {
               <img
                 src="/smartfurni-logo-transparent.png"
                 alt={companyName}
-                style={{ height: 52, width: "auto", objectFit: "contain" }}
+                width={92}
+                height={52}
+                style={{ height: 52, width: 92, objectFit: "contain", display: "block" }}
+                fetchPriority="high"
               />
             </Link>
 
