@@ -166,6 +166,103 @@ function OutlineButton({ children, onClick }: { children: React.ReactNode; onCli
   );
 }
 
+// ─── FAQ data ─────────────────────────────────────────────────────────────────
+const FAQ_ITEMS = [
+  {
+    q: "Sản phẩm có làm hỏng nệm hiện tại của khách hàng không?",
+    a: "Hoàn toàn không. Khung giường Smartfurni được thiết kế với bề mặt phẳng, bo góc mịn và lực nâng phân bổ đều, tương thích 100% với các dòng nệm cao su, nệm lò xo túi độc lập và nệm foam cao cấp mà không làm biến dạng hay ảnh hưởng đến kết cấu nệm.",
+  },
+  {
+    q: "Showroom của tôi nhỏ, trưng bày có tốn diện tích không?",
+    a: "Đây là ưu điểm lớn nhất. Bạn chỉ cần đặt khung giường Smartfurni ngay bên dưới tấm nệm đang trưng bày sẵn có. Không tốn thêm một centimet mặt bằng nào nhưng lại biến góc trưng bày đó thành khu vực trải nghiệm công nghệ thu hút khách nhất Showroom.",
+  },
+  {
+    q: "Nếu động cơ (motor) gặp sự cố thì bảo hành thế nào?",
+    a: "Smartfurni sử dụng dòng motor lõi đồng tiêu chuẩn xuất khẩu Đức với độ bền trên 10 năm. Chúng tôi áp dụng chính sách \"Đổi mới động cơ\" ngay lập tức nếu có lỗi nhà sản xuất. Đội ngũ kỹ thuật của Smartfurni sẽ hỗ trợ xử lý tận nơi, đại lý không cần phải lo lắng về khâu bảo trì.",
+  },
+  {
+    q: "Chính sách chiết khấu và giá bán lẻ được kiểm soát ra sao?",
+    a: "Chúng tôi cam kết mức chiết khấu hấp dẫn nhất thị trường nội thất thông minh hiện nay. Smartfurni kiểm soát chặt chẽ giá bán lẻ niêm yết trên toàn hệ thống (bao gồm cả các kênh online của hãng) để đảm bảo đại lý luôn có lợi nhuận tốt và cạnh tranh công bằng.",
+  },
+  {
+    q: "Tôi có phải nhập hàng số lượng lớn (ôm hàng) không?",
+    a: "Không. Chúng tôi hỗ trợ mô hình \"Trưng bày mẫu - Giao hàng từ kho hãng\". Bạn chỉ cần đầu tư bộ mẫu tại Showroom để khách trải nghiệm. Khi có đơn hàng, Smartfurni sẽ phụ trách vận chuyển và lắp đặt trực tiếp cho khách của bạn.",
+  },
+  {
+    q: "Lắp đặt có phức tạp không, nhân viên cửa hàng có làm được không?",
+    a: "Sản phẩm được thiết kế theo dạng \"Plug & Play\". Chỉ cần đặt lên giường, cắm điện là sử dụng ngay. Smartfurni sẽ cung cấp video hướng dẫn chi tiết và đào tạo nhân viên của bạn chỉ trong 15 phút là có thể thao tác thuần thục.",
+  },
+];
+
+// ─── FAQ Accordion component ────────────────────────────────────────────────
+function FaqAccordion() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {FAQ_ITEMS.map((item, i) => {
+        const isOpen = openIndex === i;
+        return (
+          <FadeIn key={i} delay={i * 60}>
+            <div
+              style={{
+                background: isOpen ? BLACK_CARD : BLACK_SOFT,
+                border: `1px solid ${isOpen ? "rgba(201,168,76,0.45)" : BLACK_BORDER}`,
+                borderRadius: R_LG,
+                overflow: "hidden",
+                transition: "border-color 0.25s ease, background 0.25s ease",
+              }}
+            >
+              <button
+                onClick={() => setOpenIndex(isOpen ? null : i)}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center",
+                  justifyContent: "space-between", gap: 16,
+                  padding: "22px 24px", background: "transparent",
+                  border: "none", cursor: "pointer", textAlign: "left" as const,
+                }}
+              >
+                <span style={{
+                  color: isOpen ? GOLD : WHITE,
+                  fontSize: "clamp(14px, 1.8vw, 16px)",
+                  fontWeight: 500, lineHeight: 1.5,
+                  fontFamily: FONT_HEADING, letterSpacing: "normal",
+                  transition: "color 0.25s ease",
+                }}>
+                  {item.q}
+                </span>
+                <span style={{
+                  color: GOLD, fontSize: 20, flexShrink: 0,
+                  transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
+                  transition: "transform 0.3s ease",
+                  lineHeight: 1,
+                }}>+</span>
+              </button>
+              <div style={{
+                maxHeight: isOpen ? 400 : 0,
+                overflow: "hidden",
+                transition: "max-height 0.4s ease",
+              }}>
+                <div style={{
+                  padding: "0 24px 24px",
+                  borderTop: `1px solid ${BLACK_BORDER}`,
+                  paddingTop: 18,
+                }}>
+                  <p style={{
+                    color: GRAY_LIGHT, fontSize: 14, lineHeight: 1.85,
+                    fontFamily: FONT_BODY, margin: 0,
+                  }}>
+                    {item.a}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Product card ─────────────────────────────────────────────────────────────
 function ProductCard({ product, index }: { product: CrmProduct; index: number }) {
   const [imgErr, setImgErr] = useState(false);
@@ -738,6 +835,25 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
               </FadeIn>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section id="faq" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>Câu hỏi thường gặp</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                Giải Đáp Thắc Mắc
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
+                Dành Cho Đối Tác Đại Lý
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <FaqAccordion />
         </div>
       </section>
 
