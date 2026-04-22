@@ -1,8 +1,22 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
+
+// ─── Design tokens (giống landing page) ──────────────────────────────────────
+const GOLD = "#C9A84C";
+const GOLD_LIGHT = "#E2C97E";
+const BLACK_CARD = "#221D00";
+const BLACK_BORDER = "#2E2800";
+const WHITE = "#F5EDD6";
+const GRAY = "#A89070";
+const GRAY_LIGHT = "#D4C4A0";
+const R_SM = 8;
+const R_LG = 16;
+const R_FULL = 999;
+const FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatPrice(price: number) {
@@ -11,17 +25,12 @@ function formatPrice(price: number) {
   return price.toLocaleString("vi-VN") + " đ";
 }
 
-// ─── Product Card ─────────────────────────────────────────────────────────────
-function ProductCard({ product, theme, index }: { product: Product; theme: SiteTheme; index: number }) {
+const BADGE_LABELS = ["Phổ thông cao cấp", "Bán chạy nhất ★", "Cao cấp nhất"];
+
+// ─── Product Card — giống hệt landing page ───────────────────────────────────
+function ProductCard({ product, index }: { product: Product; index: number }) {
   const [hovered, setHovered] = useState(false);
   const [imgErr, setImgErr] = useState(false);
-  const { colors } = theme;
-  const primary = colors.primary;
-  const secondary = colors.secondary ?? primary;
-  const bgColor = colors.background;
-  const textColor = colors.text ?? "#F5EDD6";
-  const borderColor = colors.border ?? "#2D2500";
-  const surfaceColor = colors.surface ?? "#1A1500";
 
   const isAvailable = product.status === "active";
   const isComingSoon = product.status === "coming_soon";
@@ -30,157 +39,167 @@ function ProductCard({ product, theme, index }: { product: Product; theme: SiteT
       ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
       : 0;
 
-  const BADGE_LABELS = ["Phổ thông cao cấp", "Bán chạy nhất ★", "Cao cấp nhất"];
-  const badgeLabel = BADGE_LABELS[index] ?? null;
-  const badgeHighlight = index === 1;
+  const badgeLabel = BADGE_LABELS[index] ?? "Sản phẩm";
+  const badgeHighlight = index === 1; // index 1 = "Bán chạy nhất" → nền vàng
+
+  const href = isAvailable || isComingSoon ? `/products/${product.slug}` : "#";
 
   return (
-    <Link
-      href={isAvailable || isComingSoon ? `/products/${product.slug}` : "#"}
-      style={{ textDecoration: "none", display: "block" }}
-    >
+    <Link href={href} style={{ textDecoration: "none", display: "block" }}>
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          backgroundColor: surfaceColor,
-          border: `1px solid ${hovered ? primary : borderColor}`,
-          borderRadius: 16,
+          background: BLACK_CARD,
+          border: `1px solid ${hovered ? "rgba(201,168,76,0.45)" : BLACK_BORDER}`,
+          borderRadius: R_LG,
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          height: "100%",
           transform: hovered ? "translateY(-6px)" : "translateY(0)",
-          boxShadow: hovered
-            ? `0 20px 48px ${primary}25, 0 4px 16px rgba(0,0,0,0.4)`
-            : "0 2px 8px rgba(0,0,0,0.25)",
+          boxShadow: hovered ? "0 20px 48px rgba(0,0,0,0.5)" : "0 4px 16px rgba(0,0,0,0.3)",
           transition: "all 0.3s ease",
-          cursor: isAvailable || isComingSoon ? "pointer" : "default",
-          opacity: product.status === "discontinued" ? 0.6 : 1,
+          cursor: "pointer",
+          opacity: product.status === "discontinued" ? 0.55 : 1,
         }}
       >
-        {/* Image */}
-        <div
-          style={{
-            position: "relative",
-            height: 240,
-            background: `linear-gradient(135deg, ${bgColor}, ${surfaceColor})`,
-            overflow: "hidden",
-            flexShrink: 0,
-          }}
-        >
-          {product.coverImage && !imgErr ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.coverImage}
-              alt={product.name}
-              onError={() => setImgErr(true)}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
-                opacity: isAvailable || isComingSoon ? 1 : 0.5,
-              }}
-            />
-          ) : (
-            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke={`${primary}30`} strokeWidth="1">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M3 9l4-4 4 4 4-4 4 4" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-              </svg>
-            </div>
-          )}
-          {/* Gradient overlay */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,11,0,0.65) 0%, transparent 55%)", pointerEvents: "none" }} />
-
-          {/* Status / badge */}
-          <div style={{ position: "absolute", top: 14, right: 14, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-            {badgeLabel && (
+        {/* ── Image 1:1 ratio (giống landing page) ── */}
+        <div style={{
+          position: "relative",
+          width: "100%",
+          paddingBottom: "100%", // tỷ lệ 1:1
+          background: "#0A0800",
+          borderRadius: `${R_LG}px ${R_LG}px 0 0`,
+          overflow: "hidden",
+          flexShrink: 0,
+        }}>
+          <div style={{ position: "absolute", inset: 0 }}>
+            {product.coverImage && !imgErr ? (
+              <Image
+                src={product.coverImage}
+                alt={product.name}
+                fill
+                style={{ objectFit: "cover" }}
+                onError={() => setImgErr(true)}
+              />
+            ) : (
               <div style={{
-                background: badgeHighlight ? `linear-gradient(135deg, ${primary}, ${secondary})` : "rgba(13,11,0,0.8)",
-                color: badgeHighlight ? bgColor : `${textColor}90`,
-                border: badgeHighlight ? "none" : `1px solid rgba(212,196,160,0.3)`,
-                fontSize: 10, fontWeight: 700, padding: "5px 12px", letterSpacing: "0.08em", borderRadius: 999,
+                position: "absolute", inset: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 56,
               }}>
-                {badgeLabel}
+                🛏️
               </div>
             )}
+            {/* Gradient overlay */}
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,11,0,0.7) 0%, transparent 55%)" }} />
+          </div>
+
+          {/* Badges */}
+          <div style={{ position: "absolute", top: 14, right: 14, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+            {/* Position badge */}
+            <div style={{
+              background: badgeHighlight ? GOLD : "rgba(13,11,0,0.8)",
+              color: badgeHighlight ? "#0A0800" : GRAY_LIGHT,
+              border: badgeHighlight ? "none" : `1px solid rgba(212,196,160,0.3)`,
+              fontSize: 10, fontWeight: 700, padding: "5px 12px",
+              letterSpacing: "0.08em", borderRadius: R_FULL,
+              fontFamily: FONT,
+            }}>
+              {badgeLabel}
+            </div>
+            {/* Discount badge */}
+            {discount > 0 && isAvailable && (
+              <div style={{
+                background: "rgba(239,68,68,0.9)", color: "#fff",
+                fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL,
+                fontFamily: FONT,
+              }}>
+                -{discount}%
+              </div>
+            )}
+            {/* Status badges */}
             {product.status === "out_of_stock" && (
-              <div style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#F87171", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: 999 }}>
+              <div style={{
+                background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)",
+                color: "#F87171", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL,
+                fontFamily: FONT,
+              }}>
                 Hết hàng
               </div>
             )}
             {isComingSoon && (
-              <div style={{ background: `${primary}20`, border: `1px solid ${primary}50`, color: primary, fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: 999 }}>
+              <div style={{
+                background: `rgba(201,168,76,0.15)`, border: `1px solid rgba(201,168,76,0.4)`,
+                color: GOLD, fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL,
+                fontFamily: FONT,
+              }}>
                 Sắp ra mắt
-              </div>
-            )}
-            {discount > 0 && isAvailable && (
-              <div style={{ background: "rgba(239,68,68,0.9)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: 999 }}>
-                -{discount}%
               </div>
             )}
           </div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: "20px 20px 24px", display: "flex", flexDirection: "column", flex: 1 }}>
-          {/* Category / SKU */}
-          <div style={{ color: primary, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, textTransform: "uppercase" }}>
-            {product.category === "standard" ? "Standard" : product.category === "premium" ? "Premium" : product.category === "elite" ? "Elite" : "Phụ kiện"}
+        {/* ── Content ── */}
+        <div style={{ padding: "22px 22px 26px", display: "flex", flexDirection: "column", flex: 1 }}>
+          {/* Category label */}
+          <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT, textTransform: "uppercase" }}>
+            {product.category === "standard" ? "Standard"
+              : product.category === "premium" ? "Premium"
+              : product.category === "elite" ? "Elite"
+              : "Phụ kiện"}
           </div>
 
           {/* Name */}
-          <h3 style={{ color: textColor, fontSize: 17, fontWeight: 600, marginBottom: 8, lineHeight: 1.4, minHeight: 44 }}>
+          <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 8, lineHeight: 1.4, fontFamily: FONT, minHeight: 44 }}>
             {product.name}
           </h3>
 
           {/* Description */}
-          <p style={{ color: `${textColor}70`, fontSize: 13, lineHeight: 1.7, marginBottom: 14, flex: 1 }}>
-            {product.description.slice(0, 100)}{product.description.length > 100 ? "…" : ""}
-          </p>
+          {product.description && (
+            <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, marginBottom: 14, fontFamily: FONT, flex: 1 }}>
+              {product.description.slice(0, 90)}{product.description.length > 90 ? "…" : ""}
+            </p>
+          )}
 
           {/* Features (top 4) */}
           {product.features.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
+            <ul style={{ margin: "0 0 14px 0", padding: 0, listStyle: "none" }}>
               {product.features.slice(0, 4).map((f) => (
-                <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 5 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: primary, flexShrink: 0, marginTop: 5 }} />
-                  <span style={{ color: `${textColor}75`, fontSize: 12, lineHeight: 1.5 }}>{f}</span>
-                </div>
+                <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 5 }}>
+                  <span style={{ color: GOLD, fontSize: 12, lineHeight: 1.6, flexShrink: 0 }}>•</span>
+                  <span style={{ color: GRAY_LIGHT, fontSize: 12, lineHeight: 1.6, fontFamily: FONT }}>{f}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
 
-          {/* Price */}
-          {product.price > 0 && (
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 14 }}>
-              <span style={{ color: primary, fontSize: 18, fontWeight: 800 }}>
-                {formatPrice(product.price)}
-              </span>
-              {discount > 0 && (
-                <span style={{ color: `${textColor}40`, fontSize: 13, textDecoration: "line-through" }}>
-                  {formatPrice(product.originalPrice)}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* CTA */}
+          {/* Price box — giống landing page */}
           <div style={{
-            background: hovered ? `${primary}20` : `${primary}10`,
-            border: `1px solid ${hovered ? primary + "60" : primary + "30"}`,
+            background: "rgba(201,168,76,0.06)",
+            border: `1px solid rgba(201,168,76,0.2)`,
             padding: "12px 14px",
-            color: primary,
-            fontSize: 13,
-            fontWeight: 600,
-            borderRadius: 8,
-            textAlign: "center",
-            transition: "all 0.2s",
+            borderRadius: R_SM,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}>
-            {isComingSoon ? "Đặt trước ngay →" : isAvailable ? "Xem chi tiết →" : "Xem thêm →"}
+            <div>
+              <div style={{ color: GRAY, fontSize: 10, marginBottom: 3, fontFamily: FONT }}>
+                {isComingSoon ? "Đặt trước" : "Giá bán lẻ"}
+              </div>
+              <div style={{ color: GOLD, fontSize: 18, fontWeight: 800, fontFamily: FONT }}>
+                {product.price > 0 ? formatPrice(product.price) : "Liên hệ"}
+              </div>
+            </div>
+            {discount > 0 && product.price > 0 && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ color: GRAY, fontSize: 10, marginBottom: 3, fontFamily: FONT }}>Giá gốc</div>
+                <div style={{ color: GRAY, fontSize: 13, textDecoration: "line-through", fontFamily: FONT }}>
+                  {formatPrice(product.originalPrice)}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -188,7 +207,7 @@ function ProductCard({ product, theme, index }: { product: Product; theme: SiteT
   );
 }
 
-// ─── Section Props ────────────────────────────────────────────────────────────
+// ─── Section ──────────────────────────────────────────────────────────────────
 interface StaticProductsSectionProps {
   theme: SiteTheme;
   products: Product[];
@@ -203,53 +222,65 @@ export default function StaticProductsSection({
   sectionSubtitle = "Được chế tác từ thép cường lực, tích hợp motor Đức — bảo hành 5 năm chính hãng",
 }: StaticProductsSectionProps) {
   const { colors, layout } = theme;
-  const primary = colors.primary;
-  const secondary = colors.secondary ?? primary;
-  const bgColor = colors.background;
-  const textColor = colors.text ?? "#F5EDD6";
+  const primary = colors.primary ?? GOLD;
+  const secondary = colors.secondary ?? GOLD_LIGHT;
+  const bgColor = colors.background ?? "#0D0B00";
   const maxWidth = layout.maxWidth ?? 1280;
 
-  // Lọc chỉ sản phẩm không discontinued
   const displayProducts = products.filter((p) => p.status !== "discontinued");
-
   if (displayProducts.length === 0) return null;
 
   return (
-    <section style={{ background: `${bgColor}`, padding: "80px 0" }}>
+    <section style={{ background: bgColor, padding: "80px 0" }}>
       <div style={{ maxWidth, margin: "0 auto", padding: "0 24px" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 48 }}>
+
+        {/* ── Header ── */}
+        <div style={{ textAlign: "center", marginBottom: 52 }}>
+          {/* Label pill */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            background: `${primary}15`, border: `1px solid ${primary}40`,
-            borderRadius: 999, padding: "6px 16px", marginBottom: 20,
+            background: "rgba(201,168,76,0.08)",
+            border: `1px solid rgba(201,168,76,0.3)`,
+            borderRadius: R_FULL, padding: "6px 18px", marginBottom: 20,
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: primary, display: "inline-block" }} />
-            <span style={{ color: primary, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, display: "inline-block" }} />
+            <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: FONT }}>
               Dòng sản phẩm
             </span>
           </div>
+
+          {/* Title */}
           <h2 style={{
-            fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 300, lineHeight: 1.15,
-            color: textColor, marginBottom: 16, letterSpacing: "-0.01em",
+            fontSize: "clamp(28px, 4vw, 48px)",
+            fontWeight: 300, lineHeight: 1.15,
+            color: WHITE, marginBottom: 16,
+            letterSpacing: "-0.01em", fontFamily: FONT,
           }}>
-            {sectionTitle.split(" ").slice(0, -2).join(" ")}{" "}
-            <span style={{ color: primary }}>
-              {sectionTitle.split(" ").slice(-2).join(" ")}
-            </span>
+            {(() => {
+              const words = sectionTitle.split(" ");
+              const half = Math.ceil(words.length / 2);
+              return (
+                <>
+                  {words.slice(0, half).join(" ")}{" "}
+                  <span style={{ color: GOLD }}>{words.slice(half).join(" ")}</span>
+                </>
+              );
+            })()}
           </h2>
+
           {/* Gold divider */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 16 }}>
-            <div style={{ width: 40, height: 1, background: `linear-gradient(to right, transparent, ${primary})` }} />
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: primary }} />
-            <div style={{ width: 40, height: 1, background: `linear-gradient(to left, transparent, ${primary})` }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
+            <div style={{ flex: 1, maxWidth: 60, height: 1, background: `linear-gradient(to right, transparent, ${GOLD})` }} />
+            <div style={{ width: 5, height: 5, background: GOLD, transform: "rotate(45deg)", borderRadius: 1 }} />
+            <div style={{ flex: 1, maxWidth: 60, height: 1, background: `linear-gradient(to left, transparent, ${GOLD})` }} />
           </div>
-          <p style={{ color: `${textColor}60`, fontSize: 15, lineHeight: 1.7, maxWidth: 560, margin: "0 auto" }}>
+
+          <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.7, maxWidth: 560, margin: "0 auto", fontFamily: FONT }}>
             {sectionSubtitle}
           </p>
         </div>
 
-        {/* Product grid */}
+        {/* ── Product grid ── */}
         <div style={{
           display: "grid",
           gridTemplateColumns: displayProducts.length === 1
@@ -257,26 +288,31 @@ export default function StaticProductsSection({
             : displayProducts.length === 2
               ? "repeat(2, 1fr)"
               : "repeat(auto-fill, minmax(280px, 1fr))",
-          gap: 24,
-          marginBottom: 40,
+          gap: 20,
+          marginBottom: 44,
           justifyContent: displayProducts.length <= 2 ? "center" : undefined,
         }}>
           {displayProducts.map((p, i) => (
-            <ProductCard key={p.id} product={p} theme={theme} index={i} />
+            <ProductCard key={p.id} product={p} index={i} />
           ))}
         </div>
 
-        {/* View all CTA */}
+        {/* ── CTA ── */}
         <div style={{ textAlign: "center" }}>
           <Link
             href="/products"
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "14px 32px",
-              background: `linear-gradient(135deg, ${primary}, ${secondary})`,
-              color: bgColor, borderRadius: 999, fontSize: 14, fontWeight: 700,
-              textDecoration: "none", letterSpacing: "0.04em",
-              boxShadow: `0 8px 24px ${primary}30`,
+              padding: "15px 36px",
+              background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #9A7A2E 100%)`,
+              color: "#0A0800",
+              borderRadius: R_FULL,
+              fontSize: 14, fontWeight: 700,
+              textDecoration: "none",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              boxShadow: `0 8px 28px rgba(201,168,76,0.3)`,
+              fontFamily: FONT,
             }}
           >
             Xem toàn bộ sản phẩm
@@ -285,6 +321,7 @@ export default function StaticProductsSection({
             </svg>
           </Link>
         </div>
+
       </div>
     </section>
   );
