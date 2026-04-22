@@ -234,23 +234,13 @@ export default function Navbar({ theme }: NavbarProps) {
             className="w-full h-full mx-auto px-4 sm:px-6 flex flex-nowrap items-center justify-between"
           >
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
-              <div
-                style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              >
-                <span style={{ color: bgColor }} className="font-bold text-sm leading-none">
-                  {companyName.slice(0, 2).toUpperCase()}
-                </span>
-              </div>
-              {theme?.logo.showText !== false && (
-                <span
-                  style={{ color: logoTextColor }}
-                  className="font-bold text-base sm:text-lg tracking-widest font-brand"
-                >
-                  {companyName.toUpperCase()}
-                </span>
-              )}
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/smartfurni-logo-transparent.png"
+                alt={companyName}
+                style={{ height: 40, width: "auto", objectFit: "contain" }}
+              />
             </Link>
 
             {/* Desktop nav — dropdown groups */}
