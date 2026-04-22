@@ -38,6 +38,40 @@ interface Props {
   initialContent?: Record<string, string>;
 }
 
+// ─── YouTube helper ─────────────────────────────────────────────────────────────────────────────────────
+function extractYoutubeId(url: string): string | null {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && !started) setStarted(true); },
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [started]);
+  const src = started
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=1&rel=0&modestbranding=1`
+    : `https://www.youtube.com/embed/${videoId}?controls=1&rel=0&modestbranding=1`;
+  return (
+    <div ref={containerRef} style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#000" }}>
+      <iframe
+        src={src}
+        title={title}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+      />
+    </div>
+  );
+}
+
 // ─── Intersection Observer fade-in ───────────────────────────────────────────
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -441,22 +475,42 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         </div>
       </section>
 
-      {/* ── HERO PRODUCT IMAGE ── */}
-      <section style={{ background: BLACK_SOFT }}>
-        <div style={{ maxWidth: 1140, margin: "0 auto", padding: "0 24px 72px" }}>
-          <div style={{ position: "relative", border: `1px solid ${BLACK_BORDER}`, overflow: "hidden", borderRadius: R_LG }}>
-            <img src="/lp/bed-gsf350.jpg" alt="Giường công thái học SmartFurni" style={{ width: "100%", height: "clamp(280px, 48vw, 540px)", objectFit: "cover", display: "block" }} />
-            <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, rgba(13,11,0,0.85) 0%, transparent 55%)` }} />
-            <div style={{ position: "absolute", bottom: 28, left: 32, right: 32 }}>
-              <div style={{ color: GOLD, fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase" as const, marginBottom: 10, fontFamily: FONT_BODY }}>
-                {E({ bk: "hero_img_label", def: "Dòng sản phẩm cao cấp", as: "span" })}
-              </div>
-              <div style={{ color: WHITE, fontSize: "clamp(18px, 2.6vw, 30px)", fontWeight: 400, fontFamily: FONT_HEADING, letterSpacing: "0.04em" }}>
-                {E({ bk: "hero_img_title", def: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni", as: "span" })}
+      {/* ── HERO VIDEO ── */}
+      <section style={{ background: BLACK }}>
+        {/* Label + tiêu đề */}
+        <div style={{ textAlign: "center", padding: "56px 24px 28px" }}>
+          <FadeIn>
+            <SectionLabel>
+              {E({ bk: "hero_video_label", def: "Xem sản phẩm hoạt động thực tế", as: "span" })}
+            </SectionLabel>
+            <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, color: WHITE, fontFamily: FONT_HEADING, marginTop: 12, marginBottom: 0, letterSpacing: "-0.01em" }}>
+              {E({ bk: "hero_video_title", def: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni", as: "span" })}
+            </h2>
+          </FadeIn>
+        </div>
+        {/* Video full-width */}
+        <div style={{ position: "relative", overflow: "hidden", boxShadow: `0 0 80px rgba(201,168,76,0.1)` }}>
+          <YoutubeAutoplay
+            videoId={extractYoutubeId(content["hero_video_url"] || "") || "_placeholder_"}
+            title={content["hero_video_title"] || "SmartFurni Demo"}
+          />
+          {/* Gold accent lines */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+        </div>
+        {/* Edit video URL — chỉ hiện khi editMode */}
+        {editMode && (
+          <div style={{ padding: "16px 24px", background: BLACK_SOFT, borderTop: `1px solid ${BLACK_BORDER}` }}>
+            <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" as const }}>
+              <span style={{ color: GOLD, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" as const, paddingTop: 4 }}>🎬 Link YouTube:</span>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                {E({ bk: "hero_video_url", def: "https://www.youtube.com/watch?v=PASTE_VIDEO_ID_HERE", as: "span", style: { fontSize: 13, color: GRAY_LIGHT, wordBreak: "break-all" as const } })}
               </div>
             </div>
+            <p style={{ color: GRAY, fontSize: 11, marginTop: 8, maxWidth: 900, margin: "8px auto 0" }}>Dán link YouTube (youtube.com/watch?v=... hoặc youtu.be/...) rồi nhấn Lưu. Video sẽ tự phát khi khách cuộn tới.</p>
           </div>
-        </div>
+        )}
+        <div style={{ height: 72 }} />
       </section>
 
       {/* ── PROBLEM / SOLUTION ── */}
