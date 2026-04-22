@@ -572,46 +572,6 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         </div>
       </section>
 
-      {/* ── HERO VIDEO ── */}
-      <section style={{ background: BLACK }}>
-        {/* Label + tiêu đề */}
-        <div style={{ textAlign: "center", padding: "56px 24px 24px" }}>
-          <FadeIn>
-            <SectionLabel>
-              {E({ bk: "hero_video_label", def: "Xem sản phẩm hoạt động thực tế", as: "span" })}
-            </SectionLabel>
-            <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, color: WHITE, fontFamily: FONT_HEADING, marginTop: 12, marginBottom: 0, letterSpacing: "-0.01em" }}>
-              {E({ bk: "hero_video_title", def: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni", as: "span" })}
-            </h2>
-          </FadeIn>
-        </div>
-        {/* Video — căn đối, bo góc, có padding */}
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 12px" }}>
-          <div style={{ position: "relative", overflow: "hidden", borderRadius: 16, border: "1px solid #2E2800", boxShadow: "0 0 60px rgba(201,168,76,0.08)" }}>
-            <YoutubeAutoplay
-              videoId={extractYoutubeId(content["hero_video_url"] || "") || "_placeholder_"}
-              title={content["hero_video_title"] || "SmartFurni Demo"}
-            />
-            {/* Gold accent lines */}
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #C9A84C, transparent)" }} />
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #C9A84C, transparent)" }} />
-          </div>
-        </div>
-        {/* Edit video URL — chỉ hiện khi editMode */}
-        {editMode && (
-          <div style={{ padding: "16px 24px", background: BLACK_SOFT, borderTop: `1px solid ${BLACK_BORDER}` }}>
-            <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" as const }}>
-              <span style={{ color: GOLD, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" as const, paddingTop: 4 }}>🎬 Link YouTube:</span>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                {E({ bk: "hero_video_url", def: "https://www.youtube.com/watch?v=PASTE_VIDEO_ID_HERE", as: "span", style: { fontSize: 13, color: GRAY_LIGHT, wordBreak: "break-all" as const } })}
-              </div>
-            </div>
-            <p style={{ color: GRAY, fontSize: 11, marginTop: 8, maxWidth: 900, margin: "8px auto 0" }}>Dán link YouTube (youtube.com/watch?v=... hoặc youtu.be/...) rồi nhấn Lưu. Video sẽ tự phát khi khách cuộn tới.</p>
-          </div>
-        )}
-        <div style={{ height: 56 }} />
-      </section>
-
       {/* ── PROBLEM / SOLUTION ── */}
       <section id="giai-phap" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
@@ -733,6 +693,46 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
             </div>
           </FadeIn>
         </div>
+      </section>
+
+      {/* ── HERO VIDEO ── */}
+      <section style={{ background: BLACK }}>
+        {/* Label + tiêu đề */}
+        <div style={{ textAlign: "center", padding: "56px 24px 24px" }}>
+          <FadeIn>
+            <SectionLabel>
+              {E({ bk: "hero_video_label", def: "Xem sản phẩm hoạt động thực tế", as: "span" })}
+            </SectionLabel>
+            <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, color: WHITE, fontFamily: FONT_HEADING, marginTop: 12, marginBottom: 0, letterSpacing: "-0.01em" }}>
+              {E({ bk: "hero_video_title", def: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni", as: "span" })}
+            </h2>
+          </FadeIn>
+        </div>
+        {/* Video — căn đối, bo góc, có padding */}
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 12px" }}>
+          <div style={{ position: "relative", overflow: "hidden", borderRadius: 16, border: "1px solid #2E2800", boxShadow: "0 0 60px rgba(201,168,76,0.08)" }}>
+            <YoutubeAutoplay
+              videoId={extractYoutubeId(content["hero_video_url"] || "") || "_placeholder_"}
+              title={content["hero_video_title"] || "SmartFurni Demo"}
+            />
+            {/* Gold accent lines */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #C9A84C, transparent)" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #C9A84C, transparent)" }} />
+          </div>
+        </div>
+        {/* Edit video URL — chỉ hiện khi editMode */}
+        {editMode && (
+          <div style={{ padding: "16px 24px", background: BLACK_SOFT, borderTop: `1px solid ${BLACK_BORDER}` }}>
+            <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" as const }}>
+              <span style={{ color: GOLD, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" as const, paddingTop: 4 }}>🎬 Link YouTube:</span>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                {E({ bk: "hero_video_url", def: "https://www.youtube.com/watch?v=PASTE_VIDEO_ID_HERE", as: "span", style: { fontSize: 13, color: GRAY_LIGHT, wordBreak: "break-all" as const } })}
+              </div>
+            </div>
+            <p style={{ color: GRAY, fontSize: 11, marginTop: 8, maxWidth: 900, margin: "8px auto 0" }}>Dán link YouTube (youtube.com/watch?v=... hoặc youtu.be/...) rồi nhấn Lưu. Video sẽ tự phát khi khách cuộn tới.</p>
+          </div>
+        )}
+        <div style={{ height: 56 }} />
       </section>
 
       {/* ── PRODUCTS ── */}
