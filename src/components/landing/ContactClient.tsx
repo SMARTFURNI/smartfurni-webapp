@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
 import Footer from "@/components/landing/Footer";
+import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 
 const showrooms = [
   {
@@ -84,6 +85,7 @@ export default function ContactClient({ theme }: Props) {
     <>
       {/* Hero */}
       <section className="pt-28 sm:pt-32 pb-12 sm:pb-16 px-4 sm:px-6">
+        <ScrollReveal variant="fadeUp" delay={0}>
         <div className="max-w-4xl mx-auto text-center">
           {/* Section label — giống trang chủ */}
           <div className="inline-flex items-center gap-2 mb-6">
@@ -99,11 +101,12 @@ export default function ContactClient({ theme }: Props) {
             {theme.pageContact.heroSubtitle}
           </p>
         </div>
+        </ScrollReveal>
       </section>
 
       {/* Contact Methods */}
       <section className="py-10 sm:py-12 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <StaggerReveal baseDelay={0} step={100} variant="fadeUp" className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {[
             { icon: "📞", label: "Hotline", value: theme.pageContact.phone, sub: theme.pageContact.workingHours },
             { icon: "✉️", label: "Email", value: theme.pageContact.email, sub: "Phản hồi trong 2 giờ" },
@@ -123,13 +126,14 @@ export default function ContactClient({ theme }: Props) {
               <p className="text-xs text-[#F5EDD6]/40 hidden sm:block">{c.sub}</p>
             </div>
           ))}
-        </div>
+        </StaggerReveal>
       </section>
 
       {/* Form + Showrooms */}
       <section className="py-12 sm:py-16 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
           {/* Contact Form */}
+          <ScrollReveal variant="fadeRight" delay={0}>
           <div>
             {/* Section heading — giống FeaturesSection trang chủ */}
             <h2 className="text-3xl sm:text-4xl font-light text-[#F5EDD6] mb-2">
@@ -255,8 +259,10 @@ export default function ContactClient({ theme }: Props) {
               </form>
             )}
           </div>
+          </ScrollReveal>
 
           {/* Showrooms */}
+          <ScrollReveal variant="fadeLeft" delay={100}>
           <div>
             <h2 className="text-3xl sm:text-4xl font-light text-[#F5EDD6] mb-2">
               <span className="text-gold-gradient">Showroom</span>
@@ -312,12 +318,14 @@ export default function ContactClient({ theme }: Props) {
               </div>
             </div>
           </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* FAQ */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 bg-[#0F0D00] border-t border-[#2E2800]">
         <div className="max-w-3xl mx-auto">
+          <ScrollReveal variant="fadeUp" delay={0}>
           <div className="text-center mb-10 sm:mb-12">
             {/* Section label — giống trang chủ */}
             <div className="inline-flex items-center gap-2 mb-4">
@@ -329,7 +337,8 @@ export default function ContactClient({ theme }: Props) {
               Câu hỏi <span className="text-gold-gradient">thường gặp</span>
             </h2>
           </div>
-          <div className="space-y-4">
+          </ScrollReveal>
+          <StaggerReveal baseDelay={0} step={100} variant="fadeUp" className="space-y-4">
             {[
               { q: "Giường SmartFurni có bảo hành bao lâu?", a: "SmartFurni bảo hành 5 năm toàn diện cho khung giường và motor, 2 năm cho linh kiện điện tử và app." },
               { q: "Tôi có thể lắp đặt giường tự mình không?", a: "Có — bộ giường đi kèm hướng dẫn lắp đặt chi tiết. Tuy nhiên chúng tôi cũng cung cấp dịch vụ lắp đặt tận nhà miễn phí trong vòng 50km từ showroom." },
@@ -345,7 +354,7 @@ export default function ContactClient({ theme }: Props) {
                 <p className="text-sm text-[#F5EDD6]/50 leading-relaxed">{faq.a}</p>
               </div>
             ))}
-          </div>
+          </StaggerReveal>
         </div>
       </section>
 

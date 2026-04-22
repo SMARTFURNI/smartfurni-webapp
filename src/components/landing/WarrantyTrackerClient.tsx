@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 
 interface Props {
   theme: SiteTheme;
@@ -301,6 +302,7 @@ export default function WarrantyTrackerClient({ theme }: Props) {
           className="py-14 px-4"
           style={{ background: `linear-gradient(160deg, ${colors.background} 0%, ${colors.surface} 100%)` }}
         >
+          <ScrollReveal variant="fadeUp" delay={0}>
           <div className="max-w-2xl mx-auto text-center">
             <span
               className="inline-block text-xs font-semibold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4"
@@ -315,12 +317,13 @@ export default function WarrantyTrackerClient({ theme }: Props) {
               Nhập mã đơn hàng để xem trạng thái giao hàng và thông tin bảo hành sản phẩm.
             </p>
           </div>
+          </ScrollReveal>
         </section>
 
         {/* Search form */}
+        <ScrollReveal variant="fadeUp" delay={100}>
         <section className="px-4 py-6">
-          <div className="max-w-lg mx-auto">
-            <div
+          <div className="max-w-lg mx-auto">            <div
               className="rounded-2xl p-6 border shadow-sm"
               style={{ backgroundColor: colors.surface, borderColor: `${colors.border}60` }}
             >
@@ -393,6 +396,7 @@ export default function WarrantyTrackerClient({ theme }: Props) {
             </div>
           </div>
         </section>
+        </ScrollReveal>
 
         {/* Result */}
         {result && (
@@ -560,7 +564,7 @@ export default function WarrantyTrackerClient({ theme }: Props) {
         {/* Info cards */}
         {!result && (
           <section className="px-4 pb-12">
-            <div className="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StaggerReveal baseDelay={0} step={100} variant="fadeUp" className="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 {
                   icon: "🛡️",
@@ -588,7 +592,7 @@ export default function WarrantyTrackerClient({ theme }: Props) {
                   <p className="text-xs" style={{ color: `${colors.text}60` }}>{card.desc}</p>
                 </div>
               ))}
-            </div>
+            </StaggerReveal>
           </section>
         )}
       </main>

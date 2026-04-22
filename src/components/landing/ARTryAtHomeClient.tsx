@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import type { Product } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
+import { ScrollReveal } from "./ScrollReveal";
 
 interface Props {
   products: Product[];
@@ -213,6 +214,7 @@ export default function ARTryAtHomeClient({ products, theme }: Props) {
     <div className="pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         {/* Hero */}
+        <ScrollReveal variant="fadeUp" delay={0}>
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 mb-4">
             <span className="w-6 h-px bg-[#C9A84C]" />
@@ -226,6 +228,7 @@ export default function ARTryAtHomeClient({ products, theme }: Props) {
             Sử dụng camera điện thoại để đặt thử giường SmartFurni vào phòng ngủ thực tế. Xem kích thước và màu sắc trước khi đặt hàng.
           </p>
         </div>
+        </ScrollReveal>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Config */}

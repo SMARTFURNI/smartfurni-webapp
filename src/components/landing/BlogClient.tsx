@@ -5,6 +5,7 @@ import { CATEGORIES, formatDate, type BlogPost, type BlogCategory } from "@/lib/
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import type { SiteTheme } from "@/lib/theme-types";
+import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 
 interface Props {
   theme: SiteTheme;
@@ -40,6 +41,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
 
       {/* Hero */}
       <section className="pt-28 sm:pt-32 pb-12 sm:pb-16 px-4 sm:px-6 text-center border-b border-[#2E2800]">
+        <ScrollReveal variant="fadeUp" delay={0}>
         <div className="max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 mb-5">
             <span className="w-6 h-px bg-[#C9A84C]" />
@@ -80,6 +82,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
             )}
           </div>
         </div>
+        </ScrollReveal>
       </section>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
@@ -87,13 +90,15 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
         {/* Featured Posts — only show when no search/filter active */}
         {!searchQuery && !activeCategory && (
           <section className="mb-12 sm:mb-16">
+            <ScrollReveal variant="fadeUp" delay={0}>
             <div className="flex items-center gap-3 mb-6 sm:mb-8">
               <span className="w-6 h-px bg-[#C9A84C]" />
               <h2 className="text-xl sm:text-2xl font-light text-[#F5EDD6]">
                 Bài viết <span className="text-gold-gradient">nổi bật</span>
               </h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+            </ScrollReveal>
+            <StaggerReveal baseDelay={0} step={100} variant="fadeUp" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               {featured.map((post) => (
                 <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
                   <article className="bg-[#1A1600] border border-[#2E2800] rounded-2xl p-5 sm:p-6 h-full hover:border-[#C9A84C]/40 transition-all hover:-translate-y-1">
@@ -121,7 +126,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
                   </article>
                 </Link>
               ))}
-            </div>
+            </StaggerReveal>
           </section>
         )}
 
@@ -176,7 +181,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
 
           {/* Posts Grid */}
           {filteredPosts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <StaggerReveal baseDelay={0} step={80} variant="fadeUp" className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {filteredPosts.map((post) => (
                 <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
                   <article className="bg-[#1A1600] border border-[#2E2800] rounded-xl p-4 sm:p-5 flex gap-4 hover:border-[#C9A84C]/40 transition-all">
@@ -209,7 +214,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
                   </article>
                 </Link>
               ))}
-            </div>
+            </StaggerReveal>
           ) : (
             <div className="text-center py-16">
               <p className="text-4xl mb-4">🔍</p>
@@ -227,6 +232,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
         </section>
 
         {/* Newsletter CTA */}
+        <ScrollReveal variant="fadeUp" delay={0}>
         <section className="mt-12 sm:mt-16 bg-[#1A1600] border border-[#2E2800] rounded-2xl p-6 sm:p-8 text-center">
           <div className="inline-flex items-center gap-2 mb-4">
             <span className="w-6 h-px bg-[#C9A84C]" />
@@ -250,6 +256,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
             </button>
           </div>
         </section>
+        </ScrollReveal>
       </div>
 
       <Footer theme={theme} variant="full" />

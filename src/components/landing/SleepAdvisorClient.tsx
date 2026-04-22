@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
+import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 
 interface Props {
   theme: SiteTheme;
@@ -231,6 +232,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
 
         {/* INTRO SCREEN */}
         {currentStep === "intro" && (
+          <ScrollReveal variant="fadeUp" delay={0}>
           <div className="text-center">
             <div className="text-6xl mb-6">🤖</div>
             <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: primary }}>
@@ -244,7 +246,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
             </p>
 
             {/* Features */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+            <StaggerReveal baseDelay={100} step={100} variant="fadeUp" className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
               {[
                 { icon: "⚡", title: "Nhanh chóng", desc: "Chỉ 2 phút để hoàn thành" },
                 { icon: "🎯", title: "Chính xác", desc: "Dựa trên dữ liệu y tế giấc ngủ" },
@@ -256,7 +258,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
                   <div className="text-sm" style={{ color: muted }}>{f.desc}</div>
                 </div>
               ))}
-            </div>
+            </StaggerReveal>
 
             <button
               onClick={handleStart}
@@ -266,6 +268,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
               Bắt đầu tư vấn →
             </button>
           </div>
+          </ScrollReveal>
         )}
 
         {/* QUIZ SCREEN */}

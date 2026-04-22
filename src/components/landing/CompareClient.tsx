@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import type { Product } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
+import { ScrollReveal } from "./ScrollReveal";
 
 interface Props {
   products: Product[];
@@ -278,6 +279,7 @@ export default function CompareClient({ products, theme }: Props) {
     <div className="pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Hero */}
+        <ScrollReveal variant="fadeUp" delay={0}>
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 mb-4">
             <span className="w-6 h-px bg-[#C9A84C]" />
@@ -291,6 +293,7 @@ export default function CompareClient({ products, theme }: Props) {
             Chọn 2–4 sản phẩm để so sánh. Xem điểm đánh giá tổng thể, biểu đồ radar và bảng tính năng chi tiết.
           </p>
         </div>
+        </ScrollReveal>
 
         {/* Product selector */}
         <div className="flex flex-wrap gap-3 justify-center mb-8">

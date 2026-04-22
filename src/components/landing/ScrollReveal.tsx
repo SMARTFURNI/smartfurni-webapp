@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
+import React, { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AnimationVariant = "fadeUp" | "fadeIn" | "fadeLeft" | "fadeRight" | "scaleUp" | "stagger";
@@ -13,7 +13,7 @@ interface ScrollRevealProps {
   threshold?: number;
   className?: string;
   style?: CSSProperties;
-  as?: keyof JSX.IntrinsicElements;
+  as?: string;
 }
 
 // ─── Hidden / visible styles per variant ─────────────────────────────────────
@@ -68,15 +68,10 @@ export function ScrollReveal({
 
   const animStyles = getStyles(variant, inView, delay, duration);
 
-  return (
-    // @ts-expect-error dynamic tag
-    <Tag
-      ref={ref}
-      className={className}
-      style={{ ...animStyles, ...style }}
-    >
-      {children}
-    </Tag>
+  return React.createElement(
+    Tag,
+    { ref, className, style: { ...animStyles, ...style } },
+    children
   );
 }
 

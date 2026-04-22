@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 
 interface Props {
   theme: SiteTheme;
@@ -389,6 +390,7 @@ export default function VideoReviewsClient({ theme }: Props) {
           className="py-16 px-4"
           style={{ background: `linear-gradient(160deg, ${colors.background} 0%, ${colors.surface} 100%)` }}
         >
+          <ScrollReveal variant="fadeUp" delay={0}>
           <div className="max-w-5xl mx-auto text-center">
             <span
               className="inline-block text-xs font-semibold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4"
@@ -421,6 +423,7 @@ export default function VideoReviewsClient({ theme }: Props) {
               ))}
             </div>
           </div>
+          </ScrollReveal>
         </section>
 
         {/* Filters & Sort */}
@@ -466,7 +469,7 @@ export default function VideoReviewsClient({ theme }: Props) {
                 Không có video nào phù hợp với bộ lọc này.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <StaggerReveal baseDelay={0} step={80} variant="fadeUp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredVideos.map((video) => (
                   <VideoCard
                     key={video.id}
@@ -475,7 +478,7 @@ export default function VideoReviewsClient({ theme }: Props) {
                     onClick={() => setSelectedVideo(video)}
                   />
                 ))}
-              </div>
+              </StaggerReveal>
             )}
           </div>
         </section>

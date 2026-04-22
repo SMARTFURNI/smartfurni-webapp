@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { Product, ProductCategory } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
+import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 
 interface Props {
   products: Product[];
@@ -360,11 +361,11 @@ export default function ProductsListClient({ products, theme }: Props) {
 
       {/* Grid */}
       {!isLoaded ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <StaggerReveal baseDelay={0} step={50} variant="fadeUp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <ProductCardSkeleton key={i} colors={colors} />
           ))}
-        </div>
+        </StaggerReveal>
       ) : filtered.length === 0 ? (
         <div
           style={{ backgroundColor: colors.surface, borderColor: colors.border }}
@@ -382,7 +383,7 @@ export default function ProductsListClient({ products, theme }: Props) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <StaggerReveal baseDelay={0} step={60} variant="fadeUp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filtered.map((p) => {
             const disc = p.originalPrice > p.price
               ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
@@ -403,7 +404,7 @@ export default function ProductsListClient({ products, theme }: Props) {
               />
             );
           })}
-        </div>
+        </StaggerReveal>
       )}
 
       {/* Compare floating bar */}

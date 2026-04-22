@@ -7,6 +7,7 @@ import BNPLBadge from "@/components/landing/BNPLBadge";
 import type { SiteTheme } from "@/lib/theme-types";
 import { useCart } from "@/lib/cart-context";
 import Breadcrumb from "@/components/landing/Breadcrumb";
+import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 
 interface Props {
   product: Product;
@@ -192,6 +193,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
       </div>
 
       {/* Main product section */}
+      <ScrollReveal variant="fadeUp" delay={0}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 mb-12 sm:mb-16">
         {/* Left: Image Gallery */}
         <div>
@@ -662,7 +664,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
           )}
         </div>
       </div>
-
+      </ScrollReveal>
       {/* Tabs: Mô tả / Tính năng / Thông số / Đánh giá */}
       <div className="mb-16">
         {/* Tab headers */}
@@ -846,13 +848,15 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
       {/* Related products */}
       {related.length > 0 && (
         <div>
+          <ScrollReveal variant="fadeUp" delay={0}>
           <div className="flex items-center gap-3 mb-6">
             <span className="w-6 h-px bg-[#C9A84C]" />
             <h2 className="text-xl sm:text-2xl font-light text-[#F5EDD6]">
               Sản phẩm <span className="text-gold-gradient">liên quan</span>
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          </ScrollReveal>
+          <StaggerReveal baseDelay={0} step={80} variant="fadeUp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {related.map((p) => {
               const disc = p.originalPrice > p.price
                 ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
@@ -902,7 +906,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
                 </Link>
               );
             })}
-          </div>
+          </StaggerReveal>
         </div>
       )}
     </div>
