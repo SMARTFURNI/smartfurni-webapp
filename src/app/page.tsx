@@ -4,12 +4,13 @@ import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import DownloadSection from "@/components/landing/DownloadSection";
 import Footer from "@/components/landing/Footer";
-import { getTheme, getThemeAsync } from "@/lib/theme-store";
+import { getThemeAsync } from "@/lib/theme-store";
 import StaticProductsSection from "@/components/landing/StaticProductsSection";
 import VideoSection from "@/components/landing/VideoSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import CatalogueSection from "@/components/landing/CatalogueSection";
 import { getCatalogues } from "@/lib/catalogue-store";
+import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,12 @@ const HOMEPAGE_VIDEO_ID = ""; // TODO: điền YouTube ID vào đây
 const HOMEPAGE_VIDEO_TITLE = "Giường Điều Khiển Thông Minh SmartFurni — Xem Thực Tế";
 
 export default async function HomePage() {
+  // Init DB để load sản phẩm từ CRM
+  await initHomepageProductConfig();
   const theme = await getThemeAsync();
+  const homepageConfig = await getHomepageProductConfigAsync();
+  // Lấy sản phẩm từ CRM (đã lọc theo config homepage)
+  const products = getHomepageProducts();
   const { banner } = theme;
   const publishedCatalogues = await getCatalogues(true);
 
@@ -51,8 +57,13 @@ export default async function HomePage() {
         videoTitle={HOMEPAGE_VIDEO_TITLE}
       />
 
-      {/* Sản phẩm — dữ liệu tĩnh độc lập, chỉnh sửa trong StaticProductsSection.tsx */}
-      <StaticProductsSection theme={theme} />
+      {/* Sản phẩm — đồng bộ từ CRM, giao diện giống landing page */}
+      <StaticProductsSection
+        theme={theme}
+        products={products}
+        sectionTitle={homepageConfig.sectionTitle}
+        sectionSubtitle={homepageConfig.sectionSubtitle}
+      />
 
       <CatalogueSection catalogues={publishedCatalogues} />
       <FeaturesSection />
