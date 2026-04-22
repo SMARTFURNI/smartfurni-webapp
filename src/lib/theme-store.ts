@@ -87,7 +87,7 @@ export const defaultTheme: SiteTheme = {
     closeable: true,
   },
   hero: {
-    title: "Giường Điều Khiển Thông Minh SmartFurni",
+    title: "Giường Công Thái Học\nĐiều Chỉnh Điện SmartFurni",
     subtitle: "Trải nghiệm giấc ngủ hoàn hảo với công nghệ điều khiển thông minh, theo dõi sức khỏe và kết nối ứng dụng di động.",
     ctaText: "Khám phá ngay",
     ctaLink: "/dashboard",

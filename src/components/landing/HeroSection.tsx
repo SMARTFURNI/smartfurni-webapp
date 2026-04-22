@@ -268,9 +268,21 @@ export default function HeroSection({ theme }: HeroSectionProps) {
           </div>
 
           <h1 className="text-5xl lg:text-6xl font-light leading-tight">
-            <span style={{ color: textColor }} className="block opacity-90">
-              {heroTitle}
-            </span>
+            {(() => {
+              const parts = heroTitle.includes("\n")
+                ? heroTitle.split("\n")
+                : (() => {
+                    const words = heroTitle.split(" ");
+                    const half = Math.ceil(words.length / 2);
+                    return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
+                  })();
+              return (
+                <>
+                  <span style={{ color: textColor }} className="block opacity-90">{parts[0]}</span>
+                  {parts[1] && <span style={{ color: primary }} className="block">{parts[1]}</span>}
+                </>
+              );
+            })()}
           </h1>
 
           <p style={{ color: `${textColor}99` }} className="text-lg leading-relaxed max-w-md">
