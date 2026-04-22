@@ -11,6 +11,8 @@ import type {
   PageCheckout,
   PageWarranty,
   PageReturns,
+  TextBlock,
+  HomepageFeatureItem,
 } from "@/lib/theme-store";
 
 interface PresetTheme {
@@ -44,6 +46,9 @@ const SECTION_GROUPS = [
       { id: "layout", label: "Bố cục & Hiệu ứng", icon: "⚡" },
       { id: "seo", label: "SEO & Analytics", icon: "📈" },
       { id: "video", label: "Section Video", icon: "🎥" },
+      { id: "homepageFeatures", label: "Section Tính năng", icon: "⚙️" },
+      { id: "homepageTestimonials", label: "Section Đánh giá", icon: "⭐" },
+      { id: "homepageDownload", label: "Section Tải app", icon: "📱" },
     ],
   },
   {
@@ -69,6 +74,9 @@ const SECTION_PREVIEW_URL: Record<string, string> = {
   pageBlog: "/blog", pageCart: "/cart", pageCheckout: "/checkout",
   pageWarranty: "/warranty", pageReturns: "/returns",
   video: "/",
+  homepageFeatures: "/",
+  homepageTestimonials: "/",
+  homepageDownload: "/",
 };
 
 // ─── WCAG Contrast Ratio Calculator ──────────────────────────────────────────
@@ -254,6 +262,56 @@ function SectionCard({ title, children }: { title: string; children: React.React
     <div className="space-y-4">
       <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider">{title}</h3>
       <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+// ─── TextBlock Editor ───────────────────────────────────────────────────────
+function TextBlockEditor({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: TextBlock;
+  onChange: (v: TextBlock) => void;
+}) {
+  const fontWeightOptions = [
+    { value: "light", label: "Light (300)" },
+    { value: "normal", label: "Normal (400)" },
+    { value: "medium", label: "Medium (500)" },
+    { value: "semibold", label: "Semibold (600)" },
+    { value: "bold", label: "Bold (700)" },
+  ];
+  return (
+    <div className="p-3 rounded-xl border border-[#C9A84C]/15 bg-[#0D0B00] space-y-3">
+      <div className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider">{label}</div>
+      <TextInput
+        label="Nội dung chữ"
+        value={value.text}
+        onChange={(v) => onChange({ ...value, text: v })}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <SliderInput
+          label="Cỡ chữ (px)"
+          value={value.fontSize}
+          onChange={(v) => onChange({ ...value, fontSize: v })}
+          min={10}
+          max={72}
+          unit="px"
+        />
+        <ColorInput
+          label="Màu chữ"
+          value={value.color}
+          onChange={(v) => onChange({ ...value, color: v })}
+        />
+      </div>
+      <SelectInput
+        label="Độ đậm chữ"
+        value={value.fontWeight}
+        onChange={(v) => onChange({ ...value, fontWeight: v as TextBlock["fontWeight"] })}
+        options={fontWeightOptions}
+      />
     </div>
   );
 }
@@ -1281,6 +1339,164 @@ export default function ThemeEditorClient({
             </SectionCard>
           </div>
         );
+
+      case "homepageFeatures": {
+        const feat = theme.homepageSections?.features;
+        if (!feat) return null;
+        return (
+          <div className="space-y-5">
+            <SectionCard title="Tiêu đề section">
+              <TextBlockEditor
+                label="Badge (nhãn nhỏ phía trên)"
+                value={feat.badge}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, badge: v } })}
+              />
+              <TextBlockEditor
+                label="Tiêu đề dòng 1"
+                value={feat.title}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, title: v } })}
+              />
+              <TextBlockEditor
+                label="Tiêu đề dòng 2 (màu vàng)"
+                value={feat.titleAccent}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, titleAccent: v } })}
+              />
+              <TextBlockEditor
+                label="Mô tả (subtitle)"
+                value={feat.subtitle}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, subtitle: v } })}
+              />
+            </SectionCard>
+            <SectionCard title="Các tính năng">
+              <div className="space-y-3">
+                {feat.items.map((item: HomepageFeatureItem, idx: number) => (
+                  <div key={idx} className="p-3 rounded-xl border border-[#C9A84C]/10 bg-[#0D0B00] space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{item.icon}</span>
+                      <span className="text-xs text-gray-400">Tính năng {idx + 1}</span>
+                    </div>
+                    <TextInput
+                      label="Tiêu đề"
+                      value={item.title}
+                      onChange={(v) => {
+                        const newItems = feat.items.map((it: HomepageFeatureItem, i: number) => i === idx ? { ...it, title: v } : it);
+                        updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, items: newItems } });
+                      }}
+                    />
+                    <TextInput
+                      label="Mô tả"
+                      value={item.desc}
+                      onChange={(v) => {
+                        const newItems = feat.items.map((it: HomepageFeatureItem, i: number) => i === idx ? { ...it, desc: v } : it);
+                        updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, items: newItems } });
+                      }}
+                    />
+                    <TextInput
+                      label="Biểu tượng (emoji)"
+                      value={item.icon}
+                      onChange={(v) => {
+                        const newItems = feat.items.map((it: HomepageFeatureItem, i: number) => i === idx ? { ...it, icon: v } : it);
+                        updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, items: newItems } });
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          </div>
+        );
+      }
+
+      case "homepageTestimonials": {
+        const test = theme.homepageSections?.testimonials;
+        if (!test) return null;
+        return (
+          <div className="space-y-5">
+            <SectionCard title="Tiêu đề section">
+              <TextBlockEditor
+                label="Badge (nhãn nhỏ phía trên)"
+                value={test.badge}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, testimonials: { ...test, badge: v } })}
+              />
+              <TextBlockEditor
+                label="Tiêu đề dòng 1"
+                value={test.title}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, testimonials: { ...test, title: v } })}
+              />
+              <TextBlockEditor
+                label="Tiêu đề dòng 2 (màu vàng)"
+                value={test.titleAccent}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, testimonials: { ...test, titleAccent: v } })}
+              />
+              <TextBlockEditor
+                label="Mô tả (subtitle)"
+                value={test.subtitle}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, testimonials: { ...test, subtitle: v } })}
+              />
+            </SectionCard>
+            <SectionCard title="Nhãn phụ">
+              <TextInput
+                label="Nhãn số đánh giá"
+                value={test.ratingLabel}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, testimonials: { ...test, ratingLabel: v } })}
+                placeholder="Dựa trên 10.247 đánh giá"
+              />
+              <TextInput
+                label="Nhãn được tin dùng"
+                value={test.trustedByLabel}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, testimonials: { ...test, trustedByLabel: v } })}
+                placeholder="Được tin dùng bởi"
+              />
+            </SectionCard>
+          </div>
+        );
+      }
+
+      case "homepageDownload": {
+        const dl = theme.homepageSections?.download;
+        if (!dl) return null;
+        return (
+          <div className="space-y-5">
+            <SectionCard title="Tiêu đề section">
+              <TextBlockEditor
+                label="Badge (nhãn nhỏ phía trên)"
+                value={dl.badge}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, download: { ...dl, badge: v } })}
+              />
+              <TextBlockEditor
+                label="Tiêu đề"
+                value={dl.title}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, download: { ...dl, title: v } })}
+              />
+              <TextBlockEditor
+                label="Mô tả (subtitle)"
+                value={dl.subtitle}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, download: { ...dl, subtitle: v } })}
+              />
+            </SectionCard>
+            <SectionCard title="Nhãn nút tải">
+              <TextInput
+                label="Nhãn App Store"
+                value={dl.appStoreLabel}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, download: { ...dl, appStoreLabel: v } })}
+                placeholder="App Store"
+              />
+              <TextInput
+                label="Nhãn Google Play"
+                value={dl.googlePlayLabel}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, download: { ...dl, googlePlayLabel: v } })}
+                placeholder="Google Play"
+              />
+              <TextInput
+                label="Chữ đánh giá app"
+                value={dl.ratingText}
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, download: { ...dl, ratingText: v } })}
+                placeholder="4.9 ★ trên App Store và Google Play"
+              />
+            </SectionCard>
+          </div>
+        );
+      }
 
       default:
         return null;

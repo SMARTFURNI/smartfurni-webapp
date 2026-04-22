@@ -206,6 +206,51 @@ export interface ThemeVideoSection {
   videos: ThemeVideoItem[];
 }
 
+// ─── Homepage Section Text Styles ───────────────────────────────────────────
+export interface TextBlock {
+  text: string;
+  fontSize: number;   // px
+  color: string;      // hex
+  fontWeight: "light" | "normal" | "medium" | "semibold" | "bold";
+}
+
+export interface HomepageSectionHeader {
+  badge: TextBlock;
+  title: TextBlock;
+  titleAccent: TextBlock;  // phần chữ nhấn màu khác trong tiêu đề
+  subtitle: TextBlock;
+}
+
+export interface HomepageFeatureItem {
+  icon: string;
+  title: string;
+  desc: string;
+}
+
+export interface HomepageFeaturesSection extends HomepageSectionHeader {
+  items: HomepageFeatureItem[];
+}
+
+export interface HomepageTestimonialsSection extends HomepageSectionHeader {
+  ratingLabel: string;
+  trustedByLabel: string;
+}
+
+export interface HomepageDownloadSection {
+  badge: TextBlock;
+  title: TextBlock;
+  subtitle: TextBlock;
+  appStoreLabel: string;
+  googlePlayLabel: string;
+  ratingText: string;
+}
+
+export interface HomepageSections {
+  features: HomepageFeaturesSection;
+  testimonials: HomepageTestimonialsSection;
+  download: HomepageDownloadSection;
+}
+
 export interface SiteTheme {
   id: string;
   name: string;
@@ -227,5 +272,6 @@ export interface SiteTheme {
   pageWarranty: PageWarranty;
   pageReturns: PageReturns;
   videoSection: ThemeVideoSection;
+  homepageSections: HomepageSections;
   updatedAt: string;
 }

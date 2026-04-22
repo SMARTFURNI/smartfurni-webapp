@@ -55,9 +55,9 @@ export default async function HomePage() {
       />
 
       <CatalogueSection />
-      <FeaturesSection />
+      <FeaturesSection theme={theme} />
       <TestimonialsSection theme={theme} />
-      <DownloadSection />
+      <DownloadSection theme={theme} />
       <Footer theme={theme} variant="full" />
     </main>
   );

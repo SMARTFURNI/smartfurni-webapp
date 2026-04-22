@@ -63,8 +63,13 @@ const TESTIMONIALS = [
   },
 ];
 
+const FW_MAP: Record<string, string> = {
+  light: "300", normal: "400", medium: "500", semibold: "600", bold: "700",
+};
+
 export default function TestimonialsSection({ theme }: Props) {
   const { colors } = theme;
+  const test = theme.homepageSections?.testimonials;
 
   return (
     <section className="py-16 sm:py-20 px-4 sm:px-6 border-t" style={{ borderColor: `${colors.border}40` }}>
@@ -73,17 +78,22 @@ export default function TestimonialsSection({ theme }: Props) {
         <ScrollReveal variant="fadeUp" delay={0}>
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-3 mb-4">
-              <span className="w-8 h-px" style={{ backgroundColor: "#C9A84C" }} />
-              <span className="text-xs font-medium tracking-wider uppercase" style={{ color: "#C9A84C" }}>
-                Khách hàng nói gì
+              <span className="w-8 h-px" style={{ backgroundColor: test?.badge?.color ?? "#C9A84C" }} />
+              <span style={{ fontSize: test?.badge ? `${test.badge.fontSize}px` : "12px", color: test?.badge?.color ?? "#C9A84C", fontWeight: test?.badge ? FW_MAP[test.badge.fontWeight] : "500" }} className="tracking-wider uppercase">
+                {test?.badge?.text ?? "Khách hàng nói gì"}
               </span>
-              <span className="w-8 h-px" style={{ backgroundColor: "#C9A84C" }} />
+              <span className="w-8 h-px" style={{ backgroundColor: test?.badge?.color ?? "#C9A84C" }} />
             </div>
-            <h2 className="text-3xl sm:text-4xl font-light text-[#F5EDD6] mb-3">
-              Hơn <span className="text-gold-gradient">10.000 khách hàng</span> tin dùng
+            <h2 className="mb-3">
+              <span style={{ fontSize: test?.title ? `${test.title.fontSize}px` : "36px", color: test?.title?.color ?? "#F5EDD6", fontWeight: test?.title ? FW_MAP[test.title.fontWeight] : "300", display: "block" }}>
+                {test?.title?.text ?? "Hơn"}
+              </span>
+              <span style={{ fontSize: test?.titleAccent ? `${test.titleAccent.fontSize}px` : "36px", color: test?.titleAccent?.color ?? "#C9A84C", fontWeight: test?.titleAccent ? FW_MAP[test.titleAccent.fontWeight] : "300", display: "block" }}>
+                {test?.titleAccent?.text ?? "10.000 khách hàng tin dùng"}
+              </span>
             </h2>
-            <p className="text-sm text-[#F5EDD6]/50 max-w-xl mx-auto">
-              Trải nghiệm thực tế từ khách hàng trên khắp Việt Nam — từ TP. Hồ Chí Minh đến Hà Nội, Đà Nẵng và Cần Thơ.
+            <p style={{ fontSize: test?.subtitle ? `${test.subtitle.fontSize}px` : "14px", color: test?.subtitle?.color ?? "#F5EDD6", fontWeight: test?.subtitle ? FW_MAP[test.subtitle.fontWeight] : "400", opacity: 0.5 }} className="max-w-xl mx-auto">
+              {test?.subtitle?.text ?? "Trải nghiệm thực tế từ khách hàng trên khắp Việt Nam — từ TP. Hồ Chí Minh đến Hà Nội, Đà Nẵng và Cần Thơ."}
             </p>
           </div>
         </ScrollReveal>
@@ -108,7 +118,7 @@ export default function TestimonialsSection({ theme }: Props) {
                   </svg>
                 ))}
               </div>
-              <p className="text-xs text-[#F5EDD6]/40 mt-1">Dựa trên 10.247 đánh giá</p>
+              <p className="text-xs text-[#F5EDD6]/40 mt-1">{test?.ratingLabel ?? "Dựa trên 10.247 đánh giá"}</p>
             </div>
             <div className="flex-1 w-full space-y-2">
               {[
@@ -212,7 +222,7 @@ export default function TestimonialsSection({ theme }: Props) {
         {/* Trust logos */}
         <ScrollReveal variant="fadeIn" delay={200}>
           <div className="mt-10 pt-8 border-t" style={{ borderColor: `${colors.border}30` }}>
-            <p className="text-center text-xs text-[#F5EDD6]/30 mb-5 uppercase tracking-wider">Được tin dùng bởi</p>
+            <p className="text-center text-xs text-[#F5EDD6]/30 mb-5 uppercase tracking-wider">{test?.trustedByLabel ?? "Được tin dùng bởi"}</p>
             <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10">
               {["Vingroup", "FPT", "Masan", "VinHomes", "Techcombank"].map((brand) => (
                 <span key={brand} className="text-sm font-semibold text-[#F5EDD6]/20 tracking-wider uppercase">

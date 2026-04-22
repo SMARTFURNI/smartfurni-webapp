@@ -1,6 +1,12 @@
 "use client";
-
 import { ScrollReveal } from "./ScrollReveal";
+import type { SiteTheme, HomepageFeatureItem } from "@/lib/theme-store";
+
+interface Props { theme: SiteTheme; }
+
+const FW_MAP: Record<string, string> = {
+  light: "300", normal: "400", medium: "500", semibold: "600", bold: "700",
+};
 
 const FEATURES = [
   {
@@ -45,7 +51,14 @@ const FEATURES = [
   },
 ];
 
-export default function FeaturesSection() {
+export default function FeaturesSection({ theme }: Props) {
+  const feat = theme.homepageSections?.features;
+  const badge = feat?.badge;
+  const title = feat?.title;
+  const titleAccent = feat?.titleAccent;
+  const subtitle = feat?.subtitle;
+  const items: HomepageFeatureItem[] = feat?.items?.length ? feat.items : FEATURES;
+
   return (
     <section id="features" className="py-24 px-6">
       <div className="max-w-7xl mx-auto">
@@ -53,22 +66,27 @@ export default function FeaturesSection() {
         <ScrollReveal variant="fadeUp" delay={0}>
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/5 mb-4">
-              <span className="text-xs text-[#C9A84C] font-medium tracking-wider">TÍNH NĂNG NỔI BẬT</span>
+              <span style={{ fontSize: badge ? `${badge.fontSize}px` : "12px", color: badge?.color ?? "#C9A84C", fontWeight: badge ? FW_MAP[badge.fontWeight] : "500" }} className="tracking-wider">
+                {badge?.text ?? "TÍNH NĂNG NỔI BẬT"}
+              </span>
             </div>
-            <h2 className="text-4xl font-light text-[#F5EDD6] mb-4">
-              Mọi thứ bạn cần cho{" "}
-              <span className="text-gold-gradient">giấc ngủ hoàn hảo</span>
+            <h2 className="mb-4">
+              <span style={{ fontSize: title ? `${title.fontSize}px` : "36px", color: title?.color ?? "#F5EDD6", fontWeight: title ? FW_MAP[title.fontWeight] : "300", display: "block" }}>
+                {title?.text ?? "Mọi thứ bạn cần cho"}
+              </span>
+              <span style={{ fontSize: titleAccent ? `${titleAccent.fontSize}px` : "36px", color: titleAccent?.color ?? "#C9A84C", fontWeight: titleAccent ? FW_MAP[titleAccent.fontWeight] : "300", display: "block" }}>
+                {titleAccent?.text ?? "giấc ngủ hoàn hảo"}
+              </span>
             </h2>
-            <p className="text-[#F5EDD6]/50 max-w-xl mx-auto">
-              SmartFurni tích hợp công nghệ điều khiển thông minh vào từng chi tiết,
-              mang lại trải nghiệm ngủ được cá nhân hóa hoàn toàn.
+            <p style={{ fontSize: subtitle ? `${subtitle.fontSize}px` : "14px", color: subtitle?.color ?? "#F5EDD6", fontWeight: subtitle ? FW_MAP[subtitle.fontWeight] : "400", opacity: 0.5 }} className="max-w-xl mx-auto">
+              {subtitle?.text ?? "SmartFurni tích hợp công nghệ điều khiển thông minh vào từng chi tiết, mang lại trải nghiệm ngủ được cá nhân hóa hoàn toàn."}
             </p>
           </div>
         </ScrollReveal>
 
         {/* Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURES.map((f, i) => (
+          {items.map((f, i) => (
             <ScrollReveal key={i} variant="fadeUp" delay={100 + i * 70}>
               <div className="group p-6 rounded-2xl bg-[#1A1600] border border-[#2E2800] hover:border-[#C9A84C]/40 hover:bg-[#221D00] transition-all duration-300 h-full">
                 <div className="text-3xl mb-4">{f.icon}</div>

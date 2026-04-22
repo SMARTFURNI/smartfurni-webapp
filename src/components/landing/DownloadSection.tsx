@@ -1,7 +1,16 @@
 "use client";
 import { ScrollReveal } from "./ScrollReveal";
+import type { SiteTheme } from "@/lib/theme-store";
 
-export default function DownloadSection() {
+interface Props { theme: SiteTheme; }
+
+const FW_MAP: Record<string, string> = {
+  light: "300", normal: "400", medium: "500", semibold: "600", bold: "700",
+};
+
+export default function DownloadSection({ theme }: Props) {
+  const dl = theme.homepageSections?.download;
+
   return (
     <section id="download" className="py-24 px-6">
       <div className="max-w-4xl mx-auto">
@@ -12,17 +21,19 @@ export default function DownloadSection() {
 
           <div className="relative p-12 text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/5">
-              <span className="text-xs text-[#C9A84C] font-medium tracking-wider">TẢI ỨNG DỤNG</span>
+              <span style={{ fontSize: dl?.badge ? `${dl.badge.fontSize}px` : "12px", color: dl?.badge?.color ?? "#C9A84C", fontWeight: dl?.badge ? FW_MAP[dl.badge.fontWeight] : "500" }} className="tracking-wider">
+                {dl?.badge?.text ?? "TẢI ỨNG DỤNG"}
+              </span>
             </div>
 
-            <h2 className="text-4xl font-light text-[#F5EDD6]">
-              Bắt đầu trải nghiệm{" "}
-              <span className="text-gold-gradient">ngay hôm nay</span>
+            <h2 className="mb-0">
+              <span style={{ fontSize: dl?.title ? `${dl.title.fontSize}px` : "36px", color: dl?.title?.color ?? "#F5EDD6", fontWeight: dl?.title ? FW_MAP[dl.title.fontWeight] : "300", display: "block" }}>
+                {dl?.title?.text ?? "Bắt đầu trải nghiệm ngay hôm nay"}
+              </span>
             </h2>
 
-            <p className="text-[#F5EDD6]/50 max-w-md mx-auto">
-              Tải ứng dụng SmartFurni miễn phí. Kết nối giường trong 30 giây
-              và bắt đầu tùy chỉnh giấc ngủ của bạn.
+            <p style={{ fontSize: dl?.subtitle ? `${dl.subtitle.fontSize}px` : "14px", color: dl?.subtitle?.color ?? "#F5EDD6", fontWeight: dl?.subtitle ? FW_MAP[dl.subtitle.fontWeight] : "400", opacity: 0.5 }} className="max-w-md mx-auto">
+              {dl?.subtitle?.text ?? "Tải ứng dụng SmartFurni miễn phí. Kết nối giường trong 30 giây và bắt đầu tùy chỉnh giấc ngủ của bạn."}
             </p>
 
             {/* Download buttons */}
@@ -34,7 +45,7 @@ export default function DownloadSection() {
                 <div className="text-3xl">🍎</div>
                 <div className="text-left">
                   <div className="text-xs text-[#F5EDD6]/50">Tải trên</div>
-                  <div className="text-sm font-semibold text-[#F5EDD6] group-hover:text-[#C9A84C] transition-colors">App Store</div>
+                  <div className="text-sm font-semibold text-[#F5EDD6] group-hover:text-[#C9A84C] transition-colors">{dl?.appStoreLabel ?? "App Store"}</div>
                 </div>
               </a>
               <a
@@ -44,7 +55,7 @@ export default function DownloadSection() {
                 <div className="text-3xl">🤖</div>
                 <div className="text-left">
                   <div className="text-xs text-[#F5EDD6]/50">Tải trên</div>
-                  <div className="text-sm font-semibold text-[#F5EDD6] group-hover:text-[#C9A84C] transition-colors">Google Play</div>
+                  <div className="text-sm font-semibold text-[#F5EDD6] group-hover:text-[#C9A84C] transition-colors">{dl?.googlePlayLabel ?? "Google Play"}</div>
                 </div>
               </a>
             </div>

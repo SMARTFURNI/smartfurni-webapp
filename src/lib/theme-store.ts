@@ -30,6 +30,13 @@ export type {
   PageReturns,
   ThemeVideoSection,
   ThemeVideoItem,
+  TextBlock,
+  HomepageSectionHeader,
+  HomepageFeatureItem,
+  HomepageFeaturesSection,
+  HomepageTestimonialsSection,
+  HomepageDownloadSection,
+  HomepageSections,
   SiteTheme,
 } from "./theme-types";
 
@@ -246,6 +253,40 @@ export const defaultTheme: SiteTheme = {
       },
     ],
   },
+  homepageSections: {
+    features: {
+      badge: { text: "TÍNH NĂNG NỔI BẬT", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+      title: { text: "Mọi thứ bạn cần cho", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+      titleAccent: { text: "giấc ngủ hoàn hảo", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+      subtitle: { text: "SmartFurni tích hợp công nghệ điều khiển thông minh vào từng chi tiết, mang lại trải nghiệm ngủ được cá nhân hóa hoàn toàn.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+      items: [
+        { icon: "📌", title: "Điều chỉnh góc chính xác", desc: "Điều chỉnh đầu và chân giường 0–70° với độ chính xác 1°" },
+        { icon: "🧠", title: "Preset thông minh", desc: "Lưu lại tư thế yêu thích, một chạm khôi phục" },
+        { icon: "💡", title: "Đèn LED thông minh", desc: "Dải đèn LED điều chỉnh được nhiệt độ màu và độ sáng" },
+        { icon: "💆", title: "Massage tích hợp", desc: "Hệ thống rung massage 5 chế độ giúp thư giãn cơ thể" },
+        { icon: "📊", title: "Theo dõi giấc ngủ", desc: "Cảm biến phân tích chất lượng giấc ngủ mỗi đêm" },
+        { icon: "🎤", title: "Điều khiển giọng nói", desc: "Tương thích Alexa, Google Assistant và Siri" },
+        { icon: "⏰", title: "Hẹn giờ thông minh", desc: "Tự động điều chỉnh tư thế theo lịch ngủ của bạn" },
+        { icon: "📡", title: "Kết nối Bluetooth 5.0", desc: "Kết nối ổn định với smartphone từ khoảng cách xa" },
+      ],
+    },
+    testimonials: {
+      badge: { text: "KHÁCH HÀNG NÓI GÌ", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+      title: { text: "Hơn 10.000 khách hàng", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+      titleAccent: { text: "tin tưởng SmartFurni", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+      subtitle: { text: "Những đánh giá thực tế từ khách hàng đã trải nghiệm sản phẩm SmartFurni.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+      ratingLabel: "Dựa trên 10.247 đánh giá",
+      trustedByLabel: "Được tin dùng bởi",
+    },
+    download: {
+      badge: { text: "TẢI ỨNG DỤNG", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+      title: { text: "Kiểm soát giấc ngủ từ điện thoại", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+      subtitle: { text: "Tải ứng dụng SmartFurni để điều khiển giường, theo dõi giấc ngủ và cài đặt lịch tự động.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+      appStoreLabel: "App Store",
+      googlePlayLabel: "Google Play",
+      ratingText: "4.9 ★ trên App Store và Google Play",
+    },
+  },
   updatedAt: new Date().toISOString(),
 };
 
@@ -274,6 +315,14 @@ function mergeTheme(saved: SiteTheme): SiteTheme {
     videoSection: saved.videoSection
       ? { ...defaultTheme.videoSection, ...saved.videoSection, videos: saved.videoSection.videos ?? defaultTheme.videoSection.videos }
       : defaultTheme.videoSection,
+    homepageSections: saved.homepageSections
+      ? {
+          features: { ...defaultTheme.homepageSections.features, ...saved.homepageSections.features,
+            items: saved.homepageSections.features?.items ?? defaultTheme.homepageSections.features.items },
+          testimonials: { ...defaultTheme.homepageSections.testimonials, ...saved.homepageSections.testimonials },
+          download: { ...defaultTheme.homepageSections.download, ...saved.homepageSections.download },
+        }
+      : defaultTheme.homepageSections,
   };
 }
 
