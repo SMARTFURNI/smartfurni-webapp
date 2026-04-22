@@ -89,7 +89,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
   return (
     <Link
       href={`/products/${p.slug}`}
-      style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+      style={{ backgroundColor: "#221D00", borderColor: "#2E2800" }}
       className="rounded-2xl border overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg group"
       onMouseEnter={startSlideshow}
       onMouseLeave={stopSlideshow}
@@ -191,7 +191,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
         <p className="text-xs font-medium uppercase tracking-wider text-[#C9A84C]/70">
           {p.category === "standard" ? "Standard" : p.category === "premium" ? "Premium" : p.category === "elite" ? "Elite" : "Phụ kiện"}
         </p>
-        <h3 className="text-sm font-semibold text-[#F5EDD6] leading-snug line-clamp-2">
+        <h3 className="text-sm font-semibold text-[#F5EDD6] leading-snug" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.6em" }}>
           {p.name}
         </h3>
 
