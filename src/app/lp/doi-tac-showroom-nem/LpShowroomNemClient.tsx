@@ -263,6 +263,182 @@ function FaqAccordion() {
   );
 }
 
+// ─── Showroom Comparison Section ────────────────────────────────────────────
+function ShowroomComparisonSection() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold: 0.15 });
+    obs.observe(el); return () => obs.disconnect();
+  }, []);
+
+  const leftIn = inView;
+  const rightIn = inView;
+  const imgIn = inView;
+
+  return (
+    <section style={{ background: BLACK, padding: "0 0 80px" }}>
+      {/* Caption trên */}
+      <div style={{ textAlign: "center", padding: "0 24px 36px" }}>
+        <p style={{ color: GRAY_LIGHT, fontSize: 15, fontFamily: FONT_BODY, lineHeight: 1.7, maxWidth: 680, margin: "0 auto" }}>
+          Cùng một tấm nệm — nhưng trải nghiệm của khách hàng hoàn toàn khác nhau
+        </p>
+      </div>
+
+      {/* Layout 3 cột: text trái | ảnh | text phải */}
+      <div
+        ref={ref}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr minmax(0, 2.4fr) 1fr",
+          gap: 0,
+          alignItems: "center",
+          maxWidth: 1400,
+          margin: "0 auto",
+          padding: "0 16px",
+        }}
+      >
+        {/* ── Cột TRÁI: Nệm thường ── */}
+        <div
+          style={{
+            padding: "0 28px 0 8px",
+            opacity: leftIn ? 1 : 0,
+            transform: leftIn ? "translateX(0)" : "translateX(-60px)",
+            transition: "opacity 0.7s ease 0.1s, transform 0.7s ease 0.1s",
+          }}
+        >
+          {/* Badge */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.35)", borderRadius: R_FULL, padding: "5px 14px", marginBottom: 16 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: RED_SOFT, display: "inline-block", flexShrink: 0 }} />
+            <span style={{ color: RED_SOFT, fontSize: 10, fontWeight: 700, fontFamily: FONT_BODY, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>Nệm trên giường thường</span>
+          </div>
+          {/* Heading */}
+          <h3 style={{ color: WHITE, fontSize: "clamp(16px, 1.6vw, 22px)", fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.35, marginBottom: 14, letterSpacing: "-0.01em" }}>
+            Khách chỉ nằm thử —<br />rồi về
+          </h3>
+          {/* Bullets */}
+          {[
+            "Không có điểm khác biệt với showroom khác",
+            "Khách so sánh giá, không thấy giá trị",
+            "Biên lợi nhuận ngày càng mỏng",
+          ].map((txt, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
+              <div style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                <span style={{ color: RED_SOFT, fontSize: 8, fontWeight: 700 }}>✕</span>
+              </div>
+              <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{txt}</span>
+            </div>
+          ))}
+          {/* Mũi tên trỏ sang phải vào ảnh */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20, paddingRight: 4 }}>
+            <svg width="80" height="36" viewBox="0 0 80 36" fill="none" xmlns="http://www.w3.org/2000/svg"
+              style={{ opacity: leftIn ? 1 : 0, transform: leftIn ? "translateX(0)" : "translateX(-20px)", transition: "opacity 0.6s ease 0.5s, transform 0.6s ease 0.5s" }}
+            >
+              <path d="M4 18 Q 30 4, 68 18" stroke="rgba(255,107,107,0.55)" strokeWidth="1.5" fill="none" strokeDasharray="5 3" />
+              <polygon points="72,18 62,13 64,18 62,23" fill="rgba(255,107,107,0.7)" />
+            </svg>
+          </div>
+        </div>
+
+        {/* ── Cột GIỮA: Ảnh ── */}
+        <div
+          style={{
+            position: "relative",
+            borderRadius: R_LG,
+            overflow: "hidden",
+            border: `1px solid ${BLACK_BORDER}`,
+            boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+            opacity: imgIn ? 1 : 0,
+            transform: imgIn ? "scale(1) translateY(0)" : "scale(0.96) translateY(20px)",
+            transition: "opacity 0.7s ease 0s, transform 0.7s ease 0s",
+          }}
+        >
+          <Image
+            src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663305063350/ZjsaIdyBylPYjjuJ.webp"
+            alt="So sánh showroom nệm thường vs showroom với giường công thái học SmartFurni"
+            width={1920}
+            height={1080}
+            style={{ width: "100%", height: "auto", display: "block" }}
+          />
+          {/* Đường kẻ phân cách giữa */}
+          <div style={{ position: "absolute", top: 0, bottom: 0, left: "50%", transform: "translateX(-50%)", width: 2, background: `linear-gradient(to bottom, transparent, ${GOLD}, transparent)`, opacity: 0.6, pointerEvents: "none" }} />
+          {/* Badge VS ở giữa */}
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 48, height: 48, borderRadius: "50%", background: BLACK, border: `2px solid ${GOLD}`, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10, boxShadow: `0 0 20px rgba(201,168,76,0.3)` }}>
+            <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, fontFamily: FONT_HEADING, letterSpacing: "0.05em" }}>VS</span>
+          </div>
+          {/* Gold accent lines top/bottom */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`, opacity: 0.5 }} />
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`, opacity: 0.5 }} />
+        </div>
+
+        {/* ── Cột PHẢI: SmartFurni ── */}
+        <div
+          style={{
+            padding: "0 8px 0 28px",
+            opacity: rightIn ? 1 : 0,
+            transform: rightIn ? "translateX(0)" : "translateX(60px)",
+            transition: "opacity 0.7s ease 0.1s, transform 0.7s ease 0.1s",
+          }}
+        >
+          {/* Mũi tên trỏ sang trái vào ảnh */}
+          <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 20, paddingLeft: 4 }}>
+            <svg width="80" height="36" viewBox="0 0 80 36" fill="none" xmlns="http://www.w3.org/2000/svg"
+              style={{ opacity: rightIn ? 1 : 0, transform: rightIn ? "translateX(0)" : "translateX(20px)", transition: "opacity 0.6s ease 0.5s, transform 0.6s ease 0.5s" }}
+            >
+              <path d="M76 18 Q 50 4, 12 18" stroke="rgba(201,168,76,0.55)" strokeWidth="1.5" fill="none" strokeDasharray="5 3" />
+              <polygon points="8,18 18,13 16,18 18,23" fill="rgba(201,168,76,0.7)" />
+            </svg>
+          </div>
+          {/* Badge */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.35)`, borderRadius: R_FULL, padding: "5px 14px", marginBottom: 16 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, display: "inline-block", flexShrink: 0 }} />
+            <span style={{ color: GOLD, fontSize: 10, fontWeight: 700, fontFamily: FONT_BODY, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>Nệm trên khung SmartFurni</span>
+          </div>
+          {/* Heading */}
+          <h3 style={{ color: WHITE, fontSize: "clamp(16px, 1.6vw, 22px)", fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.35, marginBottom: 14, letterSpacing: "-0.01em" }}>
+            Khách trải nghiệm —<br />và mua ngay
+          </h3>
+          {/* Bullets */}
+          {[
+            "Điều chỉnh độ nâng đầu, chân theo ý muốn",
+            "Tính năng độc đáo tạo quyết định mua tức thì",
+            "Biên lợi nhuận 30–40%, cao nhất ngành",
+          ].map((txt, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
+              <div style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.35)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                <span style={{ color: GOLD, fontSize: 8, fontWeight: 700 }}>✓</span>
+              </div>
+              <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{txt}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Caption dưới ảnh */}
+      <div
+        style={{
+          display: "flex", justifyContent: "center", gap: 8, marginTop: 28, flexWrap: "wrap" as const, padding: "0 24px",
+          opacity: inView ? 1 : 0,
+          transform: inView ? "translateY(0)" : "translateY(16px)",
+          transition: "opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s",
+        }}
+      >
+        {[
+          { icon: "📍", text: "Thực tế tại showroom đối tác" },
+          { icon: "💡", text: "Cùng thương hiệu nệm — khác biệt hoàn toàn" },
+          { icon: "📈", text: "Tăng tỷ lệ chốt đơn lên đến 3×" },
+        ].map((tag, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: BLACK_SOFT, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 14px" }}>
+            <span style={{ fontSize: 13 }}>{tag.icon}</span>
+            <span style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY }}>{tag.text}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ─── Product card ─────────────────────────────────────────────────────────────
 function ProductCard({ product, index }: { product: CrmProduct; index: number }) {
   const [imgErr, setImgErr] = useState(false);
@@ -637,63 +813,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
       </section>
 
       {/* ── SHOWROOM COMPARISON IMAGE ── */}
-      <section style={{ background: BLACK, padding: "0 24px 80px" }}>
-        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
-          <FadeIn delay={100}>
-            {/* Caption trên ảnh */}
-            <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <p style={{ color: GRAY_LIGHT, fontSize: 15, fontFamily: FONT_BODY, lineHeight: 1.7, maxWidth: 680, margin: "0 auto" }}>
-                Cùng một tấm nệm — nhưng trải nghiệm của khách hàng hoàn toàn khác nhau
-              </p>
-            </div>
-            {/* Ảnh showroom với overlay */}
-            <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}`, boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
-              <Image
-                src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663305063350/ZjsaIdyBylPYjjuJ.webp"
-                alt="So sánh showroom nệm thường vs showroom với giường công thái học SmartFurni"
-                width={1920}
-                height={1080}
-                style={{ width: "100%", height: "auto", display: "block" }}
-              />
-              {/* Đường kẻ phân cách giữa */}
-              <div style={{ position: "absolute", top: 0, bottom: 0, left: "50%", transform: "translateX(-50%)", width: 2, background: `linear-gradient(to bottom, transparent, ${GOLD}, transparent)`, opacity: 0.7, pointerEvents: "none" }} />
-              {/* Badge VS ở giữa */}
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 44, height: 44, borderRadius: "50%", background: BLACK, border: `2px solid ${GOLD}`, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
-                <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, fontFamily: FONT_HEADING, letterSpacing: "0.05em" }}>VS</span>
-              </div>
-              {/* Overlay trái — nệm thường */}
-              <div style={{ position: "absolute", bottom: 0, left: 0, width: "50%", background: "linear-gradient(to top, rgba(13,11,0,0.92) 0%, rgba(13,11,0,0.6) 60%, transparent 100%)", padding: "28px 24px 24px" }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,107,107,0.12)", border: "1px solid rgba(255,107,107,0.3)", borderRadius: R_FULL, padding: "4px 12px", marginBottom: 10 }}>
-                  <span style={{ color: RED_SOFT, fontSize: 10, fontWeight: 600, fontFamily: FONT_HEADING, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Nệm trên giường thường</span>
-                </div>
-                <p style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 6, lineHeight: 1.4 }}>Khách chỉ nằm thử — rồi về</p>
-                <p style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.65, margin: 0 }}>Không có điểm khác biệt, khách so sánh giá với showroom khác. Biên lợi nhuận ngày càng mỏng.</p>
-              </div>
-              {/* Overlay phải — nệm trên SmartFurni */}
-              <div style={{ position: "absolute", bottom: 0, right: 0, width: "50%", background: "linear-gradient(to top, rgba(13,11,0,0.92) 0%, rgba(13,11,0,0.6) 60%, transparent 100%)", padding: "28px 24px 24px" }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.35)`, borderRadius: R_FULL, padding: "4px 12px", marginBottom: 10 }}>
-                  <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_HEADING, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Nệm trên khung SmartFurni</span>
-                </div>
-                <p style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 6, lineHeight: 1.4 }}>Khách trải nghiệm — và mua ngay</p>
-                <p style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.65, margin: 0 }}>Điều chỉnh độ nâng đầu, chân theo ý muốn. Tính năng độc đáo tạo quyết định mua tức thì.</p>
-              </div>
-            </div>
-            {/* Caption dưới ảnh */}
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 20, flexWrap: "wrap" }}>
-              {[
-                { icon: "📍", text: "Thực tế tại showroom đối tác" },
-                { icon: "💡", text: "Cùng thương hiệu nệm — khác biệt hoàn toàn" },
-                { icon: "📈", text: "Tăng tỷ lệ chốt đơn lên đến 3×" },
-              ].map((tag, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: BLACK_SOFT, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 14px" }}>
-                  <span style={{ fontSize: 13 }}>{tag.icon}</span>
-                  <span style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY }}>{tag.text}</span>
-                </div>
-              ))}
-            </div>
-          </FadeIn>
-        </div>
-      </section>
+      <ShowroomComparisonSection />
 
       {/* ── HERO VIDEO ── */}
       <section style={{ background: BLACK }}>
