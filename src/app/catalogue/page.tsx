@@ -1,5 +1,7 @@
 import { Metadata } from "next";
 import CataloguePublicViewer from "@/components/catalogue/CataloguePublicViewer";
+import { loadCatalogueState } from "@/lib/catalogue-state-store";
+import { getCrmProducts } from "@/lib/crm-store";
 
 export const metadata: Metadata = {
   title: "Catalogue Sản Phẩm | SmartFurni",
@@ -8,19 +10,16 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-async function getCatalogueData() {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/public/catalogue`, { cache: "no-store" });
-    if (!res.ok) return { slides: [], products: [] };
-    const data = await res.json();
-    return { slides: data.slides ?? [], products: data.products ?? [] };
-  } catch {
-    return { slides: [], products: [] };
-  }
-}
-
 export default async function CataloguePage() {
-  const { slides, products } = await getCatalogueData();
-  return <CataloguePublicViewer initialSlides={slides} initialProducts={products} />;
+  const [slides, products] = await Promise.all([
+    loadCatalogueState().catch(() => null),
+    getCrmProducts(true).catch(() => []),
+  ]);
+
+  return (
+    <CataloguePublicViewer
+      initialSlides={slides ?? []}
+      initialProducts={products}
+    />
+  );
 }
