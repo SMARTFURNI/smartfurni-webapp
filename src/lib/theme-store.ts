@@ -28,6 +28,8 @@ export type {
   PageCheckout,
   PageWarranty,
   PageReturns,
+  ThemeVideoSection,
+  ThemeVideoItem,
   SiteTheme,
 } from "./theme-types";
 
@@ -231,6 +233,19 @@ export const defaultTheme: SiteTheme = {
     hotline: "1800 1234 56",
     email: "returns@smartfurni.vn",
   },
+  videoSection: {
+    enabled: true,
+    sectionLabel: "Xem sản phẩm hoạt động thực tế",
+    sectionTitle: "Giường Điều Khiển Thông Minh SmartFurni — Xem Thực Tế",
+    videos: [
+      {
+        id: "v1",
+        youtubeId: "YuZ81jo6_fQ",
+        title: "Giường Điều Khiển Thông Minh SmartFurni — Xem Thực Tế",
+        label: "Video giới thiệu",
+      },
+    ],
+  },
   updatedAt: new Date().toISOString(),
 };
 
@@ -256,6 +271,9 @@ function mergeTheme(saved: SiteTheme): SiteTheme {
     pageCheckout: { ...defaultTheme.pageCheckout, ...(saved.pageCheckout || {}) },
     pageWarranty: { ...defaultTheme.pageWarranty, ...(saved.pageWarranty || {}) },
     pageReturns: { ...defaultTheme.pageReturns, ...(saved.pageReturns || {}) },
+    videoSection: saved.videoSection
+      ? { ...defaultTheme.videoSection, ...saved.videoSection, videos: saved.videoSection.videos ?? defaultTheme.videoSection.videos }
+      : defaultTheme.videoSection,
   };
 }
 

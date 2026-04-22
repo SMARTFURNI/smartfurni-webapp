@@ -43,6 +43,7 @@ const SECTION_GROUPS = [
       { id: "footer", label: "Chân trang", icon: "📋" },
       { id: "layout", label: "Bố cục & Hiệu ứng", icon: "⚡" },
       { id: "seo", label: "SEO & Analytics", icon: "📈" },
+      { id: "video", label: "Section Video", icon: "🎥" },
     ],
   },
   {
@@ -67,6 +68,7 @@ const SECTION_PREVIEW_URL: Record<string, string> = {
   pageProducts: "/products", pageAbout: "/about", pageContact: "/contact",
   pageBlog: "/blog", pageCart: "/cart", pageCheckout: "/checkout",
   pageWarranty: "/warranty", pageReturns: "/returns",
+  video: "/",
 };
 
 // ─── WCAG Contrast Ratio Calculator ──────────────────────────────────────────
@@ -1189,6 +1191,93 @@ export default function ThemeEditorClient({
               <TextInput label="Tiêu đề quy trình" value={theme.pageReturns.processTitle} onChange={(v) => updateSection("pageReturns", { processTitle: v })} />
               <TextInput label="Hotline đổi trả" value={theme.pageReturns.hotline} onChange={(v) => updateSection("pageReturns", { hotline: v })} />
               <TextInput label="Email đổi trả" value={theme.pageReturns.email} onChange={(v) => updateSection("pageReturns", { email: v })} />
+            </SectionCard>
+          </div>
+        );
+
+      case "video":
+        return (
+          <div className="space-y-5">
+            <SectionCard title="Section Video">
+              <Toggle
+                label="Hiển thị section video"
+                value={theme.videoSection?.enabled ?? true}
+                onChange={(v) => updateSection("videoSection", { enabled: v })}
+                description="Section video xuất hiện trên trang chủ"
+              />
+              <TextInput
+                label="Nhãn section (chữ nhỏ phía trên)"
+                value={theme.videoSection?.sectionLabel ?? ""}
+                onChange={(v) => updateSection("videoSection", { sectionLabel: v })}
+                placeholder="Xem sản phẩm hoạt động thực tế"
+              />
+              <TextInput
+                label="Tiêu đề section"
+                value={theme.videoSection?.sectionTitle ?? ""}
+                onChange={(v) => updateSection("videoSection", { sectionTitle: v })}
+                placeholder="Giường Điều Khiển Thông Minh SmartFurni — Xem Thực Tế"
+              />
+            </SectionCard>
+
+            <SectionCard title="Danh sách video">
+              <div className="space-y-4">
+                {(theme.videoSection?.videos ?? []).map((video, idx) => (
+                  <div key={video.id} className="p-4 rounded-xl border border-[#C9A84C]/15 bg-[#0D0B00] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-[#C9A84C]">Video {idx + 1}</span>
+                      <button
+                        onClick={() => {
+                          const newVideos = (theme.videoSection?.videos ?? []).filter((_, i) => i !== idx);
+                          updateSection("videoSection", { videos: newVideos });
+                        }}
+                        className="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-400/20 hover:border-red-300/40 transition-colors"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                    <TextInput
+                      label="YouTube ID"
+                      value={video.youtubeId}
+                      onChange={(v) => {
+                        const newVideos = [...(theme.videoSection?.videos ?? [])];
+                        newVideos[idx] = { ...newVideos[idx], youtubeId: v };
+                        updateSection("videoSection", { videos: newVideos });
+                      }}
+                      placeholder="YuZ81jo6_fQ"
+                    />
+                    <TextInput
+                      label="Tiêu đề video"
+                      value={video.title}
+                      onChange={(v) => {
+                        const newVideos = [...(theme.videoSection?.videos ?? [])];
+                        newVideos[idx] = { ...newVideos[idx], title: v };
+                        updateSection("videoSection", { videos: newVideos });
+                      }}
+                      placeholder="Giới thiệu sản phẩm SmartFurni"
+                    />
+                    <TextInput
+                      label="Nhãn video"
+                      value={video.label ?? ""}
+                      onChange={(v) => {
+                        const newVideos = [...(theme.videoSection?.videos ?? [])];
+                        newVideos[idx] = { ...newVideos[idx], label: v };
+                        updateSection("videoSection", { videos: newVideos });
+                      }}
+                      placeholder="Video giới thiệu"
+                    />
+                  </div>
+                ))}
+                <button
+                  onClick={() => {
+                    const newVideo = { id: `v${Date.now()}`, youtubeId: "", title: "", label: "" };
+                    const newVideos = [...(theme.videoSection?.videos ?? []), newVideo];
+                    updateSection("videoSection", { videos: newVideos });
+                  }}
+                  className="w-full py-2.5 rounded-xl border border-dashed border-[#C9A84C]/30 text-[#C9A84C]/70 hover:text-[#C9A84C] hover:border-[#C9A84C]/50 text-sm transition-colors"
+                >
+                  + Thêm video
+                </button>
+              </div>
             </SectionCard>
           </div>
         );

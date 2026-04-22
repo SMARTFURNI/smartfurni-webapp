@@ -13,12 +13,7 @@ import { getCatalogues } from "@/lib/catalogue-store";
 import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 
 export const dynamic = "force-dynamic";
-
-// ─── Video config ─────────────────────────────────────────────────────────────
-// Thay VIDEO_ID bằng YouTube ID thực tế (phần sau v= trong link YouTube)
-// Ví dụ: https://www.youtube.com/watch?v=dQw4w9WgXcQ → VIDEO_ID = "dQw4w9WgXcQ"
-const HOMEPAGE_VIDEO_ID = "YuZ81jo6_fQ";
-const HOMEPAGE_VIDEO_TITLE = "Giường Điều Khiển Thông Minh SmartFurni — Xem Thực Tế";
+// Video config is now managed via theme.videoSection (Admin → Cài đặt giao diện → Video)
 
 export default async function HomePage() {
   // Init DB để load sản phẩm từ CRM
@@ -50,12 +45,8 @@ export default async function HomePage() {
       <Navbar theme={theme} />
       <HeroSection theme={theme} />
 
-      {/* Video section — hiển thị khi có HOMEPAGE_VIDEO_ID */}
-      <VideoSection
-        theme={theme}
-        videoId={HOMEPAGE_VIDEO_ID}
-        videoTitle={HOMEPAGE_VIDEO_TITLE}
-      />
+      {/* Video section — quản lý qua Admin → Cài đặt giao diện → Video */}
+      <VideoSection theme={theme} />
 
       {/* Sản phẩm — đồng bộ từ CRM, giao diện giống landing page */}
       <StaticProductsSection

@@ -192,6 +192,20 @@ export interface PageReturns {
   hotline: string;
   email: string;
 }
+export interface ThemeVideoItem {
+  id: string;
+  youtubeId: string;
+  title: string;
+  label?: string;
+}
+
+export interface ThemeVideoSection {
+  enabled: boolean;
+  sectionLabel: string;
+  sectionTitle: string;
+  videos: ThemeVideoItem[];
+}
+
 export interface SiteTheme {
   id: string;
   name: string;
@@ -212,5 +226,6 @@ export interface SiteTheme {
   pageCheckout: PageCheckout;
   pageWarranty: PageWarranty;
   pageReturns: PageReturns;
+  videoSection: ThemeVideoSection;
   updatedAt: string;
 }
