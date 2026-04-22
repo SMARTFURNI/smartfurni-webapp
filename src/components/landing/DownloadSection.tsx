@@ -1,9 +1,11 @@
 "use client";
+import { ScrollReveal } from "./ScrollReveal";
 
 export default function DownloadSection() {
   return (
     <section id="download" className="py-24 px-6">
       <div className="max-w-4xl mx-auto">
+        <ScrollReveal variant="fadeUp" delay={0}>
         <div className="relative rounded-3xl overflow-hidden border border-[#C9A84C]/20 bg-[#1A1600]">
           {/* Background glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#C9A84C]/10 via-transparent to-transparent" />
@@ -55,6 +57,7 @@ export default function DownloadSection() {
             </div>
           </div>
         </div>
+        </ScrollReveal>
       </div>
     </section>
   );

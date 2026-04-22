@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { SiteTheme, ThemeVideoItem } from "@/lib/theme-types";
+import { ScrollReveal } from "./ScrollReveal";
 
 // ─── YouTube embed with lazy load ─────────────────────────────────────────────
 function YoutubeEmbed({ videoId, title }: { videoId: string; title: string }) {
@@ -154,6 +155,7 @@ export default function VideoSection({ theme, videoId, videoTitle }: VideoSectio
     <section style={{ background: bgColor, padding: "80px 0" }}>
       <div style={{ maxWidth, margin: "0 auto", padding: "0 24px" }}>
         {/* Header */}
+        <ScrollReveal variant="fadeUp" delay={0}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div
             style={{
@@ -184,8 +186,10 @@ export default function VideoSection({ theme, videoId, videoTitle }: VideoSectio
             {sectionTitle}
           </h2>
         </div>
+        </ScrollReveal>
 
         {/* Carousel */}
+        <ScrollReveal variant="fadeUp" delay={150}>
         <div>
           {/* Arrow + video row */}
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -253,6 +257,7 @@ export default function VideoSection({ theme, videoId, videoTitle }: VideoSectio
           {/* Dots */}
           <Dots total={videos.length} current={current} primary={primary} onDotClick={setCurrent} />
         </div>
+        </ScrollReveal>
       </div>
     </section>
   );

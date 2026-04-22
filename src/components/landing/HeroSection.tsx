@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { ScrollReveal } from "./ScrollReveal";
 import Link from "next/link";
 import BedSVG from "@/components/ui/BedSVG";
 import type { SiteTheme } from "@/lib/theme-types";
@@ -256,6 +257,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
 
       <div style={{ maxWidth }} className="relative mx-auto px-6 py-20 grid lg:grid-cols-2 gap-16 items-center">
         {/* Left — Text */}
+        <ScrollReveal variant="fadeRight" delay={0}>
         <div className="space-y-8">
           <div
             style={{ borderColor: `${primary}40`, backgroundColor: `${primary}0d` }}
@@ -328,7 +330,9 @@ export default function HeroSection({ theme }: HeroSectionProps) {
           </div>
         </div>
 
+        </ScrollReveal>
         {/* Right — Bed Demo */}
+        <ScrollReveal variant="fadeLeft" delay={150}>
         <div className="flex flex-col items-center gap-6">
           <div className="relative w-full max-w-lg">
             <div style={{ background: `radial-gradient(circle, ${primary}15, transparent 70%)` }} className="absolute inset-0 rounded-3xl" />
@@ -368,6 +372,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
             Demo tương tác — nhấn để thay đổi tư thế giường
           </p>
         </div>
+        </ScrollReveal>
       </div>
     </section>
     </>

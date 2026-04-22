@@ -1,5 +1,7 @@
 "use client";
 
+import { ScrollReveal } from "./ScrollReveal";
+
 const FEATURES = [
   {
     icon: "🛏️",
@@ -48,33 +50,34 @@ export default function FeaturesSection() {
     <section id="features" className="py-24 px-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/5 mb-4">
-            <span className="text-xs text-[#C9A84C] font-medium tracking-wider">TÍNH NĂNG NỔI BẬT</span>
+        <ScrollReveal variant="fadeUp" delay={0}>
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/5 mb-4">
+              <span className="text-xs text-[#C9A84C] font-medium tracking-wider">TÍNH NĂNG NỔI BẬT</span>
+            </div>
+            <h2 className="text-4xl font-light text-[#F5EDD6] mb-4">
+              Mọi thứ bạn cần cho{" "}
+              <span className="text-gold-gradient">giấc ngủ hoàn hảo</span>
+            </h2>
+            <p className="text-[#F5EDD6]/50 max-w-xl mx-auto">
+              SmartFurni tích hợp công nghệ điều khiển thông minh vào từng chi tiết,
+              mang lại trải nghiệm ngủ được cá nhân hóa hoàn toàn.
+            </p>
           </div>
-          <h2 className="text-4xl font-light text-[#F5EDD6] mb-4">
-            Mọi thứ bạn cần cho{" "}
-            <span className="text-gold-gradient">giấc ngủ hoàn hảo</span>
-          </h2>
-          <p className="text-[#F5EDD6]/50 max-w-xl mx-auto">
-            SmartFurni tích hợp công nghệ điều khiển thông minh vào từng chi tiết,
-            mang lại trải nghiệm ngủ được cá nhân hóa hoàn toàn.
-          </p>
-        </div>
+        </ScrollReveal>
 
         {/* Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f, i) => (
-            <div
-              key={i}
-              className="group p-6 rounded-2xl bg-[#1A1600] border border-[#2E2800] hover:border-[#C9A84C]/40 hover:bg-[#221D00] transition-all duration-300"
-            >
-              <div className="text-3xl mb-4">{f.icon}</div>
-              <h3 className="text-sm font-semibold text-[#F5EDD6] mb-2 group-hover:text-[#C9A84C] transition-colors">
-                {f.title}
-              </h3>
-              <p className="text-xs text-[#F5EDD6]/50 leading-relaxed">{f.desc}</p>
-            </div>
+            <ScrollReveal key={i} variant="fadeUp" delay={100 + i * 70}>
+              <div className="group p-6 rounded-2xl bg-[#1A1600] border border-[#2E2800] hover:border-[#C9A84C]/40 hover:bg-[#221D00] transition-all duration-300 h-full">
+                <div className="text-3xl mb-4">{f.icon}</div>
+                <h3 className="text-sm font-semibold text-[#F5EDD6] mb-2 group-hover:text-[#C9A84C] transition-colors">
+                  {f.title}
+                </h3>
+                <p className="text-xs text-[#F5EDD6]/50 leading-relaxed">{f.desc}</p>
+              </div>
+            </ScrollReveal>
           ))}
         </div>
       </div>

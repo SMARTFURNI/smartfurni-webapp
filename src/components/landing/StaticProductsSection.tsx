@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { ScrollReveal } from "./ScrollReveal";
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/product-store";
@@ -235,6 +236,7 @@ export default function StaticProductsSection({
       <div style={{ maxWidth, margin: "0 auto", padding: "0 24px" }}>
 
         {/* ── Header ── */}
+        <ScrollReveal variant="fadeUp" delay={0}>
         <div style={{ textAlign: "center", marginBottom: 52 }}>
           {/* Label pill */}
           <div style={{
@@ -279,6 +281,7 @@ export default function StaticProductsSection({
             {sectionSubtitle}
           </p>
         </div>
+        </ScrollReveal>
 
         {/* ── Product grid ── */}
         <div style={{
@@ -293,11 +296,14 @@ export default function StaticProductsSection({
           justifyContent: displayProducts.length <= 2 ? "center" : undefined,
         }}>
           {displayProducts.map((p, i) => (
-            <ProductCard key={p.id} product={p} index={i} />
+            <ScrollReveal key={p.id} variant="fadeUp" delay={100 + i * 100}>
+            <ProductCard product={p} index={i} />
+            </ScrollReveal>
           ))}
         </div>
 
         {/* ── CTA ── */}
+        <ScrollReveal variant="fadeUp" delay={200}>
         <div style={{ textAlign: "center" }}>
           <Link
             href="/products"
@@ -321,6 +327,7 @@ export default function StaticProductsSection({
             </svg>
           </Link>
         </div>
+        </ScrollReveal>
 
       </div>
     </section>

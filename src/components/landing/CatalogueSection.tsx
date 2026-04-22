@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Catalogue } from "@/lib/catalogue-store";
+import { ScrollReveal } from "./ScrollReveal";
 
 interface Props {
   catalogues: Catalogue[];
@@ -20,6 +21,7 @@ export default function CatalogueSection({ catalogues }: Props) {
 
       <div className="max-w-6xl mx-auto px-4 relative">
         {/* Section header */}
+        <ScrollReveal variant="fadeUp" delay={0}>
         <div className="flex items-end justify-between mb-10">
           <div>
             <div className="inline-flex items-center gap-2 bg-[#C9A84C]/10 border border-[#C9A84C]/20 rounded-full px-3 py-1 mb-4">
@@ -46,6 +48,7 @@ export default function CatalogueSection({ catalogues }: Props) {
           </Link>
         </div>
 
+        </ScrollReveal>
         {/* Catalogue cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {catalogues.slice(0, 3).map((cat) => (
@@ -66,6 +69,7 @@ export default function CatalogueSection({ catalogues }: Props) {
           </Link>
         </div>
 
+        <ScrollReveal variant="fadeUp" delay={150}>
         {/* B2B CTA */}
         <div className="mt-12 bg-gradient-to-r from-[#C9A84C]/10 to-[#C9A84C]/5 border border-[#C9A84C]/20 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
@@ -89,6 +93,7 @@ export default function CatalogueSection({ catalogues }: Props) {
             </Link>
           </div>
         </div>
+        </ScrollReveal>
       </div>
     </section>
   );
