@@ -474,9 +474,20 @@ function LeadForm() {
 }
 
 export default function LpShowroomNemClient({ products }: Props) {
-  function scrollToForm() {
-    document.getElementById("dang-ky-hop-tac")?.scrollIntoView({ behavior: "smooth" });
+  function scrollTo(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   }
+  function scrollToForm() {
+    scrollTo("dang-ky-hop-tac");
+  }
+
+  const NAV_ITEMS = [
+    { label: "Giải pháp", id: "giai-phap" },
+    { label: "Sản phẩm", id: "san-pham" },
+    { label: "Đặc quyền", id: "dac-quyen" },
+    { label: "Đối tác", id: "doi-tac" },
+    { label: "Đăng ký", id: "dang-ky-hop-tac" },
+  ];
 
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "'Inter', sans-serif" }}>
@@ -485,44 +496,83 @@ export default function LpShowroomNemClient({ products }: Props) {
       <header
         style={{
           position: "sticky", top: 0, zIndex: 100,
-          background: "rgba(8,6,0,0.95)",
-          backdropFilter: "blur(12px)",
+          background: "rgba(8,6,0,0.96)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           borderBottom: `1px solid ${C.goldBorder}`,
-          padding: "14px 24px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
+        <div style={{
+          maxWidth: 1200, margin: "0 auto",
+          padding: "0 24px",
+          height: 68,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+        }}>
+          {/* Logo */}
+          <a href="/" style={{ flexShrink: 0, textDecoration: "none" }}>
+            <img
+              src="/smartfurni-logo-transparent.png"
+              alt="SmartFurni"
+              style={{ height: 42, objectFit: "contain" }}
+            />
+          </a>
+
+          {/* Main menu — desktop */}
+          <nav style={{
+            display: "flex", alignItems: "center", gap: 4,
+            flex: 1, justifyContent: "center",
+          }}>
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: C.textMuted, fontSize: 13, fontWeight: 500,
+                  fontFamily: "'Inter', sans-serif",
+                  padding: "8px 14px", borderRadius: 8,
+                  letterSpacing: "0.01em",
+                  transition: "color 0.2s, background 0.2s",
+                  whiteSpace: "nowrap" as const,
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = C.gold;
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(201,168,76,0.08)";
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = C.textMuted;
+                  (e.currentTarget as HTMLButtonElement).style.background = "none";
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* CTA button */}
+          <button
+            onClick={scrollToForm}
             style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: `linear-gradient(135deg, ${C.gold} 0%, ${C.goldLight} 100%)`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 900, fontSize: 16, color: C.bg,
+              flexShrink: 0,
+              background: `linear-gradient(135deg, ${C.goldLight} 0%, ${C.gold} 100%)`,
+              color: C.bg, border: "none", borderRadius: 8,
+              padding: "9px 20px", fontSize: 12, fontWeight: 700,
+              cursor: "pointer", letterSpacing: "0.06em",
+              fontFamily: "'Inter', sans-serif",
+              whiteSpace: "nowrap" as const,
+              transition: "opacity 0.2s, transform 0.15s",
             }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
           >
-            SF
-          </div>
-          <div>
-            <p style={{ color: C.text, fontWeight: 700, fontSize: 15, lineHeight: 1 }}>SMARTFURNI</p>
-            <p style={{ color: C.gold, fontSize: 10, letterSpacing: "0.1em" }}>CHƯƠNG TRÌNH ĐỐI TÁC B2B</p>
-          </div>
+            ĐĂNG KÝ ĐẠI LÝ
+          </button>
         </div>
-        <button
-          onClick={scrollToForm}
-          style={{
-            background: `linear-gradient(135deg, ${C.gold} 0%, ${C.goldLight} 100%)`,
-            color: C.bg, border: "none", borderRadius: 8,
-            padding: "8px 18px", fontSize: 13, fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          Đăng ký ngay
-        </button>
       </header>
 
       {/* ── HERO ── */}
       <section
+        id="hero"
         style={{
           padding: "80px 24px 72px",
           textAlign: "center",
@@ -632,7 +682,7 @@ export default function LpShowroomNemClient({ products }: Props) {
       </section>
 
       {/* ── WHY PARTNER ── */}
-      <section style={{ padding: "72px 24px", maxWidth: 1100, margin: "0 auto" }}>
+      <section id="giai-phap" style={{ padding: "72px 24px", maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 48 }}>
           <p style={{ color: C.gold, fontSize: 12, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 12 }}>
             TẠI SAO NÊN HỢP TÁC
@@ -673,6 +723,7 @@ export default function LpShowroomNemClient({ products }: Props) {
       {/* ── PRODUCTS ── */}
       {products.length > 0 && (
         <section
+          id="san-pham"
           style={{
             padding: "72px 24px",
             background: `linear-gradient(180deg, ${C.bg} 0%, ${C.surface} 50%, ${C.bg} 100%)`,
@@ -734,7 +785,7 @@ export default function LpShowroomNemClient({ products }: Props) {
       )}
 
       {/* ── HOW IT WORKS ── */}
-      <section style={{ padding: "72px 24px", maxWidth: 900, margin: "0 auto" }}>
+      <section id="dac-quyen" style={{ padding: "72px 24px", maxWidth: 900, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 48 }}>
           <p style={{ color: C.gold, fontSize: 12, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 12 }}>
             QUY TRÌNH HỢP TÁC
@@ -787,6 +838,7 @@ export default function LpShowroomNemClient({ products }: Props) {
 
       {/* ── TESTIMONIALS ── */}
       <section
+        id="doi-tac"
         style={{
           padding: "72px 24px",
           background: C.surface,
