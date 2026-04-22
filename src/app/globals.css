@@ -19,6 +19,7 @@
 
 html {
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
@@ -26,6 +27,7 @@ body {
   color: #F5EDD6;
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
+  min-height: 100%;
 }
 
 /* Gold gradient text */

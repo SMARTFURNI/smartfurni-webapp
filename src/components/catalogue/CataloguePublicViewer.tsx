@@ -916,9 +916,9 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
   const SLIDE_DISPLAY_W = 560;
 
   return (
-    <div style={{ minHeight: "100vh", background: D.pageBg, display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "100vh", background: D.pageBg, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(13,11,26,0.98)", backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 10 }}>
+      <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(13,11,26,0.98)", backdropFilter: "blur(12px)", flexShrink: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -936,9 +936,9 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
         {/* Thumbnail sidebar */}
-        <div ref={thumbRef} style={{ width: 120, flexShrink: 0, background: "rgba(8,7,18,0.9)", borderRight: "1px solid rgba(255,255,255,0.06)", overflowY: "auto", padding: "12px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div ref={thumbRef} style={{ width: 120, flexShrink: 0, background: "rgba(8,7,18,0.9)", borderRight: "1px solid rgba(255,255,255,0.06)", overflowY: "auto", overflowX: "hidden", padding: "12px 10px", display: "flex", flexDirection: "column", gap: 8, height: "100%" }}>
           {visibleSlides.map((slide, idx) => (
             <SlideThumbnail
               key={slide.id}
@@ -954,7 +954,7 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
         </div>
 
         {/* Main slide area */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 32px", overflow: "auto" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "24px 32px", overflow: "auto" }}>
           {activeSlide && (
             <>
               <div style={{
