@@ -58,6 +58,16 @@ const NAV_GROUPS: NavGroup[] = [
         badgeKey: "draftPosts",
         badgeColor: "bg-gray-600",
       },
+      {
+        href: "/admin/landing-pages",
+        label: "Landing Pages",
+        icon: "◧",
+        exact: false,
+        subItems: [
+          { href: "/lp/doi-tac-showroom-nem", label: "Đối tác Showroom Nệm" },
+          { href: "/admin/landing-pages/leads", label: "Leads đăng ký" },
+        ],
+      },
     ],
   },
   {
