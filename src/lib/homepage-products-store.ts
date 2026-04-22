@@ -26,7 +26,7 @@ export interface HomepageProductConfig {
 // ─── Default config ────────────────────────────────────────────────────────────
 const DEFAULT_CONFIG: HomepageProductConfig = {
   displayedProductIds: [], // rỗng = hiển thị tất cả sản phẩm active
-  sectionTitle: "Dòng Giường Thông Minh",
+  sectionTitle: "Dòng Giường Thông Minh\nĐiều Chỉnh Điện SmartFurni",
   sectionSubtitle:
     "Từ dòng phổ thông đến cao cấp, SmartFurni mang đến giải pháp giấc ngủ hoàn hảo cho mọi nhu cầu.",
   maxDisplay: 0,

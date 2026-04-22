@@ -225,14 +225,14 @@ export default function StaticProductsSection({
   const { colors, layout } = theme;
   const primary = colors.primary ?? GOLD;
   const secondary = colors.secondary ?? GOLD_LIGHT;
-  const bgColor = colors.background ?? "#0D0B00";
+  const bgColor = "#1A1500";
   const maxWidth = layout.maxWidth ?? 1280;
 
   const displayProducts = products.filter((p) => p.status !== "discontinued");
   if (displayProducts.length === 0) return null;
 
   return (
-    <section style={{ background: bgColor, padding: "80px 0" }}>
+    <section style={{ background: bgColor, padding: "80px 0", borderTop: "1px solid rgba(201,168,76,0.1)" }}>
       <div style={{ maxWidth, margin: "0 auto", padding: "0 24px" }}>
 
         {/* ── Header ── */}
@@ -251,20 +251,26 @@ export default function StaticProductsSection({
             </span>
           </div>
 
-          {/* Title */}
+          {/* Title — 2 dòng: dòng 1 trắng kem, dòng 2 vàng gold */}
           <h2 style={{
             fontSize: "clamp(28px, 4vw, 48px)",
-            fontWeight: 300, lineHeight: 1.15,
-            color: WHITE, marginBottom: 16,
+            fontWeight: 300, lineHeight: 1.2,
+            marginBottom: 16,
             letterSpacing: "-0.01em", fontFamily: FONT,
           }}>
             {(() => {
-              const words = sectionTitle.split(" ");
-              const half = Math.ceil(words.length / 2);
+              // Tách tại vị trí xuống dòng (\n) nếu có, nếu không tách đôi từ
+              const parts = sectionTitle.includes("\n")
+                ? sectionTitle.split("\n")
+                : (() => {
+                    const words = sectionTitle.split(" ");
+                    const half = Math.ceil(words.length / 2);
+                    return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
+                  })();
               return (
                 <>
-                  {words.slice(0, half).join(" ")}{" "}
-                  <span style={{ color: GOLD }}>{words.slice(half).join(" ")}</span>
+                  <span style={{ display: "block", color: WHITE }}>{parts[0]}</span>
+                  {parts[1] && <span style={{ display: "block", color: GOLD }}>{parts[1]}</span>}
                 </>
               );
             })()}
