@@ -9,7 +9,6 @@ import StaticProductsSection from "@/components/landing/StaticProductsSection";
 import VideoSection from "@/components/landing/VideoSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import CatalogueSection from "@/components/landing/CatalogueSection";
-import { getCatalogues } from "@/lib/catalogue-store";
 import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +22,6 @@ export default async function HomePage() {
   // Lấy sản phẩm từ CRM (đã lọc theo config homepage)
   const products = getHomepageProducts();
   const { banner } = theme;
-  const publishedCatalogues = await getCatalogues(true);
 
   return (
     <main style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
@@ -56,7 +54,7 @@ export default async function HomePage() {
         sectionSubtitle={homepageConfig.sectionSubtitle}
       />
 
-      <CatalogueSection catalogues={publishedCatalogues} />
+      <CatalogueSection />
       <FeaturesSection />
       <TestimonialsSection theme={theme} />
       <DownloadSection />
