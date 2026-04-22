@@ -41,6 +41,12 @@ export interface ThemeBanner {
 export interface ThemeHero {
   title: string;
   subtitle: string;
+  /** Cỡ chữ tiêu đề (px). Mặc định 60 */
+  titleFontSize?: number;
+  /** Màu dòng 1 tiêu đề */
+  titleColor?: string;
+  /** Màu dòng 2 tiêu đề (accent/vàng) */
+  titleAccentColor?: string;
   ctaText: string;
   ctaLink: string;
   ctaSecondaryText: string;

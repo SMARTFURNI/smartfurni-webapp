@@ -197,8 +197,11 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const borderColor = theme?.colors.border ?? "#2D2500";
   const surfaceColor = theme?.colors.surface ?? "#1A1500";
   const maxWidth = theme?.layout.maxWidth ?? 1280;
-  const heroTitle = theme?.hero.title ?? "Giường Điều Khiển Thông Minh SmartFurni";
+  const heroTitle = theme?.hero.title ?? "Giường Công Thái Học\nĐiều Chỉnh Điện SmartFurni";
   const heroSubtitle = theme?.hero.subtitle ?? "Trải nghiệm giấc ngủ hoàn hảo với công nghệ điều khiển thông minh.";
+  const titleFontSize = theme?.hero.titleFontSize ?? 60;
+  const titleColor = theme?.hero.titleColor ?? textColor;
+  const titleAccentColor = theme?.hero.titleAccentColor ?? primary;
   const ctaText = theme?.hero.ctaText ?? "Thử Dashboard ngay";
   const ctaLink = theme?.hero.ctaLink ?? "/dashboard";
   const ctaSecondaryText = theme?.hero.ctaSecondaryText ?? "Xem demo";
@@ -267,7 +270,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
             <span style={{ color: primary }} className="text-xs font-medium tracking-wider">CÔNG NGHỆ ĐIỀU KHIỂN THÔNG MINH</span>
           </div>
 
-          <h1 className="text-5xl lg:text-6xl font-light leading-tight">
+          <h1 className="font-light leading-tight" style={{ fontSize: titleFontSize }}>
             {(() => {
               const parts = heroTitle.includes("\n")
                 ? heroTitle.split("\n")
@@ -278,8 +281,8 @@ export default function HeroSection({ theme }: HeroSectionProps) {
                   })();
               return (
                 <>
-                  <span style={{ color: textColor }} className="block opacity-90">{parts[0]}</span>
-                  {parts[1] && <span style={{ color: primary }} className="block">{parts[1]}</span>}
+                  <span style={{ color: titleColor }} className="block opacity-90">{parts[0]}</span>
+                  {parts[1] && <span style={{ color: titleAccentColor }} className="block">{parts[1]}</span>}
                 </>
               );
             })()}

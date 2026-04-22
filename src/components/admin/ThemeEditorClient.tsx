@@ -956,6 +956,9 @@ export default function ThemeEditorClient({
           <div className="space-y-5">
             <SectionCard title="Nội dung Hero">
               <TextInput label="Tiêu đề chính" value={theme.hero.title} onChange={(v) => updateSection("hero", { title: v })} />
+              <SliderInput label="Cỡ chữ tiêu đề (px)" value={theme.hero.titleFontSize ?? 60} onChange={(v) => updateSection("hero", { titleFontSize: v })} min={24} max={96} unit="px" />
+              <ColorInput label="Màu dòng 1 tiêu đề" value={theme.hero.titleColor ?? theme.colors.text} onChange={(v) => updateSection("hero", { titleColor: v })} />
+              <ColorInput label="Màu dòng 2 tiêu đề (accent)" value={theme.hero.titleAccentColor ?? theme.colors.primary} onChange={(v) => updateSection("hero", { titleAccentColor: v })} />
               <div className="space-y-1.5">
                 <label className="text-sm text-gray-400">Mô tả phụ</label>
                 <textarea value={theme.hero.subtitle} onChange={(e) => updateSection("hero", { subtitle: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
