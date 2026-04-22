@@ -869,9 +869,23 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
   const [slides] = useState<Slide[]>(initialSlides);
   const [products] = useState<CrmProduct[]>(initialProducts);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  const mainAreaRef = useRef<HTMLDivElement>(null);
   const today = new Date().toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const visibleSlides = slides.filter(s => s.visible !== false);
+
+  // Measure main area to compute scale
+  useEffect(() => {
+    const el = mainAreaRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect;
+      setContainerSize({ w: width, h: height });
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const getProduct = useCallback((productId?: string) => {
     if (!productId) return undefined;
@@ -912,8 +926,21 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
     );
   }
 
-  // Responsive scale for main slide
-  const SLIDE_DISPLAY_W = 560;
+  // Slide native dimensions (A4)
+  const SLIDE_W = 794;
+  const SLIDE_H = 1123;
+  // Nav bar height estimate (px) for scale calculation
+  const NAV_H = 60; // nav buttons + hint text
+  const PAD_V = 48; // 24px top + 24px bottom padding
+
+  // Compute scale to fit both width and height of the available area
+  const availW = containerSize.w > 0 ? containerSize.w - 64 : 560; // minus horizontal padding
+  const availH = containerSize.h > 0 ? containerSize.h - NAV_H - PAD_V : 700;
+  const scaleByW = availW / SLIDE_W;
+  const scaleByH = availH / SLIDE_H;
+  const scale = Math.min(scaleByW, scaleByH, 1); // never upscale
+  const displayW = Math.round(SLIDE_W * scale);
+  const displayH = Math.round(SLIDE_H * scale);
 
   return (
     <div style={{ height: "100vh", background: D.pageBg, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -954,22 +981,23 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
         </div>
 
         {/* Main slide area */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "24px 32px", overflow: "auto" }}>
+        <div ref={mainAreaRef} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "24px 32px", overflow: "hidden", minHeight: 0 }}>
           {activeSlide && (
             <>
               <div style={{
-                width: SLIDE_DISPLAY_W,
-                height: Math.round(SLIDE_DISPLAY_W * 1123 / 794),
+                width: displayW,
+                height: displayH,
                 position: "relative",
                 borderRadius: 12,
                 overflow: "hidden",
                 border: `1px solid rgba(201,168,76,0.2)`,
                 boxShadow: "0 0 40px rgba(201,168,76,0.1)",
+                flexShrink: 0,
               }}>
                 <div style={{
                   position: "absolute", top: 0, left: 0,
-                  width: 794, height: 1123,
-                  transform: `scale(${SLIDE_DISPLAY_W / 794})`,
+                  width: SLIDE_W, height: SLIDE_H,
+                  transform: `scale(${scale})`,
                   transformOrigin: "top left",
                   pointerEvents: "none",
                 }}>
