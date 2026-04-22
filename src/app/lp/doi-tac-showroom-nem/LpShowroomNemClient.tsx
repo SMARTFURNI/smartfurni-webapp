@@ -780,6 +780,116 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         </div>
       </section>
 
+      {/* ── MARKETING SUPPORT ── */}
+      <section id="marketing" style={{ background: `linear-gradient(135deg, #0D0B00 0%, #1A1200 40%, #0D0B00 100%)`, padding: "96px 24px", position: "relative", overflow: "hidden" }}>
+        {/* Decorative glow */}
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ maxWidth: 1060, margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 56 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,168,76,0.12)", border: `2px solid rgba(201,168,76,0.5)`, borderRadius: R_FULL, padding: "8px 20px", marginBottom: 20 }}>
+                <span style={{ fontSize: 14 }}>🚀</span>
+                <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Cam kết độc quyền</span>
+              </div>
+              <h2 style={{ fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 300, lineHeight: 1.1, marginBottom: 16, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: WHITE }}>
+                SmartFurni Chạy Quảng Cáo
+              </h2>
+              <div style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 700, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", marginBottom: 20, background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                Đổ Khách Về Showroom Của Bạn
+              </div>
+              <p style={{ color: GRAY_LIGHT, fontSize: "clamp(15px, 1.8vw, 18px)", lineHeight: 1.75, maxWidth: 680, margin: "0 auto 48px", fontFamily: FONT_BODY }}>
+                Bạn tập trung bán hàng. SmartFurni lo việc kéo khách. Chúng tôi chạy quảng cáo nhắm đúng khách hàng trong bán kính khu vực Showroom của bạn và điều hướng họ đến trực tiếp để trải nghiệm.
+              </p>
+            </div>
+          </FadeIn>
+
+          {/* 3 platforms */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom: 52 }}>
+            {[
+              {
+                icon: "📘",
+                platform: "Facebook Ads",
+                color: "#1877F2",
+                desc: "Target theo địa lý — chỉ hiển thị cho khách trong bán kính 5–15km quanh Showroom của bạn.",
+                badge: "Retargeting + Lookalike",
+              },
+              {
+                icon: "🎵",
+                platform: "TikTok Ads",
+                color: "#FF0050",
+                desc: "Video sản phẩm viral tiếp cận đúng tập khách hàng trẻ, hiện đại đang tìm kiếm nội thất thông minh.",
+                badge: "Video + Spark Ads",
+              },
+              {
+                icon: "🔍",
+                platform: "Google Ads",
+                color: "#34A853",
+                desc: "Bắt khách đang tìm kiếm \"giường thông minh\", \"nệm cao cấp\" trong khu vực — dẫn thẳng về Showroom bạn.",
+                badge: "Search + Display",
+              },
+            ].map((p, i) => (
+              <FadeIn key={i} delay={i * 100}>
+                <div style={{
+                  background: BLACK_CARD,
+                  border: `1px solid ${BLACK_BORDER}`,
+                  borderTop: `3px solid ${p.color}`,
+                  borderRadius: R_LG,
+                  padding: "32px 28px",
+                  transition: "all 0.3s ease",
+                }}
+                  onMouseEnter={e => { const d = e.currentTarget as HTMLDivElement; d.style.borderColor = p.color; d.style.transform = "translateY(-6px)"; d.style.boxShadow = `0 20px 48px rgba(0,0,0,0.5)`; }}
+                  onMouseLeave={e => { const d = e.currentTarget as HTMLDivElement; d.style.borderColor = BLACK_BORDER; d.style.transform = "translateY(0)"; d.style.boxShadow = "none"; }}
+                >
+                  <div style={{ fontSize: 36, marginBottom: 14 }}>{p.icon}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <h3 style={{ color: WHITE, fontSize: 18, fontWeight: 600, fontFamily: FONT_HEADING, letterSpacing: "normal", margin: 0 }}>{p.platform}</h3>
+                    <span style={{ background: `${p.color}22`, color: p.color, border: `1px solid ${p.color}44`, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: R_FULL, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>{p.badge}</span>
+                  </div>
+                  <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY, margin: 0 }}>{p.desc}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+
+          {/* How it works */}
+          <FadeIn delay={200}>
+            <div style={{ background: `linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(201,168,76,0.02) 100%)`, border: `1px solid rgba(201,168,76,0.25)`, borderRadius: R_LG, padding: "40px 36px" }}>
+              <div style={{ textAlign: "center", marginBottom: 36 }}>
+                <h3 style={{ color: GOLD, fontSize: "clamp(16px, 2vw, 22px)", fontWeight: 500, fontFamily: FONT_HEADING, letterSpacing: "normal", marginBottom: 8 }}>Quy trình hoạt động</h3>
+                <p style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>SmartFurni quản lý toàn bộ — đại lý không cần làm gì</p>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, alignItems: "start" }}>
+                {[
+                  { step: "01", icon: "📍", title: "Xác định khu vực", desc: "SmartFurni nhập tọa độ Showroom của bạn và thiết lập bán kính quảng cáo" },
+                  { step: "02", icon: "🎯", title: "Target chính xác", desc: "Quảng cáo hiển thị đúng người đang có nhu cầu nội thất, giường ngủ trong khu vực" },
+                  { step: "03", icon: "📲", title: "Dẫn khách về", desc: "Khách click quảng cáo → thấy địa chỉ Showroom của bạn → đến trải nghiệm" },
+                  { step: "04", icon: "💰", title: "Bạn chốt sale", desc: "Khách đến nằm thử, trải nghiệm tính năng → quyết định mua ngay" },
+                ].map((s, i) => (
+                  <div key={i} style={{ textAlign: "center" }}>
+                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 20 }}>{s.icon}</div>
+                    <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", marginBottom: 6, fontFamily: FONT_BODY }}>BƯỚC {s.step}</div>
+                    <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{s.title}</div>
+                    <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
+
+          {/* CTA */}
+          <FadeIn delay={300}>
+            <div style={{ textAlign: "center", marginTop: 52 }}>
+              <p style={{ color: GRAY_LIGHT, fontSize: 15, marginBottom: 24, fontFamily: FONT_BODY }}>
+                Đăng ký đại lý ngay hôm nay — SmartFurni sẽ kích hoạt chiến dịch quảng cáo cho khu vực của bạn trong vòng <strong style={{ color: GOLD }}>7 ngày</strong> sau ký hợp đồng.
+              </p>
+              <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "16px 40px", borderRadius: R_MD }}>
+                Đăng Ký Đại Lý — Nhận Hỗ Trợ Marketing Ngay
+              </GoldButton>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ── TRUST / SOCIAL PROOF ── */}
       <section id="doi-tac" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
