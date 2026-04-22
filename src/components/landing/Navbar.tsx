@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -186,6 +186,18 @@ export default function Navbar({ theme }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
+  const [b2bOpen, setB2bOpen] = useState(false);
+
+  const B2B_PARTNERS = [
+    { icon: "🛏️", title: "Showroom Nệm & Nội thất", desc: "Phân phối sỉ, chiết khấu cao, hỗ trợ trưng bày", href: "/lp/doi-tac-showroom-nem", badge: "Phổ biến nhất" },
+    { icon: "🏨", title: "Khách sạn & Resort", desc: "Giải pháp giường thông minh cho phòng VIP, spa", href: "/catalogue", badge: null },
+    { icon: "🏥", title: "Bệnh viện & Phòng khám", desc: "Giường điều chỉnh y tế, hỗ trợ phục hồi chức năng", href: "/catalogue", badge: null },
+    { icon: "🏢", title: "Nhà phân phối nội thất", desc: "Đại lý chính thức, hỗ trợ marketing & bảo hành", href: "/catalogue", badge: null },
+    { icon: "🏗️", title: "Chủ đầu tư & Developer", desc: "Tích hợp giường thông minh vào dự án bất động sản", href: "/catalogue", badge: null },
+    { icon: "✈️", title: "Xuất khẩu & Đối tác quốc tế", desc: "Hợp tác OEM/ODM, xuất khẩu sang thị trường nước ngoài", href: "/contact", badge: null },
+  ];
+
+  const closeB2b = useCallback(() => setB2bOpen(false), []);
   const { totalItems } = useCart();
   const pathname = usePathname();
 
@@ -239,7 +251,7 @@ export default function Navbar({ theme }: NavbarProps) {
               <img
                 src="/smartfurni-logo-transparent.png"
                 alt={companyName}
-                style={{ height: 40, width: "auto", objectFit: "contain" }}
+                style={{ height: 52, width: "auto", objectFit: "contain" }}
               />
             </Link>
 
@@ -289,7 +301,7 @@ export default function Navbar({ theme }: NavbarProps) {
               )}
             </nav>
 
-            {/* Right: Cart + CTA + Hamburger */}
+            {/* Right: Cart + B2B CTA + Demo + Hamburger */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {/* Cart */}
               <Link
@@ -312,6 +324,21 @@ export default function Navbar({ theme }: NavbarProps) {
                   </span>
                 )}
               </Link>
+
+              {/* B2B Button — Desktop */}
+              <button
+                onClick={() => setB2bOpen(true)}
+                style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})`, color: bgColor }}
+                className="hidden md:flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap shadow-md hover:opacity-90"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                Đối tác B2B
+              </button>
 
               {/* Desktop CTA */}
               <Link
@@ -479,6 +506,75 @@ export default function Navbar({ theme }: NavbarProps) {
           style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)" }}
           onClick={() => setMobileOpen(false)}
         />
+      )}
+
+      {/* B2B Popup */}
+      {b2bOpen && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeB2b(); }}
+        >
+          <div
+            className="relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
+            style={{ backgroundColor: bgColor === "transparent" ? "#0a0800" : bgColor, border: `1px solid ${primary}30` }}
+          >
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 flex items-start justify-between" style={{ borderBottom: `1px solid ${primary}20` }}>
+              <div>
+                <h2 className="text-xl font-semibold" style={{ color: textColor }}>Trở thành Đối tác B2B</h2>
+                <p className="text-sm mt-1" style={{ color: `${textColor}60` }}>Chọn lĩnh vực phù hợp để nhận tư vấn chuyên biệt</p>
+              </div>
+              <button
+                onClick={closeB2b}
+                className="flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200"
+                style={{ color: `${textColor}60`, backgroundColor: `${textColor}10` }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}20`; (e.currentTarget as HTMLElement).style.color = primary; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${textColor}10`; (e.currentTarget as HTMLElement).style.color = `${textColor}60`; }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            {/* Partner grid */}
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {B2B_PARTNERS.map((p) => (
+                <a
+                  key={p.title}
+                  href={p.href}
+                  onClick={closeB2b}
+                  className="group relative flex items-start gap-4 p-4 rounded-2xl transition-all duration-200 cursor-pointer"
+                  style={{ backgroundColor: `${textColor}06`, border: `1px solid ${primary}20` }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}12`; (e.currentTarget as HTMLElement).style.borderColor = `${primary}50`; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${textColor}06`; (e.currentTarget as HTMLElement).style.borderColor = `${primary}20`; }}
+                >
+                  <span className="text-2xl flex-shrink-0 mt-0.5">{p.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold" style={{ color: textColor }}>{p.title}</span>
+                      {p.badge && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `linear-gradient(to right, ${primary}, ${secondary})`, color: bgColor === "transparent" ? "#0a0800" : bgColor }}>
+                          {p.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs mt-1 leading-relaxed" style={{ color: `${textColor}55` }}>{p.desc}</p>
+                  </div>
+                  <svg className="flex-shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: primary }}>
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </a>
+              ))}
+            </div>
+            <div className="px-6 pb-5 text-center">
+              <p className="text-xs" style={{ color: `${textColor}40` }}>
+                Chưa tìm thấy lĩnh vực phù hợp?{" "}
+                <a href="/contact" onClick={closeB2b} className="underline" style={{ color: primary }}>Liên hệ trực tiếp với chúng tôi</a>
+              </p>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

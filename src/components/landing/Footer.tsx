@@ -32,17 +32,12 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div
-              style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
-              className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
-            >
-              <span style={{ color: colors.background }} className="font-bold text-xs">
-                {footer.companyName.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-            <span style={{ color: primary }} className="font-bold text-sm tracking-widest font-brand">
-              {footer.companyName.toUpperCase()}
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/smartfurni-logo-transparent.png"
+              alt={footer.companyName}
+              style={{ height: 36, width: "auto", objectFit: "contain" }}
+            />
           </Link>
 
           <p style={{ color: footer.textColor }} className="text-xs opacity-40 text-center">
@@ -85,18 +80,13 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Brand column */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <div
-                style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              >
-                <span style={{ color: colors.background }} className="font-bold text-sm">
-                  {footer.companyName.slice(0, 2).toUpperCase()}
-                </span>
-              </div>
-              <span style={{ color: primary }} className="font-bold text-base tracking-widest font-brand">
-                {footer.companyName.toUpperCase()}
-              </span>
+            <Link href="/" className="flex items-center gap-2 mb-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/smartfurni-logo-transparent.png"
+                alt={footer.companyName}
+                style={{ height: 48, width: "auto", objectFit: "contain" }}
+              />
             </Link>
             {footer.tagline && (
               <p style={{ color: footer.textColor }} className="text-sm opacity-50 leading-relaxed mb-5 max-w-xs">
