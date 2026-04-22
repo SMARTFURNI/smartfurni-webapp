@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 // ─── Video config ─────────────────────────────────────────────────────────────
 // Thay VIDEO_ID bằng YouTube ID thực tế (phần sau v= trong link YouTube)
 // Ví dụ: https://www.youtube.com/watch?v=dQw4w9WgXcQ → VIDEO_ID = "dQw4w9WgXcQ"
-const HOMEPAGE_VIDEO_ID = ""; // TODO: điền YouTube ID vào đây
+const HOMEPAGE_VIDEO_ID = "YuZ81jo6_fQ";
 const HOMEPAGE_VIDEO_TITLE = "Giường Điều Khiển Thông Minh SmartFurni — Xem Thực Tế";
 
 export default async function HomePage() {
