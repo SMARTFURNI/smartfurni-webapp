@@ -478,7 +478,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
       {/* ── HERO VIDEO ── */}
       <section style={{ background: BLACK }}>
         {/* Label + tiêu đề */}
-        <div style={{ textAlign: "center", padding: "32px 24px 16px" }}>
+        <div style={{ textAlign: "center", padding: "56px 24px 24px" }}>
           <FadeIn>
             <SectionLabel>
               {E({ bk: "hero_video_label", def: "Xem sản phẩm hoạt động thực tế", as: "span" })}
@@ -512,7 +512,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
             <p style={{ color: GRAY, fontSize: 11, marginTop: 8, maxWidth: 900, margin: "8px auto 0" }}>Dán link YouTube (youtube.com/watch?v=... hoặc youtu.be/...) rồi nhấn Lưu. Video sẽ tự phát khi khách cuộn tới.</p>
           </div>
         )}
-        <div style={{ height: 72 }} />
+        <div style={{ height: 56 }} />
       </section>
 
       {/* ── PROBLEM / SOLUTION ── */}
