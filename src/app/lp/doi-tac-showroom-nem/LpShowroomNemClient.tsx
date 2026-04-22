@@ -488,15 +488,17 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
             </h2>
           </FadeIn>
         </div>
-        {/* Video full-width */}
-        <div style={{ position: "relative", overflow: "hidden", boxShadow: `0 0 80px rgba(201,168,76,0.1)` }}>
-          <YoutubeAutoplay
-            videoId={extractYoutubeId(content["hero_video_url"] || "") || "_placeholder_"}
-            title={content["hero_video_title"] || "SmartFurni Demo"}
-          />
-          {/* Gold accent lines */}
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+        {/* Video — căn đối, bo góc, có padding */}
+        <div style={{ maxWidth: 1140, margin: "0 auto", padding: "0 24px" }}>
+          <div style={{ position: "relative", overflow: "hidden", borderRadius: 16, border: "1px solid #2E2800", boxShadow: "0 0 60px rgba(201,168,76,0.08)" }}>
+            <YoutubeAutoplay
+              videoId={extractYoutubeId(content["hero_video_url"] || "") || "_placeholder_"}
+              title={content["hero_video_title"] || "SmartFurni Demo"}
+            />
+            {/* Gold accent lines */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #C9A84C, transparent)" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #C9A84C, transparent)" }} />
+          </div>
         </div>
         {/* Edit video URL — chỉ hiện khi editMode */}
         {editMode && (
