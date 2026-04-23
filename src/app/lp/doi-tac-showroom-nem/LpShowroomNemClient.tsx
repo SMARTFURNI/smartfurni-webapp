@@ -530,13 +530,33 @@ function ProductCard({ product, index, editMode, content, onSaved, onDeleted }: 
           {product.sku && <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{product.sku}</div>}
           <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 8, lineHeight: 1.4, fontFamily: FONT_HEADING, letterSpacing: "normal", minHeight: 44 }}>{product.name}</h3>
           {product.description && <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, marginBottom: 14, fontFamily: FONT_BODY, flex: 1 }}>{product.description.slice(0, 90)}{product.description.length > 90 ? "…" : ""}</p>}
-          <div style={{ background: "rgba(201,168,76,0.06)", border: `1px solid rgba(201,168,76,0.2)`, padding: "12px 14px", borderRadius: R_SM, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ color: GRAY, fontSize: 10, marginBottom: 3, fontFamily: FONT_BODY }}>Giá đại lý từ</div>
-              <div style={{ color: GOLD, fontSize: 18, fontWeight: 800, fontFamily: FONT_BODY }}>{product.basePrice > 0 ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(product.basePrice * 0.68) : "Liên hệ"}</div>
-            </div>
-            {product.basePrice > 0 && <div style={{ textAlign: "right" }}><div style={{ color: GRAY, fontSize: 10, marginBottom: 3, fontFamily: FONT_BODY }}>Giá lẻ</div><div style={{ color: GRAY, fontSize: 13, textDecoration: "line-through", fontFamily: FONT_BODY }}>{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(product.basePrice)}</div></div>}
-          </div>
+          {(() => {
+            // Tính giá bán lẻ thấp nhất: lấy từ sizePricings nếu có, ngược lại dùng basePrice
+            const allPrices: number[] = [];
+            if (product.sizePricings && product.sizePricings.length > 0) {
+              product.sizePricings.forEach(sp => { if (sp.price > 0) allPrices.push(sp.price); });
+            }
+            if (product.basePrice > 0) allPrices.push(product.basePrice);
+            const minPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+            const hasMultipleSizes = product.sizePricings && product.sizePricings.length > 1;
+            const fmt = (v: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
+            return (
+              <div style={{ background: "rgba(201,168,76,0.06)", border: `1px solid rgba(201,168,76,0.2)`, padding: "12px 14px", borderRadius: R_SM, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ color: GRAY, fontSize: 10, marginBottom: 3, fontFamily: FONT_BODY }}>Giá bán lẻ từ</div>
+                  <div style={{ color: GOLD, fontSize: 18, fontWeight: 800, fontFamily: FONT_BODY }}>
+                    {minPrice > 0 ? <>{fmt(minPrice)}{hasMultipleSizes && <span style={{ fontSize: 11, fontWeight: 400, color: GRAY, marginLeft: 4 }}>/ size</span>}</> : "Liên hệ"}
+                  </div>
+                </div>
+                {hasMultipleSizes && minPrice > 0 && (
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ color: GRAY, fontSize: 10, marginBottom: 3, fontFamily: FONT_BODY }}>{product.sizePricings!.length} mức giá</div>
+                    <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>theo kích thước</div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </FadeIn>
