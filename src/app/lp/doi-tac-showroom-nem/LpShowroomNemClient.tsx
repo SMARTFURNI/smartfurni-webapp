@@ -495,7 +495,7 @@ function ProductCard({ product, index }: { product: CrmProduct; index: number })
 }
 
 // ─── Lead form ────────────────────────────────────────────────────────────────
-function LeadForm() {
+function LeadForm({ submitLabel }: { submitLabel?: string }) {
   const [form, setForm] = useState({ showroomName: "", ownerName: "", phone: "", address: "", mattressBrand: "", note: "" });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -568,7 +568,7 @@ function LeadForm() {
         borderRadius: R_MD, fontFamily: FONT_BODY,
         transition: "all 0.25s ease",
       }}>
-        {loading ? "Đang gửi…" : "Nhận Chính Sách Đại Lý & Bảng Giá Sỉ →"}
+        {loading ? "Đang gửi…" : (submitLabel || "Nhận Chính Sách Đại Lý & Bảng Giá Sĩ →")}
       </button>
       <p style={{ color: GRAY, fontSize: 12, textAlign: "center", marginTop: 14, fontFamily: FONT_BODY }}>🔒 Thông tin được bảo mật tuyệt đối. Không spam.</p>
     </form>
@@ -688,7 +688,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
           }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}>
-            ĐĂNG KÝ ĐẠI LÝ
+            {E({ bk: "nav_cta", def: "ĐĂNG KÝ ĐẠI LÝ", as: "span" })}
           </button>
         </div>
       </nav>
@@ -721,7 +721,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                 {E({ bk: "hero_cta", def: "Nhận Chính Sách Đại Lý & Bảng Giá Sỉ", as: "span" })}
               </GoldButton>
               <OutlineButton onClick={() => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })}>
-                Xem sản phẩm ↓
+                {E({ bk: "hero_cta_outline", def: "Xem sản phẩm ↓", as: "span" })}
               </OutlineButton>
             </div>
           </FadeIn>
@@ -1062,7 +1062,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                 Đăng ký đại lý ngay hôm nay — SmartFurni sẽ kích hoạt chiến dịch quảng cáo cho khu vực của bạn trong vòng <strong style={{ color: GOLD }}>7 ngày</strong> sau ký hợp đồng.
               </p>
               <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "16px 40px", borderRadius: R_MD }}>
-                Đăng Ký Đại Lý — Nhận Hỗ Trợ Marketing Ngay
+                {E({ bk: "cta_bottom_gold", def: "Đăng Ký Đại Lý — Nhận Hỗ Trợ Marketing Ngay", as: "span" })}
               </GoldButton>
             </div>
           </FadeIn>
@@ -1162,7 +1162,9 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
               </p>
             </div>
           </FadeIn>
-          <FadeIn delay={100}><LeadForm /></FadeIn>
+          {/* Hidden editable block for form submit button text */}
+          <div style={{ display: "none" }}>{E({ bk: "form_submit", def: "Nhận Chính Sách Đại Lý & Bảng Giá Sĩ →", as: "span" })}</div>
+          <FadeIn delay={100}><LeadForm submitLabel={content["form_submit"] || undefined} /></FadeIn>
         </div>
       </section>
 
@@ -1295,7 +1297,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                   marginBottom: 12,
                 }}
               >
-                Đăng ký đại lý →
+                {E({ bk: "footer_cta_primary", def: "Đăng ký đại lý →", as: "span" })}
               </a>
               <a
                 href="https://zalo.me/0918326552"
@@ -1312,7 +1314,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                   border: `1px solid rgba(212,196,160,0.2)`,
                 }}
               >
-                💬 Chat Zalo ngay
+                {E({ bk: "footer_cta_zalo", def: "💬 Chat Zalo ngay", as: "span" })}
               </a>
             </div>
           </div>
