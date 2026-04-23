@@ -1,4 +1,5 @@
 "use client";
+import "./lp-mobile.css";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { CrmProduct } from "@/lib/crm-types";
 import Image from "next/image";
@@ -289,6 +290,7 @@ function ShowroomComparisonSection({ E }: { E: (opts: { bk: string; def: string;
       {/* Layout 3 cột: text trái | ảnh | text phải */}
       <div
         ref={ref}
+        className="lp-comp-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "1fr minmax(0, 2.4fr) 1fr",
@@ -647,6 +649,7 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function LpShowroomNemClient({ products, isEditor = false, initialContent = {} }: Props) {
   const [scrollY, setScrollY] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [content, setContent] = useState<Record<string, string>>(initialContent);
   const [editedCount, setEditedCount] = useState(0);
@@ -720,8 +723,8 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
             />
           </a>
 
-          {/* Main menu */}
-          <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" }}>
+          {/* Main menu — ẩn trên mobile */}
+          <div className="lp-nav-menu" style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" }}>
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.id}
@@ -746,9 +749,8 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
               </button>
             ))}
           </div>
-
-          {/* CTA */}
-          <button onClick={scrollToForm} style={{
+          {/* CTA — ẩn trên mobile */}
+          <button onClick={scrollToForm} className="lp-nav-cta" style={{
             flexShrink: 0,
             background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
             color: BLACK, border: "none", padding: "9px 20px",
@@ -761,8 +763,63 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}>
             {E({ bk: "nav_cta", def: "ĐĂNG KÝ ĐẠI LÝ", as: "span" })}
           </button>
+          {/* Hamburger — chỉ hiện trên mobile */}
+          <button
+            className="lp-nav-hamburger"
+            onClick={() => setMobileMenuOpen(v => !v)}
+            style={{
+              background: "none", border: `1px solid rgba(201,168,76,0.35)`,
+              borderRadius: R_SM, padding: "8px 10px", cursor: "pointer",
+              display: "flex", flexDirection: "column", gap: 5, flexShrink: 0,
+            }}
+            aria-label="Menu"
+          >
+            <span style={{ display: "block", width: 20, height: 2, background: mobileMenuOpen ? GOLD : "rgba(212,196,160,0.8)", borderRadius: 2, transition: "all 0.25s", transform: mobileMenuOpen ? "rotate(45deg) translateY(7px)" : "none" }} />
+            <span style={{ display: "block", width: 20, height: 2, background: mobileMenuOpen ? GOLD : "rgba(212,196,160,0.8)", borderRadius: 2, transition: "all 0.25s", opacity: mobileMenuOpen ? 0 : 1 }} />
+            <span style={{ display: "block", width: 20, height: 2, background: mobileMenuOpen ? GOLD : "rgba(212,196,160,0.8)", borderRadius: 2, transition: "all 0.25s", transform: mobileMenuOpen ? "rotate(-45deg) translateY(-7px)" : "none" }} />
+          </button>
         </div>
       </nav>
+      {/* ── MOBILE MENU DROPDOWN ── */}
+      {mobileMenuOpen && (
+        <div className="lp-mobile-menu" style={{
+          position: "fixed", top: 68, left: 0, right: 0, zIndex: 99,
+          background: "rgba(13,11,0,0.98)", backdropFilter: "blur(16px)",
+          borderBottom: `1px solid ${BLACK_BORDER}`,
+          padding: "16px 24px 24px",
+        }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => { scrollTo(item.id); setMobileMenuOpen(false); }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "rgba(212,196,160,0.8)", fontSize: 15, fontWeight: 500,
+                  fontFamily: FONT_BODY, padding: "12px 8px", borderRadius: R_SM,
+                  textAlign: "left", letterSpacing: "0.01em",
+                  borderBottom: `1px solid ${BLACK_BORDER}`,
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+            <button
+              onClick={() => { scrollToForm(); setMobileMenuOpen(false); }}
+              style={{
+                marginTop: 12,
+                background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
+                color: BLACK, border: "none", padding: "13px 20px",
+                fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", cursor: "pointer",
+                textTransform: "uppercase" as const, borderRadius: R_MD, fontFamily: FONT_BODY,
+                width: "100%",
+              }}
+            >
+              ĐĂNG KÝ ĐẠI LÝ
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── HERO ── */}
       <section style={{ minHeight: "100vh", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", padding: "120px 24px 80px", background: `linear-gradient(160deg, ${BLACK} 0%, #110E00 60%, ${BLACK} 100%)` }}>
@@ -798,14 +855,14 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
           </FadeIn>
           {/* Stats row */}
           <FadeIn delay={400}>
-            <div style={{ display: "flex", justifyContent: "center", marginTop: 72, flexWrap: "wrap", borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 40 }}>
+            <div className="lp-stats-row" style={{ display: "flex", justifyContent: "center", marginTop: 72, flexWrap: "wrap", borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 40 }}>
               {[
                 { bkNum: "stat_1_num", defNum: "500+", bkLabel: "stat_1_label", defLabel: "Đối tác đại lý" },
                 { bkNum: "stat_2_num", defNum: "30–40%", bkLabel: "stat_2_label", defLabel: "Biên lợi nhuận" },
                 { bkNum: "stat_3_num", defNum: "5 năm", bkLabel: "stat_3_label", defLabel: "Bảo hành motor" },
                 { bkNum: "stat_4_num", defNum: "100%", bkLabel: "stat_4_label", defLabel: "Tương thích nệm" },
               ].map((s, i) => (
-                <div key={i} style={{ padding: "20px 32px", borderLeft: i > 0 ? `1px solid ${BLACK_BORDER}` : "none", textAlign: "center", minWidth: 110 }}>
+                <div key={i} className="lp-stat-item" style={{ padding: "20px 32px", borderLeft: i > 0 ? `1px solid ${BLACK_BORDER}` : "none", textAlign: "center", minWidth: 110 }}>
                   <div style={{ fontSize: "clamp(22px, 2.8vw, 32px)", fontWeight: 700, color: GOLD, letterSpacing: "-0.02em", fontFamily: FONT_HEADING }}>
                     {E({ bk: s.bkNum, def: s.defNum, as: "span" })}
                   </div>
@@ -1269,12 +1326,14 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
 
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "56px 32px 0" }}>
           {/* Main grid: 4 cột */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1.6fr 1.2fr 1.2fr 1fr",
-            gap: "48px 40px",
-            marginBottom: 52,
-          }}>
+          <div
+            className="lp-footer-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.6fr 1.2fr 1.2fr 1fr",
+              gap: "48px 40px",
+              marginBottom: 52,
+            }}>
 
             {/* Cột 1: Brand */}
             <div>

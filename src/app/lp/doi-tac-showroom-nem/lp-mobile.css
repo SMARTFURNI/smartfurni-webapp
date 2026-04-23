@@ -1,0 +1,75 @@
+/* ─── Landing Page Mobile Responsive ─────────────────────────────────────────
+   Breakpoint: 768px (tablet), 480px (mobile)
+   All className-based overrides for LpShowroomNemClient.tsx
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* ── Nav: ẩn menu + CTA desktop trên mobile, hiện hamburger ── */
+@media (max-width: 768px) {
+  .lp-nav-menu {
+    display: none !important;
+  }
+  .lp-nav-cta {
+    display: none !important;
+  }
+  .lp-nav-hamburger {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .lp-nav-hamburger {
+    display: none !important;
+  }
+  .lp-mobile-menu {
+    display: none !important;
+  }
+}
+
+/* ── Showroom Comparison: 3-col → 1-col trên mobile ── */
+@media (max-width: 768px) {
+  .lp-comp-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+    padding: 0 16px !important;
+  }
+}
+
+/* ── Stats row: 2x2 grid trên mobile ── */
+@media (max-width: 480px) {
+  .lp-stats-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0 !important;
+    border-top: 1px solid #2E2800 !important;
+    padding-top: 32px !important;
+    margin-top: 48px !important;
+  }
+  .lp-stat-item {
+    border-left: none !important;
+    border-bottom: 1px solid #2E2800 !important;
+    padding: 16px 12px !important;
+  }
+  .lp-stat-item:nth-child(2),
+  .lp-stat-item:nth-child(4) {
+    border-left: 1px solid #2E2800 !important;
+  }
+  .lp-stat-item:nth-child(3),
+  .lp-stat-item:nth-child(4) {
+    border-bottom: none !important;
+  }
+}
+
+/* ── Footer: 4-col → 2-col → 1-col ── */
+@media (max-width: 900px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 36px 24px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+}
