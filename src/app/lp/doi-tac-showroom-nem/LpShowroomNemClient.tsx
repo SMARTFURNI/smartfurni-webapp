@@ -1266,7 +1266,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                   <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
                   <div>
                     <div style={{ color: GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 1 }}>{c.label}</div>
-                    <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{c.val}</div>
+                    <div style={{ color: GOLD_LIGHT, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 700 }}>{c.val}</div>
                   </div>
                 </a>
               ))}
