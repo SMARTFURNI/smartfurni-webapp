@@ -1167,48 +1167,180 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: "#080600", borderTop: `1px solid ${BLACK_BORDER}`, padding: "52px 24px 28px" }}>
-        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 36, marginBottom: 40 }}>
+      <footer style={{ background: "#060500", borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 64 }}>
+        {/* Top accent line */}
+        <div style={{ height: 2, background: `linear-gradient(90deg, transparent 0%, ${GOLD} 30%, ${GOLD} 70%, transparent 100%)`, opacity: 0.5, marginBottom: 0 }} />
+
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "56px 32px 0" }}>
+          {/* Main grid: 4 cột */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1.6fr 1.2fr 1.2fr 1fr",
+            gap: "48px 40px",
+            marginBottom: 52,
+          }}>
+
+            {/* Cột 1: Brand */}
             <div>
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 20 }}>
                 <img
                   src="/smartfurni-logo-transparent.png"
                   alt="SmartFurni"
-                  style={{ height: 52, objectFit: "contain", filter: "brightness(1.05)" }}
+                  style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }}
                 />
               </div>
-              <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.75, fontFamily: FONT_BODY }}>
-                {E({ bk: "footer_about", def: "Công ty Cổ phần SmartFurni — Tiên phong trong lĩnh vực nội thất thông minh tại Việt Nam.", as: "span", multiline: true })}
+              <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.85, fontFamily: FONT_BODY, marginBottom: 24, maxWidth: 280 }}>
+                {E({ bk: "footer_about", def: "Tiên phong trong lĩnh vực giường công thái học điều chỉnh điện tại Việt Nam. Chất lượng Đức — Thiết kế Việt.", as: "span", multiline: true })}
               </p>
+              {/* Social links */}
+              <div style={{ display: "flex", gap: 10 }}>
+                {[
+                  { label: "Facebook", icon: "f", href: "https://facebook.com/smartfurni" },
+                  { label: "YouTube", icon: "▶", href: "https://youtube.com/@smartfurni" },
+                  { label: "Zalo", icon: "Z", href: "https://zalo.me/0918326552" },
+                ].map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={s.label}
+                    style={{
+                      width: 36, height: 36, borderRadius: "50%",
+                      background: "rgba(201,168,76,0.08)",
+                      border: `1px solid rgba(201,168,76,0.25)`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY,
+                      textDecoration: "none",
+                      transition: "background 0.2s, border-color 0.2s",
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(201,168,76,0.18)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = GOLD; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(201,168,76,0.08)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(201,168,76,0.25)"; }}
+                  >
+                    {s.icon}
+                  </a>
+                ))}
+              </div>
             </div>
+
+            {/* Cột 2: Showroom */}
             <div>
-              <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase" as const, marginBottom: 16, fontFamily: FONT_BODY }}>Showroom</h4>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2 }} />
+                <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Showroom</h4>
+              </div>
               {[
-                { bk: "footer_addr_1", def: "📍 HCM: 74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
-                { bk: "footer_addr_2", def: "📍 HN: B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
-                { bk: "footer_addr_3", def: "🏭 Xưởng: 202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
+                { icon: "📍", label: "TP. HCM", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
+                { icon: "📍", label: "Hà Nội", val: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
+                { icon: "🏭", label: "Xưởng SX", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
               ].map((a, i) => (
-                <p key={i} style={{ color: GRAY, fontSize: 12, lineHeight: 1.75, marginBottom: 6, fontFamily: FONT_BODY }}>
-                  {E({ bk: a.bk, def: a.def, as: "span" })}
-                </p>
+                <div key={i} style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{a.icon}</span>
+                  <div>
+                    <div style={{ color: GOLD_LIGHT, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 2 }}>{a.label}</div>
+                    <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY }}>{a.val}</div>
+                  </div>
+                </div>
               ))}
             </div>
+
+            {/* Cột 3: Liên hệ */}
             <div>
-              <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase" as const, marginBottom: 16, fontFamily: FONT_BODY }}>Liên hệ</h4>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2 }} />
+                <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Liên hệ</h4>
+              </div>
               {[
-                { bk: "footer_hotline", def: "📞 028.7122.0818" },
-                { bk: "footer_zalo", def: "💬 Zalo: 0918.326.552" },
-                { bk: "footer_website", def: "🌐 smartfurni.vn" },
+                { icon: "📞", label: "Hotline", val: "028.7122.0818", href: "tel:02871220818" },
+                { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: "https://zalo.me/0918326552" },
+                { icon: "✉️", label: "Email", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
+                { icon: "🌐", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
               ].map((c, i) => (
-                <p key={i} style={{ color: GRAY, fontSize: 13, lineHeight: 1.75, marginBottom: 8, fontFamily: FONT_BODY }}>
-                  {E({ bk: c.bk, def: c.def, as: "span" })}
-                </p>
+                <a
+                  key={i}
+                  href={c.href}
+                  target={c.href.startsWith("http") ? "_blank" : undefined}
+                  rel="noopener noreferrer"
+                  style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}
+                >
+                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
+                  <div>
+                    <div style={{ color: GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 1 }}>{c.label}</div>
+                    <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{c.val}</div>
+                  </div>
+                </a>
               ))}
+            </div>
+
+            {/* Cột 4: CTA mini */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2 }} />
+                <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Đăng ký ngay</h4>
+              </div>
+              <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT_BODY, marginBottom: 20 }}>
+                Nhận chính sách đại lý &amp; bảng giá sỉ trong vòng <strong style={{ color: GOLD_LIGHT }}>2 giờ làm việc</strong>.
+              </p>
+              <a
+                href="#dang-ky"
+                style={{
+                  display: "block", textAlign: "center",
+                  background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 60%, #9A7A2E 100%)`,
+                  color: BLACK, fontWeight: 700, fontSize: 11,
+                  letterSpacing: "0.1em", textTransform: "uppercase" as const,
+                  padding: "13px 20px", borderRadius: R_MD,
+                  textDecoration: "none",
+                  fontFamily: FONT_BODY,
+                  boxShadow: "0 6px 24px rgba(201,168,76,0.25)",
+                  marginBottom: 12,
+                }}
+              >
+                Đăng ký đại lý →
+              </a>
+              <a
+                href="https://zalo.me/0918326552"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "block", textAlign: "center",
+                  background: "transparent",
+                  color: GRAY_LIGHT, fontWeight: 500, fontSize: 11,
+                  letterSpacing: "0.06em",
+                  padding: "12px 20px", borderRadius: R_MD,
+                  textDecoration: "none",
+                  fontFamily: FONT_BODY,
+                  border: `1px solid rgba(212,196,160,0.2)`,
+                }}
+              >
+                💬 Chat Zalo ngay
+              </a>
             </div>
           </div>
-          <div style={{ borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 22, textAlign: "center" }}>
-            <p style={{ color: "#4A4030", fontSize: 11, fontFamily: FONT_BODY }}>© 2025 SmartFurni. Tất cả quyền được bảo lưu.</p>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${BLACK_BORDER} 20%, ${BLACK_BORDER} 80%, transparent)`, marginBottom: 24 }} />
+
+          {/* Bottom bar */}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            flexWrap: "wrap" as const, gap: 12,
+            paddingBottom: 28,
+          }}>
+            <p style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, margin: 0 }}>
+              © 2025 <span style={{ color: "#5A4E30" }}>Công ty Cổ phần SmartFurni</span>. Tất cả quyền được bảo lưu.
+            </p>
+            <div style={{ display: "flex", gap: 20 }}>
+              {[
+                { label: "Chính sách bảo mật", href: "/privacy" },
+                { label: "Điều khoản sử dụng", href: "/terms" },
+                { label: "Chính sách đại lý", href: "/dai-ly" },
+              ].map((l) => (
+                <a key={l.label} href={l.href} style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.color = GRAY)}
+                  onMouseLeave={e => (e.currentTarget.style.color = "#3A3020")}
+                >{l.label}</a>
+              ))}
+            </div>
           </div>
         </div>
       </footer>
