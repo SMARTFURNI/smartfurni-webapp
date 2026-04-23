@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { getTheme, generateCSSVariables } from "@/lib/theme-store";
 import { CartProvider } from "@/lib/cart-context";
@@ -8,6 +9,24 @@ import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { initDbOnce } from "@/lib/db-init";
 import { Suspense } from "react";
 import NavigationProgress from "@/components/NavigationProgress";
+
+// Use next/font instead of Google Fonts @import to avoid FOUT (Flash of Unstyled Text)
+// This preloads fonts server-side, preventing layout shift on initial render
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-inter",
+  preload: true,
+});
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin", "vietnamese"],
+  weight: ["300", "400", "500", "600"],
+  display: "swap",
+  variable: "--font-cormorant",
+  preload: true,
+});
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const cssVars = generateCSSVariables(theme);
 
   return (
-    <html lang="vi" className="scroll-smooth">
+    <html lang="vi" className={`scroll-smooth ${inter.variable} ${cormorant.variable}`}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: `:root { ${cssVars} }` }} />
         {theme.seo.googleAnalyticsId && (
@@ -47,7 +66,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         style={{
           backgroundColor: theme.colors.background,
           color: theme.colors.text,
-          fontFamily: `${theme.typography.fontFamily}, sans-serif`,
+          fontFamily: `var(--font-inter, ${theme.typography.fontFamily}, sans-serif)`,
         }}
         className="antialiased"
       >
