@@ -164,7 +164,7 @@ export default function AdminSettingsClient() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Cài Đặt</h1>
-          <p className="text-gray-500 text-sm mt-1">Quản lý cấu hình hệ thống</p>
+          <p className="text-[rgba(245,237,214,0.55)] text-sm mt-1">Quản lý cấu hình hệ thống</p>
         </div>
         {saved && (
           <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-2 rounded-xl">
@@ -175,15 +175,15 @@ export default function AdminSettingsClient() {
 
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Sidebar */}
-        <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-3 h-fit">
+        <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-3 h-fit">
           {SECTIONS.map((section) => (
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all text-left ${
                 activeSection === section.id
-                  ? "bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/20"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
+                  ? "bg-[#C9A84C]/15 text-[#C9A84C] border border-[rgba(255,200,100,0.22)]"
+                  : "text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-white/5"
               }`}
             >
               <span>{section.icon}</span>
@@ -196,16 +196,16 @@ export default function AdminSettingsClient() {
         <div className="lg:col-span-3 space-y-4">
           {/* Account Section */}
           {activeSection === "account" && (
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6 space-y-6">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-6">
               <h2 className="text-lg font-semibold text-white">Thông Tin Tài Khoản</h2>
 
-              <div className="flex items-center gap-4 p-4 bg-[#0D0B00] rounded-xl">
+              <div className="flex items-center gap-4 p-4 bg-[#1a1200] rounded-xl">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] flex items-center justify-center text-[#0D0B00] font-bold text-xl">
                   {displayName.charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <p className="text-white font-medium">{displayName}</p>
-                  <p className="text-gray-500 text-sm">Quản trị viên</p>
+                  <p className="text-[rgba(245,237,214,0.55)] text-sm">Quản trị viên</p>
                 </div>
               </div>
 
@@ -218,7 +218,7 @@ export default function AdminSettingsClient() {
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Nhập tên hiển thị..."
-                    className="flex-1 bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                    className="flex-1 bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                   />
                   <button
                     onClick={handleUpdateProfile}
@@ -233,37 +233,37 @@ export default function AdminSettingsClient() {
                 )}
               </div>
 
-              <div className="border-t border-[#C9A84C]/10 pt-6">
+              <div className="border-t border-[rgba(255,200,100,0.14)] pt-6">
                 <h3 className="text-sm font-semibold text-white mb-4">Đổi Mật Khẩu</h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-2">Mật khẩu hiện tại</label>
+                    <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Mật khẩu hiện tại</label>
                     <input
                       type="password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                      className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-2">Mật khẩu mới</label>
+                    <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Mật khẩu mới</label>
                     <input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                      className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-2">Xác nhận mật khẩu mới</label>
+                    <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Xác nhận mật khẩu mới</label>
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                      className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                     />
                   </div>
                   {passwordError && (
@@ -283,68 +283,68 @@ export default function AdminSettingsClient() {
 
           {/* Website Section */}
           {activeSection === "website" && (
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6 space-y-4">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">Thông Tin Website</h2>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-2">Tên thương hiệu</label>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Tên thương hiệu</label>
                   <input
                     type="text"
                     value={siteName}
                     onChange={(e) => setSiteName(e.target.value)}
-                    className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-2">Email liên hệ</label>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Email liên hệ</label>
                   <input
                     type="email"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Tagline</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Tagline</label>
                 <input
                   type="text"
                   value={siteTagline}
                   onChange={(e) => setSiteTagline(e.target.value)}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-2">Số điện thoại</label>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Số điện thoại</label>
                   <input
                     type="text"
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
-                    className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-2">Facebook URL</label>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Facebook URL</label>
                   <input
                     type="url"
                     value={facebookUrl}
                     onChange={(e) => setFacebookUrl(e.target.value)}
-                    className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Instagram URL</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Instagram URL</label>
                 <input
                   type="url"
                   value={instagramUrl}
                   onChange={(e) => setInstagramUrl(e.target.value)}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
 
@@ -359,48 +359,48 @@ export default function AdminSettingsClient() {
 
           {/* SEO Section */}
           {activeSection === "seo" && (
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6 space-y-4">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">Cài Đặt SEO</h2>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Meta Title (trang chủ)</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Meta Title (trang chủ)</label>
                 <input
                   type="text"
                   value={metaTitle}
                   onChange={(e) => setMetaTitle(e.target.value)}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 />
-                <p className="text-xs text-gray-700 mt-1">{metaTitle.length}/60 ký tự</p>
+                <p className="text-xs text-[rgba(245,237,214,0.35)] mt-1">{metaTitle.length}/60 ký tự</p>
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Meta Description</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Meta Description</label>
                 <textarea
                   value={metaDesc}
                   onChange={(e) => setMetaDesc(e.target.value)}
                   rows={3}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none"
                 />
-                <p className="text-xs text-gray-700 mt-1">{metaDesc.length}/160 ký tự</p>
+                <p className="text-xs text-[rgba(245,237,214,0.35)] mt-1">{metaDesc.length}/160 ký tự</p>
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Google Analytics ID (tùy chọn)</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Google Analytics ID (tùy chọn)</label>
                 <input
                   type="text"
                   value={googleAnalytics}
                   onChange={(e) => setGoogleAnalytics(e.target.value)}
                   placeholder="G-XXXXXXXXXX"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
 
               {/* SEO Preview */}
-              <div className="bg-[#0D0B00] rounded-xl p-4 border border-[#C9A84C]/10">
-                <p className="text-xs text-gray-600 mb-2">Xem trước kết quả tìm kiếm Google:</p>
+              <div className="bg-[#1a1200] rounded-xl p-4 border border-[rgba(255,200,100,0.14)]">
+                <p className="text-xs text-[rgba(245,237,214,0.45)] mb-2">Xem trước kết quả tìm kiếm Google:</p>
                 <p className="text-blue-400 text-sm">{metaTitle || "Tiêu đề trang"}</p>
                 <p className="text-green-600 text-xs">https://smartfurni.vn</p>
-                <p className="text-gray-400 text-xs mt-1 line-clamp-2">{metaDesc || "Mô tả trang..."}</p>
+                <p className="text-[rgba(245,237,214,0.70)] text-xs mt-1 line-clamp-2">{metaDesc || "Mô tả trang..."}</p>
               </div>
 
               <button
@@ -414,7 +414,7 @@ export default function AdminSettingsClient() {
 
           {/* Email Section */}
           {activeSection === "email" && (
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6 space-y-5">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Cài Đặt Email Thông Báo</h2>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -424,13 +424,13 @@ export default function AdminSettingsClient() {
                   >
                     <div className={`w-4 h-4 bg-white rounded-full mt-1 transition-transform ${emailEnabled ? "translate-x-5" : "translate-x-1"}`} />
                   </div>
-                  <span className="text-sm text-gray-400">{emailEnabled ? "Đã bật" : "Đã tắt"}</span>
+                  <span className="text-sm text-[rgba(245,237,214,0.70)]">{emailEnabled ? "Đã bật" : "Đã tắt"}</span>
                 </label>
               </div>
 
               <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
                 <p className="text-blue-400 text-sm font-medium mb-1">📧 Cách hoạt động</p>
-                <p className="text-gray-500 text-xs leading-relaxed">
+                <p className="text-[rgba(245,237,214,0.55)] text-xs leading-relaxed">
                   Khi khách hàng gửi form liên hệ, hệ thống sẽ tự động gửi email thông báo đến địa chỉ admin.
                   Cần cấu hình SMTP server để tính năng này hoạt động.
                 </p>
@@ -438,21 +438,21 @@ export default function AdminSettingsClient() {
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-2">SMTP Host</label>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">SMTP Host</label>
                   <input
                     type="text"
                     value={smtpHost}
                     onChange={(e) => setSmtpHost(e.target.value)}
                     placeholder="smtp.gmail.com"
-                    className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-2">SMTP Port</label>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">SMTP Port</label>
                   <select
                     value={smtpPort}
                     onChange={(e) => setSmtpPort(e.target.value)}
-                    className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                   >
                     <option value="587">587 (TLS - Khuyến nghị)</option>
                     <option value="465">465 (SSL)</option>
@@ -463,37 +463,37 @@ export default function AdminSettingsClient() {
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-2">Email đăng nhập SMTP</label>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Email đăng nhập SMTP</label>
                   <input
                     type="email"
                     value={smtpUser}
                     onChange={(e) => setSmtpUser(e.target.value)}
                     placeholder="your@gmail.com"
-                    className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-2">Mật khẩu SMTP / App Password</label>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Mật khẩu SMTP / App Password</label>
                   <input
                     type="password"
                     value={smtpPass}
                     onChange={(e) => setSmtpPass(e.target.value)}
                     placeholder="••••••••••••••••"
-                    className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Email nhận thông báo (Admin)</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Email nhận thông báo (Admin)</label>
                 <input
                   type="email"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   placeholder="admin@smartfurni.vn"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                 />
-                <p className="text-xs text-gray-700 mt-1">Email này sẽ nhận thông báo khi có liên hệ mới từ khách hàng</p>
+                <p className="text-xs text-[rgba(245,237,214,0.35)] mt-1">Email này sẽ nhận thông báo khi có liên hệ mới từ khách hàng</p>
               </div>
 
               {testResult && (
@@ -506,7 +506,7 @@ export default function AdminSettingsClient() {
                 <button
                   onClick={handleTestEmail}
                   disabled={testingEmail || !smtpHost || !smtpUser}
-                  className="border border-[#C9A84C]/30 text-[#C9A84C] px-5 py-2 rounded-xl font-medium text-sm hover:bg-[#C9A84C]/10 transition-colors disabled:opacity-40"
+                  className="border border-[rgba(255,200,100,0.30)] text-[#C9A84C] px-5 py-2 rounded-xl font-medium text-sm hover:bg-[#C9A84C]/10 transition-colors disabled:opacity-40"
                 >
                   {testingEmail ? "Đang kiểm tra..." : "🔌 Kiểm tra kết nối"}
                 </button>
@@ -518,9 +518,9 @@ export default function AdminSettingsClient() {
                 </button>
               </div>
 
-              <div className="bg-[#0D0B00] rounded-xl p-4 border border-[#C9A84C]/10">
-                <p className="text-xs text-gray-600 mb-2 font-medium">💡 Hướng dẫn Gmail:</p>
-                <ol className="text-xs text-gray-700 space-y-1 list-decimal list-inside">
+              <div className="bg-[#1a1200] rounded-xl p-4 border border-[rgba(255,200,100,0.14)]">
+                <p className="text-xs text-[rgba(245,237,214,0.45)] mb-2 font-medium">💡 Hướng dẫn Gmail:</p>
+                <ol className="text-xs text-[rgba(245,237,214,0.35)] space-y-1 list-decimal list-inside">
                   <li>Bật xác minh 2 bước trong tài khoản Google</li>
                   <li>Vào Google Account → Security → App passwords</li>
                   <li>Tạo App Password cho "Mail" và dán vào ô mật khẩu SMTP</li>
@@ -532,37 +532,37 @@ export default function AdminSettingsClient() {
 
           {/* Security Section */}
           {activeSection === "security" && (
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6 space-y-4">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">Bảo Mật</h2>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 bg-[#0D0B00] rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-[#1a1200] rounded-xl">
                   <div>
                     <p className="text-sm text-white">Phiên đăng nhập</p>
-                    <p className="text-xs text-gray-500">Tự động đăng xuất sau 24 giờ</p>
+                    <p className="text-xs text-[rgba(245,237,214,0.55)]">Tự động đăng xuất sau 24 giờ</p>
                   </div>
                   <span className="text-green-400 text-xs bg-green-400/10 border border-green-400/20 px-2 py-1 rounded-full">Đang hoạt động</span>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-[#0D0B00] rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-[#1a1200] rounded-xl">
                   <div>
                     <p className="text-sm text-white">Bảo vệ CSRF</p>
-                    <p className="text-xs text-gray-500">Chống tấn công Cross-Site Request Forgery</p>
+                    <p className="text-xs text-[rgba(245,237,214,0.55)]">Chống tấn công Cross-Site Request Forgery</p>
                   </div>
                   <span className="text-green-400 text-xs bg-green-400/10 border border-green-400/20 px-2 py-1 rounded-full">Đang hoạt động</span>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-[#0D0B00] rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-[#1a1200] rounded-xl">
                   <div>
                     <p className="text-sm text-white">Mã hóa mật khẩu</p>
-                    <p className="text-xs text-gray-500">Session token được mã hóa Base64</p>
+                    <p className="text-xs text-[rgba(245,237,214,0.55)]">Session token được mã hóa Base64</p>
                   </div>
                   <span className="text-green-400 text-xs bg-green-400/10 border border-green-400/20 px-2 py-1 rounded-full">Đang hoạt động</span>
                 </div>
 
                 <div className="p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
                   <p className="text-yellow-400 text-sm font-medium mb-1">⚠️ Lưu ý bảo mật</p>
-                  <p className="text-gray-500 text-xs">
+                  <p className="text-[rgba(245,237,214,0.55)] text-xs">
                     Đây là môi trường demo. Trong production, hãy sử dụng biến môi trường cho thông tin đăng nhập và triển khai HTTPS.
                   </p>
                 </div>

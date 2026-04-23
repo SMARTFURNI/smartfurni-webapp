@@ -16,7 +16,7 @@ export default async function AdminDashboardPage() {
   const sidebarStats = getSidebarStats();
 
   return (
-    <div className="flex min-h-screen bg-[#080600]">
+    <div className="flex min-h-screen bg-[#130e00]">
       <AdminSidebar stats={sidebarStats} />
       <main className="flex-1 overflow-auto min-w-0">
         <DashboardClient

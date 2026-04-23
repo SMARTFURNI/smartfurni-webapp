@@ -15,7 +15,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ slug:
   if (!post) notFound();
   const sidebarStats = getSidebarStats();
   return (
-    <div className="flex min-h-screen bg-[#080600]">
+    <div className="flex min-h-screen bg-[#130e00]">
       <AdminSidebar stats={sidebarStats} />
       <main className="flex-1 p-8 overflow-auto min-w-0">
         <AdminHeader title={`Chỉnh sửa: ${post.title}`} subtitle="Cập nhật nội dung bài viết" />

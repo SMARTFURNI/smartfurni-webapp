@@ -180,14 +180,14 @@ export function SessionsClient() {
                 className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
                   isLive
                     ? "bg-green-500/10 border-green-500/20 text-green-400"
-                    : "bg-white/3 border-white/10 text-gray-500"
+                    : "bg-white/3 border-white/10 text-[rgba(245,237,214,0.55)]"
                 }`}
               >
                 {isLive ? "● Live" : "○ Tắt"}
               </button>
               <button
                 onClick={fetchSessions}
-                className="text-xs px-2.5 py-1 rounded-full border border-white/10 bg-white/3 text-gray-400 hover:text-white transition-colors"
+                className="text-xs px-2.5 py-1 rounded-full border border-white/10 bg-white/3 text-[rgba(245,237,214,0.70)] hover:text-white transition-colors"
               >
                 ↻
               </button>
@@ -203,7 +203,7 @@ export function SessionsClient() {
                 className={`flex-1 text-xs py-1.5 rounded-md transition-all font-medium ${
                   filter === f
                     ? "bg-white/10 text-white"
-                    : "text-gray-500 hover:text-gray-300"
+                    : "text-[rgba(245,237,214,0.55)] hover:text-gray-300"
                 }`}
               >
                 {f === "active" ? "Online" : f === "today" ? "Hôm nay" : f === "week" ? "7 ngày" : "Tất cả"}
@@ -218,9 +218,9 @@ export function SessionsClient() {
         {/* Session list */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="flex items-center justify-center h-32 text-gray-600 text-sm">Đang tải...</div>
+            <div className="flex items-center justify-center h-32 text-[rgba(245,237,214,0.45)] text-sm">Đang tải...</div>
           ) : sessions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 gap-2 text-gray-600">
+            <div className="flex flex-col items-center justify-center h-40 gap-2 text-[rgba(245,237,214,0.45)]">
               <span className="text-3xl">👁️</span>
               <p className="text-sm">Chưa có phiên truy cập</p>
             </div>
@@ -244,10 +244,10 @@ export function SessionsClient() {
                       ) : (
                         <span className="w-2 h-2 bg-gray-700 rounded-full flex-shrink-0" />
                       )}
-                      <span className="text-xs font-mono text-gray-500">{s.sessionId.slice(0, 10)}…</span>
+                      <span className="text-xs font-mono text-[rgba(245,237,214,0.55)]">{s.sessionId.slice(0, 10)}…</span>
                       <span className="text-xs">{deviceIcon(s.device)}</span>
                     </div>
-                    <span className="text-[11px] text-gray-600">{timeAgo(s.lastSeenAt)}</span>
+                    <span className="text-[11px] text-[rgba(245,237,214,0.45)]">{timeAgo(s.lastSeenAt)}</span>
                   </div>
 
                   {/* Row 2: Current URL — Talkto style */}
@@ -255,14 +255,14 @@ export function SessionsClient() {
                     <span className={`text-[11px] font-mono px-2 py-0.5 rounded-md truncate max-w-[260px] ${
                       s.isActive
                         ? "bg-green-500/10 text-green-300"
-                        : "bg-white/5 text-gray-400"
+                        : "bg-white/5 text-[rgba(245,237,214,0.70)]"
                     }`}>
                       {s.isActive ? "● " : ""}{s.exitPage}
                     </span>
                   </div>
 
                   {/* Row 3: meta */}
-                  <div className="flex items-center gap-2 text-[11px] text-gray-600">
+                  <div className="flex items-center gap-2 text-[11px] text-[rgba(245,237,214,0.45)]">
                     <span>{s.pageCount} trang</span>
                     <span>·</span>
                     <span>{formatDuration(s.totalDuration)}</span>
@@ -281,7 +281,7 @@ export function SessionsClient() {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 border-t border-white/5 flex justify-between text-[11px] text-gray-700">
+        <div className="px-4 py-2 border-t border-white/5 flex justify-between text-[11px] text-[rgba(245,237,214,0.35)]">
           <span>{total} phiên</span>
           <span>Cập nhật mỗi 5s</span>
         </div>
@@ -290,7 +290,7 @@ export function SessionsClient() {
       {/* ── RIGHT PANEL ────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {!selected ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-600">
+          <div className="flex-1 flex flex-col items-center justify-center text-[rgba(245,237,214,0.45)]">
             {detailLoading ? (
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-[#C9A84C] border-t-transparent rounded-full animate-spin" />
@@ -299,8 +299,8 @@ export function SessionsClient() {
             ) : (
               <>
                 <span className="text-5xl mb-4">🔍</span>
-                <span className="text-sm font-medium text-gray-500">Chọn một phiên để xem hành trình</span>
-                <span className="text-xs text-gray-700 mt-1">Theo dõi từng URL khách đã truy cập</span>
+                <span className="text-sm font-medium text-[rgba(245,237,214,0.55)]">Chọn một phiên để xem hành trình</span>
+                <span className="text-xs text-[rgba(245,237,214,0.35)] mt-1">Theo dõi từng URL khách đã truy cập</span>
               </>
             )}
           </div>
@@ -316,14 +316,14 @@ export function SessionsClient() {
                       Đang online
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1.5 text-gray-500 text-sm">
+                    <span className="flex items-center gap-1.5 text-[rgba(245,237,214,0.55)] text-sm">
                       <span className="w-2 h-2 bg-gray-600 rounded-full" />
                       Offline · {timeAgo(selected.lastSeenAt)}
                     </span>
                   )}
-                  <span className="text-xs font-mono text-gray-600">{selected.sessionId}</span>
+                  <span className="text-xs font-mono text-[rgba(245,237,214,0.45)]">{selected.sessionId}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                <div className="flex items-center gap-3 text-xs text-[rgba(245,237,214,0.55)] flex-wrap">
                   <span>{deviceIcon(selected.device)} {selected.device} · {selected.browser} · {selected.os}</span>
                   <span
                     className="px-2 py-0.5 rounded text-[11px]"
@@ -339,18 +339,18 @@ export function SessionsClient() {
               <div className="flex gap-5 flex-shrink-0">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">{selected.pageCount}</div>
-                  <div className="text-xs text-gray-600">trang</div>
+                  <div className="text-xs text-[rgba(245,237,214,0.45)]">trang</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">{formatDuration(selected.totalDuration)}</div>
-                  <div className="text-xs text-gray-600">tổng TG</div>
+                  <div className="text-xs text-[rgba(245,237,214,0.45)]">tổng TG</div>
                 </div>
               </div>
             </div>
 
             {/* Journey — Talkto URL feed style */}
             <div className="flex-1 overflow-y-auto px-6 py-5">
-              <div className="text-xs text-gray-600 uppercase tracking-widest mb-5 font-medium">
+              <div className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-widest mb-5 font-medium">
                 Hành trình truy cập · {selected.events.length} trang
               </div>
 
@@ -378,7 +378,7 @@ export function SessionsClient() {
                           <div className={`w-[30px] h-[30px] rounded-full border-2 flex items-center justify-center text-xs font-bold ${
                             isFirst
                               ? "border-[#C9A84C] bg-[#C9A84C]/10 text-[#C9A84C]"
-                              : "border-white/10 bg-[#0a0a0a] text-gray-600"
+                              : "border-white/10 bg-[#0a0a0a] text-[rgba(245,237,214,0.45)]"
                           }`}>
                             {idx + 1}
                           </div>
@@ -390,7 +390,7 @@ export function SessionsClient() {
                         isHere
                           ? "bg-green-500/5 border-green-500/20"
                           : isFirst
-                          ? "bg-[#C9A84C]/5 border-[#C9A84C]/15"
+                          ? "bg-[#C9A84C]/5 border-[rgba(255,200,100,0.18)]"
                           : "bg-white/2 border-white/5"
                       }`}>
                         {/* Top row: badges + time */}
@@ -415,7 +415,7 @@ export function SessionsClient() {
                               {pathLabel(ev.path)}
                             </span>
                           </div>
-                          <span className="text-[11px] text-gray-600 flex-shrink-0 ml-2">
+                          <span className="text-[11px] text-[rgba(245,237,214,0.45)] flex-shrink-0 ml-2">
                             {new Date(ev.enteredAt).toLocaleTimeString("vi-VN", {
                               hour: "2-digit", minute: "2-digit", second: "2-digit"
                             })}
@@ -424,7 +424,7 @@ export function SessionsClient() {
 
                         {/* URL — Talkto style: full path visible */}
                         <div className="flex items-center gap-1.5 mb-2.5">
-                          <span className="text-[11px] text-gray-600 font-mono">
+                          <span className="text-[11px] text-[rgba(245,237,214,0.45)] font-mono">
                             smartfurni-webapp-production.up.railway.app
                           </span>
                           <span className={`text-[11px] font-mono font-medium ${
@@ -449,7 +449,7 @@ export function SessionsClient() {
                               />
                             ) : null}
                           </div>
-                          <span className="text-[11px] text-gray-500 w-14 text-right flex-shrink-0">
+                          <span className="text-[11px] text-[rgba(245,237,214,0.55)] w-14 text-right flex-shrink-0">
                             {isHere ? "live" : formatDuration(ev.duration)}
                           </span>
                         </div>
@@ -461,8 +461,8 @@ export function SessionsClient() {
 
               {/* Entry / Exit summary */}
               <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-3">
-                <div className="bg-[#C9A84C]/5 rounded-xl p-3 border border-[#C9A84C]/10">
-                  <div className="text-[11px] text-gray-600 mb-1">Trang vào</div>
+                <div className="bg-[#C9A84C]/5 rounded-xl p-3 border border-[rgba(255,200,100,0.14)]">
+                  <div className="text-[11px] text-[rgba(245,237,214,0.45)] mb-1">Trang vào</div>
                   <div className="text-xs font-mono text-[#C9A84C] truncate">{selected.entryPage}</div>
                 </div>
                 <div className={`rounded-xl p-3 border ${
@@ -470,7 +470,7 @@ export function SessionsClient() {
                     ? "bg-green-500/5 border-green-500/15"
                     : "bg-orange-500/5 border-orange-500/10"
                 }`}>
-                  <div className="text-[11px] text-gray-600 mb-1">
+                  <div className="text-[11px] text-[rgba(245,237,214,0.45)] mb-1">
                     {selected.isActive ? "Đang ở" : "Trang thoát"}
                   </div>
                   <div className={`text-xs font-mono truncate ${

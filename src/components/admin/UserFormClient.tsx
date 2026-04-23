@@ -14,7 +14,7 @@ const ROLE_OPTIONS: { value: UserRole; label: string; color: string; icon: strin
 
 const STATUS_OPTIONS: { value: UserStatus; label: string; color: string }[] = [
   { value: "active", label: "Đang hoạt động", color: "text-green-400" },
-  { value: "inactive", label: "Không hoạt động", color: "text-gray-400" },
+  { value: "inactive", label: "Không hoạt động", color: "text-[rgba(245,237,214,0.70)]" },
   { value: "blocked", label: "Bị khóa", color: "text-red-400" },
 ];
 
@@ -109,18 +109,18 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-white mb-3 flex items-center gap-1 transition-colors">
+          <button onClick={() => router.back()} className="text-sm text-[rgba(245,237,214,0.55)] hover:text-white mb-3 flex items-center gap-1 transition-colors">
             ← Quay lại
           </button>
           <h1 className="text-2xl font-bold text-white">
             {isEdit ? `Chỉnh sửa: ${user!.name}` : "Thêm khách hàng mới"}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-[rgba(245,237,214,0.55)] text-sm mt-1">
             {isEdit ? "Cập nhật thông tin khách hàng" : "Điền thông tin để thêm khách hàng vào hệ thống"}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/admin/users")} className="text-sm text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors">
+          <button onClick={() => router.push("/admin/users")} className="text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors">
             Hủy
           </button>
           <button onClick={handleSubmit} disabled={saving} className="flex items-center gap-2 text-sm font-semibold bg-[#C9A84C] text-black px-6 py-2 rounded-xl hover:bg-[#E2C97E] transition-colors disabled:opacity-50">
@@ -142,39 +142,39 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
         <div className="lg:col-span-2 space-y-6">
 
           {/* Basic Info */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">👤 Thông tin cơ bản</h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Họ tên <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Họ tên <span className="text-red-400">*</span></label>
                 <input
                   type="text" value={name} onChange={(e) => setName(e.target.value)}
                   placeholder="VD: Nguyễn Văn A"
-                  className={`w-full bg-[#0D0B00] border ${errors.name ? "border-red-500/50" : "border-[#C9A84C]/15"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
+                  className={`w-full bg-[#1a1200] border ${errors.name ? "border-red-500/50" : "border-[rgba(255,200,100,0.18)]"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
                 />
                 {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Số điện thoại <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Số điện thoại <span className="text-red-400">*</span></label>
                 <input
                   type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
                   placeholder="VD: 0901234567"
-                  className={`w-full bg-[#0D0B00] border ${errors.phone ? "border-red-500/50" : "border-[#C9A84C]/15"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
+                  className={`w-full bg-[#1a1200] border ${errors.phone ? "border-red-500/50" : "border-[rgba(255,200,100,0.18)]"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
                 />
                 {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Email</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Email</label>
                 <input
                   type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                   placeholder="VD: khachhang@email.com"
-                  className={`w-full bg-[#0D0B00] border ${errors.email ? "border-red-500/50" : "border-[#C9A84C]/15"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
+                  className={`w-full bg-[#1a1200] border ${errors.email ? "border-red-500/50" : "border-[rgba(255,200,100,0.18)]"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
                 />
                 {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Tỉnh / Thành phố</label>
-                <select value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40">
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Tỉnh / Thành phố</label>
+                <select value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40">
                   {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -182,12 +182,12 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
           </div>
 
           {/* Classification */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">🏷️ Phân loại khách hàng</h2>
 
             {/* Role selector */}
             <div className="mb-5">
-              <label className="block text-xs text-gray-500 mb-3">Loại khách hàng</label>
+              <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-3">Loại khách hàng</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {ROLE_OPTIONS.map((r) => (
                   <button
@@ -196,7 +196,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
                     className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-xs font-medium transition-all ${
                       role === r.value
                         ? "border-[#C9A84C]/40 bg-[#C9A84C]/10 text-[#C9A84C]"
-                        : "border-[#C9A84C]/10 bg-[#0D0B00] text-gray-500 hover:border-[#C9A84C]/20 hover:text-gray-300"
+                        : "border-[rgba(255,200,100,0.14)] bg-[#1a1200] text-[rgba(245,237,214,0.55)] hover:border-[rgba(255,200,100,0.22)] hover:text-gray-300"
                     }`}
                   >
                     <span className="text-xl">{r.icon}</span>
@@ -208,14 +208,14 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Trạng thái tài khoản</label>
-                <select value={status} onChange={(e) => setStatus(e.target.value as UserStatus)} className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40">
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Trạng thái tài khoản</label>
+                <select value={status} onChange={(e) => setStatus(e.target.value as UserStatus)} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40">
                   {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Nguồn khách hàng</label>
-                <select value={source} onChange={(e) => setSource(e.target.value as UserSource)} className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40">
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Nguồn khách hàng</label>
+                <select value={source} onChange={(e) => setSource(e.target.value as UserSource)} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40">
                   {SOURCE_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.icon} {s.label}</option>)}
                 </select>
               </div>
@@ -223,12 +223,12 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
           </div>
 
           {/* Tags */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">🔖 Tags & Nhãn</h2>
 
             {/* Preset tags */}
             <div className="mb-4">
-              <p className="text-xs text-gray-600 mb-2">Tags có sẵn (click để thêm):</p>
+              <p className="text-xs text-[rgba(245,237,214,0.45)] mb-2">Tags có sẵn (click để thêm):</p>
               <div className="flex flex-wrap gap-2">
                 {PRESET_TAGS.map((t) => (
                   <button
@@ -237,8 +237,8 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
                     disabled={tags.includes(t)}
                     className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                       tags.includes(t)
-                        ? "border-[#C9A84C]/30 bg-[#C9A84C]/10 text-[#C9A84C] cursor-default"
-                        : "border-gray-700 text-gray-500 hover:border-[#C9A84C]/20 hover:text-gray-300"
+                        ? "border-[rgba(255,200,100,0.30)] bg-[#C9A84C]/10 text-[#C9A84C] cursor-default"
+                        : "border-gray-700 text-[rgba(245,237,214,0.55)] hover:border-[rgba(255,200,100,0.22)] hover:text-gray-300"
                     }`}
                   >
                     {tags.includes(t) ? "✓ " : "+ "}{t}
@@ -253,9 +253,9 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
                 type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(tagInput); } }}
                 placeholder="Nhập tag tùy chỉnh rồi nhấn Enter..."
-                className="flex-1 bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                className="flex-1 bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
               />
-              <button onClick={() => addTag(tagInput)} className="text-sm px-4 py-2.5 bg-[#C9A84C]/10 text-[#C9A84C] border border-[#C9A84C]/20 rounded-xl hover:bg-[#C9A84C]/20 transition-colors">
+              <button onClick={() => addTag(tagInput)} className="text-sm px-4 py-2.5 bg-[#C9A84C]/10 text-[#C9A84C] border border-[rgba(255,200,100,0.22)] rounded-xl hover:bg-[#C9A84C]/20 transition-colors">
                 Thêm
               </button>
             </div>
@@ -264,7 +264,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {tags.map((t) => (
-                  <span key={t} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-[#C9A84C]/10 border border-[#C9A84C]/20 text-[#C9A84C]">
+                  <span key={t} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-[#C9A84C]/10 border border-[rgba(255,200,100,0.22)] text-[#C9A84C]">
                     {t}
                     <button onClick={() => removeTag(t)} className="text-[#C9A84C]/60 hover:text-red-400 transition-colors ml-0.5">✕</button>
                   </span>
@@ -274,12 +274,12 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
           </div>
 
           {/* Notes */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">📝 Ghi chú nội bộ</h2>
             <textarea
               value={notes} onChange={(e) => setNotes(e.target.value)} rows={4}
               placeholder="Ghi chú về khách hàng này (chỉ admin thấy)..."
-              className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none"
+              className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none"
             />
           </div>
         </div>
@@ -288,15 +288,15 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
         <div className="space-y-5">
 
           {/* Avatar placeholder */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5 text-center">
-            <div className="w-20 h-20 rounded-full bg-[#C9A84C]/10 border-2 border-[#C9A84C]/20 flex items-center justify-center mx-auto mb-3">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5 text-center">
+            <div className="w-20 h-20 rounded-full bg-[#C9A84C]/10 border-2 border-[rgba(255,200,100,0.22)] flex items-center justify-center mx-auto mb-3">
               <span className="text-3xl">{selectedRole?.icon || "👤"}</span>
             </div>
             <p className="text-white font-semibold text-sm">{name || "Tên khách hàng"}</p>
-            <p className="text-gray-600 text-xs mt-1">{email || "email@example.com"}</p>
-            <p className="text-gray-600 text-xs">{phone || "Số điện thoại"}</p>
+            <p className="text-[rgba(245,237,214,0.45)] text-xs mt-1">{email || "email@example.com"}</p>
+            <p className="text-[rgba(245,237,214,0.45)] text-xs">{phone || "Số điện thoại"}</p>
             <div className="mt-3 flex justify-center gap-2">
-              <span className={`text-xs px-2.5 py-1 rounded-full bg-[#C9A84C]/10 border border-[#C9A84C]/20 ${selectedRole?.color}`}>
+              <span className={`text-xs px-2.5 py-1 rounded-full bg-[#C9A84C]/10 border border-[rgba(255,200,100,0.22)] ${selectedRole?.color}`}>
                 {selectedRole?.icon} {selectedRole?.label}
               </span>
               <span className={`text-xs px-2.5 py-1 rounded-full bg-white/5 border border-white/10 ${selectedStatus?.color}`}>
@@ -306,35 +306,35 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
           </div>
 
           {/* Summary */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
             <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider mb-4">📋 Tóm tắt</h3>
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-gray-600">Họ tên:</span>
+                <span className="text-[rgba(245,237,214,0.45)]">Họ tên:</span>
                 <span className="text-gray-300 text-right max-w-[140px] truncate">{name || "—"}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Điện thoại:</span>
+                <span className="text-[rgba(245,237,214,0.45)]">Điện thoại:</span>
                 <span className="text-gray-300">{phone || "—"}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Thành phố:</span>
+                <span className="text-[rgba(245,237,214,0.45)]">Thành phố:</span>
                 <span className="text-gray-300">{city}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Loại:</span>
+                <span className="text-[rgba(245,237,214,0.45)]">Loại:</span>
                 <span className={selectedRole?.color}>{selectedRole?.label}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Trạng thái:</span>
+                <span className="text-[rgba(245,237,214,0.45)]">Trạng thái:</span>
                 <span className={selectedStatus?.color}>{selectedStatus?.label}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Nguồn:</span>
+                <span className="text-[rgba(245,237,214,0.45)]">Nguồn:</span>
                 <span className="text-gray-300">{SOURCE_OPTIONS.find((s) => s.value === source)?.label.split(" (")[0]}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Tags:</span>
+                <span className="text-[rgba(245,237,214,0.45)]">Tags:</span>
                 <span className="text-gray-300">{tags.length > 0 ? `${tags.length} nhãn` : "Chưa có"}</span>
               </div>
             </div>
@@ -342,29 +342,29 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
 
           {/* Existing user stats (edit mode) */}
           {isEdit && (
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider mb-4">📊 Thống kê</h3>
               <div className="space-y-2.5 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Tổng đơn hàng:</span>
+                  <span className="text-[rgba(245,237,214,0.45)]">Tổng đơn hàng:</span>
                   <span className="text-white font-semibold">{user!.totalOrders}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Tổng chi tiêu:</span>
+                  <span className="text-[rgba(245,237,214,0.45)]">Tổng chi tiêu:</span>
                   <span className="text-[#C9A84C] font-semibold">
                     {user!.totalSpent >= 1_000_000 ? `${(user!.totalSpent / 1_000_000).toFixed(0)}M` : user!.totalSpent.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Thiết bị:</span>
+                  <span className="text-[rgba(245,237,214,0.45)]">Thiết bị:</span>
                   <span className="text-gray-300">{user!.devices.length} thiết bị</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Đăng ký:</span>
+                  <span className="text-[rgba(245,237,214,0.45)]">Đăng ký:</span>
                   <span className="text-gray-300">{new Date(user!.registeredAt).toLocaleDateString("vi-VN")}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Hoạt động:</span>
+                  <span className="text-[rgba(245,237,214,0.45)]">Hoạt động:</span>
                   <span className="text-gray-300">{new Date(user!.lastActiveAt).toLocaleDateString("vi-VN")}</span>
                 </div>
               </div>
@@ -376,7 +376,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
             <button onClick={handleSubmit} disabled={saving} className="w-full text-sm font-semibold bg-[#C9A84C] text-black py-3 rounded-xl hover:bg-[#E2C97E] transition-colors disabled:opacity-50">
               {saving ? "Đang lưu..." : isEdit ? "💾 Lưu thay đổi" : "✨ Thêm khách hàng"}
             </button>
-            <button onClick={() => router.push("/admin/users")} className="w-full text-sm text-gray-500 hover:text-white py-2.5 rounded-xl border border-gray-700 transition-colors">
+            <button onClick={() => router.push("/admin/users")} className="w-full text-sm text-[rgba(245,237,214,0.55)] hover:text-white py-2.5 rounded-xl border border-gray-700 transition-colors">
               Hủy bỏ
             </button>
           </div>

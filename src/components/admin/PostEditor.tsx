@@ -12,7 +12,7 @@ interface PostEditorProps {
 
 const STATUS_CONFIG: Record<PostStatus, { label: string; bg: string }> = {
   published: { label: "Đã đăng", bg: "bg-green-500/10 border-green-500/30 text-green-400" },
-  draft: { label: "Bản nháp", bg: "bg-gray-500/10 border-gray-500/30 text-gray-400" },
+  draft: { label: "Bản nháp", bg: "bg-gray-500/10 border-gray-500/30 text-[rgba(245,237,214,0.70)]" },
   scheduled: { label: "Lên lịch", bg: "bg-blue-500/10 border-blue-500/30 text-blue-400" },
 };
 
@@ -140,7 +140,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Link href="/admin/posts" className="text-gray-500 hover:text-white transition-colors text-sm">
+          <Link href="/admin/posts" className="text-[rgba(245,237,214,0.55)] hover:text-white transition-colors text-sm">
             ← Quay lại
           </Link>
           <h1 className="text-xl font-bold text-white">
@@ -153,7 +153,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setPreview(!preview)}
-            className="text-sm text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors"
+            className="text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors"
           >
             {preview ? "✏️ Soạn thảo" : "👁 Xem trước"}
           </button>
@@ -174,13 +174,13 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
       )}
 
       {preview ? (
-        <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-8 max-w-3xl">
+        <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-8 max-w-3xl">
           {form.coverImage && (
             <img src={form.coverImage} alt="Cover" className="w-full h-56 object-cover rounded-xl mb-6" />
           )}
           <h1 className="text-3xl font-bold text-white mb-4">{form.title || "Tiêu đề bài viết"}</h1>
-          <p className="text-gray-400 text-lg mb-6 border-l-4 border-[#C9A84C] pl-4">{form.excerpt}</p>
-          <div className="text-sm text-gray-500 mb-8">
+          <p className="text-[rgba(245,237,214,0.70)] text-lg mb-6 border-l-4 border-[#C9A84C] pl-4">{form.excerpt}</p>
+          <div className="text-sm text-[rgba(245,237,214,0.55)] mb-8">
             {form.author} · {form.authorRole} · {form.readTime} phút đọc
           </div>
           <div className="prose prose-invert max-w-none">
@@ -210,7 +210,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4">
             {/* Cover Image Upload */}
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <label className="block text-xs text-[#C9A84C]/70 mb-3 uppercase tracking-wider">
                 Ảnh bìa bài viết
               </label>
@@ -218,7 +218,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                 className={`relative border-2 border-dashed rounded-xl transition-colors cursor-pointer ${
                   uploadingImage
                     ? "border-[#C9A84C]/40 bg-[#C9A84C]/5"
-                    : "border-[#C9A84C]/15 hover:border-[#C9A84C]/35"
+                    : "border-[rgba(255,200,100,0.18)] hover:border-[#C9A84C]/35"
                 }`}
                 onClick={() => !uploadingImage && fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
@@ -253,13 +253,13 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                     {uploadingImage ? (
                       <>
                         <div className="w-8 h-8 border-2 border-[#C9A84C]/40 border-t-[#C9A84C] rounded-full animate-spin" />
-                        <p className="text-sm text-gray-500">Đang tải lên...</p>
+                        <p className="text-sm text-[rgba(245,237,214,0.55)]">Đang tải lên...</p>
                       </>
                     ) : (
                       <>
                         <span className="text-3xl">🖼️</span>
-                        <p className="text-sm text-gray-400">Kéo thả hoặc click để chọn ảnh</p>
-                        <p className="text-xs text-gray-600">JPG, PNG, WebP · Tối đa 5MB</p>
+                        <p className="text-sm text-[rgba(245,237,214,0.70)]">Kéo thả hoặc click để chọn ảnh</p>
+                        <p className="text-xs text-[rgba(245,237,214,0.45)]">JPG, PNG, WebP · Tối đa 5MB</p>
                       </>
                     )}
                   </div>
@@ -281,13 +281,13 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                   value={form.coverImage}
                   onChange={(e) => setForm((p) => ({ ...p, coverImage: e.target.value }))}
                   placeholder="Hoặc dán URL ảnh trực tiếp..."
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
             </div>
 
             {/* Title / Slug / Excerpt */}
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6 space-y-4">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-4">
               <div>
                 <label className="block text-xs text-[#C9A84C]/70 mb-2 uppercase tracking-wider">
                   Tiêu đề *
@@ -297,7 +297,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                   value={form.title}
                   onChange={(e) => handleTitleChange(e.target.value)}
                   placeholder="Nhập tiêu đề bài viết..."
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-3 text-white text-lg placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-3 text-white text-lg placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors"
                 />
               </div>
               <div>
@@ -309,7 +309,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                   value={form.slug}
                   onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
                   placeholder="ten-bai-viet"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-3 text-gray-400 text-sm font-mono placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-3 text-[rgba(245,237,214,0.70)] text-sm font-mono placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors"
                 />
               </div>
               <div>
@@ -321,17 +321,17 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                   onChange={(e) => setForm((p) => ({ ...p, excerpt: e.target.value }))}
                   placeholder="Mô tả ngắn về bài viết (hiển thị trong danh sách)..."
                   rows={2}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors resize-none"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-3 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors resize-none"
                 />
               </div>
             </div>
 
             {/* Content */}
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <label className="block text-xs text-[#C9A84C]/70 mb-3 uppercase tracking-wider">
                 Nội dung * (Markdown)
               </label>
-              <div className="text-xs text-gray-600 mb-3 flex flex-wrap gap-3">
+              <div className="text-xs text-[rgba(245,237,214,0.45)] mb-3 flex flex-wrap gap-3">
                 <span>## Tiêu đề lớn</span>
                 <span>### Tiêu đề nhỏ</span>
                 <span>**in đậm**</span>
@@ -343,7 +343,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                 onChange={(e) => setForm((p) => ({ ...p, content: e.target.value }))}
                 placeholder="Viết nội dung bài viết bằng Markdown..."
                 rows={20}
-                className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-3 text-white text-sm font-mono placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors resize-y"
+                className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-3 text-white text-sm font-mono placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors resize-y"
               />
             </div>
           </div>
@@ -351,7 +351,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
           {/* Sidebar */}
           <div className="space-y-4">
             {/* Publish Status */}
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5 space-y-4">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5 space-y-4">
               <h3 className="text-sm font-semibold text-white">Trạng thái xuất bản</h3>
               <div className="grid grid-cols-3 gap-2">
                 {(["published", "draft", "scheduled"] as PostStatus[]).map((s) => {
@@ -363,7 +363,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                       className={`text-xs py-2 px-1 rounded-xl border transition-all ${
                         form.status === s
                           ? cfg.bg
-                          : "border-[#C9A84C]/10 text-gray-600 hover:text-gray-400"
+                          : "border-[rgba(255,200,100,0.14)] text-[rgba(245,237,214,0.45)] hover:text-[rgba(245,237,214,0.70)]"
                       }`}
                     >
                       {s === "published" ? "✅" : s === "draft" ? "📝" : "🕐"} {cfg.label}
@@ -373,12 +373,12 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
               </div>
               {form.status === "scheduled" && (
                 <div>
-                  <label className="block text-xs text-gray-500 mb-2">Ngày giờ lên lịch</label>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Ngày giờ lên lịch</label>
                   <input
                     type="datetime-local"
                     value={form.scheduledAt}
                     onChange={(e) => setForm((p) => ({ ...p, scheduledAt: e.target.value }))}
-                    className="w-full bg-[#0D0B00] border border-blue-500/30 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500/60"
+                    className="w-full bg-[#1a1200] border border-blue-500/30 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500/60"
                   />
                   <p className="text-xs text-blue-400/60 mt-1">
                     Bài sẽ tự động xuất bản vào thời điểm này
@@ -387,7 +387,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
               )}
               {form.status === "draft" && (
                 <div className="bg-gray-500/5 border border-gray-500/20 rounded-xl p-3">
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[rgba(245,237,214,0.55)]">
                     Bản nháp không hiển thị trên website. Chỉ admin mới xem được.
                   </p>
                 </div>
@@ -395,16 +395,16 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
             </div>
 
             {/* Post Info */}
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5 space-y-4">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5 space-y-4">
               <h3 className="text-sm font-semibold text-white">Thông tin bài viết</h3>
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Chủ đề</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Chủ đề</label>
                 <select
                   value={form.category}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, category: e.target.value as BlogPost["category"] }))
                   }
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 >
                   {Object.entries(CATEGORIES).map(([key, cat]) => (
                     <option key={key} value={key}>
@@ -414,27 +414,27 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Tác giả *</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Tác giả *</label>
                 <input
                   type="text"
                   value={form.author}
                   onChange={(e) => setForm((p) => ({ ...p, author: e.target.value }))}
                   placeholder="Nguyễn Văn A"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-3 py-2 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Chức danh tác giả</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Chức danh tác giả</label>
                 <input
                   type="text"
                   value={form.authorRole}
                   onChange={(e) => setForm((p) => ({ ...p, authorRole: e.target.value }))}
                   placeholder="Chuyên gia sức khỏe"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-3 py-2 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Thời gian đọc (phút)</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Thời gian đọc (phút)</label>
                 <input
                   type="number"
                   value={form.readTime}
@@ -443,20 +443,20 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                   }
                   min={1}
                   max={60}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-2">Ngày đăng</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Ngày đăng</label>
                 <input
                   type="date"
                   value={form.publishedAt}
                   onChange={(e) => setForm((p) => ({ ...p, publishedAt: e.target.value }))}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-2">
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">
                   Tags (cách nhau bằng dấu phẩy)
                 </label>
                 <input
@@ -464,7 +464,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                   value={form.tags}
                   onChange={(e) => setForm((p) => ({ ...p, tags: e.target.value }))}
                   placeholder="giấc ngủ, sức khỏe, giường"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-3 py-2 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
               <label className="flex items-center gap-3 cursor-pointer">
@@ -480,7 +480,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                     }`}
                   />
                 </div>
-                <span className="text-sm text-gray-400">Bài viết nổi bật ⭐</span>
+                <span className="text-sm text-[rgba(245,237,214,0.70)]">Bài viết nổi bật ⭐</span>
               </label>
             </div>
           </div>

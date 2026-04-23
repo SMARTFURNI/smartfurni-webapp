@@ -133,7 +133,7 @@ function ColorInput({
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
-        <label className="text-sm text-gray-400 flex-1">{label}</label>
+        <label className="text-sm text-[rgba(245,237,214,0.70)] flex-1">{label}</label>
         {contrastBadge}
       </div>
       <div className="flex items-center gap-2">
@@ -141,13 +141,13 @@ function ColorInput({
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-9 h-9 rounded-lg border border-[#C9A84C]/20 cursor-pointer bg-transparent"
+          className="w-9 h-9 rounded-lg border border-[rgba(255,200,100,0.22)] cursor-pointer bg-transparent"
         />
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 px-2 py-1.5 rounded-lg bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-xs font-mono focus:outline-none focus:border-[#C9A84C]/40"
+          className="flex-1 px-2 py-1.5 rounded-lg bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-xs font-mono focus:outline-none focus:border-[#C9A84C]/40"
         />
       </div>
     </div>
@@ -170,13 +170,13 @@ function TextInput({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm text-gray-400">{label}</label>
+      <label className="text-sm text-[rgba(245,237,214,0.70)]">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 placeholder-gray-600"
+        className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 placeholder-[rgba(245,237,214,0.30)]"
       />
     </div>
   );
@@ -198,7 +198,7 @@ function Toggle({
     <div className="flex items-center justify-between gap-3">
       <div>
         <div className="text-sm text-white">{label}</div>
-        {description && <div className="text-xs text-gray-500 mt-0.5">{description}</div>}
+        {description && <div className="text-xs text-[rgba(245,237,214,0.55)] mt-0.5">{description}</div>}
       </div>
       <button
         onClick={() => onChange(!value)}
@@ -222,7 +222,7 @@ function SliderInput({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm text-gray-400">{label}</label>
+        <label className="text-sm text-[rgba(245,237,214,0.70)]">{label}</label>
         <span className="text-sm text-[#C9A84C] font-mono">{value}{unit}</span>
       </div>
       <input
@@ -243,10 +243,10 @@ function SelectInput({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm text-gray-400">{label}</label>
+      <label className="text-sm text-[rgba(245,237,214,0.70)]">{label}</label>
       <select
         value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+        className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -284,7 +284,7 @@ function TextBlockEditor({
     { value: "bold", label: "Bold (700)" },
   ];
   return (
-    <div className="p-3 rounded-xl border border-[#C9A84C]/15 bg-[#0D0B00] space-y-3">
+    <div className="p-3 rounded-xl border border-[rgba(255,200,100,0.18)] bg-[#1a1200] space-y-3">
       <div className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider">{label}</div>
       <TextInput
         label="Nội dung chữ"
@@ -346,9 +346,9 @@ function ImageUploadInput({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm text-gray-400">{label}</label>
+      <label className="text-sm text-[rgba(245,237,214,0.70)]">{label}</label>
       {value && (
-        <div className="relative w-full h-16 rounded-xl overflow-hidden border border-[#C9A84C]/20 bg-[#0D0B00]">
+        <div className="relative w-full h-16 rounded-xl overflow-hidden border border-[rgba(255,200,100,0.22)] bg-[#1a1200]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="Logo preview" className="h-full mx-auto object-contain p-2" />
           <button
@@ -359,7 +359,7 @@ function ImageUploadInput({
       )}
       <div
         className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
-          uploading ? "border-[#C9A84C]/40 bg-[#C9A84C]/5" : "border-[#C9A84C]/20 hover:border-[#C9A84C]/40 hover:bg-[#C9A84C]/5"
+          uploading ? "border-[#C9A84C]/40 bg-[#C9A84C]/5" : "border-[rgba(255,200,100,0.22)] hover:border-[#C9A84C]/40 hover:bg-[#C9A84C]/5"
         }`}
         onClick={() => fileRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
@@ -371,17 +371,17 @@ function ImageUploadInput({
         ) : (
           <>
             <div className="text-2xl mb-1">📁</div>
-            <div className="text-xs text-gray-400">Kéo thả hoặc click để chọn ảnh</div>
-            {hint && <div className="text-xs text-gray-600 mt-0.5">{hint}</div>}
+            <div className="text-xs text-[rgba(245,237,214,0.70)]">Kéo thả hoặc click để chọn ảnh</div>
+            {hint && <div className="text-xs text-[rgba(245,237,214,0.45)] mt-0.5">{hint}</div>}
           </>
         )}
       </div>
       {error && <div className="text-xs text-red-400">{error}</div>}
-      <div className="text-xs text-gray-600">Hoặc nhập URL trực tiếp:</div>
+      <div className="text-xs text-[rgba(245,237,214,0.45)]">Hoặc nhập URL trực tiếp:</div>
       <input
         type="text" value={value} onChange={(e) => onChange(e.target.value)}
         placeholder="https://example.com/logo.png"
-        className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 placeholder-gray-600"
+        className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 placeholder-[rgba(245,237,214,0.30)]"
       />
     </div>
   );
@@ -803,7 +803,7 @@ export default function ThemeEditorClient({
       case "presets":
         return (
           <div className="space-y-5">
-            <p className="text-sm text-gray-400">Chọn giao diện mẫu để áp dụng nhanh bảng màu.</p>
+            <p className="text-sm text-[rgba(245,237,214,0.70)]">Chọn giao diện mẫu để áp dụng nhanh bảng màu.</p>
 
             {/* Custom presets */}
             {customPresets.length > 0 && (
@@ -814,8 +814,8 @@ export default function ThemeEditorClient({
                     <div key={preset.id} className="relative group">
                       <button
                         onClick={() => handleApplyPreset(preset.id, preset)}
-                        className="w-full p-3 rounded-xl border text-left transition-all hover:border-[#C9A84C]/50"
-                        style={{ background: "#0D0B00", borderColor: "rgba(201,168,76,0.3)" }}
+                        className="w-full p-3 rounded-xl border text-left transition-all hover:border-[rgba(255,200,100,0.08)]0"
+                        style={{ background: "#130e00", borderColor: "rgba(201,168,76,0.3)" }}
                       >
                         <div className="flex items-center gap-2 mb-1.5">
                           <div className="w-5 h-5 rounded-full border border-white/10" style={{ background: preset.preview }} />
@@ -839,19 +839,19 @@ export default function ThemeEditorClient({
 
             <button
               onClick={() => setSavePresetModal(true)}
-              className="w-full py-2 rounded-xl border border-[#C9A84C]/30 text-[#C9A84C] text-sm hover:bg-[#C9A84C]/10 transition-colors"
+              className="w-full py-2 rounded-xl border border-[rgba(255,200,100,0.30)] text-[#C9A84C] text-sm hover:bg-[#C9A84C]/10 transition-colors"
             >
               + Lưu bộ màu hiện tại làm preset
             </button>
 
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Preset có sẵn</div>
+            <div className="text-xs font-semibold text-[rgba(245,237,214,0.55)] uppercase tracking-wider">Preset có sẵn</div>
             <div className="grid grid-cols-2 gap-3">
               {presets.map((preset) => (
                 <button
                   key={preset.id}
                   onClick={() => handleApplyPreset(preset.id)}
-                  className="p-3 rounded-xl border text-left transition-all hover:border-[#C9A84C]/50"
-                  style={{ background: "#0D0B00", borderColor: theme.colors.primary === preset.colors.primary ? "#C9A84C" : "rgba(201,168,76,0.1)" }}
+                  className="p-3 rounded-xl border text-left transition-all hover:border-[rgba(255,200,100,0.08)]0"
+                  style={{ background: "#130e00", borderColor: theme.colors.primary === preset.colors.primary ? "#C9A84C" : "rgba(201,168,76,0.1)" }}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-6 h-6 rounded-full border-2 border-white/10" style={{ background: preset.preview }} />
@@ -872,7 +872,7 @@ export default function ThemeEditorClient({
         return (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Kiểm tra tương phản WCAG tự động</span>
+              <span className="text-xs text-[rgba(245,237,214,0.55)]">Kiểm tra tương phản WCAG tự động</span>
               <button
                 onClick={extractColorsFromLogo}
                 className="text-xs text-[#C9A84C] hover:underline"
@@ -960,8 +960,8 @@ export default function ThemeEditorClient({
               <ColorInput label="Màu dòng 1 tiêu đề" value={theme.hero.titleColor ?? theme.colors.text} onChange={(v) => updateSection("hero", { titleColor: v })} />
               <ColorInput label="Màu dòng 2 tiêu đề (accent)" value={theme.hero.titleAccentColor ?? theme.colors.primary} onChange={(v) => updateSection("hero", { titleAccentColor: v })} />
               <div className="space-y-1.5">
-                <label className="text-sm text-gray-400">Mô tả phụ</label>
-                <textarea value={theme.hero.subtitle} onChange={(e) => updateSection("hero", { subtitle: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
+                <label className="text-sm text-[rgba(245,237,214,0.70)]">Mô tả phụ</label>
+                <textarea value={theme.hero.subtitle} onChange={(e) => updateSection("hero", { subtitle: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
               </div>
               <TextInput label="Nút CTA chính" value={theme.hero.ctaText} onChange={(v) => updateSection("hero", { ctaText: v })} />
               <TextInput label="Link CTA chính" value={theme.hero.ctaLink} onChange={(v) => updateSection("hero", { ctaLink: v })} placeholder="/products" />
@@ -1040,9 +1040,9 @@ export default function ThemeEditorClient({
               <TextInput label="Tiêu đề website" value={theme.seo.siteTitle} onChange={(v) => updateSection("seo", { siteTitle: v })} />
               <SelectInput label="Ký tự phân cách tiêu đề" value={theme.seo.titleSeparator} onChange={(v) => updateSection("seo", { titleSeparator: v })} options={[{ value: " | ", label: "Gạch đứng ( | )" }, { value: " - ", label: "Gạch ngang ( - )" }, { value: " · ", label: "Chấm giữa ( · )" }, { value: " › ", label: "Mũi tên ( › )" }]} />
               <div className="space-y-1.5">
-                <label className="text-sm text-gray-400">Mô tả mặc định</label>
-                <textarea value={theme.seo.defaultDescription} onChange={(e) => updateSection("seo", { defaultDescription: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" maxLength={160} />
-                <div className="text-xs text-gray-600 text-right">{theme.seo.defaultDescription.length}/160</div>
+                <label className="text-sm text-[rgba(245,237,214,0.70)]">Mô tả mặc định</label>
+                <textarea value={theme.seo.defaultDescription} onChange={(e) => updateSection("seo", { defaultDescription: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" maxLength={160} />
+                <div className="text-xs text-[rgba(245,237,214,0.45)] text-right">{theme.seo.defaultDescription.length}/160</div>
               </div>
               <TextInput label="URL ảnh OG (Open Graph)" value={theme.seo.ogImage} onChange={(v) => updateSection("seo", { ogImage: v })} placeholder="https://example.com/og-image.jpg" />
             </SectionCard>
@@ -1060,8 +1060,8 @@ export default function ThemeEditorClient({
               <TextInput label="Badge nhỏ" value={theme.pageProducts.heroBadge} onChange={(v) => updateSection("pageProducts", { heroBadge: v })} placeholder="Khám phá sản phẩm" />
               <TextInput label="Tiêu đề chính" value={theme.pageProducts.heroTitle} onChange={(v) => updateSection("pageProducts", { heroTitle: v })} />
               <div className="space-y-1.5">
-                <label className="text-sm text-gray-400">Mô tả phụ</label>
-                <textarea value={theme.pageProducts.heroSubtitle} onChange={(e) => updateSection("pageProducts", { heroSubtitle: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
+                <label className="text-sm text-[rgba(245,237,214,0.70)]">Mô tả phụ</label>
+                <textarea value={theme.pageProducts.heroSubtitle} onChange={(e) => updateSection("pageProducts", { heroSubtitle: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
               </div>
             </SectionCard>
             <SectionCard title="Bộ lọc & Danh sách">
@@ -1082,20 +1082,20 @@ export default function ThemeEditorClient({
               <TextInput label="Badge nhỏ" value={theme.pageAbout.heroBadge} onChange={(v) => updateSection("pageAbout", { heroBadge: v })} />
               <TextInput label="Tiêu đề chính" value={theme.pageAbout.heroTitle} onChange={(v) => updateSection("pageAbout", { heroTitle: v })} />
               <div className="space-y-1.5">
-                <label className="text-sm text-gray-400">Mô tả phụ</label>
-                <textarea value={theme.pageAbout.heroSubtitle} onChange={(e) => updateSection("pageAbout", { heroSubtitle: e.target.value })} rows={2} className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
+                <label className="text-sm text-[rgba(245,237,214,0.70)]">Mô tả phụ</label>
+                <textarea value={theme.pageAbout.heroSubtitle} onChange={(e) => updateSection("pageAbout", { heroSubtitle: e.target.value })} rows={2} className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
               </div>
             </SectionCard>
             <SectionCard title="Sứ mệnh & Tầm nhìn">
               <TextInput label="Tiêu đề sứ mệnh" value={theme.pageAbout.missionTitle} onChange={(v) => updateSection("pageAbout", { missionTitle: v })} />
               <div className="space-y-1.5">
-                <label className="text-sm text-gray-400">Nội dung sứ mệnh</label>
-                <textarea value={theme.pageAbout.missionText} onChange={(e) => updateSection("pageAbout", { missionText: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
+                <label className="text-sm text-[rgba(245,237,214,0.70)]">Nội dung sứ mệnh</label>
+                <textarea value={theme.pageAbout.missionText} onChange={(e) => updateSection("pageAbout", { missionText: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
               </div>
               <TextInput label="Tiêu đề tầm nhìn" value={theme.pageAbout.visionTitle} onChange={(v) => updateSection("pageAbout", { visionTitle: v })} />
               <div className="space-y-1.5">
-                <label className="text-sm text-gray-400">Nội dung tầm nhìn</label>
-                <textarea value={theme.pageAbout.visionText} onChange={(e) => updateSection("pageAbout", { visionText: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
+                <label className="text-sm text-[rgba(245,237,214,0.70)]">Nội dung tầm nhìn</label>
+                <textarea value={theme.pageAbout.visionText} onChange={(e) => updateSection("pageAbout", { visionText: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
               </div>
             </SectionCard>
             <SectionCard title="Thống kê">
@@ -1221,8 +1221,8 @@ export default function ThemeEditorClient({
               <TextInput label="Bảo hành SmartFurni Pro (năm)" value={theme.pageWarranty.proWarrantyYears} onChange={(v) => updateSection("pageWarranty", { proWarrantyYears: v })} placeholder="4" />
               <TextInput label="Bảo hành SmartFurni Elite (năm)" value={theme.pageWarranty.eliteWarrantyYears} onChange={(v) => updateSection("pageWarranty", { eliteWarrantyYears: v })} placeholder="5" />
               <div className="space-y-1.5">
-                <label className="text-sm text-gray-400">Phạm vi bảo hành</label>
-                <textarea value={theme.pageWarranty.warrantyScope} onChange={(e) => updateSection("pageWarranty", { warrantyScope: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
+                <label className="text-sm text-[rgba(245,237,214,0.70)]">Phạm vi bảo hành</label>
+                <textarea value={theme.pageWarranty.warrantyScope} onChange={(e) => updateSection("pageWarranty", { warrantyScope: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none" />
               </div>
             </SectionCard>
             <SectionCard title="Liên hệ bảo hành">
@@ -1283,7 +1283,7 @@ export default function ThemeEditorClient({
             <SectionCard title="Danh sách video">
               <div className="space-y-4">
                 {(theme.videoSection?.videos ?? []).map((video, idx) => (
-                  <div key={video.id} className="p-4 rounded-xl border border-[#C9A84C]/15 bg-[#0D0B00] space-y-3">
+                  <div key={video.id} className="p-4 rounded-xl border border-[rgba(255,200,100,0.18)] bg-[#1a1200] space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-[#C9A84C]">Video {idx + 1}</span>
                       <button
@@ -1334,7 +1334,7 @@ export default function ThemeEditorClient({
                     const newVideos = [...(theme.videoSection?.videos ?? []), newVideo];
                     updateSection("videoSection", { videos: newVideos });
                   }}
-                  className="w-full py-2.5 rounded-xl border border-dashed border-[#C9A84C]/30 text-[#C9A84C]/70 hover:text-[#C9A84C] hover:border-[#C9A84C]/50 text-sm transition-colors"
+                  className="w-full py-2.5 rounded-xl border border-dashed border-[rgba(255,200,100,0.30)] text-[#C9A84C]/70 hover:text-[#C9A84C] hover:border-[rgba(255,200,100,0.08)]0 text-sm transition-colors"
                 >
                   + Thêm video
                 </button>
@@ -1373,10 +1373,10 @@ export default function ThemeEditorClient({
             <SectionCard title="Các tính năng">
               <div className="space-y-3">
                 {feat.items.map((item: HomepageFeatureItem, idx: number) => (
-                  <div key={idx} className="p-3 rounded-xl border border-[#C9A84C]/10 bg-[#0D0B00] space-y-2">
+                  <div key={idx} className="p-3 rounded-xl border border-[rgba(255,200,100,0.14)] bg-[#1a1200] space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{item.icon}</span>
-                      <span className="text-xs text-gray-400">Tính năng {idx + 1}</span>
+                      <span className="text-xs text-[rgba(245,237,214,0.70)]">Tính năng {idx + 1}</span>
                     </div>
                     <TextInput
                       label="Tiêu đề"
@@ -1532,7 +1532,7 @@ export default function ThemeEditorClient({
       {/* ── Save Preset Modal ── */}
       {savePresetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0D0B00] border border-[#C9A84C]/30 rounded-2xl p-6 w-80 shadow-2xl">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.30)] rounded-2xl p-6 w-80 shadow-2xl">
             <h3 className="text-white font-semibold mb-4">Lưu preset tùy chỉnh</h3>
             <div className="mb-4">
               <div className="flex gap-1 mb-3">
@@ -1545,7 +1545,7 @@ export default function ThemeEditorClient({
                 value={newPresetName}
                 onChange={(e) => setNewPresetName(e.target.value)}
                 placeholder="Tên preset (vd: Tết 2025)"
-                className="w-full px-3 py-2 rounded-xl bg-[#1A1500] border border-[#C9A84C]/20 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                className="w-full px-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.22)] text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 autoFocus
                 onKeyDown={(e) => { if (e.key === "Enter") handleSaveCustomPreset(); if (e.key === "Escape") setSavePresetModal(false); }}
               />
@@ -1561,20 +1561,20 @@ export default function ThemeEditorClient({
       {/* ── Version History Panel ── */}
       {showVersionHistory && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0D0B00] border border-[#C9A84C]/30 rounded-2xl p-6 w-96 shadow-2xl max-h-[70vh] flex flex-col">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.30)] rounded-2xl p-6 w-96 shadow-2xl max-h-[70vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-semibold">Lịch sử phiên bản</h3>
-              <button onClick={() => setShowVersionHistory(false)} className="text-gray-500 hover:text-white">✕</button>
+              <button onClick={() => setShowVersionHistory(false)} className="text-[rgba(245,237,214,0.55)] hover:text-white">✕</button>
             </div>
             {versionHistory.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-8">Chưa có phiên bản nào được lưu.</p>
+              <p className="text-[rgba(245,237,214,0.55)] text-sm text-center py-8">Chưa có phiên bản nào được lưu.</p>
             ) : (
               <div className="overflow-y-auto space-y-2 flex-1">
                 {versionHistory.map((entry, i) => (
-                  <div key={entry.ts} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#1A1500] border border-[#C9A84C]/10 hover:border-[#C9A84C]/30 transition-colors">
+                  <div key={entry.ts} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.14)] hover:border-[rgba(255,200,100,0.30)] transition-colors">
                     <div>
                       <div className="text-sm text-white">{entry.label}</div>
-                      <div className="text-xs text-gray-500">{new Date(entry.ts).toLocaleString("vi-VN")}</div>
+                      <div className="text-xs text-[rgba(245,237,214,0.55)]">{new Date(entry.ts).toLocaleString("vi-VN")}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex gap-0.5">
@@ -1598,17 +1598,17 @@ export default function ThemeEditorClient({
       {/* ── Fullscreen Preview Overlay ── */}
       {isFullscreen && (
         <div className="fixed inset-0 z-40 bg-[#050400] flex flex-col">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-[#C9A84C]/10 bg-[#0D0B00]">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-[rgba(255,200,100,0.14)] bg-[#1a1200]">
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400">Xem trước toàn màn hình</span>
-              <div className="flex rounded-lg overflow-hidden border border-[#C9A84C]/15">
+              <span className="text-xs text-[rgba(245,237,214,0.70)]">Xem trước toàn màn hình</span>
+              <div className="flex rounded-lg overflow-hidden border border-[rgba(255,200,100,0.18)]">
                 {(["desktop", "tablet", "mobile"] as const).map((mode) => (
-                  <button key={mode} onClick={() => setPreviewMode(mode)} className={`px-3 py-1.5 text-xs font-medium transition-colors ${previewMode === mode ? "bg-[#C9A84C] text-black" : "text-gray-400 hover:text-white bg-[#0D0B00]"}`}>
+                  <button key={mode} onClick={() => setPreviewMode(mode)} className={`px-3 py-1.5 text-xs font-medium transition-colors ${previewMode === mode ? "bg-[#C9A84C] text-black" : "text-[rgba(245,237,214,0.70)] hover:text-white bg-[#1a1200]"}`}>
                     {mode === "desktop" ? "🖥" : mode === "tablet" ? "📟" : "📱"}
                   </button>
                 ))}
               </div>
-              <span className="text-xs text-gray-600 bg-[#0D0B00] px-2 py-1 rounded border border-[#C9A84C]/10">{previewUrl}</span>
+              <span className="text-xs text-[rgba(245,237,214,0.45)] bg-[#1a1200] px-2 py-1 rounded border border-[rgba(255,200,100,0.14)]">{previewUrl}</span>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={handleSave} disabled={saving} className={`px-4 py-1.5 rounded-lg text-xs font-semibold ${saved ? "bg-green-500/20 text-green-400" : "bg-[#C9A84C] text-black hover:bg-[#E2C97E]"}`}>
@@ -1628,30 +1628,30 @@ export default function ThemeEditorClient({
       {/* ── Before/After Compare Overlay ── */}
       {compareMode && compareSnapshot && (
         <div className="fixed inset-0 z-40 bg-[#050400] flex flex-col">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-[#C9A84C]/10 bg-[#0D0B00]">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-[rgba(255,200,100,0.14)] bg-[#1a1200]">
             <span className="text-sm text-white font-medium">So sánh Before / After</span>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400">Kéo slider để so sánh</span>
+              <span className="text-xs text-[rgba(245,237,214,0.70)]">Kéo slider để so sánh</span>
               <button onClick={() => setCompareMode(false)} className="px-3 py-1.5 rounded-lg bg-gray-800 text-gray-300 text-xs hover:bg-gray-700">✕ Đóng</button>
             </div>
           </div>
           <div className="flex-1 flex gap-4 p-4 overflow-hidden">
             <div className="flex-1 flex flex-col gap-2">
-              <div className="text-xs text-gray-500 text-center">TRƯỚC (snapshot)</div>
-              <div className="flex-1 rounded-xl overflow-hidden border border-[#C9A84C]/10">
+              <div className="text-xs text-[rgba(245,237,214,0.55)] text-center">TRƯỚC (snapshot)</div>
+              <div className="flex-1 rounded-xl overflow-hidden border border-[rgba(255,200,100,0.14)]">
                 <WebsitePreview theme={compareSnapshot} />
               </div>
             </div>
             <div className="w-px bg-[#C9A84C]/20 self-stretch" />
             <div className="flex-1 flex flex-col gap-2">
               <div className="text-xs text-[#C9A84C] text-center">SAU (hiện tại)</div>
-              <div className="flex-1 rounded-xl overflow-hidden border border-[#C9A84C]/30">
+              <div className="flex-1 rounded-xl overflow-hidden border border-[rgba(255,200,100,0.30)]">
                 <WebsitePreview theme={theme} />
               </div>
             </div>
           </div>
           <div className="px-4 pb-3 flex items-center gap-3">
-            <span className="text-xs text-gray-500">Slider:</span>
+            <span className="text-xs text-[rgba(245,237,214,0.55)]">Slider:</span>
             <input type="range" min={0} max={100} value={compareSlider} onChange={(e) => setCompareSlider(Number(e.target.value))} className="flex-1 accent-[#C9A84C]" />
             <span className="text-xs text-[#C9A84C] font-mono w-8">{compareSlider}%</span>
           </div>
@@ -1673,29 +1673,29 @@ export default function ThemeEditorClient({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm section... (⌘K)"
-              className="w-full pl-8 pr-3 py-2 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/15 text-white text-xs focus:outline-none focus:border-[#C9A84C]/40 placeholder-gray-600"
+              className="w-full pl-8 pr-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-xs focus:outline-none focus:border-[#C9A84C]/40 placeholder-[rgba(245,237,214,0.30)]"
             />
-            <span className="absolute left-2.5 top-2.5 text-gray-500 text-xs">🔍</span>
+            <span className="absolute left-2.5 top-2.5 text-[rgba(245,237,214,0.55)] text-xs">🔍</span>
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-2.5 text-gray-500 hover:text-white text-xs">✕</button>
+              <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-2.5 text-[rgba(245,237,214,0.55)] hover:text-white text-xs">✕</button>
             )}
           </div>
 
           {filteredGroups.map((group) => (
             <div key={group.label} className="mb-3">
-              <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">{group.label}</div>
+              <div className="px-3 py-1.5 text-xs font-semibold text-[rgba(245,237,214,0.55)] uppercase tracking-wider">{group.label}</div>
               {group.items.map((sec) => (
                 <button
                   key={sec.id}
                   onClick={() => { setActiveSection(sec.id); setSearchQuery(""); }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-left transition-all ${
-                    activeSection === sec.id ? "bg-[#C9A84C]/10 text-[#C9A84C] border border-[#C9A84C]/20" : "text-gray-400 hover:text-white hover:bg-[#1A1500]"
+                    activeSection === sec.id ? "bg-[#C9A84C]/10 text-[#C9A84C] border border-[rgba(255,200,100,0.22)]" : "text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200]"
                   }`}
                 >
                   <span className="text-base">{sec.icon}</span>
                   <span className="truncate flex-1">{sec.label}</span>
                   {sectionLastEdited[sec.id] && (
-                    <span className="text-xs text-gray-600 shrink-0" title={`Lần cuối: ${new Date(sectionLastEdited[sec.id]).toLocaleString("vi-VN")}`}>
+                    <span className="text-xs text-[rgba(245,237,214,0.45)] shrink-0" title={`Lần cuối: ${new Date(sectionLastEdited[sec.id]).toLocaleString("vi-VN")}`}>
                       {relativeTime(sectionLastEdited[sec.id]).replace(" trước", "").replace("vừa xong", "now")}
                     </span>
                   )}
@@ -1705,11 +1705,11 @@ export default function ThemeEditorClient({
           ))}
 
           {!searchQuery && (
-            <div className="mt-auto pt-4 border-t border-[#C9A84C]/10 space-y-1">
-              <button onClick={handleReset} className="w-full px-3 py-2 rounded-xl text-sm text-gray-500 hover:text-red-400 hover:bg-red-500/5 transition-colors text-left">↺ Đặt lại mặc định</button>
-              <button onClick={handleExport} className="w-full px-3 py-2 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-[#1A1500] transition-colors text-left">⬇ Export JSON</button>
-              <button onClick={() => document.getElementById("theme-import-input")?.click()} className="w-full px-3 py-2 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-[#1A1500] transition-colors text-left">⬆ Import JSON</button>
-              <button onClick={() => setShowVersionHistory(true)} className="w-full px-3 py-2 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-[#1A1500] transition-colors text-left">🕐 Lịch sử ({versionHistory.length})</button>
+            <div className="mt-auto pt-4 border-t border-[rgba(255,200,100,0.14)] space-y-1">
+              <button onClick={handleReset} className="w-full px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.55)] hover:text-red-400 hover:bg-red-500/5 transition-colors text-left">↺ Đặt lại mặc định</button>
+              <button onClick={handleExport} className="w-full px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200] transition-colors text-left">⬇ Export JSON</button>
+              <button onClick={() => document.getElementById("theme-import-input")?.click()} className="w-full px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200] transition-colors text-left">⬆ Import JSON</button>
+              <button onClick={() => setShowVersionHistory(true)} className="w-full px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200] transition-colors text-left">🕐 Lịch sử ({versionHistory.length})</button>
             </div>
           )}
         </div>
@@ -1722,15 +1722,15 @@ export default function ThemeEditorClient({
               onClick={handleUndo}
               disabled={!canUndo}
               title="Hoàn tác (Ctrl+Z)"
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-colors ${canUndo ? "text-gray-300 hover:text-white hover:bg-[#1A1500] bg-[#0D0B00] border border-[#C9A84C]/10" : "text-gray-700 cursor-not-allowed bg-[#0D0B00] border border-gray-800"}`}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-colors ${canUndo ? "text-gray-300 hover:text-white hover:bg-[#1a1200] bg-[#1a1200] border border-[rgba(255,200,100,0.14)]" : "text-[rgba(245,237,214,0.35)] cursor-not-allowed bg-[#1a1200] border border-gray-800"}`}
             >
-              ↩ Hoàn tác {canUndo && <span className="text-gray-500">({historyIndex})</span>}
+              ↩ Hoàn tác {canUndo && <span className="text-[rgba(245,237,214,0.55)]">({historyIndex})</span>}
             </button>
             <button
               onClick={handleRedo}
               disabled={!canRedo}
               title="Làm lại (Ctrl+Y)"
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-colors ${canRedo ? "text-gray-300 hover:text-white hover:bg-[#1A1500] bg-[#0D0B00] border border-[#C9A84C]/10" : "text-gray-700 cursor-not-allowed bg-[#0D0B00] border border-gray-800"}`}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-colors ${canRedo ? "text-gray-300 hover:text-white hover:bg-[#1a1200] bg-[#1a1200] border border-[rgba(255,200,100,0.14)]" : "text-[rgba(245,237,214,0.35)] cursor-not-allowed bg-[#1a1200] border border-gray-800"}`}
             >
               ↪ Làm lại
             </button>
@@ -1747,7 +1747,7 @@ export default function ThemeEditorClient({
           </div>
 
           {/* Save button */}
-          <div className="pt-4 border-t border-[#C9A84C]/10 mt-4 space-y-2">
+          <div className="pt-4 border-t border-[rgba(255,200,100,0.14)] mt-4 space-y-2">
             <button
               onClick={handleSave}
               disabled={saving}
@@ -1767,31 +1767,31 @@ export default function ThemeEditorClient({
           {/* Preview toolbar */}
           <div className="flex items-center justify-between mb-3 flex-shrink-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Xem trước:</span>
-              <div className="flex rounded-lg overflow-hidden border border-[#C9A84C]/15">
+              <span className="text-xs text-[rgba(245,237,214,0.55)]">Xem trước:</span>
+              <div className="flex rounded-lg overflow-hidden border border-[rgba(255,200,100,0.18)]">
                 {(["desktop", "tablet", "mobile"] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setPreviewMode(mode)}
-                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${previewMode === mode ? "bg-[#C9A84C] text-black" : "text-gray-400 hover:text-white bg-[#0D0B00]"}`}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${previewMode === mode ? "bg-[#C9A84C] text-black" : "text-[rgba(245,237,214,0.70)] hover:text-white bg-[#1a1200]"}`}
                     title={mode === "desktop" ? "Desktop (1280px+)" : mode === "tablet" ? "Tablet (768px)" : "Mobile (390px)"}
                   >
                     {mode === "desktop" ? "🖥 Desktop" : mode === "tablet" ? "📟 Tablet" : "📱 Mobile"}
                   </button>
                 ))}
               </div>
-              <span className="text-xs text-gray-600 bg-[#0D0B00] px-2 py-1 rounded-lg border border-[#C9A84C]/10">{previewUrl}</span>
+              <span className="text-xs text-[rgba(245,237,214,0.45)] bg-[#1a1200] px-2 py-1 rounded-lg border border-[rgba(255,200,100,0.14)]">{previewUrl}</span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={handleStartCompare} className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-[#1A1500] transition-colors" title="So sánh Before/After">⇄ So sánh</button>
-              <button onClick={() => setIsFullscreen(true)} className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-[#1A1500] transition-colors" title="Toàn màn hình (F)">⛶ Fullscreen</button>
-              <button onClick={() => setIframeKey((k) => k + 1)} className="text-xs text-gray-500 hover:text-white px-2 py-1 rounded-lg hover:bg-[#1A1500] transition-colors" title="Tải lại xem trước">↻ Tải lại</button>
+              <button onClick={handleStartCompare} className="text-xs text-[rgba(245,237,214,0.70)] hover:text-white px-2 py-1 rounded-lg hover:bg-[#1a1200] transition-colors" title="So sánh Before/After">⇄ So sánh</button>
+              <button onClick={() => setIsFullscreen(true)} className="text-xs text-[rgba(245,237,214,0.70)] hover:text-white px-2 py-1 rounded-lg hover:bg-[#1a1200] transition-colors" title="Toàn màn hình (F)">⛶ Fullscreen</button>
+              <button onClick={() => setIframeKey((k) => k + 1)} className="text-xs text-[rgba(245,237,214,0.55)] hover:text-white px-2 py-1 rounded-lg hover:bg-[#1a1200] transition-colors" title="Tải lại xem trước">↻ Tải lại</button>
               <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C9A84C] hover:underline flex items-center gap-1">🔗 Mở trang</a>
             </div>
           </div>
 
           {/* Live iframe preview */}
-          <div className="flex-1 bg-[#050400] rounded-2xl border border-[#C9A84C]/10 overflow-hidden">
+          <div className="flex-1 bg-[#050400] rounded-2xl border border-[rgba(255,200,100,0.14)] overflow-hidden">
             <div className={`h-full mx-auto transition-all duration-300 ${previewMode === "mobile" ? "max-w-sm" : previewMode === "tablet" ? "max-w-2xl" : "max-w-full"}`}>
               <iframe
                 key={iframeKey}
@@ -1805,8 +1805,8 @@ export default function ThemeEditorClient({
 
           {/* Color palette strip */}
           {["colors", "presets"].includes(activeSection) && (
-            <div className="mt-3 p-3 rounded-xl bg-[#0D0B00] border border-[#C9A84C]/10 flex-shrink-0">
-              <div className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Bảng màu hiện tại</div>
+            <div className="mt-3 p-3 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.14)] flex-shrink-0">
+              <div className="text-xs text-[rgba(245,237,214,0.55)] mb-2 font-medium uppercase tracking-wider">Bảng màu hiện tại</div>
               <div className="flex gap-1.5 flex-wrap">
                 {Object.entries(theme.colors).map(([key, color]) => (
                   <div key={key} className="text-center" title={`${key}: ${color}`}>
@@ -1818,7 +1818,7 @@ export default function ThemeEditorClient({
           )}
 
           {/* Keyboard shortcuts hint */}
-          <div className="mt-2 text-xs text-gray-700 flex gap-3 flex-wrap">
+          <div className="mt-2 text-xs text-[rgba(245,237,214,0.35)] flex gap-3 flex-wrap">
             <span>⌘Z Hoàn tác</span>
             <span>⌘Y Làm lại</span>
             <span>⌘S Lưu</span>

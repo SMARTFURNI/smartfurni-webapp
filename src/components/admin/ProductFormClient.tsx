@@ -51,7 +51,7 @@ function formatNumberInput(val: string): string {
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+    <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
       <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">{title}</h2>
       {children}
     </div>
@@ -62,17 +62,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, required, children, hint }: { label: string; required?: boolean; children: React.ReactNode; hint?: string }) {
   return (
     <div>
-      <label className="block text-xs text-gray-500 mb-1.5 font-medium">
+      <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5 font-medium">
         {label} {required && <span className="text-red-400">*</span>}
       </label>
       {children}
-      {hint && <p className="text-xs text-gray-700 mt-1">{hint}</p>}
+      {hint && <p className="text-xs text-[rgba(245,237,214,0.35)] mt-1">{hint}</p>}
     </div>
   );
 }
 
-const inputClass = "w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors";
-const selectClass = "w-full bg-[#0D0B00] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 transition-colors";
+const inputClass = "w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40 transition-colors";
+const selectClass = "w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 transition-colors";
 
 // ─── Image Gallery Component ──────────────────────────────────────────────────
 function ProductImageGallery({
@@ -194,7 +194,7 @@ function ProductImageGallery({
         className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
           dragOver
             ? "border-[#C9A84C] bg-[#C9A84C]/5"
-            : "border-[#C9A84C]/20 hover:border-[#C9A84C]/40 bg-[#0D0B00]/40"
+            : "border-[rgba(255,200,100,0.22)] hover:border-[#C9A84C]/40 bg-[#1a1200]/40"
         }`}
       >
         <input
@@ -214,10 +214,10 @@ function ProductImageGallery({
         ) : (
           <div className="flex flex-col items-center gap-1 pointer-events-none">
             <span className="text-2xl">📸</span>
-            <span className="text-xs text-gray-400 font-medium">
+            <span className="text-xs text-[rgba(245,237,214,0.70)] font-medium">
               {dragOver ? "Thả ảnh vào đây" : "Click hoặc kéo thả ảnh vào đây"}
             </span>
-            <span className="text-xs text-gray-700">JPG, PNG, WebP, AVIF · Tối đa 10MB · Nhiều ảnh cùng lúc</span>
+            <span className="text-xs text-[rgba(245,237,214,0.35)]">JPG, PNG, WebP, AVIF · Tối đa 10MB · Nhiều ảnh cùng lúc</span>
           </div>
         )}
       </div>
@@ -226,12 +226,12 @@ function ProductImageGallery({
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {images.map((img, idx) => (
-            <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-[#0D0B00]/60 border border-[#C9A84C]/10">
+            <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-[#1a1200]/60 border border-[rgba(255,200,100,0.14)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {brokenImages.has(idx) ? (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-[#1a1500]/80 gap-1">
+                <div className="w-full h-full flex flex-col items-center justify-center bg-[#1a1200]/80 gap-1">
                   <span className="text-2xl opacity-40">🖼️</span>
-                  <span className="text-[9px] text-gray-600 text-center px-1">Ảnh không tồn tại</span>
+                  <span className="text-[9px] text-[rgba(245,237,214,0.45)] text-center px-1">Ảnh không tồn tại</span>
                 </div>
               ) : (
                 <img
@@ -275,10 +275,10 @@ function ProductImageGallery({
       )}
 
       {images.length === 0 && (
-        <p className="text-xs text-gray-700 text-center">Chưa có ảnh nào. Tải lên ảnh đầu tiên để hiển thị trên trang sản phẩm.</p>
+        <p className="text-xs text-[rgba(245,237,214,0.35)] text-center">Chưa có ảnh nào. Tải lên ảnh đầu tiên để hiển thị trên trang sản phẩm.</p>
       )}
 
-      <p className="text-xs text-gray-700">
+      <p className="text-xs text-[rgba(245,237,214,0.35)]">
         {images.length} ảnh · Ảnh bìa hiển thị trên danh sách sản phẩm · Hover vào ảnh để xóa hoặc đặt làm bìa
       </p>
     </div>
@@ -437,7 +437,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
             <button
               type="button"
               onClick={() => router.push("/admin/products")}
-              className="text-gray-600 hover:text-white transition-colors text-sm"
+              className="text-[rgba(245,237,214,0.45)] hover:text-white transition-colors text-sm"
             >
               ← Quay lại
             </button>
@@ -445,7 +445,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
           <h1 className="text-2xl font-bold text-white">
             {isEdit ? `Chỉnh sửa: ${product!.name}` : "Thêm sản phẩm mới"}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-[rgba(245,237,214,0.55)] text-sm mt-1">
             {isEdit ? "Cập nhật thông tin sản phẩm" : "Điền đầy đủ thông tin để tạo sản phẩm mới"}
           </p>
         </div>
@@ -453,7 +453,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
           <button
             type="button"
             onClick={() => router.push("/admin/products")}
-            className="px-5 py-2.5 text-sm text-gray-400 border border-gray-700 rounded-xl hover:text-white hover:border-gray-500 transition-colors"
+            className="px-5 py-2.5 text-sm text-[rgba(245,237,214,0.70)] border border-gray-700 rounded-xl hover:text-white hover:border-gray-500 transition-colors"
           >
             Hủy
           </button>
@@ -548,7 +548,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
             </div>
             {priceNum > 0 && costNum > 0 && (
               <div className="mt-3 flex items-center gap-3 text-xs">
-                <span className="text-gray-600">Biên lợi nhuận:</span>
+                <span className="text-[rgba(245,237,214,0.45)]">Biên lợi nhuận:</span>
                 <span className={`font-semibold ${margin >= 30 ? "text-green-400" : margin >= 15 ? "text-yellow-400" : "text-red-400"}`}>
                   {margin}% ({(priceNum - costNum).toLocaleString("vi-VN")}đ/sản phẩm)
                 </span>
@@ -560,10 +560,10 @@ export default function ProductFormClient({ product }: { product?: Product }) {
           <Section title="Biến thể & Tồn kho">
             <div className="space-y-3">
               {form.variants.map((v, i) => (
-                <div key={v.id} className="flex items-center gap-3 p-3 bg-[#0D0B00]/60 rounded-xl">
+                <div key={v.id} className="flex items-center gap-3 p-3 bg-[#1a1200]/60 rounded-xl">
                   <div className="flex-1 grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Tên màu/loại</label>
+                      <label className="block text-xs text-[rgba(245,237,214,0.45)] mb-1">Tên màu/loại</label>
                       <input
                         type="text"
                         value={v.name}
@@ -573,7 +573,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">SKU</label>
+                      <label className="block text-xs text-[rgba(245,237,214,0.45)] mb-1">SKU</label>
                       <input
                         type="text"
                         value={v.sku}
@@ -583,7 +583,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Tồn kho</label>
+                      <label className="block text-xs text-[rgba(245,237,214,0.45)] mb-1">Tồn kho</label>
                       <input
                         type="number"
                         min="0"
@@ -612,7 +612,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
                 >
                   + Thêm biến thể
                 </button>
-                <span className="text-xs text-gray-600">Tổng tồn kho: <span className="text-white font-semibold">{totalStock}</span></span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)]">Tổng tồn kho: <span className="text-white font-semibold">{totalStock}</span></span>
               </div>
             </div>
           </Section>
@@ -662,7 +662,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
                     placeholder="Thông số (VD: Kích thước)"
                     className={`${inputClass} flex-1`}
                   />
-                  <span className="text-gray-700 flex-shrink-0">:</span>
+                  <span className="text-[rgba(245,237,214,0.35)] flex-shrink-0">:</span>
                   <input
                     type="text"
                     value={s.value}
@@ -712,13 +712,13 @@ export default function ProductFormClient({ product }: { product?: Product }) {
                   <option value="discontinued">Ngừng sản xuất</option>
                 </select>
               </Field>
-              <div className="flex items-center gap-3 p-3 bg-[#0D0B00]/60 rounded-xl cursor-pointer" onClick={() => set("isFeatured", !form.isFeatured)}>
+              <div className="flex items-center gap-3 p-3 bg-[#1a1200]/60 rounded-xl cursor-pointer" onClick={() => set("isFeatured", !form.isFeatured)}>
                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${form.isFeatured ? "bg-[#C9A84C] border-[#C9A84C]" : "border-gray-600"}`}>
                   {form.isFeatured && <span className="text-black text-xs font-bold">✓</span>}
                 </div>
                 <div>
                   <p className="text-sm text-white">Sản phẩm nổi bật</p>
-                  <p className="text-xs text-gray-600">Hiển thị badge ★ trên danh sách</p>
+                  <p className="text-xs text-[rgba(245,237,214,0.45)]">Hiển thị badge ★ trên danh sách</p>
                 </div>
               </div>
             </div>
@@ -735,17 +735,17 @@ export default function ProductFormClient({ product }: { product?: Product }) {
           </Section>
 
           {/* Summary card */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
-            <h2 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-4">Tóm tắt</h2>
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
+            <h2 className="text-xs font-semibold text-[rgba(245,237,214,0.45)] uppercase tracking-wider mb-4">Tóm tắt</h2>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between"><span className="text-gray-600">Tên:</span><span className="text-white truncate ml-2 max-w-[140px] text-right">{form.name || "—"}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Danh mục:</span><span className="text-white capitalize">{form.category}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Giá bán:</span><span className="text-[#C9A84C] font-semibold">{priceNum > 0 ? priceNum.toLocaleString("vi-VN") + "đ" : "—"}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Biên LN:</span><span className={margin > 0 ? "text-green-400" : "text-gray-700"}>{margin > 0 ? `${margin}%` : "—"}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Tồn kho:</span><span className="text-white">{totalStock} units ({form.variants.length} loại)</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Ảnh:</span><span className="text-white">{productImages.length} ảnh</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Tính năng:</span><span className="text-white">{form.features.filter((f) => f.trim()).length}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Thông số:</span><span className="text-white">{form.specs.filter((s) => s.key.trim()).length}</span></div>
+              <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.45)]">Tên:</span><span className="text-white truncate ml-2 max-w-[140px] text-right">{form.name || "—"}</span></div>
+              <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.45)]">Danh mục:</span><span className="text-white capitalize">{form.category}</span></div>
+              <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.45)]">Giá bán:</span><span className="text-[#C9A84C] font-semibold">{priceNum > 0 ? priceNum.toLocaleString("vi-VN") + "đ" : "—"}</span></div>
+              <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.45)]">Biên LN:</span><span className={margin > 0 ? "text-green-400" : "text-[rgba(245,237,214,0.35)]"}>{margin > 0 ? `${margin}%` : "—"}</span></div>
+              <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.45)]">Tồn kho:</span><span className="text-white">{totalStock} units ({form.variants.length} loại)</span></div>
+              <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.45)]">Ảnh:</span><span className="text-white">{productImages.length} ảnh</span></div>
+              <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.45)]">Tính năng:</span><span className="text-white">{form.features.filter((f) => f.trim()).length}</span></div>
+              <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.45)]">Thông số:</span><span className="text-white">{form.specs.filter((s) => s.key.trim()).length}</span></div>
             </div>
           </div>
         </div>
@@ -756,7 +756,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
         <button
           type="button"
           onClick={() => router.push("/admin/products")}
-          className="px-6 py-3 text-sm text-gray-400 border border-gray-700 rounded-xl hover:text-white hover:border-gray-500 transition-colors"
+          className="px-6 py-3 text-sm text-[rgba(245,237,214,0.70)] border border-gray-700 rounded-xl hover:text-white hover:border-gray-500 transition-colors"
         >
           Hủy bỏ
         </button>

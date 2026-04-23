@@ -10,7 +10,7 @@ export default async function NewPostPage() {
   await requireAdmin();
   const sidebarStats = getSidebarStats();
   return (
-    <div className="flex min-h-screen bg-[#080600]">
+    <div className="flex min-h-screen bg-[#130e00]">
       <AdminSidebar stats={sidebarStats} />
       <main className="flex-1 p-8 overflow-auto min-w-0">
         <AdminHeader title="Viết bài mới" subtitle="Tạo nội dung mới cho blog SmartFurni" />

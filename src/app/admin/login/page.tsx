@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#1a1a1a" }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#1a1200" }}>
 
       <div className="relative w-full max-w-md">
         {/* Logo & Brand */}
@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900">Đăng nhập</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-[rgba(245,237,214,0.55)] mt-1">
               Dành riêng cho quản trị viên hệ thống SmartFurni
             </p>
           </div>
@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-[rgba(245,237,214,0.35)] mb-1.5">
                 Tên đăng nhập
               </label>
               <input
@@ -83,7 +83,7 @@ export default function AdminLoginPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-[rgba(245,237,214,0.35)] mb-1.5">
                 Mật khẩu
               </label>
               <div className="relative">
@@ -99,7 +99,7 @@ export default function AdminLoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgba(245,237,214,0.70)] hover:text-[rgba(245,237,214,0.45)] transition-colors"
                   tabIndex={-1}
                 >
                   {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -134,14 +134,14 @@ export default function AdminLoginPage() {
 
           {/* Divider */}
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-xs text-[rgba(245,237,214,0.70)] text-center">
               Quên mật khẩu? Liên hệ kỹ thuật viên để được cấp lại
             </p>
           </div>
         </div>
 
         {/* Staff link */}
-        <p className="text-center text-xs text-gray-400 mt-5">
+        <p className="text-center text-xs text-[rgba(245,237,214,0.70)] mt-5">
           Là nhân viên CRM?{" "}
           <a href="/crm-login" className="text-[#C9A84C] hover:underline font-medium">
             Đăng nhập tại đây

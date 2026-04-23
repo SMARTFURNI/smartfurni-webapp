@@ -12,7 +12,7 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string; color: string }[] = [
   { value: "shipping", label: "Đang giao", color: "text-cyan-400" },
   { value: "delivered", label: "Đã giao", color: "text-green-400" },
   { value: "cancelled", label: "Đã hủy", color: "text-red-400" },
-  { value: "refunded", label: "Hoàn tiền", color: "text-gray-400" },
+  { value: "refunded", label: "Hoàn tiền", color: "text-[rgba(245,237,214,0.70)]" },
 ];
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
@@ -221,7 +221,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
         <div>
           <button
             onClick={() => router.back()}
-            className="text-sm text-gray-500 hover:text-white mb-3 flex items-center gap-1 transition-colors"
+            className="text-sm text-[rgba(245,237,214,0.55)] hover:text-white mb-3 flex items-center gap-1 transition-colors"
           >
             ← Quay lại
           </button>
@@ -235,14 +235,14 @@ export default function OrderFormClient({ order }: { order?: Order }) {
               </span>
             )}
           </div>
-          <p className="text-gray-500 text-sm">
+          <p className="text-[rgba(245,237,214,0.55)] text-sm">
             {isEdit ? "Cập nhật thông tin đơn hàng" : fromCrm ? `Tạo đơn hàng cho khách hàng CRM: ${crmName}` : "Điền đầy đủ thông tin để tạo đơn hàng mới"}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/admin/orders")}
-            className="text-sm text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors"
+            className="text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors"
           >
             Hủy
           </button>
@@ -273,13 +273,13 @@ export default function OrderFormClient({ order }: { order?: Order }) {
         <div className="lg:col-span-2 space-y-6">
 
           {/* Customer Info */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">
               👤 Thông tin khách hàng
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">
                   Họ tên khách hàng <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -287,12 +287,12 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="VD: Nguyễn Văn A"
-                  className={`w-full bg-[#0D0B00] border ${errors.customerName ? "border-red-500/50" : "border-[#C9A84C]/15"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
+                  className={`w-full bg-[#1a1200] border ${errors.customerName ? "border-red-500/50" : "border-[rgba(255,200,100,0.18)]"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
                 />
                 {errors.customerName && <p className="text-red-400 text-xs mt-1">{errors.customerName}</p>}
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">
                   Số điện thoại <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -300,32 +300,32 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   placeholder="VD: 0901234567"
-                  className={`w-full bg-[#0D0B00] border ${errors.customerPhone ? "border-red-500/50" : "border-[#C9A84C]/15"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
+                  className={`w-full bg-[#1a1200] border ${errors.customerPhone ? "border-red-500/50" : "border-[rgba(255,200,100,0.18)]"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
                 />
                 {errors.customerPhone && <p className="text-red-400 text-xs mt-1">{errors.customerPhone}</p>}
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Email</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Email</label>
                 <input
                   type="email"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="VD: khachhang@email.com"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Tỉnh / Thành phố</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Tỉnh / Thành phố</label>
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 >
                   {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs text-gray-500 mb-1.5">
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">
                   Địa chỉ giao hàng <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -333,7 +333,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                   value={shippingAddress}
                   onChange={(e) => setShippingAddress(e.target.value)}
                   placeholder="VD: 123 Nguyễn Huệ, Quận 1"
-                  className={`w-full bg-[#0D0B00] border ${errors.shippingAddress ? "border-red-500/50" : "border-[#C9A84C]/15"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
+                  className={`w-full bg-[#1a1200] border ${errors.shippingAddress ? "border-red-500/50" : "border-[rgba(255,200,100,0.18)]"} text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40`}
                 />
                 {errors.shippingAddress && <p className="text-red-400 text-xs mt-1">{errors.shippingAddress}</p>}
               </div>
@@ -341,14 +341,14 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           </div>
 
           {/* Order Items */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider">
                 🛒 Sản phẩm đặt hàng
               </h2>
               <button
                 onClick={addItem}
-                className="text-xs text-[#C9A84C] hover:text-[#E2C97E] border border-[#C9A84C]/20 px-3 py-1.5 rounded-lg transition-colors"
+                className="text-xs text-[#C9A84C] hover:text-[#E2C97E] border border-[rgba(255,200,100,0.22)] px-3 py-1.5 rounded-lg transition-colors"
               >
                 + Thêm sản phẩm
               </button>
@@ -358,9 +358,9 @@ export default function OrderFormClient({ order }: { order?: Order }) {
 
             <div className="space-y-4">
               {items.map((item, idx) => (
-                <div key={idx} className="bg-[#0D0B00] border border-[#C9A84C]/10 rounded-xl p-4">
+                <div key={idx} className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-gray-600 font-medium">Sản phẩm #{idx + 1}</span>
+                    <span className="text-xs text-[rgba(245,237,214,0.45)] font-medium">Sản phẩm #{idx + 1}</span>
                     {items.length > 1 && (
                       <button
                         onClick={() => removeItem(idx)}
@@ -373,11 +373,11 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                   <div className="grid sm:grid-cols-2 gap-3">
                     {/* Product selector */}
                     <div className="sm:col-span-2">
-                      <label className="block text-xs text-gray-600 mb-1">Chọn sản phẩm có sẵn</label>
+                      <label className="block text-xs text-[rgba(245,237,214,0.45)] mb-1">Chọn sản phẩm có sẵn</label>
                       <select
                         value={item.productId}
                         onChange={(e) => updateItem(idx, "productId", e.target.value)}
-                        className="w-full bg-[#1A1500] border border-[#C9A84C]/10 text-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#C9A84C]/30"
+                        className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.14)] text-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[rgba(255,200,100,0.30)]"
                       >
                         <option value="">-- Chọn từ danh sách hoặc nhập thủ công --</option>
                         {SAMPLE_PRODUCTS.map((p) => (
@@ -388,7 +388,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">
+                      <label className="block text-xs text-[rgba(245,237,214,0.45)] mb-1">
                         Tên sản phẩm <span className="text-red-400">*</span>
                       </label>
                       <input
@@ -396,31 +396,31 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                         value={item.productName}
                         onChange={(e) => updateItem(idx, "productName", e.target.value)}
                         placeholder="Tên sản phẩm"
-                        className={`w-full bg-[#1A1500] border ${errors[`item_name_${idx}`] ? "border-red-500/50" : "border-[#C9A84C]/10"} text-white rounded-lg px-3 py-2 text-sm focus:outline-none`}
+                        className={`w-full bg-[#1a1200] border ${errors[`item_name_${idx}`] ? "border-red-500/50" : "border-[rgba(255,200,100,0.14)]"} text-white rounded-lg px-3 py-2 text-sm focus:outline-none`}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Biến thể / Màu sắc</label>
+                      <label className="block text-xs text-[rgba(245,237,214,0.45)] mb-1">Biến thể / Màu sắc</label>
                       <input
                         type="text"
                         value={item.variant}
                         onChange={(e) => updateItem(idx, "variant", e.target.value)}
                         placeholder="VD: Trắng Ngà"
-                        className="w-full bg-[#1A1500] border border-[#C9A84C]/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.14)] text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">SKU</label>
+                      <label className="block text-xs text-[rgba(245,237,214,0.45)] mb-1">SKU</label>
                       <input
                         type="text"
                         value={item.sku}
                         onChange={(e) => updateItem(idx, "sku", e.target.value)}
                         placeholder="VD: SFP-IVR"
-                        className="w-full bg-[#1A1500] border border-[#C9A84C]/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.14)] text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">
+                      <label className="block text-xs text-[rgba(245,237,214,0.45)] mb-1">
                         Số lượng <span className="text-red-400">*</span>
                       </label>
                       <input
@@ -428,11 +428,11 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                         min={1}
                         value={item.quantity}
                         onChange={(e) => updateItem(idx, "quantity", parseInt(e.target.value) || 1)}
-                        className={`w-full bg-[#1A1500] border ${errors[`item_qty_${idx}`] ? "border-red-500/50" : "border-[#C9A84C]/10"} text-white rounded-lg px-3 py-2 text-sm focus:outline-none`}
+                        className={`w-full bg-[#1a1200] border ${errors[`item_qty_${idx}`] ? "border-red-500/50" : "border-[rgba(255,200,100,0.14)]"} text-white rounded-lg px-3 py-2 text-sm focus:outline-none`}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">
+                      <label className="block text-xs text-[rgba(245,237,214,0.45)] mb-1">
                         Đơn giá (VNĐ) <span className="text-red-400">*</span>
                       </label>
                       <input
@@ -440,13 +440,13 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                         value={item.unitPrice > 0 ? formatVND(item.unitPrice) : ""}
                         onChange={(e) => updateItem(idx, "unitPrice", e.target.value)}
                         placeholder="VD: 45,000,000"
-                        className={`w-full bg-[#1A1500] border ${errors[`item_price_${idx}`] ? "border-red-500/50" : "border-[#C9A84C]/10"} text-white rounded-lg px-3 py-2 text-sm focus:outline-none`}
+                        className={`w-full bg-[#1a1200] border ${errors[`item_price_${idx}`] ? "border-red-500/50" : "border-[rgba(255,200,100,0.14)]"} text-white rounded-lg px-3 py-2 text-sm focus:outline-none`}
                       />
                     </div>
                   </div>
                   {/* Item subtotal */}
                   <div className="mt-3 flex justify-end">
-                    <span className="text-xs text-gray-600">Thành tiền: </span>
+                    <span className="text-xs text-[rgba(245,237,214,0.45)]">Thành tiền: </span>
                     <span className="text-sm font-semibold text-[#C9A84C] ml-2">
                       {formatVND(item.unitPrice * item.quantity)}đ
                     </span>
@@ -457,40 +457,40 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           </div>
 
           {/* Shipping & Notes */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">
               🚚 Vận chuyển & Ghi chú
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Đơn vị vận chuyển</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Đơn vị vận chuyển</label>
                 <select
                   value={shippingPartner}
                   onChange={(e) => setShippingPartner(e.target.value)}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 >
                   <option value="">-- Chưa chọn --</option>
                   {SHIPPING_PARTNERS.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Mã vận đơn</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Mã vận đơn</label>
                 <input
                   type="text"
                   value={trackingCode}
                   onChange={(e) => setTrackingCode(e.target.value)}
                   placeholder="VD: GHN123456789"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs text-gray-500 mb-1.5">Ghi chú đơn hàng</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Ghi chú đơn hàng</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
                   placeholder="Ghi chú nội bộ hoặc yêu cầu đặc biệt từ khách..."
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none"
                 />
               </div>
             </div>
@@ -501,17 +501,17 @@ export default function OrderFormClient({ order }: { order?: Order }) {
         <div className="space-y-5">
 
           {/* Order Status */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
             <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider mb-4">
               📋 Trạng thái đơn hàng
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Trạng thái</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Trạng thái</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as OrderStatus)}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
                 >
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -519,11 +519,11 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Phương thức thanh toán</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Phương thức thanh toán</label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
                 >
                   {PAYMENT_OPTIONS.map((p) => (
                     <option key={p.value} value={p.value}>{p.label}</option>
@@ -531,11 +531,11 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Trạng thái thanh toán</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Trạng thái thanh toán</label>
                 <select
                   value={paymentStatus}
                   onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
                 >
                   {PAYMENT_STATUS_OPTIONS.map((p) => (
                     <option key={p.value} value={p.value}>{p.label}</option>
@@ -546,40 +546,40 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           </div>
 
           {/* Pricing */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
             <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider mb-4">
               💰 Chi tiết thanh toán
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Phí vận chuyển (VNĐ)</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Phí vận chuyển (VNĐ)</label>
                 <input
                   type="text"
                   value={shippingFeeStr}
                   onChange={(e) => setShippingFeeStr(e.target.value)}
                   placeholder="0"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1.5">Giảm giá / Coupon (VNĐ)</label>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Giảm giá / Coupon (VNĐ)</label>
                 <input
                   type="text"
                   value={discountStr}
                   onChange={(e) => setDiscountStr(e.target.value)}
                   placeholder="0"
-                  className="w-full bg-[#0D0B00] border border-[#C9A84C]/15 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Summary */}
-            <div className="mt-4 pt-4 border-t border-[#C9A84C]/10 space-y-2 text-sm">
-              <div className="flex justify-between text-gray-500">
+            <div className="mt-4 pt-4 border-t border-[rgba(255,200,100,0.14)] space-y-2 text-sm">
+              <div className="flex justify-between text-[rgba(245,237,214,0.55)]">
                 <span>Tạm tính ({items.length} sản phẩm)</span>
                 <span className="text-gray-300">{formatVND(subtotal)}đ</span>
               </div>
-              <div className="flex justify-between text-gray-500">
+              <div className="flex justify-between text-[rgba(245,237,214,0.55)]">
                 <span>Phí vận chuyển</span>
                 <span className="text-gray-300">+{formatVND(shippingFee)}đ</span>
               </div>
@@ -589,7 +589,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                   <span>−{formatVND(discount)}đ</span>
                 </div>
               )}
-              <div className="flex justify-between text-base font-bold pt-2 border-t border-[#C9A84C]/10">
+              <div className="flex justify-between text-base font-bold pt-2 border-t border-[rgba(255,200,100,0.14)]">
                 <span className="text-white">Tổng cộng</span>
                 <span className="text-[#C9A84C]">{formatVND(total)}đ</span>
               </div>
@@ -597,34 +597,34 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           </div>
 
           {/* Quick summary */}
-          <div className="bg-[#0D0B00] border border-[#C9A84C]/10 rounded-2xl p-5 text-xs space-y-2">
-            <p className="text-gray-600 font-medium uppercase tracking-wider mb-3">Tóm tắt</p>
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5 text-xs space-y-2">
+            <p className="text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider mb-3">Tóm tắt</p>
             <div className="flex justify-between">
-              <span className="text-gray-600">Khách hàng:</span>
+              <span className="text-[rgba(245,237,214,0.45)]">Khách hàng:</span>
               <span className="text-gray-300">{customerName || "—"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Thành phố:</span>
+              <span className="text-[rgba(245,237,214,0.45)]">Thành phố:</span>
               <span className="text-gray-300">{city}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Số sản phẩm:</span>
+              <span className="text-[rgba(245,237,214,0.45)]">Số sản phẩm:</span>
               <span className="text-gray-300">{items.length} loại</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Trạng thái:</span>
+              <span className="text-[rgba(245,237,214,0.45)]">Trạng thái:</span>
               <span className={STATUS_OPTIONS.find((s) => s.value === status)?.color || "text-gray-300"}>
                 {STATUS_OPTIONS.find((s) => s.value === status)?.label}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Thanh toán:</span>
-              <span className={paymentStatus === "paid" ? "text-green-400" : paymentStatus === "refunded" ? "text-gray-400" : "text-yellow-400"}>
+              <span className="text-[rgba(245,237,214,0.45)]">Thanh toán:</span>
+              <span className={paymentStatus === "paid" ? "text-green-400" : paymentStatus === "refunded" ? "text-[rgba(245,237,214,0.70)]" : "text-yellow-400"}>
                 {PAYMENT_STATUS_OPTIONS.find((p) => p.value === paymentStatus)?.label}
               </span>
             </div>
-            <div className="flex justify-between font-semibold pt-2 border-t border-[#C9A84C]/10">
-              <span className="text-gray-500">Tổng tiền:</span>
+            <div className="flex justify-between font-semibold pt-2 border-t border-[rgba(255,200,100,0.14)]">
+              <span className="text-[rgba(245,237,214,0.55)]">Tổng tiền:</span>
               <span className="text-[#C9A84C]">{formatVND(total)}đ</span>
             </div>
           </div>
@@ -640,7 +640,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
             </button>
             <button
               onClick={() => router.push("/admin/orders")}
-              className="w-full text-sm text-gray-500 hover:text-white py-2.5 rounded-xl border border-gray-700 transition-colors"
+              className="w-full text-sm text-[rgba(245,237,214,0.55)] hover:text-white py-2.5 rounded-xl border border-gray-700 transition-colors"
             >
               Hủy bỏ
             </button>

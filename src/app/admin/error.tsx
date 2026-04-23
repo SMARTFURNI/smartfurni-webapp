@@ -14,7 +14,7 @@ export default function AdminError({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-[#080600] flex items-center justify-center p-8">
+    <div className="min-h-screen bg-[#130e00] flex items-center justify-center p-8">
       <div className="text-center max-w-md">
         {/* Icon */}
         <div className="w-24 h-24 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
@@ -22,7 +22,7 @@ export default function AdminError({
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-3">Đã xảy ra lỗi</h1>
-        <p className="text-gray-500 text-sm mb-2 leading-relaxed">
+        <p className="text-[rgba(245,237,214,0.55)] text-sm mb-2 leading-relaxed">
           Có lỗi xảy ra khi tải trang này. Vui lòng thử lại hoặc liên hệ hỗ trợ kỹ thuật.
         </p>
         {error.message && (
@@ -40,7 +40,7 @@ export default function AdminError({
           </button>
           <Link
             href="/admin"
-            className="flex items-center gap-2 border border-[#C9A84C]/20 text-gray-400 hover:text-white text-sm px-5 py-2.5 rounded-xl hover:border-[#C9A84C]/40 transition-colors"
+            className="flex items-center gap-2 border border-[rgba(255,200,100,0.22)] text-[rgba(245,237,214,0.70)] hover:text-white text-sm px-5 py-2.5 rounded-xl hover:border-[#C9A84C]/40 transition-colors"
           >
             ← Dashboard
           </Link>

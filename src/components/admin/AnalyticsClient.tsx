@@ -31,7 +31,7 @@ function fmt(n: number): string {
 function growthColor(g: number): string {
   if (g > 0) return "text-green-400";
   if (g < 0) return "text-red-400";
-  return "text-gray-400";
+  return "text-[rgba(245,237,214,0.70)]";
 }
 
 function growthIcon(g: number): string {
@@ -56,7 +56,7 @@ function KPICard({
   icon: string;
 }) {
   return (
-    <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-5">
+    <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
       <div className="flex items-start justify-between mb-3">
         <span className="text-[#C9A84C]/60 text-xs font-medium uppercase tracking-wider">{label}</span>
         <span className="text-lg">{icon}</span>
@@ -110,7 +110,7 @@ function BarChart({
             >
               {/* Tooltip */}
               {isHov && (
-                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#1A1500] border border-[#C9A84C]/30 rounded-lg px-3 py-2 text-xs whitespace-nowrap z-10 shadow-xl">
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#1a1200] border border-[rgba(255,200,100,0.30)] rounded-lg px-3 py-2 text-xs whitespace-nowrap z-10 shadow-xl">
                   <div className="text-[#C9A84C] font-semibold">{d.label}</div>
                   <div className="text-white">Lượt xem: <span className="text-[#C9A84C]">{d.views.toLocaleString()}</span></div>
                   <div className="text-white">Unique: <span className="text-blue-400">{d.uniques.toLocaleString()}</span></div>
@@ -163,7 +163,7 @@ function HourlyHeatmap({ data }: { data: { hour: number; label: string; views: n
                 {d.hour}
               </div>
               {hovered === d.hour && (
-                <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-[#1A1500] border border-[#C9A84C]/30 rounded px-2 py-1 text-xs whitespace-nowrap z-10">
+                <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-[#1a1200] border border-[rgba(255,200,100,0.30)] rounded px-2 py-1 text-xs whitespace-nowrap z-10">
                   <div className="text-[#C9A84C] font-semibold">{d.label}</div>
                   <div className="text-white">{d.views} lượt xem</div>
                 </div>
@@ -322,7 +322,7 @@ export default function AnalyticsClient() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => fetchData(range)}
-            className="px-3 py-1.5 bg-[#1A1500] border border-[#C9A84C]/20 text-[#C9A84C] text-xs rounded-lg hover:border-[#C9A84C]/50 transition-colors"
+            className="px-3 py-1.5 bg-[#1a1200] border border-[rgba(255,200,100,0.22)] text-[#C9A84C] text-xs rounded-lg hover:border-[rgba(255,200,100,0.08)]0 transition-colors"
           >
             ↻ Làm mới
           </button>
@@ -330,7 +330,7 @@ export default function AnalyticsClient() {
       </div>
 
       {/* Range Picker */}
-      <div className="flex gap-1 bg-[#0A0800] border border-[#C9A84C]/10 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-xl p-1 w-fit">
         {(Object.entries(RANGE_LABELS) as [Range, string][]).map(([r, label]) => (
           <button
             key={r}
@@ -379,7 +379,7 @@ export default function AnalyticsClient() {
       </div>
 
       {/* Main Chart */}
-      <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-5">
+      <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <h2 className="text-[#C9A84C] font-semibold">Xu hướng lượt truy cập</h2>
@@ -391,7 +391,7 @@ export default function AnalyticsClient() {
               {range === "all" && "Tất cả thời gian"}
             </p>
           </div>
-          <div className="flex gap-1 bg-[#0A0800] border border-[#C9A84C]/10 rounded-lg p-0.5">
+          <div className="flex gap-1 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-lg p-0.5">
             <button
               onClick={() => setChartMode("views")}
               className={`px-3 py-1 rounded text-xs font-medium transition-all ${chartMode === "views" ? "bg-[#C9A84C] text-black" : "text-[#6B5B2A] hover:text-[#C9A84C]"}`}
@@ -418,11 +418,11 @@ export default function AnalyticsClient() {
       {/* Row: Top Pages + Referrers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Pages */}
-        <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-5">
+        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
           <h2 className="text-[#C9A84C] font-semibold mb-4">Trang phổ biến nhất</h2>
           {loading ? (
             <div className="space-y-2">
-              {[1,2,3,4,5].map(i => <div key={i} className="h-8 bg-[#1A1500] rounded animate-pulse" />)}
+              {[1,2,3,4,5].map(i => <div key={i} className="h-8 bg-[#1a1200] rounded animate-pulse" />)}
             </div>
           ) : !data?.topPages.length ? (
             <div className="text-[#6B5B2A] text-sm text-center py-8">Chưa có dữ liệu</div>
@@ -443,7 +443,7 @@ export default function AnalyticsClient() {
                         <span className="text-[#6B5B2A] text-xs">{p.uniques.toLocaleString()} unique</span>
                       </div>
                     </div>
-                    <div className="h-1 bg-[#1A1500] rounded-full overflow-hidden">
+                    <div className="h-1 bg-[#1a1200] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#C9A84C] rounded-full transition-all duration-500"
                         style={{ width: `${pct}%` }}
@@ -457,11 +457,11 @@ export default function AnalyticsClient() {
         </div>
 
         {/* Referrers */}
-        <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-5">
+        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
           <h2 className="text-[#C9A84C] font-semibold mb-4">Nguồn truy cập</h2>
           {loading ? (
             <div className="space-y-2">
-              {[1,2,3,4,5].map(i => <div key={i} className="h-8 bg-[#1A1500] rounded animate-pulse" />)}
+              {[1,2,3,4,5].map(i => <div key={i} className="h-8 bg-[#1a1200] rounded animate-pulse" />)}
             </div>
           ) : !data?.referrers.length ? (
             <div className="text-[#6B5B2A] text-sm text-center py-8">Chưa có dữ liệu</div>
@@ -484,7 +484,7 @@ export default function AnalyticsClient() {
                         {r.count.toLocaleString()}
                       </span>
                     </div>
-                    <div className="h-1 bg-[#1A1500] rounded-full overflow-hidden">
+                    <div className="h-1 bg-[#1a1200] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-blue-500 rounded-full transition-all duration-500"
                         style={{ width: `${pct}%` }}
@@ -501,21 +501,21 @@ export default function AnalyticsClient() {
       {/* Row: Devices + Hourly Heatmap */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Devices */}
-        <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-5">
+        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
           <h2 className="text-[#C9A84C] font-semibold mb-4">Thiết bị truy cập</h2>
           {loading ? (
-            <div className="h-40 bg-[#1A1500] rounded animate-pulse" />
+            <div className="h-40 bg-[#1a1200] rounded animate-pulse" />
           ) : (
             <DonutChart data={data?.devices || []} />
           )}
         </div>
 
         {/* Hourly Heatmap */}
-        <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-5">
+        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
           <h2 className="text-[#C9A84C] font-semibold mb-1">Phân bố theo giờ</h2>
           <p className="text-[#6B5B2A] text-xs mb-4">7 ngày gần nhất</p>
           {loading ? (
-            <div className="h-40 bg-[#1A1500] rounded animate-pulse" />
+            <div className="h-40 bg-[#1a1200] rounded animate-pulse" />
           ) : (
             <HourlyHeatmap data={data?.hourly || []} />
           )}
@@ -523,7 +523,7 @@ export default function AnalyticsClient() {
       </div>
 
       {/* Weekly trend (byWeek) */}
-      <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-5">
+      <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-[#C9A84C] font-semibold">Xu hướng theo tuần</h2>
@@ -531,14 +531,14 @@ export default function AnalyticsClient() {
           </div>
         </div>
         {loading ? (
-          <div className="h-40 bg-[#1A1500] rounded animate-pulse" />
+          <div className="h-40 bg-[#1a1200] rounded animate-pulse" />
         ) : (
           <BarChart data={data?.byWeek || []} mode={chartMode} height={160} />
         )}
       </div>
 
       {/* Monthly trend */}
-      <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-5">
+      <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-[#C9A84C] font-semibold">Xu hướng theo tháng</h2>
@@ -546,7 +546,7 @@ export default function AnalyticsClient() {
           </div>
         </div>
         {loading ? (
-          <div className="h-40 bg-[#1A1500] rounded animate-pulse" />
+          <div className="h-40 bg-[#1a1200] rounded animate-pulse" />
         ) : (
           <BarChart data={data?.byMonth || []} mode={chartMode} height={160} />
         )}
@@ -554,7 +554,7 @@ export default function AnalyticsClient() {
 
       {/* Yearly trend */}
       {(data?.byYear?.length || 0) > 0 && (
-        <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-5">
+        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-[#C9A84C] font-semibold">Xu hướng theo năm</h2>
@@ -567,7 +567,7 @@ export default function AnalyticsClient() {
 
       {/* Empty state */}
       {!loading && data && data.summary.totalViews === 0 && (
-        <div className="bg-[#0E0C00] border border-[#C9A84C]/10 rounded-xl p-10 text-center">
+        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-10 text-center">
           <div className="text-4xl mb-3">📊</div>
           <h3 className="text-[#C9A84C] font-semibold text-lg mb-2">Chưa có dữ liệu truy cập</h3>
           <p className="text-[#6B5B2A] text-sm max-w-md mx-auto">

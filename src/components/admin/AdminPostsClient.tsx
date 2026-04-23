@@ -7,7 +7,7 @@ import { CATEGORIES } from "@/lib/blog-data";
 
 const STATUS_BADGE: Record<PostStatus, { label: string; cls: string }> = {
   published: { label: "Đã đăng", cls: "text-green-400 bg-green-500/10" },
-  draft: { label: "Nháp", cls: "text-gray-400 bg-gray-500/10" },
+  draft: { label: "Nháp", cls: "text-[rgba(245,237,214,0.70)] bg-gray-500/10" },
   scheduled: { label: "Lên lịch", cls: "text-blue-400 bg-blue-500/10" },
 };
 
@@ -47,7 +47,7 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Quản Lý Bài Viết</h1>
-          <p className="text-gray-500 text-sm mt-1">{posts.length} bài viết</p>
+          <p className="text-[rgba(245,237,214,0.55)] text-sm mt-1">{posts.length} bài viết</p>
         </div>
         <Link
           href="/admin/posts/new"
@@ -64,12 +64,12 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
           placeholder="Tìm kiếm bài viết..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-[#1A1500] border border-[#C9A84C]/20 rounded-xl px-4 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#C9A84C]/50 w-64"
+          className="bg-[#1a1200] border border-[rgba(255,200,100,0.22)] rounded-xl px-4 py-2 text-white text-sm placeholder-[rgba(245,237,214,0.30)] focus:outline-none focus:border-[rgba(255,200,100,0.08)]0 w-64"
         />
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="bg-[#1A1500] border border-[#C9A84C]/20 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50"
+          className="bg-[#1a1200] border border-[rgba(255,200,100,0.22)] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
         >
           <option value="all">Tất cả chủ đề</option>
           {Object.entries(CATEGORIES).map(([key, cat]) => (
@@ -79,7 +79,7 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-[#1A1500] border border-[#C9A84C]/20 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50"
+          className="bg-[#1a1200] border border-[rgba(255,200,100,0.22)] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
         >
           <option value="all">Tất cả trạng thái</option>
           <option value="published">✅ Đã đăng</option>
@@ -89,22 +89,22 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
       </div>
 
       {/* Table */}
-      <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl overflow-hidden">
+      <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-[#C9A84C]/10">
-              <th className="text-left px-6 py-4 text-xs text-gray-500 font-medium uppercase tracking-wider">Tiêu đề</th>
-              <th className="text-left px-4 py-4 text-xs text-gray-500 font-medium uppercase tracking-wider hidden md:table-cell">Chủ đề</th>
-              <th className="text-left px-4 py-4 text-xs text-gray-500 font-medium uppercase tracking-wider hidden lg:table-cell">Tác giả</th>
-              <th className="text-left px-4 py-4 text-xs text-gray-500 font-medium uppercase tracking-wider hidden lg:table-cell">Ngày đăng</th>
-              <th className="text-left px-4 py-4 text-xs text-gray-500 font-medium uppercase tracking-wider hidden xl:table-cell">Trạng thái</th>
-              <th className="text-right px-6 py-4 text-xs text-gray-500 font-medium uppercase tracking-wider">Thao tác</th>
+            <tr className="border-b border-[rgba(255,200,100,0.14)]">
+              <th className="text-left px-6 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider">Tiêu đề</th>
+              <th className="text-left px-4 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider hidden md:table-cell">Chủ đề</th>
+              <th className="text-left px-4 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider hidden lg:table-cell">Tác giả</th>
+              <th className="text-left px-4 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider hidden lg:table-cell">Ngày đăng</th>
+              <th className="text-left px-4 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider hidden xl:table-cell">Trạng thái</th>
+              <th className="text-right px-6 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#C9A84C]/5">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-600">
+                <td colSpan={5} className="px-6 py-12 text-center text-[rgba(245,237,214,0.45)]">
                   Không tìm thấy bài viết nào
                 </td>
               </tr>
@@ -118,7 +118,7 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
                         {post.featured && <span className="text-yellow-500 text-xs">⭐</span>}
                         <div>
                           <p className="text-sm text-white font-medium line-clamp-1">{post.title}</p>
-                          <p className="text-xs text-gray-600 mt-0.5">{post.readTime} phút đọc</p>
+                          <p className="text-xs text-[rgba(245,237,214,0.45)] mt-0.5">{post.readTime} phút đọc</p>
                         </div>
                       </div>
                     </td>
@@ -131,10 +131,10 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
                       </span>
                     </td>
                     <td className="px-4 py-4 hidden lg:table-cell">
-                      <p className="text-sm text-gray-400">{post.author}</p>
+                      <p className="text-sm text-[rgba(245,237,214,0.70)]">{post.author}</p>
                     </td>
                     <td className="px-4 py-4 hidden lg:table-cell">
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-[rgba(245,237,214,0.55)]">
                         {new Date(post.publishedAt).toLocaleDateString("vi-VN")}
                       </p>
                     </td>
@@ -154,7 +154,7 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
                         <Link
                           href={`/blog/${post.slug}`}
                           target="_blank"
-                          className="text-xs text-gray-500 hover:text-gray-300 px-2 py-1 rounded transition-colors"
+                          className="text-xs text-[rgba(245,237,214,0.55)] hover:text-gray-300 px-2 py-1 rounded transition-colors"
                         >
                           Xem
                         </Link>

@@ -169,13 +169,13 @@ export default function AdminCatalogueEditorClient({ catalogue: initialCatalogue
   }
 
   return (
-    <div className="min-h-screen bg-[#080600] text-white flex flex-col">
+    <div className="min-h-screen bg-[#1a1200] text-white flex flex-col">
       {/* Header */}
-      <div className="border-b border-[#C9A84C]/10 px-6 py-3 flex items-center justify-between flex-shrink-0">
+      <div className="border-b border-[rgba(255,200,100,0.14)] px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/admin/catalogue")}
-            className="text-gray-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5"
+            className="text-[rgba(245,237,214,0.55)] hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M10 3L5 8l5 5" strokeLinecap="round"/>
@@ -187,11 +187,11 @@ export default function AdminCatalogueEditorClient({ catalogue: initialCatalogue
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
                 catalogue.status === "published"
                   ? "bg-green-500/15 text-green-400"
-                  : "bg-gray-500/15 text-gray-400"
+                  : "bg-gray-500/15 text-[rgba(245,237,214,0.70)]"
               }`}>
                 {catalogue.status === "published" ? "● Đã xuất bản" : "○ Bản nháp"}
               </span>
-              <span className="text-[10px] text-gray-600">{catalogue.pageCount} trang</span>
+              <span className="text-[10px] text-[rgba(245,237,214,0.45)]">{catalogue.pageCount} trang</span>
             </div>
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function AdminCatalogueEditorClient({ catalogue: initialCatalogue
             <a
               href={`/catalogue/${catalogue.id}`}
               target="_blank"
-              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+              className="flex items-center gap-1.5 text-xs text-[rgba(245,237,214,0.70)] hover:text-white border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
             >
               ↗ Xem public
             </a>
@@ -223,7 +223,7 @@ export default function AdminCatalogueEditorClient({ catalogue: initialCatalogue
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab
                 ? "border-[#C9A84C] text-[#C9A84C]"
-                : "border-transparent text-gray-500 hover:text-gray-300"
+                : "border-transparent text-[rgba(245,237,214,0.55)] hover:text-gray-300"
             }`}
           >
             {tab === "pages" ? "📄 Trang" : tab === "settings" ? "⚙️ Cài đặt" : "👁 Xem trước"}
@@ -254,7 +254,7 @@ export default function AdminCatalogueEditorClient({ catalogue: initialCatalogue
         {activeTab === "preview" && (
           <div className="h-full">
             {catalogue.pages.length === 0 ? (
-              <div className="flex items-center justify-center h-64 text-gray-500">
+              <div className="flex items-center justify-center h-64 text-[rgba(245,237,214,0.55)]">
                 <div className="text-center">
                   <div className="text-4xl mb-3">📋</div>
                   <p>Thêm trang để xem trước</p>
@@ -307,7 +307,7 @@ function PagesTab({
       <div className="flex flex-col items-center justify-center py-20 text-center px-4">
         <div className="text-5xl mb-4">📄</div>
         <h2 className="text-lg font-semibold text-white mb-2">Chưa có trang nào</h2>
-        <p className="text-gray-500 text-sm mb-6">Thêm trang đầu tiên cho catalogue</p>
+        <p className="text-[rgba(245,237,214,0.55)] text-sm mb-6">Thêm trang đầu tiên cho catalogue</p>
         <button
           onClick={onAdd}
           className="bg-[#C9A84C] text-black font-bold px-5 py-2 rounded-lg hover:bg-[#E2C97E] transition-colors"
@@ -324,7 +324,7 @@ function PagesTab({
         {pages.map((page, idx) => (
           <div
             key={page.id}
-            className="group relative bg-[#111] border border-white/5 rounded-xl overflow-hidden hover:border-[#C9A84C]/30 transition-all"
+            className="group relative bg-[#111] border border-white/5 rounded-xl overflow-hidden hover:border-[rgba(255,200,100,0.30)] transition-all"
           >
             {/* Page preview */}
             <div
@@ -383,7 +383,7 @@ function PagesTab({
                 {page.title || `Trang ${page.pageNumber}`}
               </p>
               {page.subtitle && (
-                <p className="text-[10px] text-gray-600 truncate">{page.subtitle}</p>
+                <p className="text-[10px] text-[rgba(245,237,214,0.45)] truncate">{page.subtitle}</p>
               )}
             </div>
 
@@ -413,7 +413,7 @@ function PagesTab({
           className="aspect-[3/4] border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-[#C9A84C]/40 hover:bg-[#C9A84C]/5 transition-all group"
         >
           <span className="text-2xl text-white/20 group-hover:text-[#C9A84C]/40 transition-colors">+</span>
-          <span className="text-[11px] text-gray-600 group-hover:text-[#C9A84C]/60">Thêm trang</span>
+          <span className="text-[11px] text-[rgba(245,237,214,0.45)] group-hover:text-[#C9A84C]/60">Thêm trang</span>
         </button>
       </div>
     </div>
@@ -436,31 +436,31 @@ function SettingsTab({
   return (
     <div className="max-w-xl mx-auto p-6 space-y-5">
       <div>
-        <label className="text-xs text-gray-400 mb-1.5 block font-medium">Tên catalogue *</label>
+        <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1.5 block font-medium">Tên catalogue *</label>
         <input
           type="text"
           value={settings.title}
           onChange={e => onChange({ ...settings, title: e.target.value })}
-          className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50"
+          className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
         />
       </div>
       <div>
-        <label className="text-xs text-gray-400 mb-1.5 block font-medium">Mô tả</label>
+        <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1.5 block font-medium">Mô tả</label>
         <textarea
           value={settings.description}
           onChange={e => onChange({ ...settings, description: e.target.value })}
           rows={3}
-          className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50 resize-none"
+          className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0 resize-none"
         />
       </div>
       <div>
-        <label className="text-xs text-gray-400 mb-1.5 block font-medium">URL ảnh bìa</label>
+        <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1.5 block font-medium">URL ảnh bìa</label>
         <input
           type="url"
           value={settings.coverImageUrl}
           onChange={e => onChange({ ...settings, coverImageUrl: e.target.value })}
           placeholder="https://..."
-          className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50"
+          className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
         />
         {settings.coverImageUrl && (
           <div className="mt-2 w-24 h-32 rounded overflow-hidden border border-white/10">
@@ -469,11 +469,11 @@ function SettingsTab({
         )}
       </div>
       <div>
-        <label className="text-xs text-gray-400 mb-1.5 block font-medium">Trạng thái</label>
+        <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1.5 block font-medium">Trạng thái</label>
         <select
           value={settings.status}
           onChange={e => onChange({ ...settings, status: e.target.value as "published" | "draft" })}
-          className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50"
+          className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
         >
           <option value="draft">Bản nháp (chỉ admin thấy)</option>
           <option value="published">Đã xuất bản (khách hàng thấy)</option>
@@ -509,7 +509,7 @@ function PageEditorModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#111] border border-[#C9A84C]/20 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-[#111] border border-[rgba(255,200,100,0.22)] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Modal header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5 flex-shrink-0">
           <h2 className="font-bold text-white text-sm">
@@ -520,13 +520,13 @@ function PageEditorModal({
               onClick={() => setPreviewOpen(v => !v)}
               className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
                 previewOpen
-                  ? "bg-[#C9A84C]/15 text-[#C9A84C] border-[#C9A84C]/30"
-                  : "text-gray-400 border-white/10 hover:text-white"
+                  ? "bg-[#C9A84C]/15 text-[#C9A84C] border-[rgba(255,200,100,0.30)]"
+                  : "text-[rgba(245,237,214,0.70)] border-white/10 hover:text-white"
               }`}
             >
               👁 Xem trước
             </button>
-            <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1">
+            <button onClick={onClose} className="text-[rgba(245,237,214,0.55)] hover:text-white transition-colors p-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M2 2l10 10M12 2L2 12"/>
               </svg>
@@ -539,7 +539,7 @@ function PageEditorModal({
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
             {/* Type */}
             <div>
-              <label className="text-xs text-gray-400 mb-1.5 block font-medium">Loại trang</label>
+              <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1.5 block font-medium">Loại trang</label>
               <div className="grid grid-cols-4 gap-1.5">
                 {PAGE_TYPES.map(t => (
                   <button
@@ -547,8 +547,8 @@ function PageEditorModal({
                     onClick={() => onChange({ ...page, type: t.value })}
                     className={`py-2 px-2 rounded-lg text-xs font-medium transition-all border ${
                       page.type === t.value
-                        ? "bg-[#C9A84C]/15 text-[#C9A84C] border-[#C9A84C]/30"
-                        : "text-gray-500 border-white/5 hover:border-white/15 hover:text-gray-300"
+                        ? "bg-[#C9A84C]/15 text-[#C9A84C] border-[rgba(255,200,100,0.30)]"
+                        : "text-[rgba(245,237,214,0.55)] border-white/5 hover:border-white/15 hover:text-gray-300"
                     }`}
                   >
                     <div>{t.icon}</div>
@@ -561,43 +561,43 @@ function PageEditorModal({
             {/* Title */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-400 mb-1 block">Tiêu đề</label>
+                <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1 block">Tiêu đề</label>
                 <input
                   type="text"
                   value={page.title || ""}
                   onChange={e => onChange({ ...page, title: e.target.value })}
                   placeholder="Tiêu đề trang"
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50"
+                  className="w-full bg-[#1a1200] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400 mb-1 block">Phụ đề</label>
+                <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1 block">Phụ đề</label>
                 <input
                   type="text"
                   value={page.subtitle || ""}
                   onChange={e => onChange({ ...page, subtitle: e.target.value })}
                   placeholder="Phụ đề"
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50"
+                  className="w-full bg-[#1a1200] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
                 />
               </div>
             </div>
 
             {/* Image URL */}
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">URL ảnh nền</label>
+              <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1 block">URL ảnh nền</label>
               <input
                 type="url"
                 value={page.imageUrl || ""}
                 onChange={e => onChange({ ...page, imageUrl: e.target.value })}
                 placeholder="https://..."
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50"
+                className="w-full bg-[#1a1200] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
               />
             </div>
 
             {/* Colors */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-400 mb-1.5 block">Màu nền</label>
+                <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1.5 block">Màu nền</label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {BG_PRESETS.map(c => (
                     <button
@@ -619,7 +619,7 @@ function PageEditorModal({
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400 mb-1.5 block">Màu chữ</label>
+                <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1.5 block">Màu chữ</label>
                 <div className="flex gap-1.5 mb-2">
                   {["#ffffff", "#000000", "#C9A84C", "#cccccc"].map(c => (
                     <button
@@ -643,26 +643,26 @@ function PageEditorModal({
 
             {/* Content */}
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Nội dung</label>
+              <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1 block">Nội dung</label>
               <textarea
                 value={page.content || ""}
                 onChange={e => onChange({ ...page, content: e.target.value })}
                 placeholder="Nội dung trang (mỗi dòng = 1 đoạn)..."
                 rows={4}
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50 resize-none"
+                className="w-full bg-[#1a1200] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0 resize-none"
               />
             </div>
 
             {/* Badge */}
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Nhãn góc (badge)</label>
+              <label className="text-xs text-[rgba(245,237,214,0.70)] mb-1 block">Nhãn góc (badge)</label>
               <input
                 type="text"
                 value={page.badge || ""}
                 onChange={e => onChange({ ...page, badge: e.target.value })}
                 placeholder="VD: MỚI, HOT, SALE..."
                 maxLength={10}
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50"
+                className="w-full bg-[#1a1200] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
               />
             </div>
           </div>
@@ -670,7 +670,7 @@ function PageEditorModal({
           {/* Mini preview */}
           {previewOpen && (
             <div className="w-48 border-l border-white/5 p-3 flex-shrink-0">
-              <p className="text-[10px] text-gray-500 mb-2 uppercase tracking-wider">Xem trước</p>
+              <p className="text-[10px] text-[rgba(245,237,214,0.55)] mb-2 uppercase tracking-wider">Xem trước</p>
               <div
                 className="relative rounded overflow-hidden"
                 style={{
@@ -711,7 +711,7 @@ function PageEditorModal({
         <div className="flex gap-3 px-5 py-3.5 border-t border-white/5 flex-shrink-0">
           <button
             onClick={onClose}
-            className="flex-1 border border-white/10 text-gray-400 py-2 rounded-lg hover:bg-white/5 transition-colors text-sm"
+            className="flex-1 border border-white/10 text-[rgba(245,237,214,0.70)] py-2 rounded-lg hover:bg-white/5 transition-colors text-sm"
           >
             Hủy
           </button>

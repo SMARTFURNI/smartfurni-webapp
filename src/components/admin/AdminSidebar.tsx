@@ -189,10 +189,11 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
 
   return (
     <aside
-      className={`${collapsed ? "w-[60px]" : "w-[220px]"} min-h-screen bg-[#0A0800] border-r border-[#C9A84C]/8 flex flex-col transition-all duration-200 flex-shrink-0`}
+      className={`${collapsed ? "w-[60px]" : "w-[220px]"} min-h-screen flex flex-col transition-all duration-200 flex-shrink-0`}
+      style={{ background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)", borderRight: "1px solid rgba(255,200,100,0.12)" }}
     >
       {/* Logo */}
-      <div className="h-[68px] border-b border-[#C9A84C]/8 flex items-center" style={{ paddingLeft: 12, paddingRight: 8 }}>
+      <div className="h-[68px] border-b border-[rgba(255,200,100,0.12)] flex items-center" style={{ paddingLeft: 12, paddingRight: 8 }}>
         {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
         <img src="/smartfurni-icon.png" alt="" style={{ display: "none" }} />
         <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
@@ -221,7 +222,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="text-gray-700 hover:text-gray-400 transition-colors p-1 rounded flex-shrink-0"
+          className="text-[rgba(245,237,214,0.35)] hover:text-[rgba(245,237,214,0.70)] transition-colors p-1 rounded flex-shrink-0"
           title={collapsed ? "Mở rộng" : "Thu gọn"}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
@@ -238,7 +239,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="mb-1">
             {!collapsed && (
-              <p className="text-[10px] text-gray-700 uppercase tracking-widest font-semibold px-4 py-1.5 mt-1">
+              <p className="text-[10px] text-[rgba(245,237,214,0.35)] uppercase tracking-widest font-semibold px-4 py-1.5 mt-1">
                 {group.label}
               </p>
             )}
@@ -258,11 +259,11 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
                         className={`flex-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all ${
                           active
                             ? "bg-[#C9A84C]/12 text-[#C9A84C]"
-                            : "text-gray-500 hover:text-gray-200 hover:bg-white/4"
+                            : "text-[rgba(245,237,214,0.55)] hover:text-gray-200 hover:bg-white/4"
                         }`}
                         title={collapsed ? item.label : undefined}
                       >
-                        <span className={`text-sm flex-shrink-0 ${active ? "text-[#C9A84C]" : "text-gray-600"}`}>
+                        <span className={`text-sm flex-shrink-0 ${active ? "text-[#C9A84C]" : "text-[rgba(245,237,214,0.45)]"}`}>
                           {item.icon}
                         </span>
                         {!collapsed && (
@@ -284,7 +285,8 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
                       {!collapsed && hasSubItems && (
                         <button
                           onClick={() => toggleExpand(item.href)}
-                          className="text-gray-700 hover:text-gray-400 p-1.5 rounded transition-colors flex-shrink-0"
+                          className="p-1.5 rounded transition-colors flex-shrink-0"
+                          style={{ color: 'rgba(245,237,214,0.35)' }}
                         >
                           <svg
                             width="10" height="10" viewBox="0 0 10 10" fill="currentColor"
@@ -297,7 +299,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
                     </div>
 
                     {!collapsed && hasSubItems && isExpanded && (
-                      <div className="ml-5 mt-0.5 space-y-0.5 border-l border-[#C9A84C]/8 pl-3">
+                      <div className="ml-5 mt-0.5 space-y-0.5 border-l border-[rgba(255,200,100,0.12)] pl-3">
                         {item.subItems!.map((sub) => (
                           <Link
                             key={sub.href}
@@ -305,7 +307,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
                             className={`block px-2 py-1.5 rounded-md text-[12px] transition-colors ${
                               pathname === sub.href
                                 ? "text-[#C9A84C]"
-                                : "text-gray-600 hover:text-gray-300"
+                                : "text-[rgba(245,237,214,0.45)] hover:text-gray-300"
                             }`}
                           >
                             {sub.label}
@@ -322,11 +324,11 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
       </nav>
 
       {/* Bottom */}
-      <div className="px-2 pb-3 border-t border-[#C9A84C]/8 pt-2 space-y-0.5">
+      <div className="px-2 pb-3 border-t border-[rgba(255,200,100,0.12)] pt-2 space-y-0.5">
         <Link
           href="/"
           target="_blank"
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-gray-600 hover:text-gray-300 hover:bg-white/4 transition-colors"
+          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-[rgba(245,237,214,0.45)] hover:text-gray-300 hover:bg-white/4 transition-colors"
           title={collapsed ? "Xem website" : undefined}
         >
           <span className="text-sm flex-shrink-0">↗</span>
@@ -335,7 +337,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
         <button
           onClick={handleLogout}
           disabled={loggingOut}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-gray-600 hover:text-red-400 hover:bg-red-500/5 transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-[rgba(245,237,214,0.45)] hover:text-red-400 hover:bg-red-500/5 transition-colors"
           title={collapsed ? "Đăng xuất" : undefined}
         >
           <span className="text-sm flex-shrink-0">⏻</span>

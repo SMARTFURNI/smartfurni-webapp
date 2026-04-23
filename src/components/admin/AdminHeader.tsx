@@ -126,12 +126,12 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
         {/* Left: Breadcrumb + Title */}
         <div className="min-w-0">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs text-gray-600 mb-2">
+          <nav className="flex items-center gap-1.5 text-xs text-[rgba(245,237,214,0.45)] mb-2">
             {breadcrumbs.map((crumb, i) => (
               <span key={crumb.href} className="flex items-center gap-1.5">
-                {i > 0 && <span className="text-gray-700">/</span>}
+                {i > 0 && <span className="text-[rgba(245,237,214,0.35)]">/</span>}
                 {i === breadcrumbs.length - 1 ? (
-                  <span className="text-gray-400">{crumb.label}</span>
+                  <span className="text-[rgba(245,237,214,0.70)]">{crumb.label}</span>
                 ) : (
                   <Link href={crumb.href} className="hover:text-[#C9A84C] transition-colors">
                     {crumb.label}
@@ -145,7 +145,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
           {title && (
             <div>
               <h1 className="text-2xl font-bold text-white truncate">{title}</h1>
-              {subtitle && <p className="text-gray-500 text-sm mt-0.5">{subtitle}</p>}
+              {subtitle && <p className="text-[rgba(245,237,214,0.55)] text-sm mt-0.5">{subtitle}</p>}
             </div>
           )}
         </div>
@@ -155,11 +155,11 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
           {/* Search button */}
           <button
             onClick={() => { setSearchOpen(true); setTimeout(() => searchRef.current?.focus(), 50); }}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 bg-[#1A1500] border border-[#C9A84C]/10 hover:border-[#C9A84C]/20 px-4 py-2 rounded-xl transition-all"
+            className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.55)] hover:text-gray-300 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] hover:border-[rgba(255,200,100,0.22)] px-4 py-2 rounded-xl transition-all"
           >
             <span>🔍</span>
             <span className="hidden sm:inline">Tìm kiếm...</span>
-            <kbd className="hidden sm:inline text-xs bg-[#C9A84C]/10 text-[#C9A84C]/60 px-1.5 py-0.5 rounded border border-[#C9A84C]/10">⌘K</kbd>
+            <kbd className="hidden sm:inline text-xs bg-[#C9A84C]/10 text-[#C9A84C]/60 px-1.5 py-0.5 rounded border border-[rgba(255,200,100,0.14)]">⌘K</kbd>
           </button>
 
           {/* Quick actions */}
@@ -174,7 +174,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
             {quickActionsOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setQuickActionsOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 w-52 bg-[#1A1500] border border-[#C9A84C]/15 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-52 bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-2xl shadow-2xl z-50 overflow-hidden">
                   <div className="p-2">
                     {QUICK_ACTIONS.map((action) => (
                       <Link
@@ -187,7 +187,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
                           <span>{action.icon}</span>
                           <span>{action.label}</span>
                         </span>
-                        <kbd className="text-xs text-gray-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">{action.shortcut}</kbd>
+                        <kbd className="text-xs text-[rgba(245,237,214,0.45)] bg-white/5 px-1.5 py-0.5 rounded border border-white/10">{action.shortcut}</kbd>
                       </Link>
                     ))}
                   </div>
@@ -202,30 +202,30 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
       {searchOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setSearchOpen(false); setSearchQuery(""); }} />
-          <div className="relative w-full max-w-lg bg-[#1A1500] border border-[#C9A84C]/20 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-lg bg-[#1a1200] border border-[rgba(255,200,100,0.22)] rounded-2xl shadow-2xl overflow-hidden">
             {/* Search input */}
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#C9A84C]/10">
-              <span className="text-gray-500">🔍</span>
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(255,200,100,0.14)]">
+              <span className="text-[rgba(245,237,214,0.55)]">🔍</span>
               <input
                 ref={searchRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm trang, thao tác..."
-                className="flex-1 bg-transparent text-white text-sm placeholder-gray-600 focus:outline-none"
+                className="flex-1 bg-transparent text-white text-sm placeholder-[rgba(245,237,214,0.30)] focus:outline-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && filteredSuggestions.length > 0) {
                     handleSearchSelect(filteredSuggestions[0].href);
                   }
                 }}
               />
-              <kbd className="text-xs text-gray-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">ESC</kbd>
+              <kbd className="text-xs text-[rgba(245,237,214,0.45)] bg-white/5 px-1.5 py-0.5 rounded border border-white/10">ESC</kbd>
             </div>
 
             {/* Results */}
             <div className="max-h-80 overflow-y-auto p-2">
               {filteredSuggestions.length === 0 ? (
-                <div className="text-center py-8 text-gray-600 text-sm">Không tìm thấy kết quả</div>
+                <div className="text-center py-8 text-[rgba(245,237,214,0.45)] text-sm">Không tìm thấy kết quả</div>
               ) : (
                 (() => {
                   const grouped = filteredSuggestions.reduce((acc, item) => {
@@ -236,7 +236,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
 
                   return Object.entries(grouped).map(([category, items]) => (
                     <div key={category} className="mb-2">
-                      <p className="text-xs text-gray-700 uppercase tracking-wider px-3 py-1.5 font-semibold">{category}</p>
+                      <p className="text-xs text-[rgba(245,237,214,0.35)] uppercase tracking-wider px-3 py-1.5 font-semibold">{category}</p>
                       {items.map((item) => (
                         <button
                           key={item.href}
@@ -245,7 +245,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
                         >
                           <span className="text-base">{item.icon}</span>
                           <span>{item.label}</span>
-                          <span className="ml-auto text-xs text-gray-600">{item.href}</span>
+                          <span className="ml-auto text-xs text-[rgba(245,237,214,0.45)]">{item.href}</span>
                         </button>
                       ))}
                     </div>
@@ -255,7 +255,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
             </div>
 
             {/* Footer hint */}
-            <div className="px-4 py-2.5 border-t border-[#C9A84C]/10 flex items-center gap-4 text-xs text-gray-700">
+            <div className="px-4 py-2.5 border-t border-[rgba(255,200,100,0.14)] flex items-center gap-4 text-xs text-[rgba(245,237,214,0.35)]">
               <span><kbd className="bg-white/5 px-1 py-0.5 rounded border border-white/10">↵</kbd> Chọn</span>
               <span><kbd className="bg-white/5 px-1 py-0.5 rounded border border-white/10">ESC</kbd> Đóng</span>
             </div>

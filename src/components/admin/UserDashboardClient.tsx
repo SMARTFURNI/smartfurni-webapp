@@ -26,15 +26,15 @@ function timeAgo(iso: string): string {
 
 const ROLE_CONFIG: Record<UserRole, { label: string; color: string; bg: string; border: string }> = {
   customer: { label: "Khách hàng", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-  dealer: { label: "Đại lý", color: "text-[#C9A84C]", bg: "bg-[#C9A84C]/10", border: "border-[#C9A84C]/20" },
+  dealer: { label: "Đại lý", color: "text-[#C9A84C]", bg: "bg-[#C9A84C]/10", border: "border-[rgba(255,200,100,0.22)]" },
   vip: { label: "VIP", color: "text-pink-400", bg: "bg-pink-500/10", border: "border-pink-500/20" },
-  blocked: { label: "Bị khóa", color: "text-gray-500", bg: "bg-gray-500/10", border: "border-gray-500/20" },
+  blocked: { label: "Bị khóa", color: "text-[rgba(245,237,214,0.55)]", bg: "bg-gray-500/10", border: "border-gray-500/20" },
 };
 
 // ─── Donut Chart ─────────────────────────────────────────────────────────────
 function DonutChart({ segments, size = 120 }: { segments: { label: string; count: number; color: string }[]; size?: number }) {
   const total = segments.reduce((s, seg) => s + seg.count, 0);
-  if (total === 0) return <div className="text-gray-600 text-sm text-center py-4">Không có dữ liệu</div>;
+  if (total === 0) return <div className="text-[rgba(245,237,214,0.45)] text-sm text-center py-4">Không có dữ liệu</div>;
   const r = 40; const cx = size / 2; const cy = size / 2;
   let cumAngle = -Math.PI / 2;
   const arcs = segments.map((seg) => {
@@ -98,7 +98,7 @@ function RevenueBar({ data }: { data: { label: string; revenue: number; color: s
       {data.map((d) => (
         <div key={d.label}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-gray-400">{d.label}</span>
+            <span className="text-xs text-[rgba(245,237,214,0.70)]">{d.label}</span>
             <span className="text-xs font-semibold text-white">{formatVND(d.revenue)}đ</span>
           </div>
           <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
@@ -123,7 +123,7 @@ function UserRow({ user, onBlock, onDelete }: {
   return (
     <>
       <tr
-        className={`border-b border-[#C9A84C]/5 hover:bg-white/2 transition-colors cursor-pointer ${isBlocked ? "opacity-50" : ""}`}
+        className={`border-b border-[rgba(255,200,100,0.08)] hover:bg-white/2 transition-colors cursor-pointer ${isBlocked ? "opacity-50" : ""}`}
         onClick={() => setExpanded(!expanded)}
       >
         <td className="px-4 py-3">
@@ -133,7 +133,7 @@ function UserRow({ user, onBlock, onDelete }: {
             </div>
             <div className="min-w-0">
               <p className="text-sm text-white font-medium truncate">{user.name}</p>
-              <p className="text-xs text-gray-600 truncate">{user.email}</p>
+              <p className="text-xs text-[rgba(245,237,214,0.45)] truncate">{user.email}</p>
             </div>
           </div>
         </td>
@@ -142,12 +142,12 @@ function UserRow({ user, onBlock, onDelete }: {
             {rc.label}
           </span>
         </td>
-        <td className="px-4 py-3 text-xs text-gray-400">{user.city}</td>
+        <td className="px-4 py-3 text-xs text-[rgba(245,237,214,0.70)]">{user.city}</td>
         <td className="px-4 py-3 text-right">
           <div className="text-sm font-semibold text-[#C9A84C]">{formatVND(user.totalSpent)}đ</div>
-          <div className="text-xs text-gray-600">{user.totalOrders} đơn</div>
+          <div className="text-xs text-[rgba(245,237,214,0.45)]">{user.totalOrders} đơn</div>
         </td>
-        <td className="px-4 py-3 text-xs text-gray-500">{timeAgo(user.lastActiveAt)}</td>
+        <td className="px-4 py-3 text-xs text-[rgba(245,237,214,0.55)]">{timeAgo(user.lastActiveAt)}</td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <Link
@@ -176,48 +176,48 @@ function UserRow({ user, onBlock, onDelete }: {
         </td>
       </tr>
       {expanded && (
-        <tr className="bg-[#0D0B00]/50">
+        <tr className="bg-[#1a1200]/50">
           <td colSpan={6} className="px-6 py-4">
             <div className="grid sm:grid-cols-3 gap-4 text-xs">
               <div>
-                <p className="text-gray-600 mb-1 font-medium">Thông tin liên hệ</p>
-                <p className="text-gray-400">📞 {user.phone}</p>
-                <p className="text-gray-400">📧 {user.email}</p>
-                <p className="text-gray-400">📍 {user.city}</p>
-                <p className="text-gray-500 mt-1">Nguồn: {user.source}</p>
-                <p className="text-gray-500">Đăng ký: {new Date(user.registeredAt).toLocaleDateString("vi-VN")}</p>
+                <p className="text-[rgba(245,237,214,0.45)] mb-1 font-medium">Thông tin liên hệ</p>
+                <p className="text-[rgba(245,237,214,0.70)]">📞 {user.phone}</p>
+                <p className="text-[rgba(245,237,214,0.70)]">📧 {user.email}</p>
+                <p className="text-[rgba(245,237,214,0.70)]">📍 {user.city}</p>
+                <p className="text-[rgba(245,237,214,0.55)] mt-1">Nguồn: {user.source}</p>
+                <p className="text-[rgba(245,237,214,0.55)]">Đăng ký: {new Date(user.registeredAt).toLocaleDateString("vi-VN")}</p>
               </div>
               <div>
-                <p className="text-gray-600 mb-1 font-medium">Thiết bị ({user.devices.length})</p>
+                <p className="text-[rgba(245,237,214,0.45)] mb-1 font-medium">Thiết bị ({user.devices.length})</p>
                 {user.devices.length === 0 ? (
-                  <p className="text-gray-700">Chưa kết nối thiết bị</p>
+                  <p className="text-[rgba(245,237,214,0.35)]">Chưa kết nối thiết bị</p>
                 ) : (
                   user.devices.map((d, i) => (
                     <div key={i} className="mb-1">
-                      <p className="text-gray-400">📱 {d.model}</p>
-                      <p className="text-gray-600">Lần cuối: {timeAgo(d.lastActive)}</p>
+                      <p className="text-[rgba(245,237,214,0.70)]">📱 {d.model}</p>
+                      <p className="text-[rgba(245,237,214,0.45)]">Lần cuối: {timeAgo(d.lastActive)}</p>
                     </div>
                   ))
                 )}
               </div>
               <div>
-                <p className="text-gray-600 mb-1 font-medium">Đơn hàng gần đây</p>
+                <p className="text-[rgba(245,237,214,0.45)] mb-1 font-medium">Đơn hàng gần đây</p>
                 {user.orders.length === 0 ? (
-                  <p className="text-gray-700">Chưa có đơn hàng</p>
+                  <p className="text-[rgba(245,237,214,0.35)]">Chưa có đơn hàng</p>
                 ) : (
                   user.orders.slice(0, 3).map((o) => {
                     const sc: Record<string, string> = { delivered: "text-green-400", confirmed: "text-blue-400", pending: "text-yellow-400", cancelled: "text-red-400" };
                     return (
                       <div key={o.id} className="mb-1 flex items-center justify-between">
-                        <span className="text-gray-400 truncate flex-1">{o.product}</span>
-                        <span className={`ml-2 ${sc[o.status] || "text-gray-500"}`}>{formatVND(o.amount)}đ</span>
+                        <span className="text-[rgba(245,237,214,0.70)] truncate flex-1">{o.product}</span>
+                        <span className={`ml-2 ${sc[o.status] || "text-[rgba(245,237,214,0.55)]"}`}>{formatVND(o.amount)}đ</span>
                       </div>
                     );
                   })
                 )}
                 {user.notes && (
-                  <div className="mt-2 p-2 bg-[#C9A84C]/5 border border-[#C9A84C]/10 rounded-lg">
-                    <p className="text-gray-500">📝 {user.notes}</p>
+                  <div className="mt-2 p-2 bg-[#C9A84C]/5 border border-[rgba(255,200,100,0.14)] rounded-lg">
+                    <p className="text-[rgba(245,237,214,0.55)]">📝 {user.notes}</p>
                   </div>
                 )}
               </div>
@@ -225,7 +225,7 @@ function UserRow({ user, onBlock, onDelete }: {
             {user.tags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1">
                 {user.tags.map((tag) => (
-                  <span key={tag} className="text-xs px-2 py-0.5 bg-white/5 border border-white/10 text-gray-500 rounded-full">
+                  <span key={tag} className="text-xs px-2 py-0.5 bg-white/5 border border-white/10 text-[rgba(245,237,214,0.55)] rounded-full">
                     #{tag}
                   </span>
                 ))}
@@ -318,21 +318,21 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white">Quản Lý Người Dùng</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-[rgba(245,237,214,0.55)] text-sm mt-1">
             {new Date().toLocaleDateString("vi-VN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-[#1A1500] border border-[#C9A84C]/10 rounded-xl overflow-hidden">
+          <div className="flex bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-xl overflow-hidden">
             <button
               onClick={() => setView("dashboard")}
-              className={`px-4 py-2 text-sm transition-colors ${view === "dashboard" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-gray-500 hover:text-white"}`}
+              className={`px-4 py-2 text-sm transition-colors ${view === "dashboard" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
             >
               📊 Tổng quan
             </button>
             <button
               onClick={switchToList}
-              className={`px-4 py-2 text-sm transition-colors ${view === "list" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-gray-500 hover:text-white"}`}
+              className={`px-4 py-2 text-sm transition-colors ${view === "list" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
             >
               👥 Danh sách
             </button>
@@ -346,7 +346,7 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
           >
             <span className={refreshing ? "animate-spin" : ""}>↻</span>
             {refreshing ? "Đang tải..." : "Làm mới"}
@@ -359,44 +359,44 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
         <>
           {/* Row 1: KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5 cursor-pointer hover:border-[#C9A84C]/30 transition-all" onClick={switchToList}>
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5 cursor-pointer hover:border-[rgba(255,200,100,0.30)] transition-all" onClick={switchToList}>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-600 uppercase tracking-wider">Tổng người dùng</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Tổng người dùng</span>
                 <span className="text-xs text-[#C9A84C]/50">→</span>
               </div>
               <div className="text-3xl font-bold text-[#C9A84C] mb-1">{d.stats.totalUsers}</div>
               <div className="flex gap-2 text-xs">
                 <span className="text-green-400">{d.stats.activeUsers} hoạt động</span>
-                {d.stats.blockedUsers > 0 && <><span className="text-gray-600">·</span><span className="text-red-400">{d.stats.blockedUsers} khóa</span></>}
+                {d.stats.blockedUsers > 0 && <><span className="text-[rgba(245,237,214,0.45)]">·</span><span className="text-red-400">{d.stats.blockedUsers} khóa</span></>}
               </div>
             </div>
 
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-600 uppercase tracking-wider">Doanh thu</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Doanh thu</span>
                 <span className="text-xs text-green-400">VNĐ</span>
               </div>
               <div className="text-3xl font-bold text-green-400 mb-1">{formatVND(d.stats.totalRevenue)}đ</div>
-              <div className="text-xs text-gray-500">TB {formatVND(d.stats.avgOrderValue)}đ/đơn</div>
+              <div className="text-xs text-[rgba(245,237,214,0.55)]">TB {formatVND(d.stats.avgOrderValue)}đ/đơn</div>
             </div>
 
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-600 uppercase tracking-wider">Mới tuần này</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Mới tuần này</span>
                 <span className="text-xs text-blue-400">+{d.stats.newUsersThisWeek}</span>
               </div>
               <div className="text-3xl font-bold text-blue-400 mb-1">{d.stats.newUsersThisMonth}</div>
-              <div className="text-xs text-gray-500">người dùng mới tháng này</div>
+              <div className="text-xs text-[rgba(245,237,214,0.55)]">người dùng mới tháng này</div>
             </div>
 
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-600 uppercase tracking-wider">Đại lý & VIP</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Đại lý & VIP</span>
               </div>
               <div className="text-3xl font-bold text-pink-400 mb-1">{d.stats.dealerCount + d.stats.vipCount}</div>
               <div className="flex gap-2 text-xs">
                 <span className="text-[#C9A84C]">{d.stats.dealerCount} đại lý</span>
-                <span className="text-gray-600">·</span>
+                <span className="text-[rgba(245,237,214,0.45)]">·</span>
                 <span className="text-pink-400">{d.stats.vipCount} VIP</span>
               </div>
             </div>
@@ -404,11 +404,11 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
 
           {/* Row 2: Registration trend + Role donut */}
           <div className="grid lg:grid-cols-3 gap-6 mb-6">
-            <div className="lg:col-span-2 bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="lg:col-span-2 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-sm font-semibold text-white">Đăng ký mới 7 ngày qua</h3>
-                  <p className="text-xs text-gray-600 mt-0.5">Số người dùng đăng ký mỗi ngày</p>
+                  <p className="text-xs text-[rgba(245,237,214,0.45)] mt-0.5">Số người dùng đăng ký mỗi ngày</p>
                 </div>
                 <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
                   +{d.stats.newUsersThisWeek} tuần này
@@ -418,14 +418,14 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
               <div className="mt-4 grid grid-cols-7 gap-1">
                 {d.registrationsByDay.map((day, i) => (
                   <div key={i} className="text-center">
-                    <div className={`text-xs font-medium ${day.count > 0 ? "text-green-400" : "text-gray-700"}`}>{day.count}</div>
-                    <div className="text-xs text-gray-700 truncate">{day.label.split(",")[0]}</div>
+                    <div className={`text-xs font-medium ${day.count > 0 ? "text-green-400" : "text-[rgba(245,237,214,0.35)]"}`}>{day.count}</div>
+                    <div className="text-xs text-[rgba(245,237,214,0.35)] truncate">{day.label.split(",")[0]}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <h3 className="text-sm font-semibold text-white mb-4">Phân loại người dùng</h3>
               <div className="flex flex-col items-center gap-4">
                 <DonutChart segments={d.usersByRole} size={120} />
@@ -434,11 +434,11 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
                     <div key={r.role} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: r.color }} />
-                        <span className="text-xs text-gray-400">{r.label}</span>
+                        <span className="text-xs text-[rgba(245,237,214,0.70)]">{r.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-white">{r.count}</span>
-                        <span className="text-xs text-gray-600">({d.stats.totalUsers > 0 ? Math.round((r.count / d.stats.totalUsers) * 100) : 0}%)</span>
+                        <span className="text-xs text-[rgba(245,237,214,0.45)]">({d.stats.totalUsers > 0 ? Math.round((r.count / d.stats.totalUsers) * 100) : 0}%)</span>
                       </div>
                     </div>
                   ))}
@@ -449,27 +449,27 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
 
           {/* Row 3: Revenue by role + Source breakdown */}
           <div className="grid lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <h3 className="text-sm font-semibold text-white mb-4">Doanh thu theo phân khúc</h3>
               <RevenueBar data={d.revenueByRole} />
-              <div className="mt-4 pt-4 border-t border-[#C9A84C]/10">
+              <div className="mt-4 pt-4 border-t border-[rgba(255,200,100,0.14)]">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Tổng doanh thu</span>
+                  <span className="text-xs text-[rgba(245,237,214,0.45)]">Tổng doanh thu</span>
                   <span className="text-sm font-bold text-[#C9A84C]">{formatVND(d.stats.totalRevenue)}đ</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <h3 className="text-sm font-semibold text-white mb-4">Nguồn khách hàng</h3>
               <div className="space-y-3">
                 {d.usersBySource.map((s, i) => (
                   <div key={s.source}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-400">{s.label}</span>
+                      <span className="text-xs text-[rgba(245,237,214,0.70)]">{s.label}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-white">{s.count}</span>
-                        <span className="text-xs text-gray-600">{s.percentage}%</span>
+                        <span className="text-xs text-[rgba(245,237,214,0.45)]">{s.percentage}%</span>
                       </div>
                     </div>
                     <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
@@ -484,7 +484,7 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
           {/* Row 4: Top spenders + City distribution + Recent users */}
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Top spenders */}
-            <div className="lg:col-span-2 bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="lg:col-span-2 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-white">Top chi tiêu cao nhất</h3>
                 <button onClick={switchToList} className="text-xs text-[#C9A84C]/60 hover:text-[#C9A84C] transition-colors">Xem tất cả →</button>
@@ -502,14 +502,14 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-white truncate">{u.name}</p>
-                        <p className="text-xs text-gray-600 truncate">{u.email}</p>
+                        <p className="text-xs text-[rgba(245,237,214,0.45)] truncate">{u.email}</p>
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full border ${rc.color} ${rc.bg} ${rc.border} flex-shrink-0`}>
                         {rc.label}
                       </span>
                       <div className="text-right flex-shrink-0">
                         <div className="text-sm font-bold text-[#C9A84C]">{formatVND(u.totalSpent)}đ</div>
-                        <div className="text-xs text-gray-600">{u.totalOrders} đơn</div>
+                        <div className="text-xs text-[rgba(245,237,214,0.45)]">{u.totalOrders} đơn</div>
                       </div>
                     </div>
                   );
@@ -519,13 +519,13 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
 
             {/* City + Recent users */}
             <div className="space-y-6">
-              <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+              <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
                 <h3 className="text-sm font-semibold text-white mb-4">Phân bố địa lý</h3>
                 <div className="space-y-2">
                   {d.usersByCity.map((c) => (
                     <div key={c.city}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-400 truncate">{c.city}</span>
+                        <span className="text-xs text-[rgba(245,237,214,0.70)] truncate">{c.city}</span>
                         <span className="text-xs font-semibold text-white ml-2">{c.count}</span>
                       </div>
                       <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
@@ -536,7 +536,7 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
                 </div>
               </div>
 
-              <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+              <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
                 <h3 className="text-sm font-semibold text-white mb-3">Đăng ký gần đây</h3>
                 <div className="space-y-2">
                   {d.recentUsers.map((u) => {
@@ -548,7 +548,7 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-gray-300 truncate">{u.name}</p>
-                          <p className="text-xs text-gray-700">{timeAgo(u.registeredAt)}</p>
+                          <p className="text-xs text-[rgba(245,237,214,0.35)]">{timeAgo(u.registeredAt)}</p>
                         </div>
                         <span className={`text-xs px-1.5 py-0.5 rounded-full ${rc.color} ${rc.bg}`}>{rc.label}</span>
                       </div>
@@ -571,12 +571,12 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên, email, SĐT..."
-              className="flex-1 min-w-48 bg-[#1A1500] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+              className="flex-1 min-w-48 bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
             />
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="bg-[#1A1500] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+              className="bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
             >
               <option value="all">Tất cả loại</option>
               <option value="customer">Khách hàng</option>
@@ -587,36 +587,36 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-[#1A1500] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+              className="bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Hoạt động</option>
               <option value="inactive">Không hoạt động</option>
               <option value="blocked">Bị khóa</option>
             </select>
-            <div className="flex items-center text-xs text-gray-500 px-3">
+            <div className="flex items-center text-xs text-[rgba(245,237,214,0.55)] px-3">
               {filteredUsers.length} / {allUsers.length} người dùng
             </div>
           </div>
 
           {/* Table */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl overflow-hidden">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden">
             {!listLoaded ? (
-              <div className="flex items-center justify-center py-16 text-gray-500">
+              <div className="flex items-center justify-center py-16 text-[rgba(245,237,214,0.55)]">
                 <span className="animate-spin mr-2">↻</span> Đang tải...
               </div>
             ) : filteredUsers.length === 0 ? (
-              <div className="text-center py-16 text-gray-600">Không tìm thấy người dùng nào</div>
+              <div className="text-center py-16 text-[rgba(245,237,214,0.45)]">Không tìm thấy người dùng nào</div>
             ) : (
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#C9A84C]/10">
-                    <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Người dùng</th>
-                    <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Loại</th>
-                    <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Thành phố</th>
-                    <th className="px-4 py-3 text-right text-xs text-gray-600 font-medium uppercase tracking-wider">Chi tiêu</th>
-                    <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Hoạt động</th>
-                    <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Thao tác</th>
+                  <tr className="border-b border-[rgba(255,200,100,0.14)]">
+                    <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Người dùng</th>
+                    <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Loại</th>
+                    <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Thành phố</th>
+                    <th className="px-4 py-3 text-right text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Chi tiêu</th>
+                    <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Hoạt động</th>
+                    <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -627,7 +627,7 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
               </table>
             )}
           </div>
-          <p className="text-xs text-gray-700 mt-3 text-center">Click vào hàng để xem chi tiết người dùng</p>
+          <p className="text-xs text-[rgba(245,237,214,0.35)] mt-3 text-center">Click vào hàng để xem chi tiết người dùng</p>
         </div>
       )}
     </div>

@@ -16,7 +16,7 @@ export default async function AdminContactsPage() {
   const unread = contacts.filter(c => !c.read).length;
 
   return (
-    <div className="flex min-h-screen bg-[#080600]">
+    <div className="flex min-h-screen bg-[#130e00]">
       <AdminSidebar stats={sidebarStats} />
       <main className="flex-1 p-8 overflow-auto min-w-0">
         <AdminHeader title="Quản lý Liên hệ" subtitle={`${contacts.length} tin nhắn · ${unread} chưa đọc`} />

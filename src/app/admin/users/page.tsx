@@ -13,7 +13,7 @@ export default async function AdminUsersPage() {
   const sidebarStats = getSidebarStats();
 
   return (
-    <div className="flex min-h-screen bg-[#080600]">
+    <div className="flex min-h-screen bg-[#130e00]">
       <AdminSidebar stats={sidebarStats} />
       <main className="flex-1 p-8 overflow-auto min-w-0">
         <AdminHeader title="Quản lý Người dùng" subtitle={`${dashboardData.stats.totalUsers} khách hàng trong hệ thống`} />

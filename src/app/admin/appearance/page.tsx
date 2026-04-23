@@ -24,7 +24,7 @@ export default async function AppearancePage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#080600] flex">
+    <div className="min-h-screen bg-[#130e00] flex">
       <AdminSidebar stats={sidebarStats} />
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader

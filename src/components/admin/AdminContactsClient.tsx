@@ -62,7 +62,7 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Tin Nhắn Liên Hệ</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-[rgba(245,237,214,0.55)] text-sm mt-1">
             {contacts.length} tin nhắn
             {unreadCount > 0 && <span className="text-blue-400 ml-2">· {unreadCount} chưa đọc</span>}
           </p>
@@ -85,8 +85,8 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
               onClick={() => setFilter(f)}
               className={`text-sm px-4 py-2 rounded-xl transition-colors ${
                 filter === f
-                  ? "bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/20"
-                  : "text-gray-500 hover:text-white border border-transparent"
+                  ? "bg-[#C9A84C]/15 text-[#C9A84C] border border-[rgba(255,200,100,0.22)]"
+                  : "text-[rgba(245,237,214,0.55)] hover:text-white border border-transparent"
               }`}
             >
               {f === "all" ? "Tất cả" : f === "unread" ? "Chưa đọc" : "Đã đọc"}
@@ -97,10 +97,10 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
 
       <div className="grid lg:grid-cols-5 gap-4 h-[calc(100vh-12rem)]">
         {/* Contact List */}
-        <div className="lg:col-span-2 bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl overflow-hidden flex flex-col">
+        <div className="lg:col-span-2 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden flex flex-col">
           <div className="flex-1 overflow-y-auto divide-y divide-[#C9A84C]/5">
             {filtered.length === 0 ? (
-              <div className="p-8 text-center text-gray-600 text-sm">Không có tin nhắn</div>
+              <div className="p-8 text-center text-[rgba(245,237,214,0.45)] text-sm">Không có tin nhắn</div>
             ) : (
               filtered.map((contact) => (
                 <button
@@ -114,17 +114,17 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
                     <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${contact.read ? "bg-gray-700" : "bg-blue-400"}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className={`text-sm font-medium truncate ${contact.read ? "text-gray-400" : "text-white"}`}>
+                        <p className={`text-sm font-medium truncate ${contact.read ? "text-[rgba(245,237,214,0.70)]" : "text-white"}`}>
                           {contact.name}
                         </p>
-                        <span className="text-xs text-gray-700 flex-shrink-0 ml-2">
+                        <span className="text-xs text-[rgba(245,237,214,0.35)] flex-shrink-0 ml-2">
                           {new Date(contact.createdAt).toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}
                         </span>
                       </div>
-                      <p className={`text-xs truncate mt-0.5 ${contact.read ? "text-gray-600" : "text-gray-400"}`}>
+                      <p className={`text-xs truncate mt-0.5 ${contact.read ? "text-[rgba(245,237,214,0.45)]" : "text-[rgba(245,237,214,0.70)]"}`}>
                         {contact.subject}
                       </p>
-                      <p className="text-xs text-gray-700 truncate mt-0.5">{contact.message}</p>
+                      <p className="text-xs text-[rgba(245,237,214,0.35)] truncate mt-0.5">{contact.message}</p>
                     </div>
                   </div>
                 </button>
@@ -134,10 +134,10 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
         </div>
 
         {/* Contact Detail */}
-        <div className="lg:col-span-3 bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl overflow-hidden flex flex-col">
+        <div className="lg:col-span-3 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden flex flex-col">
           {selected ? (
             <>
-              <div className="p-6 border-b border-[#C9A84C]/10">
+              <div className="p-6 border-b border-[rgba(255,200,100,0.14)]">
                 <div className="flex items-start justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-white">{selected.subject}</h2>
@@ -147,7 +147,7 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
                       </div>
                       <div>
                         <p className="text-sm text-white">{selected.name}</p>
-                        <p className="text-xs text-gray-500">{selected.email}</p>
+                        <p className="text-xs text-[rgba(245,237,214,0.55)]">{selected.email}</p>
                       </div>
                     </div>
                   </div>
@@ -171,31 +171,31 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
               </div>
 
               <div className="flex-1 p-6 overflow-y-auto">
-                <div className="bg-[#0D0B00] rounded-xl p-5 mb-4">
+                <div className="bg-[#1a1200] rounded-xl p-5 mb-4">
                   <p className="text-gray-300 leading-relaxed text-sm whitespace-pre-wrap">{selected.message}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   {selected.phone && (
-                    <div className="bg-[#0D0B00] rounded-xl p-4">
-                      <p className="text-xs text-gray-600 mb-1">Số điện thoại</p>
+                    <div className="bg-[#1a1200] rounded-xl p-4">
+                      <p className="text-xs text-[rgba(245,237,214,0.45)] mb-1">Số điện thoại</p>
                       <p className="text-white">{selected.phone}</p>
                     </div>
                   )}
-                  <div className="bg-[#0D0B00] rounded-xl p-4">
-                    <p className="text-xs text-gray-600 mb-1">Email</p>
+                  <div className="bg-[#1a1200] rounded-xl p-4">
+                    <p className="text-xs text-[rgba(245,237,214,0.45)] mb-1">Email</p>
                     <a href={`mailto:${selected.email}`} className="text-[#C9A84C] hover:underline text-sm">
                       {selected.email}
                     </a>
                   </div>
-                  <div className="bg-[#0D0B00] rounded-xl p-4">
-                    <p className="text-xs text-gray-600 mb-1">Thời gian gửi</p>
+                  <div className="bg-[#1a1200] rounded-xl p-4">
+                    <p className="text-xs text-[rgba(245,237,214,0.45)] mb-1">Thời gian gửi</p>
                     <p className="text-white text-sm">
                       {new Date(selected.createdAt).toLocaleString("vi-VN")}
                     </p>
                   </div>
-                  <div className="bg-[#0D0B00] rounded-xl p-4">
-                    <p className="text-xs text-gray-600 mb-1">Trạng thái</p>
+                  <div className="bg-[#1a1200] rounded-xl p-4">
+                    <p className="text-xs text-[rgba(245,237,214,0.45)] mb-1">Trạng thái</p>
                     <span className={`text-sm ${selected.read ? "text-green-400" : "text-blue-400"}`}>
                       {selected.read ? "✓ Đã đọc" : "● Chưa đọc"}
                     </span>
@@ -206,7 +206,7 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
                 <div className="mt-4">
                   <a
                     href={`mailto:${selected.email}?subject=Re: ${encodeURIComponent(selected.subject)}`}
-                    className="inline-flex items-center gap-2 bg-[#C9A84C]/10 border border-[#C9A84C]/20 text-[#C9A84C] px-4 py-2.5 rounded-xl text-sm hover:bg-[#C9A84C]/20 transition-colors"
+                    className="inline-flex items-center gap-2 bg-[#C9A84C]/10 border border-[rgba(255,200,100,0.22)] text-[#C9A84C] px-4 py-2.5 rounded-xl text-sm hover:bg-[#C9A84C]/20 transition-colors"
                   >
                     <span>✉️</span> Trả lời qua Email
                   </a>
@@ -217,7 +217,7 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <div className="text-4xl mb-3">💬</div>
-                <p className="text-gray-600 text-sm">Chọn một tin nhắn để xem chi tiết</p>
+                <p className="text-[rgba(245,237,214,0.45)] text-sm">Chọn một tin nhắn để xem chi tiết</p>
               </div>
             </div>
           )}

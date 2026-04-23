@@ -14,20 +14,20 @@ function formatVND(n: number): string {
 
 const CAT_CONFIG: Record<ProductCategory, { label: string; color: string; bg: string; border: string }> = {
   standard: { label: "Standard", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-  premium: { label: "Premium", color: "text-[#C9A84C]", bg: "bg-[#C9A84C]/10", border: "border-[#C9A84C]/20" },
+  premium: { label: "Premium", color: "text-[#C9A84C]", bg: "bg-[#C9A84C]/10", border: "border-[rgba(255,200,100,0.22)]" },
   elite: { label: "Elite", color: "text-pink-400", bg: "bg-pink-500/10", border: "border-pink-500/20" },
   accessory: { label: "Phụ kiện", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
 };
 
 const STATUS_CONFIG: Record<ProductStatus, { label: string; color: string; bg: string; dot: string }> = {
   active: { label: "Đang bán", color: "text-green-400", bg: "bg-green-500/10", dot: "bg-green-400" },
-  discontinued: { label: "Ngừng SX", color: "text-gray-500", bg: "bg-gray-500/10", dot: "bg-gray-500" },
+  discontinued: { label: "Ngừng SX", color: "text-[rgba(245,237,214,0.55)]", bg: "bg-gray-500/10", dot: "bg-gray-500" },
   out_of_stock: { label: "Hết hàng", color: "text-red-400", bg: "bg-red-500/10", dot: "bg-red-400" },
   coming_soon: { label: "Sắp ra mắt", color: "text-purple-400", bg: "bg-purple-500/10", dot: "bg-purple-400" },
 };
 
 function StarRating({ rating }: { rating: number }) {
-  if (rating === 0) return <span className="text-xs text-gray-700">Chưa có</span>;
+  if (rating === 0) return <span className="text-xs text-[rgba(245,237,214,0.35)]">Chưa có</span>;
   return (
     <span className="flex items-center gap-1">
       <span className="text-yellow-400 text-xs">★</span>
@@ -79,7 +79,7 @@ function DonutChart({ segments, size = 110, centerLabel = "", centerSub = "" }: 
   centerSub?: string;
 }) {
   const total = segments.reduce((s, seg) => s + seg.count, 0);
-  if (total === 0) return <div className="text-gray-700 text-xs text-center py-4">Không có dữ liệu</div>;
+  if (total === 0) return <div className="text-[rgba(245,237,214,0.35)] text-xs text-center py-4">Không có dữ liệu</div>;
   const r = 38; const cx = size / 2; const cy = size / 2;
   let cumAngle = -Math.PI / 2;
   const arcs = segments.map((seg) => {
@@ -120,7 +120,7 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
   return (
     <>
       <tr
-        className="border-b border-[#C9A84C]/5 hover:bg-white/2 transition-colors cursor-pointer"
+        className="border-b border-[rgba(255,200,100,0.08)] hover:bg-white/2 transition-colors cursor-pointer"
         onClick={() => setExpanded(!expanded)}
       >
         <td className="px-4 py-3">
@@ -134,7 +134,7 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
                 {product.isFeatured && <span className="text-yellow-400 text-xs">★</span>}
                 {isLowStock && <span className="text-red-400 text-xs bg-red-500/10 px-1.5 py-0.5 rounded-full">Sắp hết</span>}
               </div>
-              <p className="text-xs text-gray-600">{product.slug}</p>
+              <p className="text-xs text-[rgba(245,237,214,0.45)]">{product.slug}</p>
             </div>
           </div>
         </td>
@@ -150,29 +150,29 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
         <td className="px-4 py-3 text-right">
           <div className="text-sm font-semibold text-white">{formatVND(product.price)}đ</div>
           {product.originalPrice > product.price && (
-            <div className="text-xs text-gray-600 line-through">{formatVND(product.originalPrice)}đ</div>
+            <div className="text-xs text-[rgba(245,237,214,0.45)] line-through">{formatVND(product.originalPrice)}đ</div>
           )}
         </td>
         <td className="px-4 py-3 text-center">
           <div className={`text-sm font-bold ${product.totalStock === 0 ? "text-red-400" : product.totalStock < 10 ? "text-yellow-400" : "text-green-400"}`}>
             {product.totalStock}
           </div>
-          <div className="text-xs text-gray-600">{product.variants.length} loại</div>
+          <div className="text-xs text-[rgba(245,237,214,0.45)]">{product.variants.length} loại</div>
         </td>
         <td className="px-4 py-3 text-right">
           <div className="text-sm font-semibold text-[#C9A84C]">{formatVND(product.totalRevenue)}đ</div>
-          <div className="text-xs text-gray-600">{product.totalSold} đã bán</div>
+          <div className="text-xs text-[rgba(245,237,214,0.45)]">{product.totalSold} đã bán</div>
         </td>
         <td className="px-4 py-3">
           <StarRating rating={product.rating} />
-          {product.reviewCount > 0 && <div className="text-xs text-gray-700">({product.reviewCount})</div>}
+          {product.reviewCount > 0 && <div className="text-xs text-[rgba(245,237,214,0.35)]">({product.reviewCount})</div>}
         </td>
         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-1">
             <select
               value={product.status}
               onChange={(e) => onStatusChange(product.id, e.target.value as ProductStatus)}
-              className="text-xs bg-[#0D0B00] border border-[#C9A84C]/15 text-gray-400 rounded-lg px-2 py-1 focus:outline-none"
+              className="text-xs bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-[rgba(245,237,214,0.70)] rounded-lg px-2 py-1 focus:outline-none"
             >
               <option value="active">Đang bán</option>
               <option value="out_of_stock">Hết hàng</option>
@@ -195,39 +195,39 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
         </td>
       </tr>
       {expanded && (
-        <tr className="bg-[#0D0B00]/50">
+        <tr className="bg-[#1a1200]/50">
           <td colSpan={8} className="px-6 py-4">
             <div className="grid sm:grid-cols-3 gap-4 text-xs">
               <div>
-                <p className="text-gray-600 mb-2 font-medium">Thông tin giá</p>
+                <p className="text-[rgba(245,237,214,0.45)] mb-2 font-medium">Thông tin giá</p>
                 <div className="space-y-1">
-                  <div className="flex justify-between"><span className="text-gray-500">Giá bán:</span><span className="text-white">{formatVND(product.price)}đ</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Giá vốn:</span><span className="text-gray-400">{formatVND(product.cost)}đ</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Biên lợi nhuận:</span><span className="text-green-400">{marginPct}% ({formatVND(margin)}đ)</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Lượt xem:</span><span className="text-gray-400">{product.viewCount.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.55)]">Giá bán:</span><span className="text-white">{formatVND(product.price)}đ</span></div>
+                  <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.55)]">Giá vốn:</span><span className="text-[rgba(245,237,214,0.70)]">{formatVND(product.cost)}đ</span></div>
+                  <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.55)]">Biên lợi nhuận:</span><span className="text-green-400">{marginPct}% ({formatVND(margin)}đ)</span></div>
+                  <div className="flex justify-between"><span className="text-[rgba(245,237,214,0.55)]">Lượt xem:</span><span className="text-[rgba(245,237,214,0.70)]">{product.viewCount.toLocaleString()}</span></div>
                 </div>
               </div>
               <div>
-                <p className="text-gray-600 mb-2 font-medium">Tồn kho theo màu</p>
+                <p className="text-[rgba(245,237,214,0.45)] mb-2 font-medium">Tồn kho theo màu</p>
                 <div className="space-y-1">
                   {product.variants.map((v) => (
                     <div key={v.id} className="flex items-center justify-between">
-                      <span className="text-gray-400">{v.name} ({v.sku})</span>
+                      <span className="text-[rgba(245,237,214,0.70)]">{v.name} ({v.sku})</span>
                       <div className="flex items-center gap-2">
                         <span className={`font-semibold ${v.stock === 0 ? "text-red-400" : v.stock < 5 ? "text-yellow-400" : "text-green-400"}`}>{v.stock}</span>
-                        {v.reserved > 0 && <span className="text-gray-600">({v.reserved} đặt trước)</span>}
+                        {v.reserved > 0 && <span className="text-[rgba(245,237,214,0.45)]">({v.reserved} đặt trước)</span>}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <p className="text-gray-600 mb-2 font-medium">Thông số kỹ thuật</p>
+                <p className="text-[rgba(245,237,214,0.45)] mb-2 font-medium">Thông số kỹ thuật</p>
                 <div className="space-y-1">
                   {Object.entries(product.specs).slice(0, 4).map(([k, v]) => (
                     <div key={k} className="flex justify-between gap-2">
-                      <span className="text-gray-600">{k}:</span>
-                      <span className="text-gray-400 text-right">{v}</span>
+                      <span className="text-[rgba(245,237,214,0.45)]">{k}:</span>
+                      <span className="text-[rgba(245,237,214,0.70)] text-right">{v}</span>
                     </div>
                   ))}
                 </div>
@@ -236,7 +236,7 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
             {product.features.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {product.features.map((f) => (
-                  <span key={f} className="text-xs px-2 py-0.5 bg-[#C9A84C]/5 border border-[#C9A84C]/10 text-gray-500 rounded-full">✓ {f}</span>
+                  <span key={f} className="text-xs px-2 py-0.5 bg-[#C9A84C]/5 border border-[rgba(255,200,100,0.14)] text-[rgba(245,237,214,0.55)] rounded-full">✓ {f}</span>
                 ))}
               </div>
             )}
@@ -306,21 +306,21 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white">Quản Lý Sản Phẩm</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-[rgba(245,237,214,0.55)] text-sm mt-1">
             {new Date().toLocaleDateString("vi-VN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-[#1A1500] border border-[#C9A84C]/10 rounded-xl overflow-hidden">
+          <div className="flex bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-xl overflow-hidden">
             <button
               onClick={() => setView("dashboard")}
-              className={`px-4 py-2 text-sm transition-colors ${view === "dashboard" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-gray-500 hover:text-white"}`}
+              className={`px-4 py-2 text-sm transition-colors ${view === "dashboard" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
             >
               📊 Tổng quan
             </button>
             <button
               onClick={() => setView("list")}
-              className={`px-4 py-2 text-sm transition-colors ${view === "list" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-gray-500 hover:text-white"}`}
+              className={`px-4 py-2 text-sm transition-colors ${view === "list" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
             >
               📦 Danh sách
             </button>
@@ -328,7 +328,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
           >
             <span className={refreshing ? "animate-spin" : ""}>↻</span>
             {refreshing ? "Đang tải..." : "Làm mới"}
@@ -347,58 +347,58 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
         <>
           {/* Row 1: KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-600 uppercase tracking-wider">Sản phẩm</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Sản phẩm</span>
                 <span className="text-xs text-green-400">{d.stats.activeProducts} đang bán</span>
               </div>
               <div className="text-3xl font-bold text-[#C9A84C] mb-1">{d.stats.totalProducts}</div>
               <div className="flex flex-wrap gap-2 text-xs">
                 {d.stats.outOfStock > 0 && <span className="text-red-400">{d.stats.outOfStock} hết hàng</span>}
                 {d.stats.comingSoon > 0 && <span className="text-purple-400">{d.stats.comingSoon} sắp ra</span>}
-                {d.stats.discontinued > 0 && <span className="text-gray-600">{d.stats.discontinued} ngừng SX</span>}
+                {d.stats.discontinued > 0 && <span className="text-[rgba(245,237,214,0.45)]">{d.stats.discontinued} ngừng SX</span>}
               </div>
             </div>
 
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-600 uppercase tracking-wider">Doanh thu</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Doanh thu</span>
                 <span className="text-xs text-[#C9A84C]">VNĐ</span>
               </div>
               <div className="text-3xl font-bold text-[#C9A84C] mb-1">{formatVND(d.stats.totalRevenue)}đ</div>
               <div className="text-xs text-green-400">Lợi nhuận: {formatVND(d.stats.totalProfit)}đ ({profitMargin}%)</div>
             </div>
 
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-600 uppercase tracking-wider">Tồn kho</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Tồn kho</span>
                 {d.stats.lowStockCount > 0 && (
                   <span className="text-xs text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">⚠ {d.stats.lowStockCount} sắp hết</span>
                 )}
               </div>
               <div className="text-3xl font-bold text-blue-400 mb-1">{d.stats.totalStock}</div>
-              <div className="text-xs text-gray-500">{d.stats.totalSold} đã bán tổng cộng</div>
+              <div className="text-xs text-[rgba(245,237,214,0.55)]">{d.stats.totalSold} đã bán tổng cộng</div>
             </div>
 
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-5">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-600 uppercase tracking-wider">Đánh giá TB</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Đánh giá TB</span>
                 <span className="text-yellow-400">★</span>
               </div>
               <div className="text-3xl font-bold text-yellow-400 mb-1">{d.stats.avgRating.toFixed(1)}</div>
-              <div className="text-xs text-gray-500">trên 5.0 điểm</div>
+              <div className="text-xs text-[rgba(245,237,214,0.55)]">trên 5.0 điểm</div>
             </div>
           </div>
 
           {/* Row 2: Revenue trend + Category donut */}
           <div className="grid lg:grid-cols-3 gap-6 mb-6">
-            <div className="lg:col-span-2 bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="lg:col-span-2 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-sm font-semibold text-white">Doanh thu 6 tháng gần nhất</h3>
-                  <p className="text-xs text-gray-600 mt-0.5">Tổng doanh thu theo tháng (tất cả sản phẩm)</p>
+                  <p className="text-xs text-[rgba(245,237,214,0.45)] mt-0.5">Tổng doanh thu theo tháng (tất cả sản phẩm)</p>
                 </div>
-                <span className="text-xs text-[#C9A84C] bg-[#C9A84C]/10 border border-[#C9A84C]/20 px-2 py-0.5 rounded-full">
+                <span className="text-xs text-[#C9A84C] bg-[#C9A84C]/10 border border-[rgba(255,200,100,0.22)] px-2 py-0.5 rounded-full">
                   {formatVND(d.stats.totalRevenue)}đ tổng
                 </span>
               </div>
@@ -407,14 +407,14 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
                 {d.revenueByMonth.map((m, i) => (
                   <div key={i} className="text-center">
                     <div className="text-xs font-medium text-[#C9A84C]">{m.units}</div>
-                    <div className="text-xs text-gray-700">{m.label}</div>
+                    <div className="text-xs text-[rgba(245,237,214,0.35)]">{m.label}</div>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-700 text-center mt-1">Số lượng bán theo tháng</p>
+              <p className="text-xs text-[rgba(245,237,214,0.35)] text-center mt-1">Số lượng bán theo tháng</p>
             </div>
 
-            <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <h3 className="text-sm font-semibold text-white mb-4">Phân loại sản phẩm</h3>
               <div className="flex flex-col items-center gap-4">
                 <DonutChart
@@ -426,11 +426,11 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
                     <div key={c.category} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-                        <span className="text-xs text-gray-400">{c.label}</span>
+                        <span className="text-xs text-[rgba(245,237,214,0.70)]">{c.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-white">{c.count}</span>
-                        <span className="text-xs text-gray-600">{formatVND(c.revenue)}đ</span>
+                        <span className="text-xs text-[rgba(245,237,214,0.45)]">{formatVND(c.revenue)}đ</span>
                       </div>
                     </div>
                   ))}
@@ -442,7 +442,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
           {/* Row 3: Top selling + Low stock + Stock by category */}
           <div className="grid lg:grid-cols-3 gap-6 mb-6">
             {/* Top selling */}
-            <div className="lg:col-span-2 bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+            <div className="lg:col-span-2 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-white">Sản phẩm bán chạy nhất</h3>
                 <button onClick={() => setView("list")} className="text-xs text-[#C9A84C]/60 hover:text-[#C9A84C] transition-colors">Xem tất cả →</button>
@@ -460,7 +460,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
                         <p className="text-sm text-white truncate">{p.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className={`text-xs ${cc.color}`}>{cc.label}</span>
-                          <span className="text-gray-700">·</span>
+                          <span className="text-[rgba(245,237,214,0.35)]">·</span>
                           <div className="flex items-center gap-1">
                             <div className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
                             <span className={`text-xs ${sc.color}`}>{sc.label}</span>
@@ -469,11 +469,11 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <span className="text-yellow-400 text-xs">★</span>
-                        <span className="text-xs text-gray-400">{p.rating > 0 ? p.rating.toFixed(1) : "—"}</span>
+                        <span className="text-xs text-[rgba(245,237,214,0.70)]">{p.rating > 0 ? p.rating.toFixed(1) : "—"}</span>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className="text-sm font-bold text-[#C9A84C]">{formatVND(p.totalRevenue)}đ</div>
-                        <div className="text-xs text-gray-600">{p.totalSold} đã bán</div>
+                        <div className="text-xs text-[rgba(245,237,214,0.45)]">{p.totalSold} đã bán</div>
                       </div>
                     </div>
                   );
@@ -483,17 +483,17 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
 
             {/* Low stock + Stock by category */}
             <div className="space-y-6">
-              <div className="bg-[#1A1500] border border-red-500/10 rounded-2xl p-6">
+              <div className="bg-[#1a1200] border border-red-500/10 rounded-2xl p-6">
                 <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                   <span className="text-red-400">⚠</span> Cảnh báo tồn kho
                 </h3>
                 {d.lowStockProducts.length === 0 ? (
-                  <p className="text-xs text-gray-600">Tất cả sản phẩm đủ hàng ✓</p>
+                  <p className="text-xs text-[rgba(245,237,214,0.45)]">Tất cả sản phẩm đủ hàng ✓</p>
                 ) : (
                   <div className="space-y-2">
                     {d.lowStockProducts.map((p) => (
                       <div key={p.id} className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 truncate flex-1">{p.name}</span>
+                        <span className="text-xs text-[rgba(245,237,214,0.70)] truncate flex-1">{p.name}</span>
                         <span className={`text-xs font-bold ml-2 flex-shrink-0 ${p.totalStock === 0 ? "text-red-400" : "text-yellow-400"}`}>
                           {p.totalStock === 0 ? "Hết" : `${p.totalStock} còn`}
                         </span>
@@ -503,7 +503,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
                 )}
               </div>
 
-              <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+              <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
                 <h3 className="text-sm font-semibold text-white mb-3">Tồn kho theo danh mục</h3>
                 <div className="space-y-2">
                   {d.stockByCategory.map((s) => {
@@ -511,7 +511,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
                     return (
                       <div key={s.category}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-400">{s.label}</span>
+                          <span className="text-xs text-[rgba(245,237,214,0.70)]">{s.label}</span>
                           <span className="text-xs font-semibold text-white">{s.stock}</span>
                         </div>
                         <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
@@ -526,15 +526,15 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
           </div>
 
           {/* Row 4: Activity feed */}
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl p-6">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <h3 className="text-sm font-semibold text-white mb-4">Hoạt động gần đây</h3>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {d.recentActivity.map((act, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 bg-[#0D0B00]/50 rounded-xl">
+                <div key={i} className="flex items-start gap-3 p-3 bg-[#1a1200]/50 rounded-xl">
                   <span className="text-base flex-shrink-0">{act.icon}</span>
                   <div className="min-w-0">
                     <p className="text-xs text-gray-300 leading-relaxed">{act.message}</p>
-                    <p className="text-xs text-gray-700 mt-1">{act.time}</p>
+                    <p className="text-xs text-[rgba(245,237,214,0.35)] mt-1">{act.time}</p>
                   </div>
                 </div>
               ))}
@@ -552,12 +552,12 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên sản phẩm..."
-              className="flex-1 min-w-48 bg-[#1A1500] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
+              className="flex-1 min-w-48 bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
             />
             <select
               value={filterCat}
               onChange={(e) => setFilterCat(e.target.value)}
-              className="bg-[#1A1500] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+              className="bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
             >
               <option value="all">Tất cả danh mục</option>
               <option value="standard">Standard</option>
@@ -568,7 +568,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-[#1A1500] border border-[#C9A84C]/15 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
+              className="bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Đang bán</option>
@@ -576,27 +576,27 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
               <option value="coming_soon">Sắp ra mắt</option>
               <option value="discontinued">Ngừng SX</option>
             </select>
-            <div className="flex items-center text-xs text-gray-500 px-3">
+            <div className="flex items-center text-xs text-[rgba(245,237,214,0.55)] px-3">
               {filteredProducts.length} / {products.length} sản phẩm
             </div>
           </div>
 
-          <div className="bg-[#1A1500] border border-[#C9A84C]/10 rounded-2xl overflow-hidden">
+          <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden">
             {filteredProducts.length === 0 ? (
-              <div className="text-center py-16 text-gray-600">Không tìm thấy sản phẩm nào</div>
+              <div className="text-center py-16 text-[rgba(245,237,214,0.45)]">Không tìm thấy sản phẩm nào</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px]">
                   <thead>
-                    <tr className="border-b border-[#C9A84C]/10">
-                      <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Sản phẩm</th>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Danh mục</th>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Trạng thái</th>
-                      <th className="px-4 py-3 text-right text-xs text-gray-600 font-medium uppercase tracking-wider">Giá bán</th>
-                      <th className="px-4 py-3 text-center text-xs text-gray-600 font-medium uppercase tracking-wider">Tồn kho</th>
-                      <th className="px-4 py-3 text-right text-xs text-gray-600 font-medium uppercase tracking-wider">Doanh thu</th>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Đánh giá</th>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600 font-medium uppercase tracking-wider">Thao tác</th>
+                    <tr className="border-b border-[rgba(255,200,100,0.14)]">
+                      <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Sản phẩm</th>
+                      <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Danh mục</th>
+                      <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Trạng thái</th>
+                      <th className="px-4 py-3 text-right text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Giá bán</th>
+                      <th className="px-4 py-3 text-center text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Tồn kho</th>
+                      <th className="px-4 py-3 text-right text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Doanh thu</th>
+                      <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Đánh giá</th>
+                      <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -614,7 +614,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
               </div>
             )}
           </div>
-          <p className="text-xs text-gray-700 mt-3 text-center">Click vào hàng để xem chi tiết · Đổi trạng thái trực tiếp trong bảng</p>
+          <p className="text-xs text-[rgba(245,237,214,0.35)] mt-3 text-center">Click vào hàng để xem chi tiết · Đổi trạng thái trực tiếp trong bảng</p>
         </div>
       )}
     </div>
