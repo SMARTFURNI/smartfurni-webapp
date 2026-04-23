@@ -75,14 +75,33 @@ function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string })
 // ─── Intersection Observer fade-in ───────────────────────────────────────────
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
+  // isMounted: false on SSR/first render to avoid hydration mismatch
+  // Only start observing after client mount to prevent layout shift
+  const [isMounted, setIsMounted] = useState(false);
   const [inView, setInView] = useState(false);
   useEffect(() => {
-    const el = ref.current; if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold: 0.1 });
-    obs.observe(el); return () => obs.disconnect();
+    // Mark as mounted so we can start the animation cycle
+    setIsMounted(true);
   }, []);
+  useEffect(() => {
+    if (!isMounted) return;
+    const el = ref.current; if (!el) return;
+    // Check if already in viewport (e.g. elements near top of page)
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 0.95) {
+      // Small timeout so the browser has painted the initial layout first
+      const t = setTimeout(() => setInView(true), 50 + delay);
+      return () => clearTimeout(t);
+    }
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold: 0.08 });
+    obs.observe(el); return () => obs.disconnect();
+  }, [isMounted, delay]);
+  // Before mount: render fully visible (SSR output) to avoid layout shift
+  if (!isMounted) {
+    return <div ref={ref}>{children}</div>;
+  }
   return (
-    <div ref={ref} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(24px)", transition: `opacity 0.6s ease ${delay}ms, transform 0.6s ease ${delay}ms` }}>
+    <div ref={ref} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(20px)", transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms` }}>
       {children}
     </div>
   );
