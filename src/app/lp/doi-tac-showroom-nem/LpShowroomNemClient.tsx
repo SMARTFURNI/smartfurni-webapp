@@ -264,7 +264,7 @@ function FaqAccordion() {
 }
 
 // ─── Showroom Comparison Section ────────────────────────────────────────────
-function ShowroomComparisonSection() {
+function ShowroomComparisonSection({ E }: { E: (opts: { bk: string; def: string; as?: "h1"|"h2"|"h3"|"h4"|"h5"|"h6"|"p"|"span"|"div"|"li"; style?: React.CSSProperties; multiline?: boolean }) => React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
@@ -282,7 +282,7 @@ function ShowroomComparisonSection() {
       {/* Caption trên */}
       <div style={{ textAlign: "center", padding: "0 24px 36px" }}>
         <p style={{ color: GRAY_LIGHT, fontSize: 15, fontFamily: FONT_BODY, lineHeight: 1.7, maxWidth: 680, margin: "0 auto" }}>
-          Cùng một tấm nệm — nhưng trải nghiệm của khách hàng hoàn toàn khác nhau
+          {E({ bk: "comp_caption_top", def: "Cùng một tấm nệm — nhưng trải nghiệm của khách hàng hoàn toàn khác nhau", as: "span" })}
         </p>
       </div>
 
@@ -311,23 +311,23 @@ function ShowroomComparisonSection() {
           {/* Badge */}
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.35)", borderRadius: R_FULL, padding: "5px 14px", marginBottom: 16 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: RED_SOFT, display: "inline-block", flexShrink: 0 }} />
-            <span style={{ color: RED_SOFT, fontSize: 10, fontWeight: 700, fontFamily: FONT_BODY, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>Nệm trên giường thường</span>
+            <span style={{ color: RED_SOFT, fontSize: 10, fontWeight: 700, fontFamily: FONT_BODY, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>{E({ bk: "comp_left_badge", def: "Nệm trên giường thường", as: "span" })}</span>
           </div>
           {/* Heading */}
           <h3 style={{ color: WHITE, fontSize: "clamp(16px, 1.6vw, 22px)", fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.35, marginBottom: 14, letterSpacing: "-0.01em" }}>
-            Khách chỉ nằm thử —<br />rồi về
+            {E({ bk: "comp_left_heading", def: "Khách chỉ nằm thử — rồi về", as: "span" })}
           </h3>
           {/* Bullets */}
           {[
-            "Không có điểm khác biệt với showroom khác",
-            "Khách so sánh giá, không thấy giá trị",
-            "Biên lợi nhuận ngày càng mỏng",
-          ].map((txt, i) => (
+            { bk: "comp_left_bullet_1", def: "Không có điểm khác biệt với showroom khác" },
+            { bk: "comp_left_bullet_2", def: "Khách so sánh giá, không thấy giá trị" },
+            { bk: "comp_left_bullet_3", def: "Biên lợi nhuận ngày càng mỏng" },
+          ].map((item, i) => (
             <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
               <div style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
                 <span style={{ color: RED_SOFT, fontSize: 8, fontWeight: 700 }}>✕</span>
               </div>
-              <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{txt}</span>
+              <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{E({ bk: item.bk, def: item.def, as: "span" })}</span>
             </div>
           ))}
           {/* Mũi tên trỏ sang phải vào ảnh */}
@@ -393,23 +393,23 @@ function ShowroomComparisonSection() {
           {/* Badge */}
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.35)`, borderRadius: R_FULL, padding: "5px 14px", marginBottom: 16 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, display: "inline-block", flexShrink: 0 }} />
-            <span style={{ color: GOLD, fontSize: 10, fontWeight: 700, fontFamily: FONT_BODY, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>Nệm trên khung SmartFurni</span>
+            <span style={{ color: GOLD, fontSize: 10, fontWeight: 700, fontFamily: FONT_BODY, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>{E({ bk: "comp_right_badge", def: "Nệm trên khung SmartFurni", as: "span" })}</span>
           </div>
           {/* Heading */}
           <h3 style={{ color: WHITE, fontSize: "clamp(16px, 1.6vw, 22px)", fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.35, marginBottom: 14, letterSpacing: "-0.01em" }}>
-            Khách trải nghiệm —<br />và mua ngay
+            {E({ bk: "comp_right_heading", def: "Khách trải nghiệm — và mua ngay", as: "span" })}
           </h3>
           {/* Bullets */}
           {[
-            "Điều chỉnh độ nâng đầu, chân theo ý muốn",
-            "Tính năng độc đáo tạo quyết định mua tức thì",
-            "Biên lợi nhuận 30–40%, cao nhất ngành",
-          ].map((txt, i) => (
+            { bk: "comp_right_bullet_1", def: "Điều chỉnh độ nâng đầu, chân theo ý muốn" },
+            { bk: "comp_right_bullet_2", def: "Tính năng độc đáo tạo quyết định mua tức thì" },
+            { bk: "comp_right_bullet_3", def: "Biên lợi nhuận 30–40%, cao nhất ngành" },
+          ].map((item, i) => (
             <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
               <div style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.35)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
                 <span style={{ color: GOLD, fontSize: 8, fontWeight: 700 }}>✓</span>
               </div>
-              <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{txt}</span>
+              <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{E({ bk: item.bk, def: item.def, as: "span" })}</span>
             </div>
           ))}
         </div>
@@ -425,13 +425,13 @@ function ShowroomComparisonSection() {
         }}
       >
         {[
-          { icon: "📍", text: "Thực tế tại showroom đối tác" },
-          { icon: "💡", text: "Cùng thương hiệu nệm — khác biệt hoàn toàn" },
-          { icon: "📈", text: "Tăng tỷ lệ chốt đơn lên đến 3×" },
+          { icon: "📍", bk: "comp_pill_1", def: "Thực tế tại showroom đối tác" },
+          { icon: "💡", bk: "comp_pill_2", def: "Cùng thương hiệu nệm — khác biệt hoàn toàn" },
+          { icon: "📈", bk: "comp_pill_3", def: "Tăng tỷ lệ chốt đơn lên đến 3×" },
         ].map((tag, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: BLACK_SOFT, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 14px" }}>
             <span style={{ fontSize: 13 }}>{tag.icon}</span>
-            <span style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY }}>{tag.text}</span>
+            <span style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY }}>{E({ bk: tag.bk, def: tag.def, as: "span" })}</span>
           </div>
         ))}
       </div>
@@ -700,7 +700,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         <div style={{ position: "relative", maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ marginBottom: 28 }}>
-              <SectionLabel>Chương trình đối tác độc quyền 2025</SectionLabel>
+              <SectionLabel>{E({ bk: "hero_section_label", def: "Chương trình đối tác độc quyền 2025", as: "span" })}</SectionLabel>
             </div>
           </FadeIn>
           <FadeIn delay={100}>
@@ -753,7 +753,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
-              <SectionLabel>Thực trạng thị trường</SectionLabel>
+              <SectionLabel>{E({ bk: "problem_section_label", def: "Thực trạng thị trường", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
                 {E({ bk: "problem_title_1", def: "Showroom Nệm Đang Cạnh Tranh", as: "span", style: { display: "block" } })}
                 {E({ bk: "problem_title_2", def: "Khốc Liệt Về Giá", as: "span", style: { color: GOLD, display: "block" } })}
@@ -813,7 +813,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
       </section>
 
       {/* ── SHOWROOM COMPARISON IMAGE ── */}
-      <ShowroomComparisonSection />
+      <ShowroomComparisonSection E={E} />
 
       {/* ── HERO VIDEO ── */}
       <section style={{ background: BLACK }}>
@@ -860,7 +860,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         <div style={{ maxWidth: 1140, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
-              <SectionLabel>Dòng sản phẩm</SectionLabel>
+              <SectionLabel>{E({ bk: "products_section_label", def: "Dòng sản phẩm", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
                 {E({ bk: "products_title_1", def: "Giường Công Thái Học", as: "span", style: { display: "block" } })}
                 {E({ bk: "products_title_2", def: "Điều Chỉnh Điện SmartFurni", as: "span", style: { color: GOLD, display: "block" } })}
@@ -920,7 +920,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         <div style={{ maxWidth: 1140, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
-              <SectionLabel>Đặc quyền đối tác</SectionLabel>
+              <SectionLabel>{E({ bk: "privilege_section_label", def: "Đặc quyền đối tác", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
                 {E({ bk: "benefits_title_1", def: "6 Đặc Quyền Dành Riêng", as: "span", style: { display: "block" } })}
                 {E({ bk: "benefits_title_2", def: "Cho Đại Lý SmartFurni", as: "span", style: { color: GOLD, display: "block" } })}
@@ -1074,7 +1074,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
-              <SectionLabel>Bằng chứng niềm tin</SectionLabel>
+              <SectionLabel>{E({ bk: "trust_section_label", def: "Bằng chứng niềm tin", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
                 {E({ bk: "trust_title_1", def: "Được Kiểm Chứng Bởi", as: "span", style: { display: "block" } })}
                 {E({ bk: "trust_title_2", def: "Hàng Trăm Đối Tác", as: "span", style: { color: GOLD, display: "block" } })}
@@ -1132,7 +1132,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
-              <SectionLabel>Câu hỏi thường gặp</SectionLabel>
+              <SectionLabel>{E({ bk: "faq_section_label", def: "Câu hỏi thường gặp", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
                 Giải Đáp Thắc Mắc
               </h2>
@@ -1151,7 +1151,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 44 }}>
-              <SectionLabel>Đăng ký hợp tác</SectionLabel>
+              <SectionLabel>{E({ bk: "form_section_label", def: "Đăng ký hợp tác", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
                 {E({ bk: "form_title_1", def: "Trở Thành Đại Lý", as: "span", style: { display: "block" } })}
                 {E({ bk: "form_title_2", def: "SmartFurni Ngay Hôm Nay", as: "span", style: { color: GOLD, display: "block" } })}
