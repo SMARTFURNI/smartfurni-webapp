@@ -75,33 +75,14 @@ function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string })
 // ─── Intersection Observer fade-in ───────────────────────────────────────────
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  // isMounted: false on SSR/first render to avoid hydration mismatch
-  // Only start observing after client mount to prevent layout shift
-  const [isMounted, setIsMounted] = useState(false);
   const [inView, setInView] = useState(false);
   useEffect(() => {
-    // Mark as mounted so we can start the animation cycle
-    setIsMounted(true);
-  }, []);
-  useEffect(() => {
-    if (!isMounted) return;
     const el = ref.current; if (!el) return;
-    // Check if already in viewport (e.g. elements near top of page)
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight * 0.95) {
-      // Small timeout so the browser has painted the initial layout first
-      const t = setTimeout(() => setInView(true), 50 + delay);
-      return () => clearTimeout(t);
-    }
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold: 0.08 });
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold: 0.1 });
     obs.observe(el); return () => obs.disconnect();
-  }, [isMounted, delay]);
-  // Before mount: render fully visible (SSR output) to avoid layout shift
-  if (!isMounted) {
-    return <div ref={ref}>{children}</div>;
-  }
+  }, []);
   return (
-    <div ref={ref} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(20px)", transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms` }}>
+    <div ref={ref} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(24px)", transition: `opacity 0.6s ease ${delay}ms, transform 0.6s ease ${delay}ms` }}>
       {children}
     </div>
   );
@@ -666,15 +647,12 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function LpShowroomNemClient({ products, isEditor = false, initialContent = {} }: Props) {
   const [scrollY, setScrollY] = useState(0);
-  const [navMounted, setNavMounted] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [content, setContent] = useState<Record<string, string>>(initialContent);
   const [editedCount, setEditedCount] = useState(0);
 
   useEffect(() => {
-    // Mark as mounted AND sync scroll immediately — same pattern as main Navbar
-    // Before mount: always show solid bg to avoid CLS flash (transparent → solid)
-    setNavMounted(true);
+    // Sync scroll position immediately on mount to avoid nav flash
     setScrollY(window.scrollY);
     const fn = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", fn, { passive: true });
@@ -721,13 +699,11 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
       {/* ── STICKY NAV ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        // Before mount: always show solid bg to avoid CLS flash (transparent → solid)
-        // Same pattern as main Navbar component
-        background: (!navMounted || scrollY > 60) ? "rgba(13,11,0,0.96)" : "transparent",
-        borderBottom: (!navMounted || scrollY > 60) ? `1px solid ${BLACK_BORDER}` : "none",
-        backdropFilter: (!navMounted || scrollY > 60) ? "blur(16px)" : "none",
-        WebkitBackdropFilter: (!navMounted || scrollY > 60) ? "blur(16px)" : "none",
-        transition: navMounted ? "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease" : "none",
+        background: scrollY > 60 ? "rgba(13,11,0,0.96)" : "transparent",
+        borderBottom: scrollY > 60 ? `1px solid ${BLACK_BORDER}` : "none",
+        backdropFilter: scrollY > 60 ? "blur(16px)" : "none",
+        WebkitBackdropFilter: scrollY > 60 ? "blur(16px)" : "none",
+        transition: "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease",
       }}>
         <div style={{
           maxWidth: 1200, margin: "0 auto",

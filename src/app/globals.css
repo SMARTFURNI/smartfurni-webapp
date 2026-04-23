@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Fonts loaded via next/font in layout.tsx — zero-FOUT server-side preloading */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&display=swap');
 
 :root {
   --gold: #C9A84C;
@@ -25,7 +25,7 @@ html {
 body {
   background-color: #0D0B00;
   color: #F5EDD6;
-  font-family: var(--font-inter, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+  font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100%;
 }
@@ -40,7 +40,7 @@ body {
 
 /* Cormorant Garamond brand font */
 .font-brand {
-  font-family: var(--font-cormorant, 'Cormorant Garamond', Georgia, serif);
+  font-family: 'Cormorant Garamond', serif;
   letter-spacing: 0.12em;
 }
 
@@ -65,7 +65,10 @@ body {
   box-shadow: 0 0 20px #C9A84C10;
 }
 
-/* section transition removed — caused nav layout shift during Next.js hydration */
+/* Smooth section transitions */
+section {
+  transition: opacity 0.3s ease;
+}
 
 /* Product detailed description styles */
 .prose-custom h2 {
