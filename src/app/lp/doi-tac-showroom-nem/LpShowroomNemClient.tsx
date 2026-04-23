@@ -440,10 +440,21 @@ function ShowroomComparisonSection({ E }: { E: (opts: { bk: string; def: string;
 }
 
 // ─── Product card ─────────────────────────────────────────────────────────────
-function ProductCard({ product, index }: { product: CrmProduct; index: number }) {
+function ProductCard({ product, index, editMode, content, onSaved, onDeleted }: {
+  product: CrmProduct; index: number;
+  editMode?: boolean;
+  content?: Record<string, string>;
+  onSaved?: (bk: string, val: string) => void;
+  onDeleted?: (bk: string) => void;
+}) {
   const [imgErr, setImgErr] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const badges = ["Phổ thông cao cấp", "Bán chạy nhất ★", "Cao cấp nhất"];
+  const defaultBadges = ["Phổ thông cao cấp", "Bán chạy nhất ★", "Cao cấp nhất"];
+  const badgeBk = `product_badge_${index}`;
+  const badgeDefault = defaultBadges[index] || "Sản phẩm";
+  // If badge was deleted (key in content with empty string), hide it
+  const badgeValue = content?.[badgeBk] !== undefined ? content[badgeBk] : badgeDefault;
+  const showBadge = badgeValue !== "";
   return (
     <FadeIn delay={index * 100}>
       <div
@@ -467,15 +478,53 @@ function ProductCard({ product, index }: { product: CrmProduct; index: number })
           )}
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,11,0,0.7) 0%, transparent 55%)" }} />
           </div>
-          <div style={{
-            position: "absolute", top: 14, right: 14, zIndex: 2,
-            background: index === 1 ? GOLD : "rgba(13,11,0,0.8)",
-            color: index === 1 ? BLACK : GRAY_LIGHT,
-            border: index !== 1 ? `1px solid rgba(212,196,160,0.3)` : "none",
-            fontSize: 10, fontWeight: 700, padding: "5px 12px",
-            letterSpacing: "0.08em", borderRadius: R_FULL,
-            fontFamily: FONT_BODY,
-          }}>{badges[index] || "Sản phẩm"}</div>
+          {/* Badge — editable + deletable */}
+          {(showBadge || editMode) && (
+            <div style={{
+              position: "absolute", top: 14, right: 14, zIndex: 2,
+              background: index === 1 ? GOLD : "rgba(13,11,0,0.8)",
+              color: index === 1 ? BLACK : GRAY_LIGHT,
+              border: index !== 1 ? `1px solid rgba(212,196,160,0.3)` : "none",
+              fontSize: 10, fontWeight: 700, padding: "5px 12px",
+              letterSpacing: "0.08em", borderRadius: R_FULL,
+              fontFamily: FONT_BODY,
+              maxWidth: 180,
+            }}>
+              {editMode ? (
+                <EditableText
+                  slug={LP_SLUG}
+                  blockKey={badgeBk}
+                  defaultValue={badgeDefault}
+                  editMode={true}
+                  as="span"
+                  style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", fontFamily: FONT_BODY }}
+                  savedValue={content?.[badgeBk]}
+                  onSaved={onSaved}
+                  onDeleted={(bk) => {
+                    // Mark as empty string to hide badge
+                    onSaved?.(bk, "");
+                    // Also call delete API to reset
+                    fetch(`/api/admin/lp-content?slug=${encodeURIComponent(LP_SLUG)}&blockKey=${encodeURIComponent(bk)}`, { method: "DELETE" });
+                  }}
+                />
+              ) : (
+                <span>{badgeValue}</span>
+              )}
+            </div>
+          )}
+          {/* Add badge button when badge is hidden and in edit mode */}
+          {editMode && !showBadge && (
+            <button
+              onClick={() => onSaved?.(badgeBk, badgeDefault)}
+              style={{
+                position: "absolute", top: 14, right: 14, zIndex: 2,
+                background: "rgba(201,168,76,0.15)", color: GOLD,
+                border: `1px dashed ${GOLD}`, borderRadius: R_FULL,
+                fontSize: 10, fontWeight: 700, padding: "5px 12px",
+                cursor: "pointer", fontFamily: FONT_BODY,
+              }}
+            >+ Thêm nhãn</button>
+          )}
         </div>
         <div style={{ padding: "22px 22px 26px", display: "flex", flexDirection: "column", flex: 1 }}>
           {product.sku && <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{product.sku}</div>}
@@ -875,7 +924,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
           </FadeIn>
           {products.length > 0 ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
-              {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} editMode={editMode} content={content} onSaved={handleSaved} onDeleted={handleDeleted} />)}
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
@@ -893,9 +942,32 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                         <img src={p.img} alt={content[p.bkName] || p.defName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,11,0,0.65) 0%, transparent 55%)" }} />
                       </div>
-                      <div style={{ position: "absolute", top: 14, right: 14, zIndex: 2, background: i === 1 ? GOLD : "rgba(13,11,0,0.8)", color: i === 1 ? BLACK : GRAY_LIGHT, border: i !== 1 ? `1px solid rgba(212,196,160,0.3)` : "none", fontSize: 10, fontWeight: 700, padding: "5px 12px", letterSpacing: "0.08em", borderRadius: R_FULL, fontFamily: FONT_BODY }}>
-                        {["Phổ thông cao cấp", "Bán chạy nhất ★", "Cao cấp nhất"][i]}
-                      </div>
+                      {/* Badge fallback — editable + deletable */}
+                      {(() => {
+                        const fbBk = `product_badge_${i}`;
+                        const fbDef = ["Phổ thông cao cấp", "Bán chạy nhất ★", "Cao cấp nhất"][i] || "Sản phẩm";
+                        const fbVal = content[fbBk] !== undefined ? content[fbBk] : fbDef;
+                        const fbShow = fbVal !== "";
+                        return (
+                          <>
+                            {(fbShow || editMode) && (
+                              <div style={{ position: "absolute", top: 14, right: 14, zIndex: 2, background: i === 1 ? GOLD : "rgba(13,11,0,0.8)", color: i === 1 ? BLACK : GRAY_LIGHT, border: i !== 1 ? `1px solid rgba(212,196,160,0.3)` : "none", fontSize: 10, fontWeight: 700, padding: "5px 12px", letterSpacing: "0.08em", borderRadius: R_FULL, fontFamily: FONT_BODY, maxWidth: 180 }}>
+                                {editMode ? (
+                                  <EditableText slug={LP_SLUG} blockKey={fbBk} defaultValue={fbDef} editMode={true} as="span"
+                                    style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", fontFamily: FONT_BODY }}
+                                    savedValue={content[fbBk]}
+                                    onSaved={handleSaved}
+                                    onDeleted={(bk) => { handleSaved(bk, ""); fetch(`/api/admin/lp-content?slug=${encodeURIComponent(LP_SLUG)}&blockKey=${encodeURIComponent(bk)}`, { method: "DELETE" }); }}
+                                  />
+                                ) : <span>{fbVal}</span>}
+                              </div>
+                            )}
+                            {editMode && !fbShow && (
+                              <button onClick={() => handleSaved(fbBk, fbDef)} style={{ position: "absolute", top: 14, right: 14, zIndex: 2, background: "rgba(201,168,76,0.15)", color: GOLD, border: `1px dashed ${GOLD}`, borderRadius: R_FULL, fontSize: 10, fontWeight: 700, padding: "5px 12px", cursor: "pointer", fontFamily: FONT_BODY }}>+ Thêm nhãn</button>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                     <div style={{ padding: "20px 20px 24px", display: "flex", flexDirection: "column", flex: 1 }}>
                       <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{p.sku}</div>
