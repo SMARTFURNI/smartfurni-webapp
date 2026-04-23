@@ -60,21 +60,21 @@ export default function FeaturesSection({ theme }: Props) {
   const items: HomepageFeatureItem[] = feat?.items?.length ? feat.items : FEATURES;
 
   return (
-    <section id="features" className="py-24 px-6">
+    <section id="features" className="py-14 sm:py-20 lg:py-24 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <ScrollReveal variant="fadeUp" delay={0}>
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 sm:mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/5 mb-4">
               <span style={{ fontSize: badge ? `${badge.fontSize}px` : "12px", color: badge?.color ?? "#C9A84C", fontWeight: badge ? FW_MAP[badge.fontWeight] : "500" }} className="tracking-wider">
                 {badge?.text ?? "TÍNH NĂNG NỔI BẬT"}
               </span>
             </div>
             <h2 className="mb-4">
-              <span style={{ fontSize: title ? `${title.fontSize}px` : "36px", color: title?.color ?? "#F5EDD6", fontWeight: title ? FW_MAP[title.fontWeight] : "300", display: "block" }}>
+              <span style={{ fontSize: title ? `clamp(24px, 3vw, ${title.fontSize}px)` : "clamp(24px, 3vw, 36px)", color: title?.color ?? "#F5EDD6", fontWeight: title ? FW_MAP[title.fontWeight] : "300", display: "block" }}>
                 {title?.text ?? "Mọi thứ bạn cần cho"}
               </span>
-              <span style={{ fontSize: titleAccent ? `${titleAccent.fontSize}px` : "36px", color: titleAccent?.color ?? "#C9A84C", fontWeight: titleAccent ? FW_MAP[titleAccent.fontWeight] : "300", display: "block" }}>
+              <span style={{ fontSize: titleAccent ? `clamp(24px, 3vw, ${titleAccent.fontSize}px)` : "clamp(24px, 3vw, 36px)", color: titleAccent?.color ?? "#C9A84C", fontWeight: titleAccent ? FW_MAP[titleAccent.fontWeight] : "300", display: "block" }}>
                 {titleAccent?.text ?? "giấc ngủ hoàn hảo"}
               </span>
             </h2>

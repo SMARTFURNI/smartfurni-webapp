@@ -199,7 +199,9 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const maxWidth = theme?.layout.maxWidth ?? 1280;
   const heroTitle = theme?.hero.title ?? "Giường Công Thái Học\nĐiều Chỉnh Điện SmartFurni";
   const heroSubtitle = theme?.hero.subtitle ?? "Trải nghiệm giấc ngủ hoàn hảo với công nghệ điều khiển thông minh.";
-  const titleFontSize = theme?.hero.titleFontSize ?? 60;
+  const titleFontSizeBase = theme?.hero.titleFontSize ?? 60;
+  // Responsive font size: clamp for mobile
+  const titleFontSize = `clamp(30px, 5vw + 1rem, ${titleFontSizeBase}px)`;
   const titleColor = theme?.hero.titleColor ?? textColor;
   const titleAccentColor = theme?.hero.titleAccentColor ?? primary;
   const ctaText = theme?.hero.ctaText ?? "Thử Dashboard ngay";
@@ -258,7 +260,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
         <div style={{ background: `radial-gradient(circle at 70% 70%, ${primary}05, transparent 60%)` }} className="absolute inset-0" />
       </div>
 
-      <div style={{ maxWidth }} className="relative mx-auto px-6 py-20 grid lg:grid-cols-2 gap-16 items-center">
+      <div style={{ maxWidth }} className="relative mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20 grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         {/* Left — Text */}
         <ScrollReveal variant="fadeRight" delay={0}>
         <div className="space-y-8">
@@ -288,7 +290,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
             })()}
           </h1>
 
-          <p style={{ color: `${textColor}99` }} className="text-lg leading-relaxed max-w-md">
+          <p style={{ color: `${textColor}99` }} className="text-base sm:text-lg leading-relaxed max-w-md">
             {heroSubtitle}
           </p>
 
@@ -331,7 +333,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
           </div>
 
           {/* Stats — benefit-oriented */}
-          <div style={{ borderTopColor: borderColor }} className="grid grid-cols-3 gap-6 pt-4 border-t">
+          <div style={{ borderTopColor: borderColor }} className="grid grid-cols-3 gap-3 sm:gap-6 pt-4 border-t">
             {[
               { value: "10.000+", label: "Khách hàng hài lòng" },
               { value: "30 ngày", label: "Dùng thử miễn phí" },

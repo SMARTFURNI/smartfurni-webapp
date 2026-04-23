@@ -85,10 +85,10 @@ export default function TestimonialsSection({ theme }: Props) {
               <span className="w-8 h-px" style={{ backgroundColor: test?.badge?.color ?? "#C9A84C" }} />
             </div>
             <h2 className="mb-3">
-              <span style={{ fontSize: test?.title ? `${test.title.fontSize}px` : "36px", color: test?.title?.color ?? "#F5EDD6", fontWeight: test?.title ? FW_MAP[test.title.fontWeight] : "300", display: "block" }}>
+              <span style={{ fontSize: test?.title ? `clamp(22px, 3vw, ${test.title.fontSize}px)` : "clamp(22px, 3vw, 36px)", color: test?.title?.color ?? "#F5EDD6", fontWeight: test?.title ? FW_MAP[test.title.fontWeight] : "300", display: "block" }}>
                 {test?.title?.text ?? "Hơn"}
               </span>
-              <span style={{ fontSize: test?.titleAccent ? `${test.titleAccent.fontSize}px` : "36px", color: test?.titleAccent?.color ?? "#C9A84C", fontWeight: test?.titleAccent ? FW_MAP[test.titleAccent.fontWeight] : "300", display: "block" }}>
+              <span style={{ fontSize: test?.titleAccent ? `clamp(22px, 3vw, ${test.titleAccent.fontSize}px)` : "clamp(22px, 3vw, 36px)", color: test?.titleAccent?.color ?? "#C9A84C", fontWeight: test?.titleAccent ? FW_MAP[test.titleAccent.fontWeight] : "300", display: "block" }}>
                 {test?.titleAccent?.text ?? "10.000 khách hàng tin dùng"}
               </span>
             </h2>

@@ -232,8 +232,8 @@ export default function StaticProductsSection({
   if (displayProducts.length === 0) return null;
 
   return (
-    <section style={{ background: bgColor, padding: "80px 0", borderTop: "1px solid rgba(201,168,76,0.1)" }}>
-      <div style={{ maxWidth, margin: "0 auto", padding: "0 24px" }}>
+    <section style={{ background: bgColor, padding: "clamp(48px, 8vw, 80px) 0", borderTop: "1px solid rgba(201,168,76,0.1)" }}>
+      <div style={{ maxWidth, margin: "0 auto", padding: "0 clamp(16px, 4vw, 24px)" }}>
 
         {/* ── Header ── */}
         <ScrollReveal variant="fadeUp" delay={0}>
@@ -293,10 +293,8 @@ export default function StaticProductsSection({
         <div style={{
           display: "grid",
           gridTemplateColumns: displayProducts.length === 1
-            ? "minmax(280px, 480px)"
-            : displayProducts.length === 2
-              ? "repeat(2, 1fr)"
-              : "repeat(auto-fill, minmax(280px, 1fr))",
+            ? "minmax(min(100%, 480px), 480px)"
+            : "repeat(auto-fill, minmax(min(100%, 280px), 1fr))",
           gap: 20,
           marginBottom: 44,
           justifyContent: displayProducts.length <= 2 ? "center" : undefined,

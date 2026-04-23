@@ -12,14 +12,14 @@ export default function DownloadSection({ theme }: Props) {
   const dl = theme.homepageSections?.download;
 
   return (
-    <section id="download" className="py-24 px-6">
+    <section id="download" className="py-14 sm:py-20 lg:py-24 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
         <ScrollReveal variant="fadeUp" delay={0}>
         <div className="relative rounded-3xl overflow-hidden border border-[#C9A84C]/20 bg-[#1A1600]">
           {/* Background glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#C9A84C]/10 via-transparent to-transparent" />
 
-          <div className="relative p-12 text-center space-y-8">
+          <div className="relative p-6 sm:p-10 lg:p-12 text-center space-y-6 sm:space-y-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/5">
               <span style={{ fontSize: dl?.badge ? `${dl.badge.fontSize}px` : "12px", color: dl?.badge?.color ?? "#C9A84C", fontWeight: dl?.badge ? FW_MAP[dl.badge.fontWeight] : "500" }} className="tracking-wider">
                 {dl?.badge?.text ?? "TẢI ỨNG DỤNG"}
@@ -27,7 +27,7 @@ export default function DownloadSection({ theme }: Props) {
             </div>
 
             <h2 className="mb-0">
-              <span style={{ fontSize: dl?.title ? `${dl.title.fontSize}px` : "36px", color: dl?.title?.color ?? "#F5EDD6", fontWeight: dl?.title ? FW_MAP[dl.title.fontWeight] : "300", display: "block" }}>
+              <span style={{ fontSize: dl?.title ? `clamp(22px, 3vw, ${dl.title.fontSize}px)` : "clamp(22px, 3vw, 36px)", color: dl?.title?.color ?? "#F5EDD6", fontWeight: dl?.title ? FW_MAP[dl.title.fontWeight] : "300", display: "block" }}>
                 {dl?.title?.text ?? "Bắt đầu trải nghiệm ngay hôm nay"}
               </span>
             </h2>

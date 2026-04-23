@@ -57,8 +57,8 @@ function ArrowBtn({
       disabled={disabled}
       aria-label={direction === "left" ? "Video trước" : "Video tiếp theo"}
       style={{
-        width: 52,
-        height: 52,
+        width: "clamp(36px, 5vw, 52px)",
+        height: "clamp(36px, 5vw, 52px)",
         borderRadius: "50%",
         border: `2px solid ${disabled ? "#2D2500" : primary}`,
         background: disabled ? "transparent" : `${primary}18`,
@@ -67,7 +67,7 @@ function ArrowBtn({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 22,
+        fontSize: "clamp(16px, 2.5vw, 22px)",
         transition: "all 0.2s",
         flexShrink: 0,
       }}
@@ -152,8 +152,8 @@ export default function VideoSection({ theme, videoId, videoTitle }: VideoSectio
   const activeVideo = videos[current];
 
   return (
-    <section style={{ background: bgColor, padding: "80px 0" }}>
-      <div style={{ maxWidth, margin: "0 auto", padding: "0 24px" }}>
+    <section style={{ background: bgColor, padding: "clamp(48px, 8vw, 80px) 0" }}>
+      <div style={{ maxWidth, margin: "0 auto", padding: "0 clamp(16px, 4vw, 24px)" }}>
         {/* Header */}
         <ScrollReveal variant="fadeUp" delay={0}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
