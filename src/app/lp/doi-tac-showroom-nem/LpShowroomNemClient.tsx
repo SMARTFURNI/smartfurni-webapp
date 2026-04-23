@@ -666,12 +666,15 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function LpShowroomNemClient({ products, isEditor = false, initialContent = {} }: Props) {
   const [scrollY, setScrollY] = useState(0);
+  const [navMounted, setNavMounted] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [content, setContent] = useState<Record<string, string>>(initialContent);
   const [editedCount, setEditedCount] = useState(0);
 
   useEffect(() => {
-    // Sync scroll position immediately on mount to avoid nav flash
+    // Mark as mounted AND sync scroll immediately — same pattern as main Navbar
+    // Before mount: always show solid bg to avoid CLS flash (transparent → solid)
+    setNavMounted(true);
     setScrollY(window.scrollY);
     const fn = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", fn, { passive: true });
@@ -718,11 +721,13 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
       {/* ── STICKY NAV ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrollY > 60 ? "rgba(13,11,0,0.96)" : "transparent",
-        borderBottom: scrollY > 60 ? `1px solid ${BLACK_BORDER}` : "none",
-        backdropFilter: scrollY > 60 ? "blur(16px)" : "none",
-        WebkitBackdropFilter: scrollY > 60 ? "blur(16px)" : "none",
-        transition: "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease",
+        // Before mount: always show solid bg to avoid CLS flash (transparent → solid)
+        // Same pattern as main Navbar component
+        background: (!navMounted || scrollY > 60) ? "rgba(13,11,0,0.96)" : "transparent",
+        borderBottom: (!navMounted || scrollY > 60) ? `1px solid ${BLACK_BORDER}` : "none",
+        backdropFilter: (!navMounted || scrollY > 60) ? "blur(16px)" : "none",
+        WebkitBackdropFilter: (!navMounted || scrollY > 60) ? "blur(16px)" : "none",
+        transition: navMounted ? "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease" : "none",
       }}>
         <div style={{
           maxWidth: 1200, margin: "0 auto",
