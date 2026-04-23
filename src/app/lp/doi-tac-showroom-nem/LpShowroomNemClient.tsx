@@ -583,6 +583,8 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
   const [editedCount, setEditedCount] = useState(0);
 
   useEffect(() => {
+    // Sync scroll position immediately on mount to avoid nav flash
+    setScrollY(window.scrollY);
     const fn = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
@@ -632,7 +634,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
         borderBottom: scrollY > 60 ? `1px solid ${BLACK_BORDER}` : "none",
         backdropFilter: scrollY > 60 ? "blur(16px)" : "none",
         WebkitBackdropFilter: scrollY > 60 ? "blur(16px)" : "none",
-        transition: "all 0.3s ease",
+        transition: "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease",
       }}>
         <div style={{
           maxWidth: 1200, margin: "0 auto",
@@ -641,7 +643,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
         }}>
           {/* Logo */}
-          <a href="/" style={{ flexShrink: 0, textDecoration: "none" }}>
+          <a href="/lp/doi-tac-showroom-nem" style={{ flexShrink: 0, textDecoration: "none" }}>
             <img
               src="/smartfurni-logo-transparent.png"
               alt="SmartFurni"
