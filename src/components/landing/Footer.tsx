@@ -2,6 +2,15 @@
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
 
+// ─── Design tokens (giống landing page) ──────────────────────────────────────
+const GOLD = "#C9A84C";
+const GOLD_LIGHT = "#E2C97E";
+const BLACK_BG = "#060500";
+const BLACK_BORDER = "#2E2800";
+const GRAY = "#A89070";
+const GRAY_LIGHT = "#D4C4A0";
+const FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
 interface FooterProps {
   theme: SiteTheme;
   variant?: "full" | "minimal";
@@ -15,251 +24,279 @@ const NAV_LINKS = [
   { label: "Liên hệ", href: "/contact" },
 ];
 
-export default function Footer({ theme, variant = "full" }: FooterProps) {
-  const { colors, footer, layout } = theme;
-  const primary = colors.primary;
-  const secondary = colors.secondary;
+const SHOWROOM_ITEMS = [
+  { icon: "📍", label: "TP. HCM", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
+  { icon: "📍", label: "Hà Nội", val: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
+  { icon: "🏭", label: "Xưởng SX", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
+];
 
+// ─── Column header với accent bar vàng (giống landing page) ──────────────────
+function ColHeader({ label }: { label: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+      <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2, flexShrink: 0 }} />
+      <h4 style={{
+        color: GOLD, fontSize: 10, fontWeight: 700,
+        letterSpacing: "0.2em", textTransform: "uppercase",
+        fontFamily: FONT, margin: 0,
+      }}>
+        {label}
+      </h4>
+    </div>
+  );
+}
+
+export default function Footer({ theme, variant = "full" }: FooterProps) {
+  const { footer, layout } = theme;
+
+  // ── Minimal variant ──────────────────────────────────────────────────────────
   if (variant === "minimal") {
     return (
-      <footer
-        style={{ backgroundColor: footer.bgColor, borderTopColor: `${colors.border}60` }}
-        className="border-t py-5 px-4 sm:px-6"
-      >
-        <div
-          style={{ maxWidth: layout.maxWidth }}
-          className="mx-auto flex flex-col sm:flex-row items-center justify-between gap-3"
-        >
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/smartfurni-logo-transparent.png"
-              alt={footer.companyName}
-              width={64}
-              height={36}
-              style={{ height: 36, width: 64, objectFit: "contain", display: "block" }}
-            />
-          </Link>
+      <footer style={{ background: BLACK_BG, borderTop: `1px solid ${BLACK_BORDER}` }}>
+        {/* Top gold accent line */}
+        <div style={{ height: 1, background: `linear-gradient(90deg, transparent 0%, ${GOLD} 30%, ${GOLD} 70%, transparent 100%)`, opacity: 0.4 }} />
+        <div style={{ maxWidth: layout.maxWidth, margin: "0 auto", padding: "20px 24px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            {/* Logo */}
+            <Link href="/" style={{ display: "flex", alignItems: "center" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/smartfurni-logo-transparent.png"
+                alt={footer.companyName}
+                style={{ height: 36, objectFit: "contain" }}
+              />
+            </Link>
 
-          <p style={{ color: footer.textColor }} className="text-xs opacity-40 text-center">
-            {footer.copyrightText}
-          </p>
+            <p style={{ color: GRAY, fontSize: 11, fontFamily: FONT, margin: 0 }}>
+              {footer.copyrightText}
+            </p>
 
-          {/* Quick links */}
-          <div className="flex items-center gap-4">
-            {[
-              { label: "Trang chủ", href: "/" },
-              { label: "Sản phẩm", href: "/products" },
-              { label: "Liên hệ", href: "/contact" },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                style={{ color: footer.textColor }}
-                className="text-xs opacity-50 hover:opacity-80 transition-opacity"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {/* Quick links */}
+            <div style={{ display: "flex", gap: 20 }}>
+              {[
+                { label: "Trang chủ", href: "/" },
+                { label: "Sản phẩm", href: "/products" },
+                { label: "Liên hệ", href: "/contact" },
+              ].map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  style={{ color: GRAY, fontSize: 11, fontFamily: FONT, textDecoration: "none" }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </footer>
     );
   }
 
-  // Full footer
+  // ── Full footer ──────────────────────────────────────────────────────────────
+  const phone = (footer as unknown as Record<string, string>).phone ?? "028.7122.0818";
+  const email = (footer as unknown as Record<string, string>).email ?? "info@smartfurni.vn";
+
   return (
-    <footer
-      style={{ backgroundColor: footer.bgColor, borderTopColor: `${colors.border}60` }}
-      className="border-t"
-    >
-      {/* Main footer content */}
-      <div
-        style={{ maxWidth: layout.maxWidth }}
-        className="mx-auto px-4 sm:px-6 py-10 sm:py-14"
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Brand column */}
-          <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-              src="/smartfurni-logo-transparent.png"
-              alt={footer.companyName}
-              width={85}
-              height={48}
-              style={{ height: 48, width: 85, objectFit: "contain", display: "block" }}
-              />
-            </Link>
-            {footer.tagline && (
-              <p style={{ color: footer.textColor }} className="text-sm opacity-50 leading-relaxed mb-5 max-w-xs">
-                {footer.tagline}
-              </p>
-            )}
+    <footer style={{ background: BLACK_BG, borderTop: `1px solid ${BLACK_BORDER}` }}>
+      {/* Top gold accent line */}
+      <div style={{ height: 2, background: `linear-gradient(90deg, transparent 0%, ${GOLD} 30%, ${GOLD} 70%, transparent 100%)`, opacity: 0.5 }} />
+
+      <div style={{ maxWidth: layout.maxWidth, margin: "0 auto", padding: "56px 24px 0" }}>
+        {/* ── Main grid: 4 cột ── */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1.6fr 1.2fr 1.2fr 1fr",
+          gap: "48px 40px",
+          marginBottom: 52,
+        }}
+          className="footer-main-grid"
+        >
+          {/* Cột 1: Brand */}
+          <div>
+            <div style={{ marginBottom: 20 }}>
+              <Link href="/">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/smartfurni-logo-transparent.png"
+                  alt={footer.companyName}
+                  style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }}
+                />
+              </Link>
+            </div>
+            <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.85, fontFamily: FONT, marginBottom: 24, maxWidth: 280 }}>
+              {footer.tagline || "Nâng tầm giấc ngủ của bạn"}
+            </p>
             {/* Social links */}
-            {footer.showSocialLinks && (
-              <div className="flex items-center gap-4">
-                {footer.socialLinks.facebook && (
-                  <a
-                    href={footer.socialLinks.facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: footer.textColor, borderColor: `${colors.border}60` }}
-                    className="w-8 h-8 rounded-full border flex items-center justify-center opacity-50 hover:opacity-100 transition-opacity"
-                    aria-label="Facebook"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                    </svg>
-                  </a>
-                )}
-                {footer.socialLinks.instagram && (
-                  <a
-                    href={footer.socialLinks.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: footer.textColor, borderColor: `${colors.border}60` }}
-                    className="w-8 h-8 rounded-full border flex items-center justify-center opacity-50 hover:opacity-100 transition-opacity"
-                    aria-label="Instagram"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                    </svg>
-                  </a>
-                )}
-                {footer.socialLinks.youtube && (
-                  <a
-                    href={footer.socialLinks.youtube}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: footer.textColor, borderColor: `${colors.border}60` }}
-                    className="w-8 h-8 rounded-full border flex items-center justify-center opacity-50 hover:opacity-100 transition-opacity"
-                    aria-label="YouTube"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" />
-                      <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill={colors.background} />
-                    </svg>
-                  </a>
-                )}
-                {footer.socialLinks.tiktok && (
-                  <a
-                    href={footer.socialLinks.tiktok}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: footer.textColor, borderColor: `${colors.border}60` }}
-                    className="w-8 h-8 rounded-full border flex items-center justify-center opacity-50 hover:opacity-100 transition-opacity"
-                    aria-label="TikTok"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" />
-                    </svg>
-                  </a>
-                )}
+            <div style={{ display: "flex", gap: 10 }}>
+              {footer.showSocialLinks && footer.socialLinks.facebook && (
+                <a
+                  href={footer.socialLinks.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Facebook"
+                  style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: "rgba(201,168,76,0.08)",
+                    border: `1px solid rgba(201,168,76,0.25)`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT,
+                    textDecoration: "none",
+                  }}
+                >
+                  f
+                </a>
+              )}
+              {footer.showSocialLinks && footer.socialLinks.youtube && (
+                <a
+                  href={footer.socialLinks.youtube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="YouTube"
+                  style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: "rgba(201,168,76,0.08)",
+                    border: `1px solid rgba(201,168,76,0.25)`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT,
+                    textDecoration: "none",
+                  }}
+                >
+                  ▶
+                </a>
+              )}
+              {footer.showSocialLinks && footer.socialLinks.tiktok && (
+                <a
+                  href={footer.socialLinks.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="TikTok"
+                  style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: "rgba(201,168,76,0.08)",
+                    border: `1px solid rgba(201,168,76,0.25)`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT,
+                    textDecoration: "none",
+                  }}
+                >
+                  Z
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Cột 2: Showroom (thay thế Sản phẩm) */}
+          <div>
+            <ColHeader label="Showroom" />
+            {SHOWROOM_ITEMS.map((a, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{a.icon}</span>
+                <div>
+                  <div style={{ color: GOLD_LIGHT, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: FONT, marginBottom: 2 }}>
+                    {a.label}
+                  </div>
+                  <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT }}>
+                    {a.val}
+                  </div>
+                </div>
               </div>
-            )}
+            ))}
           </div>
 
-          {/* Navigation */}
+          {/* Cột 3: Liên hệ (giữ nguyên từ Hỗ trợ, đổi tên) */}
           <div>
-            <h4 className="text-xs font-medium tracking-wider uppercase mb-4" style={{ color: primary }}>
-              Điều hướng
-            </h4>
-            <ul className="flex flex-col gap-2.5">
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    style={{ color: footer.textColor }}
-                    className="text-sm opacity-50 hover:opacity-90 transition-opacity"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <ColHeader label="Liên hệ" />
+            {[
+              { icon: "📞", label: "Hotline", val: phone, href: `tel:${phone.replace(/[\s.]/g, "")}` },
+              { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: "https://zalo.me/0918326552" },
+              { icon: "✉️", label: "Email", val: email, href: `mailto:${email}` },
+              { icon: "🌐", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
+            ].map((c, i) => (
+              <a
+                key={i}
+                href={c.href}
+                target={c.href.startsWith("http") ? "_blank" : undefined}
+                rel="noopener noreferrer"
+                style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}
+              >
+                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
+                <div>
+                  <div style={{ color: GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: FONT, marginBottom: 1 }}>
+                    {c.label}
+                  </div>
+                  <div style={{ color: GOLD_LIGHT, fontSize: 13, fontFamily: FONT, fontWeight: 700 }}>
+                    {c.val}
+                  </div>
+                </div>
+              </a>
+            ))}
           </div>
 
-          {/* Products */}
+          {/* Cột 4: Đăng ký ngay (mới) */}
           <div>
-            <h4 className="text-xs font-medium tracking-wider uppercase mb-4" style={{ color: primary }}>
-              Sản phẩm
-            </h4>
-            <ul className="flex flex-col gap-2.5">
-              {[
-                { label: "SmartFurni Basic", href: "/products/smartfurni-basic" },
-                { label: "SmartFurni Pro", href: "/products/smartfurni-pro" },
-                { label: "SmartFurni Elite", href: "/products/smartfurni-elite" },
-                { label: "Phụ kiện", href: "/products?category=Phụ kiện" },
-                { label: "So sánh sản phẩm", href: "/products/compare" },
-              ].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    style={{ color: footer.textColor }}
-                    className="text-sm opacity-50 hover:opacity-90 transition-opacity"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Support */}
-          <div>
-            <h4 className="text-xs font-medium tracking-wider uppercase mb-4" style={{ color: primary }}>
-              Hỗ trợ
-            </h4>
-            <ul className="flex flex-col gap-2.5">
-              {[
-                { label: `Hotline: ${footer.phone ?? "1800 1234 56"}`, href: `tel:${(footer.phone ?? "18001234").replace(/\s/g, "")}` },
-                { label: `Email: ${footer.email ?? "hello@smartfurni.vn"}`, href: `mailto:${footer.email ?? "hello@smartfurni.vn"}` },
-                { label: "Chính sách bảo hành", href: "/warranty" },
-                { label: "Chính sách đổi trả", href: "/returns" },
-                { label: "Hướng dẫn sử dụng", href: "/blog?category=Hướng Dẫn Sử Dụng" },
-                { label: "Câu hỏi thường gặp", href: "/contact#faq" },
-              ].map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    style={{ color: footer.textColor }}
-                    className="text-sm opacity-50 hover:opacity-90 transition-opacity"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <ColHeader label="Đăng ký ngay" />
+            <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT, marginBottom: 20 }}>
+              Nhận chính sách đại lý &amp; bảng giá sỉ trong vòng <strong style={{ color: GOLD_LIGHT }}>2 giờ làm việc</strong>.
+            </p>
+            <a
+              href="/lp/doi-tac-showroom-nem#dang-ky"
+              style={{
+                display: "block", textAlign: "center",
+                background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 60%, #9A7A2E 100%)`,
+                color: "#0A0800", fontWeight: 700, fontSize: 11,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                padding: "13px 20px", borderRadius: 8,
+                textDecoration: "none",
+                fontFamily: FONT,
+                boxShadow: "0 6px 24px rgba(201,168,76,0.25)",
+                marginBottom: 12,
+              }}
+            >
+              Đăng ký đối tác →
+            </a>
+            <a
+              href="https://zalo.me/0918326552"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "block", textAlign: "center",
+                background: "transparent",
+                color: GRAY_LIGHT, fontWeight: 500, fontSize: 11,
+                letterSpacing: "0.06em",
+                padding: "12px 20px", borderRadius: 8,
+                textDecoration: "none",
+                fontFamily: FONT,
+                border: `1px solid rgba(212,196,160,0.2)`,
+              }}
+            >
+              💬 Chat Zalo ngay
+            </a>
           </div>
         </div>
-      </div>
 
-      {/* Bottom bar */}
-      <div
-        style={{ borderTopColor: `${colors.border}40` }}
-        className="border-t py-4 px-4 sm:px-6"
-      >
-        <div
-          style={{ maxWidth: layout.maxWidth }}
-          className="mx-auto flex flex-col sm:flex-row items-center justify-between gap-2"
-        >
-          <p style={{ color: footer.textColor }} className="text-xs opacity-30 text-center sm:text-left">
+        {/* ── Divider ── */}
+        <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${BLACK_BORDER} 20%, ${BLACK_BORDER} 80%, transparent)`, marginBottom: 24 }} />
+
+        {/* ── Bottom bar ── */}
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          flexWrap: "wrap", gap: 12,
+          paddingBottom: 28,
+        }}>
+          <p style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT, margin: 0 }}>
             {footer.copyrightText}
           </p>
-          <div className="flex items-center gap-4">
+          <div style={{ display: "flex", gap: 20 }}>
             {[
               { label: "Chính sách bảo mật", href: "/privacy" },
               { label: "Điều khoản sử dụng", href: "/terms" },
+              { label: "Chính sách đại lý", href: "/lp/doi-tac-showroom-nem" },
             ].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                style={{ color: footer.textColor }}
-                className="text-xs opacity-30 hover:opacity-60 transition-opacity"
+                style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT, textDecoration: "none" }}
               >
                 {link.label}
               </Link>
@@ -267,6 +304,25 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
           </div>
         </div>
       </div>
+
+      {/* Responsive CSS */}
+      <style>{`
+        .footer-main-grid {
+          grid-template-columns: 1.6fr 1.2fr 1.2fr 1fr;
+        }
+        @media (max-width: 900px) {
+          .footer-main-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 36px 24px !important;
+          }
+        }
+        @media (max-width: 560px) {
+          .footer-main-grid {
+            grid-template-columns: 1fr !important;
+            gap: 32px !important;
+          }
+        }
+      `}</style>
     </footer>
   );
 }
