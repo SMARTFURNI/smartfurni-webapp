@@ -6,32 +6,7 @@ import type { SiteTheme } from "@/lib/theme-types";
 import Footer from "@/components/landing/Footer";
 import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 
-const showrooms = [
-  {
-    city: "TP. Hồ Chí Minh",
-    address: "123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh",
-    phone: "028 3822 1234",
-    hours: "8:00 – 21:00 (Thứ 2 – Chủ nhật)",
-    mapUrl: "https://maps.google.com/?q=Nguyen+Hue+Ho+Chi+Minh",
-    badge: "Flagship",
-  },
-  {
-    city: "Hà Nội",
-    address: "45 Tràng Tiền, Hoàn Kiếm, Hà Nội",
-    phone: "024 3825 5678",
-    hours: "8:00 – 21:00 (Thứ 2 – Chủ nhật)",
-    mapUrl: "https://maps.google.com/?q=Trang+Tien+Hanoi",
-    badge: "Showroom",
-  },
-  {
-    city: "Đà Nẵng",
-    address: "88 Bạch Đằng, Hải Châu, Đà Nẵng",
-    phone: "0236 3822 9012",
-    hours: "8:30 – 20:30 (Thứ 2 – Thứ 7)",
-    mapUrl: "https://maps.google.com/?q=Bach+Dang+Da+Nang",
-    badge: "Showroom",
-  },
-];
+// showrooms is now loaded from theme.footer.showrooms inside the component
 
 const contactMethods = [
   { icon: "📞", label: "Hotline", value: "1800 1234 56", sub: "Miễn phí · 8:00 – 22:00" },
@@ -45,6 +20,16 @@ interface Props {
 }
 
 export default function ContactClient({ theme }: Props) {
+  // Load showrooms from theme (managed in Admin → Giao diện → Chân trang)
+  const showrooms = (theme.footer.showrooms ?? []).map((sr) => ({
+    city: sr.label,
+    address: sr.address,
+    phone: sr.phone ?? "",
+    hours: sr.hours ?? "",
+    mapUrl: sr.mapUrl ?? "#",
+    badge: sr.badge ?? "",
+  }));
+
   const [form, setForm] = useState({ name: "", phone: "", email: "", subject: "Tư vấn sản phẩm", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);

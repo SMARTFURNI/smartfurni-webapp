@@ -34,9 +34,9 @@ function ColHeader({ label }: { label: string }) {
 
 // ─── Default data (fallback khi theme chưa có dữ liệu) ───────────────────────
 const DEFAULT_SHOWROOMS = [
-  { icon: "📍", label: "TP. HCM", address: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
-  { icon: "📍", label: "Hà Nội", address: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
-  { icon: "🏭", label: "Xưởng SX", address: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
+  { icon: "📍", label: "TP. Hồ Chí Minh", address: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức", phone: "028.7122.0818", hours: "8:00 – 21:00 (Thứ 2 – Chủ nhật)", mapUrl: "https://maps.google.com/?q=74+Nguyen+Thi+Nhung+Thu+Duc", badge: "Flagship" },
+  { icon: "📍", label: "Hà Nội", address: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông", phone: "024.7109.0818", hours: "8:00 – 21:00 (Thứ 2 – Chủ nhật)", mapUrl: "https://maps.google.com/?q=Geleximco+B+Le+Trong+Tan+Ha+Dong", badge: "Showroom" },
+  { icon: "🏭", label: "Xưởng SX", address: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn", phone: "028.7122.0818", hours: "8:00 – 17:00 (Thứ 2 – Thứ 7)", mapUrl: "https://maps.google.com/?q=202+Nguyen+Thi+Sang+Dong+Thanh+Hoc+Mon", badge: "Xưởng" },
 ];
 
 const DEFAULT_CONTACTS = [
@@ -59,25 +59,18 @@ const DEFAULT_POLICY_LINKS = [
 export default function Footer({ theme, variant = "full" }: FooterProps) {
   const { footer, layout } = theme;
 
-  // ── Đọc dữ liệu động từ theme (fallback về default nếu chưa có) ──────────────
-  const footerExt = footer as Record<string, unknown>;
-  const showrooms = (footerExt.showrooms as typeof DEFAULT_SHOWROOMS | undefined)?.length
-    ? (footerExt.showrooms as typeof DEFAULT_SHOWROOMS)
-    : DEFAULT_SHOWROOMS;
-  const contacts = (footerExt.contacts as typeof DEFAULT_CONTACTS | undefined)?.length
-    ? (footerExt.contacts as typeof DEFAULT_CONTACTS)
-    : DEFAULT_CONTACTS;
-  const policyLinks = (footerExt.policyLinks as typeof DEFAULT_POLICY_LINKS | undefined)?.length
-    ? (footerExt.policyLinks as typeof DEFAULT_POLICY_LINKS)
-    : DEFAULT_POLICY_LINKS;
-  const aboutText = (footerExt.aboutText as string) || footer.tagline || "Nâng tầm giấc ngủ của bạn";
-  const ctaText = (footerExt.ctaText as string) || "Đăng ký đối tác →";
-  const ctaHref = (footerExt.ctaHref as string) || "/lp/doi-tac-showroom-nem#dang-ky";
-  const ctaZaloText = (footerExt.ctaZaloText as string) || "💬 Chat Zalo ngay";
-  const ctaZaloHref = (footerExt.ctaZaloHref as string) || "https://zalo.me/0918326552";
-  const zaloSocial = (footer.socialLinks as Record<string, string>).zalo || "";
+  // ── Đọc dữ liệu động từ theme (fallback về default nếu chưa có) ──────────────────────────────────────────────
+  const showrooms = (footer.showrooms?.length ? footer.showrooms : DEFAULT_SHOWROOMS) as typeof DEFAULT_SHOWROOMS;
+  const contacts = (footer.contacts?.length ? footer.contacts : DEFAULT_CONTACTS) as typeof DEFAULT_CONTACTS;
+  const policyLinks = (footer.policyLinks?.length ? footer.policyLinks : DEFAULT_POLICY_LINKS) as typeof DEFAULT_POLICY_LINKS;
+  const aboutText = footer.aboutText || footer.tagline || "Nâng tầm giấc ngủ của bạn";
+  const ctaText = footer.ctaText || "Đăng ký đối tác →";
+  const ctaHref = footer.ctaHref || "/lp/doi-tac-showroom-nem#dang-ky";
+  const ctaZaloText = footer.ctaZaloText || "💬 Chat Zalo ngay";
+  const ctaZaloHref = footer.ctaZaloHref || "https://zalo.me/0918326552";
+  const zaloSocial = footer.socialLinks.zalo || "";
 
-  // ── Minimal variant ──────────────────────────────────────────────────────────
+  // ── Minimal variant ──────────────────────────────────────────────────────────────────
   if (variant === "minimal") {
     return (
       <footer style={{ background: BLACK_BG, borderTop: `1px solid ${BLACK_BORDER}` }}>

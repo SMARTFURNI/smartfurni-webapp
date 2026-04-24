@@ -67,6 +67,10 @@ export interface FooterShowroom {
   icon: string;
   label: string;
   address: string;
+  phone?: string;
+  hours?: string;
+  mapUrl?: string;
+  badge?: string;
 }
 export interface FooterContact {
   icon: string;
@@ -91,6 +95,7 @@ export interface ThemeFooter {
     instagram: string;
     youtube: string;
     tiktok: string;
+    zalo: string;
   };
   copyrightText: string;
   // Extended editable footer content
