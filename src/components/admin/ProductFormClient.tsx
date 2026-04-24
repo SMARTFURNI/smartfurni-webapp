@@ -27,6 +27,7 @@ interface FormState {
   cost: string;
   coverImage: string;
   isFeatured: boolean;
+  imageBadge: string;
   features: string[];
   specs: SpecEntry[];
   variants: VariantDraft[];
@@ -300,6 +301,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
     cost: product?.cost ? product.cost.toLocaleString("vi-VN") : "",
     coverImage: product?.coverImage || "",
     isFeatured: product?.isFeatured || false,
+    imageBadge: product?.imageBadge || "",
     features: product?.features.length ? product.features : [""],
     specs: product?.specs
       ? Object.entries(product.specs).map(([key, value]) => ({ key, value }))
@@ -391,6 +393,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
         coverImage: form.coverImage || undefined,
         images: productImages,
         isFeatured: form.isFeatured,
+        imageBadge: form.imageBadge.trim() || undefined,
         features: form.features.filter((f) => f.trim()),
         specs: Object.fromEntries(form.specs.filter((s) => s.key.trim() && s.value.trim()).map((s) => [s.key.trim(), s.value.trim()])),
         variants: form.variants.map((v) => ({ name: v.name.trim(), sku: v.sku.trim(), stock: Number(v.stock) })),
@@ -712,6 +715,44 @@ export default function ProductFormClient({ product }: { product?: Product }) {
                   <option value="discontinued">Ngừng sản xuất</option>
                 </select>
               </Field>
+              {/* Image Badge field */}
+              <Field label="Nhãn trên ảnh sản phẩm" hint="Hiển thị góc trên phải của ảnh. Để trống nếu không muốn hiển thị nhãn.">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={form.imageBadge}
+                    onChange={(e) => set("imageBadge", e.target.value)}
+                    placeholder="VD: Bán chạy nhất ★, Cao cấp nhất, Mới ra mắt..."
+                    className={inputClass + " flex-1"}
+                    maxLength={30}
+                  />
+                  {form.imageBadge && (
+                    <button
+                      type="button"
+                      onClick={() => set("imageBadge", "")}
+                      className="px-3 py-2 text-xs bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/30 transition-colors whitespace-nowrap"
+                    >
+                      🗑 Xóa nhãn
+                    </button>
+                  )}
+                </div>
+                {/* Preview */}
+                {form.imageBadge && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-[rgba(245,237,214,0.45)]">Xem trước:</span>
+                    <span style={{
+                      background: form.imageBadge.includes("★") || form.imageBadge.toLowerCase().includes("bán chạy") ? "#C9A84C" : "rgba(13,11,0,0.85)",
+                      color: form.imageBadge.includes("★") || form.imageBadge.toLowerCase().includes("bán chạy") ? "#0A0800" : "#D4C4A0",
+                      border: form.imageBadge.includes("★") || form.imageBadge.toLowerCase().includes("bán chạy") ? "none" : "1px solid rgba(212,196,160,0.3)",
+                      fontSize: 10, fontWeight: 700, padding: "5px 12px", letterSpacing: "0.08em",
+                      borderRadius: 999, display: "inline-block",
+                    }}>
+                      {form.imageBadge}
+                    </span>
+                  </div>
+                )}
+              </Field>
+
               <div className="flex items-center gap-3 p-3 bg-[#1a1200]/60 rounded-xl cursor-pointer" onClick={() => set("isFeatured", !form.isFeatured)}>
                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${form.isFeatured ? "bg-[#C9A84C] border-[#C9A84C]" : "border-gray-600"}`}>
                   {form.isFeatured && <span className="text-black text-xs font-bold">✓</span>}

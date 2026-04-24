@@ -26,8 +26,6 @@ function formatPrice(price: number) {
   return price.toLocaleString("vi-VN") + " đ";
 }
 
-const BADGE_LABELS = ["Phổ thông cao cấp", "Bán chạy nhất ★", "Cao cấp nhất"];
-
 // ─── Product Card — giống hệt landing page ───────────────────────────────────
 function ProductCard({ product, index }: { product: Product; index: number }) {
   const [hovered, setHovered] = useState(false);
@@ -40,8 +38,9 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
       ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
       : 0;
 
-  const badgeLabel = BADGE_LABELS[index] ?? "Sản phẩm";
-  const badgeHighlight = index === 1; // index 1 = "Bán chạy nhất" → nền vàng
+  // Dùng imageBadge từ product data nếu có, không thì không hiển thị nhãn
+  const badgeLabel = product.imageBadge || null;
+  const badgeHighlight = badgeLabel ? (badgeLabel.includes("★") || badgeLabel.toLowerCase().includes("bán chạy")) : false;
 
   const href = isAvailable || isComingSoon ? `/products/${product.slug}` : "#";
 
@@ -98,17 +97,19 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
 
           {/* Badges */}
           <div style={{ position: "absolute", top: 14, right: 14, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-            {/* Position badge */}
-            <div style={{
-              background: badgeHighlight ? GOLD : "rgba(13,11,0,0.8)",
-              color: badgeHighlight ? "#0A0800" : GRAY_LIGHT,
-              border: badgeHighlight ? "none" : `1px solid rgba(212,196,160,0.3)`,
-              fontSize: 10, fontWeight: 700, padding: "5px 12px",
-              letterSpacing: "0.08em", borderRadius: R_FULL,
-              fontFamily: FONT,
-            }}>
-              {badgeLabel}
-            </div>
+            {/* Image badge — chỉ hiển thị khi admin đã đặt nhãn */}
+            {badgeLabel && (
+              <div style={{
+                background: badgeHighlight ? GOLD : "rgba(13,11,0,0.8)",
+                color: badgeHighlight ? "#0A0800" : GRAY_LIGHT,
+                border: badgeHighlight ? "none" : `1px solid rgba(212,196,160,0.3)`,
+                fontSize: 10, fontWeight: 700, padding: "5px 12px",
+                letterSpacing: "0.08em", borderRadius: R_FULL,
+                fontFamily: FONT,
+              }}>
+                {badgeLabel}
+              </div>
+            )}
             {/* Discount badge */}
             {discount > 0 && isAvailable && (
               <div style={{

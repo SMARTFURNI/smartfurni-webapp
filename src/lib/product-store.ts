@@ -57,6 +57,7 @@ export interface Product {
   updatedAt: string;
   isFeatured: boolean;
   viewCount: number;
+  imageBadge?: string; // Nhãn hiển thị trên ảnh sản phẩm (có thể chỉnh sửa/xóa từ admin)
 }
 
 export interface ProductDashboardStats {
