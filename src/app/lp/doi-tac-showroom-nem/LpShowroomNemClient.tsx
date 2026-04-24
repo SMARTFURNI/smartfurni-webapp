@@ -5,6 +5,7 @@ import type { CrmProduct } from "@/lib/crm-types";
 import Image from "next/image";
 import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
+import { BedDemoSection } from "./BedDemoSection";
 
 // ─── Design tokens — đồng bộ với website chính ────────────────────────────────
 const GOLD = "#C9A84C";
@@ -943,6 +944,8 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
       {/* ── SHOWROOM COMPARISON IMAGE ── */}
       <ShowroomComparisonSection E={E} />
 
+      {/* ── BED DEMO INTERACTIVE ── */}
+      <BedDemoSection />
       {/* ── HERO VIDEO ── */}
       <section style={{ background: BLACK }}>
         {/* Label + tiêu đề */}
