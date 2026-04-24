@@ -203,7 +203,7 @@ export default function BedSVG({
           fontFamily="Inter, sans-serif"
           transform={`rotate(${headAngle}, ${headPivotX}, ${headPivotY})`}
         >
-          {headAngle}°
+          {Math.round(headAngle)}°
         </text>
       )}
       {footAngle > 0 && (
@@ -216,7 +216,7 @@ export default function BedSVG({
           fontFamily="Inter, sans-serif"
           transform={`rotate(${-footAngle}, ${footPivotX}, ${footPivotY})`}
         >
-          {footAngle}°
+          {Math.round(footAngle)}°
         </text>
       )}
     </svg>
