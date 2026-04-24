@@ -178,7 +178,7 @@ export function BedDemoSection() {
 
             {/* CTA */}
             <a
-              href="/lp/doi-tac-showroom-nem#dang-ky"
+              href="#register-form"
               style={{
                 display: "inline-flex",
                 alignItems: "center",

@@ -1440,7 +1440,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                 Nhận chính sách đại lý &amp; bảng giá sỉ trong vòng <strong style={{ color: GOLD_LIGHT }}>2 giờ làm việc</strong>.
               </p>
               <a
-                href="#dang-ky"
+                href="#register-form"
                 style={{
                   display: "block", textAlign: "center",
                   background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 60%, #9A7A2E 100%)`,
