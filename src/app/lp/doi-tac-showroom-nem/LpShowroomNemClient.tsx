@@ -442,6 +442,67 @@ function ShowroomComparisonSection({ E }: { E: (opts: { bk: string; def: string;
   );
 }
 
+// ─── Image upload helper ─────────────────────────────────────────────────────
+function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: {
+  blockKey: string;
+  currentUrl?: string;
+  onUploaded: (bk: string, url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Upload thất bại"); }
+      const { url } = await res.json();
+      // Save to lp_content DB
+      await fetch("/api/admin/lp-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: LP_SLUG, blockKey, content: url }),
+      });
+      onUploaded(blockKey, url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload thất bại");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+  return (
+    <>
+      <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        style={{
+          position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)",
+          zIndex: 10, background: "rgba(13,11,0,0.85)", color: GOLD,
+          border: `1px solid ${GOLD}`, borderRadius: R_FULL,
+          fontSize: 11, fontWeight: 700, padding: "6px 16px",
+          cursor: uploading ? "not-allowed" : "pointer",
+          fontFamily: FONT_BODY, whiteSpace: "nowrap" as const,
+          backdropFilter: "blur(8px)",
+          opacity: uploading ? 0.7 : 1,
+          display: "flex", alignItems: "center", gap: 6,
+        }}
+      >
+        {uploading ? (
+          <><span style={{ display: "inline-block", width: 10, height: 10, border: `2px solid ${GOLD}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />Đang tải...</>
+        ) : (
+          <>📷 Thay ảnh</>
+        )}
+      </button>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </>
+  );
+}
+
 // ─── Product card ─────────────────────────────────────────────────────────────
 function ProductCard({ product, index, editMode, content, onSaved, onDeleted }: {
   product: CrmProduct; index: number;
@@ -454,10 +515,14 @@ function ProductCard({ product, index, editMode, content, onSaved, onDeleted }: 
   const [hovered, setHovered] = useState(false);
   const defaultBadges = ["Phổ thông cao cấp", "Bán chạy nhất ★", "Cao cấp nhất"];
   const badgeBk = `product_badge_${index}`;
+  const imgBk = `product_image_${index}`;
   const badgeDefault = defaultBadges[index] || "Sản phẩm";
   // If badge was deleted (key in content with empty string), hide it
   const badgeValue = content?.[badgeBk] !== undefined ? content[badgeBk] : badgeDefault;
   const showBadge = badgeValue !== "";
+  // Override image from lp_content if available
+  const overrideImgUrl = content?.[imgBk];
+  const displayImgUrl = overrideImgUrl || product.imageUrl;
   return (
     <FadeIn delay={index * 100}>
       <div
@@ -474,13 +539,21 @@ function ProductCard({ product, index, editMode, content, onSaved, onDeleted }: 
         }}>
         <div style={{ position: "relative", width: "100%", paddingBottom: "100%", background: "#0A0800", borderRadius: `${R_LG}px ${R_LG}px 0 0`, overflow: "hidden" }}>
           <div style={{ position: "absolute", inset: 0 }}>
-          {product.imageUrl && !imgErr ? (
-            <Image src={product.imageUrl} alt={product.name} fill style={{ objectFit: "cover" }} onError={() => setImgErr(true)} />
+          {displayImgUrl && !imgErr ? (
+            <Image src={displayImgUrl} alt={product.name} fill style={{ objectFit: "cover" }} onError={() => setImgErr(true)} />
           ) : (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 56 }}>🛏️</div>
           )}
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,11,0,0.7) 0%, transparent 55%)" }} />
           </div>
+          {/* Upload ảnh khi edit mode */}
+          {editMode && (
+            <ImageUploadOverlay
+              blockKey={imgBk}
+              currentUrl={displayImgUrl}
+              onUploaded={(bk, url) => { onSaved?.(bk, url); setImgErr(false); }}
+            />
+          )}
           {/* Badge — editable + deletable */}
           {(showBadge || editMode) && (
             <div style={{
@@ -531,8 +604,16 @@ function ProductCard({ product, index, editMode, content, onSaved, onDeleted }: 
         </div>
         <div style={{ padding: "22px 22px 26px", display: "flex", flexDirection: "column", flex: 1 }}>
           {product.sku && <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{product.sku}</div>}
-          <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 8, lineHeight: 1.4, fontFamily: FONT_HEADING, letterSpacing: "normal", minHeight: 44 }}>{product.name}</h3>
-          {product.description && <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, marginBottom: 14, fontFamily: FONT_BODY, flex: 1 }}>{product.description.slice(0, 90)}{product.description.length > 90 ? "…" : ""}</p>}
+          <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 8, lineHeight: 1.4, fontFamily: FONT_HEADING, letterSpacing: "normal", minHeight: 44 }}>
+            <EditableText slug={LP_SLUG} blockKey={`product_crm_name_${index}`} defaultValue={product.name} editMode={!!editMode} as="span"
+              style={{ color: WHITE, fontSize: 16, fontWeight: 600, lineHeight: 1.4, fontFamily: FONT_HEADING }}
+              savedValue={content?.[`product_crm_name_${index}`]} onSaved={onSaved} onDeleted={onDeleted} />
+          </h3>
+          {product.description && <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, marginBottom: 14, fontFamily: FONT_BODY, flex: 1 }}>
+            <EditableText slug={LP_SLUG} blockKey={`product_crm_desc_${index}`} defaultValue={product.description.slice(0, 90) + (product.description.length > 90 ? "…" : "")} editMode={!!editMode} as="span" multiline
+              style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY }}
+              savedValue={content?.[`product_crm_desc_${index}`]} onSaved={onSaved} onDeleted={onDeleted} />
+          </p>}
           {(() => {
             // Tính giá bán lẻ thấp nhất: lấy từ sizePricings nếu có, ngược lại dùng basePrice
             const allPrices: number[] = [];
@@ -1019,9 +1100,17 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                     onMouseLeave={e => { const d = e.currentTarget as HTMLDivElement; d.style.borderColor = BLACK_BORDER; d.style.transform = "translateY(0)"; d.style.boxShadow = "none"; }}>
                     <div style={{ position: "relative", width: "100%", paddingBottom: "100%", borderRadius: `${R_LG}px ${R_LG}px 0 0`, overflow: "hidden", flexShrink: 0 }}>
                       <div style={{ position: "absolute", inset: 0 }}>
-                        <img src={p.img} alt={content[p.bkName] || p.defName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                        <img src={content[`product_image_${i}`] || p.img} alt={content[p.bkName] || p.defName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,11,0,0.65) 0%, transparent 55%)" }} />
                       </div>
+                      {/* Upload ảnh khi edit mode */}
+                      {editMode && (
+                        <ImageUploadOverlay
+                          blockKey={`product_image_${i}`}
+                          currentUrl={content[`product_image_${i}`] || p.img}
+                          onUploaded={handleSaved}
+                        />
+                      )}
                       {/* Badge fallback — editable + deletable */}
                       {(() => {
                         const fbBk = `product_badge_${i}`;
