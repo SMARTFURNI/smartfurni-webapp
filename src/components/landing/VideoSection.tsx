@@ -3,7 +3,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { SiteTheme, ThemeVideoItem } from "@/lib/theme-types";
 import { ScrollReveal } from "./ScrollReveal";
 
-// ─── YouTube embed with lazy load ─────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+const GOLD_DIM = "#2E2800";
+const BLACK = "#060500";
+
+// ─── YouTube embed with lazy autoplay ─────────────────────────────────────────
 function YoutubeEmbed({ videoId, title }: { videoId: string; title: string }) {
   const [loaded, setLoaded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -26,20 +30,20 @@ function YoutubeEmbed({ videoId, title }: { videoId: string; title: string }) {
   return (
     <div
       ref={ref}
-      style={{ position: "relative", paddingBottom: "56.25%", height: 0, overflow: "hidden", borderRadius: 16, background: "#0D0B00" }}
+      style={{ position: "relative", paddingBottom: "56.25%", height: 0, overflow: "hidden", background: "#0D0B00" }}
     >
       <iframe
         src={src}
         title={title}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
-        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none", borderRadius: 16 }}
+        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
       />
     </div>
   );
 }
 
-// ─── Arrow Button ─────────────────────────────────────────────────────────────
+// ─── Arrow Button (compact, placed below video) ───────────────────────────────
 function ArrowBtn({
   direction,
   onClick,
@@ -57,17 +61,17 @@ function ArrowBtn({
       disabled={disabled}
       aria-label={direction === "left" ? "Video trước" : "Video tiếp theo"}
       style={{
-        width: "clamp(36px, 5vw, 52px)",
-        height: "clamp(36px, 5vw, 52px)",
+        width: 44,
+        height: 44,
         borderRadius: "50%",
-        border: `2px solid ${disabled ? "#2D2500" : primary}`,
+        border: `1.5px solid ${disabled ? GOLD_DIM : primary}`,
         background: disabled ? "transparent" : `${primary}18`,
         color: disabled ? "#4A4000" : primary,
         cursor: disabled ? "not-allowed" : "pointer",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: "clamp(16px, 2.5vw, 22px)",
+        fontSize: 18,
         transition: "all 0.2s",
         flexShrink: 0,
       }}
@@ -81,7 +85,7 @@ function ArrowBtn({
 function Dots({ total, current, primary, onDotClick }: { total: number; current: number; primary: string; onDotClick: (i: number) => void }) {
   if (total <= 1) return null;
   return (
-    <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 20 }}>
+    <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
       {Array.from({ length: total }).map((_, i) => (
         <button
           key={i}
@@ -91,7 +95,7 @@ function Dots({ total, current, primary, onDotClick }: { total: number; current:
             width: i === current ? 24 : 8,
             height: 8,
             borderRadius: 999,
-            background: i === current ? primary : "#2D2500",
+            background: i === current ? primary : GOLD_DIM,
             border: "none",
             cursor: "pointer",
             padding: 0,
@@ -113,10 +117,7 @@ interface VideoSectionProps {
 
 export default function VideoSection({ theme, videoId, videoTitle }: VideoSectionProps) {
   const { colors, layout, videoSection } = theme;
-  const primary = colors.primary;
-  const bgColor = colors.background;
-  const textColor = colors.text ?? "#F5EDD6";
-  const borderColor = colors.border ?? "#2D2500";
+  const primary = colors.primary ?? "#C9A84C";
   const maxWidth = layout.maxWidth ?? 1280;
 
   // Build video list: prefer theme.videoSection.videos, fallback to legacy props
@@ -127,7 +128,6 @@ export default function VideoSection({ theme, videoId, videoTitle }: VideoSectio
   })();
 
   const [current, setCurrent] = useState(0);
-
   const prev = useCallback(() => setCurrent((c) => Math.max(0, c - 1)), []);
   const next = useCallback(() => setCurrent((c) => Math.min(videos.length - 1, c + 1)), [videos.length]);
 
@@ -152,11 +152,12 @@ export default function VideoSection({ theme, videoId, videoTitle }: VideoSectio
   const activeVideo = videos[current];
 
   return (
-    <section style={{ background: bgColor, padding: "clamp(48px, 8vw, 80px) 0" }}>
-      <div style={{ maxWidth, margin: "0 auto", padding: "0 clamp(16px, 4vw, 24px)" }}>
-        {/* Header */}
+    <section style={{ background: BLACK }}>
+
+      {/* ── Header ── */}
+      <div style={{ textAlign: "center", padding: "clamp(40px, 6vw, 64px) 24px 28px" }}>
         <ScrollReveal variant="fadeUp" delay={0}>
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          {/* Label pill */}
           <div
             style={{
               display: "inline-flex",
@@ -165,100 +166,121 @@ export default function VideoSection({ theme, videoId, videoTitle }: VideoSectio
               background: `${primary}15`,
               border: `1px solid ${primary}40`,
               borderRadius: 999,
-              padding: "6px 16px",
+              padding: "6px 18px",
               marginBottom: 20,
             }}
           >
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: primary, display: "inline-block" }} />
-            <span style={{ color: primary, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>
+            <span style={{
+              color: primary,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase" as const,
+            }}>
               {sectionLabel}
             </span>
           </div>
+          {/* Title */}
           <h2
             style={{
-              fontSize: "clamp(24px, 3.5vw, 44px)",
+              fontSize: "clamp(22px, 3vw, 42px)",
               fontWeight: 300,
-              color: textColor,
+              color: "#F5EDD6",
               margin: 0,
               lineHeight: 1.2,
+              letterSpacing: "-0.01em",
+              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
             }}
           >
             {sectionTitle}
           </h2>
-        </div>
         </ScrollReveal>
+      </div>
 
-        {/* Carousel */}
-        <ScrollReveal variant="fadeUp" delay={150}>
-        <div>
-          {/* Arrow + video row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            {/* Left arrow */}
-            <ArrowBtn direction="left" onClick={prev} disabled={current === 0} primary={primary} />
+      {/* ── Video — full-width, edge-to-edge với maxWidth lớn ── */}
+      <ScrollReveal variant="fadeUp" delay={100}>
+        <div style={{ maxWidth, margin: "0 auto", padding: "0 clamp(8px, 2vw, 16px)" }}>
 
-            {/* Video embed */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  border: `1px solid ${borderColor}`,
-                  borderRadius: 16,
-                  overflow: "hidden",
-                  boxShadow: `0 0 60px ${primary}12`,
-                }}
-              >
-                <YoutubeEmbed
-                  key={activeVideo.id}
-                  videoId={activeVideo.youtubeId}
-                  title={activeVideo.title}
-                />
-              </div>
+          {/* Video wrapper với gold accent lines */}
+          <div
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              borderRadius: "clamp(8px, 1.5vw, 16px)",
+              border: `1px solid ${GOLD_DIM}`,
+              boxShadow: `0 0 80px ${primary}10`,
+            }}
+          >
+            {/* Gold accent top */}
+            <div style={{
+              position: "absolute", top: 0, left: 0, right: 0, height: 2, zIndex: 2,
+              background: `linear-gradient(90deg, transparent 0%, ${primary} 30%, ${primary} 70%, transparent 100%)`,
+            }} />
+            {/* Gold accent bottom */}
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0, height: 2, zIndex: 2,
+              background: `linear-gradient(90deg, transparent 0%, ${primary} 30%, ${primary} 70%, transparent 100%)`,
+            }} />
 
-              {/* Video title + label */}
-              {(activeVideo.title || activeVideo.label) && (
-                <div style={{ marginTop: 16, textAlign: "center" }}>
-                  {activeVideo.label && (
-                    <span
-                      style={{
-                        display: "inline-block",
-                        background: `${primary}20`,
-                        color: primary,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase" as const,
-                        padding: "3px 12px",
-                        borderRadius: 999,
-                        marginBottom: 6,
-                      }}
-                    >
-                      {activeVideo.label}
-                    </span>
-                  )}
-                  {activeVideo.title && (
-                    <p style={{ color: textColor, fontSize: 16, fontWeight: 500, margin: 0 }}>
-                      {activeVideo.title}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Right arrow */}
-            <ArrowBtn direction="right" onClick={next} disabled={current === videos.length - 1} primary={primary} />
+            <YoutubeEmbed
+              key={activeVideo.id}
+              videoId={activeVideo.youtubeId}
+              title={activeVideo.title}
+            />
           </div>
 
-          {/* Counter */}
-          {videos.length > 1 && (
-            <div style={{ textAlign: "center", marginTop: 12, color: colors.textMuted ?? "#9CA3AF", fontSize: 13 }}>
-              {current + 1} / {videos.length}
+          {/* ── Video title + label (dưới video) ── */}
+          {(activeVideo.title || activeVideo.label) && (
+            <div style={{ marginTop: 16, textAlign: "center" }}>
+              {activeVideo.label && (
+                <span
+                  style={{
+                    display: "inline-block",
+                    background: `${primary}20`,
+                    color: primary,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase" as const,
+                    padding: "3px 12px",
+                    borderRadius: 999,
+                    marginBottom: 6,
+                  }}
+                >
+                  {activeVideo.label}
+                </span>
+              )}
+              {activeVideo.title && (
+                <p style={{ color: "#F5EDD6", fontSize: 15, fontWeight: 400, margin: 0, opacity: 0.85 }}>
+                  {activeVideo.title}
+                </p>
+              )}
             </div>
           )}
 
-          {/* Dots */}
-          <Dots total={videos.length} current={current} primary={primary} onDotClick={setCurrent} />
+          {/* ── Navigation: arrows + dots dưới video (không chiếm không gian 2 bên) ── */}
+          {videos.length > 1 && (
+            <div style={{ marginTop: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+              {/* Arrows + counter row */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <ArrowBtn direction="left" onClick={prev} disabled={current === 0} primary={primary} />
+                <span style={{ color: "#9CA3AF", fontSize: 13, minWidth: 40, textAlign: "center" }}>
+                  {current + 1} / {videos.length}
+                </span>
+                <ArrowBtn direction="right" onClick={next} disabled={current === videos.length - 1} primary={primary} />
+              </div>
+              {/* Dots */}
+              <Dots total={videos.length} current={current} primary={primary} onDotClick={setCurrent} />
+            </div>
+          )}
+
         </div>
-        </ScrollReveal>
-      </div>
+      </ScrollReveal>
+
+      {/* Bottom spacing */}
+      <div style={{ height: "clamp(40px, 6vw, 64px)" }} />
+
     </section>
   );
 }
