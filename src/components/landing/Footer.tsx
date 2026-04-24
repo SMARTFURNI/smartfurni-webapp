@@ -100,8 +100,8 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
       <div style={{ height: 2, background: `linear-gradient(90deg, transparent 0%, ${GOLD} 30%, ${GOLD} 70%, transparent 100%)`, opacity: 0.5 }} />
 
       <div style={{ maxWidth: layout.maxWidth, margin: "0 auto", padding: "56px 24px 0" }}>
-        {/* ── Main grid: 5 cột ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr 1fr", gap: "48px 32px", marginBottom: 52 }} className="footer-main-grid">
+        {/* ── Main grid: 4 cột ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: "48px 32px", marginBottom: 52 }} className="footer-main-grid">
 
           {/* Cột 1: Brand */}
           <div>
@@ -180,21 +180,7 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
             ))}
           </div>
 
-          {/* Cột 4: Chính sách — đọc từ theme */}
-          <div>
-            <ColHeader label="Chính sách" />
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-              {policyLinks.map((link, i) => (
-                <li key={i}>
-                  <Link href={link.href} style={{ color: GRAY, fontSize: 12, fontFamily: FONT, textDecoration: "none", lineHeight: 1.5 }}>
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Cột 5: Đăng ký ngay — đọc từ theme */}
+          {/* Cột 4: Đăng ký ngay — đọc từ theme */}
           <div>
             <ColHeader label="Đăng ký ngay" />
             <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT, marginBottom: 20 }}>
@@ -237,7 +223,7 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
             {footer.copyrightText}
           </p>
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-            {policyLinks.slice(0, 3).map((link, i) => (
+            {policyLinks.map((link, i) => (
               <Link key={i} href={link.href} style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT, textDecoration: "none" }}>
                 {link.label}
               </Link>
@@ -249,7 +235,7 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
       {/* Responsive CSS */}
       <style>{`
         .footer-main-grid {
-          grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
+          grid-template-columns: 1.4fr 1fr 1fr 1fr;
         }
         @media (max-width: 1100px) {
           .footer-main-grid {
