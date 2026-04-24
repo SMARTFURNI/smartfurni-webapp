@@ -190,7 +190,7 @@ export default function VideoSection({ theme, videoId, videoTitle }: VideoSectio
               margin: 0,
               lineHeight: 1.2,
               letterSpacing: "-0.01em",
-              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
+              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             }}
           >
             {sectionTitle}
