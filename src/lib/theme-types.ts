@@ -63,6 +63,21 @@ export interface ThemeNavbar {
   height: number;
   borderBottom: boolean;
 }
+export interface FooterShowroom {
+  icon: string;
+  label: string;
+  address: string;
+}
+export interface FooterContact {
+  icon: string;
+  label: string;
+  value: string;
+  href: string;
+}
+export interface FooterPolicyLink {
+  label: string;
+  href: string;
+}
 export interface ThemeFooter {
   bgColor: string;
   textColor: string;
@@ -78,6 +93,15 @@ export interface ThemeFooter {
     tiktok: string;
   };
   copyrightText: string;
+  // Extended editable footer content
+  aboutText: string;
+  showrooms: FooterShowroom[];
+  contacts: FooterContact[];
+  policyLinks: FooterPolicyLink[];
+  ctaText: string;
+  ctaHref: string;
+  ctaZaloText: string;
+  ctaZaloHref: string;
 }
 export interface ThemeLayout {
   maxWidth: number;

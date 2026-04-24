@@ -16,20 +16,6 @@ interface FooterProps {
   variant?: "full" | "minimal";
 }
 
-const NAV_LINKS = [
-  { label: "Trang chủ", href: "/" },
-  { label: "Sản phẩm", href: "/products" },
-  { label: "Blog", href: "/blog" },
-  { label: "Giới thiệu", href: "/about" },
-  { label: "Liên hệ", href: "/contact" },
-];
-
-const SHOWROOM_ITEMS = [
-  { icon: "📍", label: "TP. HCM", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
-  { icon: "📍", label: "Hà Nội", val: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
-  { icon: "🏭", label: "Xưởng SX", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
-];
-
 // ─── Column header với accent bar vàng (giống landing page) ──────────────────
 function ColHeader({ label }: { label: string }) {
   return (
@@ -46,45 +32,66 @@ function ColHeader({ label }: { label: string }) {
   );
 }
 
+// ─── Default data (fallback khi theme chưa có dữ liệu) ───────────────────────
+const DEFAULT_SHOWROOMS = [
+  { icon: "📍", label: "TP. HCM", address: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
+  { icon: "📍", label: "Hà Nội", address: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
+  { icon: "🏭", label: "Xưởng SX", address: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
+];
+
+const DEFAULT_CONTACTS = [
+  { icon: "📞", label: "Hotline", value: "028.7122.0818", href: "tel:02871220818" },
+  { icon: "💬", label: "Zalo tư vấn", value: "0918.326.552", href: "https://zalo.me/0918326552" },
+  { icon: "✉️", label: "Email", value: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
+  { icon: "🌐", label: "Website", value: "smartfurni.vn", href: "https://smartfurni.vn" },
+];
+
+const DEFAULT_POLICY_LINKS = [
+  { label: "Chính sách bảo hành", href: "/warranty" },
+  { label: "Chính sách đổi trả", href: "/returns" },
+  { label: "Chính sách bảo mật", href: "/privacy" },
+  { label: "Điều khoản sử dụng", href: "/terms" },
+  { label: "Chính sách đại lý", href: "/lp/doi-tac-showroom-nem" },
+  { label: "Hướng dẫn sử dụng", href: "/blog?category=Hướng Dẫn Sử Dụng" },
+  { label: "Câu hỏi thường gặp", href: "/contact#faq" },
+];
+
 export default function Footer({ theme, variant = "full" }: FooterProps) {
   const { footer, layout } = theme;
+
+  // ── Đọc dữ liệu động từ theme (fallback về default nếu chưa có) ──────────────
+  const footerExt = footer as Record<string, unknown>;
+  const showrooms = (footerExt.showrooms as typeof DEFAULT_SHOWROOMS | undefined)?.length
+    ? (footerExt.showrooms as typeof DEFAULT_SHOWROOMS)
+    : DEFAULT_SHOWROOMS;
+  const contacts = (footerExt.contacts as typeof DEFAULT_CONTACTS | undefined)?.length
+    ? (footerExt.contacts as typeof DEFAULT_CONTACTS)
+    : DEFAULT_CONTACTS;
+  const policyLinks = (footerExt.policyLinks as typeof DEFAULT_POLICY_LINKS | undefined)?.length
+    ? (footerExt.policyLinks as typeof DEFAULT_POLICY_LINKS)
+    : DEFAULT_POLICY_LINKS;
+  const aboutText = (footerExt.aboutText as string) || footer.tagline || "Nâng tầm giấc ngủ của bạn";
+  const ctaText = (footerExt.ctaText as string) || "Đăng ký đối tác →";
+  const ctaHref = (footerExt.ctaHref as string) || "/lp/doi-tac-showroom-nem#dang-ky";
+  const ctaZaloText = (footerExt.ctaZaloText as string) || "💬 Chat Zalo ngay";
+  const ctaZaloHref = (footerExt.ctaZaloHref as string) || "https://zalo.me/0918326552";
+  const zaloSocial = (footer.socialLinks as Record<string, string>).zalo || "";
 
   // ── Minimal variant ──────────────────────────────────────────────────────────
   if (variant === "minimal") {
     return (
       <footer style={{ background: BLACK_BG, borderTop: `1px solid ${BLACK_BORDER}` }}>
-        {/* Top gold accent line */}
         <div style={{ height: 1, background: `linear-gradient(90deg, transparent 0%, ${GOLD} 30%, ${GOLD} 70%, transparent 100%)`, opacity: 0.4 }} />
         <div style={{ maxWidth: layout.maxWidth, margin: "0 auto", padding: "20px 24px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            {/* Logo */}
             <Link href="/" style={{ display: "flex", alignItems: "center" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/smartfurni-logo-transparent.png"
-                alt={footer.companyName}
-                style={{ height: 36, objectFit: "contain" }}
-              />
+              <img src="/smartfurni-logo-transparent.png" alt={footer.companyName} style={{ height: 36, objectFit: "contain" }} />
             </Link>
-
-            <p style={{ color: GRAY, fontSize: 11, fontFamily: FONT, margin: 0 }}>
-              {footer.copyrightText}
-            </p>
-
-            {/* Quick links */}
+            <p style={{ color: GRAY, fontSize: 11, fontFamily: FONT, margin: 0 }}>{footer.copyrightText}</p>
             <div style={{ display: "flex", gap: 20 }}>
-              {[
-                { label: "Trang chủ", href: "/" },
-                { label: "Sản phẩm", href: "/products" },
-                { label: "Liên hệ", href: "/contact" },
-              ].map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  style={{ color: GRAY, fontSize: 11, fontFamily: FONT, textDecoration: "none" }}
-                >
-                  {link.label}
-                </Link>
+              {[{ label: "Trang chủ", href: "/" }, { label: "Sản phẩm", href: "/products" }, { label: "Liên hệ", href: "/contact" }].map((link) => (
+                <Link key={link.href} href={link.href} style={{ color: GRAY, fontSize: 11, fontFamily: FONT, textDecoration: "none" }}>{link.label}</Link>
               ))}
             </div>
           </div>
@@ -94,9 +101,6 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
   }
 
   // ── Full footer ──────────────────────────────────────────────────────────────
-  const phone = (footer as unknown as Record<string, string>).phone ?? "028.7122.0818";
-  const email = (footer as unknown as Record<string, string>).email ?? "info@smartfurni.vn";
-
   return (
     <footer style={{ background: BLACK_BG, borderTop: `1px solid ${BLACK_BORDER}` }}>
       {/* Top gold accent line */}
@@ -104,92 +108,52 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
 
       <div style={{ maxWidth: layout.maxWidth, margin: "0 auto", padding: "56px 24px 0" }}>
         {/* ── Main grid: 5 cột ── */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1.4fr 1fr 1fr 1fr 1fr",
-          gap: "48px 32px",
-          marginBottom: 52,
-        }}
-          className="footer-main-grid"
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr 1fr", gap: "48px 32px", marginBottom: 52 }} className="footer-main-grid">
+
           {/* Cột 1: Brand */}
           <div>
             <div style={{ marginBottom: 20 }}>
               <Link href="/">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/smartfurni-logo-transparent.png"
-                  alt={footer.companyName}
-                  style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }}
-                />
+                <img src="/smartfurni-logo-transparent.png" alt={footer.companyName} style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }} />
               </Link>
             </div>
             <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.85, fontFamily: FONT, marginBottom: 24, maxWidth: 280 }}>
-              {footer.tagline || "Nâng tầm giấc ngủ của bạn"}
+              {aboutText}
             </p>
             {/* Social links */}
             <div style={{ display: "flex", gap: 10 }}>
               {footer.showSocialLinks && footer.socialLinks.facebook && (
-                <a
-                  href={footer.socialLinks.facebook}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Facebook"
-                  style={{
-                    width: 36, height: 36, borderRadius: "50%",
-                    background: "rgba(201,168,76,0.08)",
-                    border: `1px solid rgba(201,168,76,0.25)`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT,
-                    textDecoration: "none",
-                  }}
-                >
+                <a href={footer.socialLinks.facebook} target="_blank" rel="noopener noreferrer" title="Facebook"
+                  style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT, textDecoration: "none" }}>
                   f
                 </a>
               )}
               {footer.showSocialLinks && footer.socialLinks.youtube && (
-                <a
-                  href={footer.socialLinks.youtube}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="YouTube"
-                  style={{
-                    width: 36, height: 36, borderRadius: "50%",
-                    background: "rgba(201,168,76,0.08)",
-                    border: `1px solid rgba(201,168,76,0.25)`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT,
-                    textDecoration: "none",
-                  }}
-                >
+                <a href={footer.socialLinks.youtube} target="_blank" rel="noopener noreferrer" title="YouTube"
+                  style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT, textDecoration: "none" }}>
                   ▶
                 </a>
               )}
-              {footer.showSocialLinks && footer.socialLinks.tiktok && (
-                <a
-                  href={footer.socialLinks.tiktok}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="TikTok"
-                  style={{
-                    width: 36, height: 36, borderRadius: "50%",
-                    background: "rgba(201,168,76,0.08)",
-                    border: `1px solid rgba(201,168,76,0.25)`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT,
-                    textDecoration: "none",
-                  }}
-                >
+              {footer.showSocialLinks && zaloSocial && (
+                <a href={zaloSocial} target="_blank" rel="noopener noreferrer" title="Zalo"
+                  style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT, textDecoration: "none" }}>
                   Z
+                </a>
+              )}
+              {footer.showSocialLinks && footer.socialLinks.tiktok && (
+                <a href={footer.socialLinks.tiktok} target="_blank" rel="noopener noreferrer" title="TikTok"
+                  style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontSize: 11, fontWeight: 700, fontFamily: FONT, textDecoration: "none" }}>
+                  TK
                 </a>
               )}
             </div>
           </div>
 
-          {/* Cột 2: Showroom (thay thế Sản phẩm) */}
+          {/* Cột 2: Showroom — đọc từ theme */}
           <div>
             <ColHeader label="Showroom" />
-            {SHOWROOM_ITEMS.map((a, i) => (
+            {showrooms.map((a, i) => (
               <div key={i} style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
                 <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{a.icon}</span>
                 <div>
@@ -197,60 +161,39 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
                     {a.label}
                   </div>
                   <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT }}>
-                    {a.val}
+                    {a.address}
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Cột 3: Liên hệ (giữ nguyên từ Hỗ trợ, đổi tên) */}
+          {/* Cột 3: Liên hệ — đọc từ theme */}
           <div>
             <ColHeader label="Liên hệ" />
-            {[
-              { icon: "📞", label: "Hotline", val: phone, href: `tel:${phone.replace(/[\s.]/g, "")}` },
-              { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: "https://zalo.me/0918326552" },
-              { icon: "✉️", label: "Email", val: email, href: `mailto:${email}` },
-              { icon: "🌐", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
-            ].map((c, i) => (
-              <a
-                key={i}
-                href={c.href}
-                target={c.href.startsWith("http") ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}
-              >
+            {contacts.map((c, i) => (
+              <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
+                style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}>
                 <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
                 <div>
                   <div style={{ color: GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: FONT, marginBottom: 1 }}>
                     {c.label}
                   </div>
                   <div style={{ color: GOLD_LIGHT, fontSize: 13, fontFamily: FONT, fontWeight: 700 }}>
-                    {c.val}
+                    {c.value}
                   </div>
                 </div>
               </a>
             ))}
           </div>
 
-          {/* Cột 4: Chính sách */}
+          {/* Cột 4: Chính sách — đọc từ theme */}
           <div>
             <ColHeader label="Chính sách" />
             <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                { label: "Chính sách bảo hành", href: "/warranty" },
-                { label: "Chính sách đổi trả", href: "/returns" },
-                { label: "Chính sách bảo mật", href: "/privacy" },
-                { label: "Điều khoản sử dụng", href: "/terms" },
-                { label: "Chính sách đại lý", href: "/lp/doi-tac-showroom-nem" },
-                { label: "Hướng dẫn sử dụng", href: "/blog?category=Hướng Dẫn Sử Dụng" },
-                { label: "Câu hỏi thường gặp", href: "/contact#faq" },
-              ].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    style={{ color: GRAY, fontSize: 12, fontFamily: FONT, textDecoration: "none", lineHeight: 1.5 }}
-                  >
+              {policyLinks.map((link, i) => (
+                <li key={i}>
+                  <Link href={link.href} style={{ color: GRAY, fontSize: 12, fontFamily: FONT, textDecoration: "none", lineHeight: 1.5 }}>
                     {link.label}
                   </Link>
                 </li>
@@ -258,44 +201,36 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
             </ul>
           </div>
 
-          {/* Cột 5: Đăng ký ngay (mới) */}
+          {/* Cột 5: Đăng ký ngay — đọc từ theme */}
           <div>
             <ColHeader label="Đăng ký ngay" />
             <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT, marginBottom: 20 }}>
               Nhận chính sách đại lý &amp; bảng giá sỉ trong vòng <strong style={{ color: GOLD_LIGHT }}>2 giờ làm việc</strong>.
             </p>
-            <a
-              href="/lp/doi-tac-showroom-nem#dang-ky"
+            <a href={ctaHref}
               style={{
                 display: "block", textAlign: "center",
                 background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 60%, #9A7A2E 100%)`,
                 color: "#0A0800", fontWeight: 700, fontSize: 11,
                 letterSpacing: "0.1em", textTransform: "uppercase",
                 padding: "13px 20px", borderRadius: 8,
-                textDecoration: "none",
-                fontFamily: FONT,
+                textDecoration: "none", fontFamily: FONT,
                 boxShadow: "0 6px 24px rgba(201,168,76,0.25)",
                 marginBottom: 12,
-              }}
-            >
-              Đăng ký đối tác →
+              }}>
+              {ctaText}
             </a>
-            <a
-              href="https://zalo.me/0918326552"
-              target="_blank"
-              rel="noopener noreferrer"
+            <a href={ctaZaloHref} target="_blank" rel="noopener noreferrer"
               style={{
                 display: "block", textAlign: "center",
                 background: "transparent",
                 color: GRAY_LIGHT, fontWeight: 500, fontSize: 11,
                 letterSpacing: "0.06em",
                 padding: "12px 20px", borderRadius: 8,
-                textDecoration: "none",
-                fontFamily: FONT,
+                textDecoration: "none", fontFamily: FONT,
                 border: `1px solid rgba(212,196,160,0.2)`,
-              }}
-            >
-              💬 Chat Zalo ngay
+              }}>
+              {ctaZaloText}
             </a>
           </div>
         </div>
@@ -304,25 +239,13 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
         <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${BLACK_BORDER} 20%, ${BLACK_BORDER} 80%, transparent)`, marginBottom: 24 }} />
 
         {/* ── Bottom bar ── */}
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          flexWrap: "wrap", gap: 12,
-          paddingBottom: 28,
-        }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, paddingBottom: 28 }}>
           <p style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT, margin: 0 }}>
             {footer.copyrightText}
           </p>
-          <div style={{ display: "flex", gap: 20 }}>
-            {[
-              { label: "Chính sách bảo mật", href: "/privacy" },
-              { label: "Điều khoản sử dụng", href: "/terms" },
-              { label: "Chính sách đại lý", href: "/lp/doi-tac-showroom-nem" },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT, textDecoration: "none" }}
-              >
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+            {policyLinks.slice(0, 3).map((link, i) => (
+              <Link key={i} href={link.href} style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT, textDecoration: "none" }}>
                 {link.label}
               </Link>
             ))}

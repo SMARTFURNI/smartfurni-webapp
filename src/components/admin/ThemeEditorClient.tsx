@@ -989,31 +989,93 @@ export default function ThemeEditorClient({
           </div>
         );
 
-      case "footer":
+      case "footer": {
+        const footerShowrooms = ((theme.footer as Record<string, unknown>).showrooms ?? []) as { icon: string; label: string; address: string }[];
+        const footerContacts = ((theme.footer as Record<string, unknown>).contacts ?? []) as { icon: string; label: string; value: string; href: string }[];
+        const footerPolicyLinks = ((theme.footer as Record<string, unknown>).policyLinks ?? []) as { label: string; href: string }[];
+        const itemBoxStyle: React.CSSProperties = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px 14px", marginBottom: 10 };
+        const itemHeaderStyle: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 };
+        const deleteBtnStyle: React.CSSProperties = { background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, padding: "2px 8px", color: "#F87171", fontSize: 11, cursor: "pointer" };
+        const addBtnStyle: React.CSSProperties = { width: "100%", padding: "8px 0", background: "rgba(201,168,76,0.1)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 8, color: "#C9A84C", fontSize: 13, cursor: "pointer" };
         return (
           <div className="space-y-5">
-            <SectionCard title="Thông tin chân trang">
+            {/* Cột 1: Thương hiệu */}
+            <SectionCard title="Cột 1 — Thương hiệu">
               <TextInput label="Tên công ty" value={theme.footer.companyName} onChange={(v) => updateSection("footer", { companyName: v })} />
               <TextInput label="Slogan" value={theme.footer.tagline} onChange={(v) => updateSection("footer", { tagline: v })} />
-              <TextInput label="Số điện thoại / Hotline" value={(theme.footer as unknown as Record<string, string>).phone ?? ""} onChange={(v) => updateSection("footer", { phone: v } as Partial<SiteTheme["footer"]>)} placeholder="1800 1234 56" />
-              <TextInput label="Email liên hệ" value={(theme.footer as unknown as Record<string, string>).email ?? ""} onChange={(v) => updateSection("footer", { email: v } as Partial<SiteTheme["footer"]>)} placeholder="hello@smartfurni.vn" />
+              <TextInput label="Mô tả ngắn" value={((theme.footer as Record<string, unknown>).aboutText as string) ?? ""} onChange={(v) => updateSection("footer", { aboutText: v } as Partial<SiteTheme["footer"]>)} placeholder="Tiên phong trong lĩnh vực giường điện..." />
               <TextInput label="Bản quyền" value={theme.footer.copyrightText} onChange={(v) => updateSection("footer", { copyrightText: v })} />
               <ColorInput label="Màu nền footer" value={theme.footer.bgColor} onChange={(v) => updateSection("footer", { bgColor: v })} />
               <ColorInput label="Màu chữ footer" value={theme.footer.textColor} onChange={(v) => updateSection("footer", { textColor: v })} contrastWith={theme.footer.bgColor} />
             </SectionCard>
+            {/* Mạng xã hội */}
             <SectionCard title="Mạng xã hội">
               <Toggle label="Hiển thị mạng xã hội" value={theme.footer.showSocialLinks} onChange={(v) => updateSection("footer", { showSocialLinks: v })} />
               {theme.footer.showSocialLinks && (
                 <>
                   <TextInput label="Facebook" value={theme.footer.socialLinks.facebook} onChange={(v) => updateSection("footer", { socialLinks: { ...theme.footer.socialLinks, facebook: v } })} placeholder="https://facebook.com/..." />
-                  <TextInput label="Instagram" value={theme.footer.socialLinks.instagram} onChange={(v) => updateSection("footer", { socialLinks: { ...theme.footer.socialLinks, instagram: v } })} placeholder="https://instagram.com/..." />
                   <TextInput label="YouTube" value={theme.footer.socialLinks.youtube} onChange={(v) => updateSection("footer", { socialLinks: { ...theme.footer.socialLinks, youtube: v } })} placeholder="https://youtube.com/..." />
+                  <TextInput label="Zalo" value={((theme.footer.socialLinks as Record<string, string>).zalo) ?? ""} onChange={(v) => updateSection("footer", { socialLinks: { ...theme.footer.socialLinks, zalo: v } } as Partial<SiteTheme["footer"]>)} placeholder="https://zalo.me/..." />
                   <TextInput label="TikTok" value={theme.footer.socialLinks.tiktok} onChange={(v) => updateSection("footer", { socialLinks: { ...theme.footer.socialLinks, tiktok: v } })} placeholder="https://tiktok.com/..." />
                 </>
               )}
             </SectionCard>
+            {/* Cột 2: Showroom */}
+            <SectionCard title="Cột 2 — Showroom">
+              {footerShowrooms.map((sr, i) => (
+                <div key={i} style={itemBoxStyle}>
+                  <div style={itemHeaderStyle}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#C9A84C" }}>Showroom {i + 1}</span>
+                    <button onClick={() => updateSection("footer", { showrooms: footerShowrooms.filter((_, idx) => idx !== i) } as Partial<SiteTheme["footer"]>)} style={deleteBtnStyle}>× Xóa</button>
+                  </div>
+                  <TextInput label="Icon (emoji)" value={sr.icon} onChange={(v) => updateSection("footer", { showrooms: footerShowrooms.map((s, idx) => idx === i ? { ...s, icon: v } : s) } as Partial<SiteTheme["footer"]>)} placeholder="📍" />
+                  <TextInput label="Tên showroom" value={sr.label} onChange={(v) => updateSection("footer", { showrooms: footerShowrooms.map((s, idx) => idx === i ? { ...s, label: v } : s) } as Partial<SiteTheme["footer"]>)} placeholder="TP. HCM" />
+                  <TextInput label="Địa chỉ" value={sr.address} onChange={(v) => updateSection("footer", { showrooms: footerShowrooms.map((s, idx) => idx === i ? { ...s, address: v } : s) } as Partial<SiteTheme["footer"]>)} placeholder="74 Nguyễn Thị Nhung..." />
+                </div>
+              ))}
+              <button onClick={() => updateSection("footer", { showrooms: [...footerShowrooms, { icon: "📍", label: "Showroom mới", address: "" }] } as Partial<SiteTheme["footer"]>)} style={addBtnStyle}>+ Thêm showroom</button>
+            </SectionCard>
+            {/* Cột 3: Liên hệ */}
+            <SectionCard title="Cột 3 — Liên hệ">
+              {footerContacts.map((ct, i) => (
+                <div key={i} style={itemBoxStyle}>
+                  <div style={itemHeaderStyle}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#C9A84C" }}>Liên hệ {i + 1}</span>
+                    <button onClick={() => updateSection("footer", { contacts: footerContacts.filter((_, idx) => idx !== i) } as Partial<SiteTheme["footer"]>)} style={deleteBtnStyle}>× Xóa</button>
+                  </div>
+                  <TextInput label="Icon" value={ct.icon} onChange={(v) => updateSection("footer", { contacts: footerContacts.map((c, idx) => idx === i ? { ...c, icon: v } : c) } as Partial<SiteTheme["footer"]>)} placeholder="📞" />
+                  <TextInput label="Nhãn" value={ct.label} onChange={(v) => updateSection("footer", { contacts: footerContacts.map((c, idx) => idx === i ? { ...c, label: v } : c) } as Partial<SiteTheme["footer"]>)} placeholder="Hotline" />
+                  <TextInput label="Giá trị hiển thị" value={ct.value} onChange={(v) => updateSection("footer", { contacts: footerContacts.map((c, idx) => idx === i ? { ...c, value: v } : c) } as Partial<SiteTheme["footer"]>)} placeholder="028.7122.0818" />
+                  <TextInput label="Đường dẫn (href)" value={ct.href} onChange={(v) => updateSection("footer", { contacts: footerContacts.map((c, idx) => idx === i ? { ...c, href: v } : c) } as Partial<SiteTheme["footer"]>)} placeholder="tel:02871220818" />
+                </div>
+              ))}
+              <button onClick={() => updateSection("footer", { contacts: [...footerContacts, { icon: "📞", label: "", value: "", href: "" }] } as Partial<SiteTheme["footer"]>)} style={addBtnStyle}>+ Thêm mục liên hệ</button>
+            </SectionCard>
+            {/* Cột 4: Chính sách */}
+            <SectionCard title="Cột 4 — Chính sách">
+              {footerPolicyLinks.map((pl, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <TextInput label={`Link ${i + 1} — Tên`} value={pl.label} onChange={(v) => updateSection("footer", { policyLinks: footerPolicyLinks.map((p, idx) => idx === i ? { ...p, label: v } : p) } as Partial<SiteTheme["footer"]>)} placeholder="Chính sách bảo hành" />
+                    <div style={{ marginTop: 6 }}>
+                      <TextInput label="Đường dẫn" value={pl.href} onChange={(v) => updateSection("footer", { policyLinks: footerPolicyLinks.map((p, idx) => idx === i ? { ...p, href: v } : p) } as Partial<SiteTheme["footer"]>)} placeholder="/warranty" />
+                    </div>
+                  </div>
+                  <button onClick={() => updateSection("footer", { policyLinks: footerPolicyLinks.filter((_, idx) => idx !== i) } as Partial<SiteTheme["footer"]>)} style={{ ...deleteBtnStyle, padding: "8px 12px", marginBottom: 2 }}>×</button>
+                </div>
+              ))}
+              <button onClick={() => updateSection("footer", { policyLinks: [...footerPolicyLinks, { label: "", href: "/" }] } as Partial<SiteTheme["footer"]>)} style={addBtnStyle}>+ Thêm link chính sách</button>
+            </SectionCard>
+            {/* Cột 5: CTA */}
+            <SectionCard title="Cột 5 — Đăng ký ngay (CTA)">
+              <TextInput label="Nút CTA — Text" value={((theme.footer as Record<string, unknown>).ctaText as string) ?? ""} onChange={(v) => updateSection("footer", { ctaText: v } as Partial<SiteTheme["footer"]>)} placeholder="Đăng ký đối tác →" />
+              <TextInput label="Nút CTA — Đường dẫn" value={((theme.footer as Record<string, unknown>).ctaHref as string) ?? ""} onChange={(v) => updateSection("footer", { ctaHref: v } as Partial<SiteTheme["footer"]>)} placeholder="/lp/doi-tac-showroom-nem#dang-ky" />
+              <TextInput label="Nút Zalo — Text" value={((theme.footer as Record<string, unknown>).ctaZaloText as string) ?? ""} onChange={(v) => updateSection("footer", { ctaZaloText: v } as Partial<SiteTheme["footer"]>)} placeholder="💬 Chat Zalo ngay" />
+              <TextInput label="Nút Zalo — Đường dẫn" value={((theme.footer as Record<string, unknown>).ctaZaloHref as string) ?? ""} onChange={(v) => updateSection("footer", { ctaZaloHref: v } as Partial<SiteTheme["footer"]>)} placeholder="https://zalo.me/..." />
+            </SectionCard>
           </div>
         );
+      }
 
       case "layout":
         return (
