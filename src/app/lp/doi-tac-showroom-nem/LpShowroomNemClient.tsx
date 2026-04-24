@@ -1405,8 +1405,22 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
               </p>
             </div>
           </FadeIn>
-          {/* Hidden editable block for form submit button text */}
-          <div style={{ display: "none" }}>{E({ bk: "form_submit", def: "Nhận Chính Sách Đại Lý & Bảng Giá Sĩ →", as: "span" })}</div>
+          {/* Editable submit button text — visible only in edit mode */}
+          {editMode && (
+            <div style={{
+              marginBottom: 16,
+              padding: "12px 16px",
+              background: "rgba(201,168,76,0.06)",
+              border: `1px dashed ${GOLD}`,
+              borderRadius: R_MD,
+              display: "flex", alignItems: "center", gap: 12,
+            }}>
+              <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const, flexShrink: 0 }}>NÚT ĐĂNG KÝ:</span>
+              <div style={{ flex: 1 }}>
+                {E({ bk: "form_submit", def: "Nhận Chính Sách Đại Lý & Bảng Giá Sĩ →", as: "span", style: { fontSize: 13, fontWeight: 600, color: WHITE, fontFamily: FONT_BODY } })}
+              </div>
+            </div>
+          )}
           <FadeIn delay={100}><LeadForm submitLabel={content["form_submit"] || undefined} /></FadeIn>
         </div>
       </section>
