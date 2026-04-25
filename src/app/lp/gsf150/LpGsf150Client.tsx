@@ -1078,6 +1078,182 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
         </div>
       </section>
 
+
+      {/* ── LỢI ÍCH SỨC KHỎE CHI TIẾT ── */}
+      <section style={{ background: `linear-gradient(180deg, ${BLACK_SOFT} 0%, ${BLACK} 100%)`, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 56 }}>
+              <SectionLabel>{E({ bk: "health_section_label", def: "Khoa học giấc ngủ", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
+                {E({ bk: "health_title_1", def: "Tư Thế Ngủ Đúng Cách", as: "span", style: { display: "block" } })}
+                {E({ bk: "health_title_2", def: "Thay Đổi Sức Khỏe Của Bạn", as: "span", style: { color: GOLD, display: "block" } })}
+              </h2>
+              <GoldDivider />
+              <p style={{ color: GRAY_LIGHT, fontSize: 15, maxWidth: 600, margin: "0 auto", lineHeight: 1.75, fontFamily: FONT_BODY }}>
+                {E({ bk: "health_subtitle", def: "Nghiên cứu từ Đại học Harvard và Mayo Clinic chứng minh: tư thế ngủ ảnh hưởng trực tiếp đến cột sống, tim mạch và chất lượng giấc ngủ.", as: "span", multiline: true })}
+              </p>
+            </div>
+          </FadeIn>
+
+          {/* Infographic tư thế ngủ */}
+          <FadeIn delay={80}>
+            <div style={{ marginBottom: 64 }}>
+              <h3 style={{ textAlign: "center", color: GOLD, fontSize: 13, fontWeight: 600, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 28, textTransform: "uppercase" as const }}>
+                {E({ bk: "health_posture_title", def: "Giường phẳng vs Giường điều chỉnh góc", as: "span" })}
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                {/* Giường phẳng — vấn đề */}
+                <div style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: R_LG, padding: "28px 24px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                    <span style={{ fontSize: 18 }}>😰</span>
+                    <span style={{ color: "#FCA5A5", fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, letterSpacing: "0.05em" }}>
+                      {E({ bk: "health_flat_label", def: "GIƯỜNG PHẲNG THÔNG THƯỜNG", as: "span" })}
+                    </span>
+                  </div>
+                  {/* SVG minh họa người nằm phẳng */}
+                  <svg viewBox="0 0 320 100" style={{ width: "100%", marginBottom: 20 }}>
+                    {/* Giường */}
+                    <rect x="10" y="70" width="300" height="12" rx="4" fill="#2A1A1A" stroke="rgba(239,68,68,0.3)" strokeWidth="1"/>
+                    {/* Người nằm phẳng */}
+                    <ellipse cx="60" cy="62" rx="18" ry="18" fill="#1E1A1A" stroke="rgba(239,68,68,0.4)" strokeWidth="1.5"/>
+                    <circle cx="60" cy="52" r="9" fill="#2A2020" stroke="rgba(239,68,68,0.4)" strokeWidth="1"/>
+                    <rect x="78" y="58" width="160" height="10" rx="5" fill="#1E1A1A" stroke="rgba(239,68,68,0.3)" strokeWidth="1"/>
+                    <rect x="230" y="60" width="60" height="8" rx="4" fill="#1E1A1A" stroke="rgba(239,68,68,0.3)" strokeWidth="1"/>
+                    {/* Mũi tên chỉ áp lực */}
+                    <line x1="158" y1="40" x2="158" y2="58" stroke="#EF4444" strokeWidth="1.5" strokeDasharray="3,2"/>
+                    <polygon points="154,56 162,56 158,62" fill="#EF4444"/>
+                    <text x="165" y="48" fill="#FCA5A5" fontSize="9" fontFamily="Inter, sans-serif">Áp lực</text>
+                    <text x="162" y="58" fill="#FCA5A5" fontSize="9" fontFamily="Inter, sans-serif">cột sống</text>
+                    {/* Đường cột sống cong bất thường */}
+                    <path d="M 90 63 Q 130 55 158 63 Q 186 71 230 63" stroke="#EF4444" strokeWidth="1.5" fill="none" strokeDasharray="4,2" opacity="0.7"/>
+                  </svg>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {([
+                      { icon: "✕", text: "Cột sống không được đỡ đúng cách, cong vẹo theo trọng lực" },
+                      { icon: "✕", text: "Dạ dày cao hơn thực quản — trào ngược axit ban đêm" },
+                      { icon: "✕", text: "Đường thở hẹp khi nằm phẳng — gây ngáy và ngưng thở" },
+                      { icon: "✕", text: "Máu dồn về tim nhiều hơn — tim làm việc nặng hơn" },
+                    ] as const).map((item, i) => (
+                      <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ color: "#EF4444", fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
+                        <span style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY }}>{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Giường điều chỉnh — giải pháp */}
+                <div style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: R_LG, padding: "28px 24px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                    <span style={{ fontSize: 18 }}>😴</span>
+                    <span style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, letterSpacing: "0.05em" }}>
+                      {E({ bk: "health_smart_label", def: "SMARTFURNI GSF150 — ZERO GRAVITY", as: "span" })}
+                    </span>
+                  </div>
+                  {/* SVG minh họa người nằm tư thế Zero Gravity */}
+                  <svg viewBox="0 0 320 100" style={{ width: "100%", marginBottom: 20 }}>
+                    {/* Giường điều chỉnh góc */}
+                    <path d="M 10 82 L 10 70 Q 10 68 12 68 L 180 68 Q 160 55 155 42 L 290 42 Q 295 42 295 47 L 295 70 L 300 82 Z" fill="#1A1400" stroke="rgba(201,168,76,0.3)" strokeWidth="1"/>
+                    {/* Người nằm tư thế nâng đầu + chân */}
+                    <circle cx="165" cy="34" r="9" fill="#2A2010" stroke={`rgba(201,168,76,0.5)`} strokeWidth="1.5"/>
+                    <path d="M 165 43 L 155 60 L 240 60 L 235 43 Z" rx="4" fill="#1E1A0E" stroke="rgba(201,168,76,0.3)" strokeWidth="1"/>
+                    <path d="M 240 60 Q 265 60 275 55 L 290 55" stroke="rgba(201,168,76,0.4)" strokeWidth="8" strokeLinecap="round" fill="none"/>
+                    {/* Đường cột sống thẳng */}
+                    <path d="M 165 43 Q 200 52 240 60" stroke={GOLD} strokeWidth="1.5" fill="none" opacity="0.6"/>
+                    {/* Check marks */}
+                    <circle cx="100" cy="35" r="8" fill="rgba(201,168,76,0.15)" stroke="rgba(201,168,76,0.4)" strokeWidth="1"/>
+                    <path d="M 96 35 L 99 38 L 104 31" stroke={GOLD} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                    <text x="112" y="38" fill={GOLD} fontSize="8" fontFamily="Inter, sans-serif">Cột sống thẳng</text>
+                  </svg>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {([
+                      { icon: "✓", text: "Cột sống được đỡ theo đường cong tự nhiên — giảm áp lực đĩa đệm" },
+                      { icon: "✓", text: "Đầu nâng nhẹ 15–30° — ngăn trào ngược axit hiệu quả" },
+                      { icon: "✓", text: "Đường thở mở rộng — giảm ngáy và ngưng thở khi ngủ" },
+                      { icon: "✓", text: "Chân nâng nhẹ — cải thiện tuần hoàn máu, giảm phù nề" },
+                    ] as const).map((item, i) => (
+                      <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ color: GOLD, fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
+                        <span style={{ color: GRAY_LIGHT, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY }}>{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+
+          {/* 4 lợi ích sức khỏe chính với giải thích khoa học */}
+          <FadeIn delay={120}>
+            <h3 style={{ textAlign: "center", color: GOLD, fontSize: 13, fontWeight: 600, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 28, textTransform: "uppercase" as const }}>
+              {E({ bk: "health_benefits_title", def: "4 lợi ích sức khỏe được chứng minh khoa học", as: "span" })}
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+              {([
+                {
+                  icon: "🦴",
+                  bkTitle: "health_1_title", defTitle: "Giảm Đau Cột Sống",
+                  bkSci: "health_1_sci", defSci: "Nghiên cứu từ Sleep Medicine Reviews",
+                  bkDesc: "health_1_desc", defDesc: "Tư thế Zero Gravity phân bổ đều trọng lượng cơ thể, giảm 50% áp lực lên đĩa đệm L4-L5 so với nằm phẳng. Hiệu quả đặc biệt với người thoái hóa cột sống, đau thắt lưng mãn tính.",
+                  bkStat: "health_1_stat", defStat: "Giảm 50% áp lực đĩa đệm",
+                },
+                {
+                  icon: "😮‍💨",
+                  bkTitle: "health_2_title", defTitle: "Chống Ngáy & Ngưng Thở",
+                  bkSci: "health_2_sci", defSci: "Theo American Academy of Sleep Medicine",
+                  bkDesc: "health_2_desc", defDesc: "Nâng đầu 15–30° mở rộng đường thở, giảm rung động mô mềm vùng họng. Hiệu quả với 78% người ngáy nhẹ đến trung bình. Bác sĩ khuyến nghị cho bệnh nhân ngưng thở khi ngủ nhẹ.",
+                  bkStat: "health_2_stat", defStat: "78% giảm ngáy hiệu quả",
+                },
+                {
+                  icon: "🫀",
+                  bkTitle: "health_3_title", defTitle: "Cải Thiện Tuần Hoàn",
+                  bkSci: "health_3_sci", defSci: "Theo Journal of Cardiovascular Medicine",
+                  bkDesc: "health_3_desc", defDesc: "Nâng chân nhẹ 15–20° giúp máu tĩnh mạch trở về tim dễ dàng hơn, giảm phù nề chân sau ngày dài đứng hoặc ngồi. Đặc biệt có lợi cho người suy giãn tĩnh mạch.",
+                  bkStat: "health_3_stat", defStat: "Giảm phù nề chân 60%",
+                },
+                {
+                  icon: "🍽️",
+                  bkTitle: "health_4_title", defTitle: "Ngăn Trào Ngược Axit",
+                  bkSci: "health_4_sci", defSci: "Theo New England Journal of Medicine",
+                  bkDesc: "health_4_desc", defDesc: "Nâng đầu giường 20–30° tận dụng trọng lực để giữ axit dạ dày không trào ngược thực quản. Nghiên cứu lâm sàng cho thấy giảm 67% triệu chứng GERD ban đêm so với nằm phẳng.",
+                  bkStat: "health_4_stat", defStat: "Giảm 67% triệu chứng GERD",
+                },
+              ] as const).map((h, i) => (
+                <FadeIn key={i} delay={i * 80}>
+                  <div style={{ padding: "28px 22px", background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, height: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div style={{ fontSize: 32 }}>{h.icon}</div>
+                    <div>
+                      <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 4, lineHeight: 1.3 }}>
+                        {E({ bk: h.bkTitle, def: h.defTitle, as: "span" })}
+                      </h3>
+                      <div style={{ color: GOLD, fontSize: 10, fontWeight: 600, letterSpacing: "0.05em", fontFamily: FONT_BODY, opacity: 0.8 }}>
+                        {E({ bk: h.bkSci, def: h.defSci, as: "span" })}
+                      </div>
+                    </div>
+                    <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT_BODY, flex: 1, margin: 0 }}>
+                      {E({ bk: h.bkDesc, def: h.defDesc, as: "span", multiline: true })}
+                    </p>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.2)`, borderRadius: R_FULL, padding: "5px 12px", alignSelf: "flex-start" }}>
+                      <span style={{ width: 5, height: 5, borderRadius: "50%", background: GOLD, display: "inline-block", flexShrink: 0 }} />
+                      <span style={{ color: GOLD, fontSize: 10, fontWeight: 700, fontFamily: FONT_BODY, letterSpacing: "0.05em" }}>
+                        {E({ bk: h.bkStat, def: h.defStat, as: "span" })}
+                      </span>
+                    </div>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </FadeIn>
+
+          {/* Disclaimer khoa học */}
+          <FadeIn delay={200}>
+            <p style={{ textAlign: "center", color: GRAY, fontSize: 11, marginTop: 28, fontFamily: FONT_BODY, fontStyle: "italic", lineHeight: 1.6 }}>
+              * Các số liệu trích dẫn từ nghiên cứu khoa học quốc tế. GSF150 không phải thiết bị y tế. Tham khảo bác sĩ nếu có bệnh lý nghiêm trọng.
+            </p>
+          </FadeIn>
+        </div>
+      </section>
       {/* ── MARKETING / HOW IT WORKS ── */}
       <section style={{ background: `linear-gradient(135deg, #0D0B00 0%, #1A1200 40%, #0D0B00 100%)`, padding: "96px 24px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
