@@ -129,6 +129,134 @@ function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: {
   );
 }
 
+
+// ─── UrgencyBanner ────────────────────────────────────────────────────────────
+function UrgencyBanner({ E }: { E: (p: { bk: string; def: string; as: string; style?: React.CSSProperties }) => React.ReactNode }) {
+  const [timeLeft, setTimeLeft] = useState({ h: 0, m: 0, s: 0 });
+  const [stock, setStock] = useState(7);
+
+  useEffect(() => {
+    // Tính thời gian còn lại đến 23:59 hôm nay
+    const calcTime = () => {
+      const now = new Date();
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 0);
+      const diff = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
+      return { h: Math.floor(diff / 3600), m: Math.floor((diff % 3600) / 60), s: diff % 60 };
+    };
+    setTimeLeft(calcTime());
+    const t = setInterval(() => setTimeLeft(calcTime()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const GOLD = "#C9A84C";
+  const BLACK = "#0A0A08";
+  const WHITE = "#F5F0E8";
+  const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, #1A1000 0%, #0D0800 100%)",
+      border: `1px solid rgba(201,168,76,0.35)`,
+      borderRadius: 16,
+      padding: "clamp(24px, 3vw, 40px) clamp(20px, 4vw, 48px)",
+      maxWidth: 860,
+      margin: "0 auto 0",
+      textAlign: "center",
+    }}>
+      <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", fontFamily: FONT_BODY, marginBottom: 12 }}>
+        {E({ bk: "urgency_label", def: "⚡ ƯU ĐÃI CÓ THỜI HẠN", as: "span" })}
+      </div>
+      <h3 style={{ color: WHITE, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 8, lineHeight: 1.3 }}>
+        {E({ bk: "urgency_title", def: "Giảm 500.000 ₫ Cho Đơn Đặt Hàng Hôm Nay", as: "span" })}
+      </h3>
+      <p style={{ color: "#A8A090", fontSize: 13, fontFamily: FONT_BODY, marginBottom: 24 }}>
+        {E({ bk: "urgency_subtitle", def: "Ưu đãi kết thúc lúc 23:59 hôm nay — Đặt hàng ngay để không bỏ lỡ", as: "span" })}
+      </p>
+      {/* Countdown */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 24 }}>
+        {[
+          { val: pad(timeLeft.h), label: "GIỜ" },
+          { val: pad(timeLeft.m), label: "PHÚT" },
+          { val: pad(timeLeft.s), label: "GIÂY" },
+        ].map((unit, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ background: BLACK, border: `1px solid rgba(201,168,76,0.3)`, borderRadius: 10, padding: "10px 18px", minWidth: 60 }}>
+              <span style={{ color: GOLD, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{unit.val}</span>
+            </div>
+            <span style={{ color: "#7A7468", fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_BODY }}>{unit.label}</span>
+          </div>
+        ))}
+      </div>
+      {/* Stock indicator */}
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 100, padding: "6px 16px", marginBottom: 0 }}>
+        <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#EF4444", display: "inline-block", animation: "pulse 1.5s infinite" }} />
+        <span style={{ color: "#FCA5A5", fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY }}>
+          {E({ bk: "urgency_stock", def: `Chỉ còn ${stock} sản phẩm giá ưu đãi`, as: "span" })}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── StickyCta ─────────────────────────────────────────────────────────────
+function StickyCta({ scrollToForm, E }: { scrollToForm: () => void; E: (p: { bk: string; def: string; as: string }) => React.ReactNode }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 600);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  const GOLD = "#C9A84C";
+  const BLACK = "#0A0A08";
+  const WHITE = "#F5F0E8";
+  const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  if (!visible) return null;
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 900,
+      background: "rgba(10,10,8,0.97)",
+      borderTop: `1px solid rgba(201,168,76,0.25)`,
+      padding: "12px 20px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      backdropFilter: "blur(12px)",
+    }} className="sticky-cta-bar">
+      <div>
+        <div style={{ color: GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>9.790.000 ₫</div>
+        <div style={{ color: "#7A7468", fontSize: 11, fontFamily: FONT_BODY, marginTop: 2 }}>Miễn phí giao hàng + lắp đặt</div>
+      </div>
+      <button
+        onClick={scrollToForm}
+        style={{
+          background: `linear-gradient(135deg, ${GOLD} 0%, #E2C97E 100%)`,
+          color: BLACK,
+          border: "none",
+          borderRadius: 100,
+          padding: "12px 28px",
+          fontSize: 13,
+          fontWeight: 700,
+          fontFamily: FONT_HEADING,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          letterSpacing: "0.02em",
+        }}
+      >
+        {E({ bk: "sticky_cta_btn", def: "Đặt Hàng Ngay →", as: "span" })}
+      </button>
+    </div>
+  );
+}
+
 // ─── Intersection Observer fade-in ───────────────────────────────────────────
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -812,6 +940,100 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
         </div>
       </section>
 
+
+      {/* ── SO SÁNH: GSF150 vs Mua giường mới ── */}
+      <section style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "compare_section_label", def: "Tại sao chọn GSF150?", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
+                {E({ bk: "compare_title_1", def: "GSF150 Tiết Kiệm Hơn", as: "span", style: { display: "block" } })}
+                {E({ bk: "compare_title_2", def: "Mua Giường Điện Mới Đến 70%", as: "span", style: { color: GOLD, display: "block" } })}
+              </h2>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <FadeIn delay={100}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontFamily: FONT_BODY }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: "14px 20px", textAlign: "left", color: GRAY, fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const, borderBottom: `1px solid ${BLACK_BORDER}` }}>Tiêu chí</th>
+                    <th style={{ padding: "14px 20px", textAlign: "center", color: GOLD, fontSize: 13, fontWeight: 700, background: "rgba(201,168,76,0.07)", borderBottom: `2px solid ${GOLD}`, borderRadius: "12px 12px 0 0" }}>
+                      SmartFurni GSF150
+                    </th>
+                    <th style={{ padding: "14px 20px", textAlign: "center", color: GRAY, fontSize: 13, fontWeight: 600, borderBottom: `1px solid ${BLACK_BORDER}` }}>Mua giường điện mới</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {([
+                    { criteria: "Chi phí", gsf: "9.790.000 ₫", rival: "30–80 triệu ₫", highlight: true },
+                    { criteria: "Giữ giường cũ", gsf: "✓ Giữ nguyên 100%", rival: "✗ Phải bỏ giường cũ", highlight: false },
+                    { criteria: "Thời gian lắp đặt", gsf: "5–15 phút", rival: "Nửa ngày + thợ", highlight: false },
+                    { criteria: "Tương thích nệm cũ", gsf: "✓ Mọi loại nệm", rival: "Thường cần nệm riêng", highlight: false },
+                    { criteria: "Bảo hành motor", gsf: "5 năm CE/TÜV", rival: "1–2 năm", highlight: true },
+                    { criteria: "Điều khiển app", gsf: "✓ iOS & Android", rival: "Tuỳ model", highlight: false },
+                    { criteria: "Tải trọng", gsf: "300kg", rival: "150–200kg", highlight: false },
+                  ] as const).map((row, i) => (
+                    <tr key={i} style={{ background: i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent" }}>
+                      <td style={{ padding: "14px 20px", color: GRAY_LIGHT, fontSize: 13, borderBottom: `1px solid rgba(201,168,76,0.06)` }}>{row.criteria}</td>
+                      <td style={{ padding: "14px 20px", textAlign: "center", color: row.highlight ? GOLD : WHITE, fontSize: 13, fontWeight: row.highlight ? 700 : 500, background: "rgba(201,168,76,0.04)", borderBottom: `1px solid rgba(201,168,76,0.06)`, borderLeft: `1px solid rgba(201,168,76,0.1)`, borderRight: `1px solid rgba(201,168,76,0.1)` }}>{row.gsf}</td>
+                      <td style={{ padding: "14px 20px", textAlign: "center", color: GRAY, fontSize: 13, borderBottom: `1px solid rgba(201,168,76,0.06)` }}>{row.rival}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ textAlign: "center", color: GRAY, fontSize: 12, marginTop: 16, fontFamily: FONT_BODY, fontStyle: "italic" }}>
+              * Giá giường điện nhập khẩu tham khảo thị trường 2024–2025
+            </p>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── THÔNG SỐ KỸ THUẬT ── */}
+      <section style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <SectionLabel>{E({ bk: "spec_section_label", def: "Thông số kỹ thuật", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
+                {E({ bk: "spec_title_1", def: "Thông Số Kỹ Thuật", as: "span", style: { display: "block" } })}
+                {E({ bk: "spec_title_2", def: "SmartFurni GSF150", as: "span", style: { color: GOLD, display: "block" } })}
+              </h2>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <FadeIn delay={100}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: 2, background: BLACK_BORDER, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
+              {([
+                { label: "Kích thước lọt lòng", value: "1.600 × 2.000mm / 1.800 × 2.000mm" },
+                { label: "Tải trọng tối đa", value: "300 kg" },
+                { label: "Góc nâng đầu giường", value: "0° – 70°" },
+                { label: "Góc nâng chân giường", value: "0° – 45°" },
+                { label: "Công suất motor", value: "2 × 150W (motor Đức)" },
+                { label: "Điện áp vận hành", value: "24V DC (an toàn tuyệt đối)" },
+                { label: "Tiếng ồn vận hành", value: "< 45 dB" },
+                { label: "Tốc độ nâng hạ", value: "~25mm/giây" },
+                { label: "Trọng lượng khung", value: "~28 kg (1m6) / ~32 kg (1m8)" },
+                { label: "Chất liệu khung", value: "Thép cường lực mạ kẽm" },
+                { label: "Điều khiển", value: "Remote không dây + App iOS/Android" },
+                { label: "Vị trí nhớ", value: "4 tư thế yêu thích" },
+                { label: "Chế độ massage", value: "Có (đầu + chân)" },
+                { label: "Bảo hành motor", value: "5 năm chính hãng (CE/TÜV)" },
+                { label: "Bảo hành khung", value: "2 năm" },
+                { label: "Kiểm định", value: "50.000 lần nâng hạ" },
+              ] as const).map((spec, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", padding: "14px 20px", background: i % 2 === 0 ? BLACK_CARD : "rgba(22,20,14,0.5)", gap: 16 }}>
+                  <span style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, flex: "0 0 180px", lineHeight: 1.4 }}>{spec.label}</span>
+                  <span style={{ color: WHITE, fontSize: 13, fontWeight: 500, fontFamily: FONT_BODY, lineHeight: 1.4 }}>{spec.value}</span>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
       {/* ── 6 BENEFITS (thay cho đặc quyền đại lý) ── */}
       <section id="loi-ich" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1140, margin: "0 auto" }}>
@@ -947,6 +1169,26 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
               <GoldDivider />
             </div>
           </FadeIn>
+          {/* Social proof numbers */}
+          <FadeIn delay={50}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 48 }}>
+              {([
+                { num: "2.000+", label: "Gia đình đã sử dụng", icon: "🏠" },
+                { num: "4.9/5", label: "Đánh giá trung bình", icon: "⭐" },
+                { num: "98%", label: "Khách hàng hài lòng", icon: "💚" },
+                { num: "63/63", label: "Tỉnh thành giao hàng", icon: "🚚" },
+              ] as const).map((stat, i) => (
+                <FadeIn key={i} delay={i * 60}>
+                  <div style={{ padding: "24px 16px", textAlign: "center", background: "rgba(201,168,76,0.05)", border: `1px solid rgba(201,168,76,0.2)`, borderRadius: R_LG }}>
+                    <div style={{ fontSize: 24, marginBottom: 6 }}>{stat.icon}</div>
+                    <div style={{ color: GOLD, fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{stat.num}</div>
+                    <div style={{ color: GRAY, fontSize: 11, marginTop: 6, fontFamily: FONT_BODY, lineHeight: 1.4 }}>{stat.label}</div>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </FadeIn>
+          {/* Chứng nhận */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 48 }}>
             {[
               { icon: "🏆", bkTitle: "cert_1_title", defTitle: "Motor Đức CE/TÜV", bkDesc: "cert_1_desc", defDesc: "Tiêu chuẩn xuất khẩu châu Âu, bảo hành 5 năm chính hãng" },
@@ -967,15 +1209,19 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
               </FadeIn>
             ))}
           </div>
+          {/* Reviews — 6 reviews */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
             {[
-              { bkName: "testimonial_1_name", defName: "Chị Minh Thư", bkLoc: "testimonial_1_loc", defLoc: "Quận 7, TP. HCM", bkQuote: "testimonial_1_quote", defQuote: "Chồng tôi ngủ ngáy rất to, từ khi có GSF150 nâng nhẹ đầu giường lên, anh ấy gần như không ngáy nữa. Cả hai vợ chồng đều ngủ ngon hơn hẳn." },
-              { bkName: "testimonial_2_name", defName: "Anh Hoàng Minh", bkLoc: "testimonial_2_loc", defLoc: "Cầu Giấy, Hà Nội", bkQuote: "testimonial_2_quote", defQuote: "Tôi bị thoái hóa đốt sống cổ, bác sĩ khuyên nên ngủ tư thế nâng đầu. GSF150 giải quyết đúng vấn đề đó. Sau 2 tuần, cơn đau giảm rõ rệt." },
-              { bkName: "testimonial_3_name", defName: "Chị Lan Anh", bkLoc: "testimonial_3_loc", defLoc: "Bình Dương", bkQuote: "testimonial_3_quote", defQuote: "Tôi không muốn bỏ chiếc giường gỗ teak đắt tiền. GSF150 đặt vừa khít vào lòng giường, trông rất đẹp và sang. Đúng là giải pháp hoàn hảo!" },
+              { bkName: "testimonial_1_name", defName: "Chị Minh Thư", bkLoc: "testimonial_1_loc", defLoc: "Quận 7, TP. HCM", bkQuote: "testimonial_1_quote", defQuote: "Chồng tôi ngủ ngáy rất to, từ khi có GSF150 nâng nhẹ đầu giường lên, anh ấy gần như không ngáy nữa. Cả hai vợ chồng đều ngủ ngon hơn hẳn.", stars: 5 },
+              { bkName: "testimonial_2_name", defName: "Anh Hoàng Minh", bkLoc: "testimonial_2_loc", defLoc: "Cầu Giấy, Hà Nội", bkQuote: "testimonial_2_quote", defQuote: "Tôi bị thoái hóa đốt sống cổ, bác sĩ khuyên nên ngủ tư thế nâng đầu. GSF150 giải quyết đúng vấn đề đó. Sau 2 tuần, cơn đau giảm rõ rệt.", stars: 5 },
+              { bkName: "testimonial_3_name", defName: "Chị Lan Anh", bkLoc: "testimonial_3_loc", defLoc: "Bình Dương", bkQuote: "testimonial_3_quote", defQuote: "Tôi không muốn bỏ chiếc giường gỗ teak đắt tiền. GSF150 đặt vừa khít vào lòng giường, trông rất đẹp và sang. Đúng là giải pháp hoàn hảo!", stars: 5 },
+              { bkName: "testimonial_4_name", defName: "Anh Tuấn Anh", bkLoc: "testimonial_4_loc", defLoc: "Quận 1, TP. HCM", bkQuote: "testimonial_4_quote", defQuote: "Làm việc văn phòng cả ngày, tối về lưng đau kinh khủng. Từ khi dùng chế độ Zero Gravity của GSF150, sáng dậy thoải mái hẳn. Đáng đồng tiền bát gạo!", stars: 5 },
+              { bkName: "testimonial_5_name", defName: "Chị Thu Hà", bkLoc: "testimonial_5_loc", defLoc: "Đống Đa, Hà Nội", bkQuote: "testimonial_5_quote", defQuote: "Ban đầu tôi lo lắng lắp không vừa giường gỗ nhà mình. Nhưng đội kỹ thuật SmartFurni đến đo và lắp rất chuyên nghiệp, chỉ 20 phút là xong.", stars: 5 },
+              { bkName: "testimonial_6_name", defName: "Anh Minh Khoa", bkLoc: "testimonial_6_loc", defLoc: "Thủ Đức, TP. HCM", bkQuote: "testimonial_6_quote", defQuote: "Mua cho bố mẹ 70 tuổi. Bố hay đau lưng, giờ tự điều chỉnh tư thế bằng remote rất dễ. Mẹ thích nhất chế độ nâng đầu khi xem TV buổi tối.", stars: 5 },
             ].map((t, i) => (
-              <FadeIn key={i} delay={i * 90}>
+              <FadeIn key={i} delay={i * 70}>
                 <div style={{ padding: "28px 24px", background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG }}>
-                  <div style={{ display: "flex", gap: 3, marginBottom: 16 }}>{Array.from({ length: 5 }).map((_, j) => <span key={j} style={{ color: GOLD, fontSize: 14 }}>★</span>)}</div>
+                  <div style={{ display: "flex", gap: 3, marginBottom: 16 }}>{Array.from({ length: t.stars }).map((_, j) => <span key={j} style={{ color: GOLD, fontSize: 14 }}>★</span>)}</div>
                   <p style={{ color: GRAY_LIGHT, fontSize: 14, lineHeight: 1.8, marginBottom: 20, fontStyle: "italic", fontFamily: FONT_BODY }}>
                     &ldquo;{E({ bk: t.bkQuote, def: t.defQuote, as: "span", multiline: true })}&rdquo;
                   </p>
@@ -992,6 +1238,46 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
         </div>
       </section>
 
+
+      {/* ── CAM KẾT & CHÍNH SÁCH ── */}
+      <section style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <SectionLabel>{E({ bk: "guarantee_section_label", def: "Mua hàng an tâm", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
+                {E({ bk: "guarantee_title_1", def: "SmartFurni Cam Kết", as: "span", style: { display: "block" } })}
+                {E({ bk: "guarantee_title_2", def: "Mua Hàng Không Rủi Ro", as: "span", style: { color: GOLD, display: "block" } })}
+              </h2>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <FadeIn delay={100}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+              {([
+                { icon: "🔄", bkTitle: "guarantee_1_title", defTitle: "Đổi trả 30 ngày", bkDesc: "guarantee_1_desc", defDesc: "Không hài lòng trong 30 ngày đầu — SmartFurni thu hồi và hoàn tiền 100%, không hỏi lý do." },
+                { icon: "🛡️", bkTitle: "guarantee_2_title", defTitle: "Bảo hành 5 năm", bkDesc: "guarantee_2_desc", defDesc: "Motor bảo hành 5 năm chính hãng. Đổi mới ngay lập tức nếu có lỗi nhà sản xuất." },
+                { icon: "🚚", bkTitle: "guarantee_3_title", defTitle: "Giao hàng kiểm tra", bkDesc: "guarantee_3_desc", defDesc: "Kiểm tra hàng trước khi nhận. Không ưng — không cần nhận, không mất phí." },
+                { icon: "🔧", bkTitle: "guarantee_4_title", defTitle: "Lắp đặt miễn phí", bkDesc: "guarantee_4_desc", defDesc: "Đội kỹ thuật SmartFurni lắp đặt tận nơi toàn quốc. Hướng dẫn sử dụng chi tiết." },
+                { icon: "💳", bkTitle: "guarantee_5_title", defTitle: "Trả góp 0%", bkDesc: "guarantee_5_desc", defDesc: "Hỗ trợ trả góp 0% lãi suất qua các đối tác tài chính uy tín. Duyệt nhanh trong ngày." },
+                { icon: "📞", bkTitle: "guarantee_6_title", defTitle: "Hỗ trợ 7/7", bkDesc: "guarantee_6_desc", defDesc: "Hotline & Zalo hỗ trợ 7 ngày/tuần. Kỹ thuật viên phản hồi trong vòng 2 giờ làm việc." },
+              ] as const).map((g, i) => (
+                <FadeIn key={i} delay={i * 60}>
+                  <div style={{ padding: "28px 20px", background: "rgba(201,168,76,0.04)", border: `1px solid rgba(201,168,76,0.18)`, borderRadius: R_LG, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                    <div style={{ fontSize: 32 }}>{g.icon}</div>
+                    <div style={{ color: GOLD, fontSize: 14, fontWeight: 700, fontFamily: FONT_HEADING }}>
+                      {E({ bk: g.bkTitle, def: g.defTitle, as: "span" })}
+                    </div>
+                    <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>
+                      {E({ bk: g.bkDesc, def: g.defDesc, as: "span", multiline: true })}
+                    </p>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
       {/* ── FAQ ── */}
       <section id="faq" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
@@ -1011,6 +1297,9 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
         </div>
       </section>
 
+
+      {/* ── URGENCY TRIGGER ── */}
+      <UrgencyBanner E={E} />
       {/* ── FORM ── */}
       <section id="register-form" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
@@ -1046,6 +1335,9 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
         </div>
       </section>
 
+
+      {/* ── STICKY CTA MOBILE ── */}
+      <StickyCta scrollToForm={scrollToForm} E={E} />
       {/* ── FOOTER ── */}
       <footer style={{ background: "#060500", borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 64 }}>
         <div style={{ height: 2, background: `linear-gradient(90deg, transparent 0%, ${GOLD} 30%, ${GOLD} 70%, transparent 100%)`, opacity: 0.5 }} />
