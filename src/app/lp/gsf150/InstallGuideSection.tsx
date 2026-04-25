@@ -26,7 +26,7 @@ const DEFAULT_STEPS = [
     bkDesc: "install_step_1_desc",
     defDesc: "Nhấc nệm ra khỏi giường hiện tại và đặt sang một bên. Không cần tháo khung giường gỗ.",
     bkImg: "install_step_1_img",
-    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step1-gVvLJDLjfQCtVHPj9R4KHn.webp",
+    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step2-T6wUQcUsbLZCsssfygA2WH.webp",
   },
   {
     num: "02",
@@ -44,7 +44,7 @@ const DEFAULT_STEPS = [
     bkDesc: "install_step_3_desc",
     defDesc: "Trả khung về vị trí phẳng, trượt vào lòng giường gỗ hiện có. Khung tự khớp — không cần vít hay dụng cụ.",
     bkImg: "install_step_3_img",
-    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step3-HKaeWb8Lsa5dbSesau2m3r.webp",
+    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step2-T6wUQcUsbLZCsssfygA2WH.webp",
   },
   {
     num: "04",
@@ -53,7 +53,7 @@ const DEFAULT_STEPS = [
     bkDesc: "install_step_4_desc",
     defDesc: "Đặt nệm lên khung GSF150. Dùng remote điều chỉnh tư thế đầu giường 0–70° và chân giường 0–45° theo ý muốn.",
     bkImg: "install_step_4_img",
-    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step4-mGm6PRjYrRc8ZkdnDn6YbN.webp",
+    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step2-T6wUQcUsbLZCsssfygA2WH.webp",
   },
 ];
 
