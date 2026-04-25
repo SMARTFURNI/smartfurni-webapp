@@ -354,7 +354,7 @@ export function InstallGuideSection({
                 <div style={{
                   position: "relative",
                   width: "100%",
-                  paddingBottom: "65%",
+                  paddingBottom: "100%",
                   background: "#fff",
                   overflow: "hidden",
                 }}>
