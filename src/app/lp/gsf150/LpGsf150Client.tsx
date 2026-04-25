@@ -2034,24 +2034,62 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             </div>
           </FadeIn>
           <FadeIn delay={100}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, border: `1px solid rgba(201,168,76,0.15)`, borderRadius: R_LG, overflow: "hidden" }}>
               {([
-                { icon: "🔄", bkTitle: "guarantee_1_title", defTitle: "Đổi trả 30 ngày", bkDesc: "guarantee_1_desc", defDesc: "Không hài lòng trong 30 ngày đầu — SmartFurni thu hồi và hoàn tiền 100%, không hỏi lý do." },
-                { icon: "🛡️", bkTitle: "guarantee_2_title", defTitle: "Bảo hành 5 năm", bkDesc: "guarantee_2_desc", defDesc: "Motor bảo hành 5 năm chính hãng. Đổi mới ngay lập tức nếu có lỗi nhà sản xuất." },
-                { icon: "🚚", bkTitle: "guarantee_3_title", defTitle: "Giao hàng kiểm tra", bkDesc: "guarantee_3_desc", defDesc: "Kiểm tra hàng trước khi nhận. Không ưng — không cần nhận, không mất phí." },
-                { icon: "🔧", bkTitle: "guarantee_4_title", defTitle: "Lắp đặt miễn phí", bkDesc: "guarantee_4_desc", defDesc: "Đội kỹ thuật SmartFurni lắp đặt tận nơi toàn quốc. Hướng dẫn sử dụng chi tiết." },
-                { icon: "💳", bkTitle: "guarantee_5_title", defTitle: "Trả góp 0%", bkDesc: "guarantee_5_desc", defDesc: "Hỗ trợ trả góp 0% lãi suất qua các đối tác tài chính uy tín. Duyệt nhanh trong ngày." },
-                { icon: "📞", bkTitle: "guarantee_6_title", defTitle: "Hỗ trợ 7/7", bkDesc: "guarantee_6_desc", defDesc: "Hotline & Zalo hỗ trợ 7 ngày/tuần. Kỹ thuật viên phản hồi trong vòng 2 giờ làm việc." },
+                {
+                  svg: <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M14 3L3 8.5V14C3 19.25 7.85 24.16 14 25.5C20.15 24.16 25 19.25 25 14V8.5L14 3Z" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round" fill="none"/><path d="M9 14l3.5 3.5L19 10" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+                  bkTitle: "guarantee_1_title", defTitle: "Đổi trả 30 ngày",
+                  bkDesc: "guarantee_1_desc", defDesc: "Không hài lòng trong 30 ngày đầu — hoàn tiền 100%, không hỏi lý do."
+                },
+                {
+                  svg: <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="10" stroke="#C9A84C" strokeWidth="1.5" fill="none"/><path d="M14 8v6l4 2" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+                  bkTitle: "guarantee_2_title", defTitle: "Bảo hành 5 năm",
+                  bkDesc: "guarantee_2_desc", defDesc: "Motor bảo hành 5 năm chính hãng. Đổi mới ngay nếu có lỗi nhà sản xuất."
+                },
+                {
+                  svg: <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="8" width="16" height="11" rx="2" stroke="#C9A84C" strokeWidth="1.5" fill="none"/><path d="M19 11h3l3 4v4h-6V11Z" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round" fill="none"/><circle cx="8" cy="21" r="2" stroke="#C9A84C" strokeWidth="1.5" fill="none"/><circle cx="21" cy="21" r="2" stroke="#C9A84C" strokeWidth="1.5" fill="none"/></svg>,
+                  bkTitle: "guarantee_3_title", defTitle: "Giao hàng kiểm tra",
+                  bkDesc: "guarantee_3_desc", defDesc: "Kiểm tra hàng trước khi nhận. Không ưng — không cần nhận, không mất phí."
+                },
+                {
+                  svg: <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M6 22l4-4m0 0l8-8m-8 8l-2-2m10-6l2-2a2 2 0 012.83 2.83l-2 2m-2.83-2.83L16 12" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="20" cy="8" r="3" stroke="#C9A84C" strokeWidth="1.5" fill="none"/></svg>,
+                  bkTitle: "guarantee_4_title", defTitle: "Lắp đặt miễn phí",
+                  bkDesc: "guarantee_4_desc", defDesc: "Đội kỹ thuật lắp đặt tận nơi toàn quốc. Hướng dẫn sử dụng chi tiết."
+                },
+                {
+                  svg: <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="4" y="8" width="20" height="13" rx="2" stroke="#C9A84C" strokeWidth="1.5" fill="none"/><path d="M4 12h20" stroke="#C9A84C" strokeWidth="1.5"/><path d="M8 17h4" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+                  bkTitle: "guarantee_5_title", defTitle: "Trả góp 0%",
+                  bkDesc: "guarantee_5_desc", defDesc: "Hỗ trợ trả góp 0% lãi suất qua các đối tác tài chính uy tín. Duyệt nhanh trong ngày."
+                },
+                {
+                  svg: <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M5 5h4l2 5-2.5 1.5a11 11 0 005 5L15 14l5 2v4a2 2 0 01-2 2C9.16 22 6 12.84 6 7a2 2 0 011-2z" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round" fill="none"/></svg>,
+                  bkTitle: "guarantee_6_title", defTitle: "Hỗ trợ 7/7",
+                  bkDesc: "guarantee_6_desc", defDesc: "Hotline & Zalo hỗ trợ 7 ngày/tuần. Kỹ thuật viên phản hồi trong vòng 2 giờ."
+                },
               ] as const).map((g, i) => (
-                <FadeIn key={i} delay={i * 60}>
-                  <div style={{ padding: "28px 20px", background: "rgba(201,168,76,0.04)", border: `1px solid rgba(201,168,76,0.18)`, borderRadius: R_LG, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-                    <div style={{ fontSize: 32 }}>{g.icon}</div>
-                    <div style={{ color: GOLD, fontSize: 14, fontWeight: 700, fontFamily: FONT_HEADING }}>
-                      {E({ bk: g.bkTitle, def: g.defTitle, as: "span" })}
+                <FadeIn key={i} delay={i * 50}>
+                  <div style={{
+                    padding: "32px 24px",
+                    background: i % 2 === 0 ? "rgba(201,168,76,0.03)" : "rgba(201,168,76,0.06)",
+                    borderRight: i % 3 !== 2 ? `1px solid rgba(201,168,76,0.12)` : "none",
+                    borderBottom: i < 3 ? `1px solid rgba(201,168,76,0.12)` : "none",
+                    display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 14,
+                    transition: "background 0.25s",
+                  }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(201,168,76,0.1)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = i % 2 === 0 ? "rgba(201,168,76,0.03)" : "rgba(201,168,76,0.06)"; }}
+                  >
+                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.2)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {g.svg}
                     </div>
-                    <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>
-                      {E({ bk: g.bkDesc, def: g.defDesc, as: "span", multiline: true })}
-                    </p>
+                    <div>
+                      <div style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, letterSpacing: "0.01em", marginBottom: 6 }}>
+                        {E({ bk: g.bkTitle, def: g.defTitle, as: "span" })}
+                      </div>
+                      <p style={{ color: GRAY, fontSize: 12.5, lineHeight: 1.75, fontFamily: FONT_BODY, margin: 0 }}>
+                        {E({ bk: g.bkDesc, def: g.defDesc, as: "span", multiline: true })}
+                      </p>
+                    </div>
                   </div>
                 </FadeIn>
               ))}
