@@ -1885,7 +1885,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             </div>
           </FadeIn>
           <FadeIn delay={80}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, maxWidth: 860, margin: "0 auto" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, maxWidth: 1060, margin: "0 auto" }}>
               {([
                 { urlKey: "reel_1_url", nameKey: "reel_1_name", defName: "Chị Lan Anh", locKey: "reel_1_loc", defLoc: "Quận 3, TP.HCM", tagKey: "reel_1_tag", defTag: "Dùng 2 tháng" },
                 { urlKey: "reel_2_url", nameKey: "reel_2_name", defName: "Anh Đức Minh", locKey: "reel_2_loc", defLoc: "Hoàn Kiếm, Hà Nội", tagKey: "reel_2_tag", defTag: "Lắp đặt 5 phút" },
