@@ -73,7 +73,7 @@ function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string })
 function YoutubeThumbnailPlay({ videoId, title, tag }: { videoId: string; title: string; tag?: string }) {
   const [playing, setPlaying] = useState(false);
   const thumbUrl = videoId && videoId !== "_placeholder_"
-    ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
     : null;
   return (
     <div
@@ -96,6 +96,7 @@ function YoutubeThumbnailPlay({ videoId, title, tag }: { videoId: string; title:
               src={thumbUrl}
               alt={title}
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              onError={(e) => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`; }}
             />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: "#1A1400", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -795,7 +796,7 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
 // ─── Reel Thumbnail Play (9:16) ──────────────────────────────────────────────
 function ReelThumbnailPlay({ videoId, title }: { videoId: string; title: string }) {
   const [playing, setPlaying] = useState(false);
-  const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+  const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
   return (
     <div
       style={{ position: "absolute", inset: 0, cursor: playing ? "default" : "pointer" }}
@@ -811,7 +812,9 @@ function ReelThumbnailPlay({ videoId, title }: { videoId: string; title: string 
         />
       ) : (
         <>
-          <img src={thumbUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={thumbUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            onError={(e) => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`; }}
+          />
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)" }} />
           <div style={{
             position: "absolute", top: "50%", left: "50%",
