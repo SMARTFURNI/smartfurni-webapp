@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
+import { BedDemoSection } from "../doi-tac-showroom-nem/BedDemoSection";
 
 // ─── Design tokens — đồng bộ với website chính ────────────────────────────────
 const GOLD = "#C9A84C";
@@ -30,6 +31,101 @@ const R_FULL = 999;
 interface Props {
   isEditor?: boolean;
   initialContent?: Record<string, string>;
+}
+
+// ─── YouTube helper ─────────────────────────────────────────────────────────
+function extractYoutubeId(url: string): string | null {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))?([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && !started) setStarted(true); },
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [started]);
+  const src = started
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=1&rel=0&modestbranding=1`
+    : `https://www.youtube.com/embed/${videoId}?controls=1&rel=0&modestbranding=1`;
+  return (
+    <div ref={containerRef} style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#000" }}>
+      <iframe
+        src={src}
+        title={title}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+      />
+    </div>
+  );
+}
+
+// ─── Image upload helper ─────────────────────────────────────────────────────
+function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: {
+  blockKey: string;
+  currentUrl?: string;
+  onUploaded: (bk: string, url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  void currentUrl;
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Upload thất bại"); }
+      const { url } = await res.json();
+      await fetch("/api/admin/lp-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: LP_SLUG, blockKey, content: url }),
+      });
+      onUploaded(blockKey, url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload thất bại");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+  return (
+    <>
+      <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        style={{
+          position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)",
+          zIndex: 10, background: "rgba(13,11,0,0.85)", color: GOLD,
+          border: `1px solid ${GOLD}`, borderRadius: R_FULL,
+          fontSize: 11, fontWeight: 700, padding: "6px 16px",
+          cursor: uploading ? "not-allowed" : "pointer",
+          fontFamily: FONT_BODY, whiteSpace: "nowrap" as const,
+          backdropFilter: "blur(8px)",
+          opacity: uploading ? 0.7 : 1,
+          display: "flex", alignItems: "center", gap: 6,
+        }}
+      >
+        {uploading ? (
+          <><span style={{ display: "inline-block", width: 10, height: 10, border: `2px solid ${GOLD}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />Đang tải...</>
+        ) : (
+          <>📷 Thay ảnh</>
+        )}
+      </button>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </>
+  );
 }
 
 // ─── Intersection Observer fade-in ───────────────────────────────────────────
@@ -632,6 +728,45 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
         </div>
       </section>
 
+      {/* ── BED DEMO INTERACTIVE ── */}
+      <BedDemoSection />
+
+      {/* ── HERO VIDEO ── */}
+      <section style={{ background: BLACK }}>
+        <div style={{ textAlign: "center", padding: "56px 24px 24px" }}>
+          <FadeIn>
+            <SectionLabel>
+              {E({ bk: "hero_video_label", def: "Xem sản phẩm hoạt động thực tế", as: "span" })}
+            </SectionLabel>
+            <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, color: WHITE, fontFamily: FONT_HEADING, marginTop: 12, marginBottom: 0, letterSpacing: "-0.01em" }}>
+              {E({ bk: "hero_video_title", def: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni GSF150", as: "span" })}
+            </h2>
+          </FadeIn>
+        </div>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 12px" }}>
+          <div style={{ position: "relative", overflow: "hidden", borderRadius: 16, border: "1px solid #2E2800", boxShadow: "0 0 60px rgba(201,168,76,0.08)" }}>
+            <YoutubeAutoplay
+              videoId={extractYoutubeId(content["hero_video_url"] || "") || "_placeholder_"}
+              title={content["hero_video_title"] || "SmartFurni GSF150 Demo"}
+            />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #C9A84C, transparent)" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #C9A84C, transparent)" }} />
+          </div>
+        </div>
+        {editMode && (
+          <div style={{ padding: "16px 24px", background: BLACK_SOFT, borderTop: `1px solid ${BLACK_BORDER}` }}>
+            <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" as const }}>
+              <span style={{ color: GOLD, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" as const, paddingTop: 4 }}>🎥 Link YouTube:</span>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                {E({ bk: "hero_video_url", def: "https://www.youtube.com/watch?v=PASTE_VIDEO_ID_HERE", as: "span", style: { fontSize: 13, color: GRAY_LIGHT, wordBreak: "break-all" as const } })}
+              </div>
+            </div>
+            <p style={{ color: GRAY, fontSize: 11, marginTop: 8, maxWidth: 900, margin: "8px auto 0" }}>Dán link YouTube (youtube.com/watch?v=... hoặc youtu.be/...) rồi nhấn Lưu. Video sẽ tự phát khi khách cuộn tới.</p>
+          </div>
+        )}
+        <div style={{ height: 56 }} />
+      </section>
+
       {/* ── PRODUCTS ── */}
       <section id="san-pham" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1140, margin: "0 auto" }}>
@@ -663,6 +798,13 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                       <img src={content[`product_image_${i}`] || p.img} alt={content[p.bkName] || p.defName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,11,0,0.65) 0%, transparent 55%)" }} />
                     </div>
+                    {editMode && (
+                      <ImageUploadOverlay
+                        blockKey={`product_image_${i}`}
+                        currentUrl={content[`product_image_${i}`] || p.img}
+                        onUploaded={handleSaved}
+                      />
+                    )}
                     <div style={{ position: "absolute", top: 14, right: 14, background: i === 1 ? GOLD : "rgba(13,11,0,0.8)", color: i === 1 ? BLACK : GRAY_LIGHT, border: i !== 1 ? `1px solid rgba(212,196,160,0.3)` : "none", fontSize: 10, fontWeight: 700, padding: "5px 12px", letterSpacing: "0.08em", borderRadius: R_FULL, fontFamily: FONT_BODY }}>
                       {["Phổ thông", "Bán chạy nhất ★", "Double cao cấp"][i]}
                     </div>
