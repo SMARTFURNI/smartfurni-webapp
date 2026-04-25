@@ -21,6 +21,14 @@ const STATIC_PAGES: LandingPage[] = [
     status: "active",
     createdAt: "2026-04-21",
   },
+  {
+    slug: "gsf150",
+    title: "SmartFurni GSF150 — Bán Lẻ",
+    description: "Landing page bán lẻ khung giường công thái học GSF150 hướng tới khách hàng tiêu dùng cuối",
+    url: "/lp/gsf150",
+    status: "active",
+    createdAt: "2026-04-25",
+  },
 ];
 
 export default function AdminLandingPagesPage() {
@@ -245,7 +253,7 @@ export default function AdminLandingPagesPage() {
                 >
                   {page.status === "active" ? "⏸ Tạm dừng" : "▶ Kích hoạt"}
                 </button>
-                {page.slug !== "doi-tac-showroom-nem" && (
+                {page.slug !== "doi-tac-showroom-nem" && page.slug !== "gsf150" && (
                   <button
                     onClick={() => deletePage(page.slug)}
                     className="text-sm px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
