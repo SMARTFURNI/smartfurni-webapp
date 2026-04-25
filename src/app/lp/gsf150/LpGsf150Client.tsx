@@ -888,7 +888,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                   const imgSrc = content[s.bkImg] || "";
                   return (
                   <div key={i} style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 20 }}>{s.icon}</div>
+                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 20, fontWeight: 700, color: "#1a1200", fontFamily: FONT_HEADING }}>{s.step}</div>
                     <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", marginBottom: 6, fontFamily: FONT_BODY }}>BƯỚC {s.step}</div>
                     <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{E({ bk: s.bkTitle, def: s.defTitle, as: "span" })}</div>
                     <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: "0 0 12px" }}>{E({ bk: s.bkDesc, def: s.defDesc, as: "span", multiline: true })}</p>
