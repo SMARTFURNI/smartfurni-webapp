@@ -229,7 +229,7 @@ export function InstallGuideSection({
             borderRadius: "100px", padding: "7px 18px", marginBottom: 20,
           }}>
             <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>
-              Hướng dẫn lắp đặt
+              <EditableText slug={LP_SLUG} blockKey="install_label" defaultValue="Hướng dẫn lắp đặt" editMode={editMode} as="span" savedValue={content["install_label"]} onSaved={onSaved} onDeleted={onDeleted} />
             </span>
           </div>
           <h2 style={{
@@ -237,7 +237,7 @@ export function InstallGuideSection({
             lineHeight: 1.1, marginBottom: 10, fontFamily: FONT_HEADING,
             letterSpacing: "-0.02em", color: WHITE,
           }}>
-            Lắp Đặt Trong
+            <EditableText slug={LP_SLUG} blockKey="install_title_1" defaultValue="Lắp Đặt Trong" editMode={editMode} as="span" savedValue={content["install_title_1"]} onSaved={onSaved} onDeleted={onDeleted} />
           </h2>
           <div style={{
             fontSize: "clamp(22px, 3.5vw, 42px)", fontWeight: 700,
@@ -245,13 +245,13 @@ export function InstallGuideSection({
             background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
           }}>
-            4 Bước Đơn Giản
+            <EditableText slug={LP_SLUG} blockKey="install_title_2" defaultValue="4 Bước Đơn Giản" editMode={editMode} as="span" savedValue={content["install_title_2"]} onSaved={onSaved} onDeleted={onDeleted} />
           </div>
           <p style={{
             color: GRAY_LIGHT, fontSize: "clamp(14px, 1.6vw, 16px)",
             lineHeight: 1.75, fontFamily: FONT_BODY, maxWidth: 520, margin: "0 auto",
           }}>
-            Không cần thợ. Không cần tháo giường cũ. Chỉ 15–20 phút là xong.
+            <EditableText slug={LP_SLUG} blockKey="install_subtitle" defaultValue="Không cần thợ. Không cần tháo giường cũ. Chỉ 15–20 phút là xong." editMode={editMode} as="span" multiline savedValue={content["install_subtitle"]} onSaved={onSaved} onDeleted={onDeleted} />
           </p>
         </div>
 
