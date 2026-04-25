@@ -631,12 +631,9 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
             </label>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
               {[
-                { val: "1m2", label: "1m2
-(120×200)" },
-                { val: "1m6", label: "1m6
-(160×200)" },
-                { val: "1m8", label: "1m8
-(180×200)" },
+                { val: "1m2", label: "1m2 (120×200)" },
+                { val: "1m6", label: "1m6 (160×200)" },
+                { val: "1m8", label: "1m8 (180×200)" },
               ].map(opt => (
                 <button
                   key={opt.val}
