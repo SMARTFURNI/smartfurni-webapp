@@ -1548,7 +1548,9 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                 {/* Giường phẳng — vấn đề */}
                 <div style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: R_LG, padding: "28px 24px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                    <span style={{ fontSize: 18 }}>😰</span>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#FCA5A5" strokeWidth="2" strokeLinecap="round"/></svg>
+                    </div>
                     <span style={{ color: "#FCA5A5", fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, letterSpacing: "0.05em" }}>
                       {E({ bk: "health_flat_label", def: "GIƯỜNG PHẲNG THÔNG THƯỜNG", as: "span" })}
                     </span>
@@ -1588,25 +1590,42 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                 {/* Giường điều chỉnh — giải pháp */}
                 <div style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: R_LG, padding: "28px 24px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                    <span style={{ fontSize: 18 }}>😴</span>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.35)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
                     <span style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, letterSpacing: "0.05em" }}>
                       {E({ bk: "health_smart_label", def: "SMARTFURNI GSF150 — ZERO GRAVITY", as: "span" })}
                     </span>
                   </div>
-                  {/* SVG minh họa người nằm tư thế Zero Gravity */}
-                  <svg viewBox="0 0 320 100" style={{ width: "100%", marginBottom: 20 }}>
-                    {/* Giường điều chỉnh góc */}
-                    <path d="M 10 82 L 10 70 Q 10 68 12 68 L 180 68 Q 160 55 155 42 L 290 42 Q 295 42 295 47 L 295 70 L 300 82 Z" fill="#1A1400" stroke="rgba(201,168,76,0.3)" strokeWidth="1"/>
-                    {/* Người nằm tư thế nâng đầu + chân */}
-                    <circle cx="165" cy="34" r="9" fill="#2A2010" stroke={`rgba(201,168,76,0.5)`} strokeWidth="1.5"/>
-                    <path d="M 165 43 L 155 60 L 240 60 L 235 43 Z" rx="4" fill="#1E1A0E" stroke="rgba(201,168,76,0.3)" strokeWidth="1"/>
-                    <path d="M 240 60 Q 265 60 275 55 L 290 55" stroke="rgba(201,168,76,0.4)" strokeWidth="8" strokeLinecap="round" fill="none"/>
-                    {/* Đường cột sống thẳng */}
-                    <path d="M 165 43 Q 200 52 240 60" stroke={GOLD} strokeWidth="1.5" fill="none" opacity="0.6"/>
-                    {/* Check marks */}
-                    <circle cx="100" cy="35" r="8" fill="rgba(201,168,76,0.15)" stroke="rgba(201,168,76,0.4)" strokeWidth="1"/>
-                    <path d="M 96 35 L 99 38 L 104 31" stroke={GOLD} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-                    <text x="112" y="38" fill={GOLD} fontSize="8" fontFamily="Inter, sans-serif">Cột sống thẳng</text>
+                  {/* SVG minh họa người nằm tư thế Zero Gravity - đầu nâng 30°, chân nâng 15° */}
+                  <svg viewBox="0 0 320 110" style={{ width: "100%", marginBottom: 20 }}>
+                    {/* Khung giường - phần chân phẳng, phần lưng nghiêng lên */}
+                    <rect x="10" y="78" width="300" height="10" rx="3" fill="#1A1400" stroke="rgba(201,168,76,0.25)" strokeWidth="1"/>
+                    {/* Phần nâng đầu (góc ~25°) */}
+                    <path d="M 30 78 L 30 68 L 160 48 L 160 78 Z" fill="#221A00" stroke="rgba(201,168,76,0.2)" strokeWidth="1"/>
+                    {/* Phần nâng chân (góc ~12°) */}
+                    <path d="M 160 78 L 160 68 L 290 78 Z" fill="#1E1800" stroke="rgba(201,168,76,0.15)" strokeWidth="1"/>
+                    {/* Người nằm - đầu nâng cao bên trái, chân nâng nhẹ bên phải */}
+                    {/* Đầu */}
+                    <circle cx="52" cy="42" r="11" fill="#2A2010" stroke="rgba(201,168,76,0.5)" strokeWidth="1.5"/>
+                    {/* Cổ */}
+                    <rect x="48" y="52" width="8" height="6" rx="2" fill="#241C08" stroke="rgba(201,168,76,0.3)" strokeWidth="1"/>
+                    {/* Thân - nghiêng theo góc giường */}
+                    <path d="M 44 58 L 56 58 L 162 72 L 150 72 Z" fill="#241C08" stroke="rgba(201,168,76,0.3)" strokeWidth="1" rx="4"/>
+                    {/* Chân - nâng nhẹ */}
+                    <path d="M 150 72 L 162 72 L 290 68 L 278 68 Z" fill="#1E1800" stroke="rgba(201,168,76,0.25)" strokeWidth="1" rx="3"/>
+                    {/* Đường cột sống cong tự nhiên (S-curve nhẹ) */}
+                    <path d="M 52 58 Q 90 63 130 67 Q 170 71 220 69" stroke={GOLD} strokeWidth="1.8" fill="none" opacity="0.7" strokeLinecap="round"/>
+                    {/* Label cột sống thẳng */}
+                    <circle cx="88" cy="30" r="9" fill="rgba(201,168,76,0.15)" stroke="rgba(201,168,76,0.4)" strokeWidth="1"/>
+                    <path d="M 84 30 L 87 33 L 93 26" stroke={GOLD} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    <text x="102" y="28" fill={GOLD} fontSize="8.5" fontFamily="Inter, sans-serif" fontWeight="600">Cột sống</text>
+                    <text x="102" y="38" fill={GOLD} fontSize="8.5" fontFamily="Inter, sans-serif" fontWeight="600">tự nhiên</text>
+                    {/* Mũi tên góc đầu */}
+                    <path d="M 30 90 Q 30 95 40 95" stroke="rgba(201,168,76,0.4)" strokeWidth="1" fill="none"/>
+                    <text x="42" y="98" fill="rgba(201,168,76,0.6)" fontSize="7.5" fontFamily="Inter, sans-serif">↑ Đầu 25°</text>
+                    {/* Mũi tên góc chân */}
+                    <text x="215" y="98" fill="rgba(201,168,76,0.6)" fontSize="7.5" fontFamily="Inter, sans-serif">↑ Chân 12°</text>
                   </svg>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {([
@@ -1634,28 +1653,28 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
               {([
                 {
-                  icon: "🦴",
+                  svg: <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 2C10 2 9 4 9 6s1 3 3 3 3-1 3-3-1-4-3-4z" stroke="currentColor" strokeWidth="1.4"/><path d="M12 9v13M9 12l3 2 3-2M9 16l3 2 3-2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
                   bkTitle: "health_1_title", defTitle: "Giảm Đau Cột Sống",
                   bkSci: "health_1_sci", defSci: "Nghiên cứu từ Sleep Medicine Reviews",
                   bkDesc: "health_1_desc", defDesc: "Tư thế Zero Gravity phân bổ đều trọng lượng cơ thể, giảm 50% áp lực lên đĩa đệm L4-L5 so với nằm phẳng. Hiệu quả đặc biệt với người thoái hóa cột sống, đau thắt lưng mãn tính.",
                   bkStat: "health_1_stat", defStat: "Giảm 50% áp lực đĩa đệm",
                 },
                 {
-                  icon: "😮‍💨",
+                  svg: <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 4a4 4 0 014 4c0 3-2 5-4 7-2-2-4-4-4-7a4 4 0 014-4z" stroke="currentColor" strokeWidth="1.4"/><path d="M8 18h8M10 21h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
                   bkTitle: "health_2_title", defTitle: "Chống Ngáy & Ngưng Thở",
                   bkSci: "health_2_sci", defSci: "Theo American Academy of Sleep Medicine",
                   bkDesc: "health_2_desc", defDesc: "Nâng đầu 15–30° mở rộng đường thở, giảm rung động mô mềm vùng họng. Hiệu quả với 78% người ngáy nhẹ đến trung bình. Bác sĩ khuyến nghị cho bệnh nhân ngưng thở khi ngủ nhẹ.",
                   bkStat: "health_2_stat", defStat: "78% giảm ngáy hiệu quả",
                 },
                 {
-                  icon: "🫀",
+                  svg: <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 4 14 4 9a8 8 0 0116 0c0 5-8 12-8 12z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M12 9v4M10 11h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
                   bkTitle: "health_3_title", defTitle: "Cải Thiện Tuần Hoàn",
                   bkSci: "health_3_sci", defSci: "Theo Journal of Cardiovascular Medicine",
                   bkDesc: "health_3_desc", defDesc: "Nâng chân nhẹ 15–20° giúp máu tĩnh mạch trở về tim dễ dàng hơn, giảm phù nề chân sau ngày dài đứng hoặc ngồi. Đặc biệt có lợi cho người suy giãn tĩnh mạch.",
                   bkStat: "health_3_stat", defStat: "Giảm phù nề chân 60%",
                 },
                 {
-                  icon: "🍽️",
+                  svg: <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="14" rx="7" ry="5" stroke="currentColor" strokeWidth="1.4"/><path d="M5 14V9a7 5 0 0114 0v5" stroke="currentColor" strokeWidth="1.4"/><path d="M9 9c0-1.7 1.3-3 3-3s3 1.3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
                   bkTitle: "health_4_title", defTitle: "Ngăn Trào Ngược Axit",
                   bkSci: "health_4_sci", defSci: "Theo New England Journal of Medicine",
                   bkDesc: "health_4_desc", defDesc: "Nâng đầu giường 20–30° tận dụng trọng lực để giữ axit dạ dày không trào ngược thực quản. Nghiên cứu lâm sàng cho thấy giảm 67% triệu chứng GERD ban đêm so với nằm phẳng.",
@@ -1664,7 +1683,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
               ] as const).map((h, i) => (
                 <FadeIn key={i} delay={i * 80}>
                   <div style={{ padding: "28px 22px", background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, height: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ fontSize: 32 }}>{h.icon}</div>
+                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD }}>{h.svg}</div>
                     <div>
                       <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 4, lineHeight: 1.3 }}>
                         {E({ bk: h.bkTitle, def: h.defTitle, as: "span" })}
