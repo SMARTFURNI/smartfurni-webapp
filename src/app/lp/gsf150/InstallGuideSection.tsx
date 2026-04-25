@@ -354,7 +354,7 @@ export function InstallGuideSection({
                 <div style={{
                   position: "relative",
                   width: "100%",
-                  paddingBottom: "100%",
+                  paddingBottom: "75%",
                   background: "#fff",
                   overflow: "hidden",
                 }}>
@@ -362,7 +362,7 @@ export function InstallGuideSection({
                     src={imgSrc}
                     alt={step.defTitle}
                     fill
-                    style={{ objectFit: "cover", objectPosition: "top", transition: "transform 0.4s ease", transform: isActive ? "scale(1.04)" : "scale(1)" }}
+                    style={{ objectFit: "contain", objectPosition: "center", padding: "8px", transition: "transform 0.4s ease", transform: isActive ? "scale(1.04)" : "scale(1)" }}
                     sizes="(max-width: 768px) 50vw, 25vw"
                     loading="lazy"
                   />
