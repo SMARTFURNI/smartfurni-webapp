@@ -332,7 +332,6 @@ export function InstallGuideSection({
         >
           {DEFAULT_STEPS.map((step, i) => {
             const isActive = i === activeStep;
-            const imgSrc = imgOverrides[step.bkImg] || content[step.bkImg] || step.defImg;
             return (
               <button
                 key={i}
@@ -350,28 +349,15 @@ export function InstallGuideSection({
                   boxShadow: isActive ? "0 12px 40px rgba(201,168,76,0.12)" : "none",
                 }}
               >
-                {/* Image area */}
+                {/* Step number badge */}
                 <div style={{
-                  position: "relative",
-                  width: "100%",
-                  paddingBottom: "75%",
-                  background: "#fff",
-                  overflow: "hidden",
+                  padding: "16px 16px 0 16px",
                 }}>
-                  <Image
-                    src={imgSrc}
-                    alt={step.defTitle}
-                    fill
-                    style={{ objectFit: "contain", objectPosition: "center", padding: "8px", transition: "transform 0.4s ease", transform: isActive ? "scale(1.04)" : "scale(1)" }}
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    loading="lazy"
-                  />
-                  {/* Step number badge */}
                   <div style={{
-                    position: "absolute", top: 10, left: 10,
+                    display: "inline-block",
                     background: isActive
                       ? `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`
-                      : "rgba(0,0,0,0.55)",
+                      : "rgba(255,255,255,0.12)",
                     color: isActive ? BLACK : WHITE,
                     fontWeight: 800, fontSize: 12,
                     fontFamily: FONT_BODY, letterSpacing: "0.08em",
@@ -380,13 +366,6 @@ export function InstallGuideSection({
                   }}>
                     {step.num}
                   </div>
-                  {/* Image upload overlay (edit mode only) */}
-                  {editMode && (
-                    <ImageUploadOverlay
-                      blockKey={step.bkImg}
-                      onUploaded={handleImgUploaded}
-                    />
-                  )}
                 </div>
                 {/* Text area */}
                 <div style={{ padding: "clamp(14px, 2vw, 20px)" }}>
