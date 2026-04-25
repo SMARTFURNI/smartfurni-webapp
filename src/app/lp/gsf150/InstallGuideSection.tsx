@@ -362,7 +362,7 @@ export function InstallGuideSection({
                     src={imgSrc}
                     alt={step.defTitle}
                     fill
-                    style={{ objectFit: "cover", transition: "transform 0.4s ease", transform: isActive ? "scale(1.04)" : "scale(1)" }}
+                    style={{ objectFit: "cover", objectPosition: "top", transition: "transform 0.4s ease", transform: isActive ? "scale(1.04)" : "scale(1)" }}
                     sizes="(max-width: 768px) 50vw, 25vw"
                     loading="lazy"
                   />
