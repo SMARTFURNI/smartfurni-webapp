@@ -405,6 +405,63 @@ export function InstallGuideSection({
                     />
                   </p>
                 </div>
+                {/* Image area 1:1 — below text */}
+                {(() => {
+                  const imgSrc = imgOverrides[step.bkImg] || content[step.bkImg] || "";
+                  if (!imgSrc && !editMode) return null;
+                  return (
+                    <div style={{
+                      position: "relative",
+                      width: "100%",
+                      paddingBottom: "100%",
+                      background: imgSrc ? "#fff" : "rgba(255,255,255,0.04)",
+                      overflow: "hidden",
+                      borderTop: `1px solid ${BLACK_BORDER}`,
+                    }}>
+                      {imgSrc ? (
+                        <Image
+                          src={imgSrc}
+                          alt={step.defTitle}
+                          fill
+                          style={{ objectFit: "contain", objectPosition: "center", padding: "8px" }}
+                          sizes="(max-width: 768px) 50vw, 25vw"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div style={{
+                          position: "absolute", inset: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: GRAY, fontSize: 12, fontFamily: FONT_BODY,
+                        }}>
+                          Chưa có ảnh
+                        </div>
+                      )}
+                      {editMode && (
+                        <>
+                          <ImageUploadOverlay blockKey={step.bkImg} onUploaded={handleImgUploaded} />
+                          {imgSrc && (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await fetch(`/api/admin/lp-content?slug=${LP_SLUG}&blockKey=${step.bkImg}`, { method: "DELETE" });
+                                setImgOverrides(prev => { const n = { ...prev }; delete n[step.bkImg]; return n; });
+                                onDeleted?.(step.bkImg);
+                              }}
+                              style={{
+                                position: "absolute", top: 8, right: 8, zIndex: 20,
+                                background: "rgba(239,68,68,0.9)", color: "#fff",
+                                border: "none", borderRadius: "50%",
+                                width: 28, height: 28, cursor: "pointer",
+                                fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center",
+                                fontWeight: 700,
+                              }}
+                            >×</button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
               </button>
             );
           })}
