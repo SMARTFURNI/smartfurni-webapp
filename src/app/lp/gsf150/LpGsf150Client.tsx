@@ -501,28 +501,40 @@ function FaqAccordion({ E: EditFn }: { E: EFn }) {
 
 // ─── Lead Form (bán lẻ) ───────────────────────────────────────────────────────
 function LeadForm({ submitLabel }: { submitLabel?: string }) {
-  const [form, setForm] = useState({ name: "", phone: "", address: "", mattressType: "", note: "" });
+  const [step, setStep] = useState<1 | 2>(1);
+  const [quiz, setQuiz] = useState({ bedType: "", bedSize: "", mattressType: "" });
+  const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [utms, setUtms] = useState<Record<string, string>>({});
+
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     setUtms({ utmSource: p.get("utm_source") || "", utmMedium: p.get("utm_medium") || "", utmCampaign: p.get("utm_campaign") || "", utmContent: p.get("utm_content") || "" });
   }, []);
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(prev => ({ ...prev, [k]: e.target.value }));
+
+  const setF = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm(prev => ({ ...prev, [k]: e.target.value }));
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim()) { setError("Vui lòng điền đầy đủ Họ tên và Số điện thoại (*)"); return; }
     if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.replace(/\s/g, ""))) { setError("Số điện thoại không hợp lệ"); return; }
     setLoading(true); setError("");
     try {
-      const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.name, phone: form.phone, email: "", note: `Địa chỉ: ${form.address} | Loại nệm: ${form.mattressType} | Ghi chú: ${form.note}`, ...utms }) });
+      const noteStr = `Loại giường: ${quiz.bedType} | Kích thước: ${quiz.bedSize} | Loại nệm: ${quiz.mattressType} | Địa chỉ: ${form.address} | Ghi chú: ${form.note}`;
+      const res = await fetch("/api/lp/submit-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }),
+      });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
       setSuccess(true);
     } catch (err: unknown) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
     finally { setLoading(false); }
   }
+
   const inp: React.CSSProperties = {
     width: "100%", background: "rgba(245,237,214,0.04)",
     border: `1px solid rgba(201,168,76,0.2)`,
@@ -531,6 +543,7 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
     transition: "border-color 0.2s, box-shadow 0.2s",
     borderRadius: R_MD,
   };
+
   if (success) return (
     <div style={{ textAlign: "center", padding: "56px 32px", background: BLACK_CARD, border: `1px solid ${GOLD}`, borderRadius: R_LG }}>
       <div style={{ fontSize: 52, marginBottom: 18 }}>✅</div>
@@ -538,49 +551,351 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
       <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY }}>Cảm ơn bạn đã tin tưởng SmartFurni.<br />Đội ngũ tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 2 giờ làm việc để xác nhận đơn hàng.</p>
     </div>
   );
+
   return (
-    <form onSubmit={handleSubmit} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, padding: "clamp(24px,4vw,44px)", borderRadius: R_LG }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 16 }}>
-        {[
-          { k: "name", label: "Họ và tên *", ph: "Nguyễn Văn A" },
-          { k: "phone", label: "Số điện thoại (Zalo) *", ph: "0912 345 678" },
-          { k: "mattressType", label: "Loại nệm hiện tại", ph: "VD: Cao su, Lò xo, Foam…" },
-        ].map(f => (
-          <div key={f.k}>
-            <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>{f.label}</label>
-            <input type="text" placeholder={f.ph} value={form[f.k as keyof typeof form]} onChange={set(f.k)} style={inp}
+    <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, padding: "clamp(24px,4vw,44px)", borderRadius: R_LG }}>
+      {/* Progress bar */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 16 }}>
+          {[1, 2].map((s) => (
+            <React.Fragment key={s}>
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: step >= s ? GOLD : "rgba(201,168,76,0.1)",
+                border: `2px solid ${step >= s ? GOLD : "rgba(201,168,76,0.2)"}`,
+                color: step >= s ? BLACK : GRAY,
+                fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY,
+                transition: "all 0.3s",
+              }}>
+                {step > s ? "✓" : s}
+              </div>
+              {s < 2 && (
+                <div style={{ flex: 1, height: 2, background: step > s ? GOLD : "rgba(201,168,76,0.15)", transition: "background 0.3s" }} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ color: step === 1 ? GOLD : GRAY, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.06em" }}>
+            BƯỚC 1 — Thông tin giường
+          </span>
+          <span style={{ color: step === 2 ? GOLD : GRAY, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.06em" }}>
+            BƯỚC 2 — Thông tin liên hệ
+          </span>
+        </div>
+      </div>
+
+      {/* BƯỚC 1: Quiz thông tin giường */}
+      {step === 1 && (
+        <div>
+          <p style={{ color: GRAY_LIGHT, fontSize: 14, marginBottom: 24, fontFamily: FONT_BODY, lineHeight: 1.6 }}>
+            Cho chúng tôi biết về chiếc giường của bạn để tư vấn phiên bản phù hợp nhất:
+          </p>
+
+          {/* Loại khung giường */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 10, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>
+              Khung giường hiện tại của bạn *
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8 }}>
+              {[
+                { val: "go", label: "🪵 Gỗ tự nhiên" },
+                { val: "go-cong-nghiep", label: "🪵 Gỗ công nghiệp" },
+                { val: "sat", label: "⚙️ Sắt / Kim loại" },
+                { val: "khac", label: "❓ Loại khác" },
+              ].map(opt => (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => setQuiz(q => ({ ...q, bedType: opt.val }))}
+                  style={{
+                    padding: "12px 8px", borderRadius: R_MD, fontSize: 12, fontWeight: 600,
+                    fontFamily: FONT_BODY, cursor: "pointer", textAlign: "center",
+                    border: `2px solid ${quiz.bedType === opt.val ? GOLD : "rgba(201,168,76,0.15)"}`,
+                    background: quiz.bedType === opt.val ? "rgba(201,168,76,0.12)" : "rgba(201,168,76,0.03)",
+                    color: quiz.bedType === opt.val ? GOLD : GRAY_LIGHT,
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Kích thước giường */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 10, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>
+              Kích thước giường *
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {[
+                { val: "1m2", label: "1m2
+(120×200)" },
+                { val: "1m6", label: "1m6
+(160×200)" },
+                { val: "1m8", label: "1m8
+(180×200)" },
+              ].map(opt => (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => setQuiz(q => ({ ...q, bedSize: opt.val }))}
+                  style={{
+                    padding: "14px 8px", borderRadius: R_MD, fontSize: 12, fontWeight: 700,
+                    fontFamily: FONT_BODY, cursor: "pointer", textAlign: "center",
+                    border: `2px solid ${quiz.bedSize === opt.val ? GOLD : "rgba(201,168,76,0.15)"}`,
+                    background: quiz.bedSize === opt.val ? "rgba(201,168,76,0.12)" : "rgba(201,168,76,0.03)",
+                    color: quiz.bedSize === opt.val ? GOLD : GRAY_LIGHT,
+                    transition: "all 0.2s",
+                    whiteSpace: "pre-line" as const, lineHeight: 1.4,
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Loại nệm */}
+          <div style={{ marginBottom: 28 }}>
+            <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 10, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>
+              Loại nệm đang dùng
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
+              {[
+                { val: "cao-su", label: "🌿 Cao su" },
+                { val: "lo-xo", label: "🔩 Lò xo túi" },
+                { val: "foam", label: "🧽 Foam/Memory" },
+                { val: "khac", label: "❓ Khác" },
+              ].map(opt => (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => setQuiz(q => ({ ...q, mattressType: opt.val }))}
+                  style={{
+                    padding: "11px 8px", borderRadius: R_MD, fontSize: 12, fontWeight: 600,
+                    fontFamily: FONT_BODY, cursor: "pointer", textAlign: "center",
+                    border: `2px solid ${quiz.mattressType === opt.val ? GOLD : "rgba(201,168,76,0.15)"}`,
+                    background: quiz.mattressType === opt.val ? "rgba(201,168,76,0.12)" : "rgba(201,168,76,0.03)",
+                    color: quiz.mattressType === opt.val ? GOLD : GRAY_LIGHT,
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Compatibility result */}
+          {quiz.bedType && quiz.bedSize && (
+            <div style={{ marginBottom: 24, padding: "16px 20px", background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: R_MD, display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>✅</span>
+              <div>
+                <div style={{ color: "#4ADE80", fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 4 }}>
+                  Tương thích 100% — GSF150 phù hợp với giường của bạn!
+                </div>
+                <div style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, lineHeight: 1.6 }}>
+                  Khung {quiz.bedType === "go" ? "gỗ tự nhiên" : quiz.bedType === "go-cong-nghiep" ? "gỗ công nghiệp" : quiz.bedType === "sat" ? "sắt/kim loại" : "loại khác"} · Kích thước {quiz.bedSize} · GSF150 lắp vừa không cần chỉnh sửa.
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!quiz.bedType || !quiz.bedSize) { alert("Vui lòng chọn loại giường và kích thước để tiếp tục"); return; }
+              setStep(2);
+            }}
+            style={{
+              width: "100%", padding: "16px",
+              background: `linear-gradient(135deg, ${GOLD} 0%, #E2C97E 100%)`,
+              color: BLACK, border: "none", fontWeight: 700, fontSize: 14,
+              cursor: "pointer", letterSpacing: "0.06em",
+              borderRadius: R_MD, fontFamily: FONT_BODY,
+              boxShadow: `0 8px 24px rgba(201,168,76,0.25)`,
+            }}
+          >
+            Tiếp theo — Nhận tư vấn →
+          </button>
+        </div>
+      )}
+
+      {/* BƯỚC 2: Thông tin liên hệ */}
+      {step === 2 && (
+        <form onSubmit={handleSubmit}>
+          {/* Tóm tắt bước 1 */}
+          <div style={{ marginBottom: 24, padding: "12px 16px", background: "rgba(201,168,76,0.06)", border: `1px solid rgba(201,168,76,0.2)`, borderRadius: R_MD, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" as const }}>
+            <div style={{ color: GOLD, fontSize: 12, fontFamily: FONT_BODY }}>
+              ✓ Giường {quiz.bedType} · {quiz.bedSize} · Nệm {quiz.mattressType || "chưa chọn"}
+            </div>
+            <button type="button" onClick={() => setStep(1)} style={{ color: GRAY, fontSize: 11, background: "none", border: "none", cursor: "pointer", fontFamily: FONT_BODY, textDecoration: "underline" }}>
+              Sửa lại
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 16 }}>
+            {[
+              { k: "name", label: "Họ và tên *", ph: "Nguyễn Văn A" },
+              { k: "phone", label: "Số điện thoại (Zalo) *", ph: "0912 345 678" },
+            ].map(f => (
+              <div key={f.k}>
+                <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>{f.label}</label>
+                <input type="text" placeholder={f.ph} value={form[f.k as keyof typeof form]} onChange={setF(f.k)} style={inp}
+                  onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px rgba(201,168,76,0.12)`; }}
+                  onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+              </div>
+            ))}
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Địa chỉ giao hàng</label>
+            <input type="text" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành phố" value={form.address} onChange={setF("address")} style={inp}
               onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px rgba(201,168,76,0.12)`; }}
               onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
           </div>
-        ))}
+          <div style={{ marginBottom: 26 }}>
+            <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Câu hỏi hoặc yêu cầu thêm</label>
+            <textarea placeholder="Yêu cầu đặc biệt, thời gian giao hàng…" rows={3} value={form.note} onChange={setF("note")}
+              style={{ ...inp, resize: "vertical" }}
+              onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px rgba(201,168,76,0.12)`; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+          </div>
+          {error && <div style={{ color: RED_SOFT, fontSize: 13, marginBottom: 16, padding: "12px 16px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: R_SM, fontFamily: FONT_BODY }}>{error}</div>}
+          <button type="submit" disabled={loading} style={{
+            width: "100%", padding: "17px",
+            background: loading ? "#333" : `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #9A7A2E 100%)`,
+            color: BLACK, border: "none", fontWeight: 700, fontSize: 14,
+            cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const,
+            boxShadow: loading ? "none" : `0 8px 28px rgba(201,168,76,0.3)`,
+            borderRadius: R_MD, fontFamily: FONT_BODY,
+            transition: "all 0.25s ease",
+          }}>
+            {loading ? "Đang gửi…" : (submitLabel || "Tư Vấn & Đặt Hàng Ngay →")}
+          </button>
+          <p style={{ color: GRAY, fontSize: 12, textAlign: "center", marginTop: 14, fontFamily: FONT_BODY }}>🔒 Thông tin được bảo mật tuyệt đối. Không spam.</p>
+        </form>
+      )}
+    </div>
+  );
+}
+
+
+// ─── Reel Thumbnail Play (9:16) ──────────────────────────────────────────────
+function ReelThumbnailPlay({ videoId, title }: { videoId: string; title: string }) {
+  const [playing, setPlaying] = useState(false);
+  const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+  return (
+    <div
+      style={{ position: "absolute", inset: 0, cursor: playing ? "default" : "pointer" }}
+      onClick={() => { if (!playing) setPlaying(true); }}
+    >
+      {playing ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1`}
+          title={title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ width: "100%", height: "100%", border: "none" }}
+        />
+      ) : (
+        <>
+          <img src={thumbUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)" }} />
+          <div style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 44, height: 44, borderRadius: "50%",
+            background: "rgba(201,168,76,0.9)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(201,168,76,0.4)",
+          }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M5 3L13 8L5 13V3Z" fill="#0A0A08"/>
+            </svg>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Before/After Slider ─────────────────────────────────────────────────────
+function BeforeAfterSlider({ beforeUrl, afterUrl, beforeLabel = "Trước", afterLabel = "Sau" }: {
+  beforeUrl: string; afterUrl: string; beforeLabel?: string; afterLabel?: string;
+}) {
+  const [sliderPos, setSliderPos] = useState(50);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
+  const updatePos = (clientX: number) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const pct = Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100));
+    setSliderPos(pct);
+  };
+
+  const onMouseDown = () => { dragging.current = true; };
+  const onMouseMove = (e: React.MouseEvent) => { if (dragging.current) updatePos(e.clientX); };
+  const onMouseUp = () => { dragging.current = false; };
+  const onTouchMove = (e: React.TouchEvent) => { updatePos(e.touches[0].clientX); };
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
+      onTouchMove={onTouchMove}
+      style={{ position: "relative", width: "100%", paddingBottom: "56.25%", cursor: "ew-resize", userSelect: "none", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(201,168,76,0.15)" }}
+    >
+      {/* After image (full) */}
+      {afterUrl ? (
+        <img src={afterUrl} alt={afterLabel} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
+      ) : (
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #1A1400, #0D0B00)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ color: "#C9A84C", fontSize: 13, fontFamily: "'Inter',sans-serif" }}>Ảnh SAU (chưa cập nhật)</span>
+        </div>
+      )}
+      {/* Before image (clipped) */}
+      <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}>
+        {beforeUrl ? (
+          <img src={beforeUrl} alt={beforeLabel} style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #1A1200, #0A0A08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ color: "#7A7468", fontSize: 13, fontFamily: "'Inter',sans-serif" }}>Ảnh TRƯỚC (chưa cập nhật)</span>
+          </div>
+        )}
       </div>
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Địa chỉ giao hàng</label>
-        <input type="text" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành phố" value={form.address} onChange={set("address")} style={inp}
-          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px rgba(201,168,76,0.12)`; }}
-          onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+      {/* Divider line */}
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: `${sliderPos}%`, transform: "translateX(-50%)", width: 2, background: "#C9A84C", pointerEvents: "none" }}>
+        {/* Handle */}
+        <div style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 40, height: 40, borderRadius: "50%",
+          background: "#C9A84C",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 2px 12px rgba(201,168,76,0.5)",
+        }}>
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+            <path d="M5 7H1M1 7L4 4M1 7L4 10" stroke="#0A0A08" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M13 7H17M17 7L14 4M17 7L14 10" stroke="#0A0A08" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </div>
       </div>
-      <div style={{ marginBottom: 26 }}>
-        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Câu hỏi hoặc yêu cầu thêm</label>
-        <textarea placeholder="Kích thước giường, yêu cầu đặc biệt…" rows={3} value={form.note} onChange={set("note")}
-          style={{ ...inp, resize: "vertical" }}
-          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px rgba(201,168,76,0.12)`; }}
-          onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+      {/* Labels */}
+      <div style={{ position: "absolute", top: 12, left: 14, background: "rgba(10,10,8,0.8)", color: "#7A7468", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: 999, letterSpacing: "0.1em", fontFamily: "'Inter',sans-serif", backdropFilter: "blur(4px)" }}>
+        {beforeLabel}
       </div>
-      {error && <div style={{ color: RED_SOFT, fontSize: 13, marginBottom: 16, padding: "12px 16px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: R_SM, fontFamily: FONT_BODY }}>{error}</div>}
-      <button type="submit" disabled={loading} style={{
-        width: "100%", padding: "17px",
-        background: loading ? "#333" : `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #9A7A2E 100%)`,
-        color: BLACK, border: "none", fontWeight: 700, fontSize: 14,
-        cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const,
-        boxShadow: loading ? "none" : `0 8px 28px rgba(201,168,76,0.3)`,
-        borderRadius: R_MD, fontFamily: FONT_BODY,
-        transition: "all 0.25s ease",
-      }}>
-        {loading ? "Đang gửi…" : (submitLabel || "Tư Vấn & Đặt Hàng Ngay →")}
-      </button>
-      <p style={{ color: GRAY, fontSize: 12, textAlign: "center", marginTop: 14, fontFamily: FONT_BODY }}>🔒 Thông tin được bảo mật tuyệt đối. Không spam.</p>
-    </form>
+      <div style={{ position: "absolute", top: 12, right: 14, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.4)", color: "#C9A84C", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: 999, letterSpacing: "0.1em", fontFamily: "'Inter',sans-serif", backdropFilter: "blur(4px)" }}>
+        {afterLabel}
+      </div>
+    </div>
   );
 }
 
@@ -911,6 +1226,50 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
         </div>
       </section>
 
+
+      {/* ── BEFORE / AFTER SLIDER ── */}
+      <section style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <SectionLabel>{E({ bk: "ba_section_label", def: "Kết quả thực tế", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
+                {E({ bk: "ba_title_1", def: "Phòng Ngủ Của Bạn", as: "span", style: { display: "block" } })}
+                {E({ bk: "ba_title_2", def: "Trước Và Sau GSF150", as: "span", style: { color: GOLD, display: "block" } })}
+              </h2>
+              <GoldDivider />
+              <p style={{ color: GRAY, fontSize: 14, maxWidth: 520, margin: "0 auto", lineHeight: 1.7, fontFamily: FONT_BODY }}>
+                {E({ bk: "ba_subtitle", def: "Kéo thanh trượt để xem sự khác biệt — cùng một chiếc giường, hoàn toàn khác trải nghiệm.", as: "span", multiline: true })}
+              </p>
+            </div>
+          </FadeIn>
+          <FadeIn delay={80}>
+            <BeforeAfterSlider
+              beforeUrl={content["ba_before_url"] || ""}
+              afterUrl={content["ba_after_url"] || ""}
+              beforeLabel={content["ba_before_label"] || "Giường thường"}
+              afterLabel={content["ba_after_label"] || "Với GSF150"}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14, gap: 16, flexWrap: "wrap" as const }}>
+              <p style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, fontStyle: "italic" }}>
+                {E({ bk: "ba_caption", def: "Ảnh thực tế từ khách hàng — không chỉnh sửa", as: "span" })}
+              </p>
+              {editMode && (
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" as const }}>
+                  <div style={{ background: "rgba(201,168,76,0.06)", border: `1px dashed ${GOLD}`, borderRadius: R_SM, padding: "8px 12px" }}>
+                    <span style={{ color: GOLD, fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", display: "block", marginBottom: 3 }}>ẢNH TRƯỚC:</span>
+                    {E({ bk: "ba_before_url", def: "https://...", as: "span", style: { fontSize: 11, color: GRAY_LIGHT, wordBreak: "break-all" as const } })}
+                  </div>
+                  <div style={{ background: "rgba(201,168,76,0.06)", border: `1px dashed ${GOLD}`, borderRadius: R_SM, padding: "8px 12px" }}>
+                    <span style={{ color: GOLD, fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", display: "block", marginBottom: 3 }}>ẢNH SAU:</span>
+                    {E({ bk: "ba_after_url", def: "https://...", as: "span", style: { fontSize: 11, color: GRAY_LIGHT, wordBreak: "break-all" as const } })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
       {/* ── BED DEMO INTERACTIVE ── */}
       <BedDemoSection />
 
@@ -1514,6 +1873,72 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           </FadeIn>
         </div>
       </section>
+
+      {/* ── TESTIMONIAL VIDEO DỌC (REELS) ── */}
+      <section style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <SectionLabel>{E({ bk: "reels_section_label", def: "Video ngắn từ khách hàng", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
+                {E({ bk: "reels_title_1", def: "Cảm Nhận Thực Tế", as: "span", style: { display: "block" } })}
+                {E({ bk: "reels_title_2", def: "Từ Khách Hàng SmartFurni", as: "span", style: { color: GOLD, display: "block" } })}
+              </h2>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <FadeIn delay={80}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, maxWidth: 860, margin: "0 auto" }}>
+              {([
+                { urlKey: "reel_1_url", nameKey: "reel_1_name", defName: "Chị Lan Anh", locKey: "reel_1_loc", defLoc: "Quận 3, TP.HCM", tagKey: "reel_1_tag", defTag: "Dùng 2 tháng" },
+                { urlKey: "reel_2_url", nameKey: "reel_2_name", defName: "Anh Đức Minh", locKey: "reel_2_loc", defLoc: "Hoàn Kiếm, Hà Nội", tagKey: "reel_2_tag", defTag: "Lắp đặt 5 phút" },
+                { urlKey: "reel_3_url", nameKey: "reel_3_name", defName: "Chị Hồng Nhung", locKey: "reel_3_loc", defLoc: "Hải Châu, Đà Nẵng", tagKey: "reel_3_tag", defTag: "Giảm đau lưng" },
+                { urlKey: "reel_4_url", nameKey: "reel_4_name", defName: "Anh Quốc Bảo", locKey: "reel_4_loc", defLoc: "Thủ Đức, TP.HCM", tagKey: "reel_4_tag", defTag: "Mua cho bố mẹ" },
+              ] as const).map((reel, i) => {
+                const vidId = extractYoutubeId(content[reel.urlKey] || "") || null;
+                return (
+                  <FadeIn key={i} delay={i * 70}>
+                    <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
+                      {/* Vertical video 9:16 */}
+                      <div style={{ position: "relative", paddingBottom: "177.78%" /* 9:16 */ }}>
+                        {vidId ? (
+                          <ReelThumbnailPlay videoId={vidId} title={content[reel.nameKey] || reel.defName} />
+                        ) : (
+                          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #1A1400 0%, #0A0A08 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+                            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px dashed rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <span style={{ fontSize: 20 }}>🎬</span>
+                            </div>
+                            <span style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, textAlign: "center", padding: "0 16px" }}>Chưa có video</span>
+                          </div>
+                        )}
+                        {/* Tag */}
+                        <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(10,10,8,0.85)", border: `1px solid rgba(201,168,76,0.3)`, color: GOLD, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY, backdropFilter: "blur(4px)", zIndex: 2 }}>
+                          {content[reel.tagKey] || reel.defTag}
+                        </div>
+                      </div>
+                      {/* Caption */}
+                      <div style={{ padding: "12px 14px" }}>
+                        <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 2 }}>
+                          {E({ bk: reel.nameKey, def: reel.defName, as: "span" })}
+                        </div>
+                        <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>
+                          {E({ bk: reel.locKey, def: reel.defLoc, as: "span" })}
+                        </div>
+                        {editMode && (
+                          <div style={{ marginTop: 8, background: "rgba(201,168,76,0.04)", border: `1px dashed rgba(201,168,76,0.3)`, borderRadius: R_SM, padding: "7px 10px" }}>
+                            <span style={{ color: GOLD, fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", display: "block", marginBottom: 3 }}>🎥 LINK REEL {i + 1}:</span>
+                            {E({ bk: reel.urlKey, def: "https://www.youtube.com/shorts/PASTE_ID", as: "span", style: { fontSize: 11, color: GRAY_LIGHT, wordBreak: "break-all" as const } })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </FadeIn>
+                );
+              })}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
       {/* ── TRUST / SOCIAL PROOF ── */}
       <section id="danh-gia" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
@@ -1597,6 +2022,92 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
       </section>
 
 
+
+      {/* ── BẢN ĐỒ ĐƠN HÀNG TOÀN QUỐC ── */}
+      <section style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <SectionLabel>{E({ bk: "map_section_label", def: "Phủ sóng toàn quốc", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(22px, 3vw, 40px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
+                {E({ bk: "map_title_1", def: "GSF150 Đã Có Mặt Tại", as: "span", style: { display: "block" } })}
+                {E({ bk: "map_title_2", def: "63/63 Tỉnh Thành Việt Nam", as: "span", style: { color: GOLD, display: "block" } })}
+              </h2>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <FadeIn delay={80}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }}>
+              {/* SVG Bản đồ Việt Nam đơn giản */}
+              <div style={{ position: "relative" }}>
+                <svg viewBox="0 0 220 520" style={{ width: "100%", maxWidth: 280, margin: "0 auto", display: "block" }}>
+                  {/* Outline Việt Nam đơn giản */}
+                  <path d="M 130 10 L 155 25 L 170 50 L 165 80 L 175 105 L 170 130 L 180 155 L 175 175 L 185 195 L 178 215 L 185 235 L 175 255 L 170 275 L 160 295 L 155 315 L 145 335 L 135 355 L 120 375 L 105 395 L 90 415 L 75 435 L 65 455 L 60 475 L 65 495 L 80 510 L 70 490 L 75 470 L 85 450 L 95 430 L 110 410 L 120 390 L 130 370 L 140 350 L 148 330 L 152 310 L 155 290 L 158 270 L 162 250 L 168 230 L 172 210 L 165 190 L 168 170 L 162 150 L 165 125 L 158 100 L 162 75 L 150 50 L 135 30 Z"
+                    fill="rgba(201,168,76,0.08)" stroke="rgba(201,168,76,0.3)" strokeWidth="1.5" />
+                  {/* Các chấm tỉnh thành nổi bật */}
+                  {([
+                    { cx: 148, cy: 35, city: "Hà Nội", size: 6 },
+                    { cx: 162, cy: 55, city: "Hải Phòng", size: 4 },
+                    { cx: 155, cy: 80, city: "Thanh Hóa", size: 3 },
+                    { cx: 165, cy: 110, city: "Vinh", size: 3 },
+                    { cx: 168, cy: 145, city: "Huế", size: 3 },
+                    { cx: 170, cy: 165, city: "Đà Nẵng", size: 5 },
+                    { cx: 165, cy: 210, city: "Quy Nhơn", size: 3 },
+                    { cx: 160, cy: 255, city: "Nha Trang", size: 4 },
+                    { cx: 145, cy: 300, city: "Đà Lạt", size: 3 },
+                    { cx: 125, cy: 330, city: "Vũng Tàu", size: 3 },
+                    { cx: 115, cy: 355, city: "TP.HCM", size: 7 },
+                    { cx: 95, cy: 375, city: "Cần Thơ", size: 4 },
+                    { cx: 80, cy: 400, city: "Cà Mau", size: 3 },
+                  ] as const).map((dot, i) => (
+                    <g key={i}>
+                      <circle cx={dot.cx} cy={dot.cy} r={dot.size + 3} fill="rgba(201,168,76,0.1)" />
+                      <circle cx={dot.cx} cy={dot.cy} r={dot.size} fill={dot.size >= 6 ? "#C9A84C" : "rgba(201,168,76,0.7)"} />
+                    </g>
+                  ))}
+                  {/* Labels cho 2 thành phố lớn */}
+                  <text x="155" y="32" fill="#C9A84C" fontSize="8" fontFamily="Inter, sans-serif" fontWeight="600">Hà Nội</text>
+                  <text x="118" y="352" fill="#C9A84C" fontSize="8" fontFamily="Inter, sans-serif" fontWeight="600">TP.HCM</text>
+                  <text x="172" y="163" fill="#E2C97E" fontSize="7" fontFamily="Inter, sans-serif">Đà Nẵng</text>
+                </svg>
+              </div>
+
+              {/* Stats và danh sách tỉnh thành */}
+              <div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28 }}>
+                  {([
+                    { num: "2.000+", label: "Gia đình đã lắp đặt" },
+                    { num: "63/63", label: "Tỉnh thành có mặt" },
+                    { num: "< 48h", label: "Giao hàng nội thành" },
+                    { num: "100%", label: "Lắp đặt tại nhà" },
+                  ] as const).map((s, i) => (
+                    <div key={i} style={{ padding: "16px", background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_MD, textAlign: "center" }}>
+                      <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 24px)", fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{s.num}</div>
+                      <div style={{ color: GRAY, fontSize: 11, marginTop: 5, fontFamily: FONT_BODY, lineHeight: 1.4 }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <div style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", fontFamily: FONT_BODY, marginBottom: 12, textTransform: "uppercase" as const }}>
+                    Các tỉnh thành tiêu biểu:
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+                    {["Hà Nội", "TP. HCM", "Đà Nẵng", "Hải Phòng", "Cần Thơ", "Nha Trang", "Huế", "Vũng Tàu", "Đà Lạt", "Quy Nhơn", "Vinh", "Thanh Hóa", "Bình Dương", "Đồng Nai", "Long An"].map((city, i) => (
+                      <span key={i} style={{ background: "rgba(201,168,76,0.06)", border: `1px solid rgba(201,168,76,0.15)`, color: GRAY_LIGHT, fontSize: 11, padding: "4px 10px", borderRadius: R_FULL, fontFamily: FONT_BODY }}>
+                        {city}
+                      </span>
+                    ))}
+                    <span style={{ background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.3)`, color: GOLD, fontSize: 11, padding: "4px 10px", borderRadius: R_FULL, fontFamily: FONT_BODY, fontWeight: 600 }}>
+                      +48 tỉnh khác
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
       {/* ── CAM KẾT & CHÍNH SÁCH ── */}
       <section style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
