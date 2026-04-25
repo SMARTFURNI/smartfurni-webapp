@@ -1332,7 +1332,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                 <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, overflow: "hidden", borderRadius: R_LG, transition: "all 0.3s ease", display: "flex", flexDirection: "column" }}
                   onMouseEnter={e => { const d = e.currentTarget as HTMLDivElement; d.style.borderColor = "rgba(201,168,76,0.45)"; d.style.transform = "translateY(-6px)"; d.style.boxShadow = "0 20px 48px rgba(0,0,0,0.5)"; }}
                   onMouseLeave={e => { const d = e.currentTarget as HTMLDivElement; d.style.borderColor = BLACK_BORDER; d.style.transform = "translateY(0)"; d.style.boxShadow = "none"; }}>
-                  <div style={{ position: "relative", width: "100%", paddingBottom: "75%", borderRadius: `${R_LG}px ${R_LG}px 0 0`, overflow: "hidden", flexShrink: 0 }}>
+                  <div style={{ position: "relative", width: "100%", paddingBottom: "100%", borderRadius: `${R_LG}px ${R_LG}px 0 0`, overflow: "hidden", flexShrink: 0 }}>
                     <div style={{ position: "absolute", inset: 0 }}>
                       <img src={content[`product_image_${i}`] || p.img} alt={content[p.bkName] || p.defName} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,11,0,0.65) 0%, transparent 55%)" }} />
