@@ -546,7 +546,9 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
 
   if (success) return (
     <div style={{ textAlign: "center", padding: "56px 32px", background: BLACK_CARD, border: `1px solid ${GOLD}`, borderRadius: R_LG }}>
-      <div style={{ fontSize: 52, marginBottom: 18 }}>✅</div>
+      <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `2px solid ${GOLD}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
       <h3 style={{ fontSize: 24, fontWeight: 600, color: GOLD, marginBottom: 12, fontFamily: FONT_HEADING, letterSpacing: "0.06em" }}>Đặt hàng thành công!</h3>
       <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY }}>Cảm ơn bạn đã tin tưởng SmartFurni.<br />Đội ngũ tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 2 giờ làm việc để xác nhận đơn hàng.</p>
     </div>
@@ -557,18 +559,19 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
       {/* Progress bar */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 16 }}>
-          {[1, 2].map((s) => (
+              {[1, 2].map((s) => (
             <React.Fragment key={s}>
               <div style={{
-                width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                background: step >= s ? GOLD : "rgba(201,168,76,0.1)",
-                border: `2px solid ${step >= s ? GOLD : "rgba(201,168,76,0.2)"}`,
+                background: step >= s ? GOLD : "rgba(201,168,76,0.06)",
+                border: `1.5px solid ${step >= s ? GOLD : "rgba(201,168,76,0.25)"}`,
                 color: step >= s ? BLACK : GRAY,
-                fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY,
+                fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING,
+                letterSpacing: "-0.01em",
                 transition: "all 0.3s",
               }}>
-                {step > s ? "✓" : s}
+                {step > s ? <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke={BLACK} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> : s}
               </div>
               {s < 2 && (
                 <div style={{ flex: 1, height: 2, background: step > s ? GOLD : "rgba(201,168,76,0.15)", transition: "background 0.3s" }} />
@@ -600,25 +603,27 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
             </label>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8 }}>
               {[
-                { val: "go", label: "🪵 Gỗ tự nhiên" },
-                { val: "go-cong-nghiep", label: "🪵 Gỗ công nghiệp" },
-                { val: "sat", label: "⚙️ Sắt / Kim loại" },
-                { val: "khac", label: "❓ Loại khác" },
+                { val: "go", label: "Gỗ tự nhiên", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L8 8H3l4 4-2 7 7-4 7 4-2-7 4-4h-5L12 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg> },
+                { val: "go-cong-nghiep", label: "Gỗ công nghiệp", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="4" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="3" y="14" width="18" height="4" rx="1" stroke="currentColor" strokeWidth="1.5"/></svg> },
+                { val: "sat", label: "Sắt / Kim loại", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+                { val: "khac", label: "Loại khác", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5"/><path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
               ].map(opt => (
                 <button
                   key={opt.val}
                   type="button"
                   onClick={() => setQuiz(q => ({ ...q, bedType: opt.val }))}
                   style={{
-                    padding: "12px 8px", borderRadius: R_MD, fontSize: 12, fontWeight: 600,
+                    padding: "14px 10px", borderRadius: R_MD, fontSize: 12, fontWeight: 600,
                     fontFamily: FONT_BODY, cursor: "pointer", textAlign: "center",
-                    border: `2px solid ${quiz.bedType === opt.val ? GOLD : "rgba(201,168,76,0.15)"}`,
+                    border: `1.5px solid ${quiz.bedType === opt.val ? GOLD : "rgba(201,168,76,0.18)"}`,
                     background: quiz.bedType === opt.val ? "rgba(201,168,76,0.12)" : "rgba(201,168,76,0.03)",
                     color: quiz.bedType === opt.val ? GOLD : GRAY_LIGHT,
                     transition: "all 0.2s",
+                    display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 6,
                   }}
                 >
-                  {opt.label}
+                  <span style={{ opacity: quiz.bedType === opt.val ? 1 : 0.5 }}>{(opt as {svg?: React.ReactNode}).svg}</span>
+                  <span>{opt.label}</span>
                 </button>
               ))}
             </div>
@@ -662,25 +667,27 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
             </label>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
               {[
-                { val: "cao-su", label: "🌿 Cao su" },
-                { val: "lo-xo", label: "🔩 Lò xo túi" },
-                { val: "foam", label: "🧽 Foam/Memory" },
-                { val: "khac", label: "❓ Khác" },
+              { val: "cao-su", label: "Cao su", svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2C8 2 4 6 4 10c0 5 8 12 8 12s8-7 8-12c0-4-4-8-8-8z" stroke="currentColor" strokeWidth="1.5"/></svg> },
+                { val: "lo-xo", label: "Lò xo túi", svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3c-2 0-3 1-3 2s1 2 3 2 3 1 3 2-1 2-3 2-3 1-3 2 1 2 3 2 3 1 3 2-1 2-3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+                { val: "foam", label: "Foam/Memory", svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="8" width="18" height="10" rx="3" stroke="currentColor" strokeWidth="1.5"/><path d="M7 8V6a2 2 0 014 0v2M13 8V6a2 2 0 014 0v2" stroke="currentColor" strokeWidth="1.5"/></svg> },
+                { val: "khac", label: "Khác", svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5"/><path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
               ].map(opt => (
                 <button
                   key={opt.val}
                   type="button"
                   onClick={() => setQuiz(q => ({ ...q, mattressType: opt.val }))}
                   style={{
-                    padding: "11px 8px", borderRadius: R_MD, fontSize: 12, fontWeight: 600,
+                    padding: "13px 8px", borderRadius: R_MD, fontSize: 12, fontWeight: 600,
                     fontFamily: FONT_BODY, cursor: "pointer", textAlign: "center",
-                    border: `2px solid ${quiz.mattressType === opt.val ? GOLD : "rgba(201,168,76,0.15)"}`,
+                    border: `1.5px solid ${quiz.mattressType === opt.val ? GOLD : "rgba(201,168,76,0.18)"}`,
                     background: quiz.mattressType === opt.val ? "rgba(201,168,76,0.12)" : "rgba(201,168,76,0.03)",
                     color: quiz.mattressType === opt.val ? GOLD : GRAY_LIGHT,
                     transition: "all 0.2s",
+                    display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 5,
                   }}
                 >
-                  {opt.label}
+                  <span style={{ opacity: quiz.mattressType === opt.val ? 1 : 0.5 }}>{(opt as {svg?: React.ReactNode}).svg}</span>
+                  <span>{opt.label}</span>
                 </button>
               ))}
             </div>
@@ -689,7 +696,9 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
           {/* Compatibility result */}
           {quiz.bedType && quiz.bedSize && (
             <div style={{ marginBottom: 24, padding: "16px 20px", background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: R_MD, display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>✅</span>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="#4ADE80" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
               <div>
                 <div style={{ color: "#4ADE80", fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 4 }}>
                   Tương thích 100% — GSF150 phù hợp với giường của bạn!
@@ -772,7 +781,10 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
           }}>
             {loading ? "Đang gửi…" : (submitLabel || "Tư Vấn & Đặt Hàng Ngay →")}
           </button>
-          <p style={{ color: GRAY, fontSize: 12, textAlign: "center", marginTop: 14, fontFamily: FONT_BODY }}>🔒 Thông tin được bảo mật tuyệt đối. Không spam.</p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#687076" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+            <p style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>Thông tin được bảo mật tuyệt đối. Không spam.</p>
+          </div>
         </form>
       )}
     </div>
