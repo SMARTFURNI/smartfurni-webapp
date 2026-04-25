@@ -221,34 +221,17 @@ function OutlineButton({ children, onClick }: { children: React.ReactNode; onCli
 
 // ─── FAQ data (bán lẻ) ────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
-  {
-    q: "Giường cũ của tôi kích thước lẻ có dùng được không?",
-    a: "GSF150 có đầy đủ kích thước chuẩn (1m6, 1m8). Vui lòng để lại số điện thoại để kỹ thuật viên tư vấn kích thước lọt lòng chính xác nhất cho bạn.",
-  },
-  {
-    q: "Nệm lò xo có dùng được khung này không?",
-    a: "Hoàn toàn được. Các dòng lò xo túi hiện đại có độ đàn hồi rất tốt, khớp hoàn hảo với chuyển động của khung nâng.",
-  },
-  {
-    q: "Lắp đặt có phức tạp không?",
-    a: "Sản phẩm được thiết kế theo dạng \"Plug & Play\". Chỉ cần đặt lên giường, cắm điện là sử dụng ngay. SmartFurni cung cấp video hướng dẫn chi tiết — chỉ 15 phút là thao tác thuần thục.",
-  },
-  {
-    q: "Nếu động cơ (motor) gặp sự cố thì bảo hành thế nào?",
-    a: "SmartFurni sử dụng dòng motor lõi đồng tiêu chuẩn xuất khẩu Đức với độ bền trên 10 năm. Chúng tôi áp dụng chính sách \"Đổi mới động cơ\" ngay lập tức nếu có lỗi nhà sản xuất. Đội kỹ thuật hỗ trợ tận nơi.",
-  },
-  {
-    q: "Tôi có thể đặt khung lên giường gỗ hiện tại không?",
-    a: "Đây chính là điểm độc đáo của GSF150. Bạn chỉ cần tháo chân khung giường và đặt trực tiếp vào lòng giường gỗ hiện có — không cần bỏ giường cũ, không cần lắp đặt phức tạp.",
-  },
-  {
-    q: "Trả góp có được không?",
-    a: "Có. SmartFurni hỗ trợ trả góp 0% lãi suất qua các đối tác tài chính. Liên hệ hotline để được tư vấn phương thức phù hợp nhất.",
-  },
+  { bkQ: "faq_1_q", defQ: "Giường cũ của tôi kích thước lẻ có dùng được không?", bkA: "faq_1_a", defA: "GSF150 có đầy đủ kích thước chuẩn (1m6, 1m8). Vui lòng để lại số điện thoại để kỹ thuật viên tư vấn kích thước lọt lòng chính xác nhất cho bạn." },
+  { bkQ: "faq_2_q", defQ: "Nệm lò xo có dùng được khung này không?", bkA: "faq_2_a", defA: "Hoàn toàn được. Các dòng lò xo túi hiện đại có độ đàn hồi rất tốt, khớp hoàn hảo với chuyển động của khung nâng." },
+  { bkQ: "faq_3_q", defQ: "Lắp đặt có phức tạp không?", bkA: "faq_3_a", defA: "Sản phẩm được thiết kế theo dạng Plug & Play. Chỉ cần đặt lên giường, cắm điện là sử dụng ngay. SmartFurni cung cấp video hướng dẫn chi tiết — chỉ 15 phút là thao tác thuần thục." },
+  { bkQ: "faq_4_q", defQ: "Nếu động cơ (motor) gặp sự cố thì bảo hành thế nào?", bkA: "faq_4_a", defA: "SmartFurni sử dụng dòng motor lõi đồng tiêu chuẩn xuất khẩu Đức với độ bền trên 10 năm. Chúng tôi áp dụng chính sách Đổi mới động cơ ngay lập tức nếu có lỗi nhà sản xuất. Đội kỹ thuật hỗ trợ tận nơi." },
+  { bkQ: "faq_5_q", defQ: "Tôi có thể đặt khung lên giường gỗ hiện tại không?", bkA: "faq_5_a", defA: "Đây chính là điểm độc đáo của GSF150. Bạn chỉ cần tháo chân khung giường và đặt trực tiếp vào lòng giường gỗ hiện có — không cần bỏ giường cũ, không cần lắp đặt phức tạp." },
+  { bkQ: "faq_6_q", defQ: "Trả góp có được không?", bkA: "faq_6_a", defA: "Có. SmartFurni hỗ trợ trả góp 0% lãi suất qua các đối tác tài chính. Liên hệ hotline để được tư vấn phương thức phù hợp nhất." },
 ];
 
 // ─── FAQ Accordion component ────────────────────────────────────────────────
-function FaqAccordion() {
+type EFn = (props: { bk: string; def: string; as?: "h1"|"h2"|"h3"|"h4"|"h5"|"h6"|"p"|"span"|"div"|"li"; style?: React.CSSProperties; multiline?: boolean }) => React.ReactNode;
+function FaqAccordion({ E: EditFn }: { E: EFn }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -281,7 +264,7 @@ function FaqAccordion() {
                   fontFamily: FONT_HEADING, letterSpacing: "normal",
                   transition: "color 0.25s ease",
                 }}>
-                  {item.q}
+                  {EditFn({ bk: item.bkQ, def: item.defQ, as: "span" })}
                 </span>
                 <span style={{
                   color: GOLD, fontSize: 20, flexShrink: 0,
@@ -304,7 +287,7 @@ function FaqAccordion() {
                     color: GRAY_LIGHT, fontSize: 14, lineHeight: 1.85,
                     fontFamily: FONT_BODY, margin: 0,
                   }}>
-                    {item.a}
+                    {EditFn({ bk: item.bkA, def: item.defA, as: "span", multiline: true })}
                   </p>
                 </div>
               </div>
@@ -883,13 +866,13 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                 <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Đơn giản đến không ngờ</span>
               </div>
               <h2 style={{ fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 300, lineHeight: 1.1, marginBottom: 16, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: WHITE }}>
-                Chỉ 3 Bước
+                {E({ bk: "howitworks_title", def: "Chỉ 3 Bước", as: "span" })}
               </h2>
               <div style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 700, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", marginBottom: 20, background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                Để Có Giường Thông Minh
+                {E({ bk: "howitworks_subtitle", def: "Để Có Giường Thông Minh", as: "span" })}
               </div>
               <p style={{ color: GRAY_LIGHT, fontSize: "clamp(15px, 1.8vw, 18px)", lineHeight: 1.75, maxWidth: 680, margin: "0 auto 48px", fontFamily: FONT_BODY }}>
-                Không cần thợ lắp đặt. Không cần bỏ giường cũ. Không cần kiến thức kỹ thuật.
+                {E({ bk: "howitworks_desc", def: "Không cần thợ lắp đặt. Không cần bỏ giường cũ. Không cần kiến thức kỹ thuật.", as: "span", multiline: true })}
               </p>
             </div>
           </FadeIn>
@@ -897,15 +880,15 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             <div style={{ background: `linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(201,168,76,0.02) 100%)`, border: `1px solid rgba(201,168,76,0.25)`, borderRadius: R_LG, padding: "40px 36px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, alignItems: "start" }}>
                 {[
-                  { step: "01", icon: "📦", title: "Mở hộp", desc: "Sản phẩm được đóng gói gọn gàng. Kiểm tra đầy đủ phụ kiện: khung, remote, dây nguồn, chân rời." },
-                  { step: "02", icon: "🛏️", title: "Đặt lên giường", desc: "Tháo chân khung, đặt trực tiếp vào lòng giường gỗ. Hoặc lắp chân nếu muốn dùng độc lập." },
-                  { step: "03", icon: "⚡", title: "Cắm điện & Tận hưởng", desc: "Kết nối nguồn, nhấn remote — trải nghiệm ngay lập tức. Không cần kỹ thuật viên." },
+                  { step: "01", icon: "📦", bkTitle: "step_1_title", defTitle: "Mở hộp", bkDesc: "step_1_desc", defDesc: "Sản phẩm được đóng gói gọn gàng. Kiểm tra đầy đủ phụ kiện: khung, remote, dây nguồn, chân rời." },
+                  { step: "02", icon: "🛏️", bkTitle: "step_2_title", defTitle: "Đặt lên giường", bkDesc: "step_2_desc", defDesc: "Tháo chân khung, đặt trực tiếp vào lòng giường gỗ. Hoặc lắp chân nếu muốn dùng độc lập." },
+                  { step: "03", icon: "⚡", bkTitle: "step_3_title", defTitle: "Cắm điện & Tận hưởng", bkDesc: "step_3_desc", defDesc: "Kết nối nguồn, nhấn remote — trải nghiệm ngay lập tức. Không cần kỹ thuật viên." },
                 ].map((s, i) => (
                   <div key={i} style={{ textAlign: "center" }}>
                     <div style={{ width: 48, height: 48, borderRadius: "50%", background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 20 }}>{s.icon}</div>
                     <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", marginBottom: 6, fontFamily: FONT_BODY }}>BƯỚC {s.step}</div>
-                    <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{s.title}</div>
-                    <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{s.desc}</p>
+                    <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{E({ bk: s.bkTitle, def: s.defTitle, as: "span" })}</div>
+                    <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: s.bkDesc, def: s.defDesc, as: "span", multiline: true })}</p>
                   </div>
                 ))}
               </div>
@@ -914,7 +897,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           <FadeIn delay={300}>
             <div style={{ textAlign: "center", marginTop: 52 }}>
               <p style={{ color: GRAY_LIGHT, fontSize: 15, marginBottom: 24, fontFamily: FONT_BODY }}>
-                Đặt hàng ngay hôm nay — SmartFurni giao hàng và lắp đặt tận nơi trong vòng <strong style={{ color: GOLD }}>3–5 ngày làm việc</strong>.
+                {E({ bk: "howitworks_cta_desc", def: "Đặt hàng ngay hôm nay — SmartFurni giao hàng và lắp đặt tận nơi trong vòng 3–5 ngày làm việc.", as: "span", multiline: true })}
               </p>
               <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "16px 40px", borderRadius: R_MD }}>
                 {E({ bk: "cta_bottom_gold", def: "Đặt Hàng Ngay — Giao Hàng Toàn Quốc", as: "span" })}
@@ -989,15 +972,15 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             <div style={{ textAlign: "center", marginBottom: 52 }}>
               <SectionLabel>{E({ bk: "faq_section_label", def: "Câu hỏi thường gặp", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
-                Giải Đáp Thắc Mắc
+                {E({ bk: "faq_title_1", def: "Giải Đáp Thắc Mắc", as: "span" })}
               </h2>
               <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
-                Của Khách Hàng
+                {E({ bk: "faq_title_2", def: "Của Khách Hàng", as: "span" })}
               </div>
               <GoldDivider />
             </div>
           </FadeIn>
-          <FaqAccordion />
+          <FaqAccordion E={E} />
         </div>
       </section>
 
@@ -1115,7 +1098,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                 <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Đặt hàng ngay</h4>
               </div>
               <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT_BODY, marginBottom: 20 }}>
-                Nhận tư vấn miễn phí & xác nhận đơn hàng trong vòng <strong style={{ color: GOLD_LIGHT }}>2 giờ làm việc</strong>.
+                {E({ bk: "footer_cta_desc", def: "Nhận tư vấn miễn phí & xác nhận đơn hàng trong vòng 2 giờ làm việc.", as: "span", multiline: true })}
               </p>
               <a href="#register-form"
                 style={{ display: "block", textAlign: "center", background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 60%, #9A7A2E 100%)`, color: BLACK, fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, padding: "13px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, boxShadow: "0 6px 24px rgba(201,168,76,0.25)", marginBottom: 12 }}>
@@ -1130,7 +1113,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${BLACK_BORDER} 20%, ${BLACK_BORDER} 80%, transparent)`, marginBottom: 24 }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" as const, gap: 12, paddingBottom: 28 }}>
             <p style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, margin: 0 }}>
-              © 2025 <span style={{ color: "#5A4E30" }}>Công ty Cổ phần SmartFurni</span>. Tất cả quyền được bảo lưu.
+              {E({ bk: "footer_copyright", def: "© 2025 Công ty Cổ phần SmartFurni. Tất cả quyền được bảo lưu.", as: "span" })}
             </p>
             <div style={{ display: "flex", gap: 20 }}>
               {[
