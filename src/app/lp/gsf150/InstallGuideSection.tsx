@@ -12,7 +12,7 @@ const BLACK_BORDER = "rgba(201,168,76,0.12)";
 const WHITE = "#F5F0E8";
 const GRAY = "#7A7468";
 const GRAY_LIGHT = "#A8A090";
-const FONT_HEADING = "'Cormorant Garamond', 'Playfair Display', Georgia, serif";
+const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BODY = "'Inter', 'Helvetica Neue', Arial, sans-serif";
 
 const INSTALL_VIDEO_URL = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663305063350/hVRGaTInwtcssKOh.mp4";

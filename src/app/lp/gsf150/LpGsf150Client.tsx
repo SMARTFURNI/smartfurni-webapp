@@ -10,13 +10,13 @@ import { InstallGuideSection } from "./InstallGuideSection";
 // ─── Design tokens — đồng bộ với website chính ────────────────────────────────
 const GOLD = "#C9A84C";
 const GOLD_LIGHT = "#E2C97E";
-const BLACK = "#0D0B00";
-const BLACK_SOFT = "#1A1600";
-const BLACK_CARD = "#221D00";
-const BLACK_BORDER = "#2E2800";
-const WHITE = "#F5EDD6";
-const GRAY = "#A89070";
-const GRAY_LIGHT = "#D4C4A0";
+const BLACK = "#0A0A08";
+const BLACK_SOFT = "#111109";
+const BLACK_CARD = "#16140E";
+const BLACK_BORDER = "rgba(201,168,76,0.12)";
+const WHITE = "#F5F0E8";
+const GRAY = "#7A7468";
+const GRAY_LIGHT = "#A8A090";
 const RED_SOFT = "#FF6B6B";
 const LP_SLUG = "gsf150";
 
@@ -688,7 +688,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
           <FadeIn delay={100}>
             <div style={{ borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}`, position: "relative" }}>
-              <Image src="/gsf150-standalone.jpg" alt="SmartFurni GSF150 khung độc lập" width={600} height={450} style={{ width: "100%", height: "auto", display: "block" }} />
+              <Image src="/gsf150-standalone.jpg" alt="SmartFurni GSF150 khung độc lập" width={600} height={450} loading="lazy" style={{ width: "100%", height: "auto", display: "block" }} />
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(13,11,0,0.85) 0%, transparent 60%)", padding: "24px 20px 20px" }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: R_FULL, letterSpacing: "0.1em", marginBottom: 8 }}>PHONG CÁCH TỐI GIẢN</div>
                 <p style={{ color: WHITE, fontSize: 14, fontWeight: 500, fontFamily: FONT_HEADING, margin: 0 }}>Lắp chân thép — dùng độc lập</p>
@@ -697,7 +697,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           </FadeIn>
           <FadeIn delay={200}>
             <div style={{ borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}`, position: "relative" }}>
-              <Image src="/gsf150-wood-frame.jpg" alt="SmartFurni GSF150 lắp vào giường gỗ" width={600} height={450} style={{ width: "100%", height: "auto", display: "block" }} />
+              <Image src="/gsf150-wood-frame.jpg" alt="SmartFurni GSF150 lắp vào giường gỗ" width={600} height={450} loading="lazy" style={{ width: "100%", height: "auto", display: "block" }} />
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(13,11,0,0.85) 0%, transparent 60%)", padding: "24px 20px 20px" }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: R_FULL, letterSpacing: "0.1em", marginBottom: 8 }}>GIỮ NGUYÊN GIƯỜNG CŨ</div>
                 <p style={{ color: WHITE, fontSize: 14, fontWeight: 500, fontFamily: FONT_HEADING, margin: 0 }}>Đặt vào lòng giường gỗ hiện có</p>
@@ -706,7 +706,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           </FadeIn>
           <FadeIn delay={300}>
             <div style={{ borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
-              <Image src="/gsf150-exploded.jpg" alt="Cấu tạo SmartFurni GSF150" width={600} height={450} style={{ width: "100%", height: "auto", display: "block" }} />
+              <Image src="/gsf150-exploded.jpg" alt="Cấu tạo SmartFurni GSF150" width={600} height={450} loading="lazy" style={{ width: "100%", height: "auto", display: "block" }} />
             </div>
           </FadeIn>
         </div>
@@ -779,7 +779,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                   onMouseLeave={e => { const d = e.currentTarget as HTMLDivElement; d.style.borderColor = BLACK_BORDER; d.style.transform = "translateY(0)"; d.style.boxShadow = "none"; }}>
                   <div style={{ position: "relative", width: "100%", paddingBottom: "75%", borderRadius: `${R_LG}px ${R_LG}px 0 0`, overflow: "hidden", flexShrink: 0 }}>
                     <div style={{ position: "absolute", inset: 0 }}>
-                      <img src={content[`product_image_${i}`] || p.img} alt={content[p.bkName] || p.defName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      <img src={content[`product_image_${i}`] || p.img} alt={content[p.bkName] || p.defName} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,11,0,0.65) 0%, transparent 55%)" }} />
                     </div>
                     {editMode && (
@@ -1037,7 +1037,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             }}>
             <div>
               <div style={{ marginBottom: 20 }}>
-                <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }} />
+                <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" loading="lazy" style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }} />
               </div>
               <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.85, fontFamily: FONT_BODY, marginBottom: 24, maxWidth: 280 }}>
                 {E({ bk: "footer_about", def: "Tiên phong trong lĩnh vực giường công thái học điều chỉnh điện tại Việt Nam. Chất lượng Đức — Thiết kế Việt.", as: "span", multiline: true })}
