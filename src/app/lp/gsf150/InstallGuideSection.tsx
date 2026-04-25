@@ -323,23 +323,48 @@ export function InstallGuideSection({
 
         {/* ── Bottom note ── */}
         <div style={{
-          textAlign: "center",
-          background: "rgba(201,168,76,0.06)",
-          border: `1px solid rgba(201,168,76,0.18)`,
-          borderRadius: "12px",
-          padding: "clamp(16px, 2.5vw, 24px) clamp(20px, 4vw, 40px)",
-          maxWidth: 640, margin: "0 auto",
-        }}>
-          <p style={{
-            color: GRAY_LIGHT, fontSize: "clamp(13px, 1.4vw, 15px)",
-            lineHeight: 1.75, fontFamily: FONT_BODY, margin: 0,
-          }}>
-            <span style={{ color: GOLD, fontWeight: 600 }}>✓ Không cần thợ lắp đặt</span>
-            {"  ·  "}
-            <span style={{ color: GOLD, fontWeight: 600 }}>✓ Không cần tháo giường cũ</span>
-            {"  ·  "}
-            <span style={{ color: GOLD, fontWeight: 600 }}>✓ Tương thích mọi loại nệm</span>
-          </p>
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "clamp(12px, 2vw, 20px)",
+          marginTop: "clamp(32px, 4vw, 48px)",
+        }} className="install-badges">
+          {([
+            { bk: "install_badge_1", def: "Không cần thợ lắp đặt", icon: "🔧" },
+            { bk: "install_badge_2", def: "Không cần tháo giường cũ", icon: "🛏️" },
+            { bk: "install_badge_3", def: "Tương thích mọi loại nệm", icon: "✅" },
+          ] as const).map((item, i) => (
+            <div key={i} style={{
+              background: "rgba(201,168,76,0.07)",
+              border: `1px solid rgba(201,168,76,0.22)`,
+              borderRadius: "16px",
+              padding: "clamp(16px, 2.5vw, 28px) clamp(12px, 2vw, 20px)",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 10,
+            }}>
+              <div style={{ fontSize: 28 }}>{item.icon}</div>
+              <div style={{
+                color: GOLD,
+                fontSize: "clamp(12px, 1.3vw, 15px)",
+                fontWeight: 700,
+                fontFamily: FONT_BODY,
+                lineHeight: 1.4,
+              }}>
+                <EditableText
+                  slug={LP_SLUG}
+                  blockKey={item.bk}
+                  defaultValue={item.def}
+                  editMode={editMode}
+                  as="span"
+                  savedValue={content[item.bk]}
+                  onSaved={onSaved}
+                  onDeleted={onDeleted}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -348,6 +373,9 @@ export function InstallGuideSection({
         @media (max-width: 640px) {
           .install-grid {
             grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .install-badges {
+            grid-template-columns: repeat(1, 1fr) !important;
           }
         }
       `}</style>
