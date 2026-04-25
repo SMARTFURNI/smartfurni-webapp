@@ -1332,6 +1332,123 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
       {/* ── INSTALL GUIDE ── */}
       <InstallGuideSection editMode={editMode} content={content} onSaved={handleSaved} onDeleted={handleDeleted} />
 
+
+      {/* ── VIDEO UNBOXING / REVIEW KOL ── */}
+      <section style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "video_review_label", def: "Video thực tế từ khách hàng", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 14, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
+                {E({ bk: "video_review_title_1", def: "Khách Hàng Nói Gì", as: "span", style: { display: "block" } })}
+                {E({ bk: "video_review_title_2", def: "Về SmartFurni GSF150?", as: "span", style: { color: GOLD, display: "block" } })}
+              </h2>
+              <GoldDivider />
+              <p style={{ color: GRAY, fontSize: 14, maxWidth: 520, margin: "0 auto", lineHeight: 1.7, fontFamily: FONT_BODY }}>
+                {E({ bk: "video_review_subtitle", def: "Video thực tế từ khách hàng và KOL — không dàn dựng, không kịch bản.", as: "span", multiline: true })}
+              </p>
+            </div>
+          </FadeIn>
+
+          {/* Video chính — featured */}
+          <FadeIn delay={80}>
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid rgba(201,168,76,0.2)`, boxShadow: "0 0 40px rgba(201,168,76,0.06)" }}>
+                <YoutubeAutoplay
+                  videoId={extractYoutubeId(content["vr_featured_url"] || "") || "_placeholder_"}
+                  title={content["vr_featured_title"] || "SmartFurni GSF150 — Review thực tế"}
+                />
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+                {/* Featured badge */}
+                <div style={{ position: "absolute", top: 16, left: 16, background: `linear-gradient(135deg, ${GOLD}, #E2C97E)`, color: "#1A1000", fontSize: 10, fontWeight: 800, padding: "4px 12px", borderRadius: R_FULL, letterSpacing: "0.12em", fontFamily: FONT_BODY }}>
+                  ★ NỔI BẬT
+                </div>
+              </div>
+              {/* Caption video chính */}
+              <div style={{ marginTop: 14, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" as const }}>
+                <div>
+                  <div style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 4 }}>
+                    {E({ bk: "vr_featured_title", def: "Unboxing & Review GSF150 — Lắp đặt thực tế tại nhà", as: "span" })}
+                  </div>
+                  <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>
+                    {E({ bk: "vr_featured_author", def: "Khách hàng thực tế · TP. Hồ Chí Minh", as: "span" })}
+                  </div>
+                </div>
+                {editMode && (
+                  <div style={{ background: "rgba(201,168,76,0.06)", border: `1px dashed ${GOLD}`, borderRadius: R_MD, padding: "10px 14px", minWidth: 260 }}>
+                    <span style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", display: "block", marginBottom: 4 }}>🎥 LINK VIDEO NỔI BẬT:</span>
+                    {E({ bk: "vr_featured_url", def: "https://www.youtube.com/watch?v=PASTE_VIDEO_ID", as: "span", style: { fontSize: 12, color: GRAY_LIGHT, wordBreak: "break-all" as const } })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </FadeIn>
+
+          {/* Grid 3 video phụ */}
+          <FadeIn delay={120}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+              {([
+                { urlKey: "vr_video_1_url", titleKey: "vr_video_1_title", defTitle: "Review sau 1 tháng sử dụng — Chị Minh Thư", authorKey: "vr_video_1_author", defAuthor: "Khách hàng · Quận 7, TP. HCM", tag: "Review 1 tháng" },
+                { urlKey: "vr_video_2_url", titleKey: "vr_video_2_title", defTitle: "Lắp đặt GSF150 vào giường gỗ teak — Anh Hoàng", authorKey: "vr_video_2_author", defAuthor: "Khách hàng · Hà Nội", tag: "Hướng dẫn lắp" },
+                { urlKey: "vr_video_3_url", titleKey: "vr_video_3_title", defTitle: "So sánh ngủ trước và sau khi dùng GSF150", authorKey: "vr_video_3_author", defAuthor: "KOL Sức khoẻ · YouTube", tag: "So sánh" },
+              ] as const).map((v, i) => {
+                const vidId = extractYoutubeId(content[v.urlKey] || "") || "_placeholder_";
+                return (
+                  <FadeIn key={i} delay={i * 80}>
+                    <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
+                      {/* Thumbnail / embed */}
+                      <div style={{ position: "relative" }}>
+                        <YoutubeAutoplay videoId={vidId} title={content[v.titleKey] || v.defTitle} />
+                        {/* Tag badge */}
+                        <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(10,10,8,0.85)", border: `1px solid rgba(201,168,76,0.3)`, color: GOLD, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>
+                          {v.tag}
+                        </div>
+                      </div>
+                      {/* Caption */}
+                      <div style={{ padding: "14px 16px" }}>
+                        <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 4, lineHeight: 1.4 }}>
+                          {E({ bk: v.titleKey, def: v.defTitle, as: "span" })}
+                        </div>
+                        <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>
+                          {E({ bk: v.authorKey, def: v.defAuthor, as: "span" })}
+                        </div>
+                        {editMode && (
+                          <div style={{ marginTop: 10, background: "rgba(201,168,76,0.04)", border: `1px dashed rgba(201,168,76,0.3)`, borderRadius: R_SM, padding: "8px 10px" }}>
+                            <span style={{ color: GOLD, fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", display: "block", marginBottom: 3 }}>🎥 LINK VIDEO {i + 1}:</span>
+                            {E({ bk: v.urlKey, def: "https://www.youtube.com/watch?v=PASTE_VIDEO_ID", as: "span", style: { fontSize: 11, color: GRAY_LIGHT, wordBreak: "break-all" as const } })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </FadeIn>
+                );
+              })}
+            </div>
+          </FadeIn>
+
+          {/* CTA xem thêm */}
+          <FadeIn delay={200}>
+            <div style={{ textAlign: "center", marginTop: 40 }}>
+              <a
+                href={content["vr_channel_url"] || "https://www.youtube.com/@smartfurni"}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, color: GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none", border: `1px solid rgba(201,168,76,0.3)`, borderRadius: R_FULL, padding: "10px 24px", transition: "all 0.2s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(201,168,76,0.08)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
+              >
+                <span>▶</span>
+                {E({ bk: "vr_channel_cta", def: "Xem thêm video trên kênh YouTube SmartFurni →", as: "span" })}
+              </a>
+              {editMode && (
+                <div style={{ marginTop: 10, color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>
+                  Link kênh YouTube: {E({ bk: "vr_channel_url", def: "https://www.youtube.com/@smartfurni", as: "span", style: { color: GOLD } })}
+                </div>
+              )}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
       {/* ── TRUST / SOCIAL PROOF ── */}
       <section id="danh-gia" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
