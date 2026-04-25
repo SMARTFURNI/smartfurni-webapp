@@ -881,17 +881,40 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             <div style={{ background: `linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(201,168,76,0.02) 100%)`, border: `1px solid rgba(201,168,76,0.25)`, borderRadius: R_LG, padding: "40px 36px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, alignItems: "start" }}>
                 {[
-                  { step: "01", icon: "📦", bkTitle: "step_1_title", defTitle: "Mở hộp", bkDesc: "step_1_desc", defDesc: "Sản phẩm được đóng gói gọn gàng. Kiểm tra đầy đủ phụ kiện: khung, remote, dây nguồn, chân rời." },
-                  { step: "02", icon: "🛏️", bkTitle: "step_2_title", defTitle: "Đặt lên giường", bkDesc: "step_2_desc", defDesc: "Tháo chân khung, đặt trực tiếp vào lòng giường gỗ. Hoặc lắp chân nếu muốn dùng độc lập." },
-                  { step: "03", icon: "⚡", bkTitle: "step_3_title", defTitle: "Cắm điện & Tận hưởng", bkDesc: "step_3_desc", defDesc: "Kết nối nguồn, nhấn remote — trải nghiệm ngay lập tức. Không cần kỹ thuật viên." },
-                ].map((s, i) => (
-                  <div key={i} style={{ textAlign: "center" }}>
+                  { step: "01", icon: "📦", bkTitle: "step_1_title", defTitle: "Mở hộp", bkDesc: "step_1_desc", defDesc: "Sản phẩm được đóng gói gọn gàng. Kiểm tra đầy đủ phụ kiện: khung, remote, dây nguồn, chân rời.", bkImg: "howit_step_1_img" },
+                  { step: "02", icon: "🛏️", bkTitle: "step_2_title", defTitle: "Đặt lên giường", bkDesc: "step_2_desc", defDesc: "Tháo chân khung, đặt trực tiếp vào lòng giường gỗ. Hoặc lắp chân nếu muốn dùng độc lập.", bkImg: "howit_step_2_img" },
+                  { step: "03", icon: "⚡", bkTitle: "step_3_title", defTitle: "Cắm điện & Tận hưởng", bkDesc: "step_3_desc", defDesc: "Kết nối nguồn, nhấn remote — trải nghiệm ngay lập tức. Không cần kỹ thuật viên.", bkImg: "howit_step_3_img" },
+                ].map((s, i) => {
+                  const imgSrc = content[s.bkImg] || "";
+                  return (
+                  <div key={i} style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <div style={{ width: 48, height: 48, borderRadius: "50%", background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 20 }}>{s.icon}</div>
                     <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", marginBottom: 6, fontFamily: FONT_BODY }}>BƯỚC {s.step}</div>
                     <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{E({ bk: s.bkTitle, def: s.defTitle, as: "span" })}</div>
-                    <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: s.bkDesc, def: s.defDesc, as: "span", multiline: true })}</p>
+                    <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: "0 0 12px" }}>{E({ bk: s.bkDesc, def: s.defDesc, as: "span", multiline: true })}</p>
+                    {(imgSrc || editMode) && (
+                      <div style={{ position: "relative", width: "100%", paddingBottom: "100%", background: imgSrc ? "#fff" : "rgba(255,255,255,0.04)", overflow: "hidden", borderRadius: R_MD, border: `1px solid ${BLACK_BORDER}` }}>
+                        {imgSrc ? (
+                          <Image src={imgSrc} alt={s.defTitle} fill style={{ objectFit: "cover", objectPosition: "center" }} sizes="(max-width: 768px) 50vw, 25vw" loading="lazy" />
+                        ) : (
+                          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>Chưa có ảnh</div>
+                        )}
+                        {editMode && (
+                          <>
+                            <ImageUploadOverlay blockKey={s.bkImg} currentUrl={imgSrc} onUploaded={handleSaved} />
+                            {imgSrc && (
+                              <button
+                                onClick={async (e) => { e.stopPropagation(); await fetch(`/api/admin/lp-content?slug=${LP_SLUG}&blockKey=${s.bkImg}`, { method: "DELETE" }); handleDeleted(s.bkImg); }}
+                                style={{ position: "absolute", top: 8, right: 8, zIndex: 20, background: "rgba(239,68,68,0.9)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}
+                              >×</button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })
               </div>
             </div>
           </FadeIn>
