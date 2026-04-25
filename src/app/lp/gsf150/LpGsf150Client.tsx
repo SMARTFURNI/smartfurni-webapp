@@ -909,7 +909,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
       </section>
 
       {/* ── INSTALL GUIDE ── */}
-      <InstallGuideSection />
+      <InstallGuideSection editMode={editMode} content={content} onSaved={handleSaved} onDeleted={handleDeleted} />
 
       {/* ── TRUST / SOCIAL PROOF ── */}
       <section id="danh-gia" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>

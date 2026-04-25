@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { EditableText } from "@/components/lp/EditableText";
 
 // ─── Design tokens (match LpGsf150Client) ────────────────────────────────────
 const GOLD = "#C9A84C";
@@ -15,42 +16,162 @@ const GRAY_LIGHT = "#A8A090";
 const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BODY = "'Inter', 'Helvetica Neue', Arial, sans-serif";
 
-const INSTALL_VIDEO_URL = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663305063350/hVRGaTInwtcssKOh.mp4";
+const LP_SLUG = "gsf150";
 
-const STEPS = [
+const DEFAULT_STEPS = [
   {
     num: "01",
-    title: "Tháo nệm ra khỏi giường",
-    desc: "Nhấc nệm ra khỏi giường hiện tại và đặt sang một bên. Không cần tháo khung giường gỗ.",
-    img: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step1-gVvLJDLjfQCtVHPj9R4KHn.webp",
+    bkTitle: "install_step_1_title",
+    defTitle: "Tháo nệm ra khỏi giường",
+    bkDesc: "install_step_1_desc",
+    defDesc: "Nhấc nệm ra khỏi giường hiện tại và đặt sang một bên. Không cần tháo khung giường gỗ.",
+    bkImg: "install_step_1_img",
+    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step1-gVvLJDLjfQCtVHPj9R4KHn.webp",
   },
   {
     num: "02",
-    title: "Cắm điện & kiểm tra hoạt động",
-    desc: "Đặt khung GSF150 ra ngoài, cắm điện 220V và nhấn remote kiểm tra motor nâng đầu/chân hoạt động bình thường.",
-    img: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step2-T6wUQcUsbLZCsssfygA2WH.webp",
+    bkTitle: "install_step_2_title",
+    defTitle: "Cắm điện & kiểm tra hoạt động",
+    bkDesc: "install_step_2_desc",
+    defDesc: "Đặt khung GSF150 ra ngoài, cắm điện 220V và nhấn remote kiểm tra motor nâng đầu/chân hoạt động bình thường.",
+    bkImg: "install_step_2_img",
+    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step2-T6wUQcUsbLZCsssfygA2WH.webp",
   },
   {
     num: "03",
-    title: "Đặt khung vào lòng giường",
-    desc: "Trả khung về vị trí phẳng, trượt vào lòng giường gỗ hiện có. Khung tự khớp — không cần vít hay dụng cụ.",
-    img: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step3-HKaeWb8Lsa5dbSesau2m3r.webp",
+    bkTitle: "install_step_3_title",
+    defTitle: "Đặt khung vào lòng giường",
+    bkDesc: "install_step_3_desc",
+    defDesc: "Trả khung về vị trí phẳng, trượt vào lòng giường gỗ hiện có. Khung tự khớp — không cần vít hay dụng cụ.",
+    bkImg: "install_step_3_img",
+    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step3-HKaeWb8Lsa5dbSesau2m3r.webp",
   },
   {
     num: "04",
-    title: "Đặt nệm lại & tận hưởng",
-    desc: "Đặt nệm lên khung GSF150. Dùng remote điều chỉnh tư thế đầu giường 0–70° và chân giường 0–45° theo ý muốn.",
-    img: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step4-mGm6PRjYrRc8ZkdnDn6YbN.webp",
+    bkTitle: "install_step_4_title",
+    defTitle: "Đặt nệm lại & tận hưởng",
+    bkDesc: "install_step_4_desc",
+    defDesc: "Đặt nệm lên khung GSF150. Dùng remote điều chỉnh tư thế đầu giường 0–70° và chân giường 0–45° theo ý muốn.",
+    bkImg: "install_step_4_img",
+    defImg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663305063350/GMFkFfNyYvPnnXnxnhdKGr/install_step4-mGm6PRjYrRc8ZkdnDn6YbN.webp",
   },
 ];
 
-export function InstallGuideSection() {
+// ─── YouTube helper ───────────────────────────────────────────────────────────
+function extractYoutubeId(url: string): string | null {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))?([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && !started) setStarted(true); },
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [started]);
+  const src = started
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=1&rel=0&modestbranding=1`
+    : `https://www.youtube.com/embed/${videoId}?controls=1&rel=0&modestbranding=1`;
+  return (
+    <div ref={containerRef} style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#000" }}>
+      <iframe
+        src={src}
+        title={title}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+      />
+    </div>
+  );
+}
+
+// ─── Image upload overlay ─────────────────────────────────────────────────────
+function ImageUploadOverlay({ blockKey, onUploaded }: {
+  blockKey: string;
+  onUploaded: (bk: string, url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Upload thất bại"); }
+      const { url } = await res.json();
+      await fetch("/api/admin/lp-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: LP_SLUG, blockKey, content: url }),
+      });
+      onUploaded(blockKey, url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload thất bại");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+  return (
+    <>
+      <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+      <button
+        onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+        disabled={uploading}
+        style={{
+          position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)",
+          zIndex: 10, background: "rgba(13,11,0,0.85)", color: GOLD,
+          border: `1px solid ${GOLD}`, borderRadius: 999,
+          fontSize: 11, fontWeight: 700, padding: "6px 16px",
+          cursor: uploading ? "not-allowed" : "pointer",
+          fontFamily: FONT_BODY, whiteSpace: "nowrap" as const,
+          backdropFilter: "blur(8px)",
+          opacity: uploading ? 0.7 : 1,
+          display: "flex", alignItems: "center", gap: 6,
+        }}
+      >
+        {uploading ? (
+          <><span style={{ display: "inline-block", width: 10, height: 10, border: `2px solid ${GOLD}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />Đang tải...</>
+        ) : (
+          <>📷 Thay ảnh</>
+        )}
+      </button>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </>
+  );
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+interface InstallGuideSectionProps {
+  editMode?: boolean;
+  content?: Record<string, string>;
+  onSaved?: (blockKey: string, newValue: string) => void;
+  onDeleted?: (blockKey: string) => void;
+}
+
+export function InstallGuideSection({
+  editMode = false,
+  content = {},
+  onSaved,
+  onDeleted,
+}: InstallGuideSectionProps) {
   const [activeStep, setActiveStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [autoPlay, setAutoPlay] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  // Local image overrides (from upload)
+  const [imgOverrides, setImgOverrides] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -64,7 +185,7 @@ export function InstallGuideSection() {
   useEffect(() => {
     if (!isVisible || !autoPlay) return;
     timerRef.current = setInterval(() => {
-      setActiveStep(prev => (prev + 1) % STEPS.length);
+      setActiveStep(prev => (prev + 1) % DEFAULT_STEPS.length);
     }, 3500);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isVisible, autoPlay]);
@@ -74,6 +195,15 @@ export function InstallGuideSection() {
     setAutoPlay(false);
     if (timerRef.current) clearInterval(timerRef.current);
   };
+
+  const handleImgUploaded = (bk: string, url: string) => {
+    setImgOverrides(prev => ({ ...prev, [bk]: url }));
+    onSaved?.(bk, url);
+  };
+
+  // YouTube URL from content or default placeholder
+  const youtubeUrl = content["install_youtube_url"] || "";
+  const youtubeId = extractYoutubeId(youtubeUrl);
 
   return (
     <section
@@ -90,9 +220,7 @@ export function InstallGuideSection() {
         position: "absolute", inset: 0, pointerEvents: "none",
         background: "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(201,168,76,0.04) 0%, transparent 70%)",
       }} />
-
       <div style={{ maxWidth: 1100, margin: "0 auto", position: "relative" }}>
-
         {/* ── Header ── */}
         <div style={{ textAlign: "center", marginBottom: "clamp(40px, 6vw, 64px)" }}>
           <div style={{
@@ -127,7 +255,7 @@ export function InstallGuideSection() {
           </p>
         </div>
 
-        {/* ── Video Player ── */}
+        {/* ── YouTube Video Embed ── */}
         <div style={{
           marginBottom: "clamp(40px, 5vw, 56px)",
           borderRadius: "16px",
@@ -137,15 +265,24 @@ export function InstallGuideSection() {
           position: "relative",
           background: "#000",
         }}>
-          <video
-            ref={videoRef}
-            src={INSTALL_VIDEO_URL}
-            style={{ width: "100%", display: "block", maxHeight: "480px", objectFit: "contain" }}
-            controls
-            playsInline
-            preload="metadata"
-            poster={STEPS[0].img}
-          />
+          {youtubeId ? (
+            <YoutubeAutoplay videoId={youtubeId} title="Hướng dẫn lắp đặt SmartFurni GSF150" />
+          ) : (
+            <div style={{
+              width: "100%", paddingBottom: "56.25%", background: "#111",
+              position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <div style={{
+                position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", gap: 12,
+              }}>
+                <div style={{ color: GOLD, fontSize: 40 }}>▶</div>
+                <p style={{ color: GRAY_LIGHT, fontSize: 14, fontFamily: FONT_BODY, margin: 0 }}>
+                  {editMode ? "Nhấn vào URL bên dưới để thêm link YouTube" : "Video sắp ra mắt"}
+                </p>
+              </div>
+            </div>
+          )}
           {/* Gold border accent */}
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0, height: 3,
@@ -153,6 +290,36 @@ export function InstallGuideSection() {
             pointerEvents: "none",
           }} />
         </div>
+
+        {/* ── Editable YouTube URL (edit mode only) ── */}
+        {editMode && (
+          <div style={{
+            marginBottom: "clamp(32px, 4vw, 48px)",
+            background: "rgba(201,168,76,0.06)",
+            border: `1px solid rgba(201,168,76,0.25)`,
+            borderRadius: 12,
+            padding: "16px 20px",
+            display: "flex", alignItems: "flex-start", gap: 12,
+          }}>
+            <span style={{ color: GOLD, fontSize: 18, flexShrink: 0, marginTop: 2 }}>🎬</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 6 }}>
+                Link YouTube — Hướng dẫn lắp đặt
+              </div>
+              <EditableText
+                slug={LP_SLUG}
+                blockKey="install_youtube_url"
+                defaultValue="https://www.youtube.com/watch?v=PASTE_VIDEO_ID_HERE"
+                editMode={editMode}
+                as="span"
+                style={{ fontSize: 13, color: GRAY_LIGHT, wordBreak: "break-all" as const, fontFamily: FONT_BODY }}
+                savedValue={content["install_youtube_url"]}
+                onSaved={onSaved}
+                onDeleted={onDeleted}
+              />
+            </div>
+          </div>
+        )}
 
         {/* ── Desktop: 4 cards side by side ── */}
         <div style={{
@@ -163,8 +330,9 @@ export function InstallGuideSection() {
         }}
           className="install-grid"
         >
-          {STEPS.map((step, i) => {
+          {DEFAULT_STEPS.map((step, i) => {
             const isActive = i === activeStep;
+            const imgSrc = imgOverrides[step.bkImg] || content[step.bkImg] || step.defImg;
             return (
               <button
                 key={i}
@@ -191,11 +359,12 @@ export function InstallGuideSection() {
                   overflow: "hidden",
                 }}>
                   <Image
-                    src={step.img}
-                    alt={step.title}
+                    src={imgSrc}
+                    alt={step.defTitle}
                     fill
                     style={{ objectFit: "contain", padding: "12px", transition: "transform 0.4s ease", transform: isActive ? "scale(1.04)" : "scale(1)" }}
                     sizes="(max-width: 768px) 50vw, 25vw"
+                    loading="lazy"
                   />
                   {/* Step number badge */}
                   <div style={{
@@ -211,8 +380,14 @@ export function InstallGuideSection() {
                   }}>
                     {step.num}
                   </div>
+                  {/* Image upload overlay (edit mode only) */}
+                  {editMode && (
+                    <ImageUploadOverlay
+                      blockKey={step.bkImg}
+                      onUploaded={handleImgUploaded}
+                    />
+                  )}
                 </div>
-
                 {/* Text area */}
                 <div style={{ padding: "clamp(14px, 2vw, 20px)" }}>
                   <div style={{
@@ -221,7 +396,16 @@ export function InstallGuideSection() {
                     lineHeight: 1.4, marginBottom: 8,
                     transition: "color 0.3s",
                   }}>
-                    {step.title}
+                    <EditableText
+                      slug={LP_SLUG}
+                      blockKey={step.bkTitle}
+                      defaultValue={step.defTitle}
+                      editMode={editMode}
+                      as="span"
+                      savedValue={content[step.bkTitle]}
+                      onSaved={onSaved}
+                      onDeleted={onDeleted}
+                    />
                   </div>
                   <p style={{
                     color: isActive ? GRAY_LIGHT : GRAY,
@@ -229,7 +413,17 @@ export function InstallGuideSection() {
                     lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0,
                     transition: "color 0.3s",
                   }}>
-                    {step.desc}
+                    <EditableText
+                      slug={LP_SLUG}
+                      blockKey={step.bkDesc}
+                      defaultValue={step.defDesc}
+                      editMode={editMode}
+                      as="span"
+                      multiline
+                      savedValue={content[step.bkDesc]}
+                      onSaved={onSaved}
+                      onDeleted={onDeleted}
+                    />
                   </p>
                 </div>
               </button>
@@ -239,7 +433,7 @@ export function InstallGuideSection() {
 
         {/* ── Progress bar ── */}
         <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 32 }}>
-          {STEPS.map((_, i) => (
+          {DEFAULT_STEPS.map((_, i) => (
             <button
               key={i}
               onClick={() => handleStep(i)}
