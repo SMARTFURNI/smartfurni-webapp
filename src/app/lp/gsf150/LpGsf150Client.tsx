@@ -914,7 +914,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                     )}
                   </div>
                   );
-                })
+                })}
               </div>
             </div>
           </FadeIn>
