@@ -416,14 +416,15 @@ export function InstallGuideSection({
                       paddingBottom: "100%",
                       background: imgSrc ? "#fff" : "rgba(255,255,255,0.04)",
                       overflow: "hidden",
-                      borderTop: `1px solid ${BLACK_BORDER}`,
+                      borderBottomLeftRadius: "16px",
+                      borderBottomRightRadius: "16px",
                     }}>
                       {imgSrc ? (
                         <Image
                           src={imgSrc}
                           alt={step.defTitle}
                           fill
-                          style={{ objectFit: "contain", objectPosition: "center", padding: "8px" }}
+                          style={{ objectFit: "cover", objectPosition: "center" }}
                           sizes="(max-width: 768px) 50vw, 25vw"
                           loading="lazy"
                         />
