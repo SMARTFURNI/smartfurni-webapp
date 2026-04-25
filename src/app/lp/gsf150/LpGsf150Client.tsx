@@ -2037,35 +2037,50 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }}>
               {/* SVG Bản đồ Việt Nam đơn giản */}
               <div style={{ position: "relative" }}>
-                <svg viewBox="0 0 220 520" style={{ width: "100%", maxWidth: 280, margin: "0 auto", display: "block" }}>
-                  {/* Outline Việt Nam đơn giản */}
-                  <path d="M 130 10 L 155 25 L 170 50 L 165 80 L 175 105 L 170 130 L 180 155 L 175 175 L 185 195 L 178 215 L 185 235 L 175 255 L 170 275 L 160 295 L 155 315 L 145 335 L 135 355 L 120 375 L 105 395 L 90 415 L 75 435 L 65 455 L 60 475 L 65 495 L 80 510 L 70 490 L 75 470 L 85 450 L 95 430 L 110 410 L 120 390 L 130 370 L 140 350 L 148 330 L 152 310 L 155 290 L 158 270 L 162 250 L 168 230 L 172 210 L 165 190 L 168 170 L 162 150 L 165 125 L 158 100 L 162 75 L 150 50 L 135 30 Z"
-                    fill="rgba(201,168,76,0.08)" stroke="rgba(201,168,76,0.3)" strokeWidth="1.5" />
-                  {/* Các chấm tỉnh thành nổi bật */}
-                  {([
-                    { cx: 148, cy: 35, city: "Hà Nội", size: 6 },
-                    { cx: 162, cy: 55, city: "Hải Phòng", size: 4 },
-                    { cx: 155, cy: 80, city: "Thanh Hóa", size: 3 },
-                    { cx: 165, cy: 110, city: "Vinh", size: 3 },
-                    { cx: 168, cy: 145, city: "Huế", size: 3 },
-                    { cx: 170, cy: 165, city: "Đà Nẵng", size: 5 },
-                    { cx: 165, cy: 210, city: "Quy Nhơn", size: 3 },
-                    { cx: 160, cy: 255, city: "Nha Trang", size: 4 },
-                    { cx: 145, cy: 300, city: "Đà Lạt", size: 3 },
-                    { cx: 125, cy: 330, city: "Vũng Tàu", size: 3 },
-                    { cx: 115, cy: 355, city: "TP.HCM", size: 7 },
-                    { cx: 95, cy: 375, city: "Cần Thơ", size: 4 },
-                    { cx: 80, cy: 400, city: "Cà Mau", size: 3 },
-                  ] as const).map((dot, i) => (
-                    <g key={i}>
-                      <circle cx={dot.cx} cy={dot.cy} r={dot.size + 3} fill="rgba(201,168,76,0.1)" />
-                      <circle cx={dot.cx} cy={dot.cy} r={dot.size} fill={dot.size >= 6 ? "#C9A84C" : "rgba(201,168,76,0.7)"} />
-                    </g>
-                  ))}
-                  {/* Labels cho 2 thành phố lớn */}
-                  <text x="155" y="32" fill="#C9A84C" fontSize="8" fontFamily="Inter, sans-serif" fontWeight="600">Hà Nội</text>
-                  <text x="118" y="352" fill="#C9A84C" fontSize="8" fontFamily="Inter, sans-serif" fontWeight="600">TP.HCM</text>
-                  <text x="172" y="163" fill="#E2C97E" fontSize="7" fontFamily="Inter, sans-serif">Đà Nẵng</text>
+                <svg viewBox="0 0 220 460" style={{ width: "100%", maxWidth: 260, margin: "0 auto", display: "block" }}>
+                  <defs>
+                    <filter id="mapglow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="3" result="blur"/>
+                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                  </defs>
+                  {/* Bản đồ Việt Nam - hình dạng chính xác từ Natural Earth */}
+                  <path
+                    d="M 168.5,67.5 L 166.4,68.9 L 161.9,69.8 L 157.0,66.0 L 150.5,65.7 L 146.3,62.5 L 142.1,59.9 L 134.0,48.8 L 129.8,47.9 L 134.0,31.3 L 110.0,25.8 L 97.5,15.0 L 75.3,30.5 L 49.7,33.9 L 29.1,33.7 L 15.0,40.9 L 30.1,63.7 L 41.9,90.2 L 74.2,90.5 L 84.2,115.9 L 67.5,123.7 L 60.2,133.9 L 60.2,147.6 L 91.2,151.4 L 97.7,165.1 L 113.1,185.8 L 117.6,200.1 L 129.6,211.8 L 141.1,223.4 L 149.1,231.9 L 155.7,252.6 L 151.0,281.7 L 157.0,301.0 L 153.8,336.0 L 110.0,358.4 L 121.5,376.2 L 94.1,378.2 L 71.4,389.9 L 90.9,406.5 L 83.6,426.3 L 93.0,445.0 L 125.7,417.9 L 135.8,410.0 L 146.8,393.7 L 161.9,380.9 L 176.8,374.7 L 190.6,360.5 L 198.5,355.5 L 205.0,343.0 L 202.1,304.2 L 198.5,287.6 L 190.1,250.3 L 180.2,235.1 L 174.2,226.9 L 167.2,214.7 L 150.5,208.9 L 141.1,194.3 L 126.2,171.0 L 112.9,156.4 L 106.1,140.1 L 111.8,119.9 L 125.4,106.8 L 133.7,92.3 L 146.3,80.6 L 168.5,67.5 Z"
+                    fill="rgba(201,168,76,0.08)" stroke="rgba(201,168,76,0.55)" strokeWidth="1.5" strokeLinejoin="round" filter="url(#mapglow)"
+                  />
+                  <path
+                    d="M 168.5,67.5 L 166.4,68.9 L 161.9,69.8 L 157.0,66.0 L 150.5,65.7 L 146.3,62.5 L 142.1,59.9 L 134.0,48.8 L 129.8,47.9 L 134.0,31.3 L 110.0,25.8 L 97.5,15.0 L 75.3,30.5 L 49.7,33.9 L 29.1,33.7 L 15.0,40.9 L 30.1,63.7 L 41.9,90.2 L 74.2,90.5 L 84.2,115.9 L 67.5,123.7 L 60.2,133.9 L 60.2,147.6 L 91.2,151.4 L 97.7,165.1 L 113.1,185.8 L 117.6,200.1 L 129.6,211.8 L 141.1,223.4 L 149.1,231.9 L 155.7,252.6 L 151.0,281.7 L 157.0,301.0 L 153.8,336.0 L 110.0,358.4 L 121.5,376.2 L 94.1,378.2 L 71.4,389.9 L 90.9,406.5 L 83.6,426.3 L 93.0,445.0 L 125.7,417.9 L 135.8,410.0 L 146.8,393.7 L 161.9,380.9 L 176.8,374.7 L 190.6,360.5 L 198.5,355.5 L 205.0,343.0 L 202.1,304.2 L 198.5,287.6 L 190.1,250.3 L 180.2,235.1 L 174.2,226.9 L 167.2,214.7 L 150.5,208.9 L 141.1,194.3 L 126.2,171.0 L 112.9,156.4 L 106.1,140.1 L 111.8,119.9 L 125.4,106.8 L 133.7,92.3 L 146.3,80.6 L 168.5,67.5 Z"
+                    fill="none" stroke="rgba(201,168,76,0.9)" strokeWidth="0.8" strokeLinejoin="round"
+                  />
+                  {/* Hà Nội */}
+                  <circle cx={111.0} cy={82.6} r={9} fill="rgba(201,168,76,0.12)"/>
+                  <circle cx={111.0} cy={82.6} r={6} fill="rgba(201,168,76,0.25)"/>
+                  <circle cx={111.0} cy={82.6} r={4} fill="#C9A84C"/>
+                  <text x={119} y={86} fill="#C9A84C" fontSize={8} fontFamily="Inter, sans-serif" fontWeight="700">Hà Nội</text>
+                  {/* Hải Phòng */}
+                  <circle cx={133.0} cy={87.6} r={3} fill="rgba(201,168,76,0.75)"/>
+                  <text x={137} y={85} fill="rgba(201,168,76,0.8)" fontSize={6.5} fontFamily="Inter, sans-serif">Hải Phòng</text>
+                  {/* Vinh */}
+                  <circle cx={106.3} cy={151.4} r={3} fill="rgba(201,168,76,0.75)"/>
+                  <text x={110} y={155} fill="rgba(201,168,76,0.8)" fontSize={6.5} fontFamily="Inter, sans-serif">Vinh</text>
+                  {/* Huế */}
+                  <circle cx={156.5} cy={215.9} r={3} fill="rgba(201,168,76,0.75)"/>
+                  <text x={160} y={219} fill="rgba(201,168,76,0.8)" fontSize={6.5} fontFamily="Inter, sans-serif">Huế</text>
+                  {/* Đà Nẵng */}
+                  <circle cx={172.9} cy={227.2} r={4} fill="rgba(201,168,76,0.85)"/>
+                  <text x={177} y={231} fill="rgba(201,168,76,0.9)" fontSize={7} fontFamily="Inter, sans-serif" fontWeight="600">Đà Nẵng</text>
+                  {/* Nha Trang */}
+                  <circle cx={198.2} cy={338.9} r={3} fill="rgba(201,168,76,0.75)"/>
+                  <text x={160} y={343} fill="rgba(201,168,76,0.8)" fontSize={6.5} fontFamily="Inter, sans-serif">Nha Trang</text>
+                  {/* TP.HCM */}
+                  <circle cx={132.2} cy={380.3} r={9} fill="rgba(201,168,76,0.12)"/>
+                  <circle cx={132.2} cy={380.3} r={6} fill="rgba(201,168,76,0.25)"/>
+                  <circle cx={132.2} cy={380.3} r={4} fill="#C9A84C"/>
+                  <text x={140} y={384} fill="#C9A84C" fontSize={8} fontFamily="Inter, sans-serif" fontWeight="700">TP.HCM</text>
+                  {/* Cần Thơ */}
+                  <circle cx={109.2} cy={403.3} r={3} fill="rgba(201,168,76,0.75)"/>
+                  <text x={113} y={407} fill="rgba(201,168,76,0.8)" fontSize={6.5} fontFamily="Inter, sans-serif">Cần Thơ</text>
                 </svg>
               </div>
 
