@@ -5,6 +5,7 @@ import Image from "next/image";
 import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
 import { BedDemoSection } from "../doi-tac-showroom-nem/BedDemoSection";
+import { InstallGuideSection } from "./InstallGuideSection";
 
 // ─── Design tokens — đồng bộ với website chính ────────────────────────────────
 const GOLD = "#C9A84C";
@@ -906,6 +907,9 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           </FadeIn>
         </div>
       </section>
+
+      {/* ── INSTALL GUIDE ── */}
+      <InstallGuideSection />
 
       {/* ── TRUST / SOCIAL PROOF ── */}
       <section id="danh-gia" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
