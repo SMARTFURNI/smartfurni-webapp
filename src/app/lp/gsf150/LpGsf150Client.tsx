@@ -979,7 +979,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
         }}>
           {/* Logo */}
-          <a href="/" style={{ flexShrink: 0, textDecoration: "none" }}>
+          <a href="/lp/gsf150" style={{ flexShrink: 0, textDecoration: "none" }}>
             <img
               src="/smartfurni-logo-transparent.png"
               alt="SmartFurni"
