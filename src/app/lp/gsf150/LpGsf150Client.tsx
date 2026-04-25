@@ -1951,39 +1951,76 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           </FadeIn>
           {/* Social proof numbers */}
           <FadeIn delay={50}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 48 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, marginBottom: 48, border: `1px solid rgba(201,168,76,0.15)`, borderRadius: R_LG, overflow: "hidden" }}>
               {([
-                { num: "2.000+", label: "Gia đình đã sử dụng", icon: "🏠" },
-                { num: "4.9/5", label: "Đánh giá trung bình", icon: "⭐" },
-                { num: "98%", label: "Khách hàng hài lòng", icon: "💚" },
-                { num: "63/63", label: "Tỉnh thành giao hàng", icon: "🚚" },
+                { num: "2.000+", label: "Gia đình đã sử dụng", svg: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3l9 9" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 10v9a1 1 0 001 1h4v-4h4v4h4a1 1 0 001-1v-9" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+                { num: "4.9/5", label: "Đánh giá trung bình", svg: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round"/></svg> },
+                { num: "98%", label: "Khách hàng hài lòng", svg: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round"/></svg> },
+                { num: "63/63", label: "Tỉnh thành giao hàng", svg: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#C9A84C" strokeWidth="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" stroke="#C9A84C" strokeWidth="1.5"/></svg> },
               ] as const).map((stat, i) => (
                 <FadeIn key={i} delay={i * 60}>
-                  <div style={{ padding: "24px 16px", textAlign: "center", background: "rgba(201,168,76,0.05)", border: `1px solid rgba(201,168,76,0.2)`, borderRadius: R_LG }}>
-                    <div style={{ fontSize: 24, marginBottom: 6 }}>{stat.icon}</div>
-                    <div style={{ color: GOLD, fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{stat.num}</div>
-                    <div style={{ color: GRAY, fontSize: 11, marginTop: 6, fontFamily: FONT_BODY, lineHeight: 1.4 }}>{stat.label}</div>
+                  <div style={{
+                    padding: "32px 20px", textAlign: "center",
+                    background: i % 2 === 0 ? "rgba(201,168,76,0.03)" : "rgba(201,168,76,0.06)",
+                    borderRight: i < 3 ? `1px solid rgba(201,168,76,0.12)` : "none",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
+                  }}>
+                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {stat.svg}
+                    </div>
+                    <div style={{ color: GOLD, fontSize: "clamp(24px, 3vw, 36px)", fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1, letterSpacing: "-0.02em" }}>{stat.num}</div>
+                    <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, lineHeight: 1.4 }}>{stat.label}</div>
                   </div>
                 </FadeIn>
               ))}
             </div>
           </FadeIn>
           {/* Chứng nhận */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 48 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 48 }}>
             {[
-              { icon: "🏆", bkTitle: "cert_1_title", defTitle: "Motor Đức CE/TÜV", bkDesc: "cert_1_desc", defDesc: "Tiêu chuẩn xuất khẩu châu Âu, bảo hành 5 năm chính hãng" },
-              { icon: "🔬", bkTitle: "cert_2_title", defTitle: "Công Thái Học ISO", bkDesc: "cert_2_desc", defDesc: "Chứng nhận ergonomic quốc tế ISO 9241 — thiết kế bảo vệ cột sống" },
-              { icon: "⚡", bkTitle: "cert_3_title", defTitle: "Tải Trọng 300kg", bkDesc: "cert_3_desc", defDesc: "Khung thép cường lực, kiểm định 50.000 lần nâng hạ" },
-              { icon: "🛡️", bkTitle: "cert_4_title", defTitle: "An Toàn Điện", bkDesc: "cert_4_desc", defDesc: "Điện áp thấp 24V DC, chứng nhận TCVN an toàn tuyệt đối" },
+              {
+                svg: <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="5" stroke="#C9A84C" strokeWidth="1.5"/><path d="M9 11l-4 9 7-3 7 3-4-9" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round"/></svg>,
+                bkTitle: "cert_1_title", defTitle: "Motor Đức CE/TÜV",
+                bkDesc: "cert_1_desc", defDesc: "Tiêu chuẩn xuất khẩu châu Âu, bảo hành 5 năm chính hãng"
+              },
+              {
+                svg: <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#C9A84C" strokeWidth="1.5"/><path d="M8 12l3 3 5-5" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+                bkTitle: "cert_2_title", defTitle: "Công Thái Học ISO",
+                bkDesc: "cert_2_desc", defDesc: "Chứng nhận ergonomic quốc tế ISO 9241 — thiết kế bảo vệ cột sống"
+              },
+              {
+                svg: <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round"/><circle cx="12" cy="12" r="4" stroke="#C9A84C" strokeWidth="1.5"/></svg>,
+                bkTitle: "cert_3_title", defTitle: "Tải Trọng 300kg",
+                bkDesc: "cert_3_desc", defDesc: "Khung thép cường lực, kiểm định 50.000 lần nâng hạ"
+              },
+              {
+                svg: <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round"/><path d="M9 12l2 2 4-4" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+                bkTitle: "cert_4_title", defTitle: "An Toàn Điện",
+                bkDesc: "cert_4_desc", defDesc: "Điện áp thấp 24V DC, chứng nhận TCVN an toàn tuyệt đối"
+              },
             ].map((c, i) => (
               <FadeIn key={i} delay={i * 70}>
-                <div style={{ padding: "26px 18px", textAlign: "center", background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG }}>
-                  <div style={{ fontSize: 30, marginBottom: 10 }}>{c.icon}</div>
-                  <div style={{ color: GOLD, fontWeight: 600, fontSize: 14, marginBottom: 7, fontFamily: FONT_HEADING, letterSpacing: "normal" }}>
-                    {E({ bk: c.bkTitle, def: c.defTitle, as: "span" })}
+                <div style={{
+                  padding: "28px 20px",
+                  background: BLACK_CARD,
+                  border: `1px solid rgba(201,168,76,0.15)`,
+                  borderRadius: R_LG,
+                  display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 14,
+                  transition: "border-color 0.2s, background 0.2s",
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.4)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(201,168,76,0.06)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.15)"; (e.currentTarget as HTMLDivElement).style.background = BLACK_CARD; }}
+                >
+                  <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {c.svg}
                   </div>
-                  <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY }}>
-                    {E({ bk: c.bkDesc, def: c.defDesc, as: "span", multiline: true })}
+                  <div>
+                    <div style={{ color: WHITE, fontWeight: 600, fontSize: 14, marginBottom: 6, fontFamily: FONT_HEADING, letterSpacing: "0.01em" }}>
+                      {E({ bk: c.bkTitle, def: c.defTitle, as: "span" })}
+                    </div>
+                    <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY }}>
+                      {E({ bk: c.bkDesc, def: c.defDesc, as: "span", multiline: true })}
+                    </div>
                   </div>
                 </div>
               </FadeIn>
