@@ -68,6 +68,77 @@ function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string })
   );
 }
 
+
+// ─── YouTube Thumbnail Click-to-Play ─────────────────────────────────────────
+function YoutubeThumbnailPlay({ videoId, title, tag }: { videoId: string; title: string; tag?: string }) {
+  const [playing, setPlaying] = useState(false);
+  const thumbUrl = videoId && videoId !== "_placeholder_"
+    ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    : null;
+  return (
+    <div
+      style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#000", cursor: playing ? "default" : "pointer" }}
+      onClick={() => { if (!playing) setPlaying(true); }}
+    >
+      {playing ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1`}
+          title={title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+        />
+      ) : (
+        <>
+          {/* Thumbnail image */}
+          {thumbUrl ? (
+            <img
+              src={thumbUrl}
+              alt={title}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            <div style={{ position: "absolute", inset: 0, background: "#1A1400", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: "#7A7468", fontSize: 12, fontFamily: "'Inter', sans-serif" }}>Chưa có video</span>
+            </div>
+          )}
+          {/* Dark overlay */}
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)" }} />
+          {/* Play button */}
+          <div style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 52, height: 52, borderRadius: "50%",
+            background: "rgba(201,168,76,0.92)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 20px rgba(201,168,76,0.4)",
+            transition: "transform 0.2s, box-shadow 0.2s",
+          }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M7 4L16 10L7 16V4Z" fill="#0A0A08"/>
+            </svg>
+          </div>
+          {/* Tag badge */}
+          {tag && (
+            <div style={{
+              position: "absolute", top: 10, left: 10,
+              background: "rgba(10,10,8,0.85)",
+              border: "1px solid rgba(201,168,76,0.3)",
+              color: "#C9A84C", fontSize: 9, fontWeight: 700,
+              padding: "3px 10px", borderRadius: 999,
+              letterSpacing: "0.1em",
+              fontFamily: "'Inter', sans-serif",
+              backdropFilter: "blur(4px)",
+            }}>
+              {tag}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Image upload helper ─────────────────────────────────────────────────────
 function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: {
   blockKey: string;
@@ -1396,14 +1467,8 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                 return (
                   <FadeIn key={i} delay={i * 80}>
                     <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
-                      {/* Thumbnail / embed */}
-                      <div style={{ position: "relative" }}>
-                        <YoutubeAutoplay videoId={vidId} title={content[v.titleKey] || v.defTitle} />
-                        {/* Tag badge */}
-                        <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(10,10,8,0.85)", border: `1px solid rgba(201,168,76,0.3)`, color: GOLD, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>
-                          {v.tag}
-                        </div>
-                      </div>
+                      {/* Thumbnail click-to-play */}
+                      <YoutubeThumbnailPlay videoId={vidId} title={content[v.titleKey] || v.defTitle} tag={v.tag} />
                       {/* Caption */}
                       <div style={{ padding: "14px 16px" }}>
                         <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 4, lineHeight: 1.4 }}>
