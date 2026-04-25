@@ -15,6 +15,8 @@ const GRAY_LIGHT = "#A8A090";
 const FONT_HEADING = "'Cormorant Garamond', 'Playfair Display', Georgia, serif";
 const FONT_BODY = "'Inter', 'Helvetica Neue', Arial, sans-serif";
 
+const INSTALL_VIDEO_URL = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663305063350/hVRGaTInwtcssKOh.mp4";
+
 const STEPS = [
   {
     num: "01",
@@ -48,6 +50,7 @@ export function InstallGuideSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [autoPlay, setAutoPlay] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -122,6 +125,33 @@ export function InstallGuideSection() {
           }}>
             Không cần thợ. Không cần tháo giường cũ. Chỉ 15–20 phút là xong.
           </p>
+        </div>
+
+        {/* ── Video Player ── */}
+        <div style={{
+          marginBottom: "clamp(40px, 5vw, 56px)",
+          borderRadius: "16px",
+          overflow: "hidden",
+          border: `1px solid rgba(201,168,76,0.2)`,
+          boxShadow: "0 8px 40px rgba(0,0,0,0.4)",
+          position: "relative",
+          background: "#000",
+        }}>
+          <video
+            ref={videoRef}
+            src={INSTALL_VIDEO_URL}
+            style={{ width: "100%", display: "block", maxHeight: "480px", objectFit: "contain" }}
+            controls
+            playsInline
+            preload="metadata"
+            poster={STEPS[0].img}
+          />
+          {/* Gold border accent */}
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0, height: 3,
+            background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
+            pointerEvents: "none",
+          }} />
         </div>
 
         {/* ── Desktop: 4 cards side by side ── */}
