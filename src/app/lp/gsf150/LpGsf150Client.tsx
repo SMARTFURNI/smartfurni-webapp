@@ -1721,9 +1721,9 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
         <div style={{ maxWidth: 1060, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,168,76,0.12)", border: `2px solid rgba(201,168,76,0.5)`, borderRadius: R_FULL, padding: "8px 20px", marginBottom: 20 }}>
-                <span style={{ fontSize: 14 }}>🚀</span>
-                <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Đơn giản đến không ngờ</span>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.35)`, borderRadius: R_FULL, padding: "9px 22px", marginBottom: 20 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+                <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Đơn giản đến không ngờ</span>
               </div>
               <h2 style={{ fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 300, lineHeight: 1.1, marginBottom: 16, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: WHITE }}>
                 {E({ bk: "howitworks_title", def: "Chỉ 3 Bước", as: "span" })}
@@ -1739,16 +1739,41 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           <FadeIn delay={200}>
             <div style={{ background: `linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(201,168,76,0.02) 100%)`, border: `1px solid rgba(201,168,76,0.25)`, borderRadius: R_LG, padding: "40px 36px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, alignItems: "start" }}>
-                {[
-                  { step: "01", icon: "📦", bkTitle: "step_1_title", defTitle: "Mở hộp", bkDesc: "step_1_desc", defDesc: "Sản phẩm được đóng gói gọn gàng. Kiểm tra đầy đủ phụ kiện: khung, remote, dây nguồn, chân rời.", bkImg: "howit_step_1_img" },
-                  { step: "02", icon: "🛏️", bkTitle: "step_2_title", defTitle: "Đặt lên giường", bkDesc: "step_2_desc", defDesc: "Tháo chân khung, đặt trực tiếp vào lòng giường gỗ. Hoặc lắp chân nếu muốn dùng độc lập.", bkImg: "howit_step_2_img" },
-                  { step: "03", icon: "⚡", bkTitle: "step_3_title", defTitle: "Cắm điện & Tận hưởng", bkDesc: "step_3_desc", defDesc: "Kết nối nguồn, nhấn remote — trải nghiệm ngay lập tức. Không cần kỹ thuật viên.", bkImg: "howit_step_3_img" },
-                ].map((s, i) => {
+                {([
+                  {
+                    step: "01",
+                    svg: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1.5"/><path d="M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>),
+                    bkTitle: "step_1_title", defTitle: "Nhắc nệm ra khỏi giường",
+                    bkDesc: "step_1_desc", defDesc: "Nhắc nệm ra khỏi giường hiện tại và đặt sang một bên. Không cần tháo khung giường gỗ.",
+                    bkImg: "howit_step_1_img"
+                  },
+                  {
+                    step: "02",
+                    svg: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="9" width="20" height="10" rx="3" stroke="currentColor" strokeWidth="1.5"/><path d="M6 9V7a2 2 0 012-2h8a2 2 0 012 2v2" stroke="currentColor" strokeWidth="1.5"/><path d="M12 13v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>),
+                    bkTitle: "step_2_title", defTitle: "Đặt khung giường điều chỉnh lên giường cũ",
+                    bkDesc: "step_2_desc", defDesc: "Tháo chân khung, đặt trực tiếp vào lòng giường gỗ. Hoặc lắp chân nếu muốn dùng độc lập.",
+                    bkImg: "howit_step_2_img"
+                  },
+                  {
+                    step: "03",
+                    svg: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>),
+                    bkTitle: "step_3_title", defTitle: "Đặt nệm vào và điều khiển tư thế yêu thích",
+                    bkDesc: "step_3_desc", defDesc: "Kết nối nguồn, nhấn remote — trải nghiệm ngay lập tức. Không cần kỹ thuật viên.",
+                    bkImg: "howit_step_3_img"
+                  },
+                ] as const).map((s, i) => {
                   const imgSrc = content[s.bkImg] || "";
                   return (
                   <div key={i} style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 20, fontWeight: 700, color: "#1a1200", fontFamily: FONT_HEADING }}>{s.step}</div>
-                    <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", marginBottom: 6, fontFamily: FONT_BODY }}>BƯỚC {s.step}</div>
+                    {/* Số bước — vòng tròn kép nét mảnh */}
+                    <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 16px", flexShrink: 0 }}>
+                      <svg width="60" height="60" viewBox="0 0 60 60" fill="none" style={{ position: "absolute", inset: 0 }}>
+                        <circle cx="30" cy="30" r="28" stroke={GOLD} strokeWidth="0.75" opacity="0.3"/>
+                        <circle cx="30" cy="30" r="22" stroke={GOLD} strokeWidth="1.25" opacity="0.65"/>
+                      </svg>
+                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD }}>{s.svg}</div>
+                    </div>
+                    <div style={{ color: GOLD, fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", marginBottom: 8, fontFamily: FONT_BODY, opacity: 0.65 }}>BƯỚC {s.step}</div>
                     <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{E({ bk: s.bkTitle, def: s.defTitle, as: "span" })}</div>
                     <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: "0 0 12px" }}>{E({ bk: s.bkDesc, def: s.defDesc, as: "span", multiline: true })}</p>
                     {(imgSrc || editMode) && (
