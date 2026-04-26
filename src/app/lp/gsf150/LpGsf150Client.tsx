@@ -1398,7 +1398,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           </FadeIn>
           <FadeIn delay={100}>
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontFamily: FONT_BODY }}>
+              <table className="lp-compare-table" style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontFamily: FONT_BODY }}>
                 <thead>
                   <tr>
                     <th style={{ padding: "14px 20px", textAlign: "left", color: GRAY, fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const, borderBottom: `1px solid ${BLACK_BORDER}` }}>Tiêu chí</th>
@@ -1448,7 +1448,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             </div>
           </FadeIn>
           <FadeIn delay={100}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: 2, background: BLACK_BORDER, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
+            <div className="lp-spec-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: 2, background: BLACK_BORDER, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
               {([
                 { label: "Kích thước lọt lòng", value: "1.600 × 2.000mm / 1.800 × 2.000mm" },
                 { label: "Tải trọng tối đa", value: "300 kg" },
@@ -1544,7 +1544,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
               <h3 style={{ textAlign: "center", color: GOLD, fontSize: 13, fontWeight: 600, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 28, textTransform: "uppercase" as const }}>
                 {E({ bk: "health_posture_title", def: "Giường phẳng vs Giường điều chỉnh góc", as: "span" })}
               </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <div className="lp-health-posture-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                 {/* Giường phẳng — vấn đề */}
                 <div style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: R_LG, padding: "28px 24px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
@@ -1738,7 +1738,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           </FadeIn>
           <FadeIn delay={200}>
             <div style={{ background: `linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(201,168,76,0.02) 100%)`, border: `1px solid rgba(201,168,76,0.25)`, borderRadius: R_LG, padding: "40px 36px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, alignItems: "start" }}>
+              <div className="lp-steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, alignItems: "start" }}>
                 {([
                   {
                     step: "01",
@@ -1944,7 +1944,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             </div>
           </FadeIn>
           <FadeIn delay={80}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, maxWidth: 1060, margin: "0 auto" }}>
+            <div className="lp-reels-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, maxWidth: 1060, margin: "0 auto" }}>
               {([
                 { urlKey: "reel_1_url", nameKey: "reel_1_name", defName: "Chị Lan Anh", locKey: "reel_1_loc", defLoc: "Quận 3, TP.HCM", tagKey: "reel_1_tag", defTag: "Dùng 2 tháng" },
                 { urlKey: "reel_2_url", nameKey: "reel_2_name", defName: "Anh Đức Minh", locKey: "reel_2_loc", defLoc: "Hoàn Kiếm, Hà Nội", tagKey: "reel_2_tag", defTag: "Lắp đặt 5 phút" },
@@ -2010,7 +2010,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
           </FadeIn>
           {/* Social proof numbers */}
           <FadeIn delay={50}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, marginBottom: 48, border: `1px solid rgba(201,168,76,0.15)`, borderRadius: R_LG, overflow: "hidden" }}>
+            <div className="lp-social-proof-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, marginBottom: 48, border: `1px solid rgba(201,168,76,0.15)`, borderRadius: R_LG, overflow: "hidden" }}>
               {([
                 { num: "2.000+", label: "Gia đình đã sử dụng", svg: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3l9 9" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 10v9a1 1 0 001 1h4v-4h4v4h4a1 1 0 001-1v-9" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
                 { num: "4.9/5", label: "Đánh giá trung bình", svg: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round"/></svg> },
@@ -2035,7 +2035,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             </div>
           </FadeIn>
           {/* Chứng nhận */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 48 }}>
+          <div className="lp-cert-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 48 }}>
             {[
               {
                 svg: <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="5" stroke="#C9A84C" strokeWidth="1.5"/><path d="M9 11l-4 9 7-3 7 3-4-9" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round"/></svg>,
@@ -2130,7 +2130,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
             </div>
           </FadeIn>
           <FadeIn delay={100}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, border: `1px solid rgba(201,168,76,0.15)`, borderRadius: R_LG, overflow: "hidden" }}>
+            <div className="lp-guarantee-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, border: `1px solid rgba(201,168,76,0.15)`, borderRadius: R_LG, overflow: "hidden" }}>
               {([
                 {
                   svg: <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M14 3L3 8.5V14C3 19.25 7.85 24.16 14 25.5C20.15 24.16 25 19.25 25 14V8.5L14 3Z" stroke="#C9A84C" strokeWidth="1.5" strokeLinejoin="round" fill="none"/><path d="M9 14l3.5 3.5L19 10" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,

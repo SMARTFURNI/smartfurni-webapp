@@ -73,3 +73,78 @@
     gap: 32px !important;
   }
 }
+
+/* ── Reels grid: 4-col → 2-col → 1-col trên mobile ── */
+@media (max-width: 768px) {
+  .lp-reels-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+@media (max-width: 400px) {
+  .lp-reels-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+/* ── Social proof 4-col → 2x2 trên mobile ── */
+@media (max-width: 600px) {
+  .lp-social-proof-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Chứng nhận 4-col → 2x2 trên mobile ── */
+@media (max-width: 600px) {
+  .lp-cert-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+/* ── Cam kết 3-col → 1-col trên mobile ── */
+@media (max-width: 600px) {
+  .lp-guarantee-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+  }
+}
+
+/* ── Thông số kỹ thuật: minmax(380px) → 1-col trên mobile ── */
+@media (max-width: 600px) {
+  .lp-spec-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Bảng so sánh: font nhỏ hơn trên mobile ── */
+@media (max-width: 480px) {
+  .lp-compare-table th,
+  .lp-compare-table td {
+    padding: 10px 10px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* ── Before/After slider: full width trên mobile ── */
+@media (max-width: 768px) {
+  .lp-ba-slider {
+    border-radius: 8px !important;
+  }
+}
+
+/* ── Health posture grid: 2-col → 1-col trên mobile nhỏ ── */
+@media (max-width: 480px) {
+  .lp-health-posture-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── 3 Bước steps: min-width nhỏ hơn trên mobile ── */
+@media (max-width: 480px) {
+  .lp-steps-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+}

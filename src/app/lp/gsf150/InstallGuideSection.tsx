@@ -330,20 +330,29 @@ export function InstallGuideSection({
           flexWrap: "wrap",
         }}>
           {([
-            { bk: "install_badge_1", def: "Không cần thợ lắp đặt", icon: "🔧" },
-            { bk: "install_badge_2", def: "Không cần tháo giường cũ", icon: "🛏️" },
-            { bk: "install_badge_3", def: "Tương thích mọi loại nệm", icon: "✅" },
+            {
+              bk: "install_badge_1", def: "Không cần thợ lắp đặt",
+              svg: (<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>)
+            },
+            {
+              bk: "install_badge_2", def: "Không cần tháo giường cũ",
+              svg: (<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="2" y="8" width="20" height="12" rx="3" stroke="#C9A84C" strokeWidth="1.4"/><path d="M6 8V6a2 2 0 012-2h8a2 2 0 012 2v2" stroke="#C9A84C" strokeWidth="1.4"/><path d="M2 14h20" stroke="#C9A84C" strokeWidth="1.4" strokeDasharray="3 2"/></svg>)
+            },
+            {
+              bk: "install_badge_3", def: "Tương thích mọi loại nệm",
+              svg: (<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>)
+            },
           ] as const).map((item, i) => (
             <div key={i} style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 8,
-              background: "rgba(201,168,76,0.08)",
-              border: `1px solid rgba(201,168,76,0.25)`,
+              gap: 9,
+              background: "rgba(201,168,76,0.07)",
+              border: `1px solid rgba(201,168,76,0.22)`,
               borderRadius: "100px",
-              padding: "8px 18px",
+              padding: "9px 20px",
             }}>
-              <span style={{ fontSize: 15, lineHeight: 1 }}>{item.icon}</span>
+              <span style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>{item.svg}</span>
               <span style={{
                 color: GOLD,
                 fontSize: "clamp(11px, 1.1vw, 13px)",
