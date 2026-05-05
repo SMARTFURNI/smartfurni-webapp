@@ -103,6 +103,14 @@ const CountdownDisplay = React.memo(function CountdownDisplay() {
 });
 
 // ─── InlineEdit: component thực sự (không phải hàm bên trong component) ─────
+const FONT_SIZES = [
+  { label: "Nhỏ", value: "12px" }, { label: "Vừa nhỏ", value: "14px" },
+  { label: "Vừa", value: "16px" }, { label: "Lớn", value: "20px" },
+  { label: "Rất lớn", value: "24px" }, { label: "Tiêu đề nhỏ", value: "28px" },
+  { label: "Tiêu đề", value: "36px" }, { label: "Tiêu đề lớn", value: "48px" },
+  { label: "Hero", value: "clamp(32px,5vw,64px)" },
+];
+
 interface InlineEditProps {
   bk: string;
   def: string;
@@ -118,78 +126,138 @@ function InlineEdit({ bk, def, as: Tag = "span", style, multiline = false, editM
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [editValue, setEditValue] = useState("");
-  const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
-  const displayValue = savedValue ?? def;
-  useEffect(() => { if (isEditing && inputRef.current) inputRef.current.focus(); }, [isEditing]);
+  // editValue lưu cả text và fontSize: "text||fontSize"
+  const [editText, setEditText] = useState("");
+  const [editFontSize, setEditFontSize] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Parse savedValue: có thể là "text" hoặc "text||fontSize"
+  const parseValue = (raw: string) => {
+    const parts = raw.split("||");
+    return { text: parts[0] || "", fontSize: parts[1] || "" };
+  };
+  const { text: displayText, fontSize: savedFontSize } = parseValue(savedValue ?? def);
+  const displayValue = displayText || (savedValue ?? def);
+
+  // Merge fontSize vào style
+  const mergedStyle: React.CSSProperties = savedFontSize
+    ? { ...style, fontSize: savedFontSize }
+    : (style ?? {});
+
   useEffect(() => { if (!editMode) setIsEditing(false); }, [editMode]);
+
+  const openEdit = () => {
+    const { text, fontSize } = parseValue(savedValue ?? def);
+    setEditText(text || (savedValue ?? def));
+    setEditFontSize(fontSize || "");
+    setIsEditing(true);
+    // Focus sau khi render
+    setTimeout(() => {
+      (multiline ? textareaRef.current : inputRef.current)?.focus();
+    }, 50);
+  };
+
+  const buildSaveValue = () => editFontSize ? `${editText}||${editFontSize}` : editText;
+
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
+    const saveVal = buildSaveValue();
     try {
       const res = await fetch("/api/admin/lp-content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, blockKey: bk, content: editValue }),
+        body: JSON.stringify({ slug, blockKey: bk, content: saveVal }),
       });
-      if (res.ok) { onSaved?.(bk, editValue); setIsEditing(false); }
+      if (res.ok) { onSaved?.(bk, saveVal); setIsEditing(false); }
       else alert("Lưu thất bại. Vui lòng thử lại.");
     } catch { alert("Lỗi kết nối."); }
     finally { setIsSaving(false); }
   };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") { setIsEditing(false); return; }
     if (!multiline && e.key === "Enter") { e.preventDefault(); handleSave(); return; }
     if (multiline && e.key === "Enter" && (e.ctrlKey || e.metaKey)) { handleSave(); return; }
   };
-  if (!editMode) return <Tag style={style}>{displayValue}</Tag>;
+
+  if (!editMode) return <Tag style={mergedStyle}>{displayValue}</Tag>;
+
   if (isEditing) return (
-    <span style={{ display: "inline-block", position: "relative", width: "100%" }}>
+    <span style={{ display: "inline-block", position: "relative", width: "100%", zIndex: 300 }}>
+      {/* Toolbar cỡ chữ */}
+      <span style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11, color: "#A89070", fontFamily: "'Inter',sans-serif" }}>Cỡ chữ:</span>
+        <select
+          value={editFontSize}
+          onChange={e => setEditFontSize(e.target.value)}
+          style={{ background: "rgba(13,11,0,0.95)", border: "1px solid rgba(201,168,76,0.4)",
+            borderRadius: 6, color: "#F5EDD6", fontSize: 11, padding: "3px 8px",
+            fontFamily: "'Inter',sans-serif", cursor: "pointer", outline: "none" }}
+        >
+          <option value="">— Giữ nguyên —</option>
+          {FONT_SIZES.map(s => (
+            <option key={s.value} value={s.value}>{s.label} ({s.value})</option>
+          ))}
+        </select>
+        {editFontSize && (
+          <span style={{ fontSize: editFontSize.startsWith("clamp") ? 14 : parseInt(editFontSize),
+            color: "#C9A84C", fontFamily: "'Playfair Display',serif", lineHeight: 1 }}>
+            Aa
+          </span>
+        )}
+      </span>
+      {/* Input/Textarea */}
       {multiline ? (
-        <textarea ref={inputRef as React.RefObject<HTMLTextAreaElement>} value={editValue}
-          onChange={e => setEditValue(e.target.value)} onKeyDown={handleKeyDown} rows={4}
+        <textarea ref={textareaRef} value={editText}
+          onChange={e => setEditText(e.target.value)} onKeyDown={handleKeyDown} rows={4}
           style={{ width: "100%", boxSizing: "border-box", background: "rgba(13,11,0,0.95)",
             border: "2px solid #C9A84C", borderRadius: 8, padding: "10px 12px",
-            color: "#F5EDD6", fontSize: "inherit", fontFamily: "inherit",
-            lineHeight: "inherit", resize: "vertical", outline: "none" }} />
+            color: "#F5EDD6", fontSize: 14, fontFamily: "'Inter',sans-serif",
+            lineHeight: 1.5, resize: "vertical", outline: "none" }} />
       ) : (
-        <input ref={inputRef as React.RefObject<HTMLInputElement>} type="text" value={editValue}
-          onChange={e => setEditValue(e.target.value)} onKeyDown={handleKeyDown}
+        <input ref={inputRef} type="text" value={editText}
+          onChange={e => setEditText(e.target.value)} onKeyDown={handleKeyDown}
           style={{ width: "100%", boxSizing: "border-box", background: "rgba(13,11,0,0.95)",
-            border: "2px solid #C9A84C", borderRadius: 8, padding: "8px 12px",
-            color: "#F5EDD6", fontSize: "inherit", fontFamily: "inherit", outline: "none" }} />
+            border: "2px solid #C9A84C", borderRadius: 8, padding: "10px 14px",
+            color: "#F5EDD6", fontSize: 15, fontFamily: "'Inter',sans-serif", outline: "none" }} />
       )}
-      <span style={{ display: "flex", gap: 8, marginTop: 6 }}>
+      {/* Buttons */}
+      <span style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
         <button onClick={handleSave} disabled={isSaving}
           style={{ background: "#C9A84C", color: "#0D0B00", border: "none", borderRadius: 6,
-            padding: "5px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: isSaving ? 0.6 : 1 }}>
+            padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer",
+            opacity: isSaving ? 0.6 : 1, fontFamily: "'Inter',sans-serif" }}>
           {isSaving ? "Đang lưu..." : "✓ Lưu"}
         </button>
         <button onClick={() => setIsEditing(false)}
           style={{ background: "rgba(255,255,255,0.08)", color: "#A89070",
             border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6,
-            padding: "5px 12px", fontSize: 12, cursor: "pointer" }}>
+            padding: "6px 14px", fontSize: 12, cursor: "pointer", fontFamily: "'Inter',sans-serif" }}>
           Hủy
         </button>
-      </span>
-      <span style={{ display: "block", fontSize: 10, color: "#A89070", marginTop: 4 }}>
-        {multiline ? "Ctrl+Enter để lưu · Esc để hủy" : "Enter để lưu · Esc để hủy"}
+        <span style={{ fontSize: 10, color: "#6B6050", fontFamily: "'Inter',sans-serif" }}>
+          {multiline ? "Ctrl+Enter lưu" : "Enter lưu"} · Esc hủy
+        </span>
       </span>
     </span>
   );
+
   return (
-    <Tag style={{ ...style, position: "relative", cursor: "pointer",
+    <Tag style={{ ...mergedStyle, position: "relative", cursor: "pointer",
         outline: isHovered ? "2px dashed rgba(201,168,76,0.6)" : "2px dashed transparent",
         outlineOffset: 3, borderRadius: 4, transition: "outline 0.15s" }}
       onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
-      onClick={() => { setEditValue(displayValue); setIsEditing(true); }} title="Click để chỉnh sửa">
+      onClick={openEdit} title="Click để chỉnh sửa">
       {displayValue}
       {isHovered && (
-        <span style={{ position: "absolute", top: -28, right: 0, zIndex: 200, display: "flex", gap: 4 }}
+        <span style={{ position: "absolute", top: -30, left: 0, zIndex: 200, display: "flex", gap: 4 }}
           onClick={e => e.stopPropagation()}>
-          <button onClick={() => { setEditValue(displayValue); setIsEditing(true); }}
+          <button onClick={e => { e.stopPropagation(); openEdit(); }}
             style={{ background: "#C9A84C", color: "#0D0B00", border: "none", borderRadius: 5,
-              padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+              padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer",
+              whiteSpace: "nowrap", fontFamily: "'Inter',sans-serif" }}>
             ✏️ Sửa
           </button>
         </span>
