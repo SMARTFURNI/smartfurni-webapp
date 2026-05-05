@@ -1192,29 +1192,55 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             </div>
           </FadeIn>
           {sofaProducts.length > 0 ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
               {sofaProducts.map((p, i) => {
                 const minPrice = p.sizePricings?.length ? Math.min(...p.sizePricings.map(s => s.price)) : p.basePrice;
+                const priceCount = p.sizePricings?.length || 1;
+                const badges = ["Bán chạy nhất ★", "Double cao cấp", "Sản phẩm", "Premium", "Mới", "Hot"];
+                const badge = badges[i % badges.length];
+                const badgeColor = i === 1 ? GOLD : "rgba(201,168,76,0.18)";
+                const badgeTextColor = i === 1 ? BLACK : GOLD;
                 return (
                   <FadeIn key={p.id} delay={i * 60}>
-                    <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: "pointer", transition: "border-color 0.25s, transform 0.25s", position: "relative" }}
+                    <div
+                      style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: "pointer", transition: "border-color 0.25s, transform 0.25s", position: "relative", display: "flex", flexDirection: "column" }}
                       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.45)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
-                      onClick={() => openQuiz(p.id)}>
-                      <div style={{ position: "relative", paddingTop: "65%", overflow: "hidden" }}>
-                        {p.imageUrl ? <img src={p.imageUrl} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #1A1200, #0D0800)", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: GRAY, fontSize: 32 }}>🛋️</span></div>}
-                        <div style={{ position: "absolute", top: 12, left: 12, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY }}>{p.sku}</div>
-                        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "all 0.25s" }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(0,0,0,0.4)"; (e.currentTarget as HTMLDivElement).style.opacity = "1"; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(0,0,0,0)"; (e.currentTarget as HTMLDivElement).style.opacity = "0"; }}>
-                          <div style={{ background: GOLD, color: BLACK, padding: "10px 22px", borderRadius: 100, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>Thiết Kế Ngay</div>
+                      onClick={() => openQuiz(p.id)}
+                    >
+                      {/* Badge góc trên phải */}
+                      <div style={{ position: "absolute", top: 14, right: 14, zIndex: 2, background: badgeColor, color: badgeTextColor, fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 100, fontFamily: FONT_BODY, border: i === 1 ? "none" : "1px solid rgba(201,168,76,0.35)", backdropFilter: "blur(4px)" }}>{badge}</div>
+                      {/* Ảnh tỉ lệ 1:1 */}
+                      <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "#0D0800", flexShrink: 0 }}>
+                        {p.imageUrl
+                          ? <img src={p.imageUrl} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s" }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.05)"; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
+                            />
+                          : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><SvgIcon name="sofa" size={48} color={GRAY} /></div>
+                        }
+                        {/* Hover overlay */}
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)", opacity: 0, transition: "opacity 0.25s", display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 20 }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = "1"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0"; }}
+                        >
+                          <div style={{ background: GOLD, color: BLACK, padding: "10px 28px", borderRadius: 100, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>Thiết Kế Ngay →</div>
                         </div>
                       </div>
-                      <div style={{ padding: "20px" }}>
-                        <h3 style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING, lineHeight: 1.4 }}>{p.name.replace(/^Chia sẻ\s+/, "").substring(0, 60)}</h3>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <div style={{ color: GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING }}>Từ {fmt(minPrice || 0)}</div>
-                          <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>7 tuỳ chọn</div>
+                      {/* Info */}
+                      <div style={{ padding: "20px 20px 22px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.8 }}>{p.sku}</div>
+                        <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0 }}>{p.name.replace(/^Chia sẻ\s+/, "")}</h3>
+                        {p.description && <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{p.description}</p>}
+                        <div style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${BLACK_BORDER}`, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+                          <div>
+                            <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY, marginBottom: 2 }}>Giá bán lẻ từ</div>
+                            <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{fmt(minPrice || 0)} <span style={{ color: GRAY, fontSize: 11, fontWeight: 400 }}>/ size</span></div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{priceCount} mức giá</div>
+                            <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>theo kích thước</div>
+                          </div>
                         </div>
                       </div>
                     </div>
