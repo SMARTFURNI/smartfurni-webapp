@@ -1,0 +1,169 @@
+/* ─── Landing Page Mobile Responsive ─────────────────────────────────────────
+   Breakpoint: 768px (tablet), 480px (mobile)
+   All className-based overrides for LpShowroomNemClient.tsx
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* ── Nav: ẩn menu + CTA desktop trên mobile, hiện hamburger ── */
+@media (max-width: 768px) {
+  .lp-nav-menu {
+    display: none !important;
+  }
+  .lp-nav-cta {
+    display: none !important;
+  }
+  .lp-nav-hamburger {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .lp-nav-hamburger {
+    display: none !important;
+  }
+  .lp-mobile-menu {
+    display: none !important;
+  }
+}
+
+/* ── Showroom Comparison: 3-col → 1-col trên mobile ── */
+@media (max-width: 768px) {
+  .lp-comp-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+    padding: 0 16px !important;
+  }
+}
+
+/* ── Stats row: 2x2 grid trên mobile ── */
+@media (max-width: 480px) {
+  .lp-stats-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0 !important;
+    border-top: 1px solid #2E2800 !important;
+    padding-top: 32px !important;
+    margin-top: 48px !important;
+  }
+  .lp-stat-item {
+    border-left: none !important;
+    border-bottom: 1px solid #2E2800 !important;
+    padding: 16px 12px !important;
+  }
+  .lp-stat-item:nth-child(2),
+  .lp-stat-item:nth-child(4) {
+    border-left: 1px solid #2E2800 !important;
+  }
+  .lp-stat-item:nth-child(3),
+  .lp-stat-item:nth-child(4) {
+    border-bottom: none !important;
+  }
+}
+
+/* ── Footer: 4-col → 2-col → 1-col ── */
+@media (max-width: 900px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 36px 24px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+}
+
+/* ── Reels grid: 4-col → 2-col → 1-col trên mobile ── */
+@media (max-width: 768px) {
+  .lp-reels-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+@media (max-width: 400px) {
+  .lp-reels-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+/* ── Social proof 4-col → 2x2 trên mobile ── */
+@media (max-width: 600px) {
+  .lp-social-proof-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Chứng nhận 4-col → 2x2 trên mobile ── */
+@media (max-width: 600px) {
+  .lp-cert-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+/* ── Cam kết 3-col → 1-col trên mobile ── */
+@media (max-width: 600px) {
+  .lp-guarantee-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+  }
+}
+
+/* ── Thông số kỹ thuật: minmax(380px) → 1-col trên mobile ── */
+@media (max-width: 600px) {
+  .lp-spec-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Bảng so sánh: font nhỏ hơn trên mobile ── */
+@media (max-width: 480px) {
+  .lp-compare-table th,
+  .lp-compare-table td {
+    padding: 10px 10px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* ── Before/After slider: full width trên mobile ── */
+@media (max-width: 768px) {
+  .lp-ba-slider {
+    border-radius: 8px !important;
+  }
+}
+
+/* ── Health posture grid: 2-col → 1-col trên mobile nhỏ ── */
+@media (max-width: 480px) {
+  .lp-health-posture-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── 3 Bước steps: min-width nhỏ hơn trên mobile ── */
+@media (max-width: 480px) {
+  .lp-steps-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+}
+
+/* ── Fix layout shift: nav dịch sang trái khi scrollbar xuất hiện ── */
+/* scrollbar-gutter: stable được set ở globals.css (html element) */
+/* Đảm bảo nav không bị ảnh hưởng bởi scrollbar width */
+nav[style*="position: fixed"] {
+  /* Dùng left/right thay vì width để tránh layout shift */
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+}
+
+/* ── Fix install guide badges: wrap tốt hơn trên mobile ── */
+@media (max-width: 480px) {
+  .lp-install-badges {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+}
