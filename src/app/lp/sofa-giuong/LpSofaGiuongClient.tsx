@@ -22,11 +22,7 @@ const R_MD = 12;
 const R_LG = 16;
 const R_FULL = 999;
 
-interface Props {
-  isEditor?: boolean;
-  initialContent?: Record<string, string>;
-  sofaProducts?: CrmProduct[];
-}
+// ─── LUXURY SVG ICON LIBRARY ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface ConfigState {
   productId: string | null;
@@ -54,6 +50,69 @@ const ADDON_LABELS: Record<string, string> = {
   "7cm": "Nệm 7cm", "10cm": "Nệm 10cm",
   vai_lanh: "Áo nệm vải lanh", da_pu_nem: "Áo nệm da PU",
 };
+
+// ─── SVG Icon Library (Luxury thin-line, gold stroke) ────────────────────────
+const SVG_ICONS: Record<string, React.ReactNode> = {
+  // Hero trust badges
+  palette: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="14" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="9" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.5" fill="currentColor" stroke="none"/><path d="M12 22c-1.5 0-3-1.5-3-3s1.5-2 3-2 3 .5 3 2-1.5 3-3 3z"/></svg>),
+  price_tag: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>),
+  truck: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>),
+  shield: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>),
+  // Pain points
+  ruler_cross: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3l18 18M3 21L21 3"/><rect x="2" y="7" width="20" height="10" rx="1" opacity="0.3"/></svg>),
+  eye_off: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>),
+  question_circle: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>),
+  wrench: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>),
+  // How it works
+  sofa: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 9V7a2 2 0 00-2-2H6a2 2 0 00-2 2v2"/><path d="M2 11a2 2 0 012 2v2h16v-2a2 2 0 012-2 2 2 0 01-2-2H4a2 2 0 01-2 2z"/><line x1="6" y1="19" x2="6" y2="21"/><line x1="18" y1="19" x2="18" y2="21"/></svg>),
+  sliders: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>),
+  calculator: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg>),
+  phone: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012.18 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.16a16 16 0 006.93 6.93l1.52-1.52a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>),
+  // Features
+  star_circle: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7l1.5 3.5L17 11l-2.5 2.5.5 3.5L12 15.5 9 17l.5-3.5L7 11l3.5-.5L12 7z"/></svg>),
+  factory: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20V9l6-4v4l6-4v4l6-4v15H2z"/><line x1="2" y1="20" x2="22" y2="20"/><rect x="9" y="14" width="2" height="6"/><rect x="13" y="14" width="2" height="6"/></svg>),
+  credit_card: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>),
+  // Guarantee
+  check_circle: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>),
+  refresh: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>),
+  headphones: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>),
+  // Footer contact
+  map_pin: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>),
+  message_circle: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>),
+  mail: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>),
+  globe: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>),
+  // Quiz options
+  box: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>),
+  armchair: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 9V6a2 2 0 00-2-2H7a2 2 0 00-2 2v3"/><path d="M3 11v5a2 2 0 002 2h14a2 2 0 002-2v-5a2 2 0 00-4 0v2H7v-2a2 2 0 00-4 0z"/><line x1="5" y1="20" x2="5" y2="22"/><line x1="19" y1="20" x2="19" y2="22"/></svg>),
+  sparkles: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/><path d="M5 3l.75 2.25L8 6l-2.25.75L5 9l-.75-2.25L2 6l2.25-.75L5 3z"/><path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75L19 15z"/></svg>),
+  leaf: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 8C8 10 5.9 16.17 3.82 19.5c-.6.98.27 2.1 1.37 1.73C7.27 20.2 11.5 18 12 12c2 1 4 1.5 6 1-1 2-2.5 3.5-5 4.5 3 0 6-2 7-6s-1-9-3-3z"/></svg>),
+  // Mattress
+  layers: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>),
+  moon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>),
+  // Spec table
+  frame: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>),
+  zap: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>),
+  maximize: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>),
+  award: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>),
+  ruler: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h18v10H3z"/><path d="M7 7v3M11 7v5M15 7v3M19 7v2"/></svg>),
+  bed: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4v16M22 4v16M2 8h20M2 16h20"/><path d="M6 8v8M18 8v8"/></svg>),
+  wood: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 9h20M2 14h20M7 4v16M12 4v16M17 4v16"/></svg>),
+  minus_circle: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>),
+};
+
+function SvgIcon({ name, size = 24, color = "currentColor", className = "", style }: { name: string; size?: number; color?: string; className?: string; style?: React.CSSProperties }) {
+  const icon = SVG_ICONS[name];
+  if (!icon) return <span style={{ fontSize: size * 0.8, lineHeight: 1 }}>{name}</span>;
+  return (
+    <span
+      className={className}
+      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: size, height: size, color, flexShrink: 0, ...style }}
+    >
+      {React.cloneElement(icon as React.ReactElement, { width: size, height: size })}
+    </span>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) { return n.toLocaleString("vi-VN") + " ₫"; }
 function getBasePrice(p: CrmProduct, size: string | null): number {
@@ -498,7 +557,9 @@ function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
 }) {
   return (
     <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left" as const, transition: "all 0.2s", width: "100%" }}>
-      <div style={{ fontSize: 26, flexShrink: 0 }}>{icon}</div>
+      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, borderRadius: R_SM, background: selected ? "rgba(201,168,76,0.15)" : "rgba(201,168,76,0.06)", border: `1px solid ${selected ? "rgba(201,168,76,0.4)" : "rgba(201,168,76,0.12)"}`, transition: "all 0.2s" }}>
+        <SvgIcon name={icon} size={20} color={selected ? GOLD : "rgba(201,168,76,0.6)"} />
+      </div>
       <div style={{ flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <span style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY }}>{label}</span>
@@ -601,7 +662,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Kích thước khung sofa giường (chiều rộng)</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {sizes.map(s => (
-              <QuizOption key={s.size} icon="📐" label={s.size} desc={s.size === "0,9M" ? "Phù hợp phòng nhỏ, 1 người" : s.size === "1,2M" ? "Tiêu chuẩn, 1–2 người" : s.size === "1,5M" ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng"} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)} />
+              <QuizOption key={s.size} icon="ruler" label={s.size} desc={s.size === "0,9M" ? "Phù hợp phòng nhỏ, 1 người" : s.size === "1,2M" ? "Tiêu chuẩn, 1–2 người" : s.size === "1,5M" ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng"} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)} />
             ))}
           </div>
         </div>
@@ -614,8 +675,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Hộc để đồ</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tối ưu không gian lưu trữ trong phòng ngủ</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="📦" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")} />
-            <QuizOption icon="🚫" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")} />
+            <QuizOption icon="box" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")} />
+            <QuizOption icon="minus_circle" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")} />
           </div>
         </div>
       );
@@ -627,8 +688,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Tay vịn</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tay vịn tăng tính thẩm mỹ và tiện nghi khi ngồi</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="🛋️" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")} />
-            <QuizOption icon="🚫" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")} />
+            <QuizOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")} />
+            <QuizOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")} />
           </div>
         </div>
       );
@@ -640,10 +701,10 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Kiểu ốp mặt trang trí</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Chất liệu bọc phần đầu giường và tay vịn (nếu có)</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="🧵" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")} />
-            <QuizOption icon="✨" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")} />
-            <QuizOption icon="🪵" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")} />
-            <QuizOption icon="🌳" label="Gỗ tự nhiên" desc="Sang trọng tự nhiên, vân gỗ độc đáo, bền theo thời gian" price={1500000} badge="Premium" selected={cfg.matTrang === "go_tu_nhien"} onClick={() => selectAndAdvance("matTrang", "go_tu_nhien")} />
+            <QuizOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")} />
+            <QuizOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")} />
+            <QuizOption icon="wood" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")} />
+            <QuizOption icon="leaf" label="Gỗ tự nhiên" desc="Sang trọng tự nhiên, vân gỗ độc đáo, bền theo thời gian" price={1500000} badge="Premium" selected={cfg.matTrang === "go_tu_nhien"} onClick={() => selectAndAdvance("matTrang", "go_tu_nhien")} />
           </div>
         </div>
       );
@@ -655,8 +716,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Độ dày nệm</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Nệm mút ép đàn hồi cao, hỗ trợ cột sống tối ưu</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="💤" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")} />
-            <QuizOption icon="😴" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")} />
+            <QuizOption icon="layers" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")} />
+            <QuizOption icon="bed" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")} />
           </div>
         </div>
       );
@@ -668,8 +729,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Áo nệm</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Lớp bọc ngoài nệm, có thể tháo ra giặt dễ dàng</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="🌿" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")} />
-            <QuizOption icon="✨" label="Áo nệm da PU" desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => selectAndAdvance("aoNem", "da_pu_nem")} />
+            <QuizOption icon="leaf" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")} />
+            <QuizOption icon="star_circle" label="Áo nệm da PU" desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => selectAndAdvance("aoNem", "da_pu_nem")} />
           </div>
         </div>
       );
@@ -1068,13 +1129,13 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             {/* Trust badges */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
               {[
-                { icon: "🎨", text: "7 bước tuỳ chỉnh" },
-                { icon: "💰", text: "Giá nhảy realtime" },
-                { icon: "🚚", text: "Miễn phí giao + lắp" },
-                { icon: "🛡️", text: "Bảo hành 3 năm" },
+                { icon: "palette", text: "7 bước tuỳ chỉnh" },
+                { icon: "price_tag", text: "Giá nhảy realtime" },
+                { icon: "truck", text: "Miễn phí giao + lắp" },
+                { icon: "shield", text: "Bảo hành 3 năm" },
               ].map((b, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>{b.icon}</span>
+                  <SvgIcon name={b.icon} size={18} color={GOLD} />
                   <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{b.text}</span>
                 </div>
               ))}
@@ -1098,14 +1159,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
             {[
-              { icon: "😤", title: "Kích thước không vừa", desc: "Mua về mới phát hiện không khớp phòng ngủ, quá to hoặc quá nhỏ" },
-              { icon: "😞", title: "Chất liệu không ưng", desc: "Màu sắc, chất liệu bọc không đúng như hình — khác xa thực tế" },
-              { icon: "💸", title: "Giá không minh bạch", desc: "Không biết từng tuỳ chọn giá bao nhiêu, dễ bị thổi giá" },
-              { icon: "🔧", title: "Lắp đặt phức tạp", desc: "Hướng dẫn không rõ ràng, tự lắp mất cả ngày, dễ hỏng" },
+              { icon: "ruler_cross", title: "Kích thước không vừa", desc: "Mua về mới phát hiện không khớp phòng ngủ, quá to hoặc quá nhỏ" },
+              { icon: "eye_off", title: "Chất liệu không ưng", desc: "Màu sắc, chất liệu bọc không đúng như hình — khác xa thực tế" },
+              { icon: "question_circle", title: "Giá không minh bạch", desc: "Không biết từng tuỳ chọn giá bao nhiêu, dễ bị thổi giá" },
+              { icon: "wrench", title: "Lắp đặt phức tạp", desc: "Hướng dẫn không rõ ràng, tự lắp mất cả ngày, dễ hỏng" },
             ].map((p, i) => (
               <FadeIn key={i} delay={i * 80}>
                 <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", textAlign: "left" }}>
-                  <div style={{ fontSize: 28, marginBottom: 14 }}>{p.icon}</div>
+                  <div style={{ marginBottom: 14 }}><SvgIcon name={p.icon} size={32} color="rgba(201,168,76,0.7)" /></div>
                   <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{p.title}</h3>
                   <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{p.desc}</p>
                 </div>
@@ -1188,15 +1249,15 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24, marginTop: 16 }}>
             {[
-              { step: "01", icon: "🛋️", title: "Chọn mẫu", desc: "Duyệt qua bộ sưu tập và chọn mẫu sofa giường yêu thích" },
-              { step: "02", icon: "📐", title: "Tuỳ chỉnh", desc: "Chọn kích thước, hộc, tay vịn, chất liệu, nệm theo sở thích" },
-              { step: "03", icon: "💰", title: "Xem giá ngay", desc: "Giá tổng cập nhật realtime theo từng lựa chọn của bạn" },
-              { step: "04", icon: "📞", title: "Nhận tư vấn", desc: "Điền thông tin, nhân viên liên hệ xác nhận trong 30 phút" },
+              { step: "01", icon: "sofa", title: "Chọn mẫu", desc: "Duyệt qua bộ sưu tập và chọn mẫu sofa giường yêu thích" },
+              { step: "02", icon: "sliders", title: "Tuỳ chỉnh", desc: "Chọn kích thước, hộc, tay vịn, chất liệu, nệm theo sở thích" },
+              { step: "03", icon: "calculator", title: "Xem giá ngay", desc: "Giá tổng cập nhật realtime theo từng lựa chọn của bạn" },
+              { step: "04", icon: "phone", title: "Nhận tư vấn", desc: "Điền thông tin, nhân viên liên hệ xác nhận trong 30 phút" },
             ].map((s, i) => (
               <FadeIn key={i} delay={i * 80}>
                 <div style={{ textAlign: "center", padding: "28px 20px" }}>
                   <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                    <span style={{ fontSize: 22 }}>{s.icon}</span>
+                    <SvgIcon name={s.icon} size={24} color={GOLD} />
                   </div>
                   <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 8 }}>{s.step}</div>
                   <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{s.title}</h3>
@@ -1229,18 +1290,18 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
             {[
-              { icon: "🎨", title: "Cá nhân hoá 100%", desc: "7 bước tuỳ chỉnh — kích thước, hộc, tay vịn, chất liệu, nệm, áo nệm. Mỗi chiếc sofa giường là duy nhất." },
-              { icon: "💰", title: "Giá minh bạch", desc: "Giá tổng nhảy realtime khi bạn chọn từng tuỳ chọn. Không ẩn phí, không bất ngờ khi thanh toán." },
-              { icon: "🏭", title: "Sản xuất tại Việt Nam", desc: "Khung thép mạ kẽm, cơ cấu gas-lift nhập khẩu, chất liệu bọc đạt chuẩn xuất khẩu." },
-              { icon: "🚚", title: "Miễn phí giao + lắp đặt", desc: "Giao hàng toàn quốc, đội kỹ thuật lắp đặt tận nơi. Chỉ cần mở cửa đón hàng." },
-              { icon: "🛡️", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện khung, cơ cấu và chất liệu bọc. Đổi mới ngay nếu có lỗi nhà sản xuất." },
-              { icon: "💳", title: "Trả góp 0% lãi suất", desc: "Hỗ trợ trả góp qua các đối tác tài chính. Sở hữu sofa giường mơ ước ngay hôm nay." },
+              { icon: "star_circle", title: "Cá nhân hoá 100%", desc: "7 bước tuỳ chỉnh — kích thước, hộc, tay vịn, chất liệu, nệm, áo nệm. Mỗi chiếc sofa giường là duy nhất." },
+              { icon: "price_tag", title: "Giá minh bạch", desc: "Giá tổng nhảy realtime khi bạn chọn từng tuỳ chọn. Không ẩn phí, không bất ngờ khi thanh toán." },
+              { icon: "factory", title: "Sản xuất tại Việt Nam", desc: "Khung thép mạ kẽm, cơ cấu gas-lift nhập khẩu, chất liệu bọc đạt chuẩn xuất khẩu." },
+              { icon: "truck", title: "Miễn phí giao + lắp đặt", desc: "Giao hàng toàn quốc, đội kỹ thuật lắp đặt tận nơi. Chỉ cần mở cửa đón hàng." },
+              { icon: "shield", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện khung, cơ cấu và chất liệu bọc. Đổi mới ngay nếu có lỗi nhà sản xuất." },
+              { icon: "credit_card", title: "Trả góp 0% lãi suất", desc: "Hỗ trợ trả góp qua các đối tác tài chính. Sở hữu sofa giường mơ ước ngay hôm nay." },
             ].map((f, i) => (
               <FadeIn key={i} delay={i * 60}>
                 <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s" }}
                   onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER}>
-                  <div style={{ fontSize: 28, marginBottom: 14 }}>{f.icon}</div>
+                  <div style={{ marginBottom: 14 }}><SvgIcon name={f.icon} size={32} color={GOLD} /></div>
                   <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{f.title}</h3>
                   <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
                 </div>
@@ -1382,13 +1443,13 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               <GoldDivider />
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, marginTop: 24 }}>
                 {[
-                  { icon: "✅", title: "Đúng như thiết kế", desc: "Sản phẩm giao đúng cấu hình đã chọn, không sai lệch" },
-                  { icon: "🔄", title: "Đổi trả 30 ngày", desc: "Không hài lòng, đổi trả miễn phí trong 30 ngày đầu" },
-                  { icon: "🛡️", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện, sửa chữa tận nơi không tính phí" },
-                  { icon: "📞", title: "Hỗ trợ 24/7", desc: "Đội ngũ kỹ thuật hỗ trợ qua Zalo bất cứ lúc nào" },
+                  { icon: "check_circle", title: "Đúng như thiết kế", desc: "Sản phẩm giao đúng cấu hình đã chọn, không sai lệch" },
+                  { icon: "refresh", title: "Đổi trả 30 ngày", desc: "Không hài lòng, đổi trả miễn phí trong 30 ngày đầu" },
+                  { icon: "shield", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện, sửa chữa tận nơi không tính phí" },
+                  { icon: "headphones", title: "Hỗ trợ 24/7", desc: "Đội ngũ kỹ thuật hỗ trợ qua Zalo bất cứ lúc nào" },
                 ].map((g, i) => (
                   <div key={i} style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 28, marginBottom: 10 }}>{g.icon}</div>
+                    <div style={{ marginBottom: 10, display: "flex", justifyContent: "center" }}><SvgIcon name={g.icon} size={32} color={GOLD} /></div>
                     <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 6 }}>{g.title}</div>
                     <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{g.desc}</div>
                   </div>
@@ -1440,12 +1501,12 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Showroom</h4>
               </div>
               {[
-                { icon: "📍", label: "TP. HCM", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
-                { icon: "📍", label: "Hà Nội", val: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
-                { icon: "🏭", label: "Xưởng SX", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
+                { icon: "map_pin", label: "TP. HCM", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
+                { icon: "map_pin", label: "Hà Nội", val: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
+                { icon: "factory", label: "Xưởng SX", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
               ].map((a, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{a.icon}</span>
+                  <SvgIcon name={a.icon} size={16} color={GOLD} style={{ marginTop: 2 }} />
                   <div>
                     <div style={{ color: GOLD_LIGHT, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 2 }}>{a.label}</div>
                     <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY }}>{a.val}</div>
@@ -1460,14 +1521,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Liên hệ</h4>
               </div>
               {[
-                { icon: "📞", label: "Hotline", val: "028.7122.0818", href: "tel:02871220818" },
-                { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: "https://zalo.me/0918326552" },
-                { icon: "✉️", label: "Email", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
-                { icon: "🌐", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
+                { icon: "phone", label: "Hotline", val: "028.7122.0818", href: "tel:02871220818" },
+                { icon: "message_circle", label: "Zalo tư vấn", val: "0918.326.552", href: "https://zalo.me/0918326552" },
+                { icon: "mail", label: "Email", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
+                { icon: "globe", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
               ].map((c, i) => (
                 <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
                   style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}>
-                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
+                  <SvgIcon name={c.icon} size={16} color={GOLD} style={{ marginTop: 2 }} />
                   <div>
                     <div style={{ color: GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 1 }}>{c.label}</div>
                     <div style={{ color: GOLD_LIGHT, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 700 }}>{c.val}</div>
