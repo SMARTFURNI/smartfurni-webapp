@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
+import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
 import { BedDemoSection } from "../doi-tac-showroom-nem/BedDemoSection";
 import { InstallGuideSection } from "./InstallGuideSection";
 
@@ -1096,10 +1097,34 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
       )}
 
       {/* ── HERO ── */}
-      <section style={{ minHeight: "100vh", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", padding: "120px 24px 80px", background: `linear-gradient(160deg, ${BLACK} 0%, #110E00 60%, ${BLACK} 100%)` }}>
-        <div style={{ position: "absolute", inset: 0, opacity: 0.03, backgroundImage: `linear-gradient(${GOLD} 1px, transparent 1px), linear-gradient(90deg, ${GOLD} 1px, transparent 1px)`, backgroundSize: "64px 64px" }} />
-        <div style={{ position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", width: 800, height: 800, borderRadius: "50%", background: `radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 65%)`, pointerEvents: "none" }} />
-        <div style={{ position: "relative", maxWidth: 900, margin: "0 auto" }}>
+      <section style={{ minHeight: "100vh", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", padding: "120px 24px 80px" }}>
+        {/* Hero background — ảnh custom nếu có, fallback gradient */}
+        {content["hero_bg_0"] ? (
+          <>
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${content["hero_bg_0"]})`, backgroundSize: "cover", backgroundPosition: "center", zIndex: 0 }} />
+            <div style={{ position: "absolute", inset: 0, background: `rgba(10,10,8,${content["hero_overlay"] ? parseFloat(content["hero_overlay"]) : 0.75})`, zIndex: 1, transition: "background 0.3s" }} />
+          </>
+        ) : (
+          <>
+            <div style={{ position: "absolute", inset: 0, background: `linear-gradient(160deg, ${BLACK} 0%, #110E00 60%, ${BLACK} 100%)`, zIndex: 0 }} />
+            <div style={{ position: "absolute", inset: 0, opacity: 0.03, backgroundImage: `linear-gradient(${GOLD} 1px, transparent 1px), linear-gradient(90deg, ${GOLD} 1px, transparent 1px)`, backgroundSize: "64px 64px", zIndex: 1 }} />
+            <div style={{ position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", width: 800, height: 800, borderRadius: "50%", background: `radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 65%)`, pointerEvents: "none", zIndex: 1 }} />
+          </>
+        )}
+        {/* Edit hero button — chỉ hiện khi isEditor và editMode */}
+        {editMode && (
+          <EditableHeroImage
+            slug={LP_SLUG}
+            imageKeys={["hero_bg_0"]}
+            overlayKey="hero_overlay"
+            imageUrls={[content["hero_bg_0"] || ""]}
+            overlayOpacity={content["hero_overlay"] ? parseFloat(content["hero_overlay"]) : 0.75}
+            editMode={editMode}
+            onImageSaved={(key, url) => { setContent(c => ({ ...c, [key]: url })); setEditedCount(n => n + 1); }}
+            onOverlaySaved={(key, opacity) => { setContent(c => ({ ...c, [key]: String(opacity) })); setEditedCount(n => n + 1); }}
+          />
+        )}
+        <div style={{ position: "relative", zIndex: 2, maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ marginBottom: 28 }}>
               <SectionLabel>{E({ bk: "hero_section_label", def: "Ưu đãi đặc biệt tháng này", as: "span" })}</SectionLabel>

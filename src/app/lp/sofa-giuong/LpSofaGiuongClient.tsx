@@ -2,6 +2,7 @@
 import "./lp-retail.css";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { CrmProduct } from "@/lib/crm-types";
+import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
 
 const GOLD = "#C9A84C";
 const GOLD_LIGHT = "#E2C97E";
@@ -658,8 +659,15 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  // Hero image rotation from products
-  const heroImages = sofaProducts.slice(0, 4).map(p => p.imageUrl).filter(Boolean) as string[];
+  // Hero image rotation — ưu tiên ảnh custom đã lưu, fallback sang ảnh CRM
+  const defaultHeroImages = sofaProducts.slice(0, 4).map(p => p.imageUrl).filter(Boolean) as string[];
+  const heroImages = [
+    content["hero_bg_0"] || defaultHeroImages[0],
+    content["hero_bg_1"] || defaultHeroImages[1],
+    content["hero_bg_2"] || defaultHeroImages[2],
+    content["hero_bg_3"] || defaultHeroImages[3],
+  ].filter(Boolean) as string[];
+  const heroOverlayOpacity = content["hero_overlay"] ? parseFloat(content["hero_overlay"]) : 0.65;
   useEffect(() => {
     if (heroImages.length <= 1) return;
     const id = setInterval(() => setHeroImgIdx(i => (i + 1) % heroImages.length), 4000);
@@ -831,12 +839,28 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             {heroImages.map((img, i) => (
               <div key={i} style={{ position: "absolute", inset: 0, backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center", opacity: i === heroImgIdx ? 1 : 0, transition: "opacity 1.2s ease" }} />
             ))}
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(10,10,8,0.85) 0%, rgba(10,10,8,0.6) 50%, rgba(10,10,8,0.4) 100%)" }} />
+            <div style={{ position: "absolute", inset: 0, background: `rgba(10,10,8,${heroOverlayOpacity})`, transition: "background 0.3s" }} />
           </div>
         )}
         {!heroImages.length && (
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #0A0A08 0%, #1A1200 100%)" }} />
         )}
+        {/* Edit hero images button — chỉ hiện khi isEditor */}
+        <EditableHeroImage
+          slug={LP_SLUG}
+          imageKeys={["hero_bg_0", "hero_bg_1", "hero_bg_2", "hero_bg_3"]}
+          overlayKey="hero_overlay"
+          imageUrls={[
+            content["hero_bg_0"] || defaultHeroImages[0] || "",
+            content["hero_bg_1"] || defaultHeroImages[1] || "",
+            content["hero_bg_2"] || defaultHeroImages[2] || "",
+            content["hero_bg_3"] || defaultHeroImages[3] || "",
+          ]}
+          overlayOpacity={heroOverlayOpacity}
+          editMode={isEditor}
+          onImageSaved={(key, url) => setContent(c => ({ ...c, [key]: url }))}
+          onOverlaySaved={(key, opacity) => setContent(c => ({ ...c, [key]: String(opacity) }))}
+        />
 
         {/* Dot navigation */}
         {heroImages.length > 1 && (
