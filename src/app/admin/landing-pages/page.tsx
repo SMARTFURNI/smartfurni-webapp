@@ -49,8 +49,8 @@ export default function AdminLandingPagesPage() {
   useEffect(() => {
     // Load landing pages từ database
     Promise.all([
-      fetch("/api/admin/lp-content?action=list-pages").then((r) => r.json()),
-      fetch("/api/admin/lp-content?action=lead-counts").then((r) => r.json()),
+      fetch("/api/admin/lp-content?action=list-pages", { credentials: "include" }).then((r) => r.json()),
+      fetch("/api/admin/lp-content?action=lead-counts", { credentials: "include" }).then((r) => r.json()),
     ])
       .then(([pagesData, leadsData]) => {
         if (pagesData.pages && Array.isArray(pagesData.pages)) {
@@ -93,6 +93,7 @@ export default function AdminLandingPagesPage() {
     // Xóa từ database
     fetch(`/api/admin/lp-content?slug=${slug}&action=delete-page`, {
       method: "DELETE",
+      credentials: "include",
     })
       .then(() => {
         setPages((prev) => prev.filter((p) => p.slug !== slug));
@@ -112,6 +113,7 @@ export default function AdminLandingPagesPage() {
     // Lưu vào database
     fetch("/api/admin/lp-content", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "create-page",
@@ -154,6 +156,7 @@ export default function AdminLandingPagesPage() {
     // Lưu vào database
     fetch("/api/admin/lp-content", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "create-page",
@@ -190,6 +193,7 @@ export default function AdminLandingPagesPage() {
     // Cập nhật vào database
     fetch("/api/admin/lp-content", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         slug,
@@ -212,6 +216,7 @@ export default function AdminLandingPagesPage() {
   function publishPage(slug: string) {
     fetch("/api/admin/lp-content", {
       method: "PATCH",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ slug, status: "active" }),
     })
