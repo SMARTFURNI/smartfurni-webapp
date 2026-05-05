@@ -711,7 +711,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         <div>
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Chọn mẫu sofa giường</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Mỗi mẫu đều có thể tuỳ chỉnh hoàn toàn theo sở thích</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+          <div className="lp-sg-quiz-product-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {products.map(p => {
               const minPrice = p.sizePricings?.length ? Math.min(...p.sizePricings.map(s => s.price)) : p.basePrice;
               const isSelected = cfg.productId === p.id;
@@ -862,9 +862,9 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+    <div className="lp-sg-quiz-overlay" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: BLACK_SOFT, border: `1px solid ${BLACK_BORDER}`, borderRadius: 20, width: "100%", maxWidth: 860, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}>
+      <div className="lp-sg-quiz-modal" style={{ background: BLACK_SOFT, border: `1px solid ${BLACK_BORDER}`, borderRadius: 20, width: "100%", maxWidth: 860, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}>
         {/* Header */}
         <div style={{ padding: "20px 24px", borderBottom: `1px solid ${BLACK_BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <div>
@@ -892,10 +892,10 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           })}
         </div>
         {/* Main content */}
-        <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
+        <div className="lp-sg-quiz-body" style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
           {/* Left: Product image + price */}
           {selectedProduct && images.length > 0 && (
-            <div style={{ width: 240, flexShrink: 0, borderRight: `1px solid ${BLACK_BORDER}`, display: "flex", flexDirection: "column", background: BLACK_CARD }}>
+            <div className="lp-sg-quiz-left-panel" style={{ width: 240, flexShrink: 0, borderRight: `1px solid ${BLACK_BORDER}`, display: "flex", flexDirection: "column", background: BLACK_CARD }}>
               <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
                 <img src={images[imgIdx % images.length]} alt={selectedProduct.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
                 {isEditor && (
@@ -941,7 +941,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             </div>
           )}
           {/* Right: Step content */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "24px", opacity: isAnimating ? 0 : 1, transform: isAnimating ? "translateX(12px)" : "translateX(0)", transition: "opacity 0.15s, transform 0.15s" }}>
+          <div className="lp-sg-quiz-content" style={{ flex: 1, overflowY: "auto", padding: "24px", opacity: isAnimating ? 0 : 1, transform: isAnimating ? "translateX(12px)" : "translateX(0)", transition: "opacity 0.15s, transform 0.15s" }}>
             {renderStep()}
           </div>
         </div>
@@ -1302,7 +1302,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             </div>
           </FadeIn>
           {sofaProducts.length > 0 ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+            <div className="lp-sg-product-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
               {sofaProducts.map((p, i) => {
                 const minPrice = p.sizePricings?.length ? Math.min(...p.sizePricings.map(s => s.price)) : p.basePrice;
                 const priceCount = p.sizePricings?.length || 1;
@@ -1342,12 +1342,12 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                         <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.8 }}>{p.sku}</div>
                         <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0 }}>{p.name.replace(/^Chia sẻ\s+/, "")}</h3>
                         {p.description && <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{p.description}</p>}
-                        <div style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${BLACK_BORDER}`, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+                        <div className="lp-sg-card-price" style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${BLACK_BORDER}`, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
                           <div>
                             <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY, marginBottom: 2 }}>Giá bán lẻ từ</div>
                             <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{fmt(minPrice || 0)} <span style={{ color: GRAY, fontSize: 11, fontWeight: 400 }}>/ size</span></div>
                           </div>
-                          <div style={{ textAlign: "right" }}>
+                          <div className="lp-sg-price-meta" style={{ textAlign: "right" }}>
                             <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{priceCount} mức giá</div>
                             <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>theo kích thước</div>
                           </div>

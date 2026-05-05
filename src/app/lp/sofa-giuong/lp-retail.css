@@ -167,3 +167,72 @@ nav[style*="position: fixed"] {
     gap: 10px !important;
   }
 }
+
+/* ── Sofa Giường: Product Gallery 3-col → 2-col trên mobile ── */
+@media (max-width: 900px) {
+  .lp-sg-product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+@media (max-width: 540px) {
+  .lp-sg-product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  /* Ẩn price meta (mức giá / kích thước) trên mobile nhỏ để tránh wrap */
+  .lp-sg-price-meta {
+    display: none !important;
+  }
+  /* Giá chính chiếm full width */
+  .lp-sg-card-price {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+}
+@media (max-width: 380px) {
+  .lp-sg-product-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* ── Sofa Giường: Quiz Modal Mobile Responsive ── */
+@media (max-width: 640px) {
+  /* Modal chiếm gần full màn hình */
+  .lp-sg-quiz-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+  .lp-sg-quiz-modal {
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 92vh !important;
+  }
+  /* Ẩn left panel (ảnh + giá) trên mobile - quá chật */
+  .lp-sg-quiz-left-panel {
+    display: none !important;
+  }
+  /* Content area chiếm full width */
+  .lp-sg-quiz-body {
+    flex-direction: column !important;
+  }
+  .lp-sg-quiz-content {
+    padding: 16px !important;
+  }
+}
+
+/* ── Sofa Giường: Quiz Step 1 Product Grid Mobile ── */
+@media (max-width: 640px) {
+  /* Quiz product grid: 2 cột trên mobile */
+  .lp-sg-quiz-product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+/* ── Sofa Giường: Quiz Step 1 Product Grid Mobile ── */
+@media (max-width: 640px) {
+  .lp-sg-quiz-product-grid {
+  }
+}
