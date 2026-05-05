@@ -3,6 +3,7 @@ import "./lp-retail.css";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { CrmProduct } from "@/lib/crm-types";
 import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
+import { LpEditBar } from "@/components/lp/LpEditBar";
 
 const GOLD = "#C9A84C";
 const GOLD_LIGHT = "#E2C97E";
@@ -100,6 +101,102 @@ const CountdownDisplay = React.memo(function CountdownDisplay() {
     </div>
   );
 });
+
+// ─── InlineEdit: component thực sự (không phải hàm bên trong component) ─────
+interface InlineEditProps {
+  bk: string;
+  def: string;
+  as?: keyof JSX.IntrinsicElements;
+  style?: React.CSSProperties;
+  multiline?: boolean;
+  editMode: boolean;
+  slug: string;
+  savedValue?: string;
+  onSaved?: (bk: string, val: string) => void;
+}
+function InlineEdit({ bk, def, as: Tag = "span", style, multiline = false, editMode, slug, savedValue, onSaved }: InlineEditProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
+  const displayValue = savedValue ?? def;
+  useEffect(() => { if (isEditing && inputRef.current) inputRef.current.focus(); }, [isEditing]);
+  useEffect(() => { if (!editMode) setIsEditing(false); }, [editMode]);
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/admin/lp-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, blockKey: bk, content: editValue }),
+      });
+      if (res.ok) { onSaved?.(bk, editValue); setIsEditing(false); }
+      else alert("Lưu thất bại. Vui lòng thử lại.");
+    } catch { alert("Lỗi kết nối."); }
+    finally { setIsSaving(false); }
+  };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") { setIsEditing(false); return; }
+    if (!multiline && e.key === "Enter") { e.preventDefault(); handleSave(); return; }
+    if (multiline && e.key === "Enter" && (e.ctrlKey || e.metaKey)) { handleSave(); return; }
+  };
+  if (!editMode) return <Tag style={style}>{displayValue}</Tag>;
+  if (isEditing) return (
+    <span style={{ display: "inline-block", position: "relative", width: "100%" }}>
+      {multiline ? (
+        <textarea ref={inputRef as React.RefObject<HTMLTextAreaElement>} value={editValue}
+          onChange={e => setEditValue(e.target.value)} onKeyDown={handleKeyDown} rows={4}
+          style={{ width: "100%", boxSizing: "border-box", background: "rgba(13,11,0,0.95)",
+            border: "2px solid #C9A84C", borderRadius: 8, padding: "10px 12px",
+            color: "#F5EDD6", fontSize: "inherit", fontFamily: "inherit",
+            lineHeight: "inherit", resize: "vertical", outline: "none" }} />
+      ) : (
+        <input ref={inputRef as React.RefObject<HTMLInputElement>} type="text" value={editValue}
+          onChange={e => setEditValue(e.target.value)} onKeyDown={handleKeyDown}
+          style={{ width: "100%", boxSizing: "border-box", background: "rgba(13,11,0,0.95)",
+            border: "2px solid #C9A84C", borderRadius: 8, padding: "8px 12px",
+            color: "#F5EDD6", fontSize: "inherit", fontFamily: "inherit", outline: "none" }} />
+      )}
+      <span style={{ display: "flex", gap: 8, marginTop: 6 }}>
+        <button onClick={handleSave} disabled={isSaving}
+          style={{ background: "#C9A84C", color: "#0D0B00", border: "none", borderRadius: 6,
+            padding: "5px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: isSaving ? 0.6 : 1 }}>
+          {isSaving ? "Đang lưu..." : "✓ Lưu"}
+        </button>
+        <button onClick={() => setIsEditing(false)}
+          style={{ background: "rgba(255,255,255,0.08)", color: "#A89070",
+            border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6,
+            padding: "5px 12px", fontSize: 12, cursor: "pointer" }}>
+          Hủy
+        </button>
+      </span>
+      <span style={{ display: "block", fontSize: 10, color: "#A89070", marginTop: 4 }}>
+        {multiline ? "Ctrl+Enter để lưu · Esc để hủy" : "Enter để lưu · Esc để hủy"}
+      </span>
+    </span>
+  );
+  return (
+    <Tag style={{ ...style, position: "relative", cursor: "pointer",
+        outline: isHovered ? "2px dashed rgba(201,168,76,0.6)" : "2px dashed transparent",
+        outlineOffset: 3, borderRadius: 4, transition: "outline 0.15s" }}
+      onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
+      onClick={() => { setEditValue(displayValue); setIsEditing(true); }} title="Click để chỉnh sửa">
+      {displayValue}
+      {isHovered && (
+        <span style={{ position: "absolute", top: -28, right: 0, zIndex: 200, display: "flex", gap: 4 }}
+          onClick={e => e.stopPropagation()}>
+          <button onClick={() => { setEditValue(displayValue); setIsEditing(true); }}
+            style={{ background: "#C9A84C", color: "#0D0B00", border: "none", borderRadius: 5,
+              padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+            ✏️ Sửa
+          </button>
+        </span>
+      )}
+    </Tag>
+  );
+}
 
 type EFn = (p: { bk: string; def: string; as?: keyof JSX.IntrinsicElements; style?: React.CSSProperties; multiline?: boolean }) => React.ReactNode;
 
@@ -636,7 +733,22 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
   const [heroImgIdx, setHeroImgIdx] = useState(0);
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
+
+  const handleSaved = useCallback((bk: string, val: string) => {
+    setContent(c => ({ ...c, [bk]: val }));
+  }, []);
+
+  // Shorthand để render InlineEdit với props chung
+  const E = useCallback((p: { bk: string; def: string; as?: keyof JSX.IntrinsicElements; style?: React.CSSProperties; multiline?: boolean }) => (
+    <InlineEdit
+      bk={p.bk} def={p.def} as={p.as} style={p.style} multiline={p.multiline}
+      editMode={editMode} slug={LP_SLUG}
+      savedValue={content[p.bk]}
+      onSaved={handleSaved}
+    />
+  ), [editMode, content, handleSaved]);
 
   useEffect(() => {
     setScrollY(window.scrollY);
@@ -674,16 +786,6 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
     return () => clearInterval(id);
   }, [heroImages.length]);
 
-  function E({ bk, def, as: Tag = "span", style, multiline }: { bk: string; def: string; as?: keyof JSX.IntrinsicElements; style?: React.CSSProperties; multiline?: boolean }) {
-    if (!isEditor) return <Tag style={style}>{content[bk] ?? def}</Tag>;
-    return (
-      <Tag contentEditable suppressContentEditableWarning style={{ ...style, outline: "none", cursor: "text", borderBottom: "1px dashed rgba(201,168,76,0.4)" }}
-        onBlur={e => setContent(c => ({ ...c, [bk]: e.currentTarget.textContent || def }))}>
-        {content[bk] ?? def}
-      </Tag>
-    );
-  }
-
   function openQuiz(productId?: string) {
     setQuizProductId(productId || null);
     setQuizOpen(true);
@@ -707,8 +809,12 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
   const SECTION_PAD = "clamp(60px,8vw,100px) clamp(20px,5vw,80px)";
 
+  const editedCount = Object.keys(content).filter(k => !k.startsWith("hero_")).length;
+
   return (
     <div style={{ background: BLACK, color: WHITE, fontFamily: FONT_BODY, overflowX: "hidden" }}>
+      {/* ── EDIT BAR (admin only) ── */}
+      <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(m => !m)} editedCount={editedCount} />
       {/* ── STICKY NAV ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
