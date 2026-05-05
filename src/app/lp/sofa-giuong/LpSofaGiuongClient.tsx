@@ -724,7 +724,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                     {isSelected && <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
                   </div>
                   <div style={{ padding: "12px" }}>
-                    <div style={{ color: WHITE, fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4 }}>{p.name.replace(/^Chia sẻ\s+/, "").substring(0, 50)}</div>
+                    <div style={{ color: WHITE, fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{p.name.replace(/^Chia sẻ\s+/, "")}</div>
                     <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY }}>Từ {fmt(minPrice || 0)}</div>
                   </div>
                 </button>
