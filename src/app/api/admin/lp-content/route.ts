@@ -30,11 +30,16 @@ async function ensureLandingPagesTable() {
       title VARCHAR(255) NOT NULL,
       description TEXT,
       status VARCHAR(50) DEFAULT 'draft',
-      custom_domain VARCHAR(255),
       created_at DATE DEFAULT CURRENT_DATE,
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  // Migration: thêm cột custom_domain nếu chưa có
+  try {
+    await query(`ALTER TABLE lp_pages ADD COLUMN IF NOT EXISTS custom_domain VARCHAR(255)`);
+  } catch {
+    // Ignore if column already exists or ALTER not supported
+  }
 }
 
 // GET: Lấy tất cả content blocks cho một slug hoặc danh sách landing pages
