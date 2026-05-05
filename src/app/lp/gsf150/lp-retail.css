@@ -148,3 +148,22 @@
     gap: 32px !important;
   }
 }
+
+/* ── Fix layout shift: nav dịch sang trái khi scrollbar xuất hiện ── */
+/* scrollbar-gutter: stable được set ở globals.css (html element) */
+/* Đảm bảo nav không bị ảnh hưởng bởi scrollbar width */
+nav[style*="position: fixed"] {
+  /* Dùng left/right thay vì width để tránh layout shift */
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+}
+
+/* ── Fix install guide badges: wrap tốt hơn trên mobile ── */
+@media (max-width: 480px) {
+  .lp-install-badges {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+}

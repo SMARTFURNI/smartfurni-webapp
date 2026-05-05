@@ -20,6 +20,8 @@
 html {
   scroll-behavior: smooth;
   height: 100%;
+  /* Prevent layout shift when scrollbar appears/disappears */
+  scrollbar-gutter: stable;
 }
 
 body {

@@ -186,7 +186,7 @@ export function InstallGuideSection({
     if (!isVisible || !autoPlay) return;
     timerRef.current = setInterval(() => {
       setActiveStep(prev => (prev + 1) % DEFAULT_STEPS.length);
-    }, 3500);
+    }, 8000); // Increased from 3500ms to reduce re-render frequency
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isVisible, autoPlay]);
 

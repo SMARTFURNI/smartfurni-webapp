@@ -202,24 +202,47 @@ function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: {
 }
 
 
-// ─── UrgencyBanner ────────────────────────────────────────────────────────────
-function UrgencyBanner({ E }: { E: (p: { bk: string; def: string; as: string; style?: React.CSSProperties }) => React.ReactNode }) {
-  const [timeLeft, setTimeLeft] = useState({ h: 0, m: 0, s: 0 });
-  const [stock, setStock] = useState(7);
-
+// ─── CountdownDisplay — isolated sub-component to prevent parent re-renders ───
+const CountdownDisplay = React.memo(function CountdownDisplay() {
+  const calcTime = () => {
+    const now = new Date();
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 0);
+    const diff = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
+    return { h: Math.floor(diff / 3600), m: Math.floor((diff % 3600) / 60), s: diff % 60 };
+  };
+  const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number }>(calcTime);
   useEffect(() => {
-    // Tính thời gian còn lại đến 23:59 hôm nay
-    const calcTime = () => {
-      const now = new Date();
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 0);
-      const diff = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
-      return { h: Math.floor(diff / 3600), m: Math.floor((diff % 3600) / 60), s: diff % 60 };
-    };
-    setTimeLeft(calcTime());
     const t = setInterval(() => setTimeLeft(calcTime()), 1000);
     return () => clearInterval(t);
   }, []);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const GOLD = "#C9A84C";
+  const BLACK = "#0A0A08";
+  const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  return (
+    <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 24 }}>
+      {[
+        { val: pad(timeLeft.h), label: "GI\u1EE0" },
+        { val: pad(timeLeft.m), label: "PH\u00daT" },
+        { val: pad(timeLeft.s), label: "GI\u00c2Y" },
+      ].map((unit, i) => (
+        <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <div style={{ background: BLACK, border: `1px solid rgba(201,168,76,0.3)`, borderRadius: 10, padding: "10px 18px", minWidth: 60 }}>
+            <span style={{ color: GOLD, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{unit.val}</span>
+          </div>
+          <span style={{ color: "#7A7468", fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_BODY }}>{unit.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+});
+// ─── UrgencyBanner ────────────────────────────────────────────────────────────
+function UrgencyBanner({ E }: { E: (p: { bk: string; def: string; as: string; style?: React.CSSProperties }) => React.ReactNode }) {
+  const [stock, setStock] = useState(7);
+
+
 
   const pad = (n: number) => String(n).padStart(2, "0");
   const GOLD = "#C9A84C";
@@ -247,21 +270,8 @@ function UrgencyBanner({ E }: { E: (p: { bk: string; def: string; as: string; st
       <p style={{ color: "#A8A090", fontSize: 13, fontFamily: FONT_BODY, marginBottom: 24 }}>
         {E({ bk: "urgency_subtitle", def: "Ưu đãi kết thúc lúc 23:59 hôm nay — Đặt hàng ngay để không bỏ lỡ", as: "span" })}
       </p>
-      {/* Countdown */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 24 }}>
-        {[
-          { val: pad(timeLeft.h), label: "GIỜ" },
-          { val: pad(timeLeft.m), label: "PHÚT" },
-          { val: pad(timeLeft.s), label: "GIÂY" },
-        ].map((unit, i) => (
-          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{ background: BLACK, border: `1px solid rgba(201,168,76,0.3)`, borderRadius: 10, padding: "10px 18px", minWidth: 60 }}>
-              <span style={{ color: GOLD, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{unit.val}</span>
-            </div>
-            <span style={{ color: "#7A7468", fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_BODY }}>{unit.label}</span>
-          </div>
-        ))}
-      </div>
+      {/* Countdown — isolated in sub-component to prevent UrgencyBanner re-renders */}
+      <CountdownDisplay />
       {/* Stock indicator */}
       <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 100, padding: "6px 16px", marginBottom: 0 }}>
         <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#EF4444", display: "inline-block", animation: "pulse 1.5s infinite" }} />

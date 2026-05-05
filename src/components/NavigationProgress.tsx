@@ -9,6 +9,7 @@ NProgress.configure({
   easing: "ease",
   speed: 300,
   showSpinner: false,
+  trickle: false, // Disable trickle interval to prevent continuous DOM repaints
   trickleSpeed: 200,
 });
 

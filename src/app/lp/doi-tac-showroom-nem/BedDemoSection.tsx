@@ -47,13 +47,13 @@ export function BedDemoSection() {
 
   // LED blink
   useEffect(() => {
-    const t = setInterval(() => setLedOn((v) => !v), 4000);
+    const t = setInterval(() => setLedOn((v) => !v), 10000); // Reduced blink frequency
     return () => clearInterval(t);
   }, []);
 
   // Auto-cycle presets
   useEffect(() => {
-    const t = setInterval(() => setPresetIdx((i) => (i + 1) % DEMO_PRESETS.length), 4000);
+    const t = setInterval(() => setPresetIdx((i) => (i + 1) % DEMO_PRESETS.length), 8000); // Reduced cycle frequency
     return () => clearInterval(t);
   }, []);
 
