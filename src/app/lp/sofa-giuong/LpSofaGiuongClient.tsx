@@ -633,7 +633,26 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
   const [quizProductId, setQuizProductId] = useState<string | null>(null);
   const [orderConfig, setOrderConfig] = useState<string | null>(null);
   const [heroImgIdx, setHeroImgIdx] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setScrollY(window.scrollY);
+    const fn = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+
+  const NAV_ITEMS = [
+    { label: "Mẫu sản phẩm", id: "product-gallery" },
+    { label: "Cách thiết kế", id: "how-it-works" },
+    { label: "Điểm mạnh", id: "features" },
+    { label: "Đánh giá", id: "testimonials" },
+    { label: "Đặt hàng", id: "order-form" },
+  ];
 
   const scrollToForm = useCallback(() => {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -682,23 +701,127 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
   return (
     <div style={{ background: BLACK, color: WHITE, fontFamily: FONT_BODY, overflowX: "hidden" }}>
-      {/* ── NAV ── */}
-      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 800, background: "rgba(10,10,8,0.95)", borderBottom: "1px solid rgba(201,168,76,0.12)", backdropFilter: "blur(12px)", padding: "0 clamp(20px,5vw,80px)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: BLACK, fontSize: 14, fontWeight: 900 }}>S</span>
-            </div>
-            <span style={{ color: WHITE, fontSize: 15, fontWeight: 700, fontFamily: FONT_HEADING, letterSpacing: "0.04em" }}>SmartFurni</span>
+      {/* ── STICKY NAV ── */}
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: scrollY > 60 ? "rgba(13,11,0,0.96)" : "transparent",
+        borderBottom: scrollY > 60 ? `1px solid ${BLACK_BORDER}` : "none",
+        backdropFilter: scrollY > 60 ? "blur(16px)" : "none",
+        WebkitBackdropFilter: scrollY > 60 ? "blur(16px)" : "none",
+        transition: "background 0.3s ease, border-color 0.3s ease",
+      }}>
+        <div style={{
+          maxWidth: 1200, margin: "0 auto",
+          padding: "0 24px",
+          height: 68,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+        }}>
+          {/* Logo */}
+          <a href="/lp/sofa-giuong" style={{ flexShrink: 0, textDecoration: "none" }}>
+            <img
+              src="/smartfurni-logo-transparent.png"
+              alt="SmartFurni"
+              style={{ height: 44, objectFit: "contain", filter: "brightness(1.05)" }}
+            />
+          </a>
+
+          {/* Main menu — ẩn trên mobile */}
+          <div className="lp-nav-menu" style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" }}>
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "rgba(212,196,160,0.7)", fontSize: 13, fontWeight: 500,
+                  fontFamily: FONT_BODY, padding: "8px 14px", borderRadius: R_SM,
+                  letterSpacing: "0.01em", transition: "color 0.2s, background 0.2s",
+                  whiteSpace: "nowrap" as const,
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = GOLD;
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(201,168,76,0.08)";
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = "rgba(212,196,160,0.7)";
+                  (e.currentTarget as HTMLButtonElement).style.background = "none";
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <a href="tel:0901234567" style={{ color: GOLD, fontSize: 13, fontWeight: 600, textDecoration: "none", fontFamily: FONT_BODY }}>Hotline: 090 123 4567</a>
-            <button onClick={() => openQuiz()} style={{ background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, color: BLACK, border: "none", borderRadius: 100, padding: "8px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT_BODY }}>
-              Thiết Kế Ngay
+          {/* CTA */}
+          <button onClick={() => openQuiz()} className="lp-nav-cta" style={{
+            flexShrink: 0,
+            background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
+            color: BLACK, border: "none", padding: "9px 20px",
+            fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", cursor: "pointer",
+            textTransform: "uppercase" as const, borderRadius: R_MD, fontFamily: FONT_BODY,
+            transition: "opacity 0.2s, transform 0.15s",
+            whiteSpace: "nowrap" as const,
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}>
+            THIẾT KẾ NGAY
+          </button>
+          {/* Hamburger */}
+          <button
+            className="lp-nav-hamburger"
+            onClick={() => setMobileMenuOpen(v => !v)}
+            style={{
+              background: "none", border: `1px solid rgba(201,168,76,0.35)`,
+              borderRadius: R_SM, padding: "8px 10px", cursor: "pointer",
+              display: "flex", flexDirection: "column", gap: 5, flexShrink: 0,
+            }}
+            aria-label="Menu"
+          >
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{ display: "block", width: 20, height: 1.5, background: GOLD_LIGHT, borderRadius: 1 }} />
+            ))}
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div style={{
+          position: "fixed", top: 68, left: 0, right: 0, zIndex: 99,
+          background: "rgba(13,11,0,0.98)", backdropFilter: "blur(16px)",
+          borderBottom: `1px solid ${BLACK_BORDER}`,
+          padding: "16px 24px 24px",
+        }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => { scrollTo(item.id); setMobileMenuOpen(false); }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: GRAY_LIGHT, fontSize: 15, fontWeight: 500,
+                  fontFamily: FONT_BODY, padding: "14px 16px",
+                  textAlign: "left" as const, borderRadius: R_SM,
+                  letterSpacing: "0.02em",
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+            <button
+              onClick={() => { openQuiz(); setMobileMenuOpen(false); }}
+              style={{
+                background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
+                color: BLACK, border: "none", padding: "14px 20px",
+                fontWeight: 700, fontSize: 13, cursor: "pointer",
+                textTransform: "uppercase" as const, borderRadius: R_MD,
+                fontFamily: FONT_BODY, marginTop: 8, letterSpacing: "0.08em",
+              }}
+            >
+              Thiết Kế Ngay →
             </button>
           </div>
         </div>
-      </nav>
+      )}
 
       {/* ── HERO ── */}
       <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", paddingTop: 64, overflow: "hidden" }}>
@@ -1079,49 +1202,119 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: BLACK_SOFT, borderTop: `1px solid ${BLACK_BORDER}`, padding: "clamp(40px,5vw,60px) clamp(20px,5vw,80px)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 40, marginBottom: 40 }}>
+      <footer style={{ background: "#060500", borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 64 }}>
+        <div style={{ height: 2, background: `linear-gradient(90deg, transparent 0%, ${GOLD} 30%, ${GOLD} 70%, transparent 100%)`, opacity: 0.5 }} />
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "56px 32px 0" }}>
+          <div
+            className="lp-footer-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.6fr 1.2fr 1.2fr 1fr",
+              gap: "48px 40px",
+              marginBottom: 52,
+            }}>
+            {/* Cột 1: Logo + giới thiệu + social */}
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ color: BLACK, fontSize: 14, fontWeight: 900 }}>S</span>
-                </div>
-                <span style={{ color: WHITE, fontSize: 15, fontWeight: 700, fontFamily: FONT_HEADING }}>SmartFurni</span>
+              <div style={{ marginBottom: 20 }}>
+                <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" loading="lazy" style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }} />
               </div>
-              <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>Nội thất thông minh, thiết kế theo sở thích cá nhân hoá của bạn.</p>
-            </div>
-            <div>
-              <h4 style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 16 }}>LIÊN HỆ</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.85, fontFamily: FONT_BODY, marginBottom: 24, maxWidth: 280 }}>
+                Tiên phong trong lĩnh vực nội thất cá nhân hoá tại Việt Nam. Sofa giường thiết kế theo ý bạn — sản xuất tại Việt Nam.
+              </p>
+              <div style={{ display: "flex", gap: 10 }}>
                 {[
-                  { icon: "📞", text: "090 123 4567" },
-                  { icon: "💬", text: "Zalo: 090 123 4567" },
-                  { icon: "📧", text: "info@smartfurni.com.vn" },
-                  { icon: "🌐", text: "smartfurni.com.vn" },
-                ].map((c, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 14 }}>{c.icon}</span>
-                    <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{c.text}</span>
-                  </div>
+                  { label: "Facebook", icon: "f", href: "https://facebook.com/smartfurni" },
+                  { label: "YouTube", icon: "▶", href: "https://youtube.com/@smartfurni" },
+                  { label: "Zalo", icon: "Z", href: "https://zalo.me/0918326552" },
+                ].map((s) => (
+                  <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
+                    style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textDecoration: "none", transition: "background 0.2s, border-color 0.2s" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(201,168,76,0.18)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = GOLD; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(201,168,76,0.08)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(201,168,76,0.25)"; }}
+                  >{s.icon}</a>
                 ))}
               </div>
             </div>
+            {/* Cột 2: Showroom */}
             <div>
-              <h4 style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 16 }}>CAM KẾT</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {["Miễn phí giao hàng toàn quốc", "Lắp đặt tận nơi miễn phí", "Bảo hành 3 năm toàn diện", "Đổi trả trong 30 ngày", "Hỗ trợ kỹ thuật 24/7"].map((item, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: GOLD, fontSize: 12 }}>✓</span>
-                    <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{item}</span>
-                  </div>
-                ))}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2 }} />
+                <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Showroom</h4>
               </div>
+              {[
+                { icon: "📍", label: "TP. HCM", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
+                { icon: "📍", label: "Hà Nội", val: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
+                { icon: "🏭", label: "Xưởng SX", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
+              ].map((a, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{a.icon}</span>
+                  <div>
+                    <div style={{ color: GOLD_LIGHT, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 2 }}>{a.label}</div>
+                    <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY }}>{a.val}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Cột 3: Liên hệ */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2 }} />
+                <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Liên hệ</h4>
+              </div>
+              {[
+                { icon: "📞", label: "Hotline", val: "028.7122.0818", href: "tel:02871220818" },
+                { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: "https://zalo.me/0918326552" },
+                { icon: "✉️", label: "Email", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
+                { icon: "🌐", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
+              ].map((c, i) => (
+                <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
+                  style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}>
+                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
+                  <div>
+                    <div style={{ color: GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 1 }}>{c.label}</div>
+                    <div style={{ color: GOLD_LIGHT, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 700 }}>{c.val}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+            {/* Cột 4: Đặt hàng */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2 }} />
+                <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Đặt hàng ngay</h4>
+              </div>
+              <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT_BODY, marginBottom: 20 }}>
+                Nhận tư vấn miễn phí &amp; xác nhận đơn hàng trong vòng 2 giờ làm việc.
+              </p>
+              <button
+                onClick={scrollToForm}
+                style={{ display: "block", width: "100%", textAlign: "center", background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 60%, #9A7A2E 100%)`, color: BLACK, fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, padding: "13px 20px", borderRadius: R_MD, border: "none", cursor: "pointer", fontFamily: FONT_BODY, boxShadow: "0 6px 24px rgba(201,168,76,0.25)", marginBottom: 12 }}
+              >
+                Đặt hàng ngay →
+              </button>
+              <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer"
+                style={{ display: "block", textAlign: "center", background: "transparent", color: GRAY_LIGHT, fontWeight: 500, fontSize: 11, letterSpacing: "0.06em", padding: "12px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, border: `1px solid rgba(212,196,160,0.2)` }}>
+                💬 Chat Zalo ngay
+              </a>
             </div>
           </div>
-          <div style={{ borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 24, display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 12 }}>
-            <p style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>© 2025 SmartFurni. Tất cả quyền được bảo lưu.</p>
-            <p style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>Giá tham khảo, có thể thay đổi theo thời điểm.</p>
+          <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${BLACK_BORDER} 20%, ${BLACK_BORDER} 80%, transparent)`, marginBottom: 24 }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" as const, gap: 12, paddingBottom: 28 }}>
+            <p style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, margin: 0 }}>
+              © 2025 Công ty Cổ phần SmartFurni. Tất cả quyền được bảo lưu.
+            </p>
+            <div style={{ display: "flex", gap: 20 }}>
+              {[
+                { label: "Chính sách bảo mật", href: "/privacy" },
+                { label: "Điều khoản sử dụng", href: "/terms" },
+                { label: "Chính sách bảo hành", href: "/bao-hanh" },
+              ].map((l) => (
+                <a key={l.label} href={l.href} style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.color = GRAY)}
+                  onMouseLeave={e => (e.currentTarget.style.color = "#3A3020")}
+                >{l.label}</a>
+              ))}
+            </div>
           </div>
         </div>
       </footer>
@@ -1140,7 +1333,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       <StickyCta scrollToForm={scrollToForm} E={E} />
 
       {/* ── ZALO FLOAT ── */}
-      <a href="https://zalo.me/0901234567" target="_blank" rel="noopener noreferrer"
+      <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer"
         style={{ position: "fixed", bottom: 80, right: 20, zIndex: 850, width: 52, height: 52, borderRadius: "50%", background: "#0068FF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(0,104,255,0.4)", textDecoration: "none", transition: "transform 0.2s" }}
         onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
         onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
