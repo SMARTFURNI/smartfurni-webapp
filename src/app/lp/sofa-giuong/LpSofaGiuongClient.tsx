@@ -575,11 +575,97 @@ function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
   );
 }
 
-function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
+
+// ─── QuizEditableOption: QuizOption với khả năng chỉnh sửa khi isEditor ──────
+function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick, isEditor, optionKey, slug }: {
+  icon: string; label: string; desc: string; price: number; selected: boolean; badge?: string; onClick: () => void;
+  isEditor?: boolean; optionKey?: string; slug?: string;
+}) {
+  const [editing, setEditing] = React.useState<null | "label" | "desc" | "price">(null);
+  const [editLabel, setEditLabel] = React.useState(label);
+  const [editDesc, setEditDesc] = React.useState(desc);
+  const [editPrice, setEditPrice] = React.useState(String(price));
+  const [saving, setSaving] = React.useState(false);
+
+  const saveField = async (field: "label" | "desc" | "price") => {
+    if (!optionKey || !slug) return;
+    setSaving(true);
+    const val = field === "label" ? editLabel : field === "desc" ? editDesc : editPrice;
+    try {
+      await fetch("/api/admin/lp-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, blockKey: `quiz_opt_${optionKey}_${field}`, content: val }),
+      });
+    } catch {}
+    setSaving(false);
+    setEditing(null);
+  };
+
+  const displayLabel = editLabel;
+  const displayDesc = editDesc;
+  const displayPrice = Number(editPrice) || 0;
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left" as const, transition: "all 0.2s", width: "100%" }}>
+        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, borderRadius: R_SM, background: selected ? "rgba(201,168,76,0.15)" : "rgba(201,168,76,0.06)", border: `1px solid ${selected ? "rgba(201,168,76,0.4)" : "rgba(201,168,76,0.12)"}`, transition: "all 0.2s" }}>
+          <SvgIcon name={icon} size={20} color={selected ? GOLD : "rgba(201,168,76,0.6)"} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <span style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY }}>{displayLabel}</span>
+            {badge && <span style={{ background: selected ? GOLD : "rgba(201,168,76,0.15)", color: selected ? BLACK : GOLD, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{badge}</span>}
+          </div>
+          <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{displayDesc}</div>
+        </div>
+        <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
+          {displayPrice > 0 ? <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY }}>+{fmt(displayPrice)}</div> : <div style={{ color: "#4ADE80", fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY }}>Miễn phí</div>}
+        </div>
+        {selected && <div style={{ width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
+      </button>
+      {/* Editor toolbar khi isEditor */}
+      {isEditor && (
+        <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" as const }}>
+          {editing === "label" ? (
+            <span style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <input value={editLabel} onChange={e => setEditLabel(e.target.value)}
+                style={{ background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", width: 160 }} />
+              <button onClick={() => saveField("label")} disabled={saving} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "✓"}</button>
+              <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
+            </span>
+          ) : editing === "desc" ? (
+            <span style={{ display: "flex", gap: 4, alignItems: "center", width: "100%" }}>
+              <input value={editDesc} onChange={e => setEditDesc(e.target.value)}
+                style={{ background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", flex: 1 }} />
+              <button onClick={() => saveField("desc")} disabled={saving} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "✓"}</button>
+              <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
+            </span>
+          ) : editing === "price" ? (
+            <span style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <input value={editPrice} onChange={e => setEditPrice(e.target.value)} type="number"
+                style={{ background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", width: 120 }} />
+              <button onClick={() => saveField("price")} disabled={saving} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "✓"}</button>
+              <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
+            </span>
+          ) : (
+            <>
+              <button onClick={() => setEditing("label")} style={{ background: "rgba(201,168,76,0.12)", color: GOLD, border: "1px solid rgba(201,168,76,0.3)", borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Tên</button>
+              <button onClick={() => setEditing("desc")} style={{ background: "rgba(201,168,76,0.12)", color: GOLD, border: "1px solid rgba(201,168,76,0.3)", borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Mô tả</button>
+              <button onClick={() => setEditing("price")} style={{ background: "rgba(201,168,76,0.12)", color: GOLD, border: "1px solid rgba(201,168,76,0.3)", borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Giá</button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false }: {
   products: CrmProduct[];
   initialProductId?: string | null;
   onClose: () => void;
   onComplete: (cfg: ConfigState, product: CrmProduct, total: number) => void;
+  isEditor?: boolean;
 }) {
   const [step, setStep] = useState<QuizStep>(initialProductId ? "size" : "product");
   const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, tayVin: null, matTrang: null, doDay: null, aoNem: null });
@@ -632,7 +718,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
               return (
                 <button key={p.id} onClick={() => { setCfg(c => ({ ...c, productId: p.id })); setImgIdx(0); setTimeout(() => goNext(), 200); }}
                   style={{ background: isSelected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${isSelected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, overflow: "hidden", cursor: "pointer", textAlign: "left" as const, transition: "all 0.2s", padding: 0 }}>
-                  <div style={{ position: "relative", paddingTop: "65%", overflow: "hidden" }}>
+                  <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
                     {p.imageUrl && <img src={p.imageUrl} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
                     <div style={{ position: "absolute", top: 8, left: 8, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{p.sku}</div>
                     {isSelected && <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
@@ -662,7 +748,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Kích thước khung sofa giường (chiều rộng)</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {sizes.map(s => (
-              <QuizOption key={s.size} icon="ruler" label={s.size} desc={s.size === "0,9M" ? "Phù hợp phòng nhỏ, 1 người" : s.size === "1,2M" ? "Tiêu chuẩn, 1–2 người" : s.size === "1,5M" ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng"} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)} />
+              <QuizEditableOption key={s.size} icon="ruler" label={s.size} desc={s.size === "0,9M" ? "Phù hợp phòng nhỏ, 1 người" : s.size === "1,2M" ? "Tiêu chuẩn, 1–2 người" : s.size === "1,5M" ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng"} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)}  isEditor={isEditor} optionKey="ruler" slug={LP_SLUG} />
             ))}
           </div>
         </div>
@@ -675,8 +761,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Hộc để đồ</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tối ưu không gian lưu trữ trong phòng ngủ</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="box" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")} />
-            <QuizOption icon="minus_circle" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")} />
+            <QuizEditableOption icon="box" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey="có_hộc_để_đồ" slug={LP_SLUG} />
+            <QuizEditableOption icon="minus_circle" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey="không_hộc" slug={LP_SLUG} />
           </div>
         </div>
       );
@@ -688,8 +774,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Tay vịn</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tay vịn tăng tính thẩm mỹ và tiện nghi khi ngồi</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")} />
-            <QuizOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")} />
+            <QuizEditableOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")}  isEditor={isEditor} optionKey="có_tay_vịn" slug={LP_SLUG} />
+            <QuizEditableOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")}  isEditor={isEditor} optionKey="không_tay_vịn" slug={LP_SLUG} />
           </div>
         </div>
       );
@@ -701,10 +787,10 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Kiểu ốp mặt trang trí</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Chất liệu bọc phần đầu giường và tay vịn (nếu có)</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")} />
-            <QuizOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")} />
-            <QuizOption icon="wood" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")} />
-            <QuizOption icon="leaf" label="Gỗ tự nhiên" desc="Sang trọng tự nhiên, vân gỗ độc đáo, bền theo thời gian" price={1500000} badge="Premium" selected={cfg.matTrang === "go_tu_nhien"} onClick={() => selectAndAdvance("matTrang", "go_tu_nhien")} />
+            <QuizEditableOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")}  isEditor={isEditor} optionKey="vải_canvas" slug={LP_SLUG} />
+            <QuizEditableOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")}  isEditor={isEditor} optionKey="da_pu_cao_cấp" slug={LP_SLUG} />
+            <QuizEditableOption icon="wood" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")}  isEditor={isEditor} optionKey="gỗ_mdf_chống_ẩm" slug={LP_SLUG} />
+            <QuizEditableOption icon="leaf" label="Gỗ tự nhiên" desc="Sang trọng tự nhiên, vân gỗ độc đáo, bền theo thời gian" price={1500000} badge="Premium" selected={cfg.matTrang === "go_tu_nhien"} onClick={() => selectAndAdvance("matTrang", "go_tu_nhien")}  isEditor={isEditor} optionKey="gỗ_tự_nhiên" slug={LP_SLUG} />
           </div>
         </div>
       );
@@ -716,8 +802,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Độ dày nệm</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Nệm mút ép đàn hồi cao, hỗ trợ cột sống tối ưu</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="layers" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")} />
-            <QuizOption icon="bed" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")} />
+            <QuizEditableOption icon="layers" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey="nệm_7cm" slug={LP_SLUG} />
+            <QuizEditableOption icon="bed" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey="nệm_10cm" slug={LP_SLUG} />
           </div>
         </div>
       );
@@ -729,8 +815,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Áo nệm</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Lớp bọc ngoài nệm, có thể tháo ra giặt dễ dàng</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizOption icon="leaf" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")} />
-            <QuizOption icon="star_circle" label="Áo nệm da PU" desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => selectAndAdvance("aoNem", "da_pu_nem")} />
+            <QuizEditableOption icon="leaf" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")}  isEditor={isEditor} optionKey="áo_nệm_vải_lanh" slug={LP_SLUG} />
+            <QuizEditableOption icon="star_circle" label="Áo nệm da PU" desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => selectAndAdvance("aoNem", "da_pu_nem")}  isEditor={isEditor} optionKey="áo_nệm_da_pu" slug={LP_SLUG} />
           </div>
         </div>
       );
@@ -810,8 +896,27 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
           {/* Left: Product image + price */}
           {selectedProduct && images.length > 0 && (
             <div style={{ width: 240, flexShrink: 0, borderRight: `1px solid ${BLACK_BORDER}`, display: "flex", flexDirection: "column", background: BLACK_CARD }}>
-              <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-                <img src={images[imgIdx % images.length]} alt={selectedProduct.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
+              <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
+                <img src={images[imgIdx % images.length]} alt={selectedProduct.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
+                {isEditor && (
+                  <label style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.7)", border: `1px solid ${GOLD}`, color: GOLD, borderRadius: 6, padding: "4px 10px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FONT_BODY, whiteSpace: "nowrap" as const, zIndex: 10 }}>
+                    📷 Đổi ảnh
+                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file || !selectedProduct) return;
+                      const formData = new FormData();
+                      formData.append("file", file);
+                      try {
+                        const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+                        if (res.ok) {
+                          const data = await res.json();
+                          await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_img_${selectedProduct.id}`, content: data.url }) });
+                          window.location.reload();
+                        }
+                      } catch {}
+                    }} />
+                  </label>
+                )}
                 {images.length > 1 && (
                   <div style={{ position: "absolute", bottom: 10, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6 }}>
                     {images.map((_, i) => (
@@ -853,6 +958,11 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete }: {
 }
 
 
+interface Props {
+  isEditor?: boolean;
+  initialContent?: Record<string, string>;
+  sofaProducts?: import("@/lib/crm-types").CrmProduct[];
+}
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function LpSofaGiuongClient({ isEditor = false, initialContent = {}, sofaProducts = [] }: Props) {
   const [content, setContent] = useState<Record<string, string>>(initialContent);
@@ -1611,6 +1721,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           initialProductId={quizProductId}
           onClose={() => setQuizOpen(false)}
           onComplete={handleQuizComplete}
+          isEditor={isEditor}
         />
       )}
 
