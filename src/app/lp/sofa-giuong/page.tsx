@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
+import { getCrmProducts } from "@/lib/crm-store";
+import type { CrmProduct } from "@/lib/crm-types";
 import LpSofaGiuongClient from "./LpSofaGiuongClient";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Sofa Giường SmartFurni — Ngủ Ngon, Sống Đẹp Mỗi Ngày",
+  title: "Thiết Kế Sofa Giường Theo Ý Bạn — SmartFurni",
   description:
-    "Sofa giường SmartFurni khung thép mạ kẽm bền vững. Tuỳ chọn kiểu dáng, chất liệu theo sở thích. Từ 4.490.000 ₫ — Giao hàng & lắp đặt miễn phí toàn quốc.",
+    "Tự thiết kế sofa giường cá nhân hoá: chọn mẫu, kích thước, hộc, tay vịn, chất liệu, nệm. Khung thép mạ kẽm bền vững. Từ 2.990.000 ₫ — Giao hàng & lắp đặt miễn phí toàn quốc.",
   keywords: [
     "sofa giường",
     "sofa giường SmartFurni",
@@ -15,10 +17,12 @@ export const metadata: Metadata = {
     "sofa giường khung thép",
     "sofa giường có hộc",
     "sofa giường da PU",
+    "thiết kế sofa giường",
+    "sofa giường cá nhân hoá",
   ],
   openGraph: {
-    title: "Sofa Giường SmartFurni — Ngủ Ngon, Sống Đẹp Mỗi Ngày",
-    description: "Sofa giường khung thép mạ kẽm, tuỳ chọn chất liệu. Từ 4.490.000 ₫.",
+    title: "Thiết Kế Sofa Giường Theo Ý Bạn — SmartFurni",
+    description: "Tự thiết kế sofa giường cá nhân hoá. Khung thép mạ kẽm, từ 2.990.000 ₫.",
     url: "https://smartfurni.com.vn/lp/sofa-giuong",
     siteName: "SmartFurni",
     locale: "vi_VN",
@@ -57,7 +61,13 @@ async function getLpContent(): Promise<Record<string, string>> {
 }
 
 export default async function LpSofaGiuongPage() {
-  const initialContent = await getLpContent();
+  const [initialContent, allProducts] = await Promise.all([
+    getLpContent(),
+    getCrmProducts(true).catch(() => [] as CrmProduct[]),
+  ]);
+  const sofaProducts = allProducts.filter(
+    (p) => p.category === "sofa_bed" || p.name.toLowerCase().includes("sofa")
+  );
   let isEditor = false;
   try {
     const isAdmin = await getAdminSession();
@@ -70,5 +80,11 @@ export default async function LpSofaGiuongPage() {
   } catch {
     isEditor = false;
   }
-  return <LpSofaGiuongClient isEditor={isEditor} initialContent={initialContent} />;
+  return (
+    <LpSofaGiuongClient
+      isEditor={isEditor}
+      initialContent={initialContent}
+      sofaProducts={sofaProducts}
+    />
+  );
 }
