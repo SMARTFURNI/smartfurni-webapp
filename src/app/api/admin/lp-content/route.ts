@@ -59,6 +59,23 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Lấy số lượng leads cho mỗi landing page
+  if (action === "lead-counts") {
+    try {
+      const rows = await query<{ slug: string; count: number }>(
+        `SELECT slug, COUNT(*) as count FROM leads GROUP BY slug`
+      );
+      const counts: Record<string, number> = {};
+      for (const row of rows) {
+        counts[row.slug] = row.count;
+      }
+      return NextResponse.json({ counts });
+    } catch (e) {
+      console.error("lead-counts error:", e);
+      return NextResponse.json({ counts: {} });
+    }
+  }
+
   if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
 
   try {
@@ -85,6 +102,21 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const { slug, blockKey, content, action: bodyAction } = body;
+  
+  // Xử lý cập nhật custom domain
+  if (slug && blockKey === "custom_domain") {
+    try {
+      await ensureLandingPagesTable();
+      await query(
+        `UPDATE lp_pages SET custom_domain = $1, updated_at = NOW() WHERE slug = $2`,
+        [content, slug]
+      );
+      return NextResponse.json({ ok: true });
+    } catch (e) {
+      console.error("update custom_domain error:", e);
+      return NextResponse.json({ error: "DB error" }, { status: 500 });
+    }
+  }
 
   // Tạo landing page mới
   if (bodyAction === "create-page") {
