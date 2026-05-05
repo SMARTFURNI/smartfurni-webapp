@@ -577,9 +577,9 @@ function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
 
 
 // ─── QuizEditableOption: QuizOption với khả năng chỉnh sửa khi isEditor ──────
-function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick, isEditor, optionKey, slug }: {
+function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick, isEditor, optionKey, slug, imgUrl }: {
   icon: string; label: string; desc: string; price: number; selected: boolean; badge?: string; onClick: () => void;
-  isEditor?: boolean; optionKey?: string; slug?: string;
+  isEditor?: boolean; optionKey?: string; slug?: string; imgUrl?: string;
 }) {
   const [editing, setEditing] = React.useState<null | "label" | "desc" | "price">(null);
   const [editLabel, setEditLabel] = React.useState(label);
@@ -609,9 +609,35 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
   return (
     <div style={{ position: "relative" }}>
       <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left" as const, transition: "all 0.2s", width: "100%" }}>
-        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, borderRadius: R_SM, background: selected ? "rgba(201,168,76,0.15)" : "rgba(201,168,76,0.06)", border: `1px solid ${selected ? "rgba(201,168,76,0.4)" : "rgba(201,168,76,0.12)"}`, transition: "all 0.2s" }}>
-          <SvgIcon name={icon} size={20} color={selected ? GOLD : "rgba(201,168,76,0.6)"} />
-        </div>
+        {imgUrl ? (
+          <div style={{ flexShrink: 0, width: 72, height: 72, borderRadius: R_SM, overflow: "hidden", border: `2px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, transition: "all 0.2s", position: "relative" }}>
+            <img src={imgUrl} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            {isEditor && optionKey && slug && (
+              <label style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0, transition: "opacity 0.2s" }}
+                onMouseEnter={e => (e.currentTarget as HTMLLabelElement).style.opacity = "1"}
+                onMouseLeave={e => (e.currentTarget as HTMLLabelElement).style.opacity = "0"}
+                onClick={e => e.stopPropagation()}>
+                <span style={{ color: WHITE, fontSize: 16 }}>📷</span>
+                <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  const formData = new FormData(); formData.append("file", file);
+                  try {
+                    const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+                    if (res.ok) {
+                      const data = await res.json();
+                      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: `quiz_opt_img_${optionKey}`, content: data.url }) });
+                      window.location.reload();
+                    }
+                  } catch {}
+                }} />
+              </label>
+            )}
+          </div>
+        ) : (
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, borderRadius: R_SM, background: selected ? "rgba(201,168,76,0.15)" : "rgba(201,168,76,0.06)", border: `1px solid ${selected ? "rgba(201,168,76,0.4)" : "rgba(201,168,76,0.12)"}`, transition: "all 0.2s" }}>
+            <SvgIcon name={icon} size={20} color={selected ? GOLD : "rgba(201,168,76,0.6)"} />
+          </div>
+        )}
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <span style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY }}>{displayLabel}</span>
@@ -660,12 +686,13 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
     </div>
   );
 }
-function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false }: {
+function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false, content = {} }: {
   products: CrmProduct[];
   initialProductId?: string | null;
   onClose: () => void;
   onComplete: (cfg: ConfigState, product: CrmProduct, total: number) => void;
   isEditor?: boolean;
+  content?: Record<string, string>;
 }) {
   const [step, setStep] = useState<QuizStep>(initialProductId ? "size" : "product");
   const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, tayVin: null, matTrang: null, doDay: null, aoNem: null });
@@ -747,9 +774,17 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Chọn kích thước khung</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Kích thước khung sofa giường (chiều rộng)</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {sizes.map(s => (
-              <QuizEditableOption key={s.size} icon="ruler" label={s.size} desc={s.size === "0,9M" ? "Phù hợp phòng nhỏ, 1 người" : s.size === "1,2M" ? "Tiêu chuẩn, 1–2 người" : s.size === "1,5M" ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng"} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)}  isEditor={isEditor} optionKey="ruler" slug={LP_SLUG} />
-            ))}
+            {(() => {
+              const sizeImgs: Record<string, string> = {
+                "0,9M": content["quiz_opt_img_size_09m"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop",
+                "1,2M": content["quiz_opt_img_size_12m"] || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop",
+                "1,5M": content["quiz_opt_img_size_15m"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=center",
+                "1,8M": content["quiz_opt_img_size_18m"] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop",
+              };
+              return sizes.map(s => (
+              <QuizEditableOption key={s.size} icon="ruler" label={s.size} desc={s.size === "0,9M" ? "Phù hợp phòng nhỏ, 1 người" : s.size === "1,2M" ? "Tiêu chuẩn, 1–2 người" : s.size === "1,5M" ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng"} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)}  isEditor={isEditor} optionKey={`size_${s.size.replace(",", "").replace("M", "m")}`} slug={LP_SLUG} imgUrl={sizeImgs[s.size]} />
+              ));
+            })()}
           </div>
         </div>
       );
@@ -761,8 +796,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Hộc để đồ</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tối ưu không gian lưu trữ trong phòng ngủ</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizEditableOption icon="box" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey="có_hộc_để_đồ" slug={LP_SLUG} />
-            <QuizEditableOption icon="minus_circle" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey="không_hộc" slug={LP_SLUG} />
+            <QuizEditableOption icon="box" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey="có_hộc_để_đồ" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_hộc_để_đồ"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=bottom"} />
+            <QuizEditableOption icon="minus_circle" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey="không_hộc" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_hộc"] || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop"} />
           </div>
         </div>
       );
@@ -774,8 +809,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Tay vịn</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tay vịn tăng tính thẩm mỹ và tiện nghi khi ngồi</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizEditableOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")}  isEditor={isEditor} optionKey="có_tay_vịn" slug={LP_SLUG} />
-            <QuizEditableOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")}  isEditor={isEditor} optionKey="không_tay_vịn" slug={LP_SLUG} />
+            <QuizEditableOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")}  isEditor={isEditor} optionKey="có_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_tay_vịn"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=left"} />
+            <QuizEditableOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")}  isEditor={isEditor} optionKey="không_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_tay_vịn"] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop"} />
           </div>
         </div>
       );
@@ -787,10 +822,10 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Kiểu ốp mặt trang trí</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Chất liệu bọc phần đầu giường và tay vịn (nếu có)</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizEditableOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")}  isEditor={isEditor} optionKey="vải_canvas" slug={LP_SLUG} />
-            <QuizEditableOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")}  isEditor={isEditor} optionKey="da_pu_cao_cấp" slug={LP_SLUG} />
-            <QuizEditableOption icon="wood" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")}  isEditor={isEditor} optionKey="gỗ_mdf_chống_ẩm" slug={LP_SLUG} />
-            <QuizEditableOption icon="leaf" label="Gỗ tự nhiên" desc="Sang trọng tự nhiên, vân gỗ độc đáo, bền theo thời gian" price={1500000} badge="Premium" selected={cfg.matTrang === "go_tu_nhien"} onClick={() => selectAndAdvance("matTrang", "go_tu_nhien")}  isEditor={isEditor} optionKey="gỗ_tự_nhiên" slug={LP_SLUG} />
+            <QuizEditableOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")}  isEditor={isEditor} optionKey="vải_canvas" slug={LP_SLUG} imgUrl={content["quiz_opt_img_vải_canvas"] || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop"} />
+            <QuizEditableOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")}  isEditor={isEditor} optionKey="da_pu_cao_cấp" slug={LP_SLUG} imgUrl={content["quiz_opt_img_da_pu_cao_cấp"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=right"} />
+            <QuizEditableOption icon="wood" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")}  isEditor={isEditor} optionKey="gỗ_mdf_chống_ẩm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_gỗ_mdf_chống_ẩm"] || "https://images.unsplash.com/photo-1601628828688-632f38a5a7d0?w=200&h=200&fit=crop"} />
+            <QuizEditableOption icon="leaf" label="Gỗ tự nhiên" desc="Sang trọng tự nhiên, vân gỗ độc đáo, bền theo thời gian" price={1500000} badge="Premium" selected={cfg.matTrang === "go_tu_nhien"} onClick={() => selectAndAdvance("matTrang", "go_tu_nhien")}  isEditor={isEditor} optionKey="gỗ_tự_nhiên" slug={LP_SLUG} imgUrl={content["quiz_opt_img_gỗ_tự_nhiên"] || "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=200&h=200&fit=crop"} />
           </div>
         </div>
       );
@@ -802,8 +837,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Độ dày nệm</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Nệm mút ép đàn hồi cao, hỗ trợ cột sống tối ưu</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizEditableOption icon="layers" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey="nệm_7cm" slug={LP_SLUG} />
-            <QuizEditableOption icon="bed" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey="nệm_10cm" slug={LP_SLUG} />
+            <QuizEditableOption icon="layers" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey="nệm_7cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_7cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop"} />
+            <QuizEditableOption icon="bed" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey="nệm_10cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_10cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=bottom"} />
           </div>
         </div>
       );
@@ -815,8 +850,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Áo nệm</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Lớp bọc ngoài nệm, có thể tháo ra giặt dễ dàng</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <QuizEditableOption icon="leaf" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")}  isEditor={isEditor} optionKey="áo_nệm_vải_lanh" slug={LP_SLUG} />
-            <QuizEditableOption icon="star_circle" label="Áo nệm da PU" desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => selectAndAdvance("aoNem", "da_pu_nem")}  isEditor={isEditor} optionKey="áo_nệm_da_pu" slug={LP_SLUG} />
+            <QuizEditableOption icon="leaf" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")}  isEditor={isEditor} optionKey="áo_nệm_vải_lanh" slug={LP_SLUG} imgUrl={content["quiz_opt_img_áo_nệm_vải_lanh"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=top"} />
+            <QuizEditableOption icon="star_circle" label="Áo nệm da PU" desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => selectAndAdvance("aoNem", "da_pu_nem")}  isEditor={isEditor} optionKey="áo_nệm_da_pu" slug={LP_SLUG} imgUrl={content["quiz_opt_img_áo_nệm_da_pu"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=top"} />
           </div>
         </div>
       );
@@ -1722,6 +1757,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           onClose={() => setQuizOpen(false)}
           onComplete={handleQuizComplete}
           isEditor={isEditor}
+          content={content}
         />
       )}
 
