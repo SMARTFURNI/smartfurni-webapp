@@ -47,10 +47,25 @@ export default function AdminLandingPagesPage() {
   const [domainForm, setDomainForm] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/lp-content?action=lead-counts")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.counts) setLeadCounts(data.counts);
+    // Load landing pages từ database
+    Promise.all([
+      fetch("/api/admin/lp-content?action=list-pages").then((r) => r.json()),
+      fetch("/api/admin/lp-content?action=lead-counts").then((r) => r.json()),
+    ])
+      .then(([pagesData, leadsData]) => {
+        if (pagesData.pages && Array.isArray(pagesData.pages)) {
+          const dbPages = pagesData.pages.map((p: any) => ({
+            slug: p.slug,
+            title: p.title,
+            description: p.description,
+            url: `/lp/${p.slug}`,
+            status: p.status as "active" | "draft",
+            createdAt: p.created_at,
+            customDomain: p.custom_domain,
+          }));
+          setPages([...STATIC_PAGES, ...dbPages]);
+        }
+        if (leadsData.counts) setLeadCounts(leadsData.counts);
       })
       .catch(() => {});
   }, []);
@@ -74,30 +89,58 @@ export default function AdminLandingPagesPage() {
   function deletePage(slug: string) {
     if (!confirm(`Xác nhận xóa landing page "${slug}"?`)) return;
     setDeleting(slug);
-    setTimeout(() => {
-      setPages((prev) => prev.filter((p) => p.slug !== slug));
-      setDeleting(null);
-    }, 800);
+    
+    // Xóa từ database
+    fetch(`/api/admin/lp-content?slug=${slug}&action=delete-page`, {
+      method: "DELETE",
+    })
+      .then(() => {
+        setPages((prev) => prev.filter((p) => p.slug !== slug));
+        setDeleting(null);
+      })
+      .catch(() => {
+        setDeleting(null);
+      });
   }
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!newPage.slug || !newPage.title) return;
     const slug = newPage.slug.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    setPages((prev) => [
-      ...prev,
-      {
+    const customDomain = `smartfurni.com.vn/lp/${slug}`;
+    
+    // Lưu vào database
+    fetch("/api/admin/lp-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "create-page",
         slug,
         title: newPage.title,
         description: newPage.description,
-        url: `/lp/${slug}`,
-        status: "draft",
-        createdAt: new Date().toISOString().split("T")[0],
-        customDomain: `smartfurni.com.vn/lp/${slug}`,
-      },
-    ]);
-    setNewPage({ slug: "", title: "", description: "" });
-    setShowCreateForm(false);
+        customDomain,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok) {
+          setPages((prev) => [
+            ...prev,
+            {
+              slug,
+              title: newPage.title,
+              description: newPage.description,
+              url: `/lp/${slug}`,
+              status: "draft",
+              createdAt: new Date().toISOString().split("T")[0],
+              customDomain,
+            },
+          ]);
+          setNewPage({ slug: "", title: "", description: "" });
+          setShowCreateForm(false);
+        }
+      })
+      .catch(() => {});
   }
 
   function handleClone(e: React.FormEvent) {
@@ -106,31 +149,83 @@ export default function AdminLandingPagesPage() {
     const sourcePage = pages.find((p) => p.slug === cloneSource);
     if (!sourcePage) return;
     const slug = cloneForm.slug.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    setPages((prev) => [
-      ...prev,
-      {
+    const customDomain = cloneForm.customDomain || `smartfurni.com.vn/lp/${slug}`;
+    
+    // Lưu vào database
+    fetch("/api/admin/lp-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "create-page",
         slug,
         title: cloneForm.title,
         description: sourcePage.description,
-        url: `/lp/${slug}`,
-        status: "draft",
-        createdAt: new Date().toISOString().split("T")[0],
-        customDomain: cloneForm.customDomain || `smartfurni.com.vn/lp/${slug}`,
-      },
-    ]);
-    setShowCloneDialog(false);
-    setCloneSource(null);
-    setCloneForm({ title: "", slug: "", customDomain: "" });
+        customDomain,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok) {
+          setPages((prev) => [
+            ...prev,
+            {
+              slug,
+              title: cloneForm.title,
+              description: sourcePage.description,
+              url: `/lp/${slug}`,
+              status: "draft",
+              createdAt: new Date().toISOString().split("T")[0],
+              customDomain,
+            },
+          ]);
+          setShowCloneDialog(false);
+          setCloneSource(null);
+          setCloneForm({ title: "", slug: "", customDomain: "" });
+        }
+      })
+      .catch(() => {});
   }
 
   function handleUpdateDomain(slug: string, newDomain: string) {
-    setPages((prev) =>
-      prev.map((p) =>
-        p.slug === slug ? { ...p, customDomain: newDomain } : p
-      )
-    );
-    setShowDomainDialog(null);
-    setDomainForm("");
+    // Cập nhật vào database
+    fetch("/api/admin/lp-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug,
+        blockKey: "custom_domain",
+        content: newDomain,
+      }),
+    })
+      .then(() => {
+        setPages((prev) =>
+          prev.map((p) =>
+            p.slug === slug ? { ...p, customDomain: newDomain } : p
+          )
+        );
+        setShowDomainDialog(null);
+        setDomainForm("");
+      })
+      .catch(() => {});
+  }
+
+  function publishPage(slug: string) {
+    fetch("/api/admin/lp-content", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, status: "active" }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok) {
+          setPages((prev) =>
+            prev.map((p) =>
+              p.slug === slug ? { ...p, status: "active" } : p
+            )
+          );
+        }
+      })
+      .catch(() => {});
   }
 
   const filteredPages = pages.filter((p) =>
@@ -451,13 +546,25 @@ export default function AdminLandingPagesPage() {
                   >
                     Domain
                   </button>
-                  <button
-                    onClick={() => toggleStatus(page.slug)}
-                    className="text-xs px-2 py-1 rounded border border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-                    title={page.status === "active" ? "Tạm dừng" : "Kích hoạt"}
-                  >
-                    {page.status === "active" ? "Dừng" : "Kích"}
-                  </button>
+                  {page.status === "draft" && (
+                    <button
+                      onClick={() => publishPage(page.slug)}
+                      className="text-xs px-2 py-1 rounded text-white font-medium"
+                      style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}
+                      title="Xuất bản"
+                    >
+                      Xuất bản
+                    </button>
+                  )}
+                  {page.status === "active" && (
+                    <button
+                      onClick={() => toggleStatus(page.slug)}
+                      className="text-xs px-2 py-1 rounded border border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                      title="Tạm dừng"
+                    >
+                      Dừng
+                    </button>
+                  )}
                   {page.slug !== "doi-tac-showroom-nem" && page.slug !== "gsf150" && (
                     <button
                       onClick={() => deletePage(page.slug)}
