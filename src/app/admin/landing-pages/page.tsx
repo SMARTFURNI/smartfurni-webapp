@@ -30,6 +30,14 @@ const STATIC_PAGES: LandingPage[] = [
     status: "active",
     createdAt: "2026-04-25",
   },
+  {
+    slug: "sofa-giuong",
+    title: "Sofa Giường SmartFurni",
+    description: "Landing page bán lẻ sofa giường SmartFurni 2 dòng Tiêu Chuẩn và Nâng Cao",
+    url: "/lp/sofa-giuong",
+    status: "active",
+    createdAt: "2026-05-05",
+  },
 ];
 
 export default function AdminLandingPagesPage() {
@@ -63,7 +71,10 @@ export default function AdminLandingPagesPage() {
             createdAt: p.created_at,
             customDomain: p.custom_domain,
           }));
-          setPages([...STATIC_PAGES, ...dbPages]);
+          // Merge: DB pages override STATIC_PAGES by slug, then add remaining static pages
+          const dbSlugs = new Set(dbPages.map((p: LandingPage) => p.slug));
+          const staticOnly = STATIC_PAGES.filter((p) => !dbSlugs.has(p.slug));
+          setPages([...staticOnly, ...dbPages]);
         }
         if (leadsData.counts) setLeadCounts(leadsData.counts);
       })
