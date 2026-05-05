@@ -132,8 +132,9 @@ export async function POST(req: NextRequest) {
       );
       return NextResponse.json({ ok: true });
     } catch (e) {
-      console.error("create-page error:", e);
-      return NextResponse.json({ error: "DB error" }, { status: 500 });
+      const errMsg = e instanceof Error ? e.message : String(e);
+      console.error("create-page error:", errMsg);
+      return NextResponse.json({ error: "DB error", detail: errMsg }, { status: 500 });
     }
   }
 
