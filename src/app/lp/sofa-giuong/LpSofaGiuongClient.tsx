@@ -1935,6 +1935,116 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
         </div>
       </section>
+      {/* ── HOW IT WORKS ── */}
+      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
+          <FadeIn>
+            <SectionLabel>Quy Trình</SectionLabel>
+            <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
+              {E({ bk: "how_title", def: "Thiết Kế Trong 3 Phút", as: "span" })}
+            </h2>
+            <GoldDivider />
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24, marginTop: 16 }}>
+            {[
+              { step: "01", icon: "sofa", title: "Chọn mẫu", desc: "Duyệt qua bộ sưu tập và chọn mẫu sofa giường yêu thích" },
+              { step: "02", icon: "sliders", title: "Tuỳ chỉnh", desc: "Chọn kích thước, hộc, tay vịn, chất liệu, nệm theo sở thích" },
+              { step: "03", icon: "calculator", title: "Xem giá ngay", desc: "Giá tổng cập nhật realtime theo từng lựa chọn của bạn" },
+              { step: "04", icon: "phone", title: "Nhận tư vấn", desc: "Điền thông tin, nhân viên liên hệ xác nhận trong 30 phút" },
+            ].map((s, i) => (
+              <FadeIn key={i} delay={i * 80}>
+                <div style={{ textAlign: "center", padding: "28px 20px" }}>
+                  <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                    <SvgIcon name={s.icon} size={24} color={GOLD} />
+                  </div>
+                  <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 8 }}>{s.step}</div>
+                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{s.title}</h3>
+                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{s.desc}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+          <FadeIn delay={200}>
+            <div style={{ marginTop: 40 }}>
+              <GoldButton onClick={() => openQuiz()} style={{ fontSize: 14, padding: "16px 40px" }}>
+                Bắt Đầu Thiết Kế Ngay →
+              </GoldButton>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── FEATURES / BENEFITS ── */}
+      <section style={{ padding: SECTION_PAD, background: BLACK }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <SectionLabel>Điểm Mạnh</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
+                {E({ bk: "features_title", def: "Vì Sao Chọn SmartFurni?", as: "span" })}
+              </h2>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+            {[
+              { icon: "star_circle", title: "Cá nhân hoá 100%", desc: "7 bước tuỳ chỉnh — kích thước, hộc, tay vịn, chất liệu, nệm, áo nệm. Mỗi chiếc sofa giường là duy nhất." },
+              { icon: "price_tag", title: "Giá minh bạch", desc: "Giá tổng nhảy realtime khi bạn chọn từng tuỳ chọn. Không ẩn phí, không bất ngờ khi thanh toán." },
+              { icon: "factory", title: "Sản xuất tại Việt Nam", desc: "Khung thép mạ kẽm, cơ cấu gas-lift nhập khẩu, chất liệu bọc đạt chuẩn xuất khẩu." },
+              { icon: "truck", title: "Miễn phí giao + lắp đặt", desc: "Giao hàng toàn quốc, đội kỹ thuật lắp đặt tận nơi. Chỉ cần mở cửa đón hàng." },
+              { icon: "shield", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện khung, cơ cấu và chất liệu bọc. Đổi mới ngay nếu có lỗi nhà sản xuất." },
+              { icon: "credit_card", title: "Trả góp 0% lãi suất", desc: "Hỗ trợ trả góp qua các đối tác tài chính. Sở hữu sofa giường mơ ước ngay hôm nay." },
+            ].map((f, i) => (
+              <FadeIn key={i} delay={i * 60}>
+                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER}>
+                  <div style={{ marginBottom: 14 }}><SvgIcon name={f.icon} size={32} color={GOLD} /></div>
+                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{f.title}</h3>
+                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SPEC TABLE ── */}
+      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <SectionLabel>Thông Số Kỹ Thuật</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
+                {E({ bk: "spec_title", def: "Chất Lượng Được Kiểm Chứng", as: "span" })}
+              </h2>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
+            {[
+              { label: "Khung", value: "Thép mạ kẽm 1.5mm, chịu tải 300kg" },
+              { label: "Cơ cấu mở gập", value: "Gas-lift nhập khẩu, 50.000 lần kiểm định" },
+              { label: "Kích thước", value: "0,9M / 1,2M / 1,5M / 1,8M (theo yêu cầu)" },
+              { label: "Chất liệu bọc", value: "Vải canvas / Da PU / Gỗ MDF / Gỗ tự nhiên" },
+              { label: "Nệm", value: "Mút ép đàn hồi cao 7cm hoặc 10cm" },
+              { label: "Áo nệm", value: "Vải lanh hoặc da PU, tháo giặt được" },
+              { label: "Bảo hành", value: "3 năm toàn diện (khung + cơ cấu + chất liệu)" },
+              { label: "Xuất xứ", value: "Sản xuất tại Việt Nam, linh kiện nhập khẩu" },
+            ].map((row, i) => (
+              <div key={i} style={{ display: "flex", borderBottom: i < 7 ? `1px solid ${BLACK_BORDER}` : "none" }}>
+                <div style={{ width: "40%", padding: "16px 20px", background: "rgba(201,168,76,0.04)", borderRight: `1px solid ${BLACK_BORDER}` }}>
+                  <span style={{ color: GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{row.label}</span>
+                </div>
+                <div style={{ flex: 1, padding: "16px 20px" }}>
+                  <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{row.value}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── PRODUCT GALLERY ── */}
       <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -2091,116 +2201,6 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               </GoldButton>
             </div>
           </FadeIn>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
-          <FadeIn>
-            <SectionLabel>Quy Trình</SectionLabel>
-            <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
-              {E({ bk: "how_title", def: "Thiết Kế Trong 3 Phút", as: "span" })}
-            </h2>
-            <GoldDivider />
-          </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24, marginTop: 16 }}>
-            {[
-              { step: "01", icon: "sofa", title: "Chọn mẫu", desc: "Duyệt qua bộ sưu tập và chọn mẫu sofa giường yêu thích" },
-              { step: "02", icon: "sliders", title: "Tuỳ chỉnh", desc: "Chọn kích thước, hộc, tay vịn, chất liệu, nệm theo sở thích" },
-              { step: "03", icon: "calculator", title: "Xem giá ngay", desc: "Giá tổng cập nhật realtime theo từng lựa chọn của bạn" },
-              { step: "04", icon: "phone", title: "Nhận tư vấn", desc: "Điền thông tin, nhân viên liên hệ xác nhận trong 30 phút" },
-            ].map((s, i) => (
-              <FadeIn key={i} delay={i * 80}>
-                <div style={{ textAlign: "center", padding: "28px 20px" }}>
-                  <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                    <SvgIcon name={s.icon} size={24} color={GOLD} />
-                  </div>
-                  <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 8 }}>{s.step}</div>
-                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{s.title}</h3>
-                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{s.desc}</p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-          <FadeIn delay={200}>
-            <div style={{ marginTop: 40 }}>
-              <GoldButton onClick={() => openQuiz()} style={{ fontSize: 14, padding: "16px 40px" }}>
-                Bắt Đầu Thiết Kế Ngay →
-              </GoldButton>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── FEATURES / BENEFITS ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <FadeIn>
-            <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>Điểm Mạnh</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
-                {E({ bk: "features_title", def: "Vì Sao Chọn SmartFurni?", as: "span" })}
-              </h2>
-              <GoldDivider />
-            </div>
-          </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
-            {[
-              { icon: "star_circle", title: "Cá nhân hoá 100%", desc: "7 bước tuỳ chỉnh — kích thước, hộc, tay vịn, chất liệu, nệm, áo nệm. Mỗi chiếc sofa giường là duy nhất." },
-              { icon: "price_tag", title: "Giá minh bạch", desc: "Giá tổng nhảy realtime khi bạn chọn từng tuỳ chọn. Không ẩn phí, không bất ngờ khi thanh toán." },
-              { icon: "factory", title: "Sản xuất tại Việt Nam", desc: "Khung thép mạ kẽm, cơ cấu gas-lift nhập khẩu, chất liệu bọc đạt chuẩn xuất khẩu." },
-              { icon: "truck", title: "Miễn phí giao + lắp đặt", desc: "Giao hàng toàn quốc, đội kỹ thuật lắp đặt tận nơi. Chỉ cần mở cửa đón hàng." },
-              { icon: "shield", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện khung, cơ cấu và chất liệu bọc. Đổi mới ngay nếu có lỗi nhà sản xuất." },
-              { icon: "credit_card", title: "Trả góp 0% lãi suất", desc: "Hỗ trợ trả góp qua các đối tác tài chính. Sở hữu sofa giường mơ ước ngay hôm nay." },
-            ].map((f, i) => (
-              <FadeIn key={i} delay={i * 60}>
-                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"}
-                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER}>
-                  <div style={{ marginBottom: 14 }}><SvgIcon name={f.icon} size={32} color={GOLD} /></div>
-                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{f.title}</h3>
-                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SPEC TABLE ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <FadeIn>
-            <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>Thông Số Kỹ Thuật</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
-                {E({ bk: "spec_title", def: "Chất Lượng Được Kiểm Chứng", as: "span" })}
-              </h2>
-              <GoldDivider />
-            </div>
-          </FadeIn>
-          <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
-            {[
-              { label: "Khung", value: "Thép mạ kẽm 1.5mm, chịu tải 300kg" },
-              { label: "Cơ cấu mở gập", value: "Gas-lift nhập khẩu, 50.000 lần kiểm định" },
-              { label: "Kích thước", value: "0,9M / 1,2M / 1,5M / 1,8M (theo yêu cầu)" },
-              { label: "Chất liệu bọc", value: "Vải canvas / Da PU / Gỗ MDF / Gỗ tự nhiên" },
-              { label: "Nệm", value: "Mút ép đàn hồi cao 7cm hoặc 10cm" },
-              { label: "Áo nệm", value: "Vải lanh hoặc da PU, tháo giặt được" },
-              { label: "Bảo hành", value: "3 năm toàn diện (khung + cơ cấu + chất liệu)" },
-              { label: "Xuất xứ", value: "Sản xuất tại Việt Nam, linh kiện nhập khẩu" },
-            ].map((row, i) => (
-              <div key={i} style={{ display: "flex", borderBottom: i < 7 ? `1px solid ${BLACK_BORDER}` : "none" }}>
-                <div style={{ width: "40%", padding: "16px 20px", background: "rgba(201,168,76,0.04)", borderRight: `1px solid ${BLACK_BORDER}` }}>
-                  <span style={{ color: GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{row.label}</span>
-                </div>
-                <div style={{ flex: 1, padding: "16px 20px" }}>
-                  <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{row.value}</span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
