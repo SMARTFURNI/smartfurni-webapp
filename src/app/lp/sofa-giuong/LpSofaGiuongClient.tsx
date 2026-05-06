@@ -612,7 +612,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
       <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, cursor: "pointer", textAlign: "left" as const, transition: "all 0.2s", width: "100%", overflow: "hidden", padding: 0, display: "flex", flexDirection: "column" as const }}>
         {/* Ảnh to ở trên - tỉ lệ 16:9 */}
         {localImgUrl ? (
-          <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", overflow: "hidden", background: "#0D0800" }}>
+          <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: "#0D0800" }}>
             <img src={localImgUrl} alt={label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
             {/* Badge */}
             {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{badge}</span>}
@@ -652,7 +652,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
             )}
           </div>
         ) : (
-          <div style={{ width: "100%", paddingTop: "40%", position: "relative", background: selected ? "rgba(201,168,76,0.08)" : "rgba(201,168,76,0.03)", borderBottom: `1px solid rgba(201,168,76,0.12)` }}>
+          <div style={{ width: "100%", paddingTop: "100%", position: "relative", background: selected ? "rgba(201,168,76,0.08)" : "rgba(201,168,76,0.03)", borderBottom: `1px solid rgba(201,168,76,0.12)` }}>
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <SvgIcon name={icon} size={32} color={selected ? GOLD : "rgba(201,168,76,0.5)"} />
             </div>
@@ -660,13 +660,15 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
             {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
           </div>
         )}
-        {/* Text + giá ở dưới */}
-        <div style={{ padding: "12px 14px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 3, lineHeight: 1.3 }}>{displayLabel}</div>
-            <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, lineHeight: 1.5 }}>{displayDesc}</div>
+        {/* Text + giá ở dưới: tên+mô tả ngang, giá hàng dưới */}
+        <div style={{ padding: "10px 12px 12px", display: "flex", flexDirection: "column" as const, gap: 6, flex: 1 }}>
+          {/* Hàng 1: tên + mô tả ngang */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ color: WHITE, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, lineHeight: 1.3, flexShrink: 0, maxWidth: "45%" }}>{displayLabel}</div>
+            <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, lineHeight: 1.4, flex: 1, minWidth: 0 }}>{displayDesc}</div>
           </div>
-          <div style={{ textAlign: "right" as const, flexShrink: 0, paddingTop: 2 }}>
+          {/* Hàng 2: giá */}
+          <div style={{ marginTop: "auto" }}>
             {displayPrice > 0 ? <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>+{fmt(displayPrice)}</div> : <div style={{ color: "#4ADE80", fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY }}>Miễn phí</div>}
           </div>
         </div>
