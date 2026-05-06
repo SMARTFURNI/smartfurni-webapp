@@ -9,10 +9,10 @@ import { LpEditBar } from "@/components/lp/LpEditBar";
 
 const GOLD = "#C9A84C";
 const GOLD_LIGHT = "#E2C97E";
-const BLACK = "#0A0A08";
-const BLACK_SOFT = "#111109";
-const BLACK_CARD = "#16140E";
-const BLACK_BORDER = "rgba(201,168,76,0.12)";
+const BLACK = "#0D0B00";
+const BLACK_SOFT = "#1A1600";
+const BLACK_CARD = "#221D00";
+const BLACK_BORDER = "#2E2800";
 const WHITE = "#F5F0E8";
 const GRAY = "#7A7468";
 const GRAY_LIGHT = "#A8A090";
