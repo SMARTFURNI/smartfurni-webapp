@@ -1820,7 +1820,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
       {/* ── PRODUCT GALLERY ── */}
-      <section style={{ padding: SECTION_PAD, background: "#1A1600" }}>
+      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
