@@ -1,6 +1,8 @@
 "use client";
 import "./lp-retail.css";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 import type { CrmProduct } from "@/lib/crm-types";
 import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
 import { LpEditBar } from "@/components/lp/LpEditBar";
@@ -664,10 +666,75 @@ function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
 
 
 // ─── GalleryImageEditor: nút Upload + Dán URL ảnh cho gallery card ──────────
+
+// ─── CropImageModal: Modal crop ảnh trước khi upload ────────────────────────
+function CropImageModal({ imgSrc, aspect, onDone, onCancel }: {
+  imgSrc: string;
+  aspect?: number;
+  onDone: (croppedBlob: Blob) => void;
+  onCancel: () => void;
+}) {
+  const [crop, setCrop] = React.useState<Crop>();
+  const [completedCrop, setCompletedCrop] = React.useState<Crop>();
+  const imgRef = React.useRef<HTMLImageElement>(null);
+
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const { naturalWidth: width, naturalHeight: height } = e.currentTarget;
+    const c = centerCrop(
+      makeAspectCrop({ unit: "%", width: 90 }, aspect || 2 / 1, width, height),
+      width, height
+    );
+    setCrop(c);
+    setCompletedCrop(c);
+  }
+
+  async function handleDone() {
+    if (!completedCrop || !imgRef.current) return;
+    const image = imgRef.current;
+    const canvas = document.createElement("canvas");
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    const pixelRatio = window.devicePixelRatio || 1;
+    const cropW = completedCrop.width / 100 * image.width;
+    const cropH = completedCrop.height / 100 * image.height;
+    canvas.width = Math.floor(cropW * scaleX * pixelRatio);
+    canvas.height = Math.floor(cropH * scaleY * pixelRatio);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(pixelRatio, pixelRatio);
+    ctx.imageSmoothingQuality = "high";
+    const cropX = completedCrop.x / 100 * image.width;
+    const cropY = completedCrop.y / 100 * image.height;
+    ctx.drawImage(image, cropX * scaleX, cropY * scaleY, cropW * scaleX, cropH * scaleY, 0, 0, cropW * scaleX, cropH * scaleY);
+    canvas.toBlob(blob => { if (blob) onDone(blob); }, "image/jpeg", 0.92);
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 9999, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", padding: 24 }}
+      onClick={e => e.stopPropagation()}>
+      <div style={{ background: "#1a1810", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 16, padding: 20, maxWidth: 800, width: "100%", maxHeight: "90vh", overflow: "auto" }}>
+        <div style={{ color: "#F5EDD6", fontSize: 14, fontWeight: 600, marginBottom: 12, fontFamily: "Inter, sans-serif" }}>
+          ✂️ Kéo để chọn vùng hiển thị
+        </div>
+        <div style={{ maxHeight: "60vh", overflow: "auto", borderRadius: 8 }}>
+          <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={c => setCompletedCrop(c)} aspect={aspect} style={{ maxWidth: "100%" }}>
+            <img ref={imgRef} src={imgSrc} onLoad={onImageLoad} style={{ maxWidth: "100%", display: "block" }} alt="crop" />
+          </ReactCrop>
+        </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 16, justifyContent: "flex-end" }}>
+          <button onClick={onCancel} style={{ background: "rgba(255,255,255,0.08)", color: "#A8A090", border: "none", borderRadius: 8, padding: "8px 18px", fontSize: 13, cursor: "pointer" }}>Huỷ</button>
+          <button onClick={handleDone} style={{ background: "#C9A84C", color: "#0A0A08", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✓ Xác nhận cắt</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── PainPointImageEditor: Upload/URL ảnh cho pain point cards ───────────────
 function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url: string) => void }) {
   const [showUrlInput, setShowUrlInput] = React.useState(false);
   const [urlVal, setUrlVal] = React.useState("");
+  const [cropSrc, setCropSrc] = React.useState<string | null>(null);
   const saveUrl = async (url: string) => {
     if (!url.trim()) return;
     await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: imgKey, content: url.trim() }) });
@@ -695,25 +762,41 @@ function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url
       <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
         <span style={{ fontSize: 13 }}>📷</span>
         <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Upload</span>
-        <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+        <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
           const file = e.target.files?.[0]; if (!file) return;
-          const formData = new FormData(); formData.append("file", file);
-          try {
-            const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.url) {
-                await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: imgKey, content: data.url }) });
-                onSave(data.url);
-              } else { alert("Upload thất bại: " + (data.error || "Lỗi")); }
-            } else { const err = await res.json().catch(() => ({})); alert("Upload thất bại: " + (err.error || res.status)); }
-          } catch { alert("Lỗi kết nối"); }
+          const reader = new FileReader();
+          reader.onload = ev => {
+            if (ev.target?.result) setCropSrc(ev.target.result as string);
+          };
+          reader.readAsDataURL(file);
+          e.target.value = "";
         }} />
       </label>
       <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
         <span style={{ fontSize: 13 }}>🔗</span>
         <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Dán URL</span>
       </button>
+      {cropSrc && (
+        <CropImageModal
+          imgSrc={cropSrc}
+          aspect={imgKey === "solution_main_img" ? 2 / 1 : undefined}
+          onCancel={() => setCropSrc(null)}
+          onDone={async blob => {
+            setCropSrc(null);
+            const formData = new FormData(); formData.append("file", new File([blob], "crop.jpg", { type: "image/jpeg" }));
+            try {
+              const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.url) {
+                  await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: imgKey, content: data.url }) });
+                  onSave(data.url);
+                } else { alert("Upload thất bại: " + (data.error || "Lỗi")); }
+              } else { const err = await res.json().catch(() => ({})); alert("Upload thất bại: " + (err.error || res.status)); }
+            } catch { alert("Lỗi kết nối"); }
+          }}
+        />
+      )}
     </div>
   );
 }
