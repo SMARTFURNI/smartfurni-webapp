@@ -1657,15 +1657,79 @@ interface Props {
 
 // ─── DetailsGalleryScroll ─────────────────────────────────────────────────────
 const DETAIL_ITEMS_DEFAULT = [
-  { key: "detail_0", label: "Khung sofa", desc: "Khung thép hộp 40x40mm, sơn tĩnh điện chống gỉ" },
-  { key: "detail_1", label: "Hộc để đồ", desc: "Hộc gas-lift êm ái, chứa chăn gối gọn gàng" },
-  { key: "detail_2", label: "Tay vịn", desc: "Tay vịn gỗ MDF bọc vải, chắc chắn và thẩm mỹ" },
-  { key: "detail_3", label: "Mặt trang trí", desc: "Gỗ MDF chống ẩm, bề mặt phủ veneer cao cấp" },
-  { key: "detail_4", label: "Nệm 7cm", desc: "Mút ép đàn hồi cao, phù hợp người thích nệm vừa phải" },
-  { key: "detail_5", label: "Nệm 10cm", desc: "Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn" },
-  { key: "detail_6", label: "Vải canvas", desc: "Bền bỉ, dễ vệ sinh, phù hợp gia đình có trẻ nhỏ" },
-  { key: "detail_7", label: "Da PU cao cấp", desc: "Sang trọng, mềm mại, dễ lau chùi" },
+  { key: "detail_0", label: "Khung sofa", desc: "Khung thep hop 40x40mm, son tinh dien chong gi" },
+  { key: "detail_1", label: "Hoc de do", desc: "Hoc gas-lift em ai, chua chan goi gon gang" },
+  { key: "detail_2", label: "Tay vin", desc: "Tay vin go MDF boc vai, chac chan va tham my" },
+  { key: "detail_3", label: "Mat trang tri", desc: "Go MDF chong am, be mat phu veneer cao cap" },
+  { key: "detail_4", label: "Nem 7cm", desc: "Mut ep dan hoi cao, phu hop nguoi thich nem vua phai" },
+  { key: "detail_5", label: "Nem 10cm", desc: "Day hon, em hon, ho tro cot song tot hon" },
+  { key: "detail_6", label: "Vai canvas", desc: "Ben bi, de ve sinh, phu hop gia dinh co tre nho" },
+  { key: "detail_7", label: "Da PU cao cap", desc: "Sang trong, mem mai, de lau chui" },
 ];
+
+function DetailLabelEditor({ itemKey, label, desc, isEditor, editMode, setContent }: {
+  itemKey: string; label: string; desc: string;
+  isEditor: boolean; editMode: boolean;
+  setContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}) {
+  const [editingLabel, setEditingLabel] = React.useState(false);
+  const [editingDesc, setEditingDesc] = React.useState(false);
+  const [labelVal, setLabelVal] = React.useState(label);
+  const [descVal, setDescVal] = React.useState(desc);
+  React.useEffect(() => { setLabelVal(label); }, [label]);
+  React.useEffect(() => { setDescVal(desc); }, [desc]);
+
+  const saveLabel = async (v: string) => {
+    const bk = `details_gallery_label_${itemKey}`;
+    await fetch("/api/admin/lp-content", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: bk, content: v }) });
+    setContent(c => ({ ...c, [bk]: v }));
+    setEditingLabel(false);
+  };
+  const saveDesc = async (v: string) => {
+    const bk = `details_gallery_desc_${itemKey}`;
+    await fetch("/api/admin/lp-content", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: bk, content: v }) });
+    setContent(c => ({ ...c, [bk]: v }));
+    setEditingDesc(false);
+  };
+
+  return (
+    <div style={{ marginTop: 10, paddingRight: 4 }}>
+      {isEditor && editMode ? (
+        <>
+          {editingLabel ? (
+            <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+              <input autoFocus value={labelVal} onChange={e => setLabelVal(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") saveLabel(labelVal); if (e.key === "Escape") setEditingLabel(false); }}
+                style={{ flex: 1, background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 13, fontFamily: FONT_BODY, outline: "none" }} />
+              <button onClick={() => saveLabel(labelVal)} style={{ background: GOLD, border: "none", borderRadius: 4, padding: "3px 8px", color: BLACK, fontSize: 11, cursor: "pointer", fontWeight: 700 }}>OK</button>
+            </div>
+          ) : (
+            <div onClick={() => setEditingLabel(true)} style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, cursor: "text", borderBottom: "1px dashed rgba(201,168,76,0.3)", paddingBottom: 2 }}>
+              {label} <span style={{ color: GOLD, fontSize: 10, opacity: 0.6 }}>pencil</span>
+            </div>
+          )}
+          {editingDesc ? (
+            <div style={{ display: "flex", gap: 4 }}>
+              <textarea autoFocus value={descVal} onChange={e => setDescVal(e.target.value)}
+                onKeyDown={e => { if (e.key === "Escape") setEditingDesc(false); }}
+                style={{ flex: 1, background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#9BA1A6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", resize: "none", minHeight: 52 }} />
+              <button onClick={() => saveDesc(descVal)} style={{ background: GOLD, border: "none", borderRadius: 4, padding: "3px 8px", color: BLACK, fontSize: 11, cursor: "pointer", fontWeight: 700, alignSelf: "flex-start" }}>OK</button>
+            </div>
+          ) : (
+            <div onClick={() => setEditingDesc(true)} style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, cursor: "text", borderBottom: "1px dashed rgba(201,168,76,0.2)", paddingBottom: 2 }}>
+              {desc} <span style={{ color: GOLD, fontSize: 10, opacity: 0.6 }}>pencil</span>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 5 }}>{label}</div>
+          <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY }}>{desc}</div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
   content: Record<string, string>;
@@ -1673,29 +1737,17 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
   editMode: boolean;
   setContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const trackRef = React.useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = React.useState(false);
   const posRef = React.useRef(0);
   const animRef = React.useRef<number>(0);
-  const CARD_W = 220;
-  const GAP = 16;
-  const SPEED = 0.5;
-
-  React.useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    const totalWidth = (CARD_W + GAP) * DETAIL_ITEMS_DEFAULT.length;
-    function animate() {
-      if (!isPaused) {
-        posRef.current += SPEED;
-        if (posRef.current >= totalWidth) posRef.current = 0;
-        if (track) track.style.transform = `translateX(-${posRef.current}px)`;
-      }
-      animRef.current = requestAnimationFrame(animate);
-    }
-    animRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [isPaused]);
+  const isDragging = React.useRef(false);
+  const dragStartX = React.useRef(0);
+  const dragStartPos = React.useRef(0);
+  const CARD_W = 300;
+  const GAP = 20;
+  const SPEED = 0.4;
 
   const items = DETAIL_ITEMS_DEFAULT.map(item => ({
     ...item,
@@ -1704,36 +1756,113 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
     desc: content[`details_gallery_desc_${item.key}`] || item.desc,
   }));
   const loopItems = [...items, ...items];
+  const totalWidth = (CARD_W + GAP) * DETAIL_ITEMS_DEFAULT.length;
+
+  React.useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    function animate() {
+      if (!isPaused && !isDragging.current) {
+        posRef.current += SPEED;
+        if (posRef.current >= totalWidth) posRef.current = 0;
+        if (track) track.style.transform = `translateX(-${posRef.current}px)`;
+      }
+      animRef.current = requestAnimationFrame(animate);
+    }
+    animRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [isPaused, totalWidth]);
+
+  const handleWheel = React.useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    let newPos = posRef.current + e.deltaY * 0.8;
+    if (newPos < 0) newPos = 0;
+    if (newPos >= totalWidth) newPos = newPos % totalWidth;
+    posRef.current = newPos;
+    if (trackRef.current) trackRef.current.style.transform = `translateX(-${newPos}px)`;
+  }, [totalWidth]);
+
+  const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+    isDragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartPos.current = posRef.current;
+    setIsPaused(true);
+  }, []);
+  const handleMouseMove = React.useCallback((e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    let newPos = dragStartPos.current + (dragStartX.current - e.clientX);
+    if (newPos < 0) newPos = 0;
+    if (newPos >= totalWidth) newPos = newPos % totalWidth;
+    posRef.current = newPos;
+    if (trackRef.current) trackRef.current.style.transform = `translateX(-${newPos}px)`;
+  }, [totalWidth]);
+  const stopDrag = React.useCallback(() => {
+    isDragging.current = false;
+    setIsPaused(false);
+  }, []);
+
+  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+    isDragging.current = true;
+    dragStartX.current = e.touches[0].clientX;
+    dragStartPos.current = posRef.current;
+    setIsPaused(true);
+  }, []);
+  const handleTouchMove = React.useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    let newPos = dragStartPos.current + (dragStartX.current - e.touches[0].clientX);
+    if (newPos < 0) newPos = 0;
+    if (newPos >= totalWidth) newPos = newPos % totalWidth;
+    posRef.current = newPos;
+    if (trackRef.current) trackRef.current.style.transform = `translateX(-${newPos}px)`;
+  }, [totalWidth]);
 
   return (
-    <div style={{ overflow: "hidden", cursor: "grab", userSelect: "none" as const }}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}>
+    <div
+      ref={containerRef}
+      style={{ overflow: "hidden", cursor: "grab", userSelect: "none" as const }}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={stopDrag}
+      onMouseLeave={stopDrag}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={stopDrag}
+    >
       <div ref={trackRef} style={{ display: "flex", gap: GAP, willChange: "transform" }}>
         {loopItems.map((item, idx) => {
           const isOriginal = idx < DETAIL_ITEMS_DEFAULT.length;
           const imgKey = `details_gallery_img_${item.key}`;
           return (
             <div key={idx} style={{ flexShrink: 0, width: CARD_W }}>
-              <div style={{ position: "relative" as const, width: CARD_W, height: CARD_W, borderRadius: 12, overflow: "hidden", background: "rgba(245,237,214,0.04)", border: "1px solid rgba(201,168,76,0.15)" }}>
+              <div style={{ position: "relative" as const, width: CARD_W, height: CARD_W, borderRadius: 16, overflow: "hidden", background: "rgba(245,237,214,0.04)", border: "1px solid rgba(201,168,76,0.15)" }}>
                 {item.img ? (
-                  <img src={item.img} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={item.img} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} />
                 ) : (
                   <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
-                    <SvgIcon name="image" size={32} color="rgba(201,168,76,0.3)" />
-                    {isEditor && editMode && isOriginal && <span style={{ color: "rgba(201,168,76,0.5)", fontSize: 11, fontFamily: FONT_BODY }}>Thêm ảnh</span>}
+                    <SvgIcon name="image" size={40} color="rgba(201,168,76,0.3)" />
+                    {isEditor && editMode && isOriginal && <span style={{ color: "rgba(201,168,76,0.5)", fontSize: 12, fontFamily: FONT_BODY }}>Them anh</span>}
                   </div>
                 )}
                 {isEditor && editMode && isOriginal && (
                   <PainPointImageEditor imgKey={imgKey} onSave={url => setContent(c => ({ ...c, [imgKey]: url }))} />
                 )}
               </div>
-              <div style={{ marginTop: 10, paddingRight: 4 }}>
-                <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4 }}>{item.label}</div>
-                <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY }}>{item.desc}</div>
-              </div>
+              {isOriginal ? (
+                <DetailLabelEditor
+                  itemKey={item.key}
+                  label={item.label}
+                  desc={item.desc}
+                  isEditor={isEditor}
+                  editMode={editMode}
+                  setContent={setContent}
+                />
+              ) : (
+                <div style={{ marginTop: 10, paddingRight: 4 }}>
+                  <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 5 }}>{item.label}</div>
+                  <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY }}>{item.desc}</div>
+                </div>
+              )}
             </div>
           );
         })}
