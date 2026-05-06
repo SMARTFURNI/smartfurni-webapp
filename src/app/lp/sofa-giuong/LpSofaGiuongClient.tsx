@@ -664,6 +664,59 @@ function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
 
 
 // ─── GalleryImageEditor: nút Upload + Dán URL ảnh cho gallery card ──────────
+// ─── PainPointImageEditor: Upload/URL ảnh cho pain point cards ───────────────
+function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url: string) => void }) {
+  const [showUrlInput, setShowUrlInput] = React.useState(false);
+  const [urlVal, setUrlVal] = React.useState("");
+  const saveUrl = async (url: string) => {
+    if (!url.trim()) return;
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: imgKey, content: url.trim() }) });
+    onSave(url.trim());
+    setShowUrlInput(false); setUrlVal("");
+  };
+  if (showUrlInput) {
+    return (
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.92)", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8, zIndex: 20 }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY }}>Dán link URL ảnh</div>
+        <input autoFocus value={urlVal} onChange={e => setUrlVal(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") saveUrl(urlVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlVal(""); } }}
+          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={() => saveUrl(urlVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Lưu</button>
+          <button onClick={() => { setShowUrlInput(false); setUrlVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer" }}>Huỷ</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, zIndex: 10 }}
+      onClick={e => e.stopPropagation()}>
+      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+        <span style={{ fontSize: 13 }}>📷</span>
+        <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Upload</span>
+        <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+          const file = e.target.files?.[0]; if (!file) return;
+          const formData = new FormData(); formData.append("file", file);
+          try {
+            const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.url) {
+                await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: imgKey, content: data.url }) });
+                onSave(data.url);
+              } else { alert("Upload thất bại: " + (data.error || "Lỗi")); }
+            } else { const err = await res.json().catch(() => ({})); alert("Upload thất bại: " + (err.error || res.status)); }
+          } catch { alert("Lỗi kết nối"); }
+        }} />
+      </label>
+      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+        <span style={{ fontSize: 13 }}>🔗</span>
+        <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Dán URL</span>
+      </button>
+    </div>
+  );
+}
 function GalleryImageEditor({ productId, onSave }: { productId: string; onSave: (url: string) => void }) {
   const [showUrlInput, setShowUrlInput] = React.useState(false);
   const [urlVal, setUrlVal] = React.useState("");
@@ -1575,19 +1628,38 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
             {[
-              { icon: "ruler_cross", title: "Kích thước không vừa", desc: "Mua về mới phát hiện không khớp phòng ngủ, quá to hoặc quá nhỏ" },
-              { icon: "eye_off", title: "Chất liệu không ưng", desc: "Màu sắc, chất liệu bọc không đúng như hình — khác xa thực tế" },
-              { icon: "question_circle", title: "Giá không minh bạch", desc: "Không biết từng tuỳ chọn giá bao nhiêu, dễ bị thổi giá" },
-              { icon: "wrench", title: "Lắp đặt phức tạp", desc: "Hướng dẫn không rõ ràng, tự lắp mất cả ngày, dễ hỏng" },
-            ].map((p, i) => (
-              <FadeIn key={i} delay={i * 80}>
-                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", textAlign: "left" }}>
-                  <div style={{ marginBottom: 14 }}><SvgIcon name={p.icon} size={32} color="rgba(201,168,76,0.7)" /></div>
-                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{p.title}</h3>
-                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{p.desc}</p>
-                </div>
-              </FadeIn>
-            ))}
+              { icon: "ruler_cross", title: "Kích thước không vừa", desc: "Mua về mới phát hiện không khớp phòng ngủ, quá to hoặc quá nhỏ", imgKey: "pain_img_0" },
+              { icon: "eye_off", title: "Chất liệu không ưng", desc: "Màu sắc, chất liệu bọc không đúng như hình — khác xa thực tế", imgKey: "pain_img_1" },
+              { icon: "question_circle", title: "Giá không minh bạch", desc: "Không biết từng tuỳ chọn giá bao nhiêu, dễ bị thổi giá", imgKey: "pain_img_2" },
+              { icon: "wrench", title: "Lắp đặt phức tạp", desc: "Hướng dẫn không rõ ràng, tự lắp mất cả ngày, dễ hỏng", imgKey: "pain_img_3" },
+            ].map((p, i) => {
+              const imgUrl = content[p.imgKey] || "";
+              return (
+                <FadeIn key={i} delay={i * 80}>
+                  <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", textAlign: "left", position: "relative" }}>
+                    {/* Ảnh minh hoạ */}
+                    <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                      {imgUrl ? (
+                        <img src={imgUrl} alt={p.title} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+                          <SvgIcon name={p.icon} size={40} color="rgba(201,168,76,0.35)" />
+                          {editMode && <span style={{ color: "rgba(201,168,76,0.5)", fontSize: 11, fontFamily: FONT_BODY }}>Chưa có ảnh</span>}
+                        </div>
+                      )}
+                      {/* Edit overlay khi editMode */}
+                      {editMode && <PainPointImageEditor imgKey={p.imgKey} onSave={url => setContent(c => ({ ...c, [p.imgKey]: url }))} />}
+                    </div>
+                    {/* Nội dung card */}
+                    <div style={{ padding: "20px 20px 22px" }}>
+                      <div style={{ marginBottom: 10 }}><SvgIcon name={p.icon} size={26} color="rgba(201,168,76,0.7)" /></div>
+                      <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{p.title}</h3>
+                      <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{p.desc}</p>
+                    </div>
+                  </div>
+                </FadeIn>
+              );
+            })}
           </div>
         </div>
       </section>
