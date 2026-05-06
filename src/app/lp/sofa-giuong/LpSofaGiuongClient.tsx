@@ -1664,6 +1664,117 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
 
+      {/* ── SOLUTION / TỰ THIẾT KẾ ── */}
+      <section style={{ padding: SECTION_PAD, background: "linear-gradient(180deg, #0D0C08 0%, #111109 100%)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 56 }}>
+              <SectionLabel>Giải Pháp SmartFurni</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
+                {E({ bk: "solution_title", def: "Tự Thiết Kế Sofa Giường Theo Sở Thích Của Bạn", as: "span" })}
+              </h2>
+              <GoldDivider />
+              <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, maxWidth: 600, margin: "0 auto", fontFamily: FONT_BODY }}>
+                {E({ bk: "solution_desc", def: "Không còn lo sai kích thước, sai chất liệu hay bị thổi giá — SmartFurni cho bạn tự quyết định mọi chi tiết trước khi đặt hàng.", as: "span" })}
+              </p>
+            </div>
+          </FadeIn>
+
+          {/* Layout 2 cột: Vấn đề (trái) vs Giải pháp (phải) */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "stretch" }}>
+            {/* Cột trái: Ảnh vấn đề */}
+            <FadeIn delay={0}>
+              <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, minHeight: 420 }}>
+                {(() => {
+                  const imgUrl = content["solution_problem_img"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80";
+                  return (
+                    <>
+                      <img src={imgUrl} alt="Vấn đề khi mua sofa giường" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0, opacity: 0.7 }} />
+                      {/* Gradient overlay */}
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(10,10,8,0.95) 0%, rgba(10,10,8,0.4) 50%, transparent 100%)" }} />
+                      {/* Text overlay */}
+                      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "28px 28px 32px" }}>
+                        <div style={{ display: "inline-block", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 20, padding: "4px 14px", marginBottom: 12 }}>
+                          <span style={{ color: "#F87171", fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Vấn Đề Thường Gặp</span>
+                        </div>
+                        <h3 style={{ color: WHITE, fontSize: "clamp(18px,2.2vw,26px)", fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 10, lineHeight: 1.3 }}>
+                          {E({ bk: "solution_problem_title", def: "Hối Hận Khi Mua Sofa Giường Online", as: "span" })}
+                        </h3>
+                        <p style={{ color: GRAY_LIGHT, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>
+                          {E({ bk: "solution_problem_sub", def: "Sai kích thước, sai phong cách — mua về mới phát hiện không khớp phòng ngủ", as: "span" })}
+                        </p>
+                      </div>
+                      {editMode && <PainPointImageEditor imgKey="solution_problem_img" onSave={url => setContent(c => ({ ...c, solution_problem_img: url }))} />}
+                    </>
+                  );
+                })()}
+              </div>
+            </FadeIn>
+
+            {/* Cột phải: Ảnh giải pháp */}
+            <FadeIn delay={80}>
+              <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: BLACK_CARD, border: `1px solid rgba(201,168,76,0.25)`, minHeight: 420 }}>
+                {(() => {
+                  const imgUrl = content["solution_answer_img"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80";
+                  return (
+                    <>
+                      <img src={imgUrl} alt="Giải pháp SmartFurni" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0, opacity: 0.75 }} />
+                      {/* Gradient overlay */}
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(10,10,8,0.95) 0%, rgba(10,10,8,0.35) 50%, transparent 100%)" }} />
+                      {/* Gold glow top-right */}
+                      <div style={{ position: "absolute", top: 0, right: 0, width: 200, height: 200, background: "radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+                      {/* Text overlay */}
+                      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "28px 28px 32px" }}>
+                        <div style={{ display: "inline-block", background: "rgba(201,168,76,0.15)", border: `1px solid rgba(201,168,76,0.5)`, borderRadius: 20, padding: "4px 14px", marginBottom: 12 }}>
+                          <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Giải Pháp SmartFurni</span>
+                        </div>
+                        <h3 style={{ color: WHITE, fontSize: "clamp(18px,2.2vw,26px)", fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 10, lineHeight: 1.3 }}>
+                          {E({ bk: "solution_answer_title", def: "Tự Thiết Kế — Vừa Khít Không Gian, Đúng Sở Thích", as: "span" })}
+                        </h3>
+                        <p style={{ color: GRAY_LIGHT, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>
+                          {E({ bk: "solution_answer_sub", def: "Chọn kích thước, chất liệu, màu sắc theo ý bạn — xem giá realtime trước khi đặt", as: "span" })}
+                        </p>
+                      </div>
+                      {editMode && <PainPointImageEditor imgKey="solution_answer_img" onSave={url => setContent(c => ({ ...c, solution_answer_img: url }))} />}
+                    </>
+                  );
+                })()}
+              </div>
+            </FadeIn>
+          </div>
+
+          {/* 4 điểm giải pháp bên dưới */}
+          <FadeIn delay={160}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 24 }}>
+              {[
+                { icon: "✓", title: "Đúng kích thước", desc: "Nhập số đo phòng — hệ thống gợi ý kích thước vừa khít ngay lập tức" },
+                { icon: "✓", title: "Thấy trước khi mua", desc: "Xem trước hình ảnh thực tế với chất liệu và màu sắc bạn chọn" },
+                { icon: "✓", title: "Giá minh bạch", desc: "Mỗi tuỳ chọn hiển thị giá realtime — không phụ phí ẩn" },
+                { icon: "✓", title: "Lắp đặt miễn phí", desc: "Đội ngũ chuyên nghiệp giao hàng và lắp đặt tận nơi toàn quốc" },
+              ].map((item, i) => (
+                <div key={i} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: 16, padding: "20px 20px 22px", display: "flex", flexDirection: "column" as const, gap: 8 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <span style={{ color: GOLD, fontSize: 16, fontWeight: 700 }}>{item.icon}</span>
+                  </div>
+                  <h4 style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, margin: 0 }}>{item.title}</h4>
+                  <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY, margin: 0 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+
+          {/* CTA */}
+          <FadeIn delay={200}>
+            <div style={{ textAlign: "center", marginTop: 40 }}>
+              <a href="#order" style={{ display: "inline-flex", alignItems: "center", gap: 10, background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, color: BLACK, fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING, padding: "14px 36px", borderRadius: 50, textDecoration: "none", boxShadow: `0 4px 24px rgba(201,168,76,0.35)`, transition: "transform 0.2s, box-shadow 0.2s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(201,168,76,0.5)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 24px rgba(201,168,76,0.35)"; }}>
+                🎨 Bắt Đầu Thiết Kế Ngay →
+              </a>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
       {/* ── PRODUCT GALLERY ── */}
       <section style={{ padding: SECTION_PAD, background: BLACK }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
