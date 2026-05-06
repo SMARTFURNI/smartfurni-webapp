@@ -1069,6 +1069,30 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
     </div>
   );
 }
+// ─── EditableText: inline editable text for step titles ──────────────────────
+function EditableText({ value, onSave, style, as: Tag = "div" }: {
+  value: string; onSave: (v: string) => void; style?: React.CSSProperties; as?: "h3" | "p" | "div";
+}) {
+  const [editing, setEditing] = React.useState(false);
+  const [val, setVal] = React.useState(value);
+  if (editing) {
+    return (
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
+        <input autoFocus value={val} onChange={e => setVal(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") { onSave(val); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
+          style={{ flex: 1, background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "4px 10px", color: "#F5EDD6", fontSize: 13, fontFamily: FONT_BODY, outline: "none" }} />
+        <button onClick={() => { onSave(val); setEditing(false); }} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓</button>
+        <button onClick={() => setEditing(false)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
+      </div>
+    );
+  }
+  return (
+    <Tag style={{ ...style, cursor: "pointer", position: "relative" as const }} onClick={() => { setVal(value); setEditing(true); }} title="Click để sửa">
+      {value} <span style={{ fontSize: 9, opacity: 0.5, marginLeft: 4 }}>✏️</span>
+    </Tag>
+  );
+}
+
 function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false, content = {} }: {
   products: CrmProduct[];
   initialProductId?: string | null;
@@ -1081,6 +1105,30 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, tayVin: null, matTrang: null, doDay: null, aoNem: null });
   const [imgIdx, setImgIdx] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [editingTab, setEditingTab] = useState<string | null>(null);
+  const [editingStepTitle, setEditingStepTitle] = useState<string | null>(null); // "title" | "subtitle"
+  const [tabLabelVal, setTabLabelVal] = useState("");
+  const [stepTitleVal, setStepTitleVal] = useState("");
+  const [localContent, setLocalContent] = useState<Record<string, string>>(content || {});
+  async function saveTabLabel(stepKey: string, val: string) {
+    if (!val.trim()) return;
+    try {
+      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_step_label_${stepKey}`, content: val.trim() }) });
+      setLocalContent(prev => ({ ...prev, [`quiz_step_label_${stepKey}`]: val.trim() }));
+    } catch {}
+    setEditingTab(null);
+  }
+  async function saveStepText(stepKey: string, field: string, val: string) {
+    if (!val.trim()) return;
+    try {
+      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_step_${field}_${stepKey}`, content: val.trim() }) });
+      setLocalContent(prev => ({ ...prev, [`quiz_step_${field}_${stepKey}`]: val.trim() }));
+    } catch {}
+    setEditingStepTitle(null);
+  }
+  function getStepLabel(s: QuizStep) { return localContent[`quiz_step_label_${s}`] || STEP_LABELS[s]; }
+  function getStepTitle(s: QuizStep, fallback: string) { return localContent[`quiz_step_title_${s}`] || fallback; }
+  function getStepSubtitle(s: QuizStep, fallback: string) { return localContent[`quiz_step_subtitle_${s}`] || fallback; }
 
   const selectedProduct = products.find(p => p.id === cfg.productId) || null;
   const images = selectedProduct ? getProductImages(selectedProduct) : [];
@@ -1154,8 +1202,17 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
       ];
       return (
         <div>
-          <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Chọn kích thước khung</h3>
-          <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Kích thước khung sofa giường (chiều rộng)</p>
+          {isEditor ? (
+            <>
+              <EditableText as="h3" value={getStepTitle("size", "Chọn kích thước khung")} onSave={v => saveStepText("size", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+              <EditableText as="p" value={getStepSubtitle("size", "Kích thước khung sofa giường (chiều rộng)")} onSave={v => saveStepText("size", "subtitle", v)} style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
+            </>
+          ) : (
+            <>
+              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("size", "Chọn kích thước khung")}</h3>
+              <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("size", "Kích thước khung sofa giường (chiều rộng)")}</p>
+            </>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {(() => {
               const sizeImgs: Record<string, string> = {
@@ -1176,8 +1233,17 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     if (step === "hoc") {
       return (
         <div>
-          <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Hộc để đồ</h3>
-          <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tối ưu không gian lưu trữ trong phòng ngủ</p>
+          {isEditor ? (
+            <>
+              <EditableText as="h3" value={getStepTitle("hoc", "Hộc để đồ")} onSave={v => saveStepText("hoc", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+              <EditableText as="p" value={getStepSubtitle("hoc", "Tối ưu không gian lưu trữ trong phòng ngủ")} onSave={v => saveStepText("hoc", "subtitle", v)} style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
+            </>
+          ) : (
+            <>
+              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("hoc", "Hộc để đồ")}</h3>
+              <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("hoc", "Tối ưu không gian lưu trữ trong phòng ngủ")}</p>
+            </>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="box" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey="có_hộc_để_đồ" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_hộc_để_đồ"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=bottom"} />
             <QuizEditableOption icon="minus_circle" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey="không_hộc" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_hộc"] || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop"} />
@@ -1189,8 +1255,17 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     if (step === "tayVin") {
       return (
         <div>
-          <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Tay vịn</h3>
-          <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tay vịn tăng tính thẩm mỹ và tiện nghi khi ngồi</p>
+          {isEditor ? (
+            <>
+              <EditableText as="h3" value={getStepTitle("tayVin", "Tay vịn")} onSave={v => saveStepText("tayVin", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+              <EditableText as="p" value={getStepSubtitle("tayVin", "Tay vịn tăng tính thẩm mỹ và tiện nghi khi ngồi")} onSave={v => saveStepText("tayVin", "subtitle", v)} style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
+            </>
+          ) : (
+            <>
+              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("tayVin", "Tay vịn")}</h3>
+              <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("tayVin", "Tay vịn tăng tính thẩm mỹ và tiện nghi khi ngồi")}</p>
+            </>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")}  isEditor={isEditor} optionKey="có_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_tay_vịn"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=left"} />
             <QuizEditableOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")}  isEditor={isEditor} optionKey="không_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_tay_vịn"] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop"} />
@@ -1202,8 +1277,17 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     if (step === "matTrang") {
       return (
         <div>
-          <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Kiểu ốp mặt trang trí</h3>
-          <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Chất liệu bọc phần đầu giường và tay vịn (nếu có)</p>
+          {isEditor ? (
+            <>
+              <EditableText as="h3" value={getStepTitle("matTrang", "Kiểu ốp mặt trang trí")} onSave={v => saveStepText("matTrang", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+              <EditableText as="p" value={getStepSubtitle("matTrang", "Chất liệu bọc phần đầu giường và tay vịn (nếu có)")} onSave={v => saveStepText("matTrang", "subtitle", v)} style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
+            </>
+          ) : (
+            <>
+              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("matTrang", "Kiểu ốp mặt trang trí")}</h3>
+              <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("matTrang", "Chất liệu bọc phần đầu giường và tay vịn (nếu có)")}</p>
+            </>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")}  isEditor={isEditor} optionKey="vải_canvas" slug={LP_SLUG} imgUrl={content["quiz_opt_img_vải_canvas"] || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop"} />
             <QuizEditableOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")}  isEditor={isEditor} optionKey="da_pu_cao_cấp" slug={LP_SLUG} imgUrl={content["quiz_opt_img_da_pu_cao_cấp"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=right"} />
@@ -1217,8 +1301,17 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     if (step === "doDay") {
       return (
         <div>
-          <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Độ dày nệm</h3>
-          <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Nệm mút ép đàn hồi cao, hỗ trợ cột sống tối ưu</p>
+          {isEditor ? (
+            <>
+              <EditableText as="h3" value={getStepTitle("doDay", "Độ dày nệm")} onSave={v => saveStepText("doDay", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+              <EditableText as="p" value={getStepSubtitle("doDay", "Nệm mút ép đàn hồi cao, hỗ trợ cột sống tối ưu")} onSave={v => saveStepText("doDay", "subtitle", v)} style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
+            </>
+          ) : (
+            <>
+              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("doDay", "Độ dày nệm")}</h3>
+              <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("doDay", "Nệm mút ép đàn hồi cao, hỗ trợ cột sống tối ưu")}</p>
+            </>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="layers" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey="nệm_7cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_7cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop"} />
             <QuizEditableOption icon="bed" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey="nệm_10cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_10cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=bottom"} />
@@ -1230,7 +1323,13 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     if (step === "aoNem") {
       return (
         <div>
-          <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Áo nệm</h3>
+          {isEditor ? (
+            <>
+              <EditableText as="h3" value={getStepTitle("aoNem", "Áo nệm")} onSave={v => saveStepText("aoNem", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+            </>
+          ) : (
+            <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("aoNem", "Áo nệm")}</h3>
+          )}
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Lớp bọc ngoài nệm, có thể tháo ra giặt dễ dàng</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="leaf" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")}  isEditor={isEditor} optionKey="áo_nệm_vải_lanh" slug={LP_SLUG} imgUrl={content["quiz_opt_img_áo_nệm_vải_lanh"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=top"} />
@@ -1289,7 +1388,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", fontFamily: FONT_BODY, marginBottom: 4 }}>
               THIẾT KẾ CÁ NHÂN HOÁ — BƯỚC {stepIdx + 1}/{QUIZ_STEPS.length}
             </div>
-            <div style={{ color: WHITE, fontSize: 17, fontWeight: 700, fontFamily: FONT_HEADING }}>{STEP_LABELS[step]}</div>
+            <div style={{ color: WHITE, fontSize: 17, fontWeight: 700, fontFamily: FONT_HEADING }}>{getStepLabel(step)}</div>
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: `1px solid ${BLACK_BORDER}`, color: GRAY, borderRadius: 8, width: 36, height: 36, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
@@ -1303,8 +1402,25 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             const done = i < stepIdx;
             const active = s === step;
             return (
-              <div key={s} style={{ padding: "4px 12px", borderRadius: 100, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const, background: active ? GOLD : done ? "rgba(201,168,76,0.15)" : "transparent", color: active ? BLACK : done ? GOLD : GRAY, border: `1px solid ${active ? GOLD : done ? "rgba(201,168,76,0.4)" : BLACK_BORDER}`, transition: "all 0.2s" }}>
-                {done ? "✓ " : ""}{STEP_LABELS[s]}
+              <div key={s} style={{ padding: "4px 12px", borderRadius: 100, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const, background: active ? GOLD : done ? "rgba(201,168,76,0.15)" : "transparent", color: active ? BLACK : done ? GOLD : GRAY, border: `1px solid ${active ? GOLD : done ? "rgba(201,168,76,0.4)" : BLACK_BORDER}`, transition: "all 0.2s", position: "relative" as const, display: "flex", alignItems: "center", gap: 4 }}>
+                {done ? "✓ " : ""}
+                {isEditor && editingTab === s ? (
+                  <span style={{ display: "flex", gap: 4, alignItems: "center" }} onClick={e => e.stopPropagation()}>
+                    <input autoFocus value={tabLabelVal} onChange={e => setTabLabelVal(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") saveTabLabel(s, tabLabelVal); if (e.key === "Escape") setEditingTab(null); }}
+                      style={{ background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 4, padding: "1px 6px", color: "#F5EDD6", fontSize: 10, fontFamily: FONT_BODY, outline: "none", width: 80 }} />
+                    <button onClick={() => saveTabLabel(s, tabLabelVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 3, padding: "1px 6px", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>✓</button>
+                    <button onClick={() => setEditingTab(null)} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 3, padding: "1px 4px", fontSize: 9, cursor: "pointer" }}>✕</button>
+                  </span>
+                ) : (
+                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    {getStepLabel(s)}
+                    {isEditor && (
+                      <span onClick={e => { e.stopPropagation(); setEditingTab(s); setTabLabelVal(getStepLabel(s)); }}
+                        style={{ cursor: "pointer", opacity: 0.6, fontSize: 8, lineHeight: 1 }} title="Sửa tên tab">✏️</span>
+                    )}
+                  </span>
+                )}
               </div>
             );
           })}
