@@ -867,6 +867,8 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
   const [editPrice, setEditPrice] = React.useState(String(price));
   const [saving, setSaving] = React.useState(false);
   const [localImgUrl, setLocalImgUrl] = React.useState(imgUrl);
+  // Sync localImgUrl khi imgUrl prop thay đổi (ví dụ khi chuyển sang sản phẩm khác)
+  React.useEffect(() => { setLocalImgUrl(imgUrl); }, [imgUrl]);
   const [showUrlInput, setShowUrlInput] = React.useState(false);
   const [urlInputVal, setUrlInputVal] = React.useState("");
 
