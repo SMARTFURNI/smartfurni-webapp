@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface ChatMessage {
   id: string;
@@ -90,6 +91,8 @@ function renderBotText(text: string) {
 }
 
 export default function FloatingSupport() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/lp/")) return null;
   const [mode, setMode] = useState<"closed" | "menu" | "chat">("closed");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {

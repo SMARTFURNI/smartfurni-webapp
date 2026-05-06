@@ -273,3 +273,30 @@ nav[style*="position: fixed"] {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* ── Floating Buttons: Wave Ring Animation ── */
+.lp-wave-ring {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  animation: lp-wave-pulse 2s ease-out infinite;
+  z-index: 1;
+}
+.lp-wave-ring-2 {
+  animation-delay: 0.7s;
+}
+@keyframes lp-wave-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}

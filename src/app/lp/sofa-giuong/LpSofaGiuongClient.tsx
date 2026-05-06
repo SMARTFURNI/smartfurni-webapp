@@ -2068,16 +2068,38 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       {/* ── STICKY CTA ── */}
       <StickyCta scrollToForm={scrollToForm} E={E} />
 
-      {/* ── ZALO FLOAT ── */}
-      <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer"
-        style={{ position: "fixed", bottom: 80, right: 20, zIndex: 850, width: 52, height: 52, borderRadius: "50%", background: "#0068FF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(0,104,255,0.4)", textDecoration: "none", transition: "transform 0.2s" }}
-        onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
-        onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
-        <svg width="26" height="26" viewBox="0 0 48 48" fill="none">
-          <circle cx="24" cy="24" r="24" fill="#0068FF"/>
-          <text x="50%" y="55%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">Z</text>
-        </svg>
-      </a>
+      {/* ── FLOATING ZALO + CALL BUTTONS ── */}
+      <div style={{ position: "fixed", bottom: 140, right: 20, zIndex: 850, display: "flex", flexDirection: "column", gap: 14, alignItems: "center" }}>
+        {/* Nút Gọi điện */}
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {/* Sóng lan toả */}
+          <span className="lp-wave-ring" style={{ background: "rgba(34,197,94,0.25)" }} />
+          <span className="lp-wave-ring lp-wave-ring-2" style={{ background: "rgba(34,197,94,0.15)" }} />
+          <a href="tel:0918326552" title="Gọi điện tư vấn"
+            style={{ position: "relative", zIndex: 2, width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg,#22c55e,#16a34a)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 18px rgba(34,197,94,0.5)", textDecoration: "none", transition: "transform 0.2s" }}
+            onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
+            onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.39 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </a>
+        </div>
+
+        {/* Nút Zalo */}
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {/* Sóng lan toả */}
+          <span className="lp-wave-ring" style={{ background: "rgba(0,104,255,0.25)" }} />
+          <span className="lp-wave-ring lp-wave-ring-2" style={{ background: "rgba(0,104,255,0.15)" }} />
+          <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer" title="Chat Zalo"
+            style={{ position: "relative", zIndex: 2, width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg,#0068FF,#0050CC)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 18px rgba(0,104,255,0.5)", textDecoration: "none", transition: "transform 0.2s" }}
+            onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
+            onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
+            <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+              <text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="22" fontWeight="bold" fontFamily="Arial,sans-serif">Z</text>
+            </svg>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
