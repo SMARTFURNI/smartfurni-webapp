@@ -660,15 +660,14 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
             {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
           </div>
         )}
-        {/* Text + giá ở dưới: tên+mô tả ngang, giá hàng dưới */}
-        <div style={{ padding: "10px 12px 12px", display: "flex", flexDirection: "column" as const, gap: 6, flex: 1 }}>
-          {/* Hàng 1: tên + mô tả ngang */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-            <div style={{ color: WHITE, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, lineHeight: 1.3, flexShrink: 0, maxWidth: "45%" }}>{displayLabel}</div>
-            <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, lineHeight: 1.4, flex: 1, minWidth: 0 }}>{displayDesc}</div>
-          </div>
-          {/* Hàng 2: giá */}
-          <div style={{ marginTop: "auto" }}>
+        {/* Text + giá ở dưới: tên full-width, mô tả dưới, giá dưới cùng */}
+        <div style={{ padding: "10px 12px 12px", display: "flex", flexDirection: "column" as const, gap: 4, flex: 1 }}>
+          {/* Tên: full-width, wrap nếu dài */}
+          <div style={{ color: WHITE, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, lineHeight: 1.3, width: "100%" }}>{displayLabel}</div>
+          {/* Mô tả: dưới tên */}
+          {displayDesc && <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, lineHeight: 1.4 }}>{displayDesc}</div>}
+          {/* Giá: hàng dưới cùng */}
+          <div style={{ marginTop: "auto", paddingTop: 6 }}>
             {displayPrice > 0 ? <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>+{fmt(displayPrice)}</div> : <div style={{ color: "#4ADE80", fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY }}>Miễn phí</div>}
           </div>
         </div>
