@@ -2094,8 +2094,15 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             style={{ position: "relative", zIndex: 2, width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg,#0068FF,#0050CC)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 18px rgba(0,104,255,0.5)", textDecoration: "none", transition: "transform 0.2s" }}
             onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
             onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
-            <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
-              <text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="22" fontWeight="bold" fontFamily="Arial,sans-serif">Z</text>
+            <svg width="34" height="16" viewBox="0 0 80 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Z */}
+              <path d="M0 0h20.5v5.2L6.8 28.8H20.5V34H0v-5.2L13.7 5.2H0V0z" fill="white"/>
+              {/* a */}
+              <path d="M24 11.5c2.2-1.5 4.8-2.3 7.5-2.3 5.8 0 9.2 3 9.2 8.5V34h-5.8v-2c-1.4 1.6-3.5 2.5-6 2.5-4.2 0-7-2.5-7-6.2 0-4 3-6.5 8-6.5h4.8v-.8c0-2.5-1.5-3.8-4.5-3.8-1.8 0-3.5.6-5 1.8l-1.2-7.5zm10.8 12.5h-3.8c-2 0-3.2.8-3.2 2.2 0 1.4 1 2.2 2.8 2.2 2.5 0 4.2-1.5 4.2-3.8v-.6z" fill="white"/>
+              {/* l */}
+              <path d="M44 0h6v34h-6V0z" fill="white"/>
+              {/* o */}
+              <path d="M53.5 21.5c0-7.5 5-12.3 13-12.3s13 4.8 13 12.3-5 12.5-13 12.5-13-5-13-12.5zm19.8 0c0-4.2-2.5-6.8-6.8-6.8s-6.8 2.6-6.8 6.8 2.5 6.8 6.8 6.8 6.8-2.6 6.8-6.8z" fill="white"/>
             </svg>
           </a>
         </div>
