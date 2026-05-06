@@ -577,15 +577,16 @@ function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
 
 
 // ─── QuizEditableOption: QuizOption với khả năng chỉnh sửa khi isEditor ──────
-function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick, isEditor, optionKey, slug, imgUrl }: {
+function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick, isEditor, optionKey, slug, imgUrl, onImageUploaded }: {
   icon: string; label: string; desc: string; price: number; selected: boolean; badge?: string; onClick: () => void;
-  isEditor?: boolean; optionKey?: string; slug?: string; imgUrl?: string;
+  isEditor?: boolean; optionKey?: string; slug?: string; imgUrl?: string; onImageUploaded?: (key: string, url: string) => void;
 }) {
   const [editing, setEditing] = React.useState<null | "label" | "desc" | "price">(null);
   const [editLabel, setEditLabel] = React.useState(label);
   const [editDesc, setEditDesc] = React.useState(desc);
   const [editPrice, setEditPrice] = React.useState(String(price));
   const [saving, setSaving] = React.useState(false);
+  const [localImgUrl, setLocalImgUrl] = React.useState(imgUrl);
 
   const saveField = async (field: "label" | "desc" | "price") => {
     if (!optionKey || !slug) return;
@@ -610,9 +611,9 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
     <div style={{ position: "relative" }}>
       <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, cursor: "pointer", textAlign: "left" as const, transition: "all 0.2s", width: "100%", overflow: "hidden", padding: 0, display: "flex", flexDirection: "column" as const }}>
         {/* Ảnh to ở trên - tỉ lệ 16:9 */}
-        {imgUrl ? (
+        {localImgUrl ? (
           <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", overflow: "hidden", background: "#0D0800" }}>
-            <img src={imgUrl} alt={label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
+            <img src={localImgUrl} alt={label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
             {/* Badge */}
             {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{badge}</span>}
             {/* Tick selected */}
@@ -631,10 +632,21 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
                     const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
                     if (res.ok) {
                       const data = await res.json();
-                      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: `quiz_opt_img_${optionKey}`, content: data.url }) });
-                      window.location.reload();
+                      if (data.url) {
+                        await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: `quiz_opt_img_${optionKey}`, content: data.url }) });
+                        setLocalImgUrl(data.url);
+                        if (onImageUploaded && optionKey) onImageUploaded(optionKey, data.url);
+                      } else {
+                        alert("Upload thất bại: " + (data.error || "Lỗi không xác định"));
+                      }
+                    } else {
+                      const err = await res.json().catch(() => ({}));
+                      alert("Upload thất bại (" + res.status + "): " + (err.error || "Vui lòng đăng nhập lại"));
                     }
-                  } catch {}
+                  } catch (err) {
+                    alert("Lỗi kết nối khi upload ảnh");
+                    console.error("Upload error:", err);
+                  }
                 }} />
               </label>
             )}
@@ -954,10 +966,20 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                         const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
                         if (res.ok) {
                           const data = await res.json();
-                          await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_img_${selectedProduct.id}`, content: data.url }) });
-                          window.location.reload();
+                          if (data.url) {
+                            await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_img_${selectedProduct.id}`, content: data.url }) });
+                            window.location.reload();
+                          } else {
+                            alert("Upload thất bại: " + (data.error || "Lỗi không xác định"));
+                          }
+                        } else {
+                          const err = await res.json().catch(() => ({}));
+                          alert("Upload thất bại (" + res.status + "): " + (err.error || "Vui lòng đăng nhập lại"));
                         }
-                      } catch {}
+                      } catch (err) {
+                        alert("Lỗi khi upload ảnh sản phẩm");
+                        console.error("Product img upload error:", err);
+                      }
                     }} />
                   </label>
                 )}
