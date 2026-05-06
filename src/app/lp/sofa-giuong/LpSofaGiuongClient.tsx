@@ -2442,7 +2442,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             </h2>
             <GoldDivider />
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24, marginTop: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24, marginTop: 16 }}>
             {[
               { step: "01", icon: "sofa", title: "Chọn mẫu", desc: "Duyệt qua bộ sưu tập và chọn mẫu sofa giường yêu thích" },
               { step: "02", icon: "sliders", title: "Tuỳ chỉnh", desc: "Chọn kích thước, hộc, tay vịn, chất liệu, nệm theo sở thích" },
@@ -2450,8 +2450,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               { step: "04", icon: "phone", title: "Nhận tư vấn", desc: "Điền thông tin, nhân viên liên hệ xác nhận trong 30 phút" },
             ].map((s, i) => (
               <FadeIn key={i} delay={i * 80}>
-                <div style={{ textAlign: "center", padding: "28px 20px" }}>
-                  <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <div
+                  style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s", position: "relative" as const, overflow: "hidden" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER}
+                >
+                  {/* Step number watermark */}
+                  <div style={{ position: "absolute", top: 12, right: 16, color: "rgba(201,168,76,0.08)", fontSize: 56, fontWeight: 900, fontFamily: FONT_HEADING, lineHeight: 1, pointerEvents: "none", userSelect: "none" as const }}>{s.step}</div>
+                  <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
                     <SvgIcon name={s.icon} size={24} color={GOLD} />
                   </div>
                   <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 8 }}>{s.step}</div>
