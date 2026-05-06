@@ -372,6 +372,93 @@ function StickyCta({ scrollToForm, E }: { scrollToForm: () => void; E: EFn }) {
   );
 }
 
+// ─── TypewriterText: hiệu ứng gõ chữ từng ký tự ─────────────────────────────
+function TypewriterText({ text, highlightWords = [], speed = 55, startDelay = 400, cursorColor = GOLD }: {
+  text: string;
+  highlightWords?: string[];
+  speed?: number;
+  startDelay?: number;
+  cursorColor?: string;
+}) {
+  const [displayed, setDisplayed] = React.useState("");
+  const [done, setDone] = React.useState(false);
+
+  React.useEffect(() => {
+    setDisplayed("");
+    setDone(false);
+    const timeout = setTimeout(() => {
+      let i = 0;
+      const interval = setInterval(() => {
+        i++;
+        setDisplayed(text.slice(0, i));
+        if (i >= text.length) {
+          clearInterval(interval);
+          setDone(true);
+        }
+      }, speed);
+      return () => clearInterval(interval);
+    }, startDelay);
+    return () => clearTimeout(timeout);
+  }, [text, speed, startDelay]);
+
+  // Render với highlight cho các từ đặc biệt
+  const renderWithHighlight = (str: string) => {
+    if (!highlightWords.length) return str;
+    // Tìm vị trí highlight trong chuỗi đã hiển thị
+    let result: React.ReactNode[] = [];
+    let remaining = str;
+    let keyIdx = 0;
+
+    // Tìm highlight phrase trong text gốc
+    for (const hw of highlightWords) {
+      const fullIdx = text.indexOf(hw);
+      if (fullIdx === -1) continue;
+      const visibleLen = str.length;
+      const beforeHighlight = text.slice(0, fullIdx);
+      const highlightEnd = fullIdx + hw.length;
+
+      if (visibleLen <= fullIdx) {
+        // Chưa tới phần highlight
+        result = [<React.Fragment key="pre">{str}</React.Fragment>];
+      } else if (visibleLen < highlightEnd) {
+        // Đang gõ trong phần highlight
+        const visibleHighlight = str.slice(fullIdx);
+        result = [
+          <React.Fragment key="pre">{beforeHighlight}</React.Fragment>,
+          <span key="hl" style={{ background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{visibleHighlight}</span>
+        ];
+      } else {
+        // Đã qua phần highlight
+        const after = str.slice(highlightEnd);
+        result = [
+          <React.Fragment key="pre">{beforeHighlight}</React.Fragment>,
+          <span key="hl" style={{ background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{hw}</span>,
+          <React.Fragment key="post">{after}</React.Fragment>
+        ];
+      }
+      return result;
+    }
+    return [<React.Fragment key="all">{str}</React.Fragment>];
+  };
+
+  return (
+    <span>
+      {renderWithHighlight(displayed)}
+      <span style={{
+        display: "inline-block",
+        width: 3,
+        height: "0.85em",
+        background: cursorColor,
+        marginLeft: 3,
+        verticalAlign: "middle",
+        borderRadius: 2,
+        animation: done ? "blink-cursor 1s step-end infinite" : "none",
+        opacity: done ? 1 : 1,
+      }} />
+    </span>
+  );
+}
+
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
@@ -1437,10 +1524,12 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           <FadeIn>
             <SectionLabel>Sofa Giường Cá Nhân Hoá</SectionLabel>
             <h1 style={{ fontSize: "clamp(32px,5.5vw,68px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 20, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", maxWidth: 700 }}>
-              {E({ bk: "hero_title_1", def: "Thiết Kế Sofa Giường", as: "span" })}{" "}
-              <span style={{ background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                {E({ bk: "hero_title_2", def: "Theo Sở Thích Riêng", as: "span" })}
-              </span>
+              <TypewriterText
+                text="Tự Thiết Kế Sofa Giường Theo Nhu Cầu Của Bạn"
+                highlightWords={["Theo Nhu Cầu Của Bạn"]}
+                speed={55}
+                startDelay={300}
+              />
             </h1>
             <p style={{ fontSize: "clamp(15px,1.8vw,18px)", color: GRAY_LIGHT, lineHeight: 1.75, marginBottom: 36, maxWidth: 560, fontFamily: FONT_BODY }}>
               {E({ bk: "hero_desc", def: "Chọn mẫu, kích thước, chất liệu, màu sắc — mọi chi tiết đều do bạn quyết định. Nhận báo giá tức thì và giao hàng tận nơi.", as: "span" })}

@@ -267,3 +267,9 @@ nav[style*="position: fixed"] {
     padding: 16px !important;
   }
 }
+
+/* ── Typewriter cursor blink ── */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
