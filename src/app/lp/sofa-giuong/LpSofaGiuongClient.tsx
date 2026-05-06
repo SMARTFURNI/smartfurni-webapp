@@ -1765,15 +1765,15 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
           {/* Ảnh full-width duy nhất: upload 1 ảnh ghép vấn đề + giải pháp */}
           <FadeIn delay={0}>
-            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: BLACK_CARD, border: `1px solid rgba(201,168,76,0.2)`, width: "100%", aspectRatio: "2/1", minHeight: 280 }}>
+            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: BLACK_CARD, border: `1px solid rgba(201,168,76,0.2)`, width: "100%" }}>
               {(() => {
                 const imgUrl = content["solution_main_img"] || "";
                 return (
                   <>
                     {imgUrl ? (
-                      <img src={imgUrl} alt="Vấn đề và giải pháp sofa giường SmartFurni" style={{ width: "100%", height: "100%", objectFit: "contain", position: "absolute", inset: 0 }} />
+                      <img src={imgUrl} alt="Vấn đề và giải pháp sofa giường SmartFurni" style={{ width: "100%", height: "auto", display: "block" }} />
                     ) : (
-                      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(201,168,76,0.04)" }}>
+                      <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(201,168,76,0.04)" }}>
                         <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
                         <p style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, textAlign: "center" as const, margin: 0 }}>
                           {editMode ? "Bấm nút bên dưới để upload ảnh" : "Chưa có ảnh — bật chỉnh sửa để upload"}
