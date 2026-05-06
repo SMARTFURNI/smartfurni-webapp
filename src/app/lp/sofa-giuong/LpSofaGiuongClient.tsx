@@ -635,27 +635,88 @@ function LeadForm({ submitLabel, prefilledConfig }: { submitLabel?: string; pref
 
 
 // ─── QuizOrderForm: Form đặt hàng trong popup ─────────────────────────────────
-const VN_PROVINCES = ["An Giang","Bà Rịa - Vũng Tàu","Bắc Giang","Bắc Kạn","Bạc Liêu","Bắc Ninh","Bến Tre","Bình Định","Bình Dương","Bình Phước","Bình Thuận","Cà Mau","Cần Thơ","Cao Bằng","Đà Nẵng","Đắk Lắk","Đắk Nông","Điện Biên","Đồng Nai","Đồng Tháp","Gia Lai","Hà Giang","Hà Nam","Hà Nội","Hà Tĩnh","Hải Dương","Hải Phòng","Hậu Giang","Hòa Bình","Hưng Yên","Khánh Hòa","Kiên Giang","Kon Tum","Lai Châu","Lâm Đồng","Lạng Sơn","Lào Cai","Long An","Nam Định","Nghệ An","Ninh Bình","Ninh Thuận","Phú Thọ","Phú Yên","Quảng Bình","Quảng Nam","Quảng Ngãi","Quảng Ninh","Quảng Trị","Sóc Trăng","Sơn La","Tây Ninh","Thái Bình","Thái Nguyên","Thanh Hóa","Thừa Thiên Huế","Tiền Giang","TP. Hồ Chí Minh","Trà Vinh","Tuyên Quang","Vĩnh Long","Vĩnh Phúc","Yên Bái"];
-
 function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
   cfg: ConfigState; product: CrmProduct; total: number;
   onBack: () => void;
   onComplete: (cfg: ConfigState, product: CrmProduct, total: number) => void;
 }) {
-  const [form, setForm] = React.useState({ name: "", phone: "", province: "", address: "", note: "" });
+  const [form, setForm] = React.useState({ name: "", phone: "", note: "" });
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [error, setError] = React.useState("");
-  const [provinceSearch, setProvinceSearch] = React.useState("");
-  const [showProvinceDrop, setShowProvinceDrop] = React.useState(false);
   const [utms, setUtms] = React.useState<Record<string, string>>({});
+
+  // Address state
+  const [provinces, setProvinces] = React.useState<{id: string; full_name: string}[]>([]);
+  const [districts, setDistricts] = React.useState<{id: string; full_name: string}[]>([]);
+  const [wards, setWards] = React.useState<{id: string; full_name: string}[]>([]);
+  const [selProvince, setSelProvince] = React.useState<{id: string; full_name: string} | null>(null);
+  const [selDistrict, setSelDistrict] = React.useState<{id: string; full_name: string} | null>(null);
+  const [selWard, setSelWard] = React.useState<{id: string; full_name: string} | null>(null);
+  const [streetAddress, setStreetAddress] = React.useState("");
+
   React.useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     setUtms({ utmSource: p.get("utm_source") || "", utmMedium: p.get("utm_medium") || "", utmCampaign: p.get("utm_campaign") || "", utmContent: p.get("utm_content") || "" });
+    // Load provinces
+    fetch("https://esgoo.net/api-tinhthanh/1/0.htm")
+      .then(r => r.json())
+      .then(d => { if (d.error === 0) setProvinces(d.data); })
+      .catch(() => {});
   }, []);
+
+  React.useEffect(() => {
+    if (!selProvince) { setDistricts([]); setSelDistrict(null); setWards([]); setSelWard(null); return; }
+    fetch(`https://esgoo.net/api-tinhthanh/2/${selProvince.id}.htm`)
+      .then(r => r.json())
+      .then(d => { if (d.error === 0) setDistricts(d.data); setSelDistrict(null); setWards([]); setSelWard(null); })
+      .catch(() => {});
+  }, [selProvince]);
+
+  React.useEffect(() => {
+    if (!selDistrict) { setWards([]); setSelWard(null); return; }
+    fetch(`https://esgoo.net/api-tinhthanh/3/${selDistrict.id}.htm`)
+      .then(r => r.json())
+      .then(d => { if (d.error === 0) setWards(d.data); setSelWard(null); })
+      .catch(() => {});
+  }, [selDistrict]);
+
   const setF = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(prev => ({ ...prev, [k]: e.target.value }));
-  const filteredProvinces = VN_PROVINCES.filter(p => p.toLowerCase().includes(provinceSearch.toLowerCase()));
-  const inp = { background: "rgba(245,237,214,0.04)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: R_SM, padding: "11px 14px", color: WHITE, fontSize: 13, fontFamily: FONT_BODY, outline: "none", width: "100%", boxSizing: "border-box" as const };
+
+  // Base input style - fontSize 16px prevents iOS zoom
+  const inp: React.CSSProperties = {
+    background: "rgba(245,237,214,0.04)",
+    border: "1px solid rgba(201,168,76,0.2)",
+    borderRadius: R_SM,
+    padding: "11px 14px",
+    color: WHITE,
+    fontSize: 16,
+    fontFamily: FONT_BODY,
+    outline: "none",
+    width: "100%",
+    boxSizing: "border-box",
+    WebkitAppearance: "none",
+  };
+
+  const selStyle: React.CSSProperties = {
+    ...inp,
+    cursor: "pointer",
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23C9A84C' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 12px center",
+    paddingRight: 36,
+    appearance: "none" as const,
+  };
+
+  const focusStyle = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    e.target.style.borderColor = GOLD;
+    e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)";
+  };
+  const blurStyle = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    e.target.style.borderColor = "rgba(201,168,76,0.2)";
+    e.target.style.boxShadow = "none";
+  };
+
   async function handleSubmit() {
     if (!form.name.trim() || !form.phone.trim()) { setError("Vui lòng điền đầy đủ Họ tên và Số điện thoại (*)"); return; }
     if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.replace(/\s/g, ""))) { setError("Số điện thoại không hợp lệ"); return; }
@@ -672,8 +733,9 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
         `Tổng: ${fmt(total)}`,
       ].filter(Boolean);
       const configStr = parts.join(" | ");
-      const addressFull = [form.address, form.province].filter(Boolean).join(", ");
-      const noteStr = `[Cấu hình: ${configStr}] Địa chỉ: ${addressFull} | Ghi chú: ${form.note}`;
+      const addressParts = [streetAddress, selWard?.full_name, selDistrict?.full_name, selProvince?.full_name].filter(Boolean);
+      const addressFull = addressParts.join(", ");
+      const noteStr = `[Cấu hình: ${configStr}] Địa chỉ: ${addressFull}${form.note ? ` | Ghi chú: ${form.note}` : ""}`;
       const res = await fetch("/api/lp/submit-lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -685,6 +747,7 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
     } catch (err: unknown) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
     finally { setLoading(false); }
   }
+
   if (success) return (
     <div style={{ textAlign: "center", padding: "40px 20px" }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
@@ -692,58 +755,129 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
       <p style={{ color: GRAY_LIGHT, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY }}>Cảm ơn bạn đã tin tưởng SmartFurni.<br />Đội ngũ tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 30 phút.</p>
     </div>
   );
+
   return (
     <div>
       <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Thông tin đặt hàng</h3>
       <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Điền thông tin để nhận tư vấn và xác nhận đơn hàng</p>
+
+      {/* Name + Phone */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         <div>
           <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Họ và tên *</label>
-          <input type="text" placeholder="Nguyễn Văn A" value={form.name} onChange={setF("name")} style={inp}
-            onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
-            onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+          <input
+            type="text"
+            placeholder="Nguyễn Văn A"
+            autoComplete="name"
+            value={form.name}
+            onChange={setF("name")}
+            style={inp}
+            onFocus={focusStyle}
+            onBlur={blurStyle}
+          />
         </div>
         <div>
           <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Số điện thoại (Zalo) *</label>
-          <input type="tel" placeholder="0912 345 678" value={form.phone} onChange={setF("phone")} style={inp}
-            onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
-            onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+          <input
+            type="tel"
+            placeholder="0912 345 678"
+            autoComplete="tel"
+            value={form.phone}
+            onChange={setF("phone")}
+            style={inp}
+            onFocus={focusStyle}
+            onBlur={blurStyle}
+          />
         </div>
       </div>
-      <div style={{ marginBottom: 12, position: "relative" as const }}>
+
+      {/* Province */}
+      <div style={{ marginBottom: 10 }}>
         <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Tỉnh / Thành phố</label>
-        <input type="text" placeholder="Tìm tỉnh/thành phố..." value={form.province || provinceSearch}
-          onChange={e => { setProvinceSearch(e.target.value); setForm(prev => ({ ...prev, province: "" })); setShowProvinceDrop(true); }}
-          onFocus={() => setShowProvinceDrop(true)}
-          onBlur={() => setTimeout(() => setShowProvinceDrop(false), 200)}
-          style={inp}
-        />
-        {showProvinceDrop && filteredProvinces.length > 0 && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#1a1a0e", border: "1px solid rgba(201,168,76,0.3)", borderRadius: R_SM, zIndex: 100, maxHeight: 180, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
-            {filteredProvinces.map(p => (
-              <div key={p} onMouseDown={() => { setForm(prev => ({ ...prev, province: p })); setProvinceSearch(""); setShowProvinceDrop(false); }}
-                style={{ padding: "9px 14px", color: WHITE, fontSize: 13, fontFamily: FONT_BODY, cursor: "pointer", borderBottom: "1px solid rgba(201,168,76,0.08)" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,168,76,0.1)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                {p}
-              </div>
-            ))}
-          </div>
-        )}
+        <select
+          value={selProvince?.id || ""}
+          onChange={e => {
+            const found = provinces.find(p => p.id === e.target.value) || null;
+            setSelProvince(found);
+          }}
+          style={selStyle}
+          onFocus={focusStyle}
+          onBlur={blurStyle}
+        >
+          <option value="">-- Chọn tỉnh/thành phố --</option>
+          {provinces.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+        </select>
       </div>
+
+      {/* District */}
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Quận / Huyện</label>
+        <select
+          value={selDistrict?.id || ""}
+          onChange={e => {
+            const found = districts.find(d => d.id === e.target.value) || null;
+            setSelDistrict(found);
+          }}
+          style={{ ...selStyle, opacity: selProvince ? 1 : 0.5 }}
+          disabled={!selProvince}
+          onFocus={focusStyle}
+          onBlur={blurStyle}
+        >
+          <option value="">-- Chọn quận/huyện --</option>
+          {districts.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
+        </select>
+      </div>
+
+      {/* Ward */}
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Phường / Xã</label>
+        <select
+          value={selWard?.id || ""}
+          onChange={e => {
+            const found = wards.find(w => w.id === e.target.value) || null;
+            setSelWard(found);
+          }}
+          style={{ ...selStyle, opacity: selDistrict ? 1 : 0.5 }}
+          disabled={!selDistrict}
+          onFocus={focusStyle}
+          onBlur={blurStyle}
+        >
+          <option value="">-- Chọn phường/xã --</option>
+          {wards.map(w => <option key={w.id} value={w.id}>{w.full_name}</option>)}
+        </select>
+      </div>
+
+      {/* Street address */}
       <div style={{ marginBottom: 12 }}>
-        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Địa chỉ cụ thể</label>
-        <input type="text" placeholder="Số nhà, đường, phường/xã, quận/huyện" value={form.address} onChange={setF("address")} style={inp}
-          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
-          onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Số nhà / Đường</label>
+        <input
+          type="text"
+          placeholder="123 Đường Lê Lợi"
+          autoComplete="street-address"
+          value={streetAddress}
+          onChange={e => setStreetAddress(e.target.value)}
+          style={inp}
+          onFocus={focusStyle}
+          onBlur={blurStyle}
+        />
       </div>
+
+      {/* Note */}
       <div style={{ marginBottom: 20 }}>
         <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Ghi chú thêm (tuỳ chọn)</label>
-        <textarea placeholder="Thời gian giao hàng mong muốn, yêu cầu đặc biệt..." rows={2} value={form.note} onChange={setF("note")} style={{ ...inp, resize: "none" }}
-          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
-          onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+        <textarea
+          placeholder="Thời gian giao hàng mong muốn, yêu cầu đặc biệt..."
+          rows={2}
+          value={form.note}
+          onChange={setF("note")}
+          style={{ ...inp, resize: "none" }}
+          onFocus={focusStyle}
+          onBlur={blurStyle}
+        />
       </div>
+
       {error && <div style={{ color: "#FF6B6B", fontSize: 13, marginBottom: 16, padding: "12px 16px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: R_SM, fontFamily: FONT_BODY }}>{error}</div>}
+
       <div style={{ display: "flex", gap: 12 }}>
         <button onClick={onBack} style={{ flex: "0 0 auto", background: "transparent", border: `1px solid ${BLACK_BORDER}`, color: GRAY, borderRadius: R_MD, padding: "16px 20px", cursor: "pointer", fontFamily: FONT_BODY, fontSize: 13 }}>← Quay lại</button>
         <GoldButton onClick={handleSubmit} style={{ flex: 1, borderRadius: R_MD, fontSize: 14, padding: "16px", opacity: loading ? 0.7 : 1 }}>
