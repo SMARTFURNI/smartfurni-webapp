@@ -1008,10 +1008,22 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [hiddenProductIds, setHiddenProductIds] = useState<string[]>(() => {
+    try { return JSON.parse(initialContent["hidden_product_ids"] || "[]"); } catch { return []; }
+  });
   const formRef = useRef<HTMLDivElement>(null);
 
   const handleSaved = useCallback((bk: string, val: string) => {
     setContent(c => ({ ...c, [bk]: val }));
+  }, []);
+
+  const saveHiddenIds = useCallback(async (ids: string[]) => {
+    setHiddenProductIds(ids);
+    await fetch("/api/admin/lp-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: LP_SLUG, blockKey: "hidden_product_ids", content: JSON.stringify(ids) }),
+    });
   }, []);
 
   // Shorthand để render InlineEdit với props chung
@@ -1336,9 +1348,12 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               </p>
             </div>
           </FadeIn>
-          {sofaProducts.length > 0 ? (
+          {(() => {
+            const displayedProducts = sofaProducts.filter(p => !hiddenProductIds.includes(p.id));
+            const hiddenProducts = sofaProducts.filter(p => hiddenProductIds.includes(p.id));
+            return displayedProducts.length > 0 || isEditor ? (
             <div className="lp-sg-product-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
-              {sofaProducts.map((p, i) => {
+              {displayedProducts.map((p, i) => {
                 const minPrice = p.sizePricings?.length ? Math.min(...p.sizePricings.map(s => s.price)) : p.basePrice;
                 const priceCount = p.sizePricings?.length || 1;
                 const badges = ["Bán chạy nhất ★", "Double cao cấp", "Sản phẩm", "Premium", "Mới", "Hot"];
@@ -1355,6 +1370,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                     >
                       {/* Badge góc trên phải */}
                       <div style={{ position: "absolute", top: 14, right: 14, zIndex: 2, background: badgeColor, color: badgeTextColor, fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 100, fontFamily: FONT_BODY, border: i === 1 ? "none" : "1px solid rgba(201,168,76,0.35)", backdropFilter: "blur(4px)" }}>{badge}</div>
+                      {/* Nút xoá khi editMode */}
+                      {editMode && (
+                        <button
+                          onClick={e => { e.stopPropagation(); if (confirm(`Ẩn sản phẩm "${p.name.replace(/^Chia sẻ\s+/, "").substring(0, 40)}" khỏi trang?`)) saveHiddenIds([...hiddenProductIds, p.id]); }}
+                          style={{ position: "absolute", top: 10, left: 10, zIndex: 10, background: "rgba(239,68,68,0.9)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
+                          title="Ẩn sản phẩm này"
+                        >✕</button>
+                      )}
                       {/* Ảnh tỉ lệ 1:1 */}
                       <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "#0D0800", flexShrink: 0 }}>
                         {p.imageUrl
@@ -1392,12 +1415,30 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                   </FadeIn>
                 );
               })}
+              {/* Nút Thêm sản phẩm khi editMode */}
+              {editMode && hiddenProducts.length > 0 && (
+                <div style={{ background: "rgba(201,168,76,0.06)", border: "2px dashed rgba(201,168,76,0.35)", borderRadius: R_LG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "32px 16px", minHeight: 200 }}>
+                  <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textAlign: "center" }}>Thêm sản phẩm</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
+                    {hiddenProducts.map(hp => (
+                      <button key={hp.id}
+                        onClick={() => saveHiddenIds(hiddenProductIds.filter(id => id !== hp.id))}
+                        style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 8, padding: "8px 12px", color: GOLD, fontSize: 12, fontFamily: FONT_BODY, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}
+                      >
+                        <span style={{ fontSize: 16 }}>＋</span>
+                        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hp.name.replace(/^Chia sẻ\s+/, "").substring(0, 40)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <div style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY }}>Đang tải danh sách sản phẩm…</div>
             </div>
-          )}
+          );
+          })()}
           <FadeIn delay={200}>
             <div style={{ textAlign: "center", marginTop: 40 }}>
               <GoldButton onClick={() => openQuiz()} style={{ fontSize: 14, padding: "16px 40px" }}>
