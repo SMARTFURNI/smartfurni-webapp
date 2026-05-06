@@ -1221,15 +1221,20 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {(() => {
-              const sizeImgs: Record<string, string> = {
-                "0,9M": content["quiz_opt_img_size_09m"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop",
-                "1,2M": content["quiz_opt_img_size_12m"] || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop",
-                "1,5M": content["quiz_opt_img_size_15m"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=center",
-                "1,8M": content["quiz_opt_img_size_18m"] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop",
-              };
-              return sizes.map(s => (
-              <QuizEditableOption key={s.size} icon="ruler" label={s.size} desc={s.size === "0,9M" ? "Phù hợp phòng nhỏ, 1 người" : s.size === "1,2M" ? "Tiêu chuẩn, 1–2 người" : s.size === "1,5M" ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng"} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)}  isEditor={isEditor} optionKey={`size_${s.size.replace(",", "").replace("M", "m")}`} slug={LP_SLUG} imgUrl={sizeImgs[s.size]} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
-              ));
+              const defaultSizeImgs = [
+                "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop",
+                "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop",
+                "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=center",
+                "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop",
+              ];
+              return sizes.map((s, idx) => {
+                const sizeKey = `size_${idx}`;
+                const imgUrl = localContent[`quiz_opt_img_${sizeKey}`] || content[`quiz_opt_img_${sizeKey}`] || defaultSizeImgs[idx] || defaultSizeImgs[0];
+                const sizeDesc = idx === 0 ? "Phù hợp phòng nhỏ, 1 người" : idx === 1 ? "Tiêu chuẩn, 1–2 người" : idx === 2 ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng";
+                return (
+              <QuizEditableOption key={s.size} icon="ruler" label={s.size} desc={sizeDesc} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)}  isEditor={isEditor} optionKey={sizeKey} slug={LP_SLUG} imgUrl={imgUrl} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
+                );
+              });
             })()}
           </div>
         </div>
