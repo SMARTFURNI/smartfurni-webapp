@@ -532,7 +532,7 @@ function FaqAccordion({ E: EditFn }: { E: EFn }) {
                 <span style={{ color: GOLD, fontSize: 20, flexShrink: 0, transform: isOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.3s", lineHeight: 1 }}>+</span>
               </button>
               <div style={{ maxHeight: isOpen ? 400 : 0, overflow: "hidden", transition: "max-height 0.4s ease" }}>
-                <div style={{ padding: "0 24px 24px", borderTop: "1px solid rgba(139,94,26,0.15)", paddingTop: 18 }}>
+                <div style={{ padding: "0 24px 24px", borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 18 }}>
                   <p style={{ color: GRAY_LIGHT, fontSize: 14, lineHeight: 1.85, fontFamily: FONT_BODY, margin: 0 }}>
                     {EditFn({ bk: item.bkA, def: item.defA, as: "span", multiline: true })}
                   </p>
@@ -1820,18 +1820,18 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
       {/* ── PRODUCT GALLERY ── */}
-      <section style={{ padding: SECTION_PAD, background: "linear-gradient(180deg, #F5EDD6 0%, #EDE0C4 100%)" }}>
+      <section style={{ padding: SECTION_PAD, background: "#1A1600" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel style={{ background: "rgba(10,10,8,0.08)", color: "#7A5C1E", border: "1px solid rgba(122,92,30,0.3)" }}>Bộ Sưu Tập</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: "#1A1200" }}>
-                {E({ bk: "gallery_title_1", def: "Chọn Mẫu Yêu Thích", as: "span", style: { color: "#1A1200" } })}
+              <SectionLabel >Bộ Sưu Tập</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
+                {E({ bk: "gallery_title_1", def: "Chọn Mẫu Yêu Thích", as: "span", style: { color: WHITE } })}
                 {" "}
-                {E({ bk: "gallery_title_2", def: "Và Bắt Đầu Tuỳ Chỉnh Thiết Kế", as: "span", style: { color: "#8B5E1A" } })}
+                {E({ bk: "gallery_title_2", def: "Và Bắt Đầu Tuỳ Chỉnh Thiết Kế", as: "span", style: { color: GOLD } })}
               </h2>
               <GoldDivider />
-              <p style={{ color: "#6B5B3E", fontSize: 15, lineHeight: 1.8, maxWidth: 560, margin: "0 auto", fontFamily: FONT_BODY }}>
+              <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, maxWidth: 560, margin: "0 auto", fontFamily: FONT_BODY }}>
                 {E({ bk: "gallery_desc", def: "Mỗi mẫu đều có thể tuỳ chỉnh hoàn toàn — kích thước, chất liệu, màu sắc theo ý bạn", as: "span" })}
               </p>
             </div>
@@ -1848,7 +1848,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 return (
                   <FadeIn key={p.id} delay={i * 60}>
                     <div
-                      style={{ background: "#FFFBF4", border: "1px solid rgba(139,94,26,0.15)", borderRadius: R_LG, overflow: "hidden", cursor: "pointer", transition: "border-color 0.25s, transform 0.25s", position: "relative", display: "flex", flexDirection: "column", boxShadow: "0 2px 16px rgba(139,94,26,0.08)" }}
+                      style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: "pointer", transition: "border-color 0.25s, transform 0.25s", position: "relative", display: "flex", flexDirection: "column" }}
                       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.45)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
                       onClick={() => openQuiz(p.id)}
@@ -1894,10 +1894,10 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                               await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `prod_name_${p.id}`, content: val }) });
                               setContent(c => ({ ...c, [`prod_name_${p.id}`]: val }));
                             }}
-                            style={{ color: "#1A1200", fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0, background: "rgba(139,94,26,0.06)", border: "1px dashed rgba(139,94,26,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none" }}
+                            style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none" }}
                           />
                         ) : (
-                          <h3 style={{ color: "#1A1200", fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0 }}>{content[`prod_name_${p.id}`] || p.name.replace(/^Chia sẻ\s+/, "")}</h3>
+                          <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0 }}>{content[`prod_name_${p.id}`] || p.name.replace(/^Chia sẻ\s+/, "")}</h3>
                         )}
                         {editMode ? (
                           <textarea
@@ -1908,14 +1908,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                               await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `prod_desc_${p.id}`, content: val }) });
                               setContent(c => ({ ...c, [`prod_desc_${p.id}`]: val }));
                             }}
-                            style={{ color: "#6B5B3E", fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, background: "rgba(139,94,26,0.06)", border: "1px dashed rgba(139,94,26,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", resize: "none" }}
+                            style={{ color: "#6B5B3E", fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", resize: "none" }}
                           />
                         ) : (
-                          (content[`prod_desc_${p.id}`] || p.description) && <p style={{ color: "#6B5B3E", fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{content[`prod_desc_${p.id}`] || p.description}</p>
+                          (content[`prod_desc_${p.id}`] || p.description) && <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{content[`prod_desc_${p.id}`] || p.description}</p>
                         )}
                         <div className="lp-sg-card-price" style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${BLACK_BORDER}`, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
                           <div>
-                            <div style={{ color: "#8B7355", fontSize: 10, fontFamily: FONT_BODY, marginBottom: 2 }}>Giá bán lẻ từ</div>
+                            <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY, marginBottom: 2 }}>Giá bán lẻ từ</div>
                             {editMode ? (
                               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                                 <input
@@ -1926,17 +1926,17 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                                     await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `prod_price_${p.id}`, content: String(val) }) });
                                     setContent(c => ({ ...c, [`prod_price_${p.id}`]: String(val) }));
                                   }}
-                                  style={{ color: GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, background: "rgba(139,94,26,0.06)", border: "1px dashed rgba(139,94,26,0.4)", borderRadius: 4, padding: "2px 6px", width: 120, outline: "none" }}
+                                  style={{ color: GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: 120, outline: "none" }}
                                 />
-                                <span style={{ color: "#8B7355", fontSize: 11 }}>đ / size</span>
+                                <span style={{ color: GRAY, fontSize: 11 }}>đ / size</span>
                               </div>
                             ) : (
-                              <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{fmt(content[`prod_price_${p.id}`] ? parseInt(content[`prod_price_${p.id}`]) : (minPrice || 0))} <span style={{ color: "#8B7355", fontSize: 11, fontWeight: 400 }}>/ size</span></div>
+                              <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{fmt(content[`prod_price_${p.id}`] ? parseInt(content[`prod_price_${p.id}`]) : (minPrice || 0))} <span style={{ color: GRAY, fontSize: 11, fontWeight: 400 }}>/ size</span></div>
                             )}
                           </div>
                           <div className="lp-sg-price-meta" style={{ textAlign: "right" }}>
-                            <div style={{ color: "#8B7355", fontSize: 10, fontFamily: FONT_BODY }}>{priceCount} mức giá</div>
-                            <div style={{ color: "#8B7355", fontSize: 10, fontFamily: FONT_BODY }}>theo kích thước</div>
+                            <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{priceCount} mức giá</div>
+                            <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>theo kích thước</div>
                           </div>
                         </div>
                       </div>
