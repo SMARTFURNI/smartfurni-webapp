@@ -1709,7 +1709,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               {E({ bk: "problem_desc", def: "Hầu hết người mua sofa giường đều gặp phải những vấn đề này — và SmartFurni được tạo ra để giải quyết triệt để.", as: "span" })}
             </p>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
             {[
               { icon: "ruler_cross", title: "Kích thước không vừa", desc: "Mua về mới phát hiện không khớp phòng ngủ, quá to hoặc quá nhỏ", imgKey: "pain_img_0" },
               { icon: "eye_off", title: "Chất liệu không ưng", desc: "Màu sắc, chất liệu bọc không đúng như hình — khác xa thực tế", imgKey: "pain_img_1" },
@@ -1734,10 +1734,10 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                       {editMode && <PainPointImageEditor imgKey={p.imgKey} onSave={url => setContent(c => ({ ...c, [p.imgKey]: url }))} />}
                     </div>
                     {/* Nội dung card */}
-                    <div style={{ padding: "20px 20px 22px" }}>
-                      <div style={{ marginBottom: 10 }}><SvgIcon name={p.icon} size={26} color="rgba(201,168,76,0.7)" /></div>
-                      <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{p.title}</h3>
-                      <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{p.desc}</p>
+                    <div style={{ padding: "24px 24px 28px" }}>
+                      <div style={{ marginBottom: 12 }}><SvgIcon name={p.icon} size={30} color="rgba(201,168,76,0.7)" /></div>
+                      <h3 style={{ color: WHITE, fontSize: 17, fontWeight: 600, marginBottom: 10, fontFamily: FONT_HEADING }}>{p.title}</h3>
+                      <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY, margin: 0 }}>{p.desc}</p>
                     </div>
                   </div>
                 </FadeIn>
@@ -1796,7 +1796,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 { icon: "✓", title: "Giá minh bạch", desc: "Mỗi tuỳ chọn hiển thị giá realtime — không phụ phí ẩn" },
                 { icon: "✓", title: "Lắp đặt miễn phí", desc: "Đội ngũ chuyên nghiệp giao hàng và lắp đặt tận nơi toàn quốc" },
               ].map((item, i) => (
-                <div key={i} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: 16, padding: "20px 20px 22px", display: "flex", flexDirection: "column" as const, gap: 8 }}>
+                <div key={i} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: 16, padding: "24px 24px 28px", display: "flex", flexDirection: "column" as const, gap: 8 }}>
                   <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <span style={{ color: GOLD, fontSize: 16, fontWeight: 700 }}>{item.icon}</span>
                   </div>
@@ -1842,10 +1842,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               {displayedProducts.map((p, i) => {
                 const minPrice = p.sizePricings?.length ? Math.min(...p.sizePricings.map(s => s.price)) : p.basePrice;
                 const priceCount = p.sizePricings?.length || 1;
-                const badges = ["Bán chạy nhất ★", "Double cao cấp", "Sản phẩm", "Premium", "Mới", "Hot"];
-                const badge = badges[i % badges.length];
-                const badgeColor = i === 1 ? GOLD : "rgba(201,168,76,0.18)";
-                const badgeTextColor = i === 1 ? BLACK : GOLD;
+
                 return (
                   <FadeIn key={p.id} delay={i * 60}>
                     <div
@@ -1854,8 +1851,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
                       onClick={() => openQuiz(p.id)}
                     >
-                      {/* Badge góc trên phải */}
-                      <div style={{ position: "absolute", top: 14, right: 14, zIndex: 2, background: badgeColor, color: badgeTextColor, fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 100, fontFamily: FONT_BODY, border: i === 1 ? "none" : "1px solid rgba(201,168,76,0.35)", backdropFilter: "blur(4px)" }}>{badge}</div>
+
                       {/* Nút xoá khi editMode */}
                       {editMode && (
                         <button
@@ -1886,7 +1882,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                         {editMode && <GalleryImageEditor productId={p.id} onSave={url => setContent(prev => ({ ...prev, [`gallery_product_img_${p.id}`]: url }))} />}
                       </div>
                       {/* Info */}
-                      <div style={{ padding: "20px 20px 22px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ padding: "24px 24px 28px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
                         <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.8 }}>{p.sku}</div>
                         <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0 }}>{p.name.replace(/^Chia sẻ\s+/, "")}</h3>
                         {p.description && <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{p.description}</p>}
