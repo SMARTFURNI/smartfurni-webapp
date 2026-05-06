@@ -1654,6 +1654,94 @@ interface Props {
   sofaProducts?: import("@/lib/crm-types").CrmProduct[];
 }
 // ─── Main Component ───────────────────────────────────────────────────────────
+
+// ─── DetailsGalleryScroll ─────────────────────────────────────────────────────
+const DETAIL_ITEMS_DEFAULT = [
+  { key: "detail_0", label: "Khung sofa", desc: "Khung thép hộp 40x40mm, sơn tĩnh điện chống gỉ" },
+  { key: "detail_1", label: "Hộc để đồ", desc: "Hộc gas-lift êm ái, chứa chăn gối gọn gàng" },
+  { key: "detail_2", label: "Tay vịn", desc: "Tay vịn gỗ MDF bọc vải, chắc chắn và thẩm mỹ" },
+  { key: "detail_3", label: "Mặt trang trí", desc: "Gỗ MDF chống ẩm, bề mặt phủ veneer cao cấp" },
+  { key: "detail_4", label: "Nệm 7cm", desc: "Mút ép đàn hồi cao, phù hợp người thích nệm vừa phải" },
+  { key: "detail_5", label: "Nệm 10cm", desc: "Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn" },
+  { key: "detail_6", label: "Vải canvas", desc: "Bền bỉ, dễ vệ sinh, phù hợp gia đình có trẻ nhỏ" },
+  { key: "detail_7", label: "Da PU cao cấp", desc: "Sang trọng, mềm mại, dễ lau chùi" },
+];
+
+function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
+  content: Record<string, string>;
+  isEditor: boolean;
+  editMode: boolean;
+  setContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}) {
+  const trackRef = React.useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = React.useState(false);
+  const posRef = React.useRef(0);
+  const animRef = React.useRef<number>(0);
+  const CARD_W = 220;
+  const GAP = 16;
+  const SPEED = 0.5;
+
+  React.useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const totalWidth = (CARD_W + GAP) * DETAIL_ITEMS_DEFAULT.length;
+    function animate() {
+      if (!isPaused) {
+        posRef.current += SPEED;
+        if (posRef.current >= totalWidth) posRef.current = 0;
+        if (track) track.style.transform = `translateX(-${posRef.current}px)`;
+      }
+      animRef.current = requestAnimationFrame(animate);
+    }
+    animRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [isPaused]);
+
+  const items = DETAIL_ITEMS_DEFAULT.map(item => ({
+    ...item,
+    img: content[`details_gallery_img_${item.key}`] || "",
+    label: content[`details_gallery_label_${item.key}`] || item.label,
+    desc: content[`details_gallery_desc_${item.key}`] || item.desc,
+  }));
+  const loopItems = [...items, ...items];
+
+  return (
+    <div style={{ overflow: "hidden", cursor: "grab", userSelect: "none" as const }}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}>
+      <div ref={trackRef} style={{ display: "flex", gap: GAP, willChange: "transform" }}>
+        {loopItems.map((item, idx) => {
+          const isOriginal = idx < DETAIL_ITEMS_DEFAULT.length;
+          const imgKey = `details_gallery_img_${item.key}`;
+          return (
+            <div key={idx} style={{ flexShrink: 0, width: CARD_W }}>
+              <div style={{ position: "relative" as const, width: CARD_W, height: CARD_W, borderRadius: 12, overflow: "hidden", background: "rgba(245,237,214,0.04)", border: "1px solid rgba(201,168,76,0.15)" }}>
+                {item.img ? (
+                  <img src={item.img} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+                    <SvgIcon name="image" size={32} color="rgba(201,168,76,0.3)" />
+                    {isEditor && editMode && isOriginal && <span style={{ color: "rgba(201,168,76,0.5)", fontSize: 11, fontFamily: FONT_BODY }}>Thêm ảnh</span>}
+                  </div>
+                )}
+                {isEditor && editMode && isOriginal && (
+                  <PainPointImageEditor imgKey={imgKey} onSave={url => setContent(c => ({ ...c, [imgKey]: url }))} />
+                )}
+              </div>
+              <div style={{ marginTop: 10, paddingRight: 4 }}>
+                <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4 }}>{item.label}</div>
+                <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY }}>{item.desc}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function LpSofaGiuongClient({ isEditor = false, initialContent = {}, sofaProducts = [] }: Props) {
   const [content, setContent] = useState<Record<string, string>>(initialContent);
   const [quizOpen, setQuizOpen] = useState(false);
@@ -2120,6 +2208,24 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
 
+
+      {/* ── DETAILS GALLERY ── */}
+      <section style={{ padding: "clamp(40px,6vw,80px) 0", background: BLACK }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", paddingLeft: "clamp(20px,5vw,80px)" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 40, paddingRight: "clamp(20px,5vw,80px)" }}>
+              <SectionLabel>Chi Tiết Sản Phẩm</SectionLabel>
+              <h2 style={{ fontSize: "clamp(22px,3vw,38px)", fontWeight: 700, marginBottom: 12, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
+                {E({ bk: "details_gallery_title", def: "Từng Chi Tiết Được Chăm Chút" })}
+              </h2>
+              <p style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, margin: 0 }}>
+                {E({ bk: "details_gallery_sub", def: "Khám phá các tuỳ chọn thiết kế để tạo nên chiếc sofa giường hoàn hảo cho không gian của bạn" })}
+              </p>
+            </div>
+          </FadeIn>
+          <DetailsGalleryScroll content={content} isEditor={isEditor} editMode={editMode} setContent={setContent} />
+        </div>
+      </section>
       {/* ── FEATURES / BENEFITS ── */}
       <section style={{ padding: SECTION_PAD, background: BLACK }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
