@@ -1682,13 +1682,13 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
           {/* Ảnh full-width duy nhất: upload 1 ảnh ghép vấn đề + giải pháp */}
           <FadeIn delay={0}>
-            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: BLACK_CARD, border: `1px solid rgba(201,168,76,0.2)`, width: "100%", aspectRatio: "16/7", minHeight: 320 }}>
+            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: BLACK_CARD, border: `1px solid rgba(201,168,76,0.2)`, width: "100%", aspectRatio: "2/1", minHeight: 280 }}>
               {(() => {
                 const imgUrl = content["solution_main_img"] || "";
                 return (
                   <>
                     {imgUrl ? (
-                      <img src={imgUrl} alt="Vấn đề và giải pháp sofa giường SmartFurni" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
+                      <img src={imgUrl} alt="Vấn đề và giải pháp sofa giường SmartFurni" style={{ width: "100%", height: "100%", objectFit: "contain", position: "absolute", inset: 0 }} />
                     ) : (
                       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(201,168,76,0.04)" }}>
                         <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
