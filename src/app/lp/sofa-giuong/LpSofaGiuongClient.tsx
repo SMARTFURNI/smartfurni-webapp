@@ -1413,13 +1413,15 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                       )}
                       {/* Ảnh tỉ lệ 1:1 */}
                       <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "#0D0800", flexShrink: 0 }}>
-                        {p.imageUrl
-                          ? <img src={p.imageUrl} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s" }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.05)"; }}
-                              onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
-                            />
-                          : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><SvgIcon name="sofa" size={48} color={GRAY} /></div>
-                        }
+                        {(() => {
+                          const galleryImgUrl = content[`gallery_product_img_${p.id}`] || p.imageUrl;
+                          return galleryImgUrl
+                            ? <img src={galleryImgUrl} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s" }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.05)"; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
+                              />
+                            : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><SvgIcon name="sofa" size={48} color={GRAY} /></div>;
+                        })()}
                         {/* Hover overlay */}
                         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)", opacity: 0, transition: "opacity 0.25s", display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 20 }}
                           onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = "1"; }}
@@ -1427,6 +1429,39 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                         >
                           <div style={{ background: GOLD, color: BLACK, padding: "10px 28px", borderRadius: 100, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>Thiết Kế Ngay →</div>
                         </div>
+                        {/* Nút upload ảnh khi editMode */}
+                        {editMode && (
+                          <label
+                            onClick={e => e.stopPropagation()}
+                            style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, zIndex: 10, backdropFilter: "blur(4px)" }}
+                          >
+                            <span style={{ fontSize: 14 }}>📷</span>
+                            <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" }}>Đổi ảnh</span>
+                            <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+                              const file = e.target.files?.[0]; if (!file) return;
+                              const formData = new FormData(); formData.append("file", file);
+                              try {
+                                const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+                                if (res.ok) {
+                                  const data = await res.json();
+                                  if (data.url) {
+                                    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `gallery_product_img_${p.id}`, content: data.url }) });
+                                    setContent(prev => ({ ...prev, [`gallery_product_img_${p.id}`]: data.url }));
+                                    alert("✓ Đã cập nhật ảnh sản phẩm!");
+                                  } else {
+                                    alert("Upload thất bại: " + (data.error || "Lỗi không xác định"));
+                                  }
+                                } else {
+                                  const err = await res.json().catch(() => ({}));
+                                  alert("Upload thất bại (" + res.status + "): " + (err.error || "Vui lòng đăng nhập lại"));
+                                }
+                              } catch (err) {
+                                alert("Lỗi kết nối khi upload ảnh");
+                                console.error("Gallery img upload error:", err);
+                              }
+                            }} />
+                          </label>
+                        )}
                       </div>
                       {/* Info */}
                       <div style={{ padding: "20px 20px 22px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
