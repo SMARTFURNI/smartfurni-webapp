@@ -1093,13 +1093,14 @@ function EditableText({ value, onSave, style, as: Tag = "div" }: {
   );
 }
 
-function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false, content = {} }: {
+function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false, content = {}, onContentSaved }: {
   products: CrmProduct[];
   initialProductId?: string | null;
   onClose: () => void;
   onComplete: (cfg: ConfigState, product: CrmProduct, total: number) => void;
   isEditor?: boolean;
   content?: Record<string, string>;
+  onContentSaved?: (key: string, val: string) => void;
 }) {
   const [step, setStep] = useState<QuizStep>(initialProductId ? "size" : "product");
   const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, tayVin: null, matTrang: null, doDay: null, aoNem: null });
@@ -1115,6 +1116,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     try {
       await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_step_label_${stepKey}`, content: val.trim() }) });
       setLocalContent(prev => ({ ...prev, [`quiz_step_label_${stepKey}`]: val.trim() }));
+      onContentSaved?.(`quiz_step_label_${stepKey}`, val.trim());
     } catch {}
     setEditingTab(null);
   }
@@ -1123,6 +1125,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     try {
       await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_step_${field}_${stepKey}`, content: val.trim() }) });
       setLocalContent(prev => ({ ...prev, [`quiz_step_${field}_${stepKey}`]: val.trim() }));
+      onContentSaved?.(`quiz_step_${field}_${stepKey}`, val.trim());
     } catch {}
     setEditingStepTitle(null);
   }
@@ -1222,7 +1225,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                 "1,8M": content["quiz_opt_img_size_18m"] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop",
               };
               return sizes.map(s => (
-              <QuizEditableOption key={s.size} icon="ruler" label={s.size} desc={s.size === "0,9M" ? "Phù hợp phòng nhỏ, 1 người" : s.size === "1,2M" ? "Tiêu chuẩn, 1–2 người" : s.size === "1,5M" ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng"} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)}  isEditor={isEditor} optionKey={`size_${s.size.replace(",", "").replace("M", "m")}`} slug={LP_SLUG} imgUrl={sizeImgs[s.size]} />
+              <QuizEditableOption key={s.size} icon="ruler" label={s.size} desc={s.size === "0,9M" ? "Phù hợp phòng nhỏ, 1 người" : s.size === "1,2M" ? "Tiêu chuẩn, 1–2 người" : s.size === "1,5M" ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng"} price={s.price} selected={cfg.size === s.size} onClick={() => selectAndAdvance("size", s.size)}  isEditor={isEditor} optionKey={`size_${s.size.replace(",", "").replace("M", "m")}`} slug={LP_SLUG} imgUrl={sizeImgs[s.size]} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
               ));
             })()}
           </div>
@@ -1245,8 +1248,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             </>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="box" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey="có_hộc_để_đồ" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_hộc_để_đồ"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=bottom"} />
-            <QuizEditableOption icon="minus_circle" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey="không_hộc" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_hộc"] || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop"} />
+            <QuizEditableOption icon="box" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey="có_hộc_để_đồ" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_hộc_để_đồ"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
+            <QuizEditableOption icon="minus_circle" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey="không_hộc" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_hộc"] || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
           </div>
         </div>
       );
@@ -1267,8 +1270,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             </>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")}  isEditor={isEditor} optionKey="có_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_tay_vịn"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=left"} />
-            <QuizEditableOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")}  isEditor={isEditor} optionKey="không_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_tay_vịn"] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop"} />
+            <QuizEditableOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")}  isEditor={isEditor} optionKey="có_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_tay_vịn"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=left"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
+            <QuizEditableOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")}  isEditor={isEditor} optionKey="không_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_tay_vịn"] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
           </div>
         </div>
       );
@@ -1289,10 +1292,10 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             </>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")}  isEditor={isEditor} optionKey="vải_canvas" slug={LP_SLUG} imgUrl={content["quiz_opt_img_vải_canvas"] || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop"} />
-            <QuizEditableOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")}  isEditor={isEditor} optionKey="da_pu_cao_cấp" slug={LP_SLUG} imgUrl={content["quiz_opt_img_da_pu_cao_cấp"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=right"} />
-            <QuizEditableOption icon="wood" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")}  isEditor={isEditor} optionKey="gỗ_mdf_chống_ẩm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_gỗ_mdf_chống_ẩm"] || "https://images.unsplash.com/photo-1601628828688-632f38a5a7d0?w=200&h=200&fit=crop"} />
-            <QuizEditableOption icon="leaf" label="Gỗ tự nhiên" desc="Sang trọng tự nhiên, vân gỗ độc đáo, bền theo thời gian" price={1500000} badge="Premium" selected={cfg.matTrang === "go_tu_nhien"} onClick={() => selectAndAdvance("matTrang", "go_tu_nhien")}  isEditor={isEditor} optionKey="gỗ_tự_nhiên" slug={LP_SLUG} imgUrl={content["quiz_opt_img_gỗ_tự_nhiên"] || "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=200&h=200&fit=crop"} />
+            <QuizEditableOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")}  isEditor={isEditor} optionKey="vải_canvas" slug={LP_SLUG} imgUrl={content["quiz_opt_img_vải_canvas"] || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
+            <QuizEditableOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")}  isEditor={isEditor} optionKey="da_pu_cao_cấp" slug={LP_SLUG} imgUrl={content["quiz_opt_img_da_pu_cao_cấp"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=right"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
+            <QuizEditableOption icon="wood" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")}  isEditor={isEditor} optionKey="gỗ_mdf_chống_ẩm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_gỗ_mdf_chống_ẩm"] || "https://images.unsplash.com/photo-1601628828688-632f38a5a7d0?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
+            <QuizEditableOption icon="leaf" label="Gỗ tự nhiên" desc="Sang trọng tự nhiên, vân gỗ độc đáo, bền theo thời gian" price={1500000} badge="Premium" selected={cfg.matTrang === "go_tu_nhien"} onClick={() => selectAndAdvance("matTrang", "go_tu_nhien")}  isEditor={isEditor} optionKey="gỗ_tự_nhiên" slug={LP_SLUG} imgUrl={content["quiz_opt_img_gỗ_tự_nhiên"] || "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
           </div>
         </div>
       );
@@ -1313,8 +1316,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             </>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="layers" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey="nệm_7cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_7cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop"} />
-            <QuizEditableOption icon="bed" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey="nệm_10cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_10cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=bottom"} />
+            <QuizEditableOption icon="layers" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey="nệm_7cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_7cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
+            <QuizEditableOption icon="bed" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey="nệm_10cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_10cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
           </div>
         </div>
       );
@@ -1332,8 +1335,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           )}
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Lớp bọc ngoài nệm, có thể tháo ra giặt dễ dàng</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="leaf" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")}  isEditor={isEditor} optionKey="áo_nệm_vải_lanh" slug={LP_SLUG} imgUrl={content["quiz_opt_img_áo_nệm_vải_lanh"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=top"} />
-            <QuizEditableOption icon="star_circle" label="Áo nệm da PU" desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => selectAndAdvance("aoNem", "da_pu_nem")}  isEditor={isEditor} optionKey="áo_nệm_da_pu" slug={LP_SLUG} imgUrl={content["quiz_opt_img_áo_nệm_da_pu"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=top"} />
+            <QuizEditableOption icon="leaf" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")}  isEditor={isEditor} optionKey="áo_nệm_vải_lanh" slug={LP_SLUG} imgUrl={content["quiz_opt_img_áo_nệm_vải_lanh"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=top"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
+            <QuizEditableOption icon="star_circle" label="Áo nệm da PU" desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => selectAndAdvance("aoNem", "da_pu_nem")}  isEditor={isEditor} optionKey="áo_nệm_da_pu" slug={LP_SLUG} imgUrl={content["quiz_opt_img_áo_nệm_da_pu"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=top"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
           </div>
         </div>
       );
@@ -2444,6 +2447,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           onComplete={handleQuizComplete}
           isEditor={isEditor}
           content={content}
+          onContentSaved={(k, v) => setContent(c => ({ ...c, [k]: v }))}
         />
       )}
 
