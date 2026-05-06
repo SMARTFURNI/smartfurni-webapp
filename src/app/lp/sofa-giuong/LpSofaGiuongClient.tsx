@@ -608,16 +608,22 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
 
   return (
     <div style={{ position: "relative" }}>
-      <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left" as const, transition: "all 0.2s", width: "100%" }}>
+      <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, cursor: "pointer", textAlign: "left" as const, transition: "all 0.2s", width: "100%", overflow: "hidden", padding: 0, display: "flex", flexDirection: "column" as const }}>
+        {/* Ảnh to ở trên - tỉ lệ 16:9 */}
         {imgUrl ? (
-          <div style={{ flexShrink: 0, width: 72, height: 72, borderRadius: R_SM, overflow: "hidden", border: `2px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, transition: "all 0.2s", position: "relative" }}>
-            <img src={imgUrl} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", overflow: "hidden", background: "#0D0800" }}>
+            <img src={imgUrl} alt={label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
+            {/* Badge */}
+            {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{badge}</span>}
+            {/* Tick selected */}
+            {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
+            {/* Edit ảnh khi isEditor */}
             {isEditor && optionKey && slug && (
-              <label style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0, transition: "opacity 0.2s" }}
+              <label style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0, transition: "opacity 0.2s" }}
                 onMouseEnter={e => (e.currentTarget as HTMLLabelElement).style.opacity = "1"}
                 onMouseLeave={e => (e.currentTarget as HTMLLabelElement).style.opacity = "0"}
                 onClick={e => e.stopPropagation()}>
-                <span style={{ color: WHITE, fontSize: 16 }}>📷</span>
+                <span style={{ color: WHITE, fontSize: 20 }}>📷</span>
                 <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
                   const file = e.target.files?.[0]; if (!file) return;
                   const formData = new FormData(); formData.append("file", file);
@@ -634,21 +640,24 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
             )}
           </div>
         ) : (
-          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, borderRadius: R_SM, background: selected ? "rgba(201,168,76,0.15)" : "rgba(201,168,76,0.06)", border: `1px solid ${selected ? "rgba(201,168,76,0.4)" : "rgba(201,168,76,0.12)"}`, transition: "all 0.2s" }}>
-            <SvgIcon name={icon} size={20} color={selected ? GOLD : "rgba(201,168,76,0.6)"} />
+          <div style={{ width: "100%", paddingTop: "40%", position: "relative", background: selected ? "rgba(201,168,76,0.08)" : "rgba(201,168,76,0.03)", borderBottom: `1px solid rgba(201,168,76,0.12)` }}>
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <SvgIcon name={icon} size={32} color={selected ? GOLD : "rgba(201,168,76,0.5)"} />
+            </div>
+            {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY }}>{badge}</span>}
+            {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
           </div>
         )}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <span style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY }}>{displayLabel}</span>
-            {badge && <span style={{ background: selected ? GOLD : "rgba(201,168,76,0.15)", color: selected ? BLACK : GOLD, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{badge}</span>}
+        {/* Text + giá ở dưới */}
+        <div style={{ padding: "12px 14px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 3, lineHeight: 1.3 }}>{displayLabel}</div>
+            <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, lineHeight: 1.5 }}>{displayDesc}</div>
           </div>
-          <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{displayDesc}</div>
+          <div style={{ textAlign: "right" as const, flexShrink: 0, paddingTop: 2 }}>
+            {displayPrice > 0 ? <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>+{fmt(displayPrice)}</div> : <div style={{ color: "#4ADE80", fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY }}>Miễn phí</div>}
+          </div>
         </div>
-        <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
-          {displayPrice > 0 ? <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY }}>+{fmt(displayPrice)}</div> : <div style={{ color: "#4ADE80", fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY }}>Miễn phí</div>}
-        </div>
-        {selected && <div style={{ width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
       </button>
       {/* Editor toolbar khi isEditor */}
       {isEditor && (
@@ -773,7 +782,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         <div>
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Chọn kích thước khung</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Kích thước khung sofa giường (chiều rộng)</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {(() => {
               const sizeImgs: Record<string, string> = {
                 "0,9M": content["quiz_opt_img_size_09m"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop",
@@ -795,7 +804,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         <div>
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Hộc để đồ</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tối ưu không gian lưu trữ trong phòng ngủ</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="box" label="Có hộc để đồ" desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey="có_hộc_để_đồ" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_hộc_để_đồ"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=bottom"} />
             <QuizEditableOption icon="minus_circle" label="Không hộc" desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey="không_hộc" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_hộc"] || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop"} />
           </div>
@@ -808,7 +817,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         <div>
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Tay vịn</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Tay vịn tăng tính thẩm mỹ và tiện nghi khi ngồi</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")}  isEditor={isEditor} optionKey="có_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_có_tay_vịn"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=left"} />
             <QuizEditableOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")}  isEditor={isEditor} optionKey="không_tay_vịn" slug={LP_SLUG} imgUrl={content["quiz_opt_img_không_tay_vịn"] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop"} />
           </div>
@@ -821,7 +830,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         <div>
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Kiểu ốp mặt trang trí</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Chất liệu bọc phần đầu giường và tay vịn (nếu có)</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")}  isEditor={isEditor} optionKey="vải_canvas" slug={LP_SLUG} imgUrl={content["quiz_opt_img_vải_canvas"] || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop"} />
             <QuizEditableOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")}  isEditor={isEditor} optionKey="da_pu_cao_cấp" slug={LP_SLUG} imgUrl={content["quiz_opt_img_da_pu_cao_cấp"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=right"} />
             <QuizEditableOption icon="wood" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")}  isEditor={isEditor} optionKey="gỗ_mdf_chống_ẩm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_gỗ_mdf_chống_ẩm"] || "https://images.unsplash.com/photo-1601628828688-632f38a5a7d0?w=200&h=200&fit=crop"} />
@@ -836,7 +845,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         <div>
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Độ dày nệm</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Nệm mút ép đàn hồi cao, hỗ trợ cột sống tối ưu</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="layers" label="Nệm 7cm" desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey="nệm_7cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_7cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop"} />
             <QuizEditableOption icon="bed" label="Nệm 10cm" desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey="nệm_10cm" slug={LP_SLUG} imgUrl={content["quiz_opt_img_nệm_10cm"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=bottom"} />
           </div>
@@ -849,7 +858,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         <div>
           <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Áo nệm</h3>
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Lớp bọc ngoài nệm, có thể tháo ra giặt dễ dàng</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             <QuizEditableOption icon="leaf" label="Áo nệm vải lanh" desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={0} selected={cfg.aoNem === "vai_lanh"} onClick={() => selectAndAdvance("aoNem", "vai_lanh")}  isEditor={isEditor} optionKey="áo_nệm_vải_lanh" slug={LP_SLUG} imgUrl={content["quiz_opt_img_áo_nệm_vải_lanh"] || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=top"} />
             <QuizEditableOption icon="star_circle" label="Áo nệm da PU" desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => selectAndAdvance("aoNem", "da_pu_nem")}  isEditor={isEditor} optionKey="áo_nệm_da_pu" slug={LP_SLUG} imgUrl={content["quiz_opt_img_áo_nệm_da_pu"] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=top"} />
           </div>

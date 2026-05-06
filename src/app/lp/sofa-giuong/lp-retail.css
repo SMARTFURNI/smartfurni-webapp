@@ -236,3 +236,34 @@ nav[style*="position: fixed"] {
   .lp-sg-quiz-product-grid {
   }
 }
+
+/* ── Sofa Giường: Quiz Options Grid – mobile responsive ── */
+/* Trên mobile: 2 cột, trên desktop: auto-fill */
+@media (max-width: 640px) {
+  /* Các bước quiz (hoc, tayVin, matTrang, doDay, aoNem) */
+  .lp-sg-quiz-content [style*="repeat(auto-fill, minmax(200px"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  /* Bước size: 2 cột */
+  .lp-sg-quiz-content [style*="repeat(auto-fill, minmax(200px"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* Giảm padding right panel trên mobile */
+  .lp-sg-quiz-content {
+    padding: 16px !important;
+  }
+}
+
+/* ── Sofa Giường: Quiz Options Grid – mobile responsive ── */
+@media (max-width: 640px) {
+  /* Các bước quiz options: 2 cột trên mobile */
+  .lp-sg-quiz-content div[style*="repeat(auto-fill"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  /* Giảm padding right panel trên mobile */
+  .lp-sg-quiz-content {
+    padding: 16px !important;
+  }
+}
