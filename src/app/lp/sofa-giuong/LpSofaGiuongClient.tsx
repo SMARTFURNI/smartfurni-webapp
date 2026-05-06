@@ -36,7 +36,7 @@ interface ConfigState {
   aoNem: "vai_lanh" | "da_pu_nem" | null;
 }
 
-type QuizStep = "product" | "size" | "hoc" | "tayVin" | "matTrang" | "doDay" | "aoNem" | "summary";
+type QuizStep = "product" | "size" | "hoc" | "tayVin" | "matTrang" | "doDay" | "aoNem" | "summary" | "order_form";
 
 const PRICE_ADDONS: Record<string, number> = {
   co_hoc: 700000, khong_hoc: 0,
@@ -634,11 +634,135 @@ function LeadForm({ submitLabel, prefilledConfig }: { submitLabel?: string; pref
 }
 
 
+// ─── QuizOrderForm: Form đặt hàng trong popup ─────────────────────────────────
+const VN_PROVINCES = ["An Giang","Bà Rịa - Vũng Tàu","Bắc Giang","Bắc Kạn","Bạc Liêu","Bắc Ninh","Bến Tre","Bình Định","Bình Dương","Bình Phước","Bình Thuận","Cà Mau","Cần Thơ","Cao Bằng","Đà Nẵng","Đắk Lắk","Đắk Nông","Điện Biên","Đồng Nai","Đồng Tháp","Gia Lai","Hà Giang","Hà Nam","Hà Nội","Hà Tĩnh","Hải Dương","Hải Phòng","Hậu Giang","Hòa Bình","Hưng Yên","Khánh Hòa","Kiên Giang","Kon Tum","Lai Châu","Lâm Đồng","Lạng Sơn","Lào Cai","Long An","Nam Định","Nghệ An","Ninh Bình","Ninh Thuận","Phú Thọ","Phú Yên","Quảng Bình","Quảng Nam","Quảng Ngãi","Quảng Ninh","Quảng Trị","Sóc Trăng","Sơn La","Tây Ninh","Thái Bình","Thái Nguyên","Thanh Hóa","Thừa Thiên Huế","Tiền Giang","TP. Hồ Chí Minh","Trà Vinh","Tuyên Quang","Vĩnh Long","Vĩnh Phúc","Yên Bái"];
+
+function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
+  cfg: ConfigState; product: CrmProduct; total: number;
+  onBack: () => void;
+  onComplete: (cfg: ConfigState, product: CrmProduct, total: number) => void;
+}) {
+  const [form, setForm] = React.useState({ name: "", phone: "", province: "", address: "", note: "" });
+  const [loading, setLoading] = React.useState(false);
+  const [success, setSuccess] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [provinceSearch, setProvinceSearch] = React.useState("");
+  const [showProvinceDrop, setShowProvinceDrop] = React.useState(false);
+  const [utms, setUtms] = React.useState<Record<string, string>>({});
+  React.useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    setUtms({ utmSource: p.get("utm_source") || "", utmMedium: p.get("utm_medium") || "", utmCampaign: p.get("utm_campaign") || "", utmContent: p.get("utm_content") || "" });
+  }, []);
+  const setF = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(prev => ({ ...prev, [k]: e.target.value }));
+  const filteredProvinces = VN_PROVINCES.filter(p => p.toLowerCase().includes(provinceSearch.toLowerCase()));
+  const inp = { background: "rgba(245,237,214,0.04)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: R_SM, padding: "11px 14px", color: WHITE, fontSize: 13, fontFamily: FONT_BODY, outline: "none", width: "100%", boxSizing: "border-box" as const };
+  async function handleSubmit() {
+    if (!form.name.trim() || !form.phone.trim()) { setError("Vui lòng điền đầy đủ Họ tên và Số điện thoại (*)"); return; }
+    if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.replace(/\s/g, ""))) { setError("Số điện thoại không hợp lệ"); return; }
+    setLoading(true); setError("");
+    try {
+      const parts = [
+        `Mẫu: ${product.sku}`,
+        cfg.size ? `Kích thước: ${cfg.size}` : null,
+        cfg.hoc ? ADDON_LABELS[cfg.hoc] : null,
+        cfg.tayVin ? ADDON_LABELS[cfg.tayVin] : null,
+        cfg.matTrang ? ADDON_LABELS[cfg.matTrang] : null,
+        cfg.doDay ? ADDON_LABELS[cfg.doDay] : null,
+        cfg.aoNem ? ADDON_LABELS[cfg.aoNem] : null,
+        `Tổng: ${fmt(total)}`,
+      ].filter(Boolean);
+      const configStr = parts.join(" | ");
+      const addressFull = [form.address, form.province].filter(Boolean).join(", ");
+      const noteStr = `[Cấu hình: ${configStr}] Địa chỉ: ${addressFull} | Ghi chú: ${form.note}`;
+      const res = await fetch("/api/lp/submit-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
+      setSuccess(true);
+      setTimeout(() => onComplete(cfg, product, total), 2500);
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
+    finally { setLoading(false); }
+  }
+  if (success) return (
+    <div style={{ textAlign: "center", padding: "40px 20px" }}>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+      <h3 style={{ color: GOLD, fontSize: 20, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 12 }}>Đặt hàng thành công!</h3>
+      <p style={{ color: GRAY_LIGHT, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY }}>Cảm ơn bạn đã tin tưởng SmartFurni.<br />Đội ngũ tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 30 phút.</p>
+    </div>
+  );
+  return (
+    <div>
+      <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Thông tin đặt hàng</h3>
+      <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Điền thông tin để nhận tư vấn và xác nhận đơn hàng</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div>
+          <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Họ và tên *</label>
+          <input type="text" placeholder="Nguyễn Văn A" value={form.name} onChange={setF("name")} style={inp}
+            onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
+            onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+        </div>
+        <div>
+          <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Số điện thoại (Zalo) *</label>
+          <input type="tel" placeholder="0912 345 678" value={form.phone} onChange={setF("phone")} style={inp}
+            onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
+            onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 12, position: "relative" as const }}>
+        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Tỉnh / Thành phố</label>
+        <input type="text" placeholder="Tìm tỉnh/thành phố..." value={form.province || provinceSearch}
+          onChange={e => { setProvinceSearch(e.target.value); setForm(prev => ({ ...prev, province: "" })); setShowProvinceDrop(true); }}
+          onFocus={() => setShowProvinceDrop(true)}
+          onBlur={() => setTimeout(() => setShowProvinceDrop(false), 200)}
+          style={inp}
+        />
+        {showProvinceDrop && filteredProvinces.length > 0 && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#1a1a0e", border: "1px solid rgba(201,168,76,0.3)", borderRadius: R_SM, zIndex: 100, maxHeight: 180, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
+            {filteredProvinces.map(p => (
+              <div key={p} onMouseDown={() => { setForm(prev => ({ ...prev, province: p })); setProvinceSearch(""); setShowProvinceDrop(false); }}
+                style={{ padding: "9px 14px", color: WHITE, fontSize: 13, fontFamily: FONT_BODY, cursor: "pointer", borderBottom: "1px solid rgba(201,168,76,0.08)" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,168,76,0.1)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                {p}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Địa chỉ cụ thể</label>
+        <input type="text" placeholder="Số nhà, đường, phường/xã, quận/huyện" value={form.address} onChange={setF("address")} style={inp}
+          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
+          onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+      </div>
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Ghi chú thêm (tuỳ chọn)</label>
+        <textarea placeholder="Thời gian giao hàng mong muốn, yêu cầu đặc biệt..." rows={2} value={form.note} onChange={setF("note")} style={{ ...inp, resize: "none" }}
+          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
+          onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
+      </div>
+      {error && <div style={{ color: "#FF6B6B", fontSize: 13, marginBottom: 16, padding: "12px 16px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: R_SM, fontFamily: FONT_BODY }}>{error}</div>}
+      <div style={{ display: "flex", gap: 12 }}>
+        <button onClick={onBack} style={{ flex: "0 0 auto", background: "transparent", border: `1px solid ${BLACK_BORDER}`, color: GRAY, borderRadius: R_MD, padding: "16px 20px", cursor: "pointer", fontFamily: FONT_BODY, fontSize: 13 }}>← Quay lại</button>
+        <GoldButton onClick={handleSubmit} style={{ flex: 1, borderRadius: R_MD, fontSize: 14, padding: "16px", opacity: loading ? 0.7 : 1 }}>
+          {loading ? "Đang gửi…" : "Xác Nhận Đặt Hàng →"}
+        </GoldButton>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12 }}>
+        <span style={{ color: GRAY, fontSize: 11 }}>🔒</span>
+        <p style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, margin: 0 }}>Thông tin được bảo mật tuyệt đối. Không spam.</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Quiz Funnel Modal ────────────────────────────────────────────────────────
-const QUIZ_STEPS: QuizStep[] = ["product", "size", "hoc", "tayVin", "matTrang", "doDay", "aoNem", "summary"];
+const QUIZ_STEPS: QuizStep[] = ["product", "size", "hoc", "tayVin", "matTrang", "doDay", "aoNem", "summary", "order_form"];
 const STEP_LABELS: Record<QuizStep, string> = {
   product: "Chọn mẫu", size: "Kích thước", hoc: "Hộc đồ", tayVin: "Tay vịn",
-  matTrang: "Mặt trang trí", doDay: "Độ dày nệm", aoNem: "Áo nệm", summary: "Xác nhận",
+  matTrang: "Mặt trang trí", doDay: "Độ dày nệm", aoNem: "Áo nệm", summary: "Xác nhận", order_form: "Đặt hàng",
 };
 
 function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
@@ -1384,12 +1508,18 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
               <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginTop: 4 }}>Miễn phí giao hàng + lắp đặt toàn quốc</div>
             </div>
           </div>
-          <GoldButton onClick={() => onComplete(cfg, selectedProduct, total)} style={{ width: "100%", borderRadius: R_MD, fontSize: 14, padding: "16px" }}>
-            Xác Nhận & Đặt Hàng →
-          </GoldButton>
-          <div style={{ textAlign: "center", marginTop: 12, color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút</div>
+          <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+            <button onClick={goPrev} style={{ flex: "0 0 auto", background: "transparent", border: `1px solid ${BLACK_BORDER}`, color: GRAY, borderRadius: R_MD, padding: "16px 20px", cursor: "pointer", fontFamily: FONT_BODY, fontSize: 13 }}>← Quay lại</button>
+            <GoldButton onClick={() => goNext("order_form")} style={{ flex: 1, borderRadius: R_MD, fontSize: 14, padding: "16px" }}>
+              Xác Nhận & Đặt Hàng →
+            </GoldButton>
+          </div>
+          <div style={{ textAlign: "center", marginTop: 4, color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút</div>
         </div>
       );
+    }
+    if (step === "order_form" && selectedProduct) {
+      return <QuizOrderForm cfg={cfg} product={selectedProduct} total={total} onBack={goPrev} onComplete={onComplete} />;
     }
     return null;
   }
@@ -1414,7 +1544,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         </div>
         {/* Step pills */}
         <div style={{ display: "flex", gap: 6, padding: "10px 24px", overflowX: "auto", flexShrink: 0, borderBottom: `1px solid ${BLACK_BORDER}` }}>
-          {QUIZ_STEPS.filter(s => s !== "summary").map((s, i) => {
+          {QUIZ_STEPS.filter(s => s !== "summary" && s !== "order_form").map((s, i) => {
             const done = i < stepIdx;
             const active = s === step;
             return (
@@ -1506,7 +1636,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           </div>
         </div>
         {/* Footer nav */}
-        {step !== "product" && step !== "summary" && (
+        {step !== "product" && step !== "summary" && step !== "order_form" && (
           <div style={{ padding: "14px 24px", borderTop: `1px solid ${BLACK_BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
             <button onClick={goPrev} style={{ background: "transparent", border: `1px solid ${BLACK_BORDER}`, color: GRAY, borderRadius: 8, padding: "8px 18px", cursor: "pointer", fontFamily: FONT_BODY, fontSize: 13 }}>← Quay lại</button>
             <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>Chọn một tuỳ chọn để tiếp tục</div>
