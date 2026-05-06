@@ -576,6 +576,63 @@ function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
 }
 
 
+// ─── GalleryImageEditor: nút Upload + Dán URL ảnh cho gallery card ──────────
+function GalleryImageEditor({ productId, onSave }: { productId: string; onSave: (url: string) => void }) {
+  const [showUrlInput, setShowUrlInput] = React.useState(false);
+  const [urlVal, setUrlVal] = React.useState("");
+
+  const saveUrl = async (url: string) => {
+    if (!url.trim()) return;
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `gallery_product_img_${productId}`, content: url.trim() }) });
+    onSave(url.trim());
+    setShowUrlInput(false); setUrlVal("");
+  };
+
+  if (showUrlInput) {
+    return (
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.92)", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8, zIndex: 20 }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY }}>Dán link URL ảnh</div>
+        <input autoFocus value={urlVal} onChange={e => setUrlVal(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") saveUrl(urlVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlVal(""); } }}
+          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={() => saveUrl(urlVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Lưu</button>
+          <button onClick={() => { setShowUrlInput(false); setUrlVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer" }}>Huỷ</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, zIndex: 10 }}
+      onClick={e => e.stopPropagation()}>
+      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+        <span style={{ fontSize: 13 }}>📷</span>
+        <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Upload</span>
+        <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+          const file = e.target.files?.[0]; if (!file) return;
+          const formData = new FormData(); formData.append("file", file);
+          try {
+            const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.url) {
+                await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `gallery_product_img_${productId}`, content: data.url }) });
+                onSave(data.url);
+              } else { alert("Upload thất bại: " + (data.error || "Lỗi")); }
+            } else { const err = await res.json().catch(() => ({})); alert("Upload thất bại: " + (err.error || res.status)); }
+          } catch { alert("Lỗi kết nối"); }
+        }} />
+      </label>
+      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+        <span style={{ fontSize: 13 }}>🔗</span>
+        <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Dán URL</span>
+      </button>
+    </div>
+  );
+}
+
 // ─── QuizEditableOption: QuizOption với khả năng chỉnh sửa khi isEditor ──────
 function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick, isEditor, optionKey, slug, imgUrl, onImageUploaded }: {
   icon: string; label: string; desc: string; price: number; selected: boolean; badge?: string; onClick: () => void;
@@ -587,6 +644,17 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
   const [editPrice, setEditPrice] = React.useState(String(price));
   const [saving, setSaving] = React.useState(false);
   const [localImgUrl, setLocalImgUrl] = React.useState(imgUrl);
+  const [showUrlInput, setShowUrlInput] = React.useState(false);
+  const [urlInputVal, setUrlInputVal] = React.useState("");
+
+  const saveImgUrl = async (url: string) => {
+    if (!url.trim() || !optionKey || !slug) return;
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: `quiz_opt_img_${optionKey}`, content: url.trim() }) });
+    setLocalImgUrl(url.trim());
+    if (onImageUploaded && optionKey) onImageUploaded(optionKey, url.trim());
+    setShowUrlInput(false);
+    setUrlInputVal("");
+  };
 
   const saveField = async (field: "label" | "desc" | "price") => {
     if (!optionKey || !slug) return;
@@ -620,35 +688,58 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
             {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
             {/* Edit ảnh khi isEditor */}
             {isEditor && optionKey && slug && (
-              <label style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0, transition: "opacity 0.2s" }}
-                onMouseEnter={e => (e.currentTarget as HTMLLabelElement).style.opacity = "1"}
-                onMouseLeave={e => (e.currentTarget as HTMLLabelElement).style.opacity = "0"}
-                onClick={e => e.stopPropagation()}>
-                <span style={{ color: WHITE, fontSize: 20 }}>📷</span>
-                <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
-                  const file = e.target.files?.[0]; if (!file) return;
-                  const formData = new FormData(); formData.append("file", file);
-                  try {
-                    const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-                    if (res.ok) {
-                      const data = await res.json();
-                      if (data.url) {
-                        await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: `quiz_opt_img_${optionKey}`, content: data.url }) });
-                        setLocalImgUrl(data.url);
-                        if (onImageUploaded && optionKey) onImageUploaded(optionKey, data.url);
-                      } else {
-                        alert("Upload thất bại: " + (data.error || "Lỗi không xác định"));
-                      }
-                    } else {
-                      const err = await res.json().catch(() => ({}));
-                      alert("Upload thất bại (" + res.status + "): " + (err.error || "Vui lòng đăng nhập lại"));
-                    }
-                  } catch (err) {
-                    alert("Lỗi kết nối khi upload ảnh");
-                    console.error("Upload error:", err);
-                  }
-                }} />
-              </label>
+              <>
+                {showUrlInput ? (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.88)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: 12, zIndex: 20 }}
+                    onClick={e => e.stopPropagation()}>
+                    <div style={{ color: WHITE, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 2 }}>Dán link URL ảnh</div>
+                    <input
+                      autoFocus
+                      value={urlInputVal}
+                      onChange={e => setUrlInputVal(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") saveImgUrl(urlInputVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlInputVal(""); } }}
+                      placeholder="https://..."
+                      style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: WHITE, fontSize: 11, fontFamily: FONT_BODY, outline: "none" }}
+                    />
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => saveImgUrl(urlInputVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT_BODY }}>✓ Lưu</button>
+                      <button onClick={() => { setShowUrlInput(false); setUrlInputVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer" }}>Huỷ</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, opacity: 0, transition: "opacity 0.2s" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.opacity = "1"}
+                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.opacity = "0"}
+                    onClick={e => e.stopPropagation()}>
+                    <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                      <span style={{ fontSize: 22 }}>📷</span>
+                      <span style={{ color: WHITE, fontSize: 9, fontFamily: FONT_BODY }}>Upload</span>
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        const formData = new FormData(); formData.append("file", file);
+                        try {
+                          const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+                          if (res.ok) {
+                            const data = await res.json();
+                            if (data.url) {
+                              await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: `quiz_opt_img_${optionKey}`, content: data.url }) });
+                              setLocalImgUrl(data.url);
+                              if (onImageUploaded && optionKey) onImageUploaded(optionKey, data.url);
+                            } else { alert("Upload thất bại: " + (data.error || "Lỗi không xác định")); }
+                          } else {
+                            const err = await res.json().catch(() => ({}));
+                            alert("Upload thất bại (" + res.status + "): " + (err.error || "Vui lòng đăng nhập lại"));
+                          }
+                        } catch (err) { alert("Lỗi kết nối khi upload ảnh"); }
+                      }} />
+                    </label>
+                    <button onClick={() => { setShowUrlInput(true); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      <span style={{ fontSize: 22 }}>🔗</span>
+                      <span style={{ color: WHITE, fontSize: 9, fontFamily: FONT_BODY }}>Dán URL</span>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         ) : (
@@ -658,6 +749,53 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
             </div>
             {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY }}>{badge}</span>}
             {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
+            {/* Edit ảnh khi isEditor và chưa có ảnh */}
+            {isEditor && optionKey && slug && (
+              <>
+                {showUrlInput ? (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.88)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: 12, zIndex: 20 }}
+                    onClick={e => e.stopPropagation()}>
+                    <div style={{ color: WHITE, fontSize: 11, fontFamily: FONT_BODY }}>Dán link URL ảnh</div>
+                    <input autoFocus value={urlInputVal} onChange={e => setUrlInputVal(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") saveImgUrl(urlInputVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlInputVal(""); } }}
+                      placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: WHITE, fontSize: 11, fontFamily: FONT_BODY, outline: "none" }} />
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => saveImgUrl(urlInputVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Lưu</button>
+                      <button onClick={() => { setShowUrlInput(false); setUrlInputVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer" }}>Huỷ</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, opacity: 0, transition: "opacity 0.2s" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.opacity = "1"}
+                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.opacity = "0"}
+                    onClick={e => e.stopPropagation()}>
+                    <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                      <span style={{ fontSize: 22 }}>📷</span>
+                      <span style={{ color: WHITE, fontSize: 9, fontFamily: FONT_BODY }}>Upload</span>
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        const formData = new FormData(); formData.append("file", file);
+                        try {
+                          const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+                          if (res.ok) {
+                            const data = await res.json();
+                            if (data.url) {
+                              await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: `quiz_opt_img_${optionKey}`, content: data.url }) });
+                              setLocalImgUrl(data.url);
+                              if (onImageUploaded && optionKey) onImageUploaded(optionKey, data.url);
+                            } else { alert("Upload thất bại: " + (data.error || "Lỗi")); }
+                          } else { const err = await res.json().catch(() => ({})); alert("Upload thất bại: " + (err.error || res.status)); }
+                        } catch { alert("Lỗi kết nối"); }
+                      }} />
+                    </label>
+                    <button onClick={() => setShowUrlInput(true)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      <span style={{ fontSize: 22 }}>🔗</span>
+                      <span style={{ color: WHITE, fontSize: 9, fontFamily: FONT_BODY }}>Dán URL</span>
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
         {/* Text + giá ở dưới: tên full-width, mô tả dưới, giá dưới cùng */}
@@ -1428,39 +1566,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                         >
                           <div style={{ background: GOLD, color: BLACK, padding: "10px 28px", borderRadius: 100, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>Thiết Kế Ngay →</div>
                         </div>
-                        {/* Nút upload ảnh khi editMode */}
-                        {editMode && (
-                          <label
-                            onClick={e => e.stopPropagation()}
-                            style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, zIndex: 10, backdropFilter: "blur(4px)" }}
-                          >
-                            <span style={{ fontSize: 14 }}>📷</span>
-                            <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" }}>Đổi ảnh</span>
-                            <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
-                              const file = e.target.files?.[0]; if (!file) return;
-                              const formData = new FormData(); formData.append("file", file);
-                              try {
-                                const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-                                if (res.ok) {
-                                  const data = await res.json();
-                                  if (data.url) {
-                                    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `gallery_product_img_${p.id}`, content: data.url }) });
-                                    setContent(prev => ({ ...prev, [`gallery_product_img_${p.id}`]: data.url }));
-                                    alert("✓ Đã cập nhật ảnh sản phẩm!");
-                                  } else {
-                                    alert("Upload thất bại: " + (data.error || "Lỗi không xác định"));
-                                  }
-                                } else {
-                                  const err = await res.json().catch(() => ({}));
-                                  alert("Upload thất bại (" + res.status + "): " + (err.error || "Vui lòng đăng nhập lại"));
-                                }
-                              } catch (err) {
-                                alert("Lỗi kết nối khi upload ảnh");
-                                console.error("Gallery img upload error:", err);
-                              }
-                            }} />
-                          </label>
-                        )}
+                        {/* Nút upload ảnh + dán URL khi editMode */}
+                        {editMode && <GalleryImageEditor productId={p.id} onSave={url => setContent(prev => ({ ...prev, [`gallery_product_img_${p.id}`]: url }))} />}
                       </div>
                       {/* Info */}
                       <div style={{ padding: "20px 20px 22px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
