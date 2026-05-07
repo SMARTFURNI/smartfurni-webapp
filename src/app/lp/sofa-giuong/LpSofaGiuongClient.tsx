@@ -461,6 +461,63 @@ function TypewriterText({ text, highlightWords = [], speed = 55, startDelay = 40
   );
 }
 
+// ─── SolCardsGrid: 4 solution cards với typewriter trigger khi scroll ──────────
+// Desktop: tất cả chạy cùng lúc khi section vào view
+// Mobile: từng card chạy khi card đó vào view
+const SOL_CARDS = [
+  { bkTitle: "sol_card_1_title", defTitle: "Đúng kích thước", bkDesc: "sol_card_1_desc", defDesc: "Nhập số đo phòng — hệ thống gợi ý kích thước vừa khít ngay lập tức" },
+  { bkTitle: "sol_card_2_title", defTitle: "Thấy trước khi mua", bkDesc: "sol_card_2_desc", defDesc: "Xem trước hình ảnh thực tế với chất liệu và màu sắc bạn chọn" },
+  { bkTitle: "sol_card_3_title", defTitle: "Giá minh bạch", bkDesc: "sol_card_3_desc", defDesc: "Mỗi tuỳ chọn hiển thị giá realtime — không phụ phí ẩn" },
+  { bkTitle: "sol_card_4_title", defTitle: "Lắp đặt miễn phí", bkDesc: "sol_card_4_desc", defDesc: "Đội ngũ chuyên nghiệp giao hàng và lắp đặt tận nơi toàn quốc" },
+];
+
+function SolCardsGrid({ content, isEditor, E }: { content: Record<string, string>; isEditor: boolean; E: EFn }) {
+  const [sectionInView, setSectionInView] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setSectionInView(true); }, { threshold: 0 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 24 }}>
+      {SOL_CARDS.map((item, i) => {
+        const descText = (content[item.bkDesc] ?? item.defDesc).split("||")[0];
+        return (
+          <div key={i} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: 16, padding: "24px 24px 28px", display: "flex", flexDirection: "column" as const, gap: 8 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ color: GOLD, fontSize: 16, fontWeight: 700 }}>✓</span>
+            </div>
+            <h4 style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, margin: 0 }}>{E({ bk: item.bkTitle, def: item.defTitle, as: "span" })}</h4>
+            <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY, margin: 0 }}>
+              {isEditor ? E({ bk: item.bkDesc, def: item.defDesc, as: "span" }) : (
+                <InViewTypewriter
+                  key={descText}
+                  text={descText}
+                  speed={18}
+                  isMobile={isMobile}
+                  sectionInView={sectionInView}
+                />
+              )}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 // ─── InViewTypewriter: typewriter trigger khi element vào viewport ─────────────
 // Desktop: trigger = khi section cha vào view (tất cả card chạy cùng lúc)
 // Mobile: trigger = khi chính card đó vào view
@@ -2449,57 +2506,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
 
           {/* 4 điểm giải pháp bên dưới — typewriter khi scroll đến */}
-          {(() => {
-            const [solSectionInView, setSolSectionInView] = React.useState(false);
-            const [isMobile, setIsMobile] = React.useState(false);
-            const solRef = useRef<HTMLDivElement>(null);
-            React.useEffect(() => {
-              const checkMobile = () => setIsMobile(window.innerWidth < 768);
-              checkMobile();
-              window.addEventListener("resize", checkMobile);
-              return () => window.removeEventListener("resize", checkMobile);
-            }, []);
-            React.useEffect(() => {
-              const el = solRef.current;
-              if (!el) return;
-              const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setSolSectionInView(true); }, { threshold: 0.1 });
-              obs.observe(el);
-              return () => obs.disconnect();
-            }, []);
-            const cards = [
-              { bkTitle: "sol_card_1_title", defTitle: "Đúng kích thước", bkDesc: "sol_card_1_desc", defDesc: "Nhập số đo phòng — hệ thống gợi ý kích thước vừa khít ngay lập tức" },
-              { bkTitle: "sol_card_2_title", defTitle: "Thấy trước khi mua", bkDesc: "sol_card_2_desc", defDesc: "Xem trước hình ảnh thực tế với chất liệu và màu sắc bạn chọn" },
-              { bkTitle: "sol_card_3_title", defTitle: "Giá minh bạch", bkDesc: "sol_card_3_desc", defDesc: "Mỗi tuỳ chọn hiển thị giá realtime — không phụ phí ẩn" },
-              { bkTitle: "sol_card_4_title", defTitle: "Lắp đặt miễn phí", bkDesc: "sol_card_4_desc", defDesc: "Đội ngũ chuyên nghiệp giao hàng và lắp đặt tận nơi toàn quốc" },
-            ];
-            return (
-              <div ref={solRef} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 24 }}>
-                {cards.map((item, i) => {
-                  const descText = content[item.bkDesc] ?? item.defDesc;
-                  const titleText = content[item.bkTitle] ?? item.defTitle;
-                  return (
-                    <div key={i} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: 16, padding: "24px 24px 28px", display: "flex", flexDirection: "column" as const, gap: 8 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <span style={{ color: GOLD, fontSize: 16, fontWeight: 700 }}>✓</span>
-                      </div>
-                      <h4 style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, margin: 0 }}>{E({ bk: item.bkTitle, def: item.defTitle, as: "span" })}</h4>
-                      <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY, margin: 0 }}>
-                        {isEditor ? E({ bk: item.bkDesc, def: item.defDesc, as: "span" }) : (
-                          <InViewTypewriter
-                            key={descText}
-                            text={descText}
-                            speed={18}
-                            isMobile={isMobile}
-                            sectionInView={solSectionInView}
-                          />
-                        )}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+          <SolCardsGrid content={content} isEditor={isEditor} E={E} />
 
           {/* CTA */}
           <FadeIn delay={200}>
