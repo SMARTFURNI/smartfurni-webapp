@@ -23,15 +23,12 @@ export default function ScrollToTop() {
       onClick={scrollToTop}
       aria-label="Lên đầu trang"
       style={{
-        position: "fixed",
-        bottom: 200,
-        right: 20,
         background: "linear-gradient(135deg, #C9A84C, #8B6914)",
-        boxShadow: "0 4px 20px rgba(201,168,76,0.3)",
+        boxShadow: "0 4px 16px rgba(201,168,76,0.3)",
       }}
-      className="z-50 w-11 h-11 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200 no-print"
+      className="fixed bottom-24 right-4 sm:right-6 z-50 w-8 h-8 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200 no-print"
     >
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="4 11 9 6 14 11"/>
       </svg>
     </button>
