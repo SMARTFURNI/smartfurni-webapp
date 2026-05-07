@@ -2811,25 +2811,60 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
       {/* ── GUARANTEE ── */}
       <section style={{ padding: SECTION_PAD, background: BLACK }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <FadeIn>
-            <div style={{ background: "linear-gradient(135deg, #1A1000 0%, #0D0800 100%)", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 20, padding: "clamp(36px,5vw,60px)", textAlign: "center" }}>
-              <div style={{ fontSize: 48, marginBottom: 20 }}>🛡️</div>
-              <h2 style={{ color: GOLD, fontSize: "clamp(22px,3vw,32px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING }}>
+            <div style={{ background: "linear-gradient(160deg, #1c1200 0%, #0d0800 60%, #0a0600 100%)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "clamp(40px,5vw,64px) clamp(24px,4vw,56px)", textAlign: "center", position: "relative" as const, overflow: "hidden" }}>
+              {/* Background glow */}
+              <div style={{ position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
+              {/* Icon SmartFurni — SVG shield với chữ SF */}
+              <div style={{ marginBottom: 24, display: "flex", justifyContent: "center" }}>
+                <div style={{ position: "relative" as const, width: 72, height: 72 }}>
+                  <svg viewBox="0 0 72 72" width="72" height="72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="shieldGrad" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#C9A84C" />
+                        <stop offset="100%" stopColor="#8B6914" />
+                      </linearGradient>
+                      <linearGradient id="shieldFill" x1="36" y1="4" x2="36" y2="68" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="rgba(201,168,76,0.18)" />
+                        <stop offset="100%" stopColor="rgba(201,168,76,0.04)" />
+                      </linearGradient>
+                    </defs>
+                    {/* Shield shape */}
+                    <path d="M36 4L8 16v20c0 16.5 11.8 31.9 28 36 16.2-4.1 28-19.5 28-36V16L36 4z" fill="url(#shieldFill)" stroke="url(#shieldGrad)" strokeWidth="1.5"/>
+                    {/* Inner shield line */}
+                    <path d="M36 10L13 20v16c0 13 9.4 25.2 23 28.8C49.6 61.2 59 49 59 36V20L36 10z" fill="none" stroke="rgba(201,168,76,0.25)" strokeWidth="0.75"/>
+                    {/* SF monogram */}
+                    <text x="36" y="43" textAnchor="middle" fill="url(#shieldGrad)" fontSize="18" fontWeight="800" fontFamily="Georgia, serif" letterSpacing="-1">SF</text>
+                    {/* Star at top */}
+                    <circle cx="36" cy="16" r="2.5" fill="#C9A84C" opacity="0.8"/>
+                  </svg>
+                </div>
+              </div>
+              <h2 style={{ color: GOLD, fontSize: "clamp(22px,3vw,34px)", fontWeight: 700, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
                 {E({ bk: "guarantee_title", def: "Cam Kết SmartFurni", as: "span" })}
               </h2>
+              <p style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 32, marginTop: 8 }}>Mỗi sản phẩm đều được bảo đảm từ sản xuất đến tận nhà bạn</p>
               <GoldDivider />
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, marginTop: 24 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20, marginTop: 32 }}>
                 {[
-                  { icon: "check_circle", title: "Đúng như thiết kế", desc: "Sản phẩm giao đúng cấu hình đã chọn, không sai lệch" },
-                  { icon: "refresh", title: "Đổi trả 30 ngày", desc: "Không hài lòng, đổi trả miễn phí trong 30 ngày đầu" },
-                  { icon: "shield", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện, sửa chữa tận nơi không tính phí" },
-                  { icon: "headphones", title: "Hỗ trợ 24/7", desc: "Đội ngũ kỹ thuật hỗ trợ qua Zalo bất cứ lúc nào" },
+                  { icon: "check_circle", title: "Đúng như thiết kế", desc: "Sản phẩm giao đúng cấu hình đã chọn, không sai lệch", num: "01" },
+                  { icon: "refresh", title: "Đổi trả 30 ngày", desc: "Không hài lòng, đổi trả miễn phí trong 30 ngày đầu", num: "02" },
+                  { icon: "shield", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện, sửa chữa tận nơi không tính phí", num: "03" },
+                  { icon: "headphones", title: "Hỗ trợ 24/7", desc: "Đội ngũ kỹ thuật hỗ trợ qua Zalo bất cứ lúc nào", num: "04" },
                 ].map((g, i) => (
-                  <div key={i} style={{ textAlign: "center" }}>
-                    <div style={{ marginBottom: 10, display: "flex", justifyContent: "center" }}><SvgIcon name={g.icon} size={32} color={GOLD} /></div>
-                    <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 6 }}>{g.title}</div>
-                    <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{g.desc}</div>
+                  <div key={i} style={{ background: "rgba(201,168,76,0.04)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: 16, padding: "24px 20px", textAlign: "center", transition: "border-color 0.25s, background 0.25s", position: "relative" as const, overflow: "hidden" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(201,168,76,0.08)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.12)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(201,168,76,0.04)"; }}
+                  >
+                    {/* Number watermark */}
+                    <div style={{ position: "absolute", bottom: 8, right: 12, color: "rgba(201,168,76,0.06)", fontSize: 48, fontWeight: 900, fontFamily: FONT_HEADING, lineHeight: 1, pointerEvents: "none", userSelect: "none" as const }}>{g.num}</div>
+                    {/* Icon circle */}
+                    <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                      <SvgIcon name={g.icon} size={24} color={GOLD} />
+                    </div>
+                    <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 8 }}>{g.title}</div>
+                    <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{g.desc}</div>
                   </div>
                 ))}
               </div>
