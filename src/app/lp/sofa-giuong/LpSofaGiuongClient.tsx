@@ -2313,7 +2313,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
-            <SectionLabel>Vấn Đề Thường Gặp</SectionLabel>
+            <SectionLabel>{E({ bk: "pain_label", def: "Vấn Đề Thường Gặp", as: "span" })}</SectionLabel>
             <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
               {E({ bk: "problem_title", def: "Mua Sofa Giường Xong Lại Hối Hận?", as: "span" })}
             </h2>
@@ -2324,10 +2324,10 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
             {[
-              { icon: "ruler_cross", title: "Kích thước không vừa", desc: "Mua về mới phát hiện không khớp phòng ngủ, quá to hoặc quá nhỏ", imgKey: "pain_img_0" },
-              { icon: "eye_off", title: "Chất liệu không ưng", desc: "Màu sắc, chất liệu bọc không đúng như hình — khác xa thực tế", imgKey: "pain_img_1" },
-              { icon: "question_circle", title: "Giá không minh bạch", desc: "Không biết từng tuỳ chọn giá bao nhiêu, dễ bị thổi giá", imgKey: "pain_img_2" },
-              { icon: "wrench", title: "Lắp đặt phức tạp", desc: "Hướng dẫn không rõ ràng, tự lắp mất cả ngày, dễ hỏng", imgKey: "pain_img_3" },
+              { icon: "ruler_cross", title: E({ bk: "pain_0_title", def: "Kích thước không vừa", as: "span" }), desc: E({ bk: "pain_0_desc", def: "Mua về mới phát hiện không khớp phòng ngủ, quá to hoặc quá nhỏ", as: "span" }), imgKey: "pain_img_0" },
+              { icon: "eye_off", title: E({ bk: "pain_1_title", def: "Chất liệu không ưng", as: "span" }), desc: E({ bk: "pain_1_desc", def: "Màu sắc, chất liệu bọc không đúng như hình — khác xa thực tế", as: "span" }), imgKey: "pain_img_1" },
+              { icon: "question_circle", title: E({ bk: "pain_2_title", def: "Giá không minh bạch", as: "span" }), desc: E({ bk: "pain_2_desc", def: "Không biết từng tuỳ chọn giá bao nhiêu, dễ bị thổi giá", as: "span" }), imgKey: "pain_img_2" },
+              { icon: "wrench", title: E({ bk: "pain_3_title", def: "Lắp đặt phức tạp", as: "span" }), desc: E({ bk: "pain_3_desc", def: "Hướng dẫn không rõ ràng, tự lắp mất cả ngày, dễ hỏng", as: "span" }), imgKey: "pain_img_3" },
             ].map((p, i) => {
               const imgUrl = content[p.imgKey] || "";
               return (
