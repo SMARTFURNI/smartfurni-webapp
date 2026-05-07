@@ -2404,17 +2404,17 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           <FadeIn delay={160}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 24 }}>
               {[
-                { icon: "✓", title: "Đúng kích thước", desc: "Nhập số đo phòng — hệ thống gợi ý kích thước vừa khít ngay lập tức" },
-                { icon: "✓", title: "Thấy trước khi mua", desc: "Xem trước hình ảnh thực tế với chất liệu và màu sắc bạn chọn" },
-                { icon: "✓", title: "Giá minh bạch", desc: "Mỗi tuỳ chọn hiển thị giá realtime — không phụ phí ẩn" },
-                { icon: "✓", title: "Lắp đặt miễn phí", desc: "Đội ngũ chuyên nghiệp giao hàng và lắp đặt tận nơi toàn quốc" },
+                { bkTitle: "sol_card_1_title", defTitle: "Đúng kích thước", bkDesc: "sol_card_1_desc", defDesc: "Nhập số đo phòng — hệ thống gợi ý kích thước vừa khít ngay lập tức" },
+                { bkTitle: "sol_card_2_title", defTitle: "Thấy trước khi mua", bkDesc: "sol_card_2_desc", defDesc: "Xem trước hình ảnh thực tế với chất liệu và màu sắc bạn chọn" },
+                { bkTitle: "sol_card_3_title", defTitle: "Giá minh bạch", bkDesc: "sol_card_3_desc", defDesc: "Mỗi tuỳ chọn hiển thị giá realtime — không phụ phí ẩn" },
+                { bkTitle: "sol_card_4_title", defTitle: "Lắp đặt miễn phí", bkDesc: "sol_card_4_desc", defDesc: "Đội ngũ chuyên nghiệp giao hàng và lắp đặt tận nơi toàn quốc" },
               ].map((item, i) => (
                 <div key={i} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: 16, padding: "24px 24px 28px", display: "flex", flexDirection: "column" as const, gap: 8 }}>
                   <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <span style={{ color: GOLD, fontSize: 16, fontWeight: 700 }}>{item.icon}</span>
+                    <span style={{ color: GOLD, fontSize: 16, fontWeight: 700 }}>✓</span>
                   </div>
-                  <h4 style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, margin: 0 }}>{item.title}</h4>
-                  <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY, margin: 0 }}>{item.desc}</p>
+                  <h4 style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, margin: 0 }}>{E({ bk: item.bkTitle, def: item.defTitle, as: "span" })}</h4>
+                  <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: item.bkDesc, def: item.defDesc, as: "span" })}</p>
                 </div>
               ))}
             </div>
