@@ -17,18 +17,6 @@ const WHITE = "#F5F0E8";
 const GRAY = "#7A7468";
 const GRAY_LIGHT = "#A8A090";
 const LP_SLUG = "sofa-giuong";
-
-// ─── Cloudinary image optimization helper ─────────────────────────────────────
-// Tự động thêm transformation vào Cloudinary URL để giảm kích thước file
-// f_auto: chọn format tốt nhất (webp/avif), q_auto:good: nén thông minh, w_X: resize
-function optimizeImg(url: string, width: number = 1200): string {
-  if (!url || !url.includes("res.cloudinary.com")) return url;
-  const parts = url.split("/image/upload/");
-  if (parts.length !== 2) return url;
-  // Tránh duplicate transformation
-  if (parts[1].startsWith("f_auto") || parts[1].startsWith("q_auto") || parts[1].startsWith("w_")) return url;
-  return `${parts[0]}/image/upload/f_auto,q_auto:good,w_${width},c_limit/${parts[1]}`;
-}
 const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const R_SM = 8;
@@ -1271,7 +1259,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
         {/* Ảnh to ở trên - tỉ lệ 16:9 */}
         {localImgUrl ? (
           <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: "#0D0800" }}>
-            <img src={optimizeImg(localImgUrl, 400)} alt={label} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
+            <img src={localImgUrl} alt={label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
             {/* Badge */}
             {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{badge}</span>}
             {/* Tick selected */}
@@ -1547,7 +1535,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                 <button key={p.id} onClick={() => { setCfg(c => ({ ...c, productId: p.id })); setImgIdx(0); setTimeout(() => goNext(), 200); }}
                   style={{ background: isSelected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${isSelected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, overflow: "hidden", cursor: "pointer", textAlign: "left" as const, transition: "all 0.2s", padding: 0 }}>
                   <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
-                    {p.imageUrl && <img src={optimizeImg(p.imageUrl, 600)} alt={p.name} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+                    {p.imageUrl && <img src={p.imageUrl} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
                     <div style={{ position: "absolute", top: 8, left: 8, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{p.sku}</div>
                     {isSelected && <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
                   </div>
@@ -1812,7 +1800,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           {selectedProduct && images.length > 0 && (
             <div className="lp-sg-quiz-left-panel" style={{ width: 240, flexShrink: 0, borderRight: `1px solid ${BLACK_BORDER}`, display: "flex", flexDirection: "column", background: BLACK_CARD }}>
               <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
-                <img src={optimizeImg(images[imgIdx % images.length], 800)} alt={selectedProduct.name} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
+                <img src={images[imgIdx % images.length]} alt={selectedProduct.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
                 {isEditor && (
                   <label style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.7)", border: `1px solid ${GOLD}`, color: GOLD, borderRadius: 6, padding: "4px 10px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FONT_BODY, whiteSpace: "nowrap" as const, zIndex: 10 }}>
                     📷 Đổi ảnh
@@ -2084,7 +2072,7 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
             <div key={idx} style={{ flexShrink: 0, width: CARD_W }}>
               <div style={{ position: "relative" as const, width: CARD_W, height: CARD_W, borderRadius: 16, overflow: "hidden", background: "rgba(245,237,214,0.04)", border: "1px solid rgba(201,168,76,0.15)" }}>
                 {item.img ? (
-                  <img src={optimizeImg(item.img, 600)} alt={item.label} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} />
+                  <img src={item.img} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} />
                 ) : (
                   <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
                     <SvgIcon name="image" size={40} color="rgba(201,168,76,0.3)" />
@@ -2348,7 +2336,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         {heroImages.length > 0 && (
           <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
             {heroImages.map((img, i) => (
-              <div key={i} style={{ position: "absolute", inset: 0, backgroundImage: `url(${optimizeImg(img, 1920)})`, backgroundSize: "cover", backgroundPosition: "center", opacity: i === heroImgIdx ? 1 : 0, transition: "opacity 1.2s ease" }} />
+              <div key={i} style={{ position: "absolute", inset: 0, backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center", opacity: i === heroImgIdx ? 1 : 0, transition: "opacity 1.2s ease" }} />
             ))}
             <div style={{ position: "absolute", inset: 0, background: `rgba(10,10,8,${heroOverlayOpacity})`, transition: "background 0.3s" }} />
           </div>
@@ -2449,7 +2437,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                     {/* Ảnh minh hoạ */}
                     <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
                       {imgUrl ? (
-                        <img src={optimizeImg(imgUrl, 600)} alt={p.title} loading="lazy" decoding="async" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={imgUrl} alt={p.title} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
                         <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
                           <SvgIcon name={p.icon} size={40} color="rgba(201,168,76,0.35)" />
@@ -2497,7 +2485,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 return (
                   <>
                     {imgUrl ? (
-                      <img src={optimizeImg(imgUrl, 1200)} alt="Vấn đề và giải pháp sofa giường SmartFurni" loading="lazy" decoding="async" style={{ width: "100%", height: "auto", display: "block" }} />
+                      <img src={imgUrl} alt="Vấn đề và giải pháp sofa giường SmartFurni" style={{ width: "100%", height: "auto", display: "block" }} />
                     ) : (
                       <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(201,168,76,0.04)" }}>
                         <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
@@ -2710,7 +2698,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                         {(() => {
                           const galleryImgUrl = content[`gallery_product_img_${p.id}`] || p.imageUrl;
                           return galleryImgUrl
-                            ? <img src={optimizeImg(galleryImgUrl, 600)} alt={p.name} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s" }}
+                            ? <img src={galleryImgUrl} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s" }}
                                 onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.05)"; }}
                                 onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
                               />
