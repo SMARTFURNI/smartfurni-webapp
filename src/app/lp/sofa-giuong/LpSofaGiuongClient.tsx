@@ -504,32 +504,42 @@ function InViewTypewriter({ text, speed = 22 }: { text: string; speed?: number }
     const el = ref.current;
     if (!el) return;
     let cleaned = false;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
     const startTyping = () => {
       if (started.current || cleaned) return;
       started.current = true;
-      window.removeEventListener("scroll", checkVisible, true);
+      obs.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
       let i = 0;
-      const interval = setInterval(() => {
+      intervalId = setInterval(() => {
         i++;
         setDisplayed(text.slice(0, i));
-        if (i >= text.length) { clearInterval(interval); setDone(true); }
+        if (i >= text.length) { if (intervalId) clearInterval(intervalId); setDone(true); }
       }, speed);
     };
-    const checkVisible = () => {
+    const isVisible = () => {
       const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight * 0.95 && rect.bottom > 0) {
-        startTyping();
-      }
+      return rect.top < window.innerHeight && rect.bottom > 0 && rect.height > 0;
     };
-    // Lắng nghe scroll event (hoạt động chắc chắn trên cả desktop và mobile)
-    window.addEventListener("scroll", checkVisible, true);
-    // Check ngay sau khi browser render xong (dùng rAF để đảm bảo layout đã ổn định)
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => { checkVisible(); });
-    });
+    // IntersectionObserver — hoạt động tốt khi element scroll vào
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) startTyping();
+    }, { threshold: 0.01 });
+    obs.observe(el);
+    // Scroll listener — fallback passive cho Chrome
+    const onScroll = () => { if (isVisible()) startTyping(); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    // Check sau mount với delay tăng dần (Chrome cần thêm thời gian layout)
+    const t1 = setTimeout(() => { if (isVisible()) startTyping(); }, 50);
+    const t2 = setTimeout(() => { if (isVisible()) startTyping(); }, 400);
+    const t3 = setTimeout(() => { if (isVisible()) startTyping(); }, 1000);
     return () => {
       cleaned = true;
-      window.removeEventListener("scroll", checkVisible, true);
+      obs.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      if (intervalId) clearInterval(intervalId);
     };
   }, [text, speed]);
   return (
