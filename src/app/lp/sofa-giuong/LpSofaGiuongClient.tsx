@@ -513,18 +513,21 @@ function InViewTypewriter({ text, speed = 22 }: { text: string; speed?: number }
         if (i >= text.length) { clearInterval(interval); setDone(true); }
       }, speed);
     };
-    // Nếu element đã visible khi mount (desktop), bắt đầu ngay
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      startTyping();
-      return;
-    }
-    // Nếu chưa visible, dùng IntersectionObserver
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { startTyping(); obs.disconnect(); }
-    }, { threshold: 0 });
+    // Dùng IntersectionObserver với rootMargin để trigger ngay khi element gần viewport
+    // rootMargin: 0px nghĩa là trigger đúng khi element vào viewport
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { startTyping(); obs.disconnect(); }
+    }, { threshold: 0, rootMargin: "0px 0px 0px 0px" });
     obs.observe(el);
-    return () => obs.disconnect();
+    // Fallback: check ngay sau khi browser paint xong (giải quyết trường hợp element đã visible)
+    const timer = setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        startTyping();
+        obs.disconnect();
+      }
+    }, 100);
+    return () => { obs.disconnect(); clearTimeout(timer); };
   }, [text, speed]);
   return (
     <span ref={ref}>
