@@ -503,9 +503,11 @@ function InViewTypewriter({ text, speed = 22 }: { text: string; speed?: number }
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    let cleaned = false;
     const startTyping = () => {
-      if (started.current) return;
+      if (started.current || cleaned) return;
       started.current = true;
+      window.removeEventListener("scroll", checkVisible, true);
       let i = 0;
       const interval = setInterval(() => {
         i++;
@@ -513,21 +515,22 @@ function InViewTypewriter({ text, speed = 22 }: { text: string; speed?: number }
         if (i >= text.length) { clearInterval(interval); setDone(true); }
       }, speed);
     };
-    // Dùng IntersectionObserver với rootMargin để trigger ngay khi element gần viewport
-    // rootMargin: 0px nghĩa là trigger đúng khi element vào viewport
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) { startTyping(); obs.disconnect(); }
-    }, { threshold: 0, rootMargin: "0px 0px 0px 0px" });
-    obs.observe(el);
-    // Fallback: check ngay sau khi browser paint xong (giải quyết trường hợp element đã visible)
-    const timer = setTimeout(() => {
+    const checkVisible = () => {
       const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight && rect.bottom > 0) {
+      if (rect.top < window.innerHeight * 0.95 && rect.bottom > 0) {
         startTyping();
-        obs.disconnect();
       }
-    }, 100);
-    return () => { obs.disconnect(); clearTimeout(timer); };
+    };
+    // Lắng nghe scroll event (hoạt động chắc chắn trên cả desktop và mobile)
+    window.addEventListener("scroll", checkVisible, true);
+    // Check ngay sau khi browser render xong (dùng rAF để đảm bảo layout đã ổn định)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { checkVisible(); });
+    });
+    return () => {
+      cleaned = true;
+      window.removeEventListener("scroll", checkVisible, true);
+    };
   }, [text, speed]);
   return (
     <span ref={ref}>
