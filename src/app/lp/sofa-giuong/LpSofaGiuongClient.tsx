@@ -503,17 +503,26 @@ function InViewTypewriter({ text, speed = 22 }: { text: string; speed?: number }
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const startTyping = () => {
+      if (started.current) return;
+      started.current = true;
+      let i = 0;
+      const interval = setInterval(() => {
+        i++;
+        setDisplayed(text.slice(0, i));
+        if (i >= text.length) { clearInterval(interval); setDone(true); }
+      }, speed);
+    };
+    // Nếu element đã visible khi mount (desktop), bắt đầu ngay
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      startTyping();
+      return;
+    }
+    // Nếu chưa visible, dùng IntersectionObserver
     const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !started.current) {
-        started.current = true;
-        let i = 0;
-        const interval = setInterval(() => {
-          i++;
-          setDisplayed(text.slice(0, i));
-          if (i >= text.length) { clearInterval(interval); setDone(true); }
-        }, speed);
-      }
-    }, { threshold: 0.1 });
+      if (e.isIntersecting) { startTyping(); obs.disconnect(); }
+    }, { threshold: 0 });
     obs.observe(el);
     return () => obs.disconnect();
   }, [text, speed]);
@@ -1945,7 +1954,7 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
   const dragStartPos = React.useRef(0);
   const CARD_W = 300;
   const GAP = 20;
-  const SPEED = 0.4;
+  const SPEED = 1.2;
 
   const items = DETAIL_ITEMS_DEFAULT.map(item => ({
     ...item,
@@ -1985,15 +1994,27 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
     dragStartX.current = e.clientX;
     dragStartPos.current = posRef.current;
     setIsPaused(true);
-  }, []);
-  const handleMouseMove = React.useCallback((e: React.MouseEvent) => {
-    if (!isDragging.current) return;
-    let newPos = dragStartPos.current + (dragStartX.current - e.clientX);
-    if (newPos < 0) newPos = 0;
-    if (newPos >= totalWidth) newPos = newPos % totalWidth;
-    posRef.current = newPos;
-    if (trackRef.current) trackRef.current.style.transform = `translateX(-${newPos}px)`;
+    // Gắn lên document để drag không bị mất khi chuột ra ngoài container
+    const onMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return;
+      let newPos = dragStartPos.current + (dragStartX.current - ev.clientX);
+      if (newPos < 0) newPos = 0;
+      if (newPos >= totalWidth) newPos = newPos % totalWidth;
+      posRef.current = newPos;
+      if (trackRef.current) trackRef.current.style.transform = `translateX(-${newPos}px)`;
+    };
+    const onUp = () => {
+      isDragging.current = false;
+      setIsPaused(false);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   }, [totalWidth]);
+  const handleMouseMove = React.useCallback((_e: React.MouseEvent) => {
+    // Handled by document listener in handleMouseDown
+  }, []);
   const stopDrag = React.useCallback(() => {
     isDragging.current = false;
     setIsPaused(false);
