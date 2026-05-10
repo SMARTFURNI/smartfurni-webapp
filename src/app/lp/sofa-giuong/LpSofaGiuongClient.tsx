@@ -1448,6 +1448,60 @@ function EditableText({ value, onSave, style, as: Tag = "div" }: {
   );
 }
 
+// ─── QuizProductImageEditor: upload/URL ảnh cho product card trong quiz ──────
+function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: string; currentUrl: string; onSave: (url: string) => void }) {
+  const [showUrlInput, setShowUrlInput] = React.useState(false);
+  const [urlVal, setUrlVal] = React.useState("");
+  const saveUrl = async (url: string) => {
+    if (!url.trim()) return;
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_img_${productId}`, content: url.trim() }) });
+    onSave(url.trim());
+    setShowUrlInput(false); setUrlVal("");
+  };
+  if (showUrlInput) {
+    return (
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.92)", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8, zIndex: 20 }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY }}>Dán link URL ảnh</div>
+        <input autoFocus value={urlVal} onChange={e => setUrlVal(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") saveUrl(urlVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlVal(""); } }}
+          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={() => saveUrl(urlVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Lưu</button>
+          <button onClick={() => { setShowUrlInput(false); setUrlVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer" }}>Huỷ</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, zIndex: 10 }}
+      onClick={e => e.stopPropagation()}>
+      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, backdropFilter: "blur(4px)" }}>
+        <span style={{ fontSize: 12 }}>📷</span>
+        <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Upload</span>
+        <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
+          const file = e.target.files?.[0]; if (!file) return;
+          const formData = new FormData(); formData.append("file", file);
+          try {
+            const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.url) {
+                await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_img_${productId}`, content: data.url }) });
+                onSave(data.url);
+              } else { alert("Upload thất bại: " + (data.error || "Lỗi")); }
+            } else { const err = await res.json().catch(() => ({})); alert("Upload thất bại: " + (err.error || res.status)); }
+          } catch { alert("Lỗi kết nối"); }
+        }} />
+      </label>
+      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, backdropFilter: "blur(4px)" }}>
+        <span style={{ fontSize: 12 }}>🔗</span>
+        <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Dán URL</span>
+      </button>
+    </div>
+  );
+}
+
 function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false, content = {}, onContentSaved }: {
   products: CrmProduct[];
   initialProductId?: string | null;
@@ -1466,6 +1520,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   const [tabLabelVal, setTabLabelVal] = useState("");
   const [stepTitleVal, setStepTitleVal] = useState("");
   const [localContent, setLocalContent] = useState<Record<string, string>>(content || {});
+  const [quizProductOverrides, setQuizProductOverrides] = useState<Record<string, string>>({});
   async function saveTabLabel(stepKey: string, val: string) {
     if (!val.trim()) return;
     try {
@@ -1483,6 +1538,17 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
       onContentSaved?.(`quiz_step_${field}_${stepKey}`, val.trim());
     } catch {}
     setEditingStepTitle(null);
+  }
+  async function saveQuizProductField(productId: string, field: string, val: string) {
+    if (!val.trim()) return;
+    try {
+      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_${field}_${productId}`, content: val.trim() }) });
+      setQuizProductOverrides(prev => ({ ...prev, [`quiz_product_${field}_${productId}`]: val.trim() }));
+      onContentSaved?.(`quiz_product_${field}_${productId}`, val.trim());
+    } catch {}
+  }
+  function getQuizProductField(productId: string, field: string, fallback: string) {
+    return quizProductOverrides[`quiz_product_${field}_${productId}`] || localContent[`quiz_product_${field}_${productId}`] || fallback;
   }
   function getStepLabel(s: QuizStep) { return localContent[`quiz_step_label_${s}`] || STEP_LABELS[s]; }
   function getStepTitle(s: QuizStep, fallback: string) { return localContent[`quiz_step_title_${s}`] || fallback; }
@@ -1525,23 +1591,70 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     if (step === "product") {
       return (
         <div>
-          <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Chọn mẫu sofa giường</h3>
-          <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Mỗi mẫu đều có thể tuỳ chỉnh hoàn toàn theo sở thích</p>
+          {isEditor ? (
+            <>
+              <EditableText as="h3" value={getStepTitle("product", "Chọn mẫu sofa giường")} onSave={v => saveStepText("product", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+              <EditableText as="p" value={getStepSubtitle("product", "Mỗi mẫu đều có thể tuỳ chỉnh hoàn toàn theo sở thích")} onSave={v => saveStepText("product", "subtitle", v)} style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
+            </>
+          ) : (
+            <>
+              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("product", "Chọn mẫu sofa giường")}</h3>
+              <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("product", "Mỗi mẫu đều có thể tuỳ chỉnh hoàn toàn theo sở thích")}</p>
+            </>
+          )}
           <div className="lp-sg-quiz-product-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {products.map(p => {
               const minPrice = p.sizePricings?.length ? Math.min(...p.sizePricings.map(s => s.price)) : p.basePrice;
               const isSelected = cfg.productId === p.id;
+              const displayImgUrl = getQuizProductField(p.id, "img", p.imageUrl || "");
+              const displayName = getQuizProductField(p.id, "name", p.name.replace(/^Chia sẻ\s+/, ""));
+              const displaySku = getQuizProductField(p.id, "sku", p.sku || "");
+              const displayPrice = getQuizProductField(p.id, "price", "");
+              const priceLabel = displayPrice ? `Từ ${displayPrice}` : `Từ ${fmt(minPrice || 0)}`;
               return (
-                <button key={p.id} onClick={() => { setCfg(c => ({ ...c, productId: p.id })); setImgIdx(0); setTimeout(() => goNext(), 200); }}
-                  style={{ background: isSelected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${isSelected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, overflow: "hidden", cursor: "pointer", textAlign: "left" as const, transition: "all 0.2s", padding: 0 }}>
+                <button key={p.id} onClick={() => { if (isEditor) return; setCfg(c => ({ ...c, productId: p.id })); setImgIdx(0); setTimeout(() => goNext(), 200); }}
+                  style={{ background: isSelected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${isSelected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, overflow: "hidden", cursor: isEditor ? "default" : "pointer", textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative" }}>
                   <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
-                    {p.imageUrl && <img src={p.imageUrl} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
-                    <div style={{ position: "absolute", top: 8, left: 8, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{p.sku}</div>
-                    {isSelected && <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
+                    {displayImgUrl && <img src={displayImgUrl} alt={displayName} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+                    {/* Badge SKU - editable */}
+                    {isEditor ? (
+                      <div style={{ position: "absolute", top: 8, left: 8, zIndex: 10 }}
+                        onClick={e => e.stopPropagation()}>
+                        <input
+                          defaultValue={displaySku}
+                          onBlur={e => saveQuizProductField(p.id, "sku", e.target.value)}
+                          onClick={e => e.stopPropagation()}
+                          style={{ background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY, border: "none", outline: "1px dashed rgba(0,0,0,0.4)", minWidth: 40, maxWidth: 80 }}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ position: "absolute", top: 8, left: 8, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{displaySku}</div>
+                    )}
+                    {isSelected && !isEditor && <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
+                    {/* Nút upload ảnh khi editMode */}
+                    {isEditor && <QuizProductImageEditor productId={p.id} currentUrl={displayImgUrl} onSave={url => setQuizProductOverrides(prev => ({ ...prev, [`quiz_product_img_${p.id}`]: url }))} />}
                   </div>
                   <div style={{ padding: "12px" }}>
-                    <div style={{ color: WHITE, fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{p.name.replace(/^Chia sẻ\s+/, "")}</div>
-                    <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY }}>Từ {fmt(minPrice || 0)}</div>
+                    {isEditor ? (
+                      <div onClick={e => e.stopPropagation()}>
+                        <input
+                          defaultValue={displayName}
+                          onBlur={e => saveQuizProductField(p.id, "name", e.target.value)}
+                          style={{ color: WHITE, fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const }}
+                        />
+                        <input
+                          defaultValue={displayPrice || fmt(minPrice || 0)}
+                          onBlur={e => saveQuizProductField(p.id, "price", e.target.value)}
+                          placeholder={fmt(minPrice || 0)}
+                          style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const, marginTop: 4 }}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ color: WHITE, fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{displayName}</div>
+                        <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY }}>{priceLabel}</div>
+                      </>
+                    )}
                   </div>
                 </button>
               );
