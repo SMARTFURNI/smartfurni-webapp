@@ -2732,7 +2732,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>Thông Số Kỹ Thuật</SectionLabel>
+              <SectionLabel>{E({ bk: "spec_badge", def: "Thông Số Kỹ Thuật", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
                 {E({ bk: "spec_title", def: "Chất Lượng Được Kiểm Chứng", as: "span" })}
               </h2>
@@ -2741,21 +2741,21 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
           <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
             {[
-              { label: "Khung", value: "Thép mạ kẽm 1.5mm, chịu tải 300kg" },
-              { label: "Cơ cấu mở gập", value: "Gas-lift nhập khẩu, 50.000 lần kiểm định" },
-              { label: "Kích thước", value: "0,9M / 1,2M / 1,5M / 1,8M (theo yêu cầu)" },
-              { label: "Chất liệu bọc", value: "Vải canvas / Da PU / Gỗ MDF / Gỗ tự nhiên" },
-              { label: "Nệm", value: "Mút ép đàn hồi cao 7cm hoặc 10cm" },
-              { label: "Áo nệm", value: "Vải lanh hoặc da PU, tháo giặt được" },
-              { label: "Bảo hành", value: "3 năm toàn diện (khung + cơ cấu + chất liệu)" },
-              { label: "Xuất xứ", value: "Sản xuất tại Việt Nam, linh kiện nhập khẩu" },
+              { bkL: "spec_row_0_label", defL: "Khung", bkV: "spec_row_0_value", defV: "Thép mạ kẽm 1.5mm, chịu tải 300kg" },
+              { bkL: "spec_row_1_label", defL: "Cơ cấu mở gập", bkV: "spec_row_1_value", defV: "Gas-lift nhập khẩu, 50.000 lần kiểm định" },
+              { bkL: "spec_row_2_label", defL: "Kích thước", bkV: "spec_row_2_value", defV: "0,9M / 1,2M / 1,5M / 1,8M (theo yêu cầu)" },
+              { bkL: "spec_row_3_label", defL: "Chất liệu bọc", bkV: "spec_row_3_value", defV: "Vải canvas / Da PU / Gỗ MDF / Gỗ tự nhiên" },
+              { bkL: "spec_row_4_label", defL: "Nệm", bkV: "spec_row_4_value", defV: "Mút ép đàn hồi cao 7cm hoặc 10cm" },
+              { bkL: "spec_row_5_label", defL: "Áo nệm", bkV: "spec_row_5_value", defV: "Vải lanh hoặc da PU, tháo giặt được" },
+              { bkL: "spec_row_6_label", defL: "Bảo hành", bkV: "spec_row_6_value", defV: "3 năm toàn diện (khung + cơ cấu + chất liệu)" },
+              { bkL: "spec_row_7_label", defL: "Xuất xứ", bkV: "spec_row_7_value", defV: "Sản xuất tại Việt Nam, linh kiện nhập khẩu" },
             ].map((row, i) => (
               <div key={i} style={{ display: "flex", borderBottom: i < 7 ? `1px solid ${BLACK_BORDER}` : "none" }}>
                 <div style={{ width: "40%", padding: "16px 20px", background: "rgba(201,168,76,0.04)", borderRight: `1px solid ${BLACK_BORDER}` }}>
-                  <span style={{ color: GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{row.label}</span>
+                  <span style={{ color: GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{E({ bk: row.bkL, def: row.defL, as: "span", style: { color: GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY } })}</span>
                 </div>
                 <div style={{ flex: 1, padding: "16px 20px" }}>
-                  <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{row.value}</span>
+                  <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{E({ bk: row.bkV, def: row.defV, as: "span", style: { color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY } })}</span>
                 </div>
               </div>
             ))}
