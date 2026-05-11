@@ -2231,6 +2231,18 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
   const [hiddenProductIds, setHiddenProductIds] = useState<string[]>(() => {
     try { return JSON.parse(initialContent["hidden_product_ids"] || "[]"); } catch { return []; }
   });
+  const [productOrder, setProductOrder] = useState<string[]>(() => {
+    try { return JSON.parse(initialContent["product_order"] || "[]"); } catch { return []; }
+  });
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const saveProductOrder = useCallback(async (order: string[]) => {
+    setProductOrder(order);
+    await fetch("/api/admin/lp-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: LP_SLUG, blockKey: "product_order", content: JSON.stringify(order) }),
+    });
+  }, []);
   const formRef = useRef<HTMLDivElement>(null);
 
   const handleSaved = useCallback((bk: string, val: string) => {
@@ -2781,7 +2793,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             </div>
           </FadeIn>
           {(() => {
-            const displayedProducts = sofaProducts.filter(p => !hiddenProductIds.includes(p.id));
+            const displayedProducts = (() => {
+              const filtered = sofaProducts.filter(p => !hiddenProductIds.includes(p.id));
+              if (productOrder.length === 0) return filtered;
+              const ordered: typeof filtered = [];
+              productOrder.forEach(id => { const p = filtered.find(x => x.id === id); if (p) ordered.push(p); });
+              filtered.forEach(p => { if (!productOrder.includes(p.id)) ordered.push(p); });
+              return ordered;
+            })();
             const hiddenProducts = sofaProducts.filter(p => hiddenProductIds.includes(p.id));
             return displayedProducts.length > 0 || isEditor ? (
             <div className="lp-sg-product-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
@@ -2795,16 +2814,43 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                       style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: "pointer", transition: "border-color 0.25s, transform 0.25s", position: "relative", display: "flex", flexDirection: "column" }}
                       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.45)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
-                      onClick={() => openQuiz(p.id)}
+                      onClick={() => { if (!editMode) openQuiz(p.id); }}
+                      draggable={editMode}
+                      onDragStart={e => { e.dataTransfer.setData("text/plain", p.id); e.dataTransfer.effectAllowed = "move"; }}
+                      onDragOver={e => { if (!editMode) return; e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverId(p.id); }}
+                      onDragLeave={() => setDragOverId(null)}
+                      onDrop={e => {
+                        e.preventDefault(); setDragOverId(null);
+                        const draggedId = e.dataTransfer.getData("text/plain");
+                        if (draggedId === p.id) return;
+                        const ids = displayedProducts.map(x => x.id);
+                        const fromIdx = ids.indexOf(draggedId);
+                        const toIdx = ids.indexOf(p.id);
+                        if (fromIdx === -1 || toIdx === -1) return;
+                        const newOrder = [...ids];
+                        newOrder.splice(fromIdx, 1);
+                        newOrder.splice(toIdx, 0, draggedId);
+                        saveProductOrder(newOrder);
+                      }}
                     >
 
-                      {/* Nút xoá khi editMode */}
+                      {/* Nút xoá và drag handle khi editMode */}
                       {editMode && (
-                        <button
-                          onClick={e => { e.stopPropagation(); if (confirm(`Ẩn sản phẩm "${p.name.replace(/^Chia sẻ\s+/, "").substring(0, 40)}" khỏi trang?`)) saveHiddenIds([...hiddenProductIds, p.id]); }}
-                          style={{ position: "absolute", top: 10, left: 10, zIndex: 10, background: "rgba(239,68,68,0.9)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
-                          title="Ẩn sản phẩm này"
-                        >✕</button>
+                        <>
+                          <button
+                            onClick={e => { e.stopPropagation(); if (confirm(`Ẩn sản phẩm "${p.name.replace(/^Chia sẻ\s+/, "").substring(0, 40)}" khỏi trang?`)) saveHiddenIds([...hiddenProductIds, p.id]); }}
+                            style={{ position: "absolute", top: 10, left: 10, zIndex: 10, background: "rgba(239,68,68,0.9)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
+                            title="Ẩn sản phẩm này"
+                          >✕</button>
+                          <div
+                            title="Kéo để sắp xếp"
+                            style={{ position: "absolute", top: 10, right: 10, zIndex: 10, background: "rgba(201,168,76,0.85)", color: "#000", borderRadius: 6, width: 28, height: 28, fontSize: 14, cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          >⠿</div>
+                        </>
+                      )}
+                      {/* Drop highlight */}
+                      {editMode && dragOverId === p.id && (
+                        <div style={{ position: "absolute", inset: 0, border: "3px dashed rgba(201,168,76,0.8)", borderRadius: R_LG, zIndex: 20, pointerEvents: "none", background: "rgba(201,168,76,0.08)" }} />
                       )}
                       {/* Ảnh tỉ lệ 1:1 */}
                       <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "#0D0800", flexShrink: 0 }}>
