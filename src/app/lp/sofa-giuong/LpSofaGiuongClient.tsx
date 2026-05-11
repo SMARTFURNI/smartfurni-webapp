@@ -2630,7 +2630,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
       {/* ── HOW IT WORKS ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section id="how-it-works" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
             <SectionLabel>Quy Trình</SectionLabel>
@@ -2693,7 +2693,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
       {/* ── FEATURES / BENEFITS ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK }}>
+      <section id="features" style={{ padding: SECTION_PAD, background: BLACK }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -2764,7 +2764,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── PRODUCT GALLERY ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section id="product-gallery" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -2923,7 +2923,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK }}>
+      <section id="testimonials" style={{ padding: SECTION_PAD, background: BLACK }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
             <SectionLabel>Khách Hàng Nói Gì</SectionLabel>
