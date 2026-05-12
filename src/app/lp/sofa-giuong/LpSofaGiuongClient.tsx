@@ -1679,14 +1679,13 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         return (
           <div key={slotKey} style={{ position: "relative", flexShrink: 0, width: 180 }}>
             <button onClick={() => {
-              if (isEditor) return;
               if (!isSelectable) return;
               const targetId = slot.productId || slotKey;
               setCfg(c => ({ ...c, productId: targetId }));
               setImgIdx(0);
               setTimeout(() => goNext(), 200);
             }}
-              style={{ background: isSelected ? "rgba(201,168,76,0.12)" : (isEmpty ? "rgba(201,168,76,0.04)" : "rgba(245,237,214,0.03)"), border: `1.5px solid ${isSelected ? GOLD : (isEmpty ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.18)")}`, borderRadius: R_MD, overflow: "hidden", cursor: isEditor ? "default" : (isSelectable ? "pointer" : "default"), textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", width: "100%" }}>
+              style={{ background: isSelected ? "rgba(201,168,76,0.12)" : (isEmpty ? "rgba(201,168,76,0.04)" : "rgba(245,237,214,0.03)"), border: `1.5px solid ${isSelected ? GOLD : (isEmpty ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.18)")}`, borderRadius: R_MD, overflow: "hidden", cursor: isSelectable ? "pointer" : "default", textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", width: "100%" }}>
               <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: isEmpty ? "rgba(201,168,76,0.04)" : "transparent" }}>
                 {displayImgUrl ? (
                   <img src={displayImgUrl} alt={displayName} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
