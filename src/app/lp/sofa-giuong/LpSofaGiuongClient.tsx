@@ -1502,7 +1502,8 @@ function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: 
   );
 }
 
-type FrameGroup = { id: string; label: string; productIds: string[] };
+type FrameSlot = { slotId: string; productId: string | null };
+type FrameGroup = { id: string; label: string; productIds: string[]; slots?: FrameSlot[] };
 function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false, content = {}, onContentSaved }: {
   products: CrmProduct[];
   initialProductId?: string | null;
@@ -1523,10 +1524,13 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   const [localContent, setLocalContent] = useState<Record<string, string>>(content || {});
   const [quizProductOverrides, setQuizProductOverrides] = useState<Record<string, string>>({});
   // Frame groups: 3 hàng khung SMF12, SMF22, SMF23
+  function makeDefaultSlots(groupId: string): FrameSlot[] {
+    return Array.from({ length: 8 }, (_, i) => ({ slotId: `${groupId}_slot_${i}`, productId: null }));
+  }
   const DEFAULT_FRAME_GROUPS: FrameGroup[] = [
-    { id: "smf12", label: "Khung Sofa Giường SMF12", productIds: [] },
-    { id: "smf22", label: "Khung Sofa Giường SMF22", productIds: [] },
-    { id: "smf23", label: "Khung Sofa Giường SMF23", productIds: [] },
+    { id: "smf12", label: "Khung Sofa Giường SMF12", productIds: [], slots: makeDefaultSlots("smf12") },
+    { id: "smf22", label: "Khung Sofa Giường SMF22", productIds: [], slots: makeDefaultSlots("smf22") },
+    { id: "smf23", label: "Khung Sofa Giường SMF23", productIds: [], slots: makeDefaultSlots("smf23") },
   ];
   const [frameGroups, setFrameGroups] = useState<FrameGroup[]>(() => {
     try {
@@ -1544,24 +1548,41 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   }
   // Phân nhóm sản phẩm: nếu chưa có cấu hình, tự động phân theo SKU prefix
   const groupedProducts = useMemo(() => {
-    const groups = frameGroups.map(g => ({ ...g }));
-    // Check if any group has productIds configured
-    const hasConfig = groups.some(g => g.productIds.length > 0);
-    if (!hasConfig) {
-      // Auto-assign by SKU prefix
-      products.forEach(p => {
-        const sku = (p.sku || "").toUpperCase();
-        if (sku.includes("SMF12")) { groups[0].productIds.push(p.id); }
-        else if (sku.includes("SMF22")) { groups[1].productIds.push(p.id); }
-        else if (sku.includes("SMF23")) { groups[2].productIds.push(p.id); }
-        else { groups[0].productIds.push(p.id); } // fallback: nhóm đầu
+    return frameGroups.map(g => {
+      // Ensure 8 slots, pad with empty if needed
+      const existingSlots: FrameSlot[] = g.slots && g.slots.length > 0 ? g.slots : [];
+      const slots: FrameSlot[] = Array.from({ length: 8 }, (_, i) => {
+        return existingSlots[i] || { slotId: `${g.id}_slot_${i}`, productId: null };
       });
-    }
-    return groups.map(g => ({
-      ...g,
-      products: g.productIds.map(id => products.find(p => p.id === id)).filter(Boolean) as typeof products,
-    }));
-  }, [frameGroups, products]);
+      return {
+        ...g,
+        slots,
+      };
+    });
+  }, [frameGroups]);
+  // Helper: update a slot in a group
+  function updateSlot(gIdx: number, slotIdx: number, productId: string | null) {
+    const newGroups = frameGroups.map((g, i) => {
+      if (i !== gIdx) return g;
+      const slots: FrameSlot[] = Array.from({ length: 8 }, (_, si) => {
+        const existing = g.slots?.[si] || { slotId: `${g.id}_slot_${si}`, productId: null };
+        return si === slotIdx ? { ...existing, productId } : existing;
+      });
+      return { ...g, slots };
+    });
+    saveFrameGroups(newGroups);
+  }
+  // Helper: remove a slot from a group (shift remaining slots left, pad with empty at end)
+  function removeSlot(gIdx: number, slotIdx: number) {
+    const newGroups = frameGroups.map((g, i) => {
+      if (i !== gIdx) return g;
+      const currentSlots: FrameSlot[] = Array.from({ length: 8 }, (_, si) => g.slots?.[si] || { slotId: `${g.id}_slot_${si}`, productId: null });
+      const filtered = currentSlots.filter((_, si) => si !== slotIdx);
+      const slots: FrameSlot[] = Array.from({ length: 8 }, (_, si) => filtered[si] || { slotId: `${g.id}_slot_${si}_new`, productId: null });
+      return { ...g, slots };
+    });
+    saveFrameGroups(newGroups);
+  }
   async function saveTabLabel(stepKey: string, val: string) {
     if (!val.trim()) return;
     try {
@@ -1630,47 +1651,94 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
 
   function renderStep() {
     if (step === "product") {
-      // Render một product card
-      const renderProductCard = (p: typeof products[0]) => {
-        const minPrice = p.sizePricings?.length ? Math.min(...p.sizePricings.map(s => s.price)) : p.basePrice;
-        const isSelected = cfg.productId === p.id;
-        const displayImgUrl = getQuizProductField(p.id, "img", p.imageUrl || "");
-        const displayName = getQuizProductField(p.id, "name", p.name.replace(/^Chia sẻ\s+/, ""));
-        const displaySku = getQuizProductField(p.id, "sku", p.sku || "");
-        const displayPrice = getQuizProductField(p.id, "price", "");
-        const priceLabel = displayPrice ? `Từ ${displayPrice}` : `Từ ${fmt(minPrice || 0)}`;
+      // Render một slot card (có thể có productId hoặc trống)
+      const renderSlotCard = (slot: FrameSlot, gIdx: number, slotIdx: number) => {
+        const slotKey = slot.slotId;
+        const baseProd = slot.productId ? products.find(p => p.id === slot.productId) : null;
+        const minPrice = baseProd?.sizePricings?.length ? Math.min(...baseProd.sizePricings.map(s => s.price)) : (baseProd?.basePrice || 0);
+        const isSelected = !!slot.productId && cfg.productId === slot.productId;
+        const displayImgUrl = quizProductOverrides[`slot_img_${slotKey}`] || localContent[`slot_img_${slotKey}`] || baseProd?.imageUrl || "";
+        const displayName = quizProductOverrides[`slot_name_${slotKey}`] || localContent[`slot_name_${slotKey}`] || (baseProd ? baseProd.name.replace(/^Chia sẻ\s+/, "") : "");
+        const displaySku = quizProductOverrides[`slot_sku_${slotKey}`] || localContent[`slot_sku_${slotKey}`] || baseProd?.sku || "";
+        const displayPrice = quizProductOverrides[`slot_price_${slotKey}`] || localContent[`slot_price_${slotKey}`] || "";
+        const priceLabel = displayPrice ? `Từ ${displayPrice}` : (minPrice ? `Từ ${fmt(minPrice)}` : "");
+        const isEmpty = !displayImgUrl && !displayName;
+
+        async function saveSlotField(field: string, val: string) {
+          if (!val.trim()) return;
+          const key = `slot_${field}_${slotKey}`;
+          await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: key, content: val.trim() }) });
+          setQuizProductOverrides(prev => ({ ...prev, [key]: val.trim() }));
+          onContentSaved?.(key, val.trim());
+        }
+
+        if (!isEditor && isEmpty) return null;
+
         return (
-          <button key={p.id} onClick={() => { if (isEditor) return; setCfg(c => ({ ...c, productId: p.id })); setImgIdx(0); setTimeout(() => goNext(), 200); }}
-            style={{ background: isSelected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${isSelected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, overflow: "hidden", cursor: isEditor ? "default" : "pointer", textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", flexShrink: 0, width: 180 }}>
-            <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
-              {displayImgUrl && <img src={displayImgUrl} alt={displayName} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
-              {isEditor ? (
-                <div style={{ position: "absolute", top: 8, left: 8, zIndex: 10 }} onClick={e => e.stopPropagation()}>
-                  <input defaultValue={displaySku} onBlur={e => saveQuizProductField(p.id, "sku", e.target.value)} onClick={e => e.stopPropagation()}
-                    style={{ background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY, border: "none", outline: "1px dashed rgba(0,0,0,0.4)", minWidth: 40, maxWidth: 80 }} />
-                </div>
-              ) : (
-                <div style={{ position: "absolute", top: 8, left: 8, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{displaySku}</div>
-              )}
-              {isSelected && !isEditor && <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
-              {isEditor && <QuizProductImageEditor productId={p.id} currentUrl={displayImgUrl} onSave={url => setQuizProductOverrides(prev => ({ ...prev, [`quiz_product_img_${p.id}`]: url }))} />}
-            </div>
-            <div style={{ padding: "10px" }}>
-              {isEditor ? (
-                <div onClick={e => e.stopPropagation()}>
-                  <input defaultValue={displayName} onBlur={e => saveQuizProductField(p.id, "name", e.target.value)}
-                    style={{ color: WHITE, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const }} />
-                  <input defaultValue={displayPrice || fmt(minPrice || 0)} onBlur={e => saveQuizProductField(p.id, "price", e.target.value)} placeholder={fmt(minPrice || 0)}
-                    style={{ color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const, marginTop: 4 }} />
-                </div>
-              ) : (
-                <>
-                  <div style={{ color: WHITE, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{displayName}</div>
-                  <div style={{ color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>{priceLabel}</div>
-                </>
-              )}
-            </div>
-          </button>
+          <div key={slotKey} style={{ position: "relative", flexShrink: 0, width: 180 }}>
+            <button onClick={() => {
+              if (isEditor) return;
+              if (isEmpty) return;
+              const targetId = slot.productId || slotKey;
+              setCfg(c => ({ ...c, productId: targetId }));
+              setImgIdx(0);
+              setTimeout(() => goNext(), 200);
+            }}
+              style={{ background: isSelected ? "rgba(201,168,76,0.12)" : (isEmpty ? "rgba(201,168,76,0.04)" : "rgba(245,237,214,0.03)"), border: `1.5px solid ${isSelected ? GOLD : (isEmpty ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.18)")}`, borderRadius: R_MD, overflow: "hidden", cursor: isEditor ? "default" : (isEmpty ? "default" : "pointer"), textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", width: "100%" }}>
+              <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: isEmpty ? "rgba(201,168,76,0.04)" : "transparent" }}>
+                {displayImgUrl ? (
+                  <img src={displayImgUrl} alt={displayName} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                    <span style={{ fontSize: 24, opacity: 0.3 }}>🖼</span>
+                    {isEditor && <span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY, textAlign: "center" as const }}>Thêm ảnh</span>}
+                  </div>
+                )}
+                {isEditor ? (
+                  <div style={{ position: "absolute", top: 8, left: 8, zIndex: 10 }} onClick={e => e.stopPropagation()}>
+                    <input key={`sku_${slotKey}`} defaultValue={displaySku} onBlur={e => saveSlotField("sku", e.target.value)} onClick={e => e.stopPropagation()} placeholder="SKU"
+                      style={{ background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY, border: "none", outline: "1px dashed rgba(0,0,0,0.4)", minWidth: 40, maxWidth: 80 }} />
+                  </div>
+                ) : displaySku ? (
+                  <div style={{ position: "absolute", top: 8, left: 8, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{displaySku}</div>
+                ) : null}
+                {isSelected && !isEditor && <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
+                {isEditor && (
+                  <QuizProductImageEditor
+                    productId={slotKey}
+                    currentUrl={displayImgUrl}
+                    onSave={url => {
+                      const key = `slot_img_${slotKey}`;
+                      fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: key, content: url }) });
+                      setQuizProductOverrides(prev => ({ ...prev, [key]: url }));
+                      onContentSaved?.(key, url);
+                    }}
+                  />
+                )}
+              </div>
+              <div style={{ padding: "10px" }}>
+                {isEditor ? (
+                  <div onClick={e => e.stopPropagation()}>
+                    <input key={`name_${slotKey}`} defaultValue={displayName} onBlur={e => saveSlotField("name", e.target.value)} placeholder="Tên mẫu..."
+                      style={{ color: WHITE, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const }} />
+                    <input key={`price_${slotKey}`} defaultValue={displayPrice || (minPrice ? fmt(minPrice) : "")} onBlur={e => saveSlotField("price", e.target.value)} placeholder="Giá từ..."
+                      style={{ color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const, marginTop: 4 }} />
+                  </div>
+                ) : (
+                  <>
+                    {displayName && <div style={{ color: WHITE, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{displayName}</div>}
+                    {priceLabel && <div style={{ color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>{priceLabel}</div>}
+                  </>
+                )}
+              </div>
+            </button>
+            {isEditor && (
+              <button onClick={() => removeSlot(gIdx, slotIdx)}
+                style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "rgba(239,68,68,0.85)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 20, padding: 0 }}>
+                <span style={{ color: "white", fontSize: 11, fontWeight: 700, lineHeight: 1 }}>✕</span>
+              </button>
+            )}
+          </div>
         );
       };
 
@@ -1687,87 +1755,27 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
               <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("product", "Mỗi mẫu đều có thể tuỳ chỉnh hoàn toàn theo sở thích")}</p>
             </>
           )}
-
-          {/* 3 hàng khung */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             {groupedProducts.map((group, gIdx) => {
-              // Danh sách products chưa thuộc nhóm nào (để thêm vào nhóm)
-              const assignedIds = new Set(groupedProducts.flatMap(g => g.productIds));
-              const unassignedProducts = products.filter(p => !assignedIds.has(p.id));
+              const filledCount = group.slots.filter(s => {
+                const k = s.slotId;
+                return !!(quizProductOverrides[`slot_img_${k}`] || localContent[`slot_img_${k}`] || (s.productId && products.find(p => p.id === s.productId)?.imageUrl));
+              }).length;
               return (
                 <div key={group.id}>
-                  {/* Header hàng */}
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     {isEditor ? (
-                      <input
-                        defaultValue={group.label}
-                        onBlur={e => {
-                          const newGroups = frameGroups.map((g, i) => i === gIdx ? { ...g, label: e.target.value } : g);
-                          saveFrameGroups(newGroups);
-                        }}
-                        style={{ color: WHITE, fontSize: 14, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 6, padding: "3px 8px", outline: "none", flex: 1 }}
-                      />
+                      <input defaultValue={group.label} onBlur={e => { const ng = frameGroups.map((g, i) => i === gIdx ? { ...g, label: e.target.value } : g); saveFrameGroups(ng); }}
+                        style={{ color: WHITE, fontSize: 14, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 6, padding: "3px 8px", outline: "none", flex: 1 }} />
                     ) : (
                       <div style={{ color: WHITE, fontSize: 14, fontWeight: 700, fontFamily: FONT_BODY }}>{group.label}</div>
                     )}
                     <div style={{ height: 1, flex: 1, background: "rgba(201,168,76,0.2)" }} />
-                    <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>{group.products.length} mẫu</div>
+                    <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>{isEditor ? `${filledCount}/8 mẫu` : `${filledCount} mẫu`}</div>
                   </div>
-
-                  {/* Slider ngang */}
-                  <div style={{ position: "relative" }}>
-                    <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" as any, scrollbarWidth: "none" as any }}
-                      className="lp-sg-quiz-row-slider">
-                      {group.products.map(p => renderProductCard(p))}
-
-                      {/* Nút thêm sản phẩm (editMode) */}
-                      {isEditor && (
-                        <div style={{ flexShrink: 0, width: 180, display: "flex", flexDirection: "column", gap: 6 }}>
-                          {/* Nút thêm từ danh sách chưa phân nhóm */}
-                          {unassignedProducts.map(p => (
-                            <button key={p.id} onClick={() => {
-                              const newGroups = frameGroups.map((g, i) => i === gIdx ? { ...g, productIds: [...g.productIds, p.id] } : g);
-                              saveFrameGroups(newGroups);
-                            }}
-                              style={{ background: "rgba(201,168,76,0.06)", border: "1.5px dashed rgba(201,168,76,0.4)", borderRadius: R_MD, padding: "8px 10px", cursor: "pointer", textAlign: "left" as const, color: GOLD, fontSize: 11, fontFamily: FONT_BODY, display: "flex", alignItems: "center", gap: 6 }}>
-                              <span style={{ fontSize: 14 }}>＋</span>
-                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{p.sku || p.name}</span>
-                            </button>
-                          ))}
-                          {/* Nút thêm từ nhóm khác */}
-                          {groupedProducts.filter((_, i) => i !== gIdx).flatMap(g => g.products).map(p => (
-                            <button key={p.id} onClick={() => {
-                              // Di chuyển product sang nhóm này
-                              const newGroups = frameGroups.map((g, i) => {
-                                if (i === gIdx) return { ...g, productIds: [...g.productIds, p.id] };
-                                return { ...g, productIds: g.productIds.filter(id => id !== p.id) };
-                              });
-                              saveFrameGroups(newGroups);
-                            }}
-                              style={{ background: "rgba(201,168,76,0.04)", border: "1px dashed rgba(201,168,76,0.25)", borderRadius: R_MD, padding: "8px 10px", cursor: "pointer", textAlign: "left" as const, color: "rgba(201,168,76,0.6)", fontSize: 11, fontFamily: FONT_BODY, display: "flex", alignItems: "center", gap: 6 }}>
-                              <span style={{ fontSize: 12 }}>↗</span>
-                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{p.sku || p.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Nút xoá sản phẩm khỏi nhóm (editMode) */}
-                    {isEditor && group.products.length > 0 && (
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, marginTop: 6 }}>
-                        {group.products.map(p => (
-                          <button key={p.id} onClick={() => {
-                            const newGroups = frameGroups.map((g, i) => i === gIdx ? { ...g, productIds: g.productIds.filter(id => id !== p.id) } : g);
-                            saveFrameGroups(newGroups);
-                          }}
-                            style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 20, padding: "2px 8px", cursor: "pointer", color: "#F87171", fontSize: 10, fontFamily: FONT_BODY, display: "flex", alignItems: "center", gap: 4 }}>
-                            <span>✕</span>
-                            <span>{p.sku || p.name.slice(0, 12)}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" as any, scrollbarWidth: "none" as any }}
+                    className="lp-sg-quiz-row-slider">
+                    {group.slots.map((slot, slotIdx) => renderSlotCard(slot, gIdx, slotIdx))}
                   </div>
                 </div>
               );
@@ -1776,7 +1784,6 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         </div>
       );
     }
-
     if (step === "size" && selectedProduct) {
       const sizes = selectedProduct.sizePricings?.length ? selectedProduct.sizePricings : [
         { size: "0,9M", price: (selectedProduct.basePrice || 0) },
