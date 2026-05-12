@@ -1663,6 +1663,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         const displayPrice = quizProductOverrides[`slot_price_${slotKey}`] || localContent[`slot_price_${slotKey}`] || "";
         const priceLabel = displayPrice ? `Từ ${displayPrice}` : (minPrice ? `Từ ${fmt(minPrice)}` : "");
         const isEmpty = !displayImgUrl && !displayName;
+        // A slot is selectable if it has an image or name (even without a productId)
+        const isSelectable = !isEmpty;
 
         async function saveSlotField(field: string, val: string) {
           if (!val.trim()) return;
@@ -1678,13 +1680,13 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           <div key={slotKey} style={{ position: "relative", flexShrink: 0, width: 180 }}>
             <button onClick={() => {
               if (isEditor) return;
-              if (isEmpty) return;
+              if (!isSelectable) return;
               const targetId = slot.productId || slotKey;
               setCfg(c => ({ ...c, productId: targetId }));
               setImgIdx(0);
               setTimeout(() => goNext(), 200);
             }}
-              style={{ background: isSelected ? "rgba(201,168,76,0.12)" : (isEmpty ? "rgba(201,168,76,0.04)" : "rgba(245,237,214,0.03)"), border: `1.5px solid ${isSelected ? GOLD : (isEmpty ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.18)")}`, borderRadius: R_MD, overflow: "hidden", cursor: isEditor ? "default" : (isEmpty ? "default" : "pointer"), textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", width: "100%" }}>
+              style={{ background: isSelected ? "rgba(201,168,76,0.12)" : (isEmpty ? "rgba(201,168,76,0.04)" : "rgba(245,237,214,0.03)"), border: `1.5px solid ${isSelected ? GOLD : (isEmpty ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.18)")}`, borderRadius: R_MD, overflow: "hidden", cursor: isEditor ? "default" : (isSelectable ? "pointer" : "default"), textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", width: "100%" }}>
               <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: isEmpty ? "rgba(201,168,76,0.04)" : "transparent" }}>
                 {displayImgUrl ? (
                   <img src={displayImgUrl} alt={displayName} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
@@ -3401,7 +3403,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           initialProductId={quizProductId}
           onClose={() => setQuizOpen(false)}
           onComplete={handleQuizComplete}
-          isEditor={isEditor}
+          isEditor={isEditor && editMode}
           content={content}
           onContentSaved={(k, v) => setContent(c => ({ ...c, [k]: v }))}
         />
