@@ -1126,7 +1126,7 @@ function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url
       {cropSrc && (
         <CropImageModal
           imgSrc={cropSrc}
-          aspect={imgKey === "solution_main_img" ? 2 / 1 : undefined}
+          aspect={imgKey === "solution_main_img" || imgKey === "solution_main_img_2" ? 2 / 1 : undefined}
           onCancel={() => setCropSrc(null)}
           onDone={async blob => {
             setCropSrc(null);
@@ -2626,6 +2626,29 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             </div>
           </FadeIn>
 
+          {/* Ảnh thứ 2 bên dưới solution_main_img */}
+          <FadeIn delay={80}>
+            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: BLACK_CARD, border: `1px solid rgba(201,168,76,0.2)`, width: "100%", marginTop: 16 }}>
+              {(() => {
+                const imgUrl2 = content["solution_main_img_2"] || "";
+                return (
+                  <>
+                    {imgUrl2 ? (
+                      <img src={imgUrl2} alt="Ảnh giải pháp sofa giường SmartFurni 2" style={{ width: "100%", height: "auto", display: "block" }} />
+                    ) : (
+                      <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(201,168,76,0.04)" }}>
+                        <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
+                        <p style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, textAlign: "center" as const, margin: 0 }}>
+                          {editMode ? "Bấm nút bên dưới để upload ảnh" : "Chưa có ảnh — bật chỉnh sửa để upload"}
+                        </p>
+                      </div>
+                    )}
+                    {editMode && <PainPointImageEditor imgKey="solution_main_img_2" onSave={url => setContent(c => ({ ...c, solution_main_img_2: url }))} />}
+                  </>
+                );
+              })()}
+            </div>
+          </FadeIn>
           {/* 4 điểm giải pháp bên dưới — typewriter khi scroll đến */}
           <SolCardsGrid content={content} isEditor={isEditor} E={E} />
 
