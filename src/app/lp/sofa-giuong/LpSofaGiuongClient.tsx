@@ -1,6 +1,6 @@
 "use client";
 import "./lp-retail.css";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import type { CrmProduct } from "@/lib/crm-types";
@@ -1502,6 +1502,7 @@ function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: 
   );
 }
 
+type FrameGroup = { id: string; label: string; productIds: string[] };
 function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false, content = {}, onContentSaved }: {
   products: CrmProduct[];
   initialProductId?: string | null;
@@ -1521,6 +1522,46 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   const [stepTitleVal, setStepTitleVal] = useState("");
   const [localContent, setLocalContent] = useState<Record<string, string>>(content || {});
   const [quizProductOverrides, setQuizProductOverrides] = useState<Record<string, string>>({});
+  // Frame groups: 3 hàng khung SMF12, SMF22, SMF23
+  const DEFAULT_FRAME_GROUPS: FrameGroup[] = [
+    { id: "smf12", label: "Khung Sofa Giường SMF12", productIds: [] },
+    { id: "smf22", label: "Khung Sofa Giường SMF22", productIds: [] },
+    { id: "smf23", label: "Khung Sofa Giường SMF23", productIds: [] },
+  ];
+  const [frameGroups, setFrameGroups] = useState<FrameGroup[]>(() => {
+    try {
+      const saved = localContent["quiz_frame_groups"] || content["quiz_frame_groups"];
+      if (saved) return JSON.parse(saved) as FrameGroup[];
+    } catch {}
+    return DEFAULT_FRAME_GROUPS;
+  });
+  async function saveFrameGroups(groups: FrameGroup[]) {
+    setFrameGroups(groups);
+    try {
+      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: "quiz_frame_groups", content: JSON.stringify(groups) }) });
+      onContentSaved?.("quiz_frame_groups", JSON.stringify(groups));
+    } catch {}
+  }
+  // Phân nhóm sản phẩm: nếu chưa có cấu hình, tự động phân theo SKU prefix
+  const groupedProducts = useMemo(() => {
+    const groups = frameGroups.map(g => ({ ...g }));
+    // Check if any group has productIds configured
+    const hasConfig = groups.some(g => g.productIds.length > 0);
+    if (!hasConfig) {
+      // Auto-assign by SKU prefix
+      products.forEach(p => {
+        const sku = (p.sku || "").toUpperCase();
+        if (sku.includes("SMF12")) { groups[0].productIds.push(p.id); }
+        else if (sku.includes("SMF22")) { groups[1].productIds.push(p.id); }
+        else if (sku.includes("SMF23")) { groups[2].productIds.push(p.id); }
+        else { groups[0].productIds.push(p.id); } // fallback: nhóm đầu
+      });
+    }
+    return groups.map(g => ({
+      ...g,
+      products: g.productIds.map(id => products.find(p => p.id === id)).filter(Boolean) as typeof products,
+    }));
+  }, [frameGroups, products]);
   async function saveTabLabel(stepKey: string, val: string) {
     if (!val.trim()) return;
     try {
@@ -1589,74 +1630,146 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
 
   function renderStep() {
     if (step === "product") {
+      // Render một product card
+      const renderProductCard = (p: typeof products[0]) => {
+        const minPrice = p.sizePricings?.length ? Math.min(...p.sizePricings.map(s => s.price)) : p.basePrice;
+        const isSelected = cfg.productId === p.id;
+        const displayImgUrl = getQuizProductField(p.id, "img", p.imageUrl || "");
+        const displayName = getQuizProductField(p.id, "name", p.name.replace(/^Chia sẻ\s+/, ""));
+        const displaySku = getQuizProductField(p.id, "sku", p.sku || "");
+        const displayPrice = getQuizProductField(p.id, "price", "");
+        const priceLabel = displayPrice ? `Từ ${displayPrice}` : `Từ ${fmt(minPrice || 0)}`;
+        return (
+          <button key={p.id} onClick={() => { if (isEditor) return; setCfg(c => ({ ...c, productId: p.id })); setImgIdx(0); setTimeout(() => goNext(), 200); }}
+            style={{ background: isSelected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${isSelected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, overflow: "hidden", cursor: isEditor ? "default" : "pointer", textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", flexShrink: 0, width: 180 }}>
+            <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
+              {displayImgUrl && <img src={displayImgUrl} alt={displayName} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+              {isEditor ? (
+                <div style={{ position: "absolute", top: 8, left: 8, zIndex: 10 }} onClick={e => e.stopPropagation()}>
+                  <input defaultValue={displaySku} onBlur={e => saveQuizProductField(p.id, "sku", e.target.value)} onClick={e => e.stopPropagation()}
+                    style={{ background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY, border: "none", outline: "1px dashed rgba(0,0,0,0.4)", minWidth: 40, maxWidth: 80 }} />
+                </div>
+              ) : (
+                <div style={{ position: "absolute", top: 8, left: 8, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{displaySku}</div>
+              )}
+              {isSelected && !isEditor && <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
+              {isEditor && <QuizProductImageEditor productId={p.id} currentUrl={displayImgUrl} onSave={url => setQuizProductOverrides(prev => ({ ...prev, [`quiz_product_img_${p.id}`]: url }))} />}
+            </div>
+            <div style={{ padding: "10px" }}>
+              {isEditor ? (
+                <div onClick={e => e.stopPropagation()}>
+                  <input defaultValue={displayName} onBlur={e => saveQuizProductField(p.id, "name", e.target.value)}
+                    style={{ color: WHITE, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const }} />
+                  <input defaultValue={displayPrice || fmt(minPrice || 0)} onBlur={e => saveQuizProductField(p.id, "price", e.target.value)} placeholder={fmt(minPrice || 0)}
+                    style={{ color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const, marginTop: 4 }} />
+                </div>
+              ) : (
+                <>
+                  <div style={{ color: WHITE, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{displayName}</div>
+                  <div style={{ color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>{priceLabel}</div>
+                </>
+              )}
+            </div>
+          </button>
+        );
+      };
+
       return (
         <div>
           {isEditor ? (
             <>
-              <EditableText as="h3" value={getStepTitle("product", "Chọn mẫu sofa giường")} onSave={v => saveStepText("product", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+              <EditableText as="h3" value={getStepTitle("product", "Chọn Mẫu Khung Sofa Giường Và Bắt Đầu Thiết Kế")} onSave={v => saveStepText("product", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
               <EditableText as="p" value={getStepSubtitle("product", "Mỗi mẫu đều có thể tuỳ chỉnh hoàn toàn theo sở thích")} onSave={v => saveStepText("product", "subtitle", v)} style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
             </>
           ) : (
             <>
-              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("product", "Chọn mẫu sofa giường")}</h3>
+              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("product", "Chọn Mẫu Khung Sofa Giường Và Bắt Đầu Thiết Kế")}</h3>
               <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("product", "Mỗi mẫu đều có thể tuỳ chỉnh hoàn toàn theo sở thích")}</p>
             </>
           )}
-          <div className="lp-sg-quiz-product-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            {products.map(p => {
-              const minPrice = p.sizePricings?.length ? Math.min(...p.sizePricings.map(s => s.price)) : p.basePrice;
-              const isSelected = cfg.productId === p.id;
-              const displayImgUrl = getQuizProductField(p.id, "img", p.imageUrl || "");
-              const displayName = getQuizProductField(p.id, "name", p.name.replace(/^Chia sẻ\s+/, ""));
-              const displaySku = getQuizProductField(p.id, "sku", p.sku || "");
-              const displayPrice = getQuizProductField(p.id, "price", "");
-              const priceLabel = displayPrice ? `Từ ${displayPrice}` : `Từ ${fmt(minPrice || 0)}`;
+
+          {/* 3 hàng khung */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {groupedProducts.map((group, gIdx) => {
+              // Danh sách products chưa thuộc nhóm nào (để thêm vào nhóm)
+              const assignedIds = new Set(groupedProducts.flatMap(g => g.productIds));
+              const unassignedProducts = products.filter(p => !assignedIds.has(p.id));
               return (
-                <button key={p.id} onClick={() => { if (isEditor) return; setCfg(c => ({ ...c, productId: p.id })); setImgIdx(0); setTimeout(() => goNext(), 200); }}
-                  style={{ background: isSelected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${isSelected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, overflow: "hidden", cursor: isEditor ? "default" : "pointer", textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative" }}>
-                  <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
-                    {displayImgUrl && <img src={displayImgUrl} alt={displayName} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
-                    {/* Badge SKU - editable */}
+                <div key={group.id}>
+                  {/* Header hàng */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     {isEditor ? (
-                      <div style={{ position: "absolute", top: 8, left: 8, zIndex: 10 }}
-                        onClick={e => e.stopPropagation()}>
-                        <input
-                          defaultValue={displaySku}
-                          onBlur={e => saveQuizProductField(p.id, "sku", e.target.value)}
-                          onClick={e => e.stopPropagation()}
-                          style={{ background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY, border: "none", outline: "1px dashed rgba(0,0,0,0.4)", minWidth: 40, maxWidth: 80 }}
-                        />
-                      </div>
+                      <input
+                        defaultValue={group.label}
+                        onBlur={e => {
+                          const newGroups = frameGroups.map((g, i) => i === gIdx ? { ...g, label: e.target.value } : g);
+                          saveFrameGroups(newGroups);
+                        }}
+                        style={{ color: WHITE, fontSize: 14, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 6, padding: "3px 8px", outline: "none", flex: 1 }}
+                      />
                     ) : (
-                      <div style={{ position: "absolute", top: 8, left: 8, background: GOLD, color: BLACK, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{displaySku}</div>
+                      <div style={{ color: WHITE, fontSize: 14, fontWeight: 700, fontFamily: FONT_BODY }}>{group.label}</div>
                     )}
-                    {isSelected && !isEditor && <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 12, fontWeight: 700 }}>✓</span></div>}
-                    {/* Nút upload ảnh khi editMode */}
-                    {isEditor && <QuizProductImageEditor productId={p.id} currentUrl={displayImgUrl} onSave={url => setQuizProductOverrides(prev => ({ ...prev, [`quiz_product_img_${p.id}`]: url }))} />}
+                    <div style={{ height: 1, flex: 1, background: "rgba(201,168,76,0.2)" }} />
+                    <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>{group.products.length} mẫu</div>
                   </div>
-                  <div style={{ padding: "12px" }}>
-                    {isEditor ? (
-                      <div onClick={e => e.stopPropagation()}>
-                        <input
-                          defaultValue={displayName}
-                          onBlur={e => saveQuizProductField(p.id, "name", e.target.value)}
-                          style={{ color: WHITE, fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const }}
-                        />
-                        <input
-                          defaultValue={displayPrice || fmt(minPrice || 0)}
-                          onBlur={e => saveQuizProductField(p.id, "price", e.target.value)}
-                          placeholder={fmt(minPrice || 0)}
-                          style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const, marginTop: 4 }}
-                        />
+
+                  {/* Slider ngang */}
+                  <div style={{ position: "relative" }}>
+                    <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" as any, scrollbarWidth: "none" as any }}
+                      className="lp-sg-quiz-row-slider">
+                      {group.products.map(p => renderProductCard(p))}
+
+                      {/* Nút thêm sản phẩm (editMode) */}
+                      {isEditor && (
+                        <div style={{ flexShrink: 0, width: 180, display: "flex", flexDirection: "column", gap: 6 }}>
+                          {/* Nút thêm từ danh sách chưa phân nhóm */}
+                          {unassignedProducts.map(p => (
+                            <button key={p.id} onClick={() => {
+                              const newGroups = frameGroups.map((g, i) => i === gIdx ? { ...g, productIds: [...g.productIds, p.id] } : g);
+                              saveFrameGroups(newGroups);
+                            }}
+                              style={{ background: "rgba(201,168,76,0.06)", border: "1.5px dashed rgba(201,168,76,0.4)", borderRadius: R_MD, padding: "8px 10px", cursor: "pointer", textAlign: "left" as const, color: GOLD, fontSize: 11, fontFamily: FONT_BODY, display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 14 }}>＋</span>
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{p.sku || p.name}</span>
+                            </button>
+                          ))}
+                          {/* Nút thêm từ nhóm khác */}
+                          {groupedProducts.filter((_, i) => i !== gIdx).flatMap(g => g.products).map(p => (
+                            <button key={p.id} onClick={() => {
+                              // Di chuyển product sang nhóm này
+                              const newGroups = frameGroups.map((g, i) => {
+                                if (i === gIdx) return { ...g, productIds: [...g.productIds, p.id] };
+                                return { ...g, productIds: g.productIds.filter(id => id !== p.id) };
+                              });
+                              saveFrameGroups(newGroups);
+                            }}
+                              style={{ background: "rgba(201,168,76,0.04)", border: "1px dashed rgba(201,168,76,0.25)", borderRadius: R_MD, padding: "8px 10px", cursor: "pointer", textAlign: "left" as const, color: "rgba(201,168,76,0.6)", fontSize: 11, fontFamily: FONT_BODY, display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 12 }}>↗</span>
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{p.sku || p.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Nút xoá sản phẩm khỏi nhóm (editMode) */}
+                    {isEditor && group.products.length > 0 && (
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, marginTop: 6 }}>
+                        {group.products.map(p => (
+                          <button key={p.id} onClick={() => {
+                            const newGroups = frameGroups.map((g, i) => i === gIdx ? { ...g, productIds: g.productIds.filter(id => id !== p.id) } : g);
+                            saveFrameGroups(newGroups);
+                          }}
+                            style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 20, padding: "2px 8px", cursor: "pointer", color: "#F87171", fontSize: 10, fontFamily: FONT_BODY, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span>✕</span>
+                            <span>{p.sku || p.name.slice(0, 12)}</span>
+                          </button>
+                        ))}
                       </div>
-                    ) : (
-                      <>
-                        <div style={{ color: WHITE, fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{displayName}</div>
-                        <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY }}>{priceLabel}</div>
-                      </>
                     )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

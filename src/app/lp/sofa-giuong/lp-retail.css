@@ -300,3 +300,15 @@ nav[style*="position: fixed"] {
     opacity: 0;
   }
 }
+
+/* ── Quiz Frame Group Row Slider ── */
+.lp-sg-quiz-row-slider {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.lp-sg-quiz-row-slider::-webkit-scrollbar {
+  display: none;
+}
+.lp-sg-quiz-row-slider > button {
+  scroll-snap-align: start;
+}
