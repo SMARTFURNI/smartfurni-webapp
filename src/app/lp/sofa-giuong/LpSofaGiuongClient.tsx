@@ -2898,7 +2898,24 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                       </div>
                       {/* Info */}
                       <div style={{ padding: "24px 24px 28px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-                        <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.8 }}>{p.sku}</div>
+                        {editMode ? (
+                          <input
+                            defaultValue={content[`prod_sku_${p.id}`] || p.sku}
+                            title="Mã sản phẩm (SKU)"
+                            placeholder="Mã sản phẩm..."
+                            onBlur={async e => {
+                              const val = e.target.value.trim(); if (!val) return;
+                              // Lưu vào lp-content để hiển thị trên LP
+                              await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `prod_sku_${p.id}`, content: val }) });
+                              setContent(c => ({ ...c, [`prod_sku_${p.id}`]: val }));
+                              // Đồng thời cập nhật SKU thực trong CRM
+                              await fetch("/api/crm/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...p, sku: val }) });
+                            }}
+                            style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.9, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.5)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", textTransform: "uppercase" as const }}
+                          />
+                        ) : (
+                          <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.8 }}>{content[`prod_sku_${p.id}`] || p.sku}</div>
+                        )}
                         {editMode ? (
                           <input
                             defaultValue={content[`prod_name_${p.id}`] || p.name.replace(/^Chia sẻ\s+/, "")}
