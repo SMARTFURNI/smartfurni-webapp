@@ -30,13 +30,11 @@ interface ConfigState {
   productId: string | null;
   size: string | null;
   hoc: "co_hoc" | "khong_hoc" | null;
-  tayVin: "co_tay" | "khong_tay" | null;
-  matTrang: "vai_canvas" | "da_pu" | "go_mdf" | "go_tu_nhien" | null;
   doDay: "7cm" | "10cm" | null;
   aoNem: "vai_lanh" | "da_pu_nem" | null;
 }
 
-type QuizStep = "product" | "size" | "hoc" | "tayVin" | "matTrang" | "doDay" | "aoNem" | "summary" | "order_form";
+type QuizStep = "product" | "size" | "hoc" | "doDay" | "aoNem" | "summary" | "order_form";
 
 const PRICE_ADDONS: Record<string, number> = {
   co_hoc: 700000, khong_hoc: 0,
@@ -127,8 +125,6 @@ function calcTotal(p: CrmProduct | null, cfg: ConfigState): number {
   const base = getBasePrice(p, cfg.size);
   let add = 0;
   if (cfg.hoc) add += PRICE_ADDONS[cfg.hoc] || 0;
-  if (cfg.tayVin) add += PRICE_ADDONS[cfg.tayVin] || 0;
-  if (cfg.matTrang) add += PRICE_ADDONS[cfg.matTrang] || 0;
   if (cfg.doDay) add += PRICE_ADDONS[cfg.doDay] || 0;
   if (cfg.aoNem) add += PRICE_ADDONS[cfg.aoNem] || 0;
   return base + add;
@@ -815,8 +811,6 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
         `Mẫu: ${product.sku}`,
         cfg.size ? `Kích thước: ${cfg.size}` : null,
         cfg.hoc ? ADDON_LABELS[cfg.hoc] : null,
-        cfg.tayVin ? ADDON_LABELS[cfg.tayVin] : null,
-        cfg.matTrang ? ADDON_LABELS[cfg.matTrang] : null,
         cfg.doDay ? ADDON_LABELS[cfg.doDay] : null,
         cfg.aoNem ? ADDON_LABELS[cfg.aoNem] : null,
         `Tổng: ${fmt(total)}`,
@@ -982,10 +976,10 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
 }
 
 // ─── Quiz Funnel Modal ────────────────────────────────────────────────────────
-const QUIZ_STEPS: QuizStep[] = ["product", "size", "hoc", "tayVin", "matTrang", "doDay", "aoNem", "summary", "order_form"];
+const QUIZ_STEPS: QuizStep[] = ["product", "size", "hoc", "doDay", "aoNem", "summary", "order_form"];
 const STEP_LABELS: Record<QuizStep, string> = {
-  product: "Chọn mẫu", size: "Kích thước", hoc: "Hộc đồ", tayVin: "Tay vịn",
-  matTrang: "Mặt trang trí", doDay: "Độ dày nệm", aoNem: "Áo nệm", summary: "Xác nhận", order_form: "Đặt hàng",
+  product: "Chọn mẫu", size: "Kích thước", hoc: "Hộc đồ",
+  doDay: "Độ dày nệm", aoNem: "Áo nệm", summary: "Xác nhận", order_form: "Đặt hàng",
 };
 
 function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
@@ -1514,7 +1508,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   onContentSaved?: (key: string, val: string) => void;
 }) {
   const [step, setStep] = useState<QuizStep>(initialProductId ? "size" : "product");
-  const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, tayVin: null, matTrang: null, doDay: null, aoNem: null });
+  const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, doDay: null, aoNem: null });
   // Track which slotKey was selected (for image key lookup when slot has no real productId)
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
@@ -1854,52 +1848,6 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
       );
     }
 
-    if (step === "tayVin") {
-      return (
-        <div>
-          {isEditor ? (
-            <>
-              <EditableText as="h3" value={getStepTitle("tayVin", "Tay vịn")} onSave={v => saveStepText("tayVin", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
-              <EditableText as="p" value={getStepSubtitle("tayVin", "Tay vịn tăng tính thẩm mỹ và tiện nghi khi ngồi")} onSave={v => saveStepText("tayVin", "subtitle", v)} style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
-            </>
-          ) : (
-            <>
-              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("tayVin", "Tay vịn")}</h3>
-              <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("tayVin", "Tay vịn tăng tính thẩm mỹ và tiện nghi khi ngồi")}</p>
-            </>
-          )}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="sofa" label="Có tay vịn" desc="Thiết kế sang trọng, bọc vải/da theo chất liệu mặt trang trí đã chọn" price={500000} badge="Khuyên dùng" selected={cfg.tayVin === "co_tay"} onClick={() => selectAndAdvance("tayVin", "co_tay")}  isEditor={isEditor} optionKey={`${effectiveKey}_có_tay_vịn`} slug={LP_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_có_tay_vịn`] || content[`quiz_opt_img_${effectiveKey}_có_tay_vịn`]) || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=left"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
-            <QuizEditableOption icon="minus_circle" label="Không tay vịn" desc="Thiết kế tối giản, tiết kiệm không gian hai bên" price={0} selected={cfg.tayVin === "khong_tay"} onClick={() => selectAndAdvance("tayVin", "khong_tay")}  isEditor={isEditor} optionKey={`${effectiveKey}_không_tay_vịn`} slug={LP_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_không_tay_vịn`] || content[`quiz_opt_img_${effectiveKey}_không_tay_vịn`]) || "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
-          </div>
-        </div>
-      );
-    }
-
-    if (step === "matTrang") {
-      return (
-        <div>
-          {isEditor ? (
-            <>
-              <EditableText as="h3" value={getStepTitle("matTrang", "Kiểu ốp mặt trang trí")} onSave={v => saveStepText("matTrang", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
-              <EditableText as="p" value={getStepSubtitle("matTrang", "Chất liệu bọc phần đầu giường và tay vịn (nếu có)")} onSave={v => saveStepText("matTrang", "subtitle", v)} style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
-            </>
-          ) : (
-            <>
-              <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("matTrang", "Kiểu ốp mặt trang trí")}</h3>
-              <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>{getStepSubtitle("matTrang", "Chất liệu bọc phần đầu giường và tay vịn (nếu có)")}</p>
-            </>
-          )}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="layers" label="Vải canvas" desc="Thoáng mát, dễ vệ sinh, nhiều màu sắc đa dạng" price={0} selected={cfg.matTrang === "vai_canvas"} onClick={() => selectAndAdvance("matTrang", "vai_canvas")}  isEditor={isEditor} optionKey={`${effectiveKey}_vải_canvas`} slug={LP_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_vải_canvas`] || content[`quiz_opt_img_${effectiveKey}_vải_canvas`]) || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
-            <QuizEditableOption icon="star_circle" label="Da PU cao cấp" desc="Sang trọng, dễ lau chùi, chống thấm nước tốt" price={1200000} badge="Cao cấp" selected={cfg.matTrang === "da_pu"} onClick={() => selectAndAdvance("matTrang", "da_pu")}  isEditor={isEditor} optionKey={`${effectiveKey}_da_pu_cao_cấp`} slug={LP_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_da_pu_cao_cấp`] || content[`quiz_opt_img_${effectiveKey}_da_pu_cao_cấp`]) || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=right"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
-            <QuizEditableOption icon="wood" label="Gỗ MDF chống ẩm" desc="Hiện đại, bền bỉ, dễ phối hợp nội thất" price={0} selected={cfg.matTrang === "go_mdf"} onClick={() => selectAndAdvance("matTrang", "go_mdf")}  isEditor={isEditor} optionKey={`${effectiveKey}_gỗ_mdf_chống_ẩm`} slug={LP_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_gỗ_mdf_chống_ẩm`] || content[`quiz_opt_img_${effectiveKey}_gỗ_mdf_chống_ẩm`]) || "https://images.unsplash.com/photo-1601628828688-632f38a5a7d0?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
-            <QuizEditableOption icon="leaf" label="Gỗ tự nhiên" desc="Sang trọng tự nhiên, vân gỗ độc đáo, bền theo thời gian" price={1500000} badge="Premium" selected={cfg.matTrang === "go_tu_nhien"} onClick={() => selectAndAdvance("matTrang", "go_tu_nhien")}  isEditor={isEditor} optionKey={`${effectiveKey}_gỗ_tự_nhiên`} slug={LP_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_gỗ_tự_nhiên`] || content[`quiz_opt_img_${effectiveKey}_gỗ_tự_nhiên`]) || "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} />
-          </div>
-        </div>
-      );
-    }
-
     if (step === "doDay") {
       return (
         <div>
@@ -1946,8 +1894,6 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         { label: "Mẫu sản phẩm", value: `${selectedProduct.sku} — ${selectedProduct.name.replace(/^Chia sẻ\s+/, "").substring(0, 40)}` },
         { label: "Kích thước", value: cfg.size || "—" },
         { label: "Hộc để đồ", value: cfg.hoc ? ADDON_LABELS[cfg.hoc] : "—" },
-        { label: "Tay vịn", value: cfg.tayVin ? ADDON_LABELS[cfg.tayVin] : "—" },
-        { label: "Mặt trang trí", value: cfg.matTrang ? ADDON_LABELS[cfg.matTrang] : "—" },
         { label: "Độ dày nệm", value: cfg.doDay ? ADDON_LABELS[cfg.doDay] : "—" },
         { label: "Áo nệm", value: cfg.aoNem ? ADDON_LABELS[cfg.aoNem] : "—" },
       ];
@@ -2084,8 +2030,6 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 3 }}>
                   {cfg.size && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{cfg.size}</span></div>}
                   {cfg.hoc && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.hoc]}</span></div>}
-                  {cfg.tayVin && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.tayVin]}</span></div>}
-                  {cfg.matTrang && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.matTrang]}</span></div>}
                   {cfg.doDay && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.doDay]}</span></div>}
                   {cfg.aoNem && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.aoNem]}</span></div>}
                 </div>
@@ -2440,8 +2384,6 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       `Mẫu: ${product.sku}`,
       cfg.size ? `Kích thước: ${cfg.size}` : null,
       cfg.hoc ? ADDON_LABELS[cfg.hoc] : null,
-      cfg.tayVin ? ADDON_LABELS[cfg.tayVin] : null,
-      cfg.matTrang ? ADDON_LABELS[cfg.matTrang] : null,
       cfg.doDay ? ADDON_LABELS[cfg.doDay] : null,
       cfg.aoNem ? ADDON_LABELS[cfg.aoNem] : null,
       `Tổng: ${fmt(total)}`,
