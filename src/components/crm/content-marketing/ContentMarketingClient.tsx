@@ -10,8 +10,10 @@ import {
   AlertCircle, LayoutGrid, ChevronLeft, ChevronRight,
   Wand2, GripVertical, ArrowLeft, ArrowRight, Settings,
   Zap, Target, Mic, Timer, FileText, ChevronDown, Printer, Download,
+  HardDrive,
 } from "lucide-react";
 import ContentSettingsTab from "./ContentSettingsTab";
+import GoogleDriveTab from "./GoogleDriveTab";
 import FacebookTabWrapper from "./FacebookTabWrapper";
 import TikTokTabWrapper from "./TikTokTabWrapper";
 import {
@@ -1836,7 +1838,7 @@ function VideoDetailModal({ video, onClose, onUpdated }: { video: ContentVideo; 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function ContentMarketingClient() {
-  const [activeTab, setActiveTab] = useState<"generator" | "planner" | "facebook" | "tiktok" | "settings">("generator");
+  const [activeTab, setActiveTab] = useState<"generator" | "planner" | "facebook" | "tiktok" | "settings" | "drive">("generator");
   const [refreshKey, setRefreshKey] = useState(0);
   const [savedToast, setSavedToast] = useState(false);
 
@@ -1846,6 +1848,7 @@ export function ContentMarketingClient() {
     { id: "facebook" as const,  label: "Đăng Facebook",        icon: Facebook,    desc: "Đăng bài lên Fanpage" },
     { id: "tiktok" as const,    label: "Đăng TikTok",          icon: Smartphone,  desc: "Đăng video TikTok" },
     { id: "settings" as const,  label: "Cài đặt",              icon: Settings,    desc: "Admin only" },
+    { id: "drive" as const,     label: "Google Drive",          icon: HardDrive,   desc: "Upload file lên Drive" },
   ];
 
   return (
@@ -1910,6 +1913,7 @@ export function ContentMarketingClient() {
         {activeTab === "facebook" && <FacebookTabWrapper />}
         {activeTab === "tiktok" && <TikTokTabWrapper />}
         {activeTab === "settings" && <ContentSettingsTab />}
+        {activeTab === "drive" && <GoogleDriveTab />}
       </div>
     </div>
   );
