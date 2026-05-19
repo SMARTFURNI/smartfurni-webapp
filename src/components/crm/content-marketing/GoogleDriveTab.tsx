@@ -134,13 +134,20 @@ export default function GoogleDriveTab() {
       );
 
       try {
-        const formData = new FormData();
-        formData.append("file", uploadItems[idx].file);
-        if (folderId) formData.append("folderId", folderId);
+        const file = uploadItems[idx].file;
+        // Dùng raw binary thay vì FormData để tránh giới hạn body size của Next.js
+        const params = new URLSearchParams({
+          fileName: file.name,
+          mimeType: file.type || "application/octet-stream",
+          ...(folderId ? { folderId } : {}),
+        });
 
-        const res = await fetch("/api/crm/drive/upload", {
+        const res = await fetch(`/api/crm/drive/upload?${params.toString()}`, {
           method: "POST",
-          body: formData,
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+          body: file,
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Upload thất bại");
