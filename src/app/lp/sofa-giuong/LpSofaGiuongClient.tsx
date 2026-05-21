@@ -1580,10 +1580,25 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     saveFrameGroups(newGroups);
   }
   // Helper: remove a slot from a group (shift remaining slots left, pad with empty at end)
-  function removeSlot(gIdx: number, slotIdx: number) {
+  async function removeSlot(gIdx: number, slotIdx: number) {
+    const group = frameGroups[gIdx];
+    const currentSlots: FrameSlot[] = Array.from({ length: 8 }, (_, si) => group.slots?.[si] || { slotId: `${group.id}_slot_${si}`, productId: null });
+    const removedSlot = currentSlots[slotIdx];
+    // Xóa dữ liệu DB của slot bị xóa
+    if (removedSlot) {
+      const k = removedSlot.slotId;
+      const keysToDelete = [`slot_img_${k}`, `slot_name_${k}`, `slot_price_${k}`, `slot_sku_${k}`];
+      for (const blockKey of keysToDelete) {
+        try {
+          await fetch(`/api/admin/lp-content?slug=${LP_SLUG}&blockKey=${encodeURIComponent(blockKey)}`, { method: "DELETE" });
+        } catch {}
+        setQuizProductOverrides(prev => { const n = { ...prev }; delete n[blockKey]; return n; });
+        setLocalContent(prev => { const n = { ...prev }; delete n[blockKey]; return n; });
+        onContentSaved?.(blockKey, "");
+      }
+    }
     const newGroups = frameGroups.map((g, i) => {
       if (i !== gIdx) return g;
-      const currentSlots: FrameSlot[] = Array.from({ length: 8 }, (_, si) => g.slots?.[si] || { slotId: `${g.id}_slot_${si}`, productId: null });
       const filtered = currentSlots.filter((_, si) => si !== slotIdx);
       const slots: FrameSlot[] = Array.from({ length: 8 }, (_, si) => filtered[si] || { slotId: `${g.id}_slot_${si}_new`, productId: null });
       return { ...g, slots };
