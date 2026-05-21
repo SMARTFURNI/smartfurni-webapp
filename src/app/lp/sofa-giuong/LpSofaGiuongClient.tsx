@@ -1198,11 +1198,11 @@ function GalleryImageEditor({ productId, onSave }: { productId: string; onSave: 
 }
 
 // ─── QuizEditableOption: QuizOption với khả năng chỉnh sửa khi isEditor ──────
-function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick, isEditor, optionKey, slug, imgUrl, onImageUploaded }: {
+function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick, isEditor, optionKey, slug, imgUrl, onImageUploaded, onFieldSaved }: {
   icon: string; label: string; desc: string; price: number; selected: boolean; badge?: string; onClick: () => void;
   isEditor?: boolean; optionKey?: string; slug?: string; imgUrl?: string; onImageUploaded?: (key: string, url: string) => void;
   onFieldSaved?: (key: string, field: string, val: string) => void;
-, onFieldSaved }) {
+}) {
   const [editing, setEditing] = React.useState<null | "label" | "desc" | "price">(null);
   const [editLabel, setEditLabel] = React.useState(label);
   const [editDesc, setEditDesc] = React.useState(desc);
