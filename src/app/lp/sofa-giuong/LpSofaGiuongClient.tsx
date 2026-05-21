@@ -1707,7 +1707,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         if (!isEditor && isEmpty) return null;
 
         return (
-          <div key={slotKey} style={{ position: "relative", flexShrink: 0, width: 180 }}>
+          <div key={slotKey} style={{ position: "relative", flexShrink: 0, width: 180, overflow: "visible" }}>
             <button onClick={() => {
               if (!isSelectable) return;
               const targetId = slot.productId || slotKey;
@@ -1773,9 +1773,9 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
               </div>
             </button>
             {isEditor && (
-              <button onClick={() => removeSlot(gIdx, slotIdx)}
-                style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "rgba(239,68,68,0.85)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 20, padding: 0 }}>
-                <span style={{ color: "white", fontSize: 11, fontWeight: 700, lineHeight: 1 }}>✕</span>
+              <button onClick={(e) => { e.stopPropagation(); removeSlot(gIdx, slotIdx); }}
+                style={{ position: "absolute", top: 4, right: 4, width: 24, height: 24, borderRadius: "50%", background: "rgba(239,68,68,0.9)", border: "2px solid rgba(255,255,255,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 0, pointerEvents: "all" }}>
+                <span style={{ color: "white", fontSize: 12, fontWeight: 700, lineHeight: 1 }}>✕</span>
               </button>
             )}
           </div>
