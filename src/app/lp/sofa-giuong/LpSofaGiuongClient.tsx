@@ -31,11 +31,10 @@ interface ConfigState {
   size: string | null;
   hoc: "co_hoc" | "khong_hoc" | null;
   doDay: "7cm" | "10cm" | null;
-  aoNem: "vai_canvas" | "da_pu_nem" | null;
-  aoNemColor: string | null;
+  aoNem: string | null;
 }
 
-type QuizStep = "product" | "size" | "hoc" | "doDay" | "aoNem" | "aoNemColor" | "summary" | "order_form";
+type QuizStep = "product" | "size" | "hoc" | "doDay" | "aoNem" | "summary" | "order_form";
 
 const PRICE_ADDONS: Record<string, number> = {
   co_hoc: 700000, khong_hoc: 0,
@@ -43,9 +42,7 @@ const PRICE_ADDONS: Record<string, number> = {
   vai_canvas: 0, da_pu: 1200000, go_mdf: 0, go_tu_nhien: 1500000,
   "7cm": 0, "10cm": 800000,
   da_pu_nem: 600000,
-  // aoNemColor - giá phụ thuộc vào loại, không cộng thêm
-  "da_pu_mau_nau": 0, "da_pu_mau_den": 0, "da_pu_mau_be": 0,
-  "canvas_xam_dam": 0, "canvas_xam_nhat": 0, "canvas_mau_be": 0, "canvas_nau_cafe": 0,
+  ao_nem_3: 0, ao_nem_4: 0,
 };
 const ADDON_LABELS: Record<string, string> = {
   co_hoc: "Có hộc để đồ", khong_hoc: "Không hộc",
@@ -53,8 +50,7 @@ const ADDON_LABELS: Record<string, string> = {
   vai_canvas: "Vải canvas", da_pu: "Da PU cao cấp", go_mdf: "Gỗ MDF chống ẩm", go_tu_nhien: "Gỗ tự nhiên",
   "7cm": "Nệm 7cm", "10cm": "Nệm 10cm",
   da_pu_nem: "Áo nệm da PU",
-  "da_pu_mau_nau": "Da PU Màu Nâu", "da_pu_mau_den": "Da PU Màu Đen", "da_pu_mau_be": "Da PU Màu Be",
-  "canvas_xam_dam": "Canvas Xám Đậm", "canvas_xam_nhat": "Canvas Xám Nhạt", "canvas_mau_be": "Canvas Màu Be", "canvas_nau_cafe": "Canvas Nâu Cafe",
+  ao_nem_3: "Áo nệm 3", ao_nem_4: "Áo nệm 4",
 };
 
 // ─── SVG Icon Library (Luxury thin-line, gold stroke) ────────────────────────
@@ -818,8 +814,7 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
         cfg.size ? `Kích thước: ${cfg.size}` : null,
         cfg.hoc ? ADDON_LABELS[cfg.hoc] : null,
         cfg.doDay ? ADDON_LABELS[cfg.doDay] : null,
-        cfg.aoNem ? ADDON_LABELS[cfg.aoNem] : null,
-        cfg.aoNemColor ? `Màu: ${ADDON_LABELS[cfg.aoNemColor]}` : null,
+        cfg.aoNem ? (ADDON_LABELS[cfg.aoNem] || cfg.aoNem) : null,
         `Tổng: ${fmt(total)}`,
       ].filter(Boolean);
       const configStr = parts.join(" | ");
@@ -983,10 +978,10 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
 }
 
 // ─── Quiz Funnel Modal ────────────────────────────────────────────────────────
-const QUIZ_STEPS: QuizStep[] = ["product", "size", "hoc", "doDay", "aoNem", "aoNemColor", "summary", "order_form"];
+const QUIZ_STEPS: QuizStep[] = ["product", "size", "hoc", "doDay", "aoNem", "summary", "order_form"];
 const STEP_LABELS: Record<QuizStep, string> = {
   product: "Chọn mẫu", size: "Kích thước", hoc: "Hộc đồ",
-  doDay: "Độ dày nệm", aoNem: "Áo nệm", aoNemColor: "Màu áo nệm", summary: "Xác nhận", order_form: "Đặt hàng",
+  doDay: "Độ dày nệm", aoNem: "Áo nệm", summary: "Xác nhận", order_form: "Đặt hàng",
 };
 
 function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
@@ -1517,7 +1512,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   onContentSaved?: (key: string, val: string) => void;
 }) {
   const [step, setStep] = useState<QuizStep>(initialProductId ? "size" : "product");
-  const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, doDay: null, aoNem: null, aoNemColor: null });
+  const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, doDay: null, aoNem: null });
   // Track which slotKey was selected (for image key lookup when slot has no real productId)
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
   // Track slot info (name, price, image) when slot has no real productId
@@ -1915,71 +1910,37 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     }
 
     if (step === "aoNem") {
+      const aoNemOptions = [
+        { key: "ao_nem_1", defaultLabel: "Áo nệm vải canvas", defaultDesc: "Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam", defaultPrice: "0", defaultImg: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=top", icon: "leaf" },
+        { key: "ao_nem_2", defaultLabel: "Áo nệm da PU", defaultDesc: "Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ", defaultPrice: "600000", defaultImg: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=top", icon: "star_circle" },
+        { key: "ao_nem_3", defaultLabel: "Áo nệm 3", defaultDesc: "Mô tả tùy chỉnh", defaultPrice: "0", defaultImg: "", icon: "palette" },
+        { key: "ao_nem_4", defaultLabel: "Áo nệm 4", defaultDesc: "Mô tả tùy chỉnh", defaultPrice: "0", defaultImg: "", icon: "palette" },
+      ];
       return (
         <div>
           {isEditor ? (
-            <EditableText as="h3" value={getStepTitle("aoNem", "Chọn loại áo nệm")} onSave={v => saveStepText("aoNem", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+            <EditableText as="h3" value={getStepTitle("aoNem", "Áo nệm")} onSave={v => saveStepText("aoNem", "title", v)} style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
           ) : (
-            <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("aoNem", "Chọn loại áo nệm")}</h3>
+            <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("aoNem", "Áo nệm")}</h3>
           )}
           <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Lớp bọc ngoài nệm, có thể tháo ra giặt dễ dàng</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="leaf" label={(localContent[`quiz_opt_${effectiveKey}_áo_nệm_vải_canvas_label`] || content[`quiz_opt_${effectiveKey}_áo_nệm_vải_canvas_label`]) || "Áo nệm vải canvas"} desc="Thoáng mát, thấm hút tốt, phù hợp khí hậu nhiệt đới Việt Nam" price={Number(localContent[`quiz_opt_${effectiveKey}_áo_nệm_vải_canvas_price`] || content[`quiz_opt_${effectiveKey}_áo_nệm_vải_canvas_price`] || "0") || 0} selected={cfg.aoNem === "vai_canvas"} onClick={() => { setCfg(c => ({ ...c, aoNem: "vai_canvas", aoNemColor: null })); setTimeout(() => goNext(), 200); }} isEditor={isEditor} optionKey={`${effectiveKey}_áo_nệm_vải_canvas`} slug={LP_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_áo_nệm_vải_canvas`] || content[`quiz_opt_img_${effectiveKey}_áo_nệm_vải_canvas`]) || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=top"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
-            <QuizEditableOption icon="star_circle" label={(localContent[`quiz_opt_${effectiveKey}_áo_nệm_da_pu_label`] || content[`quiz_opt_${effectiveKey}_áo_nệm_da_pu_label`]) || "Áo nệm da PU"} desc="Chống thấm, dễ lau chùi, sang trọng — phù hợp gia đình có trẻ nhỏ" price={Number(localContent[`quiz_opt_${effectiveKey}_áo_nệm_da_pu_price`] || content[`quiz_opt_${effectiveKey}_áo_nệm_da_pu_price`] || "600000") || 600000} badge="Tiện lợi" selected={cfg.aoNem === "da_pu_nem"} onClick={() => { setCfg(c => ({ ...c, aoNem: "da_pu_nem", aoNemColor: null })); setTimeout(() => goNext(), 200); }} isEditor={isEditor} optionKey={`${effectiveKey}_áo_nệm_da_pu`} slug={LP_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_áo_nệm_da_pu`] || content[`quiz_opt_img_${effectiveKey}_áo_nệm_da_pu`]) || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=top"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
-          </div>
-        </div>
-      );
-    }
-
-    if (step === "aoNemColor") {
-      const isDaPU = cfg.aoNem === "da_pu_nem";
-      const colors = isDaPU
-        ? [
-            { key: "da_pu_mau_nau", label: "Da PU Màu Nâu", hex: "#8B6347", desc: "Tôn lên vẻ sang trọng, ấm cúng" },
-            { key: "da_pu_mau_den", label: "Da PU Màu Đen", hex: "#1a1a1a", desc: "Hiện đại, dễ phối nội thất" },
-            { key: "da_pu_mau_be", label: "Da PU Màu Be", hex: "#D4C5A9", desc: "Nhẹ nhàng, thanh lịch, phù hợp mọi không gian" },
-          ]
-        : [
-            { key: "canvas_xam_dam", label: "Xám Đậm", hex: "#555F6E", desc: "Trẻ trung, hiện đại" },
-            { key: "canvas_xam_nhat", label: "Xám Nhạt", hex: "#9BA8B5", desc: "Thanh lịch, dễ phối" },
-            { key: "canvas_mau_be", label: "Màu Be", hex: "#C8B89A", desc: "Nhẹ nhàng, ấm cúng" },
-            { key: "canvas_nau_cafe", label: "Nâu Cafe", hex: "#6B4F3A", desc: "Sâu sắc, sang trọng" },
-          ];
-      return (
-        <div>
-          <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 4, fontFamily: FONT_BODY }}>Chọn màu áo nệm</h3>
-          <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>
-            {isDaPU ? "Chọn màu da PU cho áo nệm" : "Chọn màu vải canvas cho áo nệm"}
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
-            {colors.map(c => (
-              <button
-                key={c.key}
-                onClick={() => selectAndAdvance("aoNemColor", c.key)}
-                style={{
-                  background: cfg.aoNemColor === c.key ? "rgba(245,237,214,0.08)" : "rgba(255,255,255,0.03)",
-                  border: `2px solid ${cfg.aoNemColor === c.key ? GOLD : "rgba(255,255,255,0.1)"}`,
-                  borderRadius: 12,
-                  padding: "16px 14px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  transition: "all 0.15s",
-                }}
-              >
-                <div style={{ width: 40, height: 40, borderRadius: 8, background: c.hex, flexShrink: 0, border: "1px solid rgba(255,255,255,0.15)", boxShadow: cfg.aoNemColor === c.key ? `0 0 0 2px ${GOLD}` : "none" }} />
-                <div>
-                  <div style={{ color: cfg.aoNemColor === c.key ? GOLD : WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 3 }}>{c.label}</div>
-                  <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>{c.desc}</div>
-                </div>
-                {cfg.aoNemColor === c.key && (
-                  <div style={{ marginLeft: "auto", width: 20, height: 20, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <svg viewBox="0 0 24 24" width={12} height={12} fill="none" stroke="#1a1a0e" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>
-                  </div>
-                )}
-              </button>
+            {aoNemOptions.map(opt => (
+              <QuizEditableOption
+                key={opt.key}
+                icon={opt.icon}
+                label={(localContent[`quiz_opt_${effectiveKey}_${opt.key}_label`] || content[`quiz_opt_${effectiveKey}_${opt.key}_label`]) || opt.defaultLabel}
+                desc={(localContent[`quiz_opt_${effectiveKey}_${opt.key}_desc`] || content[`quiz_opt_${effectiveKey}_${opt.key}_desc`]) || opt.defaultDesc}
+                price={Number(localContent[`quiz_opt_${effectiveKey}_${opt.key}_price`] || content[`quiz_opt_${effectiveKey}_${opt.key}_price`] || opt.defaultPrice) || 0}
+                selected={cfg.aoNem === opt.key}
+                onClick={() => selectAndAdvance("aoNem", opt.key)}
+                isEditor={isEditor}
+                optionKey={`${effectiveKey}_${opt.key}`}
+                slug={LP_SLUG}
+                imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_${opt.key}`] || content[`quiz_opt_img_${effectiveKey}_${opt.key}`]) || opt.defaultImg}
+                onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }}
+                onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }}
+              />
             ))}
           </div>
         </div>
@@ -1992,8 +1953,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         { label: "Kích thước", value: cfg.size || "—" },
         { label: "Hộc để đồ", value: cfg.hoc ? ADDON_LABELS[cfg.hoc] : "—" },
         { label: "Độ dày nệm", value: cfg.doDay ? ADDON_LABELS[cfg.doDay] : "—" },
-        { label: "Áo nệm", value: cfg.aoNem ? ADDON_LABELS[cfg.aoNem] : "—" },
-        { label: "Màu áo nệm", value: cfg.aoNemColor ? ADDON_LABELS[cfg.aoNemColor] : "—" },
+        { label: "Áo nệm", value: cfg.aoNem ? (ADDON_LABELS[cfg.aoNem] || cfg.aoNem) : "—" },
       ];
       return (
         <div>
@@ -2129,7 +2089,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                   {cfg.size && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{cfg.size}</span></div>}
                   {cfg.hoc && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.hoc]}</span></div>}
                   {cfg.doDay && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.doDay]}</span></div>}
-                  {cfg.aoNem && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.aoNem]}</span></div>}
+                  {cfg.aoNem && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.aoNem] || cfg.aoNem}</span></div>}
                 </div>
               </div>
             </div>
@@ -2483,8 +2443,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       cfg.size ? `Kích thước: ${cfg.size}` : null,
       cfg.hoc ? ADDON_LABELS[cfg.hoc] : null,
       cfg.doDay ? ADDON_LABELS[cfg.doDay] : null,
-      cfg.aoNem ? ADDON_LABELS[cfg.aoNem] : null,
-      cfg.aoNemColor ? `Màu: ${ADDON_LABELS[cfg.aoNemColor]}` : null,
+      cfg.aoNem ? (ADDON_LABELS[cfg.aoNem] || cfg.aoNem) : null,
       `Tổng: ${fmt(total)}`,
     ].filter(Boolean);
     setOrderConfig(parts.join(" | "));
