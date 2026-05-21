@@ -1524,6 +1524,11 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   const [tabLabelVal, setTabLabelVal] = useState("");
   const [stepTitleVal, setStepTitleVal] = useState("");
   const [localContent, setLocalContent] = useState<Record<string, string>>(content || {});
+  // Sync localContent khi content prop thay đổi từ parent (ví dụ sau khi lưu)
+  useEffect(() => {
+    if (content) setLocalContent(prev => ({ ...content, ...prev }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [quizProductOverrides, setQuizProductOverrides] = useState<Record<string, string>>({});
   // Frame groups: 3 hàng khung SMF12, SMF22, SMF23
   function makeDefaultSlots(groupId: string): FrameSlot[] {
@@ -1929,15 +1934,15 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
               <QuizEditableOption
                 key={opt.key}
                 icon={opt.icon}
-                label={(localContent[`quiz_opt_${effectiveKey}_${opt.key}_label`] || content[`quiz_opt_${effectiveKey}_${opt.key}_label`]) || opt.defaultLabel}
-                desc={(localContent[`quiz_opt_${effectiveKey}_${opt.key}_desc`] || content[`quiz_opt_${effectiveKey}_${opt.key}_desc`]) || opt.defaultDesc}
-                price={Number(localContent[`quiz_opt_${effectiveKey}_${opt.key}_price`] || content[`quiz_opt_${effectiveKey}_${opt.key}_price`] || opt.defaultPrice) || 0}
+                label={(localContent[`quiz_opt_global_${opt.key}_label`] || content[`quiz_opt_global_${opt.key}_label`]) || opt.defaultLabel}
+                desc={(localContent[`quiz_opt_global_${opt.key}_desc`] || content[`quiz_opt_global_${opt.key}_desc`]) || opt.defaultDesc}
+                price={Number(localContent[`quiz_opt_global_${opt.key}_price`] || content[`quiz_opt_global_${opt.key}_price`] || opt.defaultPrice) || 0}
                 selected={cfg.aoNem === opt.key}
                 onClick={() => selectAndAdvance("aoNem", opt.key)}
                 isEditor={isEditor}
-                optionKey={`${effectiveKey}_${opt.key}`}
+                optionKey={`global_${opt.key}`}
                 slug={LP_SLUG}
-                imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_${opt.key}`] || content[`quiz_opt_img_${effectiveKey}_${opt.key}`]) || opt.defaultImg}
+                imgUrl={(localContent[`quiz_opt_img_global_${opt.key}`] || content[`quiz_opt_img_global_${opt.key}`]) || opt.defaultImg}
                 onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }}
                 onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }}
               />
