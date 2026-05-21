@@ -1511,6 +1511,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, doDay: null, aoNem: null });
   // Track which slotKey was selected (for image key lookup when slot has no real productId)
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
+  // Track slot info (name, price, image) when slot has no real productId
+  const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ name: string; sku: string; imgUrl: string; basePrice: number } | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [editingTab, setEditingTab] = useState<string | null>(null);
@@ -1615,8 +1617,29 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   const selectedProduct = products.find(p => p.id === cfg.productId) || null;
   // effectiveKey: use selectedSlotKey if productId is a slotKey (no real product), else use productId
   const effectiveKey = (selectedSlotKey && !selectedProduct) ? selectedSlotKey : (cfg.productId || "default");
-  const images = selectedProduct ? getProductImages(selectedProduct) : [];
-  const total = calcTotal(selectedProduct, cfg);
+  // effectiveProduct: use real product or create virtual product from slot info
+  const effectiveProduct: CrmProduct | null = selectedProduct || (selectedSlotInfo ? {
+    id: cfg.productId || selectedSlotKey || "virtual",
+    name: selectedSlotInfo.name || "Sofa Giường",
+    category: "sofa_bed" as const,
+    sku: selectedSlotInfo.sku || "SMF",
+    description: "",
+    imageUrl: selectedSlotInfo.imgUrl || "",
+    specs: {},
+    basePrice: selectedSlotInfo.basePrice || 0,
+    discountTiers: [],
+    sizePricings: [
+      { size: "0,9M", price: selectedSlotInfo.basePrice || 0, label: "0,9M" },
+      { size: "1,2M", price: (selectedSlotInfo.basePrice || 0) + 500000, label: "1,2M" },
+      { size: "1,5M", price: (selectedSlotInfo.basePrice || 0) + 1000000, label: "1,5M" },
+      { size: "1,8M", price: (selectedSlotInfo.basePrice || 0) + 1500000, label: "1,8M" },
+    ],
+    isActive: true,
+    createdAt: "",
+    updatedAt: "",
+  } : null);
+  const images = effectiveProduct ? getProductImages(effectiveProduct) : [];
+  const total = calcTotal(effectiveProduct, cfg);
 
   const stepIdx = QUIZ_STEPS.indexOf(step);
   const progress = ((stepIdx + 1) / QUIZ_STEPS.length) * 100;
@@ -1682,6 +1705,14 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
               setCfg(c => ({ ...c, productId: targetId }));
               setSelectedSlotKey(slotKey);
               setImgIdx(0);
+              // Save slot info for virtual product when no real productId
+              if (!slot.productId) {
+                const rawPrice = displayPrice || (minPrice ? String(minPrice) : "0");
+                const parsedPrice = parseInt(rawPrice.replace(/[^0-9]/g, ""), 10) || minPrice || 0;
+                setSelectedSlotInfo({ name: displayName, sku: displaySku || slotKey, imgUrl: displayImgUrl, basePrice: parsedPrice });
+              } else {
+                setSelectedSlotInfo(null);
+              }
               setTimeout(() => goNext(), 200);
             }}
               style={{ background: isSelected ? "rgba(201,168,76,0.12)" : (isEmpty ? "rgba(201,168,76,0.04)" : "rgba(245,237,214,0.03)"), border: `1.5px solid ${isSelected ? GOLD : (isEmpty ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.18)")}`, borderRadius: R_MD, overflow: "hidden", cursor: isSelectable ? "pointer" : "default", textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", width: "100%" }}>
@@ -1785,11 +1816,11 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
       );
     }
     if (step === "size") {
-      const sizes = selectedProduct?.sizePricings?.length ? selectedProduct.sizePricings : [
-        { size: "0,9M", price: (selectedProduct?.basePrice || 0) },
-        { size: "1,2M", price: (selectedProduct?.basePrice || 0) + 500000 },
-        { size: "1,5M", price: (selectedProduct?.basePrice || 0) + 1000000 },
-        { size: "1,8M", price: (selectedProduct?.basePrice || 0) + 1500000 },
+      const sizes = effectiveProduct?.sizePricings?.length ? effectiveProduct.sizePricings : [
+        { size: "0,9M", price: (effectiveProduct?.basePrice || 0) },
+        { size: "1,2M", price: (effectiveProduct?.basePrice || 0) + 500000 },
+        { size: "1,5M", price: (effectiveProduct?.basePrice || 0) + 1000000 },
+        { size: "1,8M", price: (effectiveProduct?.basePrice || 0) + 1500000 },
       ];
       return (
         <div>
@@ -1889,9 +1920,9 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
       );
     }
 
-    if (step === "summary" && selectedProduct) {
+    if (step === "summary" && effectiveProduct) {
       const summaryItems = [
-        { label: "Mẫu sản phẩm", value: `${selectedProduct.sku} — ${selectedProduct.name.replace(/^Chia sẻ\s+/, "").substring(0, 40)}` },
+        { label: "Mẫu sản phẩm", value: `${effectiveProduct.sku} — ${effectiveProduct.name.replace(/^Chia sẻ\s+/, "").substring(0, 40)}` },
         { label: "Kích thước", value: cfg.size || "—" },
         { label: "Hộc để đồ", value: cfg.hoc ? ADDON_LABELS[cfg.hoc] : "—" },
         { label: "Độ dày nệm", value: cfg.doDay ? ADDON_LABELS[cfg.doDay] : "—" },
@@ -1926,8 +1957,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         </div>
       );
     }
-    if (step === "order_form" && selectedProduct) {
-      return <QuizOrderForm cfg={cfg} product={selectedProduct} total={total} onBack={goPrev} onComplete={onComplete} />;
+    if (step === "order_form" && effectiveProduct) {
+      return <QuizOrderForm cfg={cfg} product={effectiveProduct} total={total} onBack={goPrev} onComplete={onComplete} />;
     }
     return null;
   }
@@ -1982,16 +2013,16 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         {/* Main content */}
         <div className="lp-sg-quiz-body" style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
           {/* Left: Product image + price */}
-          {selectedProduct && images.length > 0 && (
+          {effectiveProduct && images.length > 0 && (
             <div className="lp-sg-quiz-left-panel" style={{ width: 240, flexShrink: 0, borderRight: `1px solid ${BLACK_BORDER}`, display: "flex", flexDirection: "column", background: BLACK_CARD }}>
               <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
-                <img src={images[imgIdx % images.length]} alt={selectedProduct.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
+                <img src={images[imgIdx % images.length]} alt={effectiveProduct.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
                 {isEditor && (
                   <label style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.7)", border: `1px solid ${GOLD}`, color: GOLD, borderRadius: 6, padding: "4px 10px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FONT_BODY, whiteSpace: "nowrap" as const, zIndex: 10 }}>
                     📷 Đổi ảnh
                     <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (!file || !selectedProduct) return;
+                      if (!file || !effectiveProduct) return;
                       const formData = new FormData();
                       formData.append("file", file);
                       try {
@@ -1999,7 +2030,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                         if (res.ok) {
                           const data = await res.json();
                           if (data.url) {
-                            await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_img_${selectedProduct.id}`, content: data.url }) });
+                            await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_img_${effectiveProduct.id}`, content: data.url }) });
                             window.location.reload();
                           } else {
                             alert("Upload thất bại: " + (data.error || "Lỗi không xác định"));
