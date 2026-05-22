@@ -2757,7 +2757,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── PROBLEM / PAIN POINTS ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section className="lp-sg-pain-section" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
             <SectionLabel>{E({ bk: "pain_label", def: "Vấn Đề Thường Gặp", as: "span" })}</SectionLabel>
@@ -2886,7 +2886,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section id="how-it-works" className="lp-sg-how-section" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
             <SectionLabel>Quy Trình</SectionLabel>
@@ -2949,7 +2949,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
       {/* ── FEATURES / BENEFITS ── */}
-      <section id="features" style={{ padding: SECTION_PAD, background: BLACK }}>
+      <section id="features" className="lp-sg-features-section" style={{ padding: SECTION_PAD, background: BLACK }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
