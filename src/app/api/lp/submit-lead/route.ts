@@ -5,19 +5,24 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
-      fullName,
+      fullName: fullNameRaw,
+      name: nameRaw,
       phone,
       email,
       businessType,
       province,
       showroomName,
       message,
+      note,
       utmSource,
       utmMedium,
       utmCampaign,
       utmContent,
       landingPage,
+      landingPageSlug,
     } = body;
+    // Support both 'fullName' (B2B form) and 'name' (quiz form)
+    const fullName = fullNameRaw || nameRaw;
 
     if (!fullName || !phone) {
       return NextResponse.json({ error: "Thiếu họ tên hoặc số điện thoại" }, { status: 400 });
@@ -31,18 +36,20 @@ export async function POST(req: NextRequest) {
       source = "tiktok_lead";
     }
 
+    const slug = landingPageSlug || landingPage || "sofa-giuong";
     const lead = await createRawLead({
       fullName,
       phone,
       email: email || "",
       source,
-      adName: utmContent || landingPage || "LP Đối tác Showroom Nệm",
-      campaignName: utmCampaign || "b2b-showroom-nem",
-      formName: "Landing Page B2B - Đối tác Showroom Nệm",
-      customerRole: businessType || "Chủ Showroom Nệm/Chăn ga gối",
+      adName: utmContent || slug || "LP Sofa Giường",
+      campaignName: utmCampaign || slug || "sofa-giuong",
+      formName: `Landing Page - ${slug}`,
+      customerRole: businessType || "Khách hàng",
       message: [
         showroomName ? `Showroom: ${showroomName}` : null,
         province ? `Tỉnh/TP: ${province}` : null,
+        note ? note : null,
         message ? `Ghi chú: ${message}` : null,
       ].filter(Boolean).join(" | ") || undefined,
       rawData: {
@@ -50,7 +57,7 @@ export async function POST(req: NextRequest) {
         utmMedium,
         utmCampaign,
         utmContent,
-        landingPage,
+        landingPage: slug,
         businessType,
         province,
         showroomName,
