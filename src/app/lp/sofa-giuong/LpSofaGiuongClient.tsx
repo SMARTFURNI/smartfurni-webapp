@@ -828,6 +828,21 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
       setSuccess(true);
+      // Fire conversion events
+      try {
+        if (typeof window !== "undefined") {
+          // Facebook Pixel Lead event
+          if ((window as unknown as Record<string,unknown>).fbq && (window as unknown as Record<string,string>).__FB_PIXEL_ID) {
+            (window as unknown as {fbq: (...a: unknown[]) => void}).fbq("track", "Lead", { value: total / 1000000, currency: "VND" });
+          }
+          // Google Ads conversion
+          const gAdsId = (window as unknown as Record<string,string>).__GOOGLE_ADS_ID;
+          const gAdsLabel = (window as unknown as Record<string,string>).__GOOGLE_ADS_LABEL;
+          if ((window as unknown as Record<string,unknown>).gtag && gAdsId && gAdsLabel) {
+            (window as unknown as {gtag: (...a: unknown[]) => void}).gtag("event", "conversion", { send_to: `${gAdsId}/${gAdsLabel}`, value: total / 1000000, currency: "VND" });
+          }
+        }
+      } catch {}
       setTimeout(() => onComplete(cfg, product, total), 2500);
     } catch (err: unknown) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
     finally { setLoading(false); }
@@ -2478,7 +2493,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
   return (
     <div style={{ background: BLACK, color: WHITE, fontFamily: FONT_BODY, overflowX: "hidden" }}>
       {/* ── EDIT BAR (admin only) ── */}
-      <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(m => !m)} editedCount={editedCount} />
+      <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(m => !m)} editedCount={editedCount} slug={LP_SLUG} />
       {/* ── STICKY NAV ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,

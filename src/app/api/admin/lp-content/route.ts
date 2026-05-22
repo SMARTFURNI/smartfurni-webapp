@@ -83,6 +83,30 @@ export async function GET(req: NextRequest) {
 
   if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
 
+  // Lấy tracking settings cho landing page
+  if (action === "get-tracking") {
+    const ok = await checkAuth();
+    if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    try {
+      await ensureTable();
+      const rows = await query<{ block_key: string; content: string }>(
+        `SELECT block_key, content FROM lp_content WHERE slug = $1 AND block_key LIKE 'tracking_%'`,
+        [slug]
+      );
+      const result: Record<string, string> = {};
+      for (const row of rows) result[row.block_key] = row.content;
+      return NextResponse.json({
+        fbPixelId: result["tracking_fb_pixel_id"] || "",
+        googleAdsId: result["tracking_google_ads_id"] || "",
+        googleAdsLabel: result["tracking_google_ads_label"] || "",
+        gtmId: result["tracking_gtm_id"] || "",
+      });
+    } catch (e) {
+      console.error("get-tracking error:", e);
+      return NextResponse.json({ fbPixelId: "", googleAdsId: "", googleAdsLabel: "", gtmId: "" });
+    }
+  }
+
   try {
     await ensureTable();
     const rows = await query<{ block_key: string; content: string }>(
