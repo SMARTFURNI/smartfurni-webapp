@@ -1737,7 +1737,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         if (!isEditor && isEmpty) return null;
 
         return (
-          <div key={slotKey} style={{ position: "relative", flexShrink: 0, width: 180, overflow: "visible" }}>
+          <div key={slotKey} style={{ position: "relative", flexShrink: 0, width: "100%", minWidth: 140, overflow: "visible" }}>
             <button onClick={() => {
               if (!isSelectable) return;
               const targetId = slot.productId || slotKey;
@@ -1843,10 +1843,31 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                     <div style={{ height: 1, flex: 1, background: "rgba(201,168,76,0.2)" }} />
                     <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>{isEditor ? `${filledCount}/8 mẫu` : `${filledCount} mẫu`}</div>
                   </div>
-                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" as any, scrollbarWidth: "none" as any }}
-                    className="lp-sg-quiz-row-slider">
-                    {group.slots.map((slot, slotIdx) => renderSlotCard(slot, gIdx, slotIdx))}
-                  </div>
+                  {(() => {
+                    const visibleSlots = isEditor ? group.slots : group.slots.filter(s => {
+                      const k = s.slotId;
+                      return !!(quizProductOverrides[`slot_img_${k}`] || localContent[`slot_img_${k}`] || (s.productId && products.find(p => p.id === s.productId)?.imageUrl) || localContent[`slot_name_${k}`]);
+                    });
+                    const count = isEditor ? group.slots.length : visibleSlots.length;
+                    // <= 4 slots: dùng grid để card to hơn, cân đối; > 4: dùng flex scroll
+                    if (count <= 4) {
+                      return (
+                        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(count, 4)}, 1fr)`, gap: 10 }}>
+                          {(isEditor ? group.slots : visibleSlots).map((slot, slotIdx) => (
+                            <div key={slot.slotId} style={{ position: "relative", overflow: "visible" }}>
+                              {renderSlotCard(slot, gIdx, slotIdx)}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" as any, scrollbarWidth: "none" as any }}
+                        className="lp-sg-quiz-row-slider">
+                        {group.slots.map((slot, slotIdx) => renderSlotCard(slot, gIdx, slotIdx))}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
