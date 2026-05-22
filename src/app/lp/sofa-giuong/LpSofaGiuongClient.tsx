@@ -1529,7 +1529,20 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   const [step, setStep] = useState<QuizStep>(initialProductId ? "size" : "product");
   const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, doDay: null, aoNem: null });
   // Track which slotKey was selected (for image key lookup when slot has no real productId)
-  const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
+  // When opened with initialProductId, find the matching slot key for image/content lookup
+  const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(() => {
+    if (!initialProductId) return null;
+    try {
+      const savedGroups = content["quiz_frame_groups"];
+      const groups = savedGroups ? JSON.parse(savedGroups) : [];
+      for (const g of groups) {
+        for (const s of (g.slots || [])) {
+          if (s.productId === initialProductId) return s.slotId;
+        }
+      }
+    } catch {}
+    return null;
+  });
   // Track slot info (name, price, image) when slot has no real productId
   const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ name: string; sku: string; imgUrl: string; basePrice: number } | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
