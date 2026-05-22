@@ -288,32 +288,29 @@ nav[style*="position: fixed"] {
     gap: 12px !important;
   }
 
-  /* ── Pain Points: ảnh sát mép trên card, 2 góc trên bo theo card ── */
-  /* Card outer: overflow hidden để ảnh bị clip theo border-radius */
-  .lp-sg-pain-grid > * {
+  /* ── Pain Points: ảnh sát mép trên, bo góc theo card ── */
+  .lp-sg-pain-card {
     border-radius: 16px !important;
     overflow: hidden !important;
   }
-  /* Ảnh: sát mép trên (không có padding/margin trên), tỉ lệ 4:3 */
-  .lp-sg-pain-grid > * > div:first-child {
+  /* Ảnh: tỉ lệ 4:3, sát mép trên (override inline paddingTop 56.25%) */
+  .lp-sg-pain-card-img {
     padding-top: 72% !important;
-    margin-top: 0 !important;
-    border-radius: 0 !important;
   }
-  /* Info text: padding ngang rộng sát viền (chỉ là 10px) */
-  .lp-sg-pain-grid > * > div:nth-child(2) {
+  /* Info: padding ngang sát viền */
+  .lp-sg-pain-card-info {
     padding: 12px 10px 14px !important;
   }
-  .lp-sg-pain-grid > * > div:nth-child(2) > div:first-child {
+  .lp-sg-pain-card-info > div:first-child {
     margin-bottom: 6px !important;
   }
-  .lp-sg-pain-grid h3 {
+  .lp-sg-pain-card h3 {
     font-size: 13px !important;
     font-weight: 600 !important;
     margin-bottom: 5px !important;
     line-height: 1.35 !important;
   }
-  .lp-sg-pain-grid p {
+  .lp-sg-pain-card p {
     font-size: 11.5px !important;
     line-height: 1.55 !important;
   }

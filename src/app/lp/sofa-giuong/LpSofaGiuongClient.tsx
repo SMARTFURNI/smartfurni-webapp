@@ -2779,9 +2779,9 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               const imgUrl = content[p.imgKey] || "";
               return (
                 <FadeIn key={i} delay={i * 80}>
-                  <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", textAlign: "left", position: "relative" }}>
+                  <div className="lp-sg-pain-card" style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", textAlign: "left", position: "relative" }}>
                     {/* Ảnh minh hoạ */}
-                    <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                    <div className="lp-sg-pain-card-img" style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
                       {imgUrl ? (
                         <img src={imgUrl} alt={p.title} loading="lazy" decoding="async" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
@@ -2794,7 +2794,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                       {editMode && <PainPointImageEditor imgKey={p.imgKey} onSave={url => setContent(c => ({ ...c, [p.imgKey]: url }))} />}
                     </div>
                     {/* Nội dung card */}
-                    <div style={{ padding: "24px 24px 28px" }}>
+                    <div className="lp-sg-pain-card-info" style={{ padding: "24px 24px 28px" }}>
                       <div style={{ marginBottom: 12 }}><SvgIcon name={p.icon} size={30} color="rgba(201,168,76,0.7)" /></div>
                       <h3 style={{ color: WHITE, fontSize: 17, fontWeight: 600, marginBottom: 10, fontFamily: FONT_HEADING }}>{p.title}</h3>
                       <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY, margin: 0 }}>{p.desc}</p>
