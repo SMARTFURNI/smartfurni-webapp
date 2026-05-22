@@ -1272,7 +1272,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
         {/* Ảnh to ở trên - tỉ lệ 16:9 */}
         {localImgUrl ? (
           <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: "#0D0800" }}>
-            <img src={localImgUrl} alt={label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
+            <img src={localImgUrl} alt={label} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
             {/* Badge */}
             {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{badge}</span>}
             {/* Tick selected */}
@@ -1757,7 +1757,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
               style={{ background: isSelected ? "rgba(201,168,76,0.12)" : (isEmpty ? "rgba(201,168,76,0.04)" : "rgba(245,237,214,0.03)"), border: `1.5px solid ${isSelected ? GOLD : (isEmpty ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.18)")}`, borderRadius: R_MD, overflow: "hidden", cursor: isSelectable ? "pointer" : "default", textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", width: "100%" }}>
               <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: isEmpty ? "rgba(201,168,76,0.04)" : "transparent" }}>
                 {displayImgUrl ? (
-                  <img src={displayImgUrl} alt={displayName} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={displayImgUrl} alt={displayName} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
                     <span style={{ fontSize: 24, opacity: 0.3 }}>🖼</span>
@@ -2078,7 +2078,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           {effectiveProduct && images.length > 0 && (
             <div className="lp-sg-quiz-left-panel" style={{ width: 240, flexShrink: 0, borderRight: `1px solid ${BLACK_BORDER}`, display: "flex", flexDirection: "column", background: BLACK_CARD }}>
               <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
-                <img src={images[imgIdx % images.length]} alt={effectiveProduct.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
+                <img src={images[imgIdx % images.length]} alt={effectiveProduct.name} loading="eager" decoding="async" fetchPriority="high" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
                 {isEditor && (
                   <label style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.7)", border: `1px solid ${GOLD}`, color: GOLD, borderRadius: 6, padding: "4px 10px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FONT_BODY, whiteSpace: "nowrap" as const, zIndex: 10 }}>
                     📷 Đổi ảnh
@@ -2348,7 +2348,7 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
             <div key={idx} style={{ flexShrink: 0, width: CARD_W }}>
               <div style={{ position: "relative" as const, width: CARD_W, height: CARD_W, borderRadius: 16, overflow: "hidden", background: "rgba(245,237,214,0.04)", border: "1px solid rgba(201,168,76,0.15)" }}>
                 {item.img ? (
-                  <img src={item.img} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} />
+                  <img src={item.img} alt={item.label} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} />
                 ) : (
                   <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
                     <SvgIcon name="image" size={40} color="rgba(201,168,76,0.3)" />
@@ -2723,7 +2723,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                     {/* Ảnh minh hoạ */}
                     <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
                       {imgUrl ? (
-                        <img src={imgUrl} alt={p.title} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={imgUrl} alt={p.title} loading="lazy" decoding="async" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
                         <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
                           <SvgIcon name={p.icon} size={40} color="rgba(201,168,76,0.35)" />
@@ -2771,7 +2771,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 return (
                   <>
                     {imgUrl ? (
-                      <img src={imgUrl} alt="Vấn đề và giải pháp sofa giường SmartFurni" style={{ width: "100%", height: "auto", display: "block" }} />
+                      <img src={imgUrl} alt="Vấn đề và giải pháp sofa giường SmartFurni" loading="lazy" decoding="async" style={{ width: "100%", height: "auto", display: "block" }} />
                     ) : (
                       <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(201,168,76,0.04)" }}>
                         <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
@@ -2795,7 +2795,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 return (
                   <>
                     {imgUrl2 ? (
-                      <img src={imgUrl2} alt="Ảnh giải pháp sofa giường SmartFurni 2" style={{ width: "100%", height: "auto", display: "block" }} />
+                      <img src={imgUrl2} alt="Ảnh giải pháp sofa giường SmartFurni 2" loading="lazy" decoding="async" style={{ width: "100%", height: "auto", display: "block" }} />
                     ) : (
                       <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(201,168,76,0.04)" }}>
                         <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
@@ -3041,7 +3041,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                         {(() => {
                           const galleryImgUrl = content[`gallery_product_img_${p.id}`] || p.imageUrl;
                           return galleryImgUrl
-                            ? <img src={galleryImgUrl} alt={p.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s" }}
+                            ? <img src={galleryImgUrl} alt={p.name} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s" }}
                                 onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.05)"; }}
                                 onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
                               />

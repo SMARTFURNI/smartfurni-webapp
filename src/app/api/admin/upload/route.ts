@@ -55,7 +55,14 @@ export async function POST(request: NextRequest) {
         uploadStream.end(buffer);
       }
     );
-    return NextResponse.json({ url: uploadResult.secure_url, filename: uploadResult.public_id });
+    // Inject Cloudinary transformation: auto format (WebP/AVIF), auto quality, max width 900px
+    // e.g. https://res.cloudinary.com/xxx/image/upload/v123/file.jpg
+    //   -> https://res.cloudinary.com/xxx/image/upload/f_auto,q_auto:good,w_900,c_limit/v123/file.jpg
+    const optimizedUrl = uploadResult.secure_url.replace(
+      /\/image\/upload\/(?!f_auto)/,
+      "/image/upload/f_auto,q_auto:good,w_900,c_limit/"
+    );
+    return NextResponse.json({ url: optimizedUrl, filename: uploadResult.public_id });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
