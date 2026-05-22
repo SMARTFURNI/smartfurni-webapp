@@ -735,10 +735,13 @@ function LeadForm({ submitLabel, prefilledConfig }: { submitLabel?: string; pref
 
 
 // ─── QuizOrderForm: Form đặt hàng trong popup ─────────────────────────────────
-function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
+function QuizOrderForm({ cfg, product, total, onBack, onComplete, content, selectedSlotKey, effectiveKey }: {
   cfg: ConfigState; product: CrmProduct; total: number;
   onBack: () => void;
   onComplete: (cfg: ConfigState, product: CrmProduct, total: number) => void;
+  content?: Record<string, string>;
+  selectedSlotKey?: string | null;
+  effectiveKey?: string;
 }) {
   const [form, setForm] = React.useState({ name: "", phone: "", note: "" });
   const [loading, setLoading] = React.useState(false);
@@ -822,12 +825,40 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
     if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.replace(/\s/g, ""))) { setError("Số điện thoại không hợp lệ"); return; }
     setLoading(true); setError("");
     try {
+      // Lấy tên sản phẩm đẹp từ content (ưu tiên slot_name/slot_sku từ editor)
+      const productSkuDisplay = (() => {
+        if (selectedSlotKey && content) {
+          const fromContent = content[`slot_sku_${selectedSlotKey}`];
+          if (fromContent) return fromContent;
+        }
+        const raw = product.sku || "";
+        return raw.includes("_slot_") ? "" : raw;
+      })();
+      const productNameDisplay = (() => {
+        if (selectedSlotKey && content) {
+          const fromContent = content[`slot_name_${selectedSlotKey}`];
+          if (fromContent) return fromContent;
+        }
+        return product.name.replace(/^Chia sẻ\s+/, "");
+      })();
+      const productLabel = productSkuDisplay
+        ? `${productSkuDisplay} — ${productNameDisplay.substring(0, 50)}`
+        : productNameDisplay.substring(0, 60);
+      // Lấy tên áo nệm đẹp từ content editor
+      const aoNemLabel = (() => {
+        if (!cfg.aoNem) return null;
+        if (effectiveKey && content) {
+          const fromContent = content[`quiz_opt_${effectiveKey}_${cfg.aoNem}_label`];
+          if (fromContent) return fromContent;
+        }
+        return ADDON_LABELS[cfg.aoNem] || cfg.aoNem;
+      })();
       const parts = [
-        `Mẫu: ${product.sku}`,
+        `Mẫu: ${productLabel}`,
         cfg.size ? `Kích thước: ${cfg.size}` : null,
         cfg.hoc ? ADDON_LABELS[cfg.hoc] : null,
         cfg.doDay ? ADDON_LABELS[cfg.doDay] : null,
-        cfg.aoNem ? (ADDON_LABELS[cfg.aoNem] || cfg.aoNem) : null,
+        aoNemLabel,
         `Tổng: ${fmt(total)}`,
       ].filter(Boolean);
       const configStr = parts.join(" | ");
@@ -2106,7 +2137,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
       );
     }
     if (step === "order_form" && effectiveProduct) {
-      return <QuizOrderForm cfg={cfg} product={effectiveProduct} total={total} onBack={goPrev} onComplete={onComplete} />;
+      return <QuizOrderForm cfg={cfg} product={effectiveProduct} total={total} onBack={goPrev} onComplete={onComplete} content={localContent || content} selectedSlotKey={selectedSlotKey} effectiveKey={effectiveKey} />;
     }
     return null;
   }
