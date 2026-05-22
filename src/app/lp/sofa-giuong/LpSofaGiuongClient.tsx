@@ -658,7 +658,20 @@ function LeadForm({ submitLabel, prefilledConfig }: { submitLabel?: string; pref
       const res = await fetch("/api/lp/submit-lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }),
+        body: JSON.stringify({
+          landingPageSlug: LP_SLUG,
+          name: form.name,
+          phone: form.phone,
+          email: "",
+          province: selProvince?.full_name || "",
+          district: selDistrict?.full_name || "",
+          ward: selWard?.full_name || "",
+          address: streetAddress || "",
+          configStr,
+          totalPrice: fmt(total),
+          note: form.note || "",
+          ...utms,
+        }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
       setSuccess(true);
@@ -824,7 +837,20 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete }: {
       const res = await fetch("/api/lp/submit-lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }),
+        body: JSON.stringify({
+          landingPageSlug: LP_SLUG,
+          name: form.name,
+          phone: form.phone,
+          email: "",
+          province: selProvince?.full_name || "",
+          district: selDistrict?.full_name || "",
+          ward: selWard?.full_name || "",
+          address: streetAddress || "",
+          configStr,
+          totalPrice: fmt(total),
+          note: form.note || "",
+          ...utms,
+        }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
       setSuccess(true);

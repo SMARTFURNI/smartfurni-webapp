@@ -1,6 +1,108 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRawLead } from "@/lib/crm-raw-lead-store";
 
+const NOTIFY_EMAIL = "phamtuat0820@gmail.com";
+
+async function sendLeadNotification(data: {
+  fullName: string;
+  phone: string;
+  email?: string;
+  province?: string;
+  district?: string;
+  ward?: string;
+  address?: string;
+  note?: string;
+  configStr?: string;
+  totalPrice?: string;
+  slug: string;
+}) {
+  const resendKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@smartfurni.vn";
+  if (!resendKey) return;
+
+  const now = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+  const addressParts = [data.ward, data.district, data.province].filter(Boolean).join(", ");
+  const fullAddress = [data.address, addressParts].filter(Boolean).join(", ");
+
+  const configRows = data.configStr
+    ? data.configStr.split("|").map(s => s.trim()).filter(Boolean).map(s =>
+        `<tr><td colspan="2" style="padding: 4px 0; font-size: 13px; color: #444;">• ${s}</td></tr>`
+      ).join("")
+    : "";
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px;">
+  <div style="max-width: 580px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.1);">
+    <div style="background: linear-gradient(135deg, #1a1200 0%, #3d2c00 100%); padding: 28px 32px; text-align: center;">
+      <div style="color: #C9A84C; font-size: 22px; font-weight: 700; letter-spacing: 1px;">🛋️ SMARTFURNI</div>
+      <div style="color: #fff; font-size: 16px; margin-top: 8px; font-weight: 600;">Đơn đặt hàng mới từ Landing Page</div>
+      <div style="color: #C9A84C; font-size: 13px; margin-top: 4px;">${now}</div>
+    </div>
+    <div style="padding: 28px 32px;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px; width: 130px;">Họ và tên</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-weight: 700; font-size: 16px; color: #1a1a1a;">${data.fullName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px;">Số điện thoại</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-weight: 700; font-size: 16px;">
+            <a href="tel:${data.phone}" style="color: #C9A84C; text-decoration: none;">${data.phone}</a>
+          </td>
+        </tr>
+        ${data.email ? `<tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px;">Email</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">${data.email}</td>
+        </tr>` : ""}
+        ${fullAddress ? `<tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px;">Địa chỉ</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">${fullAddress}</td>
+        </tr>` : ""}
+        ${data.configStr ? `<tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px; vertical-align: top;">Cấu hình</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+            <table style="width: 100%; border-collapse: collapse;">${configRows}</table>
+          </td>
+        </tr>` : ""}
+        ${data.totalPrice ? `<tr>
+          <td style="padding: 12px 0 4px; color: #888; font-size: 13px;">Giá tham khảo</td>
+          <td style="padding: 12px 0 4px; font-weight: 700; font-size: 20px; color: #C9A84C;">${data.totalPrice}</td>
+        </tr>` : ""}
+        ${data.note ? `<tr>
+          <td style="padding: 10px 0; color: #888; font-size: 13px; vertical-align: top;">Ghi chú</td>
+          <td style="padding: 10px 0; font-size: 13px; color: #555;">${data.note}</td>
+        </tr>` : ""}
+      </table>
+      <div style="margin-top: 28px; text-align: center;">
+        <a href="https://smartfurni.com.vn/admin/crm" style="display: inline-block; background: linear-gradient(135deg, #C9A84C, #e8c96a); color: #1a1200; font-weight: 700; font-size: 14px; padding: 12px 32px; border-radius: 50px; text-decoration: none;">
+          📋 Xem trong CRM →
+        </a>
+      </div>
+    </div>
+    <div style="background: #f9f9f9; padding: 14px 32px; text-align: center; color: #aaa; font-size: 12px; border-top: 1px solid #eee;">
+      SmartFurni — Sofa Giường Thông Minh | smartfurni.com.vn
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${resendKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: `SmartFurni <${fromEmail}>`,
+      to: [NOTIFY_EMAIL],
+      subject: `🛋️ Đơn mới: ${data.fullName} — ${data.phone}`,
+      html,
+    }),
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -11,9 +113,14 @@ export async function POST(req: NextRequest) {
       email,
       businessType,
       province,
+      district,
+      ward,
+      address,
       showroomName,
       message,
       note,
+      configStr,
+      totalPrice,
       utmSource,
       utmMedium,
       utmCampaign,
@@ -21,9 +128,9 @@ export async function POST(req: NextRequest) {
       landingPage,
       landingPageSlug,
     } = body;
+
     // Support both 'fullName' (B2B form) and 'name' (quiz form)
     const fullName = fullNameRaw || nameRaw;
-
     if (!fullName || !phone) {
       return NextResponse.json({ error: "Thiếu họ tên hoặc số điện thoại" }, { status: 400 });
     }
@@ -37,6 +144,9 @@ export async function POST(req: NextRequest) {
     }
 
     const slug = landingPageSlug || landingPage || "sofa-giuong";
+    const addressParts = [ward, district, province].filter(Boolean).join(", ");
+    const fullAddress = [address, addressParts].filter(Boolean).join(", ");
+
     const lead = await createRawLead({
       fullName,
       phone,
@@ -48,8 +158,10 @@ export async function POST(req: NextRequest) {
       customerRole: businessType || "Khách hàng",
       message: [
         showroomName ? `Showroom: ${showroomName}` : null,
-        province ? `Tỉnh/TP: ${province}` : null,
-        note ? note : null,
+        fullAddress ? `Địa chỉ: ${fullAddress}` : null,
+        configStr ? `Cấu hình: ${configStr}` : null,
+        totalPrice ? `Giá: ${totalPrice}` : null,
+        note ? `Ghi chú: ${note}` : null,
         message ? `Ghi chú: ${message}` : null,
       ].filter(Boolean).join(" | ") || undefined,
       rawData: {
@@ -60,10 +172,30 @@ export async function POST(req: NextRequest) {
         landingPage: slug,
         businessType,
         province,
+        district,
+        ward,
+        address,
         showroomName,
+        configStr,
+        totalPrice,
         submittedAt: new Date().toISOString(),
       },
     });
+
+    // Gửi email thông báo (không block response)
+    sendLeadNotification({
+      fullName,
+      phone,
+      email,
+      province,
+      district,
+      ward,
+      address,
+      note: note || message,
+      configStr,
+      totalPrice,
+      slug,
+    }).catch(err => console.error("[submit-lead] email notification failed:", err));
 
     return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
   } catch (e) {
