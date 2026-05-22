@@ -315,45 +315,49 @@ nav[style*="position: fixed"] {
     line-height: 1.55 !important;
   }
 
-  /* ── How It Works: padding ngang sát viền ── */
-  .lp-sg-how-grid > * {
+  /* ── How It Works: giống pain card (padding nhỏ, sát viền) ── */
+  .lp-sg-how-card {
     padding: 14px 10px 16px !important;
     border-radius: 16px !important;
   }
-  /* Icon circle: 52px → 40px */
-  .lp-sg-how-grid > * > div:nth-child(2) {
+  .lp-sg-how-card-icon {
     width: 40px !important;
     height: 40px !important;
     min-width: 40px !important;
     min-height: 40px !important;
     margin-bottom: 10px !important;
   }
-  .lp-sg-how-grid h3 {
+  .lp-sg-how-card-step-bg {
+    font-size: 40px !important;
+    top: 8px !important;
+    right: 10px !important;
+  }
+  .lp-sg-how-card h3 {
     font-size: 13px !important;
     font-weight: 600 !important;
     margin-bottom: 5px !important;
     line-height: 1.35 !important;
   }
-  .lp-sg-how-grid p {
+  .lp-sg-how-card p {
     font-size: 11.5px !important;
     line-height: 1.55 !important;
   }
 
-  /* ── Features/Benefits: padding ngang sát viền ── */
-  .lp-sg-features-grid > * {
+  /* ── Features/Benefits: giống pain card (padding nhỏ, sát viền) ── */
+  .lp-sg-feat-card {
     padding: 14px 10px 16px !important;
     border-radius: 16px !important;
   }
-  .lp-sg-features-grid > * > div:first-child {
+  .lp-sg-feat-card-icon {
     margin-bottom: 10px !important;
   }
-  .lp-sg-features-grid h3 {
+  .lp-sg-feat-card h3 {
     font-size: 13px !important;
     font-weight: 600 !important;
     margin-bottom: 5px !important;
     line-height: 1.35 !important;
   }
-  .lp-sg-features-grid p {
+  .lp-sg-feat-card p {
     font-size: 11.5px !important;
     line-height: 1.55 !important;
   }

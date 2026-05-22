@@ -2904,13 +2904,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             ].map((s, i) => (
               <FadeIn key={i} delay={i * 80}>
                 <div
+                  className="lp-sg-how-card"
                   style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s", position: "relative" as const, overflow: "hidden" }}
                   onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER}
                 >
                   {/* Step number watermark */}
-                  <div style={{ position: "absolute", top: 12, right: 16, color: "rgba(201,168,76,0.08)", fontSize: 56, fontWeight: 900, fontFamily: FONT_HEADING, lineHeight: 1, pointerEvents: "none", userSelect: "none" as const }}>{s.step}</div>
-                  <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <div className="lp-sg-how-card-step-bg" style={{ position: "absolute", top: 12, right: 16, color: "rgba(201,168,76,0.08)", fontSize: 56, fontWeight: 900, fontFamily: FONT_HEADING, lineHeight: 1, pointerEvents: "none", userSelect: "none" as const }}>{s.step}</div>
+                  <div className="lp-sg-how-card-icon" style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
                     <SvgIcon name={s.icon} size={24} color={GOLD} />
                   </div>
                   <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 8 }}>{s.step}</div>
@@ -2970,10 +2971,10 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               { icon: "credit_card", title: "Trả góp 0% lãi suất", desc: "Hỗ trợ trả góp qua các đối tác tài chính. Sở hữu sofa giường mơ ước ngay hôm nay." },
             ].map((f, i) => (
               <FadeIn key={i} delay={i * 60}>
-                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s" }}
+                <div className="lp-sg-feat-card" style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s" }}
                   onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER}>
-                  <div style={{ marginBottom: 14 }}><SvgIcon name={f.icon} size={32} color={GOLD} /></div>
+                  <div className="lp-sg-feat-card-icon" style={{ marginBottom: 14 }}><SvgIcon name={f.icon} size={32} color={GOLD} /></div>
                   <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{f.title}</h3>
                   <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
                 </div>
