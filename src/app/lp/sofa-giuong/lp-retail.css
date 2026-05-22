@@ -268,6 +268,34 @@ nav[style*="position: fixed"] {
   }
 }
 
+/* ── 3 Sections: 2-col grid trên mobile (Pain Points, How It Works, Features) ── */
+@media (max-width: 640px) {
+  .lp-sg-pain-grid,
+  .lp-sg-how-grid,
+  .lp-sg-features-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  /* Giảm padding card để vừa 2 cột */
+  .lp-sg-pain-grid > *,
+  .lp-sg-how-grid > *,
+  .lp-sg-features-grid > * {
+    padding: 16px 14px !important;
+  }
+  /* Font nhỏ hơn cho title trong card 2 cột */
+  .lp-sg-pain-grid h3,
+  .lp-sg-how-grid h3,
+  .lp-sg-features-grid h3 {
+    font-size: 13px !important;
+  }
+  .lp-sg-pain-grid p,
+  .lp-sg-how-grid p,
+  .lp-sg-features-grid p {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+}
+
 /* ── Typewriter cursor blink ── */
 @keyframes blink-cursor {
   0%, 100% { opacity: 1; }

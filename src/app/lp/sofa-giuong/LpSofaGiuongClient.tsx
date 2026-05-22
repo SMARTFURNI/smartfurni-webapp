@@ -2769,7 +2769,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               {E({ bk: "problem_desc", def: "Hầu hết người mua sofa giường đều gặp phải những vấn đề này — và SmartFurni được tạo ra để giải quyết triệt để.", as: "span" })}
             </p>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
+          <div className="lp-sg-pain-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
             {[
               { icon: "ruler_cross", title: E({ bk: "pain_0_title", def: "Kích thước không vừa", as: "span" }), desc: E({ bk: "pain_0_desc", def: "Mua về mới phát hiện không khớp phòng ngủ, quá to hoặc quá nhỏ", as: "span" }), imgKey: "pain_img_0" },
               { icon: "eye_off", title: E({ bk: "pain_1_title", def: "Chất liệu không ưng", as: "span" }), desc: E({ bk: "pain_1_desc", def: "Màu sắc, chất liệu bọc không đúng như hình — khác xa thực tế", as: "span" }), imgKey: "pain_img_1" },
@@ -2895,7 +2895,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             </h2>
             <GoldDivider />
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24, marginTop: 16 }}>
+          <div className="lp-sg-how-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24, marginTop: 16 }}>
             {[
               { step: "01", icon: "sofa", title: "Chọn mẫu", desc: "Duyệt qua bộ sưu tập và chọn mẫu sofa giường yêu thích" },
               { step: "02", icon: "sliders", title: "Tuỳ chỉnh", desc: "Chọn kích thước, hộc, tay vịn, chất liệu, nệm theo sở thích" },
@@ -2960,7 +2960,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               <GoldDivider />
             </div>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+          <div className="lp-sg-features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
             {[
               { icon: "star_circle", title: "Cá nhân hoá 100%", desc: "7 bước tuỳ chỉnh — kích thước, hộc, tay vịn, chất liệu, nệm, áo nệm. Mỗi chiếc sofa giường là duy nhất." },
               { icon: "price_tag", title: "Giá minh bạch", desc: "Giá tổng nhảy realtime khi bạn chọn từng tuỳ chọn. Không ẩn phí, không bất ngờ khi thanh toán." },
