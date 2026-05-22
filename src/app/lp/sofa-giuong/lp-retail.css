@@ -269,6 +269,7 @@ nav[style*="position: fixed"] {
 }
 
 /* ── 3 Sections: 2-col grid trên mobile (Pain Points, How It Works, Features) ── */
+/* Style giống card sản phẩm: background #221D00, border-radius 16px, overflow hidden */
 @media (max-width: 640px) {
   .lp-sg-pain-grid,
   .lp-sg-how-grid,
@@ -276,22 +277,66 @@ nav[style*="position: fixed"] {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
   }
-  /* Giảm padding card để vừa 2 cột */
-  .lp-sg-pain-grid > *,
-  .lp-sg-how-grid > *,
-  .lp-sg-features-grid > * {
-    padding: 16px 14px !important;
+
+  /* ── Pain Points: card có ảnh tỉ lệ 1:1 (giống product card) ── */
+  .lp-sg-pain-grid > * {
+    border-radius: 16px !important;
+    overflow: hidden !important;
   }
-  /* Font nhỏ hơn cho title trong card 2 cột */
-  .lp-sg-pain-grid h3,
-  .lp-sg-how-grid h3,
-  .lp-sg-features-grid h3 {
-    font-size: 13px !important;
+  /* Phần ảnh trong pain card: đổi từ 16:9 sang 1:1 */
+  .lp-sg-pain-grid > * > div:first-child {
+    padding-top: 100% !important;
   }
-  .lp-sg-pain-grid p,
-  .lp-sg-how-grid p,
-  .lp-sg-features-grid p {
+  /* Phần info text bên dưới ảnh */
+  .lp-sg-pain-grid > * > div:last-child {
+    padding: 12px 12px 14px !important;
+  }
+  .lp-sg-pain-grid > * > div:last-child > div:first-child {
+    margin-bottom: 6px !important;
+  }
+  .lp-sg-pain-grid h3 {
     font-size: 12px !important;
+    margin-bottom: 4px !important;
+  }
+  .lp-sg-pain-grid p {
+    font-size: 11px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* ── How It Works: padding nhỏ, giống product card info section ── */
+  .lp-sg-how-grid > * {
+    padding: 14px 12px 16px !important;
+    border-radius: 16px !important;
+  }
+  /* Icon circle: 52px → 36px */
+  .lp-sg-how-grid > * > div:nth-child(2) {
+    width: 36px !important;
+    height: 36px !important;
+    margin-bottom: 10px !important;
+  }
+  .lp-sg-how-grid h3 {
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
+  }
+  .lp-sg-how-grid p {
+    font-size: 11px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* ── Features/Benefits: padding nhỏ, giống product card info section ── */
+  .lp-sg-features-grid > * {
+    padding: 14px 12px 16px !important;
+    border-radius: 16px !important;
+  }
+  .lp-sg-features-grid > * > div:first-child {
+    margin-bottom: 10px !important;
+  }
+  .lp-sg-features-grid h3 {
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
+  }
+  .lp-sg-features-grid p {
+    font-size: 11px !important;
     line-height: 1.5 !important;
   }
 }
