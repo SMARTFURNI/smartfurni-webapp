@@ -2850,11 +2850,11 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           {/* CTA */}
           <FadeIn delay={200}>
             <div style={{ textAlign: "center", marginTop: 40 }}>
-              <a href="#order" style={{ display: "inline-flex", alignItems: "center", gap: 10, background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, color: BLACK, fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING, padding: "14px 36px", borderRadius: 50, textDecoration: "none", boxShadow: `0 4px 24px rgba(201,168,76,0.35)`, transition: "transform 0.2s, box-shadow 0.2s" }}
+              <button onClick={() => openQuiz()} style={{ display: "inline-flex", alignItems: "center", gap: 10, background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, color: BLACK, fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING, padding: "14px 36px", borderRadius: 50, border: "none", cursor: "pointer", boxShadow: `0 4px 24px rgba(201,168,76,0.35)`, transition: "transform 0.2s, box-shadow 0.2s" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(201,168,76,0.5)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 24px rgba(201,168,76,0.35)"; }}>
                 🎨 Bắt Đầu Thiết Kế Ngay →
-              </a>
+              </button>
             </div>
           </FadeIn>
         </div>
