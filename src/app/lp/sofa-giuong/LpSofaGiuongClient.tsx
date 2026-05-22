@@ -3032,7 +3032,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                       style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: "pointer", transition: "border-color 0.25s, transform 0.25s", position: "relative", display: "flex", flexDirection: "column" }}
                       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.45)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
-                      onClick={() => { if (!editMode) openQuiz(p.id); }}
+                      onClick={() => { if (!editMode) openQuiz(); }}
                       draggable={editMode}
                       onDragStart={e => { e.dataTransfer.setData("text/plain", p.id); e.dataTransfer.effectAllowed = "move"; }}
                       onDragOver={e => { if (!editMode) return; e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverId(p.id); }}
