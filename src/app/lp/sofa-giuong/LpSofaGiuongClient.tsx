@@ -2043,12 +2043,38 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     }
 
     if (step === "summary" && effectiveProduct) {
+      // Lấy tên hiển thị đẹp cho sản phẩm: ưu tiên displayName từ content, bỏ prefix kỹ thuật
+      const summaryProductSku = (() => {
+        if (selectedSlotKey) {
+          const fromContent = localContent[`slot_sku_${selectedSlotKey}`] || content[`slot_sku_${selectedSlotKey}`];
+          if (fromContent) return fromContent;
+        }
+        // Bỏ prefix slotKey nếu sku chứa "_slot_"
+        const raw = effectiveProduct.sku || "";
+        return raw.includes("_slot_") ? "" : raw;
+      })();
+      const summaryProductName = (() => {
+        if (selectedSlotKey) {
+          const fromContent = localContent[`slot_name_${selectedSlotKey}`] || content[`slot_name_${selectedSlotKey}`];
+          if (fromContent) return fromContent;
+        }
+        return effectiveProduct.name.replace(/^Chia sẻ\s+/, "");
+      })();
+      const summaryProductLabel = summaryProductSku
+        ? `${summaryProductSku} — ${summaryProductName.substring(0, 40)}`
+        : summaryProductName.substring(0, 50);
+      // Lấy tên áo nệm từ content editor (nếu đã tùy chỉnh), fallback về ADDON_LABELS
+      const summaryAoNemLabel = (() => {
+        if (!cfg.aoNem) return "—";
+        const fromContent = localContent[`quiz_opt_${effectiveKey}_${cfg.aoNem}_label`] || content[`quiz_opt_${effectiveKey}_${cfg.aoNem}_label`];
+        return fromContent || ADDON_LABELS[cfg.aoNem] || cfg.aoNem;
+      })();
       const summaryItems = [
-        { label: "Mẫu sản phẩm", value: `${effectiveProduct.sku} — ${effectiveProduct.name.replace(/^Chia sẻ\s+/, "").substring(0, 40)}` },
+        { label: "Mẫu sản phẩm", value: summaryProductLabel },
         { label: "Kích thước", value: cfg.size || "—" },
         { label: "Hộc để đồ", value: cfg.hoc ? ADDON_LABELS[cfg.hoc] : "—" },
         { label: "Độ dày nệm", value: cfg.doDay ? ADDON_LABELS[cfg.doDay] : "—" },
-        { label: "Áo nệm", value: cfg.aoNem ? (ADDON_LABELS[cfg.aoNem] || cfg.aoNem) : "—" },
+        { label: "Áo nệm", value: summaryAoNemLabel },
       ];
       return (
         <div>
