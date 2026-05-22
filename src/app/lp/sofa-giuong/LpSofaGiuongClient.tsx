@@ -471,12 +471,12 @@ const SOL_CARDS = [
 
 function SolCardsGrid({ content, isEditor, E }: { content: Record<string, string>; isEditor: boolean; E: EFn }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 24 }}>
+    <div className="lp-sg-sol-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 24 }}>
       {SOL_CARDS.map((item, i) => {
         const descText = (content[item.bkDesc] ?? item.defDesc).split("||")[0];
         return (
-          <div key={i} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: 16, padding: "24px 24px 28px", display: "flex", flexDirection: "column" as const, gap: 8 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <div key={i} className="lp-sg-sol-card" style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: 16, padding: "24px 24px 28px", display: "flex", flexDirection: "column" as const, gap: 8 }}>
+            <div className="lp-sg-sol-card-icon" style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <span style={{ color: GOLD, fontSize: 16, fontWeight: 700 }}>✓</span>
             </div>
             <h4 style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, margin: 0 }}>{E({ bk: item.bkTitle, def: item.defTitle, as: "span" })}</h4>

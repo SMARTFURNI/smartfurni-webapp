@@ -343,6 +343,32 @@ nav[style*="position: fixed"] {
     line-height: 1.55 !important;
   }
 
+  /* ── Solution Cards: 2 cột, giống pain card ── */
+  .lp-sg-sol-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  .lp-sg-sol-card {
+    padding: 14px 10px 16px !important;
+    border-radius: 16px !important;
+    gap: 6px !important;
+  }
+  .lp-sg-sol-card-icon {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+  }
+  .lp-sg-sol-card h4 {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+  }
+  .lp-sg-sol-card p {
+    font-size: 11.5px !important;
+    line-height: 1.55 !important;
+  }
+
   /* ── Features/Benefits: giống pain card (padding nhỏ, sát viền) ── */
   .lp-sg-feat-card {
     padding: 14px 10px 16px !important;
