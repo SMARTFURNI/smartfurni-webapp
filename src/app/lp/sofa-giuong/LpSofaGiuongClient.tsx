@@ -29,6 +29,7 @@ const R_FULL = 999;
 interface ConfigState {
   productId: string | null;
   size: string | null;
+  sizeIdx: number | null; // index vào sizePricings để tính giá đúng dù label đã đổi
   hoc: "co_hoc" | "khong_hoc" | null;
   doDay: "7cm" | "10cm" | null;
   aoNem: string | null;
@@ -124,7 +125,13 @@ function getBasePrice(p: CrmProduct, size: string | null): number {
 }
 function calcTotal(p: CrmProduct | null, cfg: ConfigState): number {
   if (!p) return 0;
-  const base = getBasePrice(p, cfg.size);
+  // Ưu tiên dùng sizeIdx để tra giá đúng dù label đã được editor đổi tên
+  let base: number;
+  if (cfg.sizeIdx !== null && cfg.sizeIdx !== undefined && p.sizePricings?.length) {
+    base = p.sizePricings[cfg.sizeIdx]?.price ?? p.basePrice ?? 0;
+  } else {
+    base = getBasePrice(p, cfg.size);
+  }
   let add = 0;
   if (cfg.hoc) add += PRICE_ADDONS[cfg.hoc] || 0;
   if (cfg.doDay) add += PRICE_ADDONS[cfg.doDay] || 0;
@@ -1584,7 +1591,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   onContentSaved?: (key: string, val: string) => void;
 }) {
   const [step, setStep] = useState<QuizStep>(initialProductId ? "size" : "product");
-  const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, hoc: null, doDay: null, aoNem: null });
+  const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, sizeIdx: null, hoc: null, doDay: null, aoNem: null });
   // Track which slotKey was selected (for image key lookup when slot has no real productId)
   // When opened with initialProductId, find the matching slot key for image/content lookup
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(() => {
@@ -1982,7 +1989,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                 const savedPriceStr = localContent[`quiz_opt_${sizeKey}_price`] || content[`quiz_opt_${sizeKey}_price`];
                 const savedPrice = savedPriceStr !== undefined ? (Number(savedPriceStr) || 0) : s.price;
                 return (
-              <QuizEditableOption key={s.size} icon="ruler" label={savedLabel} desc={sizeDesc} price={savedPrice} selected={cfg.size === savedLabel} onClick={() => selectAndAdvance("size", savedLabel)}  isEditor={isEditor} optionKey={sizeKey} slug={LP_SLUG} imgUrl={imgUrl} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+              <QuizEditableOption key={s.size} icon="ruler" label={savedLabel} desc={sizeDesc} price={savedPrice} selected={cfg.size === savedLabel} onClick={() => { setCfg(c => ({ ...c, size: savedLabel, sizeIdx: idx })); setTimeout(() => goNext(), 200); }}  isEditor={isEditor} optionKey={sizeKey} slug={LP_SLUG} imgUrl={imgUrl} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
                 );
               });
             })()}
