@@ -123,7 +123,7 @@ function getBasePrice(p: CrmProduct, size: string | null): number {
   const sp = p.sizePricings?.find((s) => s.size === size);
   return sp ? sp.price : p.basePrice || 0;
 }
-function calcTotal(p: CrmProduct | null, cfg: ConfigState): number {
+function calcTotal(p: CrmProduct | null, cfg: ConfigState, addonPrices?: Record<string, number>): number {
   if (!p) return 0;
   // Ưu tiên dùng sizeIdx để tra giá đúng dù label đã được editor đổi tên
   let base: number;
@@ -132,10 +132,12 @@ function calcTotal(p: CrmProduct | null, cfg: ConfigState): number {
   } else {
     base = getBasePrice(p, cfg.size);
   }
+  // Dùng addonPrices từ content DB nếu có, fallback về PRICE_ADDONS hardcode
+  const priceMap = addonPrices || PRICE_ADDONS;
   let add = 0;
-  if (cfg.hoc) add += PRICE_ADDONS[cfg.hoc] || 0;
-  if (cfg.doDay) add += PRICE_ADDONS[cfg.doDay] || 0;
-  if (cfg.aoNem) add += PRICE_ADDONS[cfg.aoNem] || 0;
+  if (cfg.hoc) add += priceMap[cfg.hoc] ?? PRICE_ADDONS[cfg.hoc] ?? 0;
+  if (cfg.doDay) add += priceMap[cfg.doDay] ?? PRICE_ADDONS[cfg.doDay] ?? 0;
+  if (cfg.aoNem) add += priceMap[cfg.aoNem] ?? PRICE_ADDONS[cfg.aoNem] ?? 0;
   return base + add;
 }
 function getProductImages(p: CrmProduct): string[] {
@@ -860,11 +862,22 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete, content, selec
         }
         return ADDON_LABELS[cfg.aoNem] || cfg.aoNem;
       })();
+      // Lấy label hộc và nệm từ content editor nếu có
+      const hocLabel = (() => {
+        if (!cfg.hoc) return null;
+        const hocContentKey = cfg.hoc === "co_hoc" ? `quiz_opt_${effectiveKey}_có_hộc_để_đồ_label` : `quiz_opt_${effectiveKey}_không_hộc_label`;
+        return (effectiveKey && content ? (content[hocContentKey] || ADDON_LABELS[cfg.hoc]) : ADDON_LABELS[cfg.hoc]) || null;
+      })();
+      const doDayLabel = (() => {
+        if (!cfg.doDay) return null;
+        const doDayContentKey = cfg.doDay === "7cm" ? `quiz_opt_${effectiveKey}_nệm_7cm_label` : `quiz_opt_${effectiveKey}_nệm_10cm_label`;
+        return (effectiveKey && content ? (content[doDayContentKey] || ADDON_LABELS[cfg.doDay]) : ADDON_LABELS[cfg.doDay]) || null;
+      })();
       const parts = [
         `Mẫu: ${productLabel}`,
         cfg.size ? `Kích thước: ${cfg.size}` : null,
-        cfg.hoc ? ADDON_LABELS[cfg.hoc] : null,
-        cfg.doDay ? ADDON_LABELS[cfg.doDay] : null,
+        hocLabel,
+        doDayLabel,
         aoNemLabel,
         `Tổng: ${fmt(total)}`,
       ].filter(Boolean);
@@ -1744,18 +1757,39 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
     specs: {},
     basePrice: selectedSlotInfo.basePrice || 0,
     discountTiers: [],
-    sizePricings: [
-      { size: "0,9M", price: selectedSlotInfo.basePrice || 0, label: "0,9M" },
-      { size: "1,2M", price: (selectedSlotInfo.basePrice || 0) + 500000, label: "1,2M" },
-      { size: "1,5M", price: (selectedSlotInfo.basePrice || 0) + 1000000, label: "1,5M" },
-      { size: "1,8M", price: (selectedSlotInfo.basePrice || 0) + 1500000, label: "1,8M" },
-    ],
+    sizePricings: (() => {
+      const slotKey = selectedSlotKey || "";
+      const baseP = selectedSlotInfo.basePrice || 0;
+      const defaultDeltas = [0, 500000, 1000000, 1500000];
+      const defaultSizes = ["0,9M", "1,2M", "1,5M", "1,8M"];
+      return defaultSizes.map((sz, i) => {
+        const sizeKey = `${slotKey}_size_${i}`;
+        // Ưu tiên lấy giá từ content DB (editor đã set), fallback về basePrice + delta mặc định
+        const savedPriceStr = localContent[`quiz_opt_${sizeKey}_price`] || content[`quiz_opt_${sizeKey}_price`];
+        const price = savedPriceStr !== undefined ? (Number(savedPriceStr) || 0) : (baseP + defaultDeltas[i]);
+        return { size: sz, price, label: sz };
+      });
+    })(),
     isActive: true,
     createdAt: "",
     updatedAt: "",
   } : null);
   const images = effectiveProduct ? getProductImages(effectiveProduct) : [];
-  const total = calcTotal(effectiveProduct, cfg);
+  // Tính addonPrices từ content DB để calcTotal dùng giá đúng
+  const addonPrices: Record<string, number> = {
+    // Hộc
+    co_hoc: Number(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || PRICE_ADDONS.co_hoc),
+    khong_hoc: Number(localContent[`quiz_opt_${effectiveKey}_không_hộc_price`] || content[`quiz_opt_${effectiveKey}_không_hộc_price`] || 0),
+    // Độ dày nệm
+    "7cm": Number(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || 0),
+    "10cm": Number(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || PRICE_ADDONS["10cm"]),
+    // Áo nệm
+    ao_nem_1: Number(localContent[`quiz_opt_${effectiveKey}_ao_nem_1_price`] || content[`quiz_opt_${effectiveKey}_ao_nem_1_price`] || 0),
+    ao_nem_2: Number(localContent[`quiz_opt_${effectiveKey}_ao_nem_2_price`] || content[`quiz_opt_${effectiveKey}_ao_nem_2_price`] || 600000),
+    ao_nem_3: Number(localContent[`quiz_opt_${effectiveKey}_ao_nem_3_price`] || content[`quiz_opt_${effectiveKey}_ao_nem_3_price`] || 0),
+    ao_nem_4: Number(localContent[`quiz_opt_${effectiveKey}_ao_nem_4_price`] || content[`quiz_opt_${effectiveKey}_ao_nem_4_price`] || 0),
+  };
+  const total = calcTotal(effectiveProduct, cfg, addonPrices);
 
   const stepIdx = QUIZ_STEPS.indexOf(step);
   const progress = ((stepIdx + 1) / QUIZ_STEPS.length) * 100;
