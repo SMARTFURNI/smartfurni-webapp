@@ -1,4 +1,5 @@
 import { getTheme } from "@/lib/theme-store";
+import { getAllProducts } from "@/lib/product-store";
 import Navbar from "@/components/landing/Navbar";
 import CartClient from "@/components/landing/CartClient";
 
@@ -17,10 +18,13 @@ export const metadata = {
 
 export default function CartPage() {
   const theme = getTheme();
+  const upsellProducts = getAllProducts()
+    .filter((p) => p.status === "active")
+    .slice(0, 6);
   return (
     <main style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
       <Navbar theme={theme} />
-      <CartClient theme={theme} />
+      <CartClient theme={theme} upsellProducts={upsellProducts} />
       {/* Footer */}
       <footer
         style={{ backgroundColor: theme.footer.bgColor, borderTopColor: theme.colors.border }}

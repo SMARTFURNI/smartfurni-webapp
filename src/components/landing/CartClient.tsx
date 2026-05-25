@@ -4,11 +4,12 @@ import { useRouter } from "next/navigation";
 import type { SiteTheme } from "@/lib/theme-types";
 import { useCart } from "@/lib/cart-context";
 import Footer from "@/components/landing/Footer";
-import { getAllProducts } from "@/lib/product-store";
+import type { Product } from "@/lib/product-store";
 import { SvgIcon } from "@/components/ui/SvgIcon";
 
 interface Props {
   theme: SiteTheme;
+  upsellProducts?: Product[];
 }
 
 function formatPrice(price: number) {
@@ -19,18 +20,16 @@ function formatPrice(price: number) {
 
 const SHIPPING_FEE = 0; // Free shipping
 
-export default function CartClient({ theme }: Props) {
+export default function CartClient({ theme, upsellProducts = [] }: Props) {
   const { colors, layout } = theme;
   const router = useRouter();
   const { items, totalItems, subtotal, removeItem, updateQuantity, clearCart } = useCart();
 
   const total = subtotal + SHIPPING_FEE;
 
-  // Upsell: suggest products not already in cart
+  // Upsell: filter out products already in cart (client-side)
   const cartProductIds = new Set(items.map((i) => i.productId));
-  const upsellProducts = getAllProducts()
-    .filter((p) => p.status === "active" && !cartProductIds.has(p.id))
-    .slice(0, 3);
+  const filteredUpsell = upsellProducts.filter((p) => !cartProductIds.has(p.id)).slice(0, 3);
 
   if (items.length === 0) {
     return (
@@ -225,7 +224,7 @@ export default function CartClient({ theme }: Props) {
           </Link>
 
           {/* Upsell — sản phẩm gợi ý */}
-          {upsellProducts.length > 0 && (
+          {filteredUpsell.length > 0 && (
             <div
               style={{ borderColor: colors.border }}
               className="mt-6 pt-6 border-t"
@@ -235,7 +234,7 @@ export default function CartClient({ theme }: Props) {
                 <h3 className="text-sm font-semibold text-[#F5EDD6]">Khách hàng cũng mua</h3>
               </div>
               <div className="flex flex-col gap-3">
-                {upsellProducts.map((p) => {
+                {filteredUpsell.map((p) => {
                   const disc = p.originalPrice > p.price
                     ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
                     : 0;
