@@ -35,7 +35,7 @@ const SORT_OPTIONS = [
 function ProductCardSkeleton({ colors }: { colors: { surface: string; border: string } }) {
   return (
     <div style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-2xl border overflow-hidden flex flex-col animate-pulse">
-      <div style={{ backgroundColor: `${colors.border}` }} className="h-[200px] w-full" />
+      <div style={{ backgroundColor: `${colors.border}`, aspectRatio: '1/1' }} className="w-full" />
       <div className="p-4 flex flex-col gap-3">
         <div style={{ backgroundColor: colors.border }} className="h-3 w-16 rounded-full" />
         <div style={{ backgroundColor: colors.border }} className="h-4 w-3/4 rounded-full" />
@@ -98,10 +98,10 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
       <div
         style={{
           background: `linear-gradient(135deg, ${colors.background}, ${colors.surface})`,
-          height: 200,
+          aspectRatio: '1/1',
           position: "relative",
         }}
-        className="flex items-center justify-center overflow-hidden"
+        className="flex items-center justify-center overflow-hidden w-full"
       >
         {currentImage ? (
           <img

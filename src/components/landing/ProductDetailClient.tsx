@@ -203,7 +203,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
             style={{
               background: `linear-gradient(135deg, ${colors.background}, ${colors.surface})`,
               border: `1px solid ${colors.border}`,
-              aspectRatio: '4/3',
+              aspectRatio: '1/1',
             }}
             onClick={() => activeImage && openLightbox(activeImageIdx)}
           >
@@ -265,7 +265,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
                   className="flex-shrink-0 rounded-xl overflow-hidden transition-all duration-200"
                   style={{
                     width: 72,
-                    height: 54,
+                    height: 72,
                     border: idx === activeImageIdx
                       ? `2px solid ${colors.primary}`
                       : `2px solid ${colors.border}`,
@@ -872,8 +872,8 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
                   className="rounded-xl border overflow-hidden hover:border-primary transition-all duration-200 hover:-translate-y-1 block"
                 >
                   <div
-                    style={{ background: `linear-gradient(135deg, ${colors.background}, ${colors.surface})`, height: 160 }}
-                    className="flex items-center justify-center"
+                    style={{ background: `linear-gradient(135deg, ${colors.background}, ${colors.surface})`, aspectRatio: '1/1' }}
+                    className="flex items-center justify-center overflow-hidden"
                   >
                     {p.coverImage ? (
                       <img src={p.coverImage} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
