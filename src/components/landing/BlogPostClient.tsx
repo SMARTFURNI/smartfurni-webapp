@@ -212,7 +212,7 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
                       const isTodo = item.includes("[ ]");
                       return (
                         <li key={ii} className={`flex items-start gap-2 ${isDone ? "text-green-400" : isTodo ? "text-gray-400" : "text-gray-300"}`}>
-                          <span className="mt-1 flex-shrink-0">{isDone ? "✅" : isTodo ? "⬜" : "•"}</span>
+                          <span className="mt-1 flex-shrink-0">{isDone ? "✓" : isTodo ? "○" : "•"}</span>
                           <span dangerouslySetInnerHTML={{ __html: text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>') }} />
                         </li>
                       );

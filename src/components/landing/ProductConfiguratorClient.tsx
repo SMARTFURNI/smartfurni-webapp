@@ -1,4 +1,5 @@
 "use client";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import type { Product } from "@/lib/product-store";
@@ -19,8 +20,8 @@ function formatPrice(price: number) {
 // Frame material options
 const FRAME_MATERIALS = [
   { id: "steel", label: "Thép không gỉ", desc: "Bền bỉ, chịu lực tốt", priceAdd: 0, icon: "🔩" },
-  { id: "aluminum", label: "Nhôm cao cấp", desc: "Nhẹ, chống oxy hóa", priceAdd: 2_000_000, icon: "✨" },
-  { id: "carbon", label: "Carbon fiber", desc: "Siêu nhẹ, cứng cáp", priceAdd: 8_000_000, icon: "⚡" },
+  { id: "aluminum", label: "Nhôm cao cấp", desc: "Nhẹ, chống oxy hóa", priceAdd: 2_000_000, icon: "star" },
+  { id: "carbon", label: "Carbon fiber", desc: "Siêu nhẹ, cứng cáp", priceAdd: 8_000_000, icon: "zap" },
 ];
 
 // Upholstery color options
@@ -35,10 +36,10 @@ const FABRIC_COLORS = [
 
 // Size options
 const BED_SIZES = [
-  { id: "single", label: "Đơn", dim: "90×200 cm", priceAdd: -5_000_000, icon: "🛏" },
-  { id: "double", label: "Đôi", dim: "140×200 cm", priceAdd: 0, icon: "🛏" },
-  { id: "queen", label: "Queen", dim: "160×200 cm", priceAdd: 3_000_000, icon: "🛏" },
-  { id: "king", label: "King", dim: "180×200 cm", priceAdd: 6_000_000, icon: "🛏" },
+  { id: "single", label: "Đơn", dim: "90×200 cm", priceAdd: -5_000_000, icon: "bed" },
+  { id: "double", label: "Đôi", dim: "140×200 cm", priceAdd: 0, icon: "bed" },
+  { id: "queen", label: "Queen", dim: "160×200 cm", priceAdd: 3_000_000, icon: "bed" },
+  { id: "king", label: "King", dim: "180×200 cm", priceAdd: 6_000_000, icon: "bed" },
 ];
 
 // Headboard style options

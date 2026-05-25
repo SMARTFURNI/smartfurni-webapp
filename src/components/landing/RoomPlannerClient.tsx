@@ -17,17 +17,17 @@ const ROOM_PRESETS = [
 
 // Furniture catalog
 const FURNITURE_CATALOG = [
-  { id: "bed_queen", label: "Giường Queen", category: "bed", w: 120, h: 80, color: "#C9A84C", icon: "🛏️", desc: "SmartFurni Queen" },
-  { id: "bed_king", label: "Giường King", category: "bed", w: 140, h: 90, color: "#C9A84C", icon: "🛏️", desc: "SmartFurni King" },
-  { id: "bed_single", label: "Giường Đơn", category: "bed", w: 80, h: 70, color: "#C9A84C", icon: "🛏️", desc: "SmartFurni Single" },
+  { id: "bed_queen", label: "Giường Queen", category: "bed", w: 120, h: 80, color: "#C9A84C", icon: "▭", desc: "SmartFurni Queen" },
+  { id: "bed_king", label: "Giường King", category: "bed", w: 140, h: 90, color: "#C9A84C", icon: "▭", desc: "SmartFurni King" },
+  { id: "bed_single", label: "Giường Đơn", category: "bed", w: 80, h: 70, color: "#C9A84C", icon: "▭", desc: "SmartFurni Single" },
   { id: "wardrobe", label: "Tủ quần áo", category: "storage", w: 100, h: 40, color: "#8B6914", icon: "🚪", desc: "Tủ 2 cánh" },
   { id: "desk", label: "Bàn làm việc", category: "work", w: 90, h: 50, color: "#6B7280", icon: "🖥️", desc: "Bàn góc" },
   { id: "dresser", label: "Tủ đầu giường", category: "storage", w: 45, h: 40, color: "#8B6914", icon: "🗄️", desc: "Tủ nhỏ" },
   { id: "chair", label: "Ghế đọc sách", category: "seating", w: 55, h: 55, color: "#4A6741", icon: "🪑", desc: "Armchair" },
-  { id: "sofa", label: "Sofa nhỏ", category: "seating", w: 110, h: 55, color: "#1E3A5F", icon: "🛋️", desc: "2 chỗ ngồi" },
+  { id: "sofa", label: "Sofa nhỏ", category: "seating", w: 110, h: 55, color: "#1E3A5F", icon: "▬", desc: "2 chỗ ngồi" },
   { id: "tv_stand", label: "Kệ TV", category: "media", w: 100, h: 35, color: "#374151", icon: "📺", desc: "Kệ thấp" },
-  { id: "plant", label: "Cây xanh", category: "decor", w: 30, h: 30, color: "#4A6741", icon: "🌿", desc: "Trang trí" },
-  { id: "lamp", label: "Đèn sàn", category: "lighting", w: 25, h: 25, color: "#F59E0B", icon: "💡", desc: "Floor lamp" },
+  { id: "plant", label: "Cây xanh", category: "decor", w: 30, h: 30, color: "#4A6741", icon: "◇", desc: "Trang trí" },
+  { id: "lamp", label: "Đèn sàn", category: "lighting", w: 25, h: 25, color: "#F59E0B", icon: "○", desc: "Floor lamp" },
   { id: "rug", label: "Thảm trải sàn", category: "decor", w: 130, h: 90, color: "#9CA3AF", icon: "🟫", desc: "Thảm lớn" },
 ];
 

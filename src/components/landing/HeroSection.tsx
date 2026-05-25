@@ -4,46 +4,47 @@ import { ScrollReveal } from "./ScrollReveal";
 import Link from "next/link";
 import BedSVG from "@/components/ui/BedSVG";
 import type { SiteTheme } from "@/lib/theme-types";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 
 // ─── B2B Partner types ───────────────────────────────────────────────────────
 const B2B_PARTNERS = [
   {
-    icon: "🛏️",
+    icon: "bed",
     title: "Showroom Nệm & Nội thất",
     desc: "Phân phối sỉ, chiết khấu cao, hỗ trợ trưng bày",
     href: "/lp/doi-tac-showroom-nem",
     badge: "Phổ biến nhất",
   },
   {
-    icon: "🏨",
+    icon: "hotel",
     title: "Khách sạn & Resort",
     desc: "Giải pháp giường thông minh cho phòng VIP, spa",
     href: "/catalogue",
     badge: null,
   },
   {
-    icon: "🏥",
+    icon: "hospital",
     title: "Bệnh viện & Phòng khám",
     desc: "Giường điều chỉnh y tế, hỗ trợ phục hồi chức năng",
     href: "/catalogue",
     badge: null,
   },
   {
-    icon: "🏢",
+    icon: "building",
     title: "Nhà phân phối nội thất",
     desc: "Đại lý chính thức, hỗ trợ marketing & bảo hành",
     href: "/catalogue",
     badge: null,
   },
   {
-    icon: "🏗️",
+    icon: "construction",
     title: "Chủ đầu tư & Developer",
     desc: "Tích hợp giường thông minh vào dự án bất động sản",
     href: "/catalogue",
     badge: null,
   },
   {
-    icon: "✈️",
+    icon: "plane",
     title: "Xuất khẩu & Đối tác quốc tế",
     desc: "Hợp tác OEM/ODM, xuất khẩu sang thị trường nước ngoài",
     href: "/contact",
@@ -132,7 +133,9 @@ function B2BPopup({
                 (e.currentTarget as HTMLElement).style.borderColor = borderColor;
               }}
             >
-              <span className="text-2xl flex-shrink-0 mt-0.5">{p.icon}</span>
+              <span className="flex-shrink-0 mt-0.5 flex items-center justify-center w-10 h-10 rounded-xl" style={{ backgroundColor: `${primary}12`, border: `1px solid ${primary}25` }}>
+                <SvgIcon name={p.icon} size={18} color={primary} strokeWidth={1.4} />
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold" style={{ color: textColor }}>{p.title}</span>

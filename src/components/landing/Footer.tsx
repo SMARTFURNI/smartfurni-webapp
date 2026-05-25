@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 
 // ─── Design tokens (giống landing page) ──────────────────────────────────────
 const GOLD = "#C9A84C";
@@ -34,16 +35,16 @@ function ColHeader({ label }: { label: string }) {
 
 // ─── Default data (fallback khi theme chưa có dữ liệu) ───────────────────────
 const DEFAULT_SHOWROOMS = [
-  { icon: "📍", label: "TP. Hồ Chí Minh", address: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức", phone: "028.7122.0818", hours: "8:00 – 21:00 (Thứ 2 – Chủ nhật)", mapUrl: "https://maps.google.com/?q=74+Nguyen+Thi+Nhung+Thu+Duc", badge: "Flagship" },
-  { icon: "📍", label: "Hà Nội", address: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông", phone: "024.7109.0818", hours: "8:00 – 21:00 (Thứ 2 – Chủ nhật)", mapUrl: "https://maps.google.com/?q=Geleximco+B+Le+Trong+Tan+Ha+Dong", badge: "Showroom" },
-  { icon: "🏭", label: "Xưởng SX", address: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn", phone: "028.7122.0818", hours: "8:00 – 17:00 (Thứ 2 – Thứ 7)", mapUrl: "https://maps.google.com/?q=202+Nguyen+Thi+Sang+Dong+Thanh+Hoc+Mon", badge: "Xưởng" },
+  { icon: "map-pin", label: "TP. Hồ Chí Minh", address: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức", phone: "028.7122.0818", hours: "8:00 – 21:00 (Thứ 2 – Chủ nhật)", mapUrl: "https://maps.google.com/?q=74+Nguyen+Thi+Nhung+Thu+Duc", badge: "Flagship" },
+  { icon: "map-pin", label: "Hà Nội", address: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông", phone: "024.7109.0818", hours: "8:00 – 21:00 (Thứ 2 – Chủ nhật)", mapUrl: "https://maps.google.com/?q=Geleximco+B+Le+Trong+Tan+Ha+Dong", badge: "Showroom" },
+  { icon: "factory", label: "Xưởng SX", address: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn", phone: "028.7122.0818", hours: "8:00 – 17:00 (Thứ 2 – Thứ 7)", mapUrl: "https://maps.google.com/?q=202+Nguyen+Thi+Sang+Dong+Thanh+Hoc+Mon", badge: "Xưởng" },
 ];
 
 const DEFAULT_CONTACTS = [
-  { icon: "📞", label: "Hotline", value: "028.7122.0818", href: "tel:02871220818" },
-  { icon: "💬", label: "Zalo tư vấn", value: "0918.326.552", href: "https://zalo.me/0918326552" },
-  { icon: "✉️", label: "Email", value: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
-  { icon: "🌐", label: "Website", value: "smartfurni.vn", href: "https://smartfurni.vn" },
+  { icon: "phone-call", label: "Hotline", value: "028.7122.0818", href: "tel:02871220818" },
+  { icon: "chat", label: "Zalo tư vấn", value: "0918.326.552", href: "https://zalo.me/0918326552" },
+  { icon: "mail", label: "Email", value: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
+  { icon: "globe", label: "Website", value: "smartfurni.vn", href: "https://smartfurni.vn" },
 ];
 
 const DEFAULT_POLICY_LINKS = [
@@ -148,7 +149,9 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
             <ColHeader label="Showroom" />
             {showrooms.map((a, i) => (
               <div key={i} style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{a.icon}</span>
+                <span style={{ flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: 6, backgroundColor: `${GOLD}15` }}>
+                  <SvgIcon name={a.icon} size={13} color={GOLD} strokeWidth={1.5} />
+                </span>
                 <div>
                   <div style={{ color: GOLD_LIGHT, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: FONT, marginBottom: 2 }}>
                     {a.label}
@@ -167,7 +170,9 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
             {contacts.map((c, i) => (
               <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
                 style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}>
-                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
+                <span style={{ flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: 6, backgroundColor: `${GOLD}15` }}>
+                  <SvgIcon name={c.icon} size={13} color={GOLD} strokeWidth={1.5} />
+                </span>
                 <div>
                   <div style={{ color: GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: FONT, marginBottom: 1 }}>
                     {c.label}

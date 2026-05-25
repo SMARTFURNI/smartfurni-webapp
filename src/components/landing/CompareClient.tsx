@@ -18,11 +18,11 @@ function formatPrice(price: number) {
 
 // Score dimensions for radar chart
 const SCORE_DIMS: { key: string; label: string; icon: string }[] = [
-  { key: "comfort", label: "Thoải mái", icon: "🛏️" },
-  { key: "tech", label: "Công nghệ", icon: "⚡" },
-  { key: "health", label: "Sức khỏe", icon: "❤️" },
-  { key: "value", label: "Giá trị", icon: "💰" },
-  { key: "smart", label: "Smart Home", icon: "🏠" },
+  { key: "comfort", label: "Thoải mái", icon: "C" },
+  { key: "tech", label: "Công nghệ", icon: "T" },
+  { key: "health", label: "Sức khỏe", icon: "H" },
+  { key: "value", label: "Giá trị", icon: "V" },
+  { key: "smart", label: "Smart Home", icon: "S" },
 ];
 
 function computeScores(product: Product): Record<string, number> {
@@ -342,7 +342,7 @@ export default function CompareClient({ products, theme }: Props) {
                 }
                 className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
               >
-                {mode === "score" ? "📊 Điểm & Radar" : "📋 Bảng chi tiết"}
+                {mode === "score" ? "■ Điểm & Radar" : "☰ Bảng chi tiết"}
               </button>
             ))}
           </div>
@@ -352,7 +352,7 @@ export default function CompareClient({ products, theme }: Props) {
               style={{ color: highlightDiff ? colors.primary : `${colors.text}40`, borderColor: highlightDiff ? colors.primary : colors.border }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-all duration-200"
             >
-              <span>{highlightDiff ? "✓" : "○"}</span>
+              <span style={{ fontSize: 10 }}>{highlightDiff ? "✔" : "○"}</span>
               Nổi bật sự khác biệt
             </button>
           )}

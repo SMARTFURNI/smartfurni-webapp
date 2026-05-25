@@ -1,6 +1,7 @@
 "use client";
 import { ScrollReveal } from "./ScrollReveal";
 import type { SiteTheme, HomepageFeatureItem } from "@/lib/theme-store";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 
 interface Props { theme: SiteTheme; }
 
@@ -10,42 +11,42 @@ const FW_MAP: Record<string, string> = {
 
 const FEATURES = [
   {
-    icon: "🛏️",
+    icon: "adjust",
     title: "Điều chỉnh góc chính xác",
     desc: "Điều khiển góc đầu (0–70°) và góc chân (0–45°) với độ chính xác từng độ. Motor êm ái, không rung lắc.",
   },
   {
-    icon: "✨",
+    icon: "star",
     title: "Preset thông minh",
     desc: "6 chế độ có sẵn: Nằm phẳng, Đọc sách, Xem TV, Ngồi dậy, Chống ngáy, Không trọng lực. Lưu vị trí yêu thích cá nhân.",
   },
   {
-    icon: "💡",
+    icon: "light",
     title: "Đèn LED thông minh",
     desc: "Điều chỉnh màu sắc, độ sáng và hẹn giờ tắt đèn. Hỗ trợ 16 triệu màu với color wheel trực quan.",
   },
   {
-    icon: "🎵",
+    icon: "wave",
     title: "Massage tích hợp",
     desc: "3 mức độ massage: Nhẹ, Vừa, Mạnh. Hẹn giờ massage tự động tắt sau 15–60 phút.",
   },
   {
-    icon: "🌙",
+    icon: "moon",
     title: "Theo dõi giấc ngủ",
     desc: "Phân tích chu kỳ ngủ, điểm chất lượng giấc ngủ, biểu đồ 7 ngày và lời khuyên cải thiện.",
   },
   {
-    icon: "🎙️",
+    icon: "mic",
     title: "Điều khiển giọng nói",
     desc: "Ra lệnh bằng tiếng Việt: 'Nâng đầu lên', 'Bật đèn', 'Về vị trí ngủ'. Phản hồi bằng giọng nói tự nhiên.",
   },
   {
-    icon: "⏰",
+    icon: "clock",
     title: "Hẹn giờ thông minh",
     desc: "Đặt lịch giường tự động điều chỉnh theo giờ. Báo thức nhẹ nhàng bằng cách nâng đầu từ từ.",
   },
   {
-    icon: "📱",
+    icon: "phone",
     title: "Kết nối Bluetooth 5.0",
     desc: "Kết nối ổn định trong phạm vi 10m. Tự động kết nối lại khi mở app. Hỗ trợ iOS và Android.",
   },
@@ -89,7 +90,9 @@ export default function FeaturesSection({ theme }: Props) {
           {items.map((f, i) => (
             <ScrollReveal key={i} variant="fadeUp" delay={100 + i * 70}>
               <div className="group p-6 rounded-2xl bg-[#1A1600] border border-[#2E2800] hover:border-[#C9A84C]/40 hover:bg-[#221D00] transition-all duration-300 h-full">
-                <div className="text-3xl mb-4">{f.icon}</div>
+                <div className="mb-4 flex items-center justify-center w-10 h-10 rounded-xl bg-[#C9A84C]/10 border border-[#C9A84C]/20 group-hover:bg-[#C9A84C]/15 transition-colors">
+                  <SvgIcon name={f.icon} size={20} color="#C9A84C" strokeWidth={1.5} />
+                </div>
                 <h3 className="text-sm font-semibold text-[#F5EDD6] mb-2 group-hover:text-[#C9A84C] transition-colors">
                   {f.title}
                 </h3>

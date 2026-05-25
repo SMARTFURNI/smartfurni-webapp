@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
 import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 
 interface Props {
   theme: SiteTheme;
@@ -33,50 +34,50 @@ const QUESTIONS: Question[] = [
     id: "sleep_position",
     text: "Bạn thường ngủ ở tư thế nào?",
     options: [
-      { label: "Nằm ngửa", value: "back", icon: "🛌" },
-      { label: "Nằm nghiêng", value: "side", icon: "↩️" },
-      { label: "Nằm sấp", value: "stomach", icon: "⬇️" },
-      { label: "Thay đổi liên tục", value: "mixed", icon: "🔄" },
+      { label: "Nằm ngửa", value: "back", icon: "bed" },
+      { label: "Nằm nghiêng", value: "side", icon: "moon" },
+      { label: "Nằm sấp", value: "stomach", icon: "star" },
+      { label: "Thay đổi liên tục", value: "mixed", icon: "refresh" },
     ],
   },
   {
     id: "health_concern",
     text: "Bạn có vấn đề sức khỏe nào liên quan đến giấc ngủ không?",
     options: [
-      { label: "Đau lưng / cột sống", value: "back_pain", icon: "🦴" },
-      { label: "Ngủ ngáy / khó thở", value: "snoring", icon: "😴" },
-      { label: "Mất ngủ / khó vào giấc", value: "insomnia", icon: "🌙" },
-      { label: "Không có vấn đề gì", value: "none", icon: "✅" },
+      { label: "Đau lưng / cột sống", value: "back_pain", icon: "tool" },
+      { label: "Ngủ ngáy / khó thở", value: "snoring", icon: "moon" },
+      { label: "Mất ngủ / khó vào giấc", value: "insomnia", icon: "star" },
+      { label: "Không có vấn đề gì", value: "none", icon: "check" },
     ],
   },
   {
     id: "partner",
     text: "Bạn ngủ cùng ai?",
     options: [
-      { label: "Ngủ một mình", value: "solo", icon: "👤" },
-      { label: "Ngủ cùng bạn đời", value: "partner", icon: "👫" },
-      { label: "Đôi khi có trẻ nhỏ", value: "kids", icon: "👨‍👩‍👧" },
-      { label: "Thay đổi", value: "varies", icon: "🔀" },
+      { label: "Ngủ một mình", value: "solo", icon: "user" },
+      { label: "Ngủ cùng bạn đời", value: "partner", icon: "heart" },
+      { label: "Đôi khi có trẻ nhỏ", value: "kids", icon: "home" },
+      { label: "Thay đổi", value: "varies", icon: "refresh" },
     ],
   },
   {
     id: "tech_level",
     text: "Bạn muốn mức độ công nghệ như thế nào?",
     options: [
-      { label: "Đơn giản, dễ dùng", value: "basic", icon: "🎛️" },
-      { label: "Có tính năng massage", value: "massage", icon: "💆" },
-      { label: "Kết nối app & Smart Home", value: "smart", icon: "📱" },
-      { label: "AI tự động tối ưu giấc ngủ", value: "ai", icon: "🤖" },
+      { label: "Đơn giản, dễ dùng", value: "basic", icon: "settings" },
+      { label: "Có tính năng massage", value: "massage", icon: "zap" },
+      { label: "Kết nối app & Smart Home", value: "smart", icon: "smartphone" },
+      { label: "AI tự động tối ưu giấc ngủ", value: "ai", icon: "cpu" },
     ],
   },
   {
     id: "budget",
     text: "Ngân sách của bạn là bao nhiêu?",
     options: [
-      { label: "Dưới 30 triệu", value: "low", icon: "💰" },
-      { label: "30 – 50 triệu", value: "mid", icon: "💰💰" },
-      { label: "50 – 70 triệu", value: "high", icon: "💰💰💰" },
-      { label: "Trên 70 triệu", value: "premium", icon: "👑" },
+      { label: "Dưới 30 triệu", value: "low", icon: "tag" },
+      { label: "30 – 50 triệu", value: "mid", icon: "tag" },
+      { label: "50 – 70 triệu", value: "high", icon: "diamond" },
+      { label: "Trên 70 triệu", value: "premium", icon: "diamond" },
     ],
   },
 ];
@@ -234,7 +235,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
         {currentStep === "intro" && (
           <ScrollReveal variant="fadeUp" delay={0}>
           <div className="text-center">
-            <div className="text-6xl mb-6">🤖</div>
+            <div className="mb-6 flex justify-center"><SvgIcon name="cpu" size={56} color={primary} strokeWidth={1} /></div>
             <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: primary }}>
               AI Sleep Advisor
             </h1>
@@ -248,12 +249,12 @@ export default function SleepAdvisorClient({ theme }: Props) {
             {/* Features */}
             <StaggerReveal baseDelay={100} step={100} variant="fadeUp" className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
               {[
-                { icon: "⚡", title: "Nhanh chóng", desc: "Chỉ 2 phút để hoàn thành" },
-                { icon: "🎯", title: "Chính xác", desc: "Dựa trên dữ liệu y tế giấc ngủ" },
-                { icon: "🔒", title: "Riêng tư", desc: "Không lưu thông tin cá nhân" },
+                { icon: "zap", title: "Nhanh chóng", desc: "Chỉ 2 phút để hoàn thành" },
+                { icon: "check-circle", title: "Chính xác", desc: "Dựa trên dữ liệu y tế giấc ngủ" },
+                { icon: "lock", title: "Riêng tư", desc: "Không lưu thông tin cá nhân" },
               ].map((f) => (
                 <div key={f.title} style={{ background: surface, border: `1px solid ${border}` }} className="rounded-xl p-5">
-                  <div className="text-3xl mb-2">{f.icon}</div>
+                  <div className="mb-3 flex justify-center"><SvgIcon name={f.icon} size={28} color={primary} strokeWidth={1.5} /></div>
                   <div className="font-semibold mb-1" style={{ color: text }}>{f.title}</div>
                   <div className="text-sm" style={{ color: muted }}>{f.desc}</div>
                 </div>
@@ -306,7 +307,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
                     }}
                     className="flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:opacity-90"
                   >
-                    <span className="text-2xl">{opt.icon}</span>
+                    <SvgIcon name={opt.icon} size={20} color={selectedOption === opt.value ? primary : muted} strokeWidth={1.5} />
                     <span className="font-medium">{opt.label}</span>
                     {selectedOption === opt.value && (
                       <span className="ml-auto" style={{ color: primary }}>✓</span>
@@ -342,7 +343,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
                 }}
                 className="px-8 py-3 rounded-full font-semibold transition-all"
               >
-                {currentQuestion < QUESTIONS.length - 1 ? "Tiếp theo →" : "Xem kết quả 🎯"}
+                {currentQuestion < QUESTIONS.length - 1 ? "Tiếp theo →" : "Xem kết quả →"}
               </button>
             </div>
           </div>
@@ -352,7 +353,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
         {currentStep === "result" && (
           <div>
             <div className="text-center mb-10">
-              <div className="text-5xl mb-4">🎯</div>
+              <div className="mb-4 flex justify-center"><SvgIcon name="check-circle" size={48} color={primary} strokeWidth={1} /></div>
               <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ color: primary }}>
                 Kết quả tư vấn của bạn
               </h2>
@@ -453,7 +454,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
                 style={{ border: `1px solid ${border}`, color: muted }}
                 className="px-6 py-3 rounded-full text-sm hover:opacity-80 transition-opacity"
               >
-                🔄 Làm lại từ đầu
+                ↺ Làm lại từ đầu
               </button>
             </div>
           </div>

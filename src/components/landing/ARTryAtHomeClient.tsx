@@ -1,4 +1,5 @@
 "use client";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import type { Product } from "@/lib/product-store";
@@ -557,9 +558,9 @@ export default function ARTryAtHomeClient({ products, theme }: Props) {
             {/* Feature highlights */}
             <div className="mt-4 grid grid-cols-3 gap-3">
               {[
-                { icon: "📐", title: "Kích thước thực tế", desc: "Hiển thị đúng tỷ lệ 1:1 với phòng của bạn" },
-                { icon: "🎨", title: "Thử màu sắc", desc: "Xem trước 5 màu sắc khác nhau" },
-                { icon: "🔄", title: "Di chuyển tự do", desc: "Kéo để đặt vào vị trí bất kỳ" },
+                { icon: "tool", title: "Kích thước thực tế", desc: "Hiển thị đúng tỷ lệ 1:1 với phòng của bạn" },
+                { icon: "star", title: "Thử màu sắc", desc: "Xem trước 5 màu sắc khác nhau" },
+                { icon: "refresh", title: "Di chuyển tự do", desc: "Kéo để đặt vào vị trí bất kỳ" },
               ].map((feat, i) => (
                 <div
                   key={i}

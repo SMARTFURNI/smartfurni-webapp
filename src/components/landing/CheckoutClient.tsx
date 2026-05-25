@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SiteTheme } from "@/lib/theme-types";
@@ -21,31 +22,31 @@ const PAYMENT_METHODS = [
     id: "cod",
     label: "Thanh toán khi nhận hàng (COD)",
     desc: "Trả tiền mặt khi nhận hàng",
-    icon: "💵",
+    icon: "cash",
   },
   {
     id: "bank_transfer",
     label: "Chuyển khoản ngân hàng",
     desc: "Chuyển khoản trước khi giao hàng",
-    icon: "🏦",
+    icon: "bank",
   },
   {
     id: "momo",
     label: "Ví MoMo",
     desc: "Thanh toán qua ví điện tử MoMo",
-    icon: "📱",
+    icon: "smartphone",
   },
   {
     id: "vnpay",
     label: "VNPay",
     desc: "Thanh toán qua cổng VNPay",
-    icon: "💳",
+    icon: "credit-card",
   },
   {
     id: "installment",
     label: "Trả góp 0% lãi suất",
     desc: "MoMo Pay Later, Kredivo, VPBank BNPL — từ 3–24 tháng",
-    icon: "💸",
+    icon: "calendar",
   },
 ];
 
@@ -421,7 +422,9 @@ export default function CheckoutClient({ theme }: Props) {
                     </div>
 
                     {/* Icon */}
-                    <span className="text-xl">{method.icon}</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: "#C9A84C18", border: "1px solid #C9A84C25" }}>
+                      <SvgIcon name={method.icon} size={16} color="#C9A84C" strokeWidth={1.4} />
+                    </span>
 
                     {/* Label */}
                     <div className="flex-1">

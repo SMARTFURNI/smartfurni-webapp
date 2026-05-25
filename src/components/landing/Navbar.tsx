@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { SiteTheme } from "@/lib/theme-types";
 import { useCart } from "@/lib/cart-context";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 
 interface NavbarProps {
   theme?: SiteTheme;
@@ -30,34 +31,34 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Sản phẩm",
     children: [
-      { label: "Tất cả sản phẩm", href: "/products", icon: "🛏️", desc: "Xem toàn bộ dòng sản phẩm" },
-      { label: "So sánh sản phẩm", href: "/products/compare", icon: "⚖️", desc: "So sánh chi tiết các model" },
-      { label: "Cấu hình 3D", href: "/products/configure/smartfurni-pro", icon: "🎨", desc: "Tùy chỉnh màu sắc & vật liệu" },
+      { label: "Tất cả sản phẩm", href: "/products", icon: "bed", desc: "Xem toàn bộ dòng sản phẩm" },
+      { label: "So sánh sản phẩm", href: "/products/compare", icon: "scale", desc: "So sánh chi tiết các model" },
+      { label: "Cấu hình 3D", href: "/products/configure/smartfurni-pro", icon: "palette", desc: "Tùy chỉnh màu sắc & vật liệu" },
     ],
   },
   {
     label: "Trải nghiệm",
     children: [
-      { label: "AR Thử tại nhà", href: "/ar-try", icon: "📷", desc: "Đặt giường vào phòng thực tế" },
-      { label: "Room Planner", href: "/room-planner", icon: "🏠", desc: "Thiết kế phòng ngủ 2D" },
-      { label: "AI Sleep Advisor", href: "/sleep-advisor", icon: "🤖", desc: "Tư vấn giường theo sức khỏe" },
+      { label: "AR Thử tại nhà", href: "/ar-try", icon: "camera", desc: "Đặt giường vào phòng thực tế" },
+      { label: "Room Planner", href: "/room-planner", icon: "floor-plan", desc: "Thiết kế phòng ngủ 2D" },
+      { label: "AI Sleep Advisor", href: "/sleep-advisor", icon: "ai", desc: "Tư vấn giường theo sức khỏe" },
     ],
   },
   {
     label: "Khám phá",
     children: [
-      { label: "Catalogue B2B", href: "/catalogue", icon: "📋", desc: "Bộ sưu tập sản phẩm dành cho đối tác" },
-      { label: "Video Reviews", href: "/reviews", icon: "🎬", desc: "Đánh giá thực tế từ khách hàng" },
-      { label: "Blog & Tin tức", href: "/blog", icon: "📖", desc: "Kiến thức giấc ngủ & sức khỏe" },
-      { label: "Tính năng nổi bật", href: "/#features", isAnchor: true, icon: "✨", desc: "Công nghệ SmartFurni" },
+      { label: "Catalogue B2B", href: "/catalogue", icon: "book", desc: "Bộ sưu tập sản phẩm dành cho đối tác" },
+      { label: "Video Reviews", href: "/reviews", icon: "play", desc: "Đánh giá thực tế từ khách hàng" },
+      { label: "Blog & Tin tức", href: "/blog", icon: "article", desc: "Kiến thức giấc ngủ & sức khỏe" },
+      { label: "Tính năng nổi bật", href: "/#features", isAnchor: true, icon: "star", desc: "Công nghệ SmartFurni" },
     ],
   },
   {
     label: "Hỗ trợ",
     children: [
-      { label: "Theo dõi đơn hàng", href: "/warranty/track", icon: "📦", desc: "Tra cứu trạng thái & bảo hành" },
-      { label: "Chính sách bảo hành", href: "/warranty", icon: "🛡️", desc: "Bảo hành 5–7 năm toàn diện" },
-      { label: "Liên hệ", href: "/contact", icon: "💬", desc: "Tư vấn & hỗ trợ trực tiếp" },
+      { label: "Theo dõi đơn hàng", href: "/warranty/track", icon: "package", desc: "Tra cứu trạng thái & bảo hành" },
+      { label: "Chính sách bảo hành", href: "/warranty", icon: "shield", desc: "Bảo hành 5–7 năm toàn diện" },
+      { label: "Liên hệ", href: "/contact", icon: "chat", desc: "Tư vấn & hỗ trợ trực tiếp" },
     ],
   },
 ];
@@ -147,7 +148,9 @@ function DropdownMenu({
                   onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}08`; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = active ? `${primary}12` : "transparent"; }}
                 >
-                  <span className="text-base leading-none mt-0.5 flex-shrink-0">{item.icon}</span>
+                  <span className="flex-shrink-0 mt-0.5 flex items-center justify-center w-7 h-7 rounded-lg" style={{ backgroundColor: `${primary}12` }}>
+                    <SvgIcon name={item.icon ?? "star"} size={14} color={primary} strokeWidth={1.5} />
+                  </span>
                   <div className="min-w-0">
                     <p
                       className="text-sm font-medium leading-tight"
@@ -190,12 +193,12 @@ export default function Navbar({ theme }: NavbarProps) {
   const [b2bOpen, setB2bOpen] = useState(false);
 
   const B2B_PARTNERS = [
-    { icon: "🛏️", title: "Showroom Nệm & Nội thất", desc: "Phân phối sỉ, chiết khấu cao, hỗ trợ trưng bày", href: "/lp/doi-tac-showroom-nem", badge: "Phổ biến nhất" },
-    { icon: "🏨", title: "Khách sạn & Resort", desc: "Giải pháp giường thông minh cho phòng VIP, spa", href: "/catalogue", badge: null },
-    { icon: "🏥", title: "Bệnh viện & Phòng khám", desc: "Giường điều chỉnh y tế, hỗ trợ phục hồi chức năng", href: "/catalogue", badge: null },
-    { icon: "🏢", title: "Nhà phân phối nội thất", desc: "Đại lý chính thức, hỗ trợ marketing & bảo hành", href: "/catalogue", badge: null },
-    { icon: "🏗️", title: "Chủ đầu tư & Developer", desc: "Tích hợp giường thông minh vào dự án bất động sản", href: "/catalogue", badge: null },
-    { icon: "✈️", title: "Xuất khẩu & Đối tác quốc tế", desc: "Hợp tác OEM/ODM, xuất khẩu sang thị trường nước ngoài", href: "/contact", badge: null },
+    { icon: "bed", title: "Showroom Nệm & Nội thất", desc: "Phân phối sỉ, chiết khấu cao, hỗ trợ trưng bày", href: "/lp/doi-tac-showroom-nem", badge: "Phổ biến nhất" },
+    { icon: "hotel", title: "Khách sạn & Resort", desc: "Giải pháp giường thông minh cho phòng VIP, spa", href: "/catalogue", badge: null },
+    { icon: "hospital", title: "Bệnh viện & Phòng khám", desc: "Giường điều chỉnh y tế, hỗ trợ phục hồi chức năng", href: "/catalogue", badge: null },
+    { icon: "building", title: "Nhà phân phối nội thất", desc: "Đại lý chính thức, hỗ trợ marketing & bảo hành", href: "/catalogue", badge: null },
+    { icon: "construction", title: "Chủ đầu tư & Developer", desc: "Tích hợp giường thông minh vào dự án bất động sản", href: "/catalogue", badge: null },
+    { icon: "plane", title: "Xuất khẩu & Đối tác quốc tế", desc: "Hợp tác OEM/ODM, xuất khẩu sang thị trường nước ngoài", href: "/contact", badge: null },
   ];
 
   const closeB2b = useCallback(() => setB2bOpen(false), []);
@@ -439,7 +442,9 @@ export default function Navbar({ theme }: NavbarProps) {
                                 backgroundColor: active ? `${primary}10` : "transparent",
                               }}
                             >
-                              <span className="text-base">{item.icon}</span>
+                              <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-md" style={{ backgroundColor: `${primary}12` }}>
+                                <SvgIcon name={item.icon ?? "star"} size={13} color={primary} strokeWidth={1.5} />
+                              </span>
                               <span>{item.label}</span>
                             </div>
                           );
@@ -563,7 +568,9 @@ export default function Navbar({ theme }: NavbarProps) {
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}12`; (e.currentTarget as HTMLElement).style.borderColor = `${primary}50`; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${textColor}06`; (e.currentTarget as HTMLElement).style.borderColor = `${primary}20`; }}
                 >
-                  <span className="text-2xl flex-shrink-0 mt-0.5">{p.icon}</span>
+                  <span className="flex-shrink-0 mt-0.5 flex items-center justify-center w-10 h-10 rounded-xl" style={{ backgroundColor: `${primary}12`, border: `1px solid ${primary}25` }}>
+                    <SvgIcon name={p.icon} size={18} color={primary} strokeWidth={1.4} />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold" style={{ color: textColor }}>{p.title}</span>

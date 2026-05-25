@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ScrollReveal } from "./ScrollReveal";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 
 export default function CatalogueSection() {
   return (
@@ -46,16 +47,18 @@ export default function CatalogueSection() {
         <ScrollReveal variant="fadeUp" delay={100}>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
             {[
-              { icon: "🛏️", title: "Giường Công Thái Học", desc: "Điều khiển điện, nâng đầu/chân, massage tích hợp", count: "6+ mẫu" },
-              { icon: "🛋️", title: "Sofa Giường Đa Năng", desc: "Gấp mở 30 giây, tiết kiệm không gian, đệm cao cấp", count: "4+ mẫu" },
-              { icon: "📋", title: "Bảng Giá & Chiết Khấu", desc: "Giá niêm yết, chiết khấu theo số lượng, chính sách B2B", count: "Cập nhật mới nhất" },
+              { icon: "bed", title: "Giường Công Thái Học", desc: "Điều khiển điện, nâng đầu/chân, massage tích hợp", count: "6+ mẫu" },
+              { icon: "sofa", title: "Sofa Giường Đa Năng", desc: "Gấp mở 30 giây, tiết kiệm không gian, đệm cao cấp", count: "4+ mẫu" },
+              { icon: "file-text", title: "Bảng Giá & Chiết Khấu", desc: "Giá niêm yết, chiết khấu theo số lượng, chính sách B2B", count: "Cập nhật mới nhất" },
             ].map((item, i) => (
               <Link
                 key={i}
                 href="/catalogue"
                 className="group bg-[#111] border border-white/5 rounded-2xl p-6 hover:border-[#C9A84C]/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/50"
               >
-                <div className="text-3xl mb-4">{item.icon}</div>
+                <div className="mb-4 flex items-center justify-center w-12 h-12 rounded-xl" style={{ backgroundColor: "#C9A84C18", border: "1px solid #C9A84C25" }}>
+                  <SvgIcon name={item.icon} size={22} color="#C9A84C" strokeWidth={1.4} />
+                </div>
                 <h3 className="font-bold text-white text-sm mb-2 group-hover:text-[#C9A84C] transition-colors">{item.title}</h3>
                 <p className="text-gray-500 text-xs leading-relaxed mb-3">{item.desc}</p>
                 <div className="inline-flex items-center gap-1 bg-[#C9A84C]/10 border border-[#C9A84C]/20 rounded-full px-2 py-0.5">

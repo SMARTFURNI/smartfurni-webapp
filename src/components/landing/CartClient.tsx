@@ -5,6 +5,7 @@ import type { SiteTheme } from "@/lib/theme-types";
 import { useCart } from "@/lib/cart-context";
 import Footer from "@/components/landing/Footer";
 import { getAllProducts } from "@/lib/product-store";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 
 interface Props {
   theme: SiteTheme;
@@ -354,12 +355,12 @@ export default function CartClient({ theme }: Props) {
             {/* Trust badges */}
             <div className="mt-5 flex flex-col gap-2">
               {[
-                { icon: "🔒", text: "Thanh toán bảo mật 100%" },
-                { icon: "🚚", text: "Giao hàng miễn phí toàn quốc" },
-                { icon: "↩️", text: "Đổi trả trong 30 ngày" },
+                { icon: "lock", text: "Thanh toán bảo mật 100%" },
+                { icon: "truck", text: "Giao hàng miễn phí toàn quốc" },
+                { icon: "refresh", text: "Đổi trả trong 30 ngày" },
               ].map((badge, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="text-sm">{badge.icon}</span>
+                  <SvgIcon name={badge.icon} size={14} color="#C9A84C" strokeWidth={1.5} />
                   <span className="text-xs text-[#F5EDD6]/40">{badge.text}</span>
                 </div>
               ))}

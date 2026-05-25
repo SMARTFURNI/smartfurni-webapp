@@ -1,4 +1,5 @@
 "use client";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 import { useState } from "react";
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
@@ -128,7 +129,7 @@ const MOCK_ORDERS: Record<string, OrderResult> = {
 const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; icon: string; step: number }> = {
   confirmed: { label: "Đã xác nhận", color: "#3B82F6", icon: "✓", step: 1 },
   processing: { label: "Đang xử lý", color: "#F59E0B", icon: "⚙", step: 2 },
-  shipping: { label: "Đang vận chuyển", color: "#8B5CF6", icon: "🚚", step: 3 },
+  shipping: { label: "Đang vận chuyển", color: "#8B5CF6", icon: "truck", step: 3 },
   delivered: { label: "Đã giao hàng", color: "#22C55E", icon: "✓✓", step: 4 },
   cancelled: { label: "Đã hủy", color: "#EF4444", icon: "✕", step: 0 },
 };
@@ -481,7 +482,7 @@ export default function WarrantyTrackerClient({ theme }: Props) {
                         : { backgroundColor: colors.surface, color: `${colors.text}70`, border: `1px solid ${colors.border}` }
                     }
                   >
-                    {tab === "tracking" ? "📦 Lịch sử vận chuyển" : "🛡️ Thông tin bảo hành"}
+                    {tab === "tracking" ? "Lịch sử vận chuyển" : "Thông tin bảo hành"}
                   </button>
                 ))}
               </div>
@@ -567,17 +568,17 @@ export default function WarrantyTrackerClient({ theme }: Props) {
             <StaggerReveal baseDelay={0} step={100} variant="fadeUp" className="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 {
-                  icon: "🛡️",
+                  icon: "shield",
                   title: "Bảo hành 5–7 năm",
                   desc: "Bảo hành toàn diện cho tất cả linh kiện điện tử và cơ khí",
                 },
                 {
-                  icon: "🚚",
+                  icon: "truck",
                   title: "Giao hàng toàn quốc",
                   desc: "Miễn phí giao hàng và lắp đặt tận nhà trong 2 giờ",
                 },
                 {
-                  icon: "↩️",
+                  icon: "refresh",
                   title: "Đổi trả 30 ngày",
                   desc: "Không hài lòng? Trả lại trong 30 ngày, hoàn tiền 100%",
                 },

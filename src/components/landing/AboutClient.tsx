@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
 import Footer from "@/components/landing/Footer";
 import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 
 const stats = [
   { value: "2020", label: "Năm thành lập" },
@@ -14,22 +15,22 @@ const stats = [
 
 const values = [
   {
-    icon: "🎯",
+    icon: "adjust",
     title: "Chính xác",
     desc: "Mỗi chi tiết được thiết kế với độ chính xác cao nhất — từ góc điều chỉnh 1° đến độ êm ái của motor.",
   },
   {
-    icon: "🌿",
+    icon: "shield",
     title: "Bền vững",
     desc: "Sử dụng vật liệu thân thiện môi trường, quy trình sản xuất tiết kiệm năng lượng và bao bì tái chế.",
   },
   {
-    icon: "🤝",
+    icon: "handshake",
     title: "Tin cậy",
     desc: "Bảo hành 5 năm toàn diện, hỗ trợ kỹ thuật 24/7 và cam kết đổi trả trong 30 ngày.",
   },
   {
-    icon: "💡",
+    icon: "light",
     title: "Đổi mới",
     desc: "Liên tục cập nhật tính năng qua OTA, tích hợp AI phân tích giấc ngủ và kết nối hệ sinh thái smart home.",
   },
@@ -138,7 +139,9 @@ export default function AboutClient({ theme }: Props) {
           <StaggerReveal baseDelay={100} step={100} variant="fadeUp" className="grid grid-cols-2 gap-3 sm:gap-4">
             {values.map((v) => (
               <div key={v.title} className="bg-[#1A1600] border border-[#2E2800] rounded-2xl p-4 sm:p-5 hover:border-[#C9A84C]/40 transition-colors group">
-                <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">{v.icon}</div>
+                <div className="mb-3 flex items-center justify-center w-10 h-10 rounded-xl" style={{ backgroundColor: "#C9A84C18", border: "1px solid #C9A84C30" }}>
+                  <SvgIcon name={v.icon} size={20} color="#C9A84C" strokeWidth={1.4} />
+                </div>
                 {/* Card heading — font-semibold giống trang chủ */}
                 <h3 className="text-[#F5EDD6] font-semibold mb-1 sm:mb-2 text-sm group-hover:text-[#C9A84C] transition-colors">{v.title}</h3>
                 {/* Card body — text-xs mờ giống trang chủ */}

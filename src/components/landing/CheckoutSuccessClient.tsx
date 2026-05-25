@@ -1,4 +1,5 @@
 "use client";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -203,25 +204,25 @@ export default function CheckoutSuccessClient({ theme }: Props) {
               step: "1",
               title: "Xác nhận đơn hàng",
               desc: "Nhân viên SmartFurni sẽ gọi điện xác nhận trong vòng 2 giờ làm việc",
-              icon: "📞",
+              icon: "phone-call",
             },
             {
               step: "2",
               title: "Chuẩn bị hàng",
               desc: "Đơn hàng sẽ được đóng gói và chuẩn bị trong 1-2 ngày làm việc",
-              icon: "📦",
+              icon: "package",
             },
             {
               step: "3",
               title: "Giao hàng",
               desc: "Hàng được giao đến địa chỉ của bạn trong 3-7 ngày làm việc",
-              icon: "🚚",
+              icon: "truck",
             },
             {
               step: "4",
               title: "Lắp đặt miễn phí",
               desc: "Kỹ thuật viên SmartFurni sẽ lắp đặt và hướng dẫn sử dụng tại nhà",
-              icon: "🔧",
+              icon: "tool",
             },
           ].map((item) => (
             <div key={item.step} className="flex items-start gap-3">
@@ -229,7 +230,7 @@ export default function CheckoutSuccessClient({ theme }: Props) {
                 style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm"
               >
-                {item.icon}
+                <SvgIcon name={item.icon} size={16} color={colors.primary} strokeWidth={1.5} />
               </div>
               <div>
                 <p className="text-sm font-semibold text-[#F5EDD6]">{item.title}</p>

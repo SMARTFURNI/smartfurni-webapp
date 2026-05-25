@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SvgIcon } from "@/components/ui/SvgIcon";
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
 import Footer from "@/components/landing/Footer";
@@ -9,10 +10,10 @@ import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 // showrooms is now loaded from theme.footer.showrooms inside the component
 
 const contactMethods = [
-  { icon: "📞", label: "Hotline", value: "1800 1234 56", sub: "Miễn phí · 8:00 – 22:00" },
-  { icon: "✉️", label: "Email", value: "hello@smartfurni.vn", sub: "Phản hồi trong 2 giờ" },
-  { icon: "💬", label: "Zalo OA", value: "SmartFurni Official", sub: "Phản hồi tức thì" },
-  { icon: "📘", label: "Facebook", value: "fb.com/smartfurni", sub: "Cộng đồng 50K thành viên" },
+  { icon: "phone-call", label: "Hotline", value: "1800 1234 56", sub: "Miễn phí · 8:00 – 22:00" },
+  { icon: "mail", label: "Email", value: "hello@smartfurni.vn", sub: "Phản hồi trong 2 giờ" },
+  { icon: "chat", label: "Zalo OA", value: "SmartFurni Official", sub: "Phản hồi tức thì" },
+  { icon: "globe", label: "Facebook", value: "fb.com/smartfurni", sub: "Cộng đồng 50K thành viên" },
 ];
 
 interface Props {
@@ -93,16 +94,18 @@ export default function ContactClient({ theme }: Props) {
       <section className="py-10 sm:py-12 px-4 sm:px-6">
         <StaggerReveal baseDelay={0} step={100} variant="fadeUp" className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { icon: "📞", label: "Hotline", value: theme.pageContact.phone, sub: theme.pageContact.workingHours },
-            { icon: "✉️", label: "Email", value: theme.pageContact.email, sub: "Phản hồi trong 2 giờ" },
-            { icon: "💬", label: "Zalo OA", value: "SmartFurni Official", sub: "Phản hồi tức thì" },
-            { icon: "📌", label: "Showroom", value: theme.pageContact.address, sub: theme.pageContact.workingHours },
+            { icon: "phone-call", label: "Hotline", value: theme.pageContact.phone, sub: theme.pageContact.workingHours },
+            { icon: "mail", label: "Email", value: theme.pageContact.email, sub: "Phản hồi trong 2 giờ" },
+            { icon: "chat", label: "Zalo OA", value: "SmartFurni Official", sub: "Phản hồi tức thì" },
+            { icon: "map-pin", label: "Showroom", value: theme.pageContact.address, sub: theme.pageContact.workingHours },
           ].map((c) => (
             <div
               key={c.label}
               className="bg-[#1A1600] border border-[#2E2800] rounded-2xl p-4 sm:p-5 text-center hover:border-[#C9A84C]/40 transition-colors group"
             >
-              <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">{c.icon}</div>
+              <div className="mb-2 sm:mb-3 flex items-center justify-center w-10 h-10 rounded-xl mx-auto" style={{ backgroundColor: "#C9A84C18", border: "1px solid #C9A84C25" }}>
+                <SvgIcon name={c.icon} size={18} color="#C9A84C" strokeWidth={1.4} />
+              </div>
               {/* Label — giống section label trang chủ */}
               <p className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase mb-1">{c.label}</p>
               {/* Value — font-semibold giống card heading trang chủ */}
@@ -268,12 +271,12 @@ export default function ContactClient({ theme }: Props) {
                           {s.badge}
                         </span>
                       </div>
-                      <p className="text-sm text-[#F5EDD6]/50">📍 {s.address}</p>
+                      <p className="text-sm text-[#F5EDD6]/50 flex items-center gap-1.5"><SvgIcon name="map-pin" size={13} color="#C9A84C" strokeWidth={1.5} /> {s.address}</p>
                     </div>
                   </div>
                   <div className="space-y-1 mb-4">
-                    <p className="text-sm text-[#F5EDD6]/50">📞 {s.phone}</p>
-                    <p className="text-sm text-[#F5EDD6]/50">🕐 {s.hours}</p>
+                    <p className="text-sm text-[#F5EDD6]/50 flex items-center gap-1.5"><SvgIcon name="phone-call" size={13} color="#C9A84C" strokeWidth={1.5} /> {s.phone}</p>
+                    <p className="text-sm text-[#F5EDD6]/50 flex items-center gap-1.5"><SvgIcon name="clock" size={13} color="#C9A84C" strokeWidth={1.5} /> {s.hours}</p>
                   </div>
                   <a
                     href={s.mapUrl}
