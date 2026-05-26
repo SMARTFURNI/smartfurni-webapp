@@ -79,6 +79,8 @@ export async function GET(req: NextRequest) {
       console.error("lead-counts error:", e);
       return NextResponse.json({ counts: {} });
     }
+  }
+
   // Lấy lượt truy cập cho các LP slugs (dùng analytics_events table)
   if (action === "lp-views") {
     const ok = await checkAuth();

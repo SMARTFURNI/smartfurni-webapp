@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/admin-auth";
-import { db } from "@/lib/db";
+import { query } from "@/lib/db";
 import Link from "next/link";
 
 export default async function AdminLpLeadsPage({
@@ -30,17 +30,15 @@ export default async function AdminLpLeadsPage({
   let convertedCount = 0;
 
   try {
-    const result = await db.query<LeadRow>(
+    leads = await query<LeadRow>(
       `SELECT id, full_name, phone, email, customer_role, message, ad_name, campaign_name, raw_data, created_at, source
        FROM crm_raw_leads
        WHERE campaign_name ILIKE '%showroom%' OR campaign_name ILIKE '%b2b%'
           OR form_name ILIKE '%landing%' OR ad_name ILIKE '%LP%'
           OR source IN ('facebook_lead', 'tiktok_lead', 'other')
        ORDER BY created_at DESC
-       LIMIT 500`,
-      []
-    );
-    leads = result.rows ?? [];
+       LIMIT 500`
+    ) ?? [];
     totalCount = leads.length;
     const today = new Date().toDateString();
     newToday = leads.filter((l) => new Date(l.created_at).toDateString() === today).length;

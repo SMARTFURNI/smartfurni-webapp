@@ -1,5 +1,5 @@
 import { requireCrmAccess } from "@/lib/admin-auth";
-import { db } from "@/lib/db";
+import { query } from "@/lib/db";
 import Link from "next/link";
 
 export default async function CrmLandingPagesPage() {
@@ -22,16 +22,14 @@ export default async function CrmLandingPagesPage() {
   let convertedCount = 0;
 
   try {
-    const result = await db.query<LeadRow>(
+    leads = await query<LeadRow>(
       `SELECT id, full_name, phone, raw_data, created_at, source, customer_role
        FROM crm_raw_leads
        WHERE campaign_name ILIKE '%showroom%' OR campaign_name ILIKE '%b2b%'
           OR form_name ILIKE '%landing%' OR ad_name ILIKE '%LP%'
        ORDER BY created_at DESC
-       LIMIT 200`,
-      []
-    );
-    leads = result.rows ?? [];
+       LIMIT 200`
+    ) ?? [];
     totalCount = leads.length;
     const today = new Date().toDateString();
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
