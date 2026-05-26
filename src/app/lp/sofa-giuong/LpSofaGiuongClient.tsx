@@ -643,7 +643,7 @@ function FaqAccordion({ E: EditFn }: { E: EFn }) {
 }
 
 // ─── Lead Form ────────────────────────────────────────────────────────────────
-function LeadForm({ submitLabel, prefilledConfig }: { submitLabel?: string; prefilledConfig?: string }) {
+function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = leadSlug }: { submitLabel?: string; prefilledConfig?: string; slug?: string }) {
   const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -668,7 +668,7 @@ function LeadForm({ submitLabel, prefilledConfig }: { submitLabel?: string; pref
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          landingPageSlug: EFFECTIVE_SLUG,
+          landingPageSlug: leadSlug,
           name: form.name,
           phone: form.phone,
           email: "",
@@ -744,13 +744,14 @@ function LeadForm({ submitLabel, prefilledConfig }: { submitLabel?: string; pref
 
 
 // ─── QuizOrderForm: Form đặt hàng trong popup ─────────────────────────────────
-function QuizOrderForm({ cfg, product, total, onBack, onComplete, content, selectedSlotKey, effectiveKey }: {
+function QuizOrderForm({ cfg, product, total, onBack, onComplete, content, selectedSlotKey, effectiveKey, slug: orderSlug = orderSlug }: {
   cfg: ConfigState; product: CrmProduct; total: number;
   onBack: () => void;
   onComplete: (cfg: ConfigState, product: CrmProduct, total: number) => void;
   content?: Record<string, string>;
   selectedSlotKey?: string | null;
   effectiveKey?: string;
+  slug?: string;
 }) {
   const [form, setForm] = React.useState({ name: "", phone: "", note: "" });
   const [loading, setLoading] = React.useState(false);
@@ -889,7 +890,7 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete, content, selec
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          landingPageSlug: EFFECTIVE_SLUG,
+          landingPageSlug: orderSlug,
           name: form.name,
           phone: form.phone,
           email: "",
@@ -1172,7 +1173,7 @@ function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url
   const [cropSrc, setCropSrc] = React.useState<string | null>(null);
   const saveUrl = async (url: string) => {
     if (!url.trim()) return;
-    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: imgKey, content: url.trim() }) });
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: imgKey, content: url.trim() }) });
     onSave(url.trim());
     setShowUrlInput(false); setUrlVal("");
   };
@@ -1224,7 +1225,7 @@ function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url
               if (res.ok) {
                 const data = await res.json();
                 if (data.url) {
-                  await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: imgKey, content: data.url }) });
+                  await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: imgKey, content: data.url }) });
                   onSave(data.url);
                 } else { alert("Upload thất bại: " + (data.error || "Lỗi")); }
               } else { const err = await res.json().catch(() => ({})); alert("Upload thất bại: " + (err.error || res.status)); }
@@ -1241,7 +1242,7 @@ function GalleryImageEditor({ productId, onSave }: { productId: string; onSave: 
 
   const saveUrl = async (url: string) => {
     if (!url.trim()) return;
-    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `gallery_product_img_${productId}`, content: url.trim() }) });
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `gallery_product_img_${productId}`, content: url.trim() }) });
     onSave(url.trim());
     setShowUrlInput(false); setUrlVal("");
   };
@@ -1276,7 +1277,7 @@ function GalleryImageEditor({ productId, onSave }: { productId: string; onSave: 
             if (res.ok) {
               const data = await res.json();
               if (data.url) {
-                await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `gallery_product_img_${productId}`, content: data.url }) });
+                await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `gallery_product_img_${productId}`, content: data.url }) });
                 onSave(data.url);
               } else { alert("Upload thất bại: " + (data.error || "Lỗi")); }
             } else { const err = await res.json().catch(() => ({})); alert("Upload thất bại: " + (err.error || res.status)); }
@@ -1544,7 +1545,7 @@ function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: 
   const [urlVal, setUrlVal] = React.useState("");
   const saveUrl = async (url: string) => {
     if (!url.trim()) return;
-    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `quiz_product_img_${productId}`, content: url.trim() }) });
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_img_${productId}`, content: url.trim() }) });
     onSave(url.trim());
     setShowUrlInput(false); setUrlVal("");
   };
@@ -1577,7 +1578,7 @@ function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: 
             if (res.ok) {
               const data = await res.json();
               if (data.url) {
-                await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `quiz_product_img_${productId}`, content: data.url }) });
+                await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey: `quiz_product_img_${productId}`, content: data.url }) });
                 onSave(data.url);
               } else { alert("Upload thất bại: " + (data.error || "Lỗi")); }
             } else { const err = await res.json().catch(() => ({})); alert("Upload thất bại: " + (err.error || res.status)); }
@@ -1594,7 +1595,7 @@ function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: 
 
 type FrameSlot = { slotId: string; productId: string | null };
 type FrameGroup = { id: string; label: string; productIds: string[]; slots?: FrameSlot[] };
-function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false, content = {}, onContentSaved }: {
+function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEditor = false, content = {}, onContentSaved, slug: quizSlug = LP_SLUG }: {
   products: CrmProduct[];
   initialProductId?: string | null;
   onClose: () => void;
@@ -1602,6 +1603,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   isEditor?: boolean;
   content?: Record<string, string>;
   onContentSaved?: (key: string, val: string) => void;
+  slug?: string;
 }) {
   const [step, setStep] = useState<QuizStep>(initialProductId ? "size" : "product");
   const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, sizeIdx: null, hoc: null, doDay: null, aoNem: null });
@@ -1654,7 +1656,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   async function saveFrameGroups(groups: FrameGroup[]) {
     setFrameGroups(groups);
     try {
-      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: "quiz_frame_groups", content: JSON.stringify(groups) }) });
+      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: quizSlug, blockKey: "quiz_frame_groups", content: JSON.stringify(groups) }) });
       onContentSaved?.("quiz_frame_groups", JSON.stringify(groups));
     } catch {}
   }
@@ -1695,7 +1697,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
       const keysToDelete = [`slot_img_${k}`, `slot_name_${k}`, `slot_price_${k}`, `slot_sku_${k}`];
       for (const blockKey of keysToDelete) {
         try {
-          await fetch(`/api/admin/lp-content?slug=${EFFECTIVE_SLUG}&blockKey=${encodeURIComponent(blockKey)}`, { method: "DELETE" });
+          await fetch(`/api/admin/lp-content?slug=${quizSlug}&blockKey=${encodeURIComponent(blockKey)}`, { method: "DELETE" });
         } catch {}
         setQuizProductOverrides(prev => { const n = { ...prev }; delete n[blockKey]; return n; });
         setLocalContent(prev => { const n = { ...prev }; delete n[blockKey]; return n; });
@@ -1713,7 +1715,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   async function saveTabLabel(stepKey: string, val: string) {
     if (!val.trim()) return;
     try {
-      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `quiz_step_label_${stepKey}`, content: val.trim() }) });
+      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: quizSlug, blockKey: `quiz_step_label_${stepKey}`, content: val.trim() }) });
       setLocalContent(prev => ({ ...prev, [`quiz_step_label_${stepKey}`]: val.trim() }));
       onContentSaved?.(`quiz_step_label_${stepKey}`, val.trim());
     } catch {}
@@ -1722,7 +1724,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   async function saveStepText(stepKey: string, field: string, val: string) {
     if (!val.trim()) return;
     try {
-      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `quiz_step_${field}_${stepKey}`, content: val.trim() }) });
+      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: quizSlug, blockKey: `quiz_step_${field}_${stepKey}`, content: val.trim() }) });
       setLocalContent(prev => ({ ...prev, [`quiz_step_${field}_${stepKey}`]: val.trim() }));
       onContentSaved?.(`quiz_step_${field}_${stepKey}`, val.trim());
     } catch {}
@@ -1731,7 +1733,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   async function saveQuizProductField(productId: string, field: string, val: string) {
     if (!val.trim()) return;
     try {
-      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `quiz_product_${field}_${productId}`, content: val.trim() }) });
+      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: quizSlug, blockKey: `quiz_product_${field}_${productId}`, content: val.trim() }) });
       setQuizProductOverrides(prev => ({ ...prev, [`quiz_product_${field}_${productId}`]: val.trim() }));
       onContentSaved?.(`quiz_product_${field}_${productId}`, val.trim());
     } catch {}
@@ -1840,7 +1842,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         async function saveSlotField(field: string, val: string) {
           if (!val.trim()) return;
           const key = `slot_${field}_${slotKey}`;
-          await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: key, content: val.trim() }) });
+          await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: quizSlug, blockKey: key, content: val.trim() }) });
           setQuizProductOverrides(prev => ({ ...prev, [key]: val.trim() }));
           onContentSaved?.(key, val.trim());
         }
@@ -1890,7 +1892,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                     currentUrl={displayImgUrl}
                     onSave={url => {
                       const key = `slot_img_${slotKey}`;
-                      fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: key, content: url }) });
+                      fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: quizSlug, blockKey: key, content: url }) });
                       setQuizProductOverrides(prev => ({ ...prev, [key]: url }));
                       onContentSaved?.(key, url);
                     }}
@@ -2023,7 +2025,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                 const savedPriceStr = localContent[`quiz_opt_${sizeKey}_price`] || content[`quiz_opt_${sizeKey}_price`];
                 const savedPrice = savedPriceStr !== undefined ? (Number(savedPriceStr) || 0) : s.price;
                 return (
-              <QuizEditableOption key={s.size} icon="ruler" label={savedLabel} desc={sizeDesc} price={savedPrice} selected={cfg.size === savedLabel} onClick={() => { setCfg(c => ({ ...c, size: savedLabel, sizeIdx: idx })); setTimeout(() => goNext(), 200); }}  isEditor={isEditor} optionKey={sizeKey} slug={EFFECTIVE_SLUG} imgUrl={imgUrl} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+              <QuizEditableOption key={s.size} icon="ruler" label={savedLabel} desc={sizeDesc} price={savedPrice} selected={cfg.size === savedLabel} onClick={() => { setCfg(c => ({ ...c, size: savedLabel, sizeIdx: idx })); setTimeout(() => goNext(), 200); }}  isEditor={isEditor} optionKey={sizeKey} slug={quizSlug} imgUrl={imgUrl} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
                 );
               });
             })()}
@@ -2047,8 +2049,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             </>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="box" label={(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_label`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_label`]) || "Có hộc để đồ"} desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={Number(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || "700000") || 700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey={`${effectiveKey}_có_hộc_để_đồ`} slug={EFFECTIVE_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_có_hộc_để_đồ`] || content[`quiz_opt_img_${effectiveKey}_có_hộc_để_đồ`]) || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
-            <QuizEditableOption icon="minus_circle" label={(localContent[`quiz_opt_${effectiveKey}_không_hộc_label`] || content[`quiz_opt_${effectiveKey}_không_hộc_label`]) || "Không hộc"} desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={Number(localContent[`quiz_opt_${effectiveKey}_không_hộc_price`] || content[`quiz_opt_${effectiveKey}_không_hộc_price`] || "0") || 0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey={`${effectiveKey}_không_hộc`} slug={EFFECTIVE_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_không_hộc`] || content[`quiz_opt_img_${effectiveKey}_không_hộc`]) || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+            <QuizEditableOption icon="box" label={(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_label`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_label`]) || "Có hộc để đồ"} desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={Number(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || "700000") || 700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey={`${effectiveKey}_có_hộc_để_đồ`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_có_hộc_để_đồ`] || content[`quiz_opt_img_${effectiveKey}_có_hộc_để_đồ`]) || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+            <QuizEditableOption icon="minus_circle" label={(localContent[`quiz_opt_${effectiveKey}_không_hộc_label`] || content[`quiz_opt_${effectiveKey}_không_hộc_label`]) || "Không hộc"} desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={Number(localContent[`quiz_opt_${effectiveKey}_không_hộc_price`] || content[`quiz_opt_${effectiveKey}_không_hộc_price`] || "0") || 0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey={`${effectiveKey}_không_hộc`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_không_hộc`] || content[`quiz_opt_img_${effectiveKey}_không_hộc`]) || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
           </div>
         </div>
       );
@@ -2069,8 +2071,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             </>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="layers" label={(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_label`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_label`]) || "Nệm 7cm"} desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={Number(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || "0") || 0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey={`${effectiveKey}_nệm_7cm`} slug={EFFECTIVE_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_nệm_7cm`] || content[`quiz_opt_img_${effectiveKey}_nệm_7cm`]) || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
-            <QuizEditableOption icon="bed" label={(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_label`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_label`]) || "Nệm 10cm"} desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={Number(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || "800000") || 800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey={`${effectiveKey}_nệm_10cm`} slug={EFFECTIVE_SLUG} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_nệm_10cm`] || content[`quiz_opt_img_${effectiveKey}_nệm_10cm`]) || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+            <QuizEditableOption icon="layers" label={(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_label`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_label`]) || "Nệm 7cm"} desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={Number(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || "0") || 0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey={`${effectiveKey}_nệm_7cm`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_nệm_7cm`] || content[`quiz_opt_img_${effectiveKey}_nệm_7cm`]) || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+            <QuizEditableOption icon="bed" label={(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_label`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_label`]) || "Nệm 10cm"} desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={Number(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || "800000") || 800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey={`${effectiveKey}_nệm_10cm`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_nệm_10cm`] || content[`quiz_opt_img_${effectiveKey}_nệm_10cm`]) || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
           </div>
         </div>
       );
@@ -2103,7 +2105,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                 onClick={() => selectAndAdvance("aoNem", opt.key)}
                 isEditor={isEditor}
                 optionKey={`${effectiveKey}_${opt.key}`}
-                slug={EFFECTIVE_SLUG}
+                slug={quizSlug}
                 imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_${opt.key}`] || content[`quiz_opt_img_${effectiveKey}_${opt.key}`]) || opt.defaultImg}
                 onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }}
                 onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }}
@@ -2178,7 +2180,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
       );
     }
     if (step === "order_form" && effectiveProduct) {
-      return <QuizOrderForm cfg={cfg} product={effectiveProduct} total={total} onBack={goPrev} onComplete={onComplete} content={localContent || content} selectedSlotKey={selectedSlotKey} effectiveKey={effectiveKey} />;
+      return <QuizOrderForm cfg={cfg} product={effectiveProduct} total={total} onBack={goPrev} onComplete={onComplete} content={localContent || content} selectedSlotKey={selectedSlotKey} effectiveKey={effectiveKey} slug={quizSlug} />;
     }
     return null;
   }
@@ -2250,7 +2252,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                         if (res.ok) {
                           const data = await res.json();
                           if (data.url) {
-                            await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `quiz_product_img_${effectiveProduct.id}`, content: data.url }) });
+                            await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: quizSlug, blockKey: `quiz_product_img_${effectiveProduct.id}`, content: data.url }) });
                             window.location.reload();
                           } else {
                             alert("Upload thất bại: " + (data.error || "Lỗi không xác định"));
@@ -2325,10 +2327,11 @@ const DETAIL_ITEMS_DEFAULT = [
   { key: "detail_7", label: "Da PU cao cap", desc: "Sang trong, mem mai, de lau chui" },
 ];
 
-function DetailLabelEditor({ itemKey, label, desc, isEditor, editMode, setContent }: {
+function DetailLabelEditor({ itemKey, label, desc, isEditor, editMode, setContent, slug: detailSlug = LP_SLUG }: {
   itemKey: string; label: string; desc: string;
   isEditor: boolean; editMode: boolean;
   setContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  slug?: string;
 }) {
   const [editingLabel, setEditingLabel] = React.useState(false);
   const [editingDesc, setEditingDesc] = React.useState(false);
@@ -2339,13 +2342,13 @@ function DetailLabelEditor({ itemKey, label, desc, isEditor, editMode, setConten
 
   const saveLabel = async (v: string) => {
     const bk = `details_gallery_label_${itemKey}`;
-    await fetch("/api/admin/lp-content", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: bk, content: v }) });
+    await fetch("/api/admin/lp-content", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: detailSlug, blockKey: bk, content: v }) });
     setContent(c => ({ ...c, [bk]: v }));
     setEditingLabel(false);
   };
   const saveDesc = async (v: string) => {
     const bk = `details_gallery_desc_${itemKey}`;
-    await fetch("/api/admin/lp-content", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: bk, content: v }) });
+    await fetch("/api/admin/lp-content", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: detailSlug, blockKey: bk, content: v }) });
     setContent(c => ({ ...c, [bk]: v }));
     setEditingDesc(false);
   };
@@ -2389,11 +2392,12 @@ function DetailLabelEditor({ itemKey, label, desc, isEditor, editMode, setConten
   );
 }
 
-function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
+function DetailsGalleryScroll({ content, isEditor, editMode, setContent, slug: gallerySlug = LP_SLUG }: {
   content: Record<string, string>;
   isEditor: boolean;
   editMode: boolean;
   setContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  slug?: string;
 }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const trackRef = React.useRef<HTMLDivElement>(null);
@@ -2526,6 +2530,7 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent }: {
                   isEditor={isEditor}
                   editMode={editMode}
                   setContent={setContent}
+                  slug={gallerySlug}
                 />
               ) : (
                 <div style={{ marginTop: 10, paddingRight: 4 }}>
@@ -3046,7 +3051,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               </p>
             </div>
           </FadeIn>
-          <DetailsGalleryScroll content={content} isEditor={isEditor} editMode={editMode} setContent={setContent} />
+          <DetailsGalleryScroll content={content} isEditor={isEditor} editMode={editMode} setContent={setContent} slug={EFFECTIVE_SLUG} />
         </div>
       </section>
       {/* ── FEATURES / BENEFITS ── */}
@@ -3393,7 +3398,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             )}
           </FadeIn>
           <FadeIn delay={100}>
-            <LeadForm submitLabel="Đặt Hàng Ngay →" prefilledConfig={orderConfig || undefined} />
+            <LeadForm submitLabel="Đặt Hàng Ngay →" prefilledConfig={orderConfig || undefined} slug={EFFECTIVE_SLUG} />
           </FadeIn>
         </div>
       </section>
@@ -3606,6 +3611,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           isEditor={isEditor && editMode}
           content={content}
           onContentSaved={(k, v) => setContent(c => ({ ...c, [k]: v }))}
+          slug={EFFECTIVE_SLUG}
         />
       )}
 
