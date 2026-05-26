@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Product, ProductCategory } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
 import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
+import { useCart } from "@/lib/cart-context";
 
 interface Props {
   products: Product[];
@@ -56,9 +57,11 @@ interface CardProps {
   colors: SiteTheme["colors"];
   compareList: string[];
   onToggleCompare: (e: React.MouseEvent, id: string) => void;
+  onAddToCart: (e: React.MouseEvent, product: Product) => void;
+  addedToCartId: string | null;
 }
 
-function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, compareList, onToggleCompare }: CardProps) {
+function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, compareList, onToggleCompare, onAddToCart, addedToCartId }: CardProps) {
   const allImages = p.images && p.images.length > 0
     ? p.images
     : p.coverImage ? [p.coverImage] : [];
@@ -234,14 +237,33 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
         </div>
 
         {/* CTA */}
-        <div
-          style={{
-            background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-            color: colors.background,
-          }}
-          className="w-full py-2 rounded-lg text-xs font-semibold text-center mt-1 group-hover:opacity-90 transition-opacity"
-        >
-          {isComingSoon ? "Đặt trước" : isOutOfStock ? "Hết hàng" : "Xem chi tiết"}
+        <div className="flex gap-1.5 mt-1">
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+              color: colors.background,
+            }}
+            className="flex-1 py-2 rounded-lg text-xs font-semibold text-center group-hover:opacity-90 transition-opacity"
+          >
+            {isComingSoon ? "Đặt trước" : isOutOfStock ? "Hết hàng" : "Xem chi tiết"}
+          </div>
+          {!isComingSoon && !isOutOfStock && (
+            <button
+              onClick={(e) => onAddToCart(e, p)}
+              style={addedToCartId === p.id
+                ? { backgroundColor: `${colors.success}20`, color: colors.success, borderColor: `${colors.success}40` }
+                : { backgroundColor: `${colors.primary}15`, color: colors.primary, borderColor: `${colors.primary}30` }
+              }
+              className="w-9 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 transition-all duration-200"
+              title="Thêm vào giỏ hàng"
+            >
+              {addedToCartId === p.id ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>
+              )}
+            </button>
+          )}
         </div>
         {p.category !== "accessory" && (
           <button
@@ -263,11 +285,13 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ProductsListClient({ products, theme }: Props) {
   const { colors, layout } = theme;
+  const { addItem } = useCart();
   const [activeCategory, setActiveCategory] = useState<ProductCategory | "all">("all");
   const [sortKey, setSortKey] = useState("default");
   const [search, setSearch] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
   const [compareList, setCompareList] = useState<string[]>([]);
+  const [addedToCartId, setAddedToCartId] = useState<string | null>(null);
 
   const toggleCompare = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -275,6 +299,27 @@ export default function ProductsListClient({ products, theme }: Props) {
     setCompareList((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 4 ? [...prev, id] : prev
     );
+  };
+
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const defaultVariant = product.variants[0];
+    if (!defaultVariant) return;
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      slug: product.slug,
+      variantId: defaultVariant.id,
+      variantName: defaultVariant.name,
+      sku: defaultVariant.sku,
+      price: defaultVariant.price ?? product.price,
+      originalPrice: product.originalPrice,
+      quantity: 1,
+      coverImage: product.coverImage,
+    });
+    setAddedToCartId(product.id);
+    setTimeout(() => setAddedToCartId(null), 1500);
   };
 
   useEffect(() => {
@@ -401,6 +446,8 @@ export default function ProductsListClient({ products, theme }: Props) {
                 colors={colors}
                 compareList={compareList}
                 onToggleCompare={toggleCompare}
+                onAddToCart={handleAddToCart}
+                addedToCartId={addedToCartId}
               />
             );
           })}

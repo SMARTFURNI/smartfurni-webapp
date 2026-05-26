@@ -731,7 +731,7 @@ export default function CompareClient({ products, theme }: Props) {
 
         {/* Help text */}
         <p className="text-center text-xs text-[#F5EDD6]/30 mt-6">
-          Cần tư vấn thêm? Gọi <span className="text-[#C9A84C]">1800 1234 56</span> (miễn phí) hoặc{" "}
+          Cần tư vấn thêm? Gọi <span className="text-[#C9A84C]">028.7122.0818</span> (miễn phí) hoặc{" "}
           <Link href="/contact" className="text-[#C9A84C] hover:opacity-70 transition-opacity">liên hệ chúng tôi</Link>.
         </p>
       </div>

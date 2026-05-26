@@ -238,7 +238,7 @@ export default function AboutClient({ theme }: Props) {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/contact"
+                href="/products"
                 className="px-8 py-3 rounded-full bg-gradient-to-r from-[#E2C97E] to-[#9A7A2E] text-[#0D0B00] font-semibold text-sm hover:opacity-90 transition-opacity"
               >
                 {theme.pageAbout.ctaButton}

@@ -148,7 +148,7 @@ App sẽ hướng dẫn bạn:
 |--------|-----------|
 | Không tìm thấy thiết bị | Tắt/bật Bluetooth, đứng gần giường hơn (<3m) |
 | Kết nối bị ngắt | Kiểm tra nguồn điện giường, khởi động lại app |
-| Đèn LED đỏ | Lỗi motor — liên hệ hotline 1800 1234 56 |
+| Đèn LED đỏ | Lỗi motor — liên hệ hotline 028.7122.0818 |
 
 ## Kết nối thành công rồi, giờ làm gì?
 
@@ -393,7 +393,7 @@ Giường SmartFurni có tuổi thọ thiết kế **15 năm** với bảo trì 
 
 ## Khi nào cần gọi kỹ thuật viên?
 
-Liên hệ hotline **1800 1234 56** ngay khi:
+Liên hệ hotline **028.7122.0818** ngay khi:
 - Motor phát ra tiếng kêu lạ hoặc rung mạnh
 - Giường không phản hồi lệnh từ app
 - Đèn LED trên hộp điều khiển sáng đỏ

@@ -64,7 +64,60 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
         >
           Khám phá sản phẩm →
         </Link>
+
+        {/* Upsell products when cart is empty */}
+        {upsellProducts.length > 0 && (
+          <div className="mt-16 text-left">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="w-6 h-px bg-[#C9A84C]" />
+              <h2 className="text-lg font-light text-[#F5EDD6]">
+                Sản phẩm <span style={{ color: colors.primary }}>gợi ý</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {upsellProducts.slice(0, 3).map((p) => {
+                const disc = p.originalPrice > p.price
+                  ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
+                  : 0;
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/products/${p.slug}`}
+                    style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+                    className="rounded-2xl border overflow-hidden hover:border-[#C9A84C]/40 transition-all group"
+                  >
+                    <div
+                      style={{ background: `linear-gradient(135deg, ${colors.background}, ${colors.surface})`, aspectRatio: '1/1' }}
+                      className="w-full overflow-hidden"
+                    >
+                      {p.coverImage ? (
+                        <img src={p.coverImage} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <svg viewBox="0 0 80 60" width="80" height="60" fill="none">
+                            <rect x="10" y="30" width="60" height="20" rx="4" fill={`${colors.primary}15`} stroke={`${colors.primary}30`} strokeWidth="1" />
+                            <rect x="12" y="22" width="56" height="22" rx="5" fill={`${colors.primary}20`} stroke={`${colors.primary}40`} strokeWidth="1" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p style={{ color: colors.text }} className="text-sm font-semibold line-clamp-2 mb-2 group-hover:text-[#C9A84C] transition-colors">{p.name}</p>
+                      <div className="flex items-center gap-2">
+                        <span style={{ color: colors.primary }} className="text-sm font-bold">{formatPrice(p.price)}</span>
+                        {disc > 0 && (
+                          <span style={{ backgroundColor: `${colors.error}15`, color: colors.error }} className="text-xs px-1.5 py-0.5 rounded-full">-{disc}%</span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
+      <Footer theme={theme} variant="minimal" />
     );
   }
 

@@ -10,7 +10,7 @@ import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 // showrooms is now loaded from theme.footer.showrooms inside the component
 
 const contactMethods = [
-  { icon: "phone-call", label: "Hotline", value: "1800 1234 56", sub: "Miễn phí · 8:00 – 22:00" },
+  { icon: "phone-call", label: "Hotline", value: "028.7122.0818", sub: "Miễn phí · 8:00 – 22:00" },
   { icon: "mail", label: "Email", value: "hello@smartfurni.vn", sub: "Phản hồi trong 2 giờ" },
   { icon: "chat", label: "Zalo OA", value: "SmartFurni Official", sub: "Phản hồi tức thì" },
   { icon: "globe", label: "Facebook", value: "fb.com/smartfurni", sub: "Cộng đồng 50K thành viên" },
@@ -63,7 +63,7 @@ export default function ContactClient({ theme }: Props) {
       setSubmitted(true);
     } catch {
       setLoading(false);
-      setSubmitError("Có lỗi xảy ra. Vui lòng thử lại hoặc gọi hotline 1800 1234 56.");
+      setSubmitError("Có lỗi xảy ra. Vui lòng thử lại hoặc gọi hotline 028.7122.0818.");
     }
   };
 

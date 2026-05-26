@@ -101,7 +101,35 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
             <StaggerReveal baseDelay={0} step={100} variant="fadeUp" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               {featured.map((post) => (
                 <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
-                  <article className="bg-[#1A1600] border border-[#2E2800] rounded-2xl p-5 sm:p-6 h-full hover:border-[#C9A84C]/40 transition-all hover:-translate-y-1">
+                  <article className="bg-[#1A1600] border border-[#2E2800] rounded-2xl overflow-hidden h-full hover:border-[#C9A84C]/40 transition-all hover:-translate-y-1">
+                    {/* Thumbnail */}
+                    <div
+                      className="w-full overflow-hidden"
+                      style={{ aspectRatio: '16/9', backgroundColor: '#1A1600' }}
+                    >
+                      {post.coverImage ? (
+                        <img
+                          src={post.coverImage}
+                          alt={post.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center"
+                          style={{ background: `linear-gradient(135deg, ${CATEGORIES[post.category].color}10, ${CATEGORIES[post.category].color}25)` }}
+                        >
+                          <div className="text-center">
+                            <div className="text-3xl mb-1">
+                              {post.category === 'tips-giac-ngu' ? '🌙' : post.category === 'huong-dan-su-dung' ? '📱' : post.category === 'cap-nhat-san-pham' ? '🛏️' : '💚'}
+                            </div>
+                            <p className="text-xs font-medium" style={{ color: CATEGORIES[post.category].color }}>{post.categoryLabel}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5 sm:p-6">
                     <div className="flex items-center gap-2 mb-3">
                       <span
                         className="text-xs px-2 py-1 rounded-full font-medium"
@@ -122,6 +150,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
                     <div className="flex items-center justify-between text-xs text-[#F5EDD6]/30">
                       <span>{post.author}</span>
                       <span>{formatDate(post.publishedAt)}</span>
+                    </div>
                     </div>
                   </article>
                 </Link>
@@ -184,12 +213,36 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
             <StaggerReveal baseDelay={0} step={80} variant="fadeUp" className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {filteredPosts.map((post) => (
                 <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
-                  <article className="bg-[#1A1600] border border-[#2E2800] rounded-xl p-4 sm:p-5 flex gap-4 hover:border-[#C9A84C]/40 transition-all">
+                  <article className="bg-[#1A1600] border border-[#2E2800] rounded-xl overflow-hidden flex gap-0 hover:border-[#C9A84C]/40 transition-all">
+                    {/* Thumbnail */}
                     <div
-                      className="w-1 rounded-full flex-shrink-0"
+                      className="flex-shrink-0 overflow-hidden"
+                      style={{ width: 96, aspectRatio: '1/1', backgroundColor: '#0D0B00' }}
+                    >
+                      {post.coverImage ? (
+                        <img
+                          src={post.coverImage}
+                          alt={post.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center"
+                          style={{ background: `linear-gradient(135deg, ${CATEGORIES[post.category].color}10, ${CATEGORIES[post.category].color}20)` }}
+                        >
+                          <span className="text-2xl">
+                            {post.category === 'tips-giac-ngu' ? '🌙' : post.category === 'huong-dan-su-dung' ? '📱' : post.category === 'cap-nhat-san-pham' ? '🛏️' : '💚'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      className="w-1 flex-shrink-0"
                       style={{ backgroundColor: CATEGORIES[post.category].color }}
                     />
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 p-4 sm:p-5">
                       <div className="flex items-center gap-2 mb-2">
                         <span
                           className="text-xs px-2 py-0.5 rounded-full"

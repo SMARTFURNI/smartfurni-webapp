@@ -110,7 +110,7 @@ export const defaultTheme: SiteTheme = {
     textColor: "#9CA3AF",
     companyName: "SmartFurni",
     tagline: "Nâng tầm giấc ngủ của bạn",
-    phone: "1800 1234 56",
+    phone: "028.7122.0818",
     email: "hello@smartfurni.vn",
     showSocialLinks: true,
     socialLinks: {
@@ -201,7 +201,7 @@ export const defaultTheme: SiteTheme = {
     heroBadge: "Liên Hệ",
     formTitle: "Gửi tin nhắn",
     formSubtitle: "Điền form bên dưới, chúng tôi sẽ phản hồi trong vòng 2 giờ.",
-    phone: "1800 1234 56",
+    phone: "028.7122.0818",
     email: "hello@smartfurni.vn",
     address: "123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh",
     workingHours: "Thứ 2 – Thứ 7: 8:00 – 20:00 | Chủ nhật: 9:00 – 17:00",
@@ -250,7 +250,7 @@ export const defaultTheme: SiteTheme = {
     eliteWarrantyYears: "7 năm",
     warrantyScope: "Bảo hành toàn bộ linh kiện điện tử, cơ cấu điều chỉnh và khung giường.",
     processTitle: "Quy trình bảo hành",
-    hotline: "1800 1234 56",
+    hotline: "028.7122.0818",
     email: "warranty@smartfurni.vn",
   },
   pageReturns: {
@@ -263,7 +263,7 @@ export const defaultTheme: SiteTheme = {
     condition2: "Còn đầy đủ phụ kiện và hộp đựng ban đầu",
     condition3: "Có hóa đơn mua hàng hợp lệ",
     processTitle: "Quy trình đổi trả",
-    hotline: "1800 1234 56",
+    hotline: "028.7122.0818",
     email: "returns@smartfurni.vn",
   },
   videoSection: {
