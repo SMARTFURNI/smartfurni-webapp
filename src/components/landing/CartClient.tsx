@@ -33,6 +33,7 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
 
   if (items.length === 0) {
     return (
+      <>
       <div
         style={{ maxWidth: layout.maxWidth, paddingTop: 120 }}
         className="mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center"
@@ -118,6 +119,7 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
         )}
       </div>
       <Footer theme={theme} variant="minimal" />
+      </>
     );
   }
 
