@@ -79,6 +79,40 @@ export async function GET(req: NextRequest) {
       console.error("lead-counts error:", e);
       return NextResponse.json({ counts: {} });
     }
+  // Lấy lượt truy cập cho các LP slugs (dùng analytics_events table)
+  if (action === "lp-views") {
+    const ok = await checkAuth();
+    if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const range = searchParams.get("range") || "month";
+    let startDate: Date;
+    const now = new Date();
+    switch (range) {
+      case "day": startDate = new Date(now); startDate.setHours(0,0,0,0); break;
+      case "week": startDate = new Date(now); startDate.setDate(now.getDate()-6); startDate.setHours(0,0,0,0); break;
+      case "year": startDate = new Date(now); startDate.setFullYear(now.getFullYear()-1); startDate.setHours(0,0,0,0); break;
+      default: startDate = new Date(now); startDate.setDate(now.getDate()-29); startDate.setHours(0,0,0,0);
+    }
+    try {
+      const rows = await query<{ path: string; views: string; uniques: string }>(
+        `SELECT path,
+                COUNT(*) as views,
+                COUNT(DISTINCT COALESCE(ip_hash, session_id, ua)) as uniques
+         FROM analytics_events
+         WHERE path LIKE '/lp/%' AND created_at >= $1
+         GROUP BY path ORDER BY views DESC`,
+        [startDate]
+      );
+      const viewsBySlug: Record<string, { views: number; uniques: number }> = {};
+      for (const row of (rows || [])) {
+        // path = /lp/sofa-giuong-1 → slug = sofa-giuong-1
+        const slug = row.path.replace(/^\/lp\//, "").split("?")[0].split("#")[0];
+        viewsBySlug[slug] = { views: parseInt(row.views), uniques: parseInt(row.uniques) };
+      }
+      return NextResponse.json({ viewsBySlug });
+    } catch (e) {
+      console.error("lp-views error:", e);
+      return NextResponse.json({ viewsBySlug: {} });
+    }
   }
 
   if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });

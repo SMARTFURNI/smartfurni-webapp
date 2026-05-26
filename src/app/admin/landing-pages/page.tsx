@@ -43,6 +43,8 @@ const STATIC_PAGES: LandingPage[] = [
 export default function AdminLandingPagesPage() {
   const [pages, setPages] = useState<LandingPage[]>(STATIC_PAGES);
   const [leadCounts, setLeadCounts] = useState<Record<string, number>>({});
+  const [viewCounts, setViewCounts] = useState<Record<string, { views: number; uniques: number }>>({});
+  const [viewRange, setViewRange] = useState<"day" | "week" | "month">("month");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [newPage, setNewPage] = useState({ slug: "", title: "", description: "" });
@@ -53,6 +55,40 @@ export default function AdminLandingPagesPage() {
   const [cloneForm, setCloneForm] = useState({ title: "", slug: "", customDomain: "" });
   const [showDomainDialog, setShowDomainDialog] = useState<string | null>(null);
   const [domainForm, setDomainForm] = useState("");
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
+
+  function seedVariants() {
+    if (!confirm("Tạo 3 bản sofa-giuong-1, sofa-giuong-2, sofa-giuong-3 vào database?")) return;
+    setSeeding(true);
+    fetch("/api/admin/lp-seed", { method: "POST", credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok) {
+          setSeedResult(`✓ Đã tạo ${data.results.length} bản LP`);
+          // Reload pages
+          fetch("/api/admin/lp-content?action=list-pages", { credentials: "include" })
+            .then((r) => r.json())
+            .then((pagesData) => {
+              if (pagesData.pages && Array.isArray(pagesData.pages)) {
+                const dbPages = pagesData.pages.map((p: any) => ({
+                  slug: p.slug, title: p.title, description: p.description,
+                  url: `/lp/${p.slug}`, status: p.status as "active" | "draft",
+                  createdAt: p.created_at, customDomain: p.custom_domain,
+                }));
+                const dbSlugs = new Set(dbPages.map((p: LandingPage) => p.slug));
+                const staticOnly = STATIC_PAGES.filter((p) => !dbSlugs.has(p.slug));
+                setPages([...staticOnly, ...dbPages]);
+              }
+            }).catch(() => {});
+        } else {
+          setSeedResult(`Lỗi: ${data.error}`);
+        }
+        setSeeding(false);
+        setTimeout(() => setSeedResult(null), 5000);
+      })
+      .catch((e) => { setSeedResult(`Lỗi: ${e.message}`); setSeeding(false); });
+  }
 
   useEffect(() => {
     // Load landing pages từ database
@@ -80,6 +116,13 @@ export default function AdminLandingPagesPage() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    fetch(`/api/admin/lp-content?action=lp-views&range=${viewRange}`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => { if (data.viewsBySlug) setViewCounts(data.viewsBySlug); })
+      .catch(() => {});
+  }, [viewRange]);
 
   function copyUrl(url: string, slug: string) {
     const fullUrl = `https://smartfurni-webapp-production.up.railway.app${url}`;
@@ -250,6 +293,7 @@ export default function AdminLandingPagesPage() {
   );
 
   const totalLeads = Object.values(leadCounts).reduce((a, b) => a + b, 0);
+  const totalViews = Object.values(viewCounts).reduce((a, b) => a + b.views, 0);
   const activeCount = pages.filter((p) => p.status === "active").length;
 
   return (
@@ -267,6 +311,7 @@ export default function AdminLandingPagesPage() {
             { label: "Tổng Landing Pages", value: pages.length, icon: "📄" },
             { label: "Đang hoạt động", value: activeCount, icon: "✓" },
             { label: "Tổng Leads nhận được", value: totalLeads, icon: "👥" },
+            { label: "Lượt xem LP (30 ngày)", value: totalViews.toLocaleString(), icon: "👁" },
           ].map((stat) => (
             <div key={stat.label} className="bg-gray-900 border border-gray-700 rounded-lg p-6">
               <div className="flex items-center justify-between">
@@ -291,13 +336,25 @@ export default function AdminLandingPagesPage() {
               className="w-full px-4 py-2 rounded-lg border border-gray-700 bg-gray-900 text-white text-sm focus:outline-none focus:border-yellow-600"
             />
           </div>
-          <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white whitespace-nowrap"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}
-          >
-            + Tạo Landing Page
-          </button>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={seedVariants}
+              disabled={seeding}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white whitespace-nowrap border border-blue-600 hover:bg-blue-900/30 transition-colors disabled:opacity-50"
+            >
+              {seeding ? "Đang tạo..." : "✨ Tạo 3 bản sofa-giuong"}
+            </button>
+            <button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white whitespace-nowrap"
+              style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}
+            >
+              + Tạo Landing Page
+            </button>
+          </div>
+          {seedResult && (
+            <div className="mt-2 text-sm text-green-400 font-medium">{seedResult}</div>
+          )}
         </div>
 
         {/* Create Form */}
@@ -471,6 +528,16 @@ export default function AdminLandingPagesPage() {
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-400">Tên miền</th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-400">Trạng thái</th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-400">Leads</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-400">
+                  <div className="flex items-center gap-1">
+                    <span>Lượt xem</span>
+                    <select value={viewRange} onChange={(e) => setViewRange(e.target.value as "day" | "week" | "month")} className="text-xs bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-gray-300 focus:outline-none ml-1">
+                      <option value="day">Hôm nay</option>
+                      <option value="week">7 ngày</option>
+                      <option value="month">30 ngày</option>
+                    </select>
+                  </div>
+                </th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-400">Ngày tạo</th>
                 <th className="text-right px-4 py-3 text-sm font-semibold text-gray-400">Hành động</th>
               </tr>
@@ -505,6 +572,12 @@ export default function AdminLandingPagesPage() {
                 </td>
                 <td className="px-4 py-3">
                   <p className="text-sm text-white font-medium">{leadCounts[page.slug] ?? 0}</p>
+                </td>
+                <td className="px-4 py-3">
+                  <div>
+                    <p className="text-sm text-white font-medium">{(viewCounts[page.slug]?.views ?? 0).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">{(viewCounts[page.slug]?.uniques ?? 0).toLocaleString()} unique</p>
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <p className="text-sm text-gray-400">{page.createdAt}</p>
