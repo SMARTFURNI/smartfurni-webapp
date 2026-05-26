@@ -203,6 +203,29 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Clone toàn bộ nội dung từ slug nguồn sang slug đích
+  if (bodyAction === "clone-content") {
+    const { sourceSlug, targetSlug } = body;
+    if (!sourceSlug || !targetSlug) return NextResponse.json({ error: "Missing sourceSlug or targetSlug" }, { status: 400 });
+    try {
+      await ensureTable();
+      // Copy tất cả content blocks từ source sang target (bỏ qua tracking blocks)
+      await query(
+        `INSERT INTO lp_content (slug, block_key, content, updated_at)
+         SELECT $2, block_key, content, NOW()
+         FROM lp_content
+         WHERE slug = $1 AND block_key NOT LIKE 'tracking_%'
+         ON CONFLICT (slug, block_key)
+         DO UPDATE SET content = EXCLUDED.content, updated_at = NOW()`,
+        [sourceSlug, targetSlug]
+      );
+      return NextResponse.json({ ok: true });
+    } catch (e) {
+      console.error("clone-content error:", e);
+      return NextResponse.json({ error: "DB error" }, { status: 500 });
+    }
+  }
+
   if (!slug || !blockKey || content === undefined) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }

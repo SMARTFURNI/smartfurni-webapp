@@ -180,21 +180,34 @@ export default function AdminLandingPagesPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.ok) {
-          setPages((prev) => [
-            ...prev,
-            {
-              slug,
-              title: cloneForm.title,
-              description: sourcePage.description,
-              url: `/lp/${slug}`,
-              status: "draft",
-              createdAt: new Date().toISOString().split("T")[0],
-              customDomain,
-            },
-          ]);
-          setShowCloneDialog(false);
-          setCloneSource(null);
-          setCloneForm({ title: "", slug: "", customDomain: "" });
+          // Copy toàn bộ nội dung từ slug nguồn sang slug mới
+          return fetch("/api/admin/lp-content", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "clone-content",
+              sourceSlug: cloneSource,
+              targetSlug: slug,
+            }),
+          })
+            .then(() => {
+              setPages((prev) => [
+                ...prev,
+                {
+                  slug,
+                  title: cloneForm.title,
+                  description: sourcePage!.description,
+                  url: `/lp/${slug}`,
+                  status: "draft",
+                  createdAt: new Date().toISOString().split("T")[0],
+                  customDomain,
+                },
+              ]);
+              setShowCloneDialog(false);
+              setCloneSource(null);
+              setCloneForm({ title: "", slug: "", customDomain: "" });
+            });
         }
       })
       .catch(() => {});
