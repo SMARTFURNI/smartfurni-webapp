@@ -961,41 +961,140 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       )}
 
       {/* ── STICKY NAV ── */}
-      <nav style={{ position: "fixed", top: isEditor ? 48 : 0, left: 0, right: 0, zIndex: 90, background: navScrolled ? "rgba(253,250,245,0.97)" : "transparent", borderBottom: navScrolled ? `1px solid ${BLACK_BORDER}` : "none", backdropFilter: navScrolled ? "blur(12px)" : "none", transition: "all 0.3s ease", padding: "0 24px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <nav style={{
+        position: "fixed", top: isEditor ? 48 : 0, left: 0, right: 0, zIndex: 100,
+        background: navScrolled ? "rgba(253,250,245,0.96)" : "transparent",
+        borderBottom: navScrolled ? `1px solid ${BLACK_BORDER}` : "none",
+        backdropFilter: navScrolled ? "blur(16px)" : "none",
+        WebkitBackdropFilter: navScrolled ? "blur(16px)" : "none",
+        transition: "background 0.3s ease, border-color 0.3s ease",
+      }}>
+        <div style={{
+          maxWidth: 1200, margin: "0 auto",
+          padding: "0 24px",
+          height: 68,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+        }}>
           {/* Logo */}
-          <a href="/lp/smf12" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 36, objectFit: "contain" }} />
+          <a href="/lp/smf12" style={{ flexShrink: 0, textDecoration: "none" }}>
+            <img src="/smartfurni-logo-transparent.png" alt="SmartFurni"
+              style={{ height: 44, objectFit: "contain", filter: "brightness(1.05)" }} />
           </a>
-          {/* Menu — desktop */}
-          <div className="lp-nav-menu" style={{ display: "flex", gap: 28, alignItems: "center" }}>
-            {[["demo", "Tính năng"], ["products", "Sản phẩm"], ["benefits", "Lợi ích"], ["testimonials", "Đánh giá"], ["register-form", "Đặt hàng"]].map(([id, label]) => (
-              <button key={id} onClick={() => scrollTo(id)} style={{ background: "none", border: "none", color: navScrolled ? GRAY : "rgba(253,250,245,0.85)", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: FONT_BODY, letterSpacing: "0.02em", padding: "4px 0", transition: "color 0.2s" }}>
+
+          {/* Menu — desktop, ẩn trên mobile */}
+          <div className="lp-nav-menu" style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" }}>
+            {([
+              ["product-detail", "Tính năng"],
+              ["products", "Sản phẩm"],
+              ["benefits", "Lợi ích"],
+              ["testimonials", "Đánh giá"],
+              ["register-form", "Đặt hàng"],
+            ] as [string, string][]).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => scrollTo(id)}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: navScrolled ? GRAY : "rgba(253,250,245,0.85)",
+                  fontSize: 13, fontWeight: 500,
+                  fontFamily: FONT_BODY, padding: "8px 14px", borderRadius: R_SM,
+                  letterSpacing: "0.01em", transition: "color 0.2s, background 0.2s",
+                  whiteSpace: "nowrap" as const,
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = GOLD;
+                  (e.currentTarget as HTMLButtonElement).style.background = `rgba(139,105,20,0.08)`;
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = navScrolled ? GRAY : "rgba(253,250,245,0.85)";
+                  (e.currentTarget as HTMLButtonElement).style.background = "none";
+                }}
+              >
                 {label}
               </button>
             ))}
           </div>
-          {/* CTA */}
-          <div className="lp-nav-cta">
-            <GoldButton onClick={scrollToForm} style={{ padding: "10px 20px", fontSize: 12 }}>ĐẶT HÀNG NGAY</GoldButton>
-          </div>
-          {/* Hamburger */}
-          <button className="lp-hamburger" onClick={() => setMobileMenuOpen(m => !m)} style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke={navScrolled ? WHITE : "#FDFAF5"} strokeWidth="1.5" strokeLinecap="round"/></svg>
+
+          {/* CTA button — ẩn trên mobile */}
+          <button
+            onClick={scrollToForm}
+            className="lp-nav-cta"
+            style={{
+              flexShrink: 0,
+              background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
+              color: BLACK, border: "none", padding: "9px 20px",
+              fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", cursor: "pointer",
+              textTransform: "uppercase" as const, borderRadius: R_MD, fontFamily: FONT_BODY,
+              transition: "opacity 0.2s, transform 0.15s",
+              whiteSpace: "nowrap" as const,
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
+          >
+            ĐẶT HÀNG NGAY
+          </button>
+
+          {/* Hamburger — chỉ hiện trên mobile */}
+          <button
+            className="lp-nav-hamburger"
+            onClick={() => setMobileMenuOpen(v => !v)}
+            style={{
+              background: "none", border: `1px solid rgba(139,105,20,0.35)`,
+              borderRadius: R_SM, padding: "8px 10px", cursor: "pointer",
+              display: "flex", flexDirection: "column", gap: 5, flexShrink: 0,
+            }}
+            aria-label="Menu"
+          >
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{ display: "block", width: 20, height: 1.5, background: navScrolled ? GOLD : GOLD_LIGHT, borderRadius: 1 }} />
+            ))}
           </button>
         </div>
       </nav>
 
-      {/* Mobile menu */}
+      {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 89, background: "rgba(253,250,245,0.98)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}>
-          <button onClick={() => setMobileMenuOpen(false)} style={{ position: "absolute", top: 20, right: 20, background: "none", border: "none", cursor: "pointer" }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke={WHITE} strokeWidth="1.5" strokeLinecap="round"/></svg>
-          </button>
-          {[["demo", "Tính năng"], ["products", "Sản phẩm"], ["benefits", "Lợi ích"], ["testimonials", "Đánh giá"], ["register-form", "Đặt hàng"]].map(([id, label]) => (
-            <button key={id} onClick={() => { scrollTo(id); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", color: WHITE, fontSize: 22, fontWeight: 300, cursor: "pointer", fontFamily: FONT_HEADING, letterSpacing: "0.04em" }}>{label}</button>
-          ))}
-          <GoldButton onClick={() => { scrollToForm(); setMobileMenuOpen(false); }} style={{ marginTop: 16 }}>ĐẶT HÀNG NGAY</GoldButton>
+        <div style={{
+          position: "fixed", top: isEditor ? 116 : 68, left: 0, right: 0, zIndex: 99,
+          background: "rgba(253,250,245,0.98)", backdropFilter: "blur(16px)",
+          borderBottom: `1px solid ${BLACK_BORDER}`,
+          padding: "16px 24px 24px",
+        }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {([
+              ["product-detail", "Tính năng"],
+              ["products", "Sản phẩm"],
+              ["benefits", "Lợi ích"],
+              ["testimonials", "Đánh giá"],
+              ["register-form", "Đặt hàng"],
+            ] as [string, string][]).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => { scrollTo(id); setMobileMenuOpen(false); }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: GRAY, fontSize: 15, fontWeight: 500,
+                  fontFamily: FONT_BODY, padding: "14px 16px",
+                  textAlign: "left" as const, borderRadius: R_SM,
+                  letterSpacing: "0.02em",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              onClick={() => { scrollToForm(); setMobileMenuOpen(false); }}
+              style={{
+                background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
+                color: BLACK, border: "none", padding: "14px 20px",
+                fontWeight: 700, fontSize: 13, cursor: "pointer",
+                textTransform: "uppercase" as const, borderRadius: R_MD,
+                fontFamily: FONT_BODY, marginTop: 8, letterSpacing: "0.08em",
+              }}
+            >
+              Đặt Hàng Ngay →
+            </button>
+          </div>
         </div>
       )}
 
