@@ -1172,62 +1172,93 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── PROBLEM / SOLUTION ── */}
-      <section id="problems" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
-        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+      <section id="problems" className="lp-section-pad" style={{ background: "#0D0B00", padding: "96px 24px", position: "relative" }}>
+        {/* Texture overlay */}
+        <div style={{ position: "absolute", inset: 0, backgroundImage: `radial-gradient(ellipse at 20% 50%, rgba(139,105,20,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(139,105,20,0.04) 0%, transparent 50%)`, pointerEvents: "none" }} />
+        <div style={{ maxWidth: 1060, margin: "0 auto", position: "relative" }}>
+          {/* Header */}
           <FadeIn>
-            <div style={{ textAlign: "center", marginBottom: 52 }}>
+            <div style={{ textAlign: "center", marginBottom: 64 }}>
               <SectionLabel>{E({ bk: "problem_section_label", def: "Thực trạng phòng ngủ Việt", as: "span" })}</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+              <h2 style={{ fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 700, lineHeight: 1.1, marginBottom: 10, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF" }}>
                 {E({ bk: "problem_title_1", def: "Bạn Có Đang Lãng Phí", as: "span" })}
               </h2>
-              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
+              <div style={{ color: GOLD_PALE, fontSize: "clamp(18px, 2.5vw, 30px)", fontWeight: 400, fontFamily: FONT_BRAND, fontStyle: "italic", marginBottom: 16 }}>
                 {E({ bk: "problem_title_2", def: "Không Gian Sống Của Mình?", as: "span" })}
               </div>
-              <GoldDivider />
+              <div style={{ width: 48, height: 2, background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD_PALE})`, borderRadius: 2, margin: "0 auto" }} />
             </div>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }} className="lp-problem-grid">
-            {/* Problems */}
-            <FadeIn>
-              <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "32px 28px" }}>
-                <div style={{ fontSize: 32, marginBottom: 16 }}>😰</div>
-                <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 20, fontFamily: FONT_HEADING }}>Vấn đề thường gặp</h3>
-                {[
-                  "Phòng nhỏ chật chội, không đủ chỗ cho cả sofa lẫn giường",
-                  "Sofa vải dễ bám bụi, khó vệ sinh, nhanh xuống màu",
-                  "Giường chỉ dùng ban đêm — lãng phí không gian ban ngày",
-                  "Khách đến chơi không có chỗ ngồi thoải mái",
-                ].map((p, i) => (
-                  <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
-                    <span style={{ color: RED_SOFT, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✕</span>
-                    <span style={{ color: GRAY, fontSize: 14, lineHeight: 1.6, fontFamily: FONT_BODY }}>{p}</span>
+
+          {/* 2 cột: Vấn đề vs Giải pháp */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }} className="lp-problem-grid">
+
+            {/* Cột trái: Vấn đề */}
+            <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: `${R_LG}px 0 0 ${R_LG}px`, border: `1px solid rgba(255,255,255,0.07)`, borderRight: "none", padding: "36px 32px 36px 32px", display: "flex", flexDirection: "column" }}>
+              <FadeIn>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(192,57,43,0.15)", border: "1px solid rgba(192,57,43,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>😰</div>
+                  <div>
+                    <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_BODY, textTransform: "uppercase" as const, marginBottom: 2 }}>Vấn đề hiện tại</div>
+                    <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING }}>Vấn đề thường gặp</div>
                   </div>
-                ))}
-              </div>
-            </FadeIn>
-            {/* Solutions */}
-            <FadeIn delay={150}>
-              <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.3)`, borderRadius: R_LG, padding: "32px 28px" }}>
-                <div style={{ marginBottom: 16 }}><IconDiamond color={GOLD} size={32} /></div>
-                <h3 style={{ color: GOLD, fontSize: 16, fontWeight: 600, marginBottom: 20, fontFamily: FONT_HEADING }}>Giải pháp SMF12</h3>
-                {[
-                  "2-in-1: sofa tiếp khách ban ngày + giường ngủ ban đêm",
-                  "Da PU cao cấp — lau sạch trong 30 giây, kháng nước hoàn toàn",
-                  "Tiết kiệm 40% diện tích so với dùng riêng sofa + giường",
-                  "Cơ cấu SmartFold 1 thao tác — chuyển đổi trong 10 giây",
-                ].map((s, i) => (
-                  <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
-                    <span style={{ flexShrink: 0, marginTop: 2 }}><IconCheck color={GOLD} size={16} /></span>
-                    <span style={{ color: GRAY, fontSize: 14, lineHeight: 1.6, fontFamily: FONT_BODY }}>{s}</span>
+                </div>
+              </FadeIn>
+              {[
+                { text: "Phòng nhỏ chật chội, không đủ chỗ cho cả sofa lẫn giường", icon: "✕" },
+                { text: "Sofa vải dễ bám bụi, khó vệ sinh, nhanh xuống màu", icon: "✕" },
+                { text: "Giường chỉ dùng ban đêm — lãng phí không gian ban ngày", icon: "✕" },
+                { text: "Khách đến chơi không có chỗ ngồi thoải mái", icon: "✕" },
+              ].map((p, i) => (
+                <FadeIn key={i} delay={i * 120}>
+                  <div style={{ display: "flex", gap: 14, marginBottom: 18, alignItems: "flex-start", padding: "14px 16px", borderRadius: R_SM, background: "rgba(192,57,43,0.05)", border: "1px solid rgba(192,57,43,0.12)" }}>
+                    <span style={{ color: RED_SOFT, fontWeight: 700, flexShrink: 0, fontSize: 13, marginTop: 1, opacity: 0.8 }}>{p.icon}</span>
+                    <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 14, lineHeight: 1.65, fontFamily: FONT_BODY }}>{p.text}</span>
                   </div>
-                ))}
-              </div>
-            </FadeIn>
+                </FadeIn>
+              ))}
+            </div>
+
+            {/* Cột phải: Giải pháp */}
+            <div style={{ background: "rgba(139,105,20,0.07)", borderRadius: `0 ${R_LG}px ${R_LG}px 0`, border: `1px solid rgba(139,105,20,0.25)`, borderLeft: `2px solid rgba(139,105,20,0.5)`, padding: "36px 32px 36px 32px", display: "flex", flexDirection: "column" }}>
+              <FadeIn delay={100}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(139,105,20,0.2)", border: `1px solid rgba(139,105,20,0.4)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <IconDiamond color={GOLD_PALE} size={18} />
+                  </div>
+                  <div>
+                    <div style={{ color: GOLD, fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_BODY, textTransform: "uppercase" as const, marginBottom: 2 }}>Giải pháp</div>
+                    <div style={{ color: GOLD_PALE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING }}>SMF12 đáp ứng</div>
+                  </div>
+                </div>
+              </FadeIn>
+              {[
+                { text: "2-in-1: sofa tiếp khách ban ngày + giường ngủ ban đêm", highlight: "2-in-1" },
+                { text: "Da PU cao cấp — lau sạch trong 30 giây, kháng nước hoàn toàn", highlight: "30 giây" },
+                { text: "Tiết kiệm 40% diện tích so với dùng riêng sofa + giường", highlight: "40%" },
+                { text: "Cơ cấu SmartFold 1 thao tác — chuyển đổi trong 10 giây", highlight: "10 giây" },
+              ].map((s, i) => (
+                <FadeIn key={i} delay={100 + i * 120}>
+                  <div style={{ display: "flex", gap: 14, marginBottom: 18, alignItems: "flex-start", padding: "14px 16px", borderRadius: R_SM, background: "rgba(139,105,20,0.08)", border: `1px solid rgba(139,105,20,0.2)` }}>
+                    <span style={{ flexShrink: 0, marginTop: 2 }}><IconCheck color={GOLD_PALE} size={15} /></span>
+                    <span style={{ color: "rgba(253,250,245,0.8)", fontSize: 14, lineHeight: 1.65, fontFamily: FONT_BODY }}>
+                      {(() => { const parts = s.text.split(s.highlight); return parts.map((part, j) => j === parts.length - 1 ? <span key={j}>{part}</span> : <span key={j}>{part}<strong style={{ color: GOLD_PALE, fontWeight: 700 }}>{s.highlight}</strong></span>); })()}
+                    </span>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
           </div>
-          <FadeIn delay={200}>
-            <p style={{ textAlign: "center", color: GRAY_LIGHT, fontSize: 13, marginTop: 24, fontFamily: FONT_BODY, fontStyle: "italic" }}>
-              Cùng một không gian — nhưng trải nghiệm hoàn toàn khác nhau
-            </p>
+
+          {/* Tagline */}
+          <FadeIn delay={300}>
+            <div style={{ textAlign: "center", marginTop: 40, display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
+              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,105,20,0.3))" }} />
+              <p style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, fontStyle: "italic", margin: 0, whiteSpace: "nowrap" as const }}>
+                Cùng một không gian — nhưng trải nghiệm hoàn toàn khác nhau
+              </p>
+              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(139,105,20,0.3), transparent)" }} />
+            </div>
           </FadeIn>
         </div>
       </section>
