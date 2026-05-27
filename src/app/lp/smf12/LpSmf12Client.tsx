@@ -1,771 +1,944 @@
 "use client";
 import "./lp-retail.css";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
 import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
 
-// ─── Design tokens ─────────────────────────────────────────────────────────────
-const GOLD        = "#B8922A";
-const GOLD_LIGHT  = "#D4A84B";
-const BLACK       = "#FDFAF5";
-const BLACK_SOFT  = "#F4F7FA";
-const BLACK_CARD  = "#F0EBE0";
-const BLACK_BORDER= "rgba(184,146,42,0.18)";
-const WHITE       = "#1A1200";
-const GRAY        = "#4A3F2F";
-const GRAY_LIGHT  = "#6B5A40";
-const RED_SOFT    = "#C0392B";
-
+// ─── Design tokens — tông kem-vàng đồng (light theme) ────────────────────────
+const GOLD = "#8B6914";
+const GOLD_LIGHT = "#B8922A";
+const GOLD_PALE = "#C9A84C";
+const BLACK = "#FDFAF5";          // nền chính — kem trắng
+const BLACK_SOFT = "#F4F7FA";     // nền section xen kẽ
+const BLACK_CARD = "#F0EBE0";     // nền card
+const BLACK_BORDER = "rgba(139,105,20,0.15)";
+const WHITE = "#1A1200";          // chữ chính — nâu đen ấm
+const GRAY = "#4A3F2F";           // chữ phụ
+const GRAY_LIGHT = "#7A6A55";     // chữ mờ
+const RED_SOFT = "#C0392B";
 const LP_SLUG = "smf12";
 const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-const FONT_BODY    = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-const FONT_BRAND   = "'Cormorant Garamond', Georgia, serif";
-const R_SM   = 8;
-const R_MD   = 12;
-const R_LG   = 16;
+const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+const FONT_BRAND = "'Cormorant Garamond', Georgia, serif";
+const R_SM = 8;
+const R_MD = 12;
+const R_LG = 16;
 const R_FULL = 999;
 
-function fmt(n: number) {
-  return n.toLocaleString("vi-VN") + "đ";
-}
-function gRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
-// ─── Sizes & Pricing ───────────────────────────────────────────────────────────
-const SIZES = [
-  { key: "0m9x2m", label: "0,9M × 2M", price: 8_900_000, desc: "Phù hợp phòng nhỏ, 1 người" },
-  { key: "1m2x2m", label: "1,2M × 2M", price: 10_900_000, desc: "Phổ biến nhất, 1–2 người" },
-  { key: "1m4x2m", label: "1,4M × 2M", price: 12_500_000, desc: "Rộng rãi, 2 người thoải mái" },
-  { key: "1m6x2m", label: "1,6M × 2M", price: 14_200_000, desc: "Cao cấp, không gian rộng" },
-  { key: "1m8x2m", label: "1,8M × 2M", price: 16_800_000, desc: "Luxury, phòng ngủ lớn" },
-];
-
-const FEATURES = [
-  {
-    icon: "🛡️",
-    title: "Da PU Nhập Khẩu Cao Cấp",
-    desc: "Da PU dày 1.2mm, chịu nhiệt, chống thấm, dễ lau chùi. Màu sắc bền đẹp sau nhiều năm sử dụng.",
-  },
-  {
-    icon: "⚙️",
-    title: "Cơ Cấu Gập Mở 50.000 Lần",
-    desc: "Gas-lift nhập khẩu, kiểm định 50.000 lần mở gập. Trơn tru, êm ái, không tiếng động.",
-  },
-  {
-    icon: "🏗️",
-    title: "Khung Thép Mạ Kẽm 1.5mm",
-    desc: "Khung thép chịu tải 300kg, mạ kẽm chống gỉ. Độ bền vượt trội so với khung gỗ thông thường.",
-  },
-  {
-    icon: "📐",
-    title: "5 Kích Thước Tùy Chọn",
-    desc: "Từ 0,9M đến 1,8M, phù hợp mọi không gian phòng ngủ. Tư vấn miễn phí để chọn size đúng nhất.",
-  },
-  {
-    icon: "🚚",
-    title: "Giao Hàng & Lắp Đặt Miễn Phí",
-    desc: "Giao tận nơi toàn quốc, đội thợ lắp đặt chuyên nghiệp. Không phát sinh chi phí ẩn.",
-  },
-  {
-    icon: "✅",
-    title: "Bảo Hành 3 Năm Toàn Diện",
-    desc: "Bảo hành khung, cơ cấu và chất liệu da PU trong 3 năm. Đổi mới nếu có lỗi nhà sản xuất.",
-  },
-];
-
-const SPECS = [
-  { label: "Mã sản phẩm", value: "SMF12" },
-  { label: "Chất liệu bọc", value: "Da PU nhập khẩu dày 1.2mm, kháng nước" },
-  { label: "Khung", value: "Thép mạ kẽm 1.5mm, chịu tải 300kg" },
-  { label: "Cơ cấu mở gập", value: "Gas-lift nhập khẩu, kiểm định 50.000 lần" },
-  { label: "Kích thước", value: "0,9M / 1,2M / 1,4M / 1,6M / 1,8M × 2M" },
-  { label: "Nệm ngồi", value: "Mút ép đàn hồi cao 7cm, D40" },
-  { label: "Tay vịn", value: "Da PU bọc đệm, bo góc an toàn" },
-  { label: "Chân đỡ", value: "Inox 304 hoặc chân gỗ tự nhiên (tuỳ chọn)" },
-  { label: "Màu sắc", value: "Đen, Nâu, Kem, Xám (theo yêu cầu)" },
-  { label: "Bảo hành", value: "3 năm toàn diện (khung + cơ cấu + da PU)" },
-  { label: "Xuất xứ", value: "Sản xuất tại Việt Nam, linh kiện nhập khẩu" },
-];
-
-const TESTIMONIALS = [
-  {
-    name: "Chị Lan Anh",
-    location: "Hà Nội",
-    rating: 5,
-    text: "Sofa SMF12 đẹp hơn tôi tưởng rất nhiều! Da PU mịn, màu nâu sang trọng, phòng ngủ nhà mình trông xịn hẳn lên. Lắp đặt nhanh, nhân viên nhiệt tình.",
-  },
-  {
-    name: "Anh Minh Tuấn",
-    location: "TP.HCM",
-    rating: 5,
-    text: "Mua size 1,4M cho phòng ngủ 15m². Cơ cấu gập mở rất êm, không tiếng kẽo kẹt. Dùng 6 tháng vẫn như mới. Giá tốt so với chất lượng.",
-  },
-  {
-    name: "Chị Thu Hương",
-    location: "Đà Nẵng",
-    rating: 5,
-    text: "Nhân viên tư vấn rất tận tâm, giúp mình chọn đúng size và màu. Giao hàng đúng hẹn, đóng gói cẩn thận. Sẽ giới thiệu cho bạn bè.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "Sofa giường SMF12 có bền không?",
-    a: "SMF12 sử dụng khung thép mạ kẽm 1.5mm chịu tải 300kg và cơ cấu gas-lift kiểm định 50.000 lần mở gập. Bảo hành 3 năm toàn diện, đổi mới nếu có lỗi nhà sản xuất.",
-  },
-  {
-    q: "Da PU có bị bong tróc sau vài năm không?",
-    a: "Da PU SMF12 dày 1.2mm, nhập khẩu chất lượng cao, kháng nước và chịu nhiệt tốt. Với điều kiện sử dụng bình thường, da PU bền đẹp 5–7 năm. Tránh tiếp xúc trực tiếp với vật sắc nhọn.",
-  },
-  {
-    q: "Tôi có thể đặt màu sắc theo yêu cầu không?",
-    a: "Có! SMF12 có sẵn 4 màu tiêu chuẩn (Đen, Nâu, Kem, Xám). Ngoài ra bạn có thể đặt màu theo yêu cầu với thời gian sản xuất thêm 5–7 ngày.",
-  },
-  {
-    q: "Thời gian giao hàng bao lâu?",
-    a: "Hà Nội và TP.HCM: 3–5 ngày làm việc. Các tỉnh thành khác: 5–10 ngày. Đội thợ lắp đặt chuyên nghiệp, hoàn thành trong 30–60 phút.",
-  },
-  {
-    q: "Có hỗ trợ trả góp không?",
-    a: "Có! Hỗ trợ trả góp 0% lãi suất qua các đối tác tài chính (Home Credit, FE Credit, thẻ tín dụng). Liên hệ tư vấn để biết thêm chi tiết.",
-  },
-];
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold: 0.1 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return (
-    <div ref={ref} style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(24px)", transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms` }}>
-      {children}
-    </div>
-  );
-}
-
-function GoldDivider() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, margin: "20px auto 0", width: "fit-content" }}>
-      <div style={{ width: 40, height: 1, background: `linear-gradient(to right, transparent, ${GOLD})` }} />
-      <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD }} />
-      <div style={{ width: 40, height: 1, background: `linear-gradient(to left, transparent, ${GOLD})` }} />
-    </div>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: gRgba(GOLD, 0.1), border: `1px solid ${gRgba(GOLD, 0.3)}`, borderRadius: R_FULL, padding: "5px 14px", marginBottom: 16 }}>
-      <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD }} />
-      <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>{children}</span>
-    </div>
-  );
-}
-
-function GoldButton({ children, onClick, style }: { children: React.ReactNode; onClick?: () => void; style?: React.CSSProperties }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 8,
-        background: hovered
-          ? `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`
-          : `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`,
-        color: "#FFFFFF",
-        fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING,
-        padding: "15px 36px", borderRadius: R_FULL, border: "none",
-        cursor: "pointer",
-        boxShadow: hovered ? `0 8px 32px ${gRgba(GOLD, 0.45)}` : `0 4px 20px ${gRgba(GOLD, 0.3)}`,
-        transform: hovered ? "translateY(-2px)" : "translateY(0)",
-        transition: "all 0.2s ease",
-        letterSpacing: "0.02em",
-        ...style,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-function SvgIcon({ name, size = 24, color = WHITE }: { name: string; size?: number; color?: string }) {
-  const icons: Record<string, React.ReactNode> = {
-    check: <path d="M20 6L9 17l-5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />,
-    phone: <><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></>,
-    shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />,
-    truck: <><rect x="1" y="3" width="15" height="13" rx="1" stroke={color} strokeWidth="1.5" /><path d="M16 8h4l3 5v4h-7V8z" stroke={color} strokeWidth="1.5" strokeLinejoin="round" /><circle cx="5.5" cy="18.5" r="2.5" stroke={color} strokeWidth="1.5" /><circle cx="18.5" cy="18.5" r="2.5" stroke={color} strokeWidth="1.5" /></>,
-    star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />,
-    zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />,
-    gift: <><polyline points="20 12 20 22 4 22 4 12" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><rect x="2" y="7" width="20" height="5" rx="1" stroke={color} strokeWidth="1.5" /><line x1="12" y1="22" x2="12" y2="7" stroke={color} strokeWidth="1.5" /><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z" stroke={color} strokeWidth="1.5" /><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" stroke={color} strokeWidth="1.5" /></>,
-  };
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {icons[name] || <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5" />}
-    </svg>
-  );
-}
-
-// ─── Lead Form ─────────────────────────────────────────────────────────────────
-function LeadForm({ selectedSize, selectedSizeLabel, selectedPrice, content }: {
-  selectedSize?: string;
-  selectedSizeLabel?: string;
-  selectedPrice?: number;
-  content: Record<string, string>;
-}) {
-  const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-
-  const setF = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm(f => ({ ...f, [k]: e.target.value }));
-
-  const inp: React.CSSProperties = {
-    width: "100%", padding: "12px 16px",
-    background: "#FFFFFF",
-    border: `1px solid ${gRgba(GOLD, 0.25)}`,
-    borderRadius: R_MD, color: WHITE,
-    fontSize: 14, fontFamily: FONT_BODY,
-    outline: "none", boxSizing: "border-box" as const,
-    transition: "border-color 0.2s, box-shadow 0.2s",
-  };
-
-  async function handleSubmit(e: React.MouseEvent) {
-    e.preventDefault();
-    if (!form.name.trim()) { setError("Vui lòng nhập họ tên."); return; }
-    if (!form.phone.trim() || !/^[0-9]{9,11}$/.test(form.phone.replace(/\s/g, ""))) {
-      setError("Vui lòng nhập số điện thoại hợp lệ."); return;
-    }
-    setError(""); setLoading(true);
-    try {
-      const configNote = selectedSizeLabel
-        ? `Sofa SMF12 | Size: ${selectedSizeLabel}${selectedPrice ? ` | Giá: ${fmt(selectedPrice)}` : ""}`
-        : "Sofa SMF12 — Tư vấn chọn size";
-      const res = await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          phone: form.phone.trim(),
-          address: form.address.trim(),
-          note: [configNote, form.note.trim()].filter(Boolean).join(" | "),
-          source: "lp_smf12",
-          landingPageSlug: LP_SLUG,
-          productInterest: "SMF12",
-        }),
-      });
-      if (!res.ok) throw new Error("Lỗi gửi form");
-      setSuccess(true);
-    } catch {
-      setError("Có lỗi xảy ra. Vui lòng thử lại hoặc liên hệ Zalo.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (success) {
-    return (
-      <div style={{ textAlign: "center", padding: "40px 24px" }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-        <h3 style={{ color: GOLD, fontSize: 22, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 12 }}>Đã Nhận Yêu Cầu!</h3>
-        <p style={{ color: GRAY, fontSize: 15, fontFamily: FONT_BODY, lineHeight: 1.7 }}>
-          Cảm ơn bạn đã tin tưởng SmartFurni.<br />
-          Nhân viên tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 2 giờ làm việc.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ background: "#FFFFFF", border: `1px solid ${gRgba(GOLD, 0.2)}`, padding: "clamp(24px,4vw,44px)", borderRadius: R_LG, boxShadow: `0 4px 32px ${gRgba(GOLD, 0.08)}` }}>
-      {selectedSizeLabel && (
-        <div style={{ marginBottom: 20, padding: "12px 16px", background: gRgba(GOLD, 0.07), border: `1px solid ${gRgba(GOLD, 0.25)}`, borderRadius: R_MD }}>
-          <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", fontFamily: FONT_BODY, marginBottom: 4 }}>✓ SIZE ĐÃ CHỌN:</div>
-          <div style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>
-            Sofa SMF12 — {selectedSizeLabel}
-            {selectedPrice && <span style={{ color: GOLD, fontWeight: 700, marginLeft: 8 }}>{fmt(selectedPrice)}</span>}
-          </div>
-        </div>
-      )}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 16 }}>
-        {[
-          { k: "name", label: "Họ và tên *", ph: "Nguyễn Văn A" },
-          { k: "phone", label: "Số điện thoại (Zalo) *", ph: "0912 345 678" },
-        ].map(f => (
-          <div key={f.k}>
-            <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>{f.label}</label>
-            <input type="text" placeholder={f.ph} value={form[f.k as keyof typeof form]} onChange={setF(f.k)} style={inp}
-              onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px ${gRgba(GOLD, 0.12)}`; }}
-              onBlur={e => { e.target.style.borderColor = gRgba(GOLD, 0.25); e.target.style.boxShadow = "none"; }} />
-          </div>
-        ))}
-      </div>
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Địa chỉ giao hàng</label>
-        <input type="text" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành phố" value={form.address} onChange={setF("address")} style={inp}
-          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px ${gRgba(GOLD, 0.12)}`; }}
-          onBlur={e => { e.target.style.borderColor = gRgba(GOLD, 0.25); e.target.style.boxShadow = "none"; }} />
-      </div>
-      <div style={{ marginBottom: 26 }}>
-        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Yêu cầu thêm (tuỳ chọn)</label>
-        <textarea placeholder="Màu sắc, yêu cầu đặc biệt, thời gian giao hàng…" rows={3} value={form.note} onChange={setF("note")} style={{ ...inp, resize: "vertical" as const }}
-          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px ${gRgba(GOLD, 0.12)}`; }}
-          onBlur={e => { e.target.style.borderColor = gRgba(GOLD, 0.25); e.target.style.boxShadow = "none"; }} />
-      </div>
-      {error && (
-        <div style={{ color: RED_SOFT, fontSize: 13, marginBottom: 16, padding: "12px 16px", background: "rgba(192,57,43,0.06)", border: "1px solid rgba(192,57,43,0.2)", borderRadius: R_SM, fontFamily: FONT_BODY }}>
-          {error}
-        </div>
-      )}
-      <button
-        onClick={handleSubmit}
-        disabled={loading}
-        style={{
-          width: "100%", padding: "17px",
-          background: loading ? "#C8BCA8" : `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
-          color: "#FFFFFF", border: "none", fontWeight: 700, fontSize: 14,
-          cursor: loading ? "not-allowed" : "pointer",
-          letterSpacing: "0.08em", textTransform: "uppercase" as const,
-          boxShadow: loading ? "none" : `0 8px 28px ${gRgba(GOLD, 0.3)}`,
-          borderRadius: R_MD, fontFamily: FONT_BODY, transition: "all 0.25s ease",
-        }}
-      >
-        {loading ? "Đang gửi…" : "Nhận Tư Vấn & Báo Giá Miễn Phí →"}
-      </button>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14 }}>
-        <SvgIcon name="shield" size={13} color={GRAY_LIGHT} />
-        <p style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>Thông tin được bảo mật tuyệt đối. Không spam.</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Props ─────────────────────────────────────────────────────────────────────
 interface Props {
   isEditor?: boolean;
   initialContent?: Record<string, string>;
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// ─── YouTube helpers ─────────────────────────────────────────────────────────
+function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting && !started) setStarted(true); }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [started]);
+  const src = started
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=1&rel=0&modestbranding=1`
+    : `https://www.youtube.com/embed/${videoId}?controls=1&rel=0&modestbranding=1`;
+  return (
+    <div ref={containerRef} style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#000", borderRadius: R_MD, overflow: "hidden" }}>
+      <iframe src={src} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
+    </div>
+  );
+}
+
+function YoutubeThumbnailPlay({ videoId, title, tag }: { videoId: string; title: string; tag?: string }) {
+  const [playing, setPlaying] = useState(false);
+  const thumbUrl = videoId && videoId !== "_placeholder_" ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
+  return (
+    <div style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#111", cursor: playing ? "default" : "pointer", borderRadius: R_MD, overflow: "hidden" }} onClick={() => { if (!playing) setPlaying(true); }}>
+      {playing ? (
+        <iframe src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1`} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
+      ) : (
+        <>
+          {thumbUrl ? (
+            <img src={thumbUrl} alt={title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`; }} />
+          ) : (
+            <div style={{ position: "absolute", inset: 0, background: "#1A1200", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: GOLD_PALE, fontSize: 13 }}>Video chưa cập nhật</span>
+            </div>
+          )}
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8 5l11 7-11 7V5z" fill="#1A1200"/></svg>
+            </div>
+          </div>
+          {tag && (
+            <div style={{ position: "absolute", top: 12, left: 12, background: `rgba(139,105,20,0.9)`, color: "#fff", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>
+              {tag}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── ImageUploadOverlay ───────────────────────────────────────────────────────
+function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: { blockKey: string; currentUrl: string; onUploaded: (key: string, url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  async function handleFile(file: File) {
+    setUploading(true);
+    try {
+      const fd = new FormData(); fd.append("file", file); fd.append("slug", LP_SLUG); fd.append("blockKey", blockKey);
+      const res = await fetch("/api/admin/lp-upload-image", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      onUploaded(blockKey, url);
+    } catch { alert("Upload thất bại"); } finally { setUploading(false); }
+  }
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(26,18,0,0.6)", cursor: "pointer" }} onClick={() => inputRef.current?.click()}>
+      <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+      {uploading ? (
+        <div style={{ color: "#fff", fontSize: 13, fontFamily: FONT_BODY }}>Đang upload...</div>
+      ) : (
+        <div style={{ textAlign: "center", color: "#fff" }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ marginBottom: 8 }}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div style={{ fontSize: 12, fontFamily: FONT_BODY }}>Nhấn để upload ảnh</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── FadeIn ───────────────────────────────────────────────────────────────────
+function FadeIn({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(24px)", transition: `opacity 0.6s ease ${delay}ms, transform 0.6s ease ${delay}ms` }}>
+      {children}
+    </div>
+  );
+}
+
+// ─── SectionLabel ─────────────────────────────────────────────────────────────
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid rgba(139,105,20,0.35)`, background: "rgba(139,105,20,0.08)", color: GOLD, fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", padding: "6px 16px", marginBottom: 18, borderRadius: R_FULL, textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: GOLD, display: "inline-block" }} />
+      {children}
+    </div>
+  );
+}
+
+// ─── GoldDivider ─────────────────────────────────────────────────────────────
+function GoldDivider() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, margin: "20px auto 28px" }}>
+      <div style={{ width: 32, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD})` }} />
+      <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD }} />
+      <div style={{ width: 32, height: 1, background: `linear-gradient(90deg, ${GOLD}, transparent)` }} />
+    </div>
+  );
+}
+
+// ─── GoldButton ──────────────────────────────────────────────────────────────
+function GoldButton({ children, onClick, style }: { children: React.ReactNode; onClick?: () => void; style?: React.CSSProperties }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{ background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #5A3E08 100%)`, color: "#FDFAF5", border: "none", padding: "15px 32px", fontWeight: 700, fontSize: 13, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderRadius: R_MD, boxShadow: hovered ? `0 12px 36px rgba(139,105,20,0.35)` : `0 6px 24px rgba(139,105,20,0.2)`, transform: hovered ? "translateY(-2px)" : "translateY(0)", transition: "all 0.25s ease", fontFamily: FONT_BODY, ...style }}>
+      {children}
+    </button>
+  );
+}
+
+function OutlineButton({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{ background: "transparent", color: hovered ? GOLD : WHITE, border: `1px solid ${hovered ? GOLD : "rgba(26,18,0,0.3)"}`, padding: "15px 32px", fontWeight: 500, fontSize: 13, cursor: "pointer", letterSpacing: "0.06em", borderRadius: R_MD, transition: "all 0.25s ease", fontFamily: FONT_BODY }}>
+      {children}
+    </button>
+  );
+}
+
+// ─── BeforeAfterSlider ───────────────────────────────────────────────────────
+function BeforeAfterSlider({ beforeUrl, afterUrl, beforeLabel = "Sofa thường", afterLabel = "SMF12 Da PU" }: { beforeUrl?: string; afterUrl?: string; beforeLabel?: string; afterLabel?: string }) {
+  const [sliderPos, setSliderPos] = useState(50);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const updatePos = (clientX: number) => {
+    const el = containerRef.current; if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setSliderPos(Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100)));
+  };
+  return (
+    <div ref={containerRef} onMouseDown={() => { dragging.current = true; }} onMouseMove={(e) => { if (dragging.current) updatePos(e.clientX); }} onMouseUp={() => { dragging.current = false; }} onMouseLeave={() => { dragging.current = false; }} onTouchMove={(e) => updatePos(e.touches[0].clientX)}
+      style={{ position: "relative", width: "100%", paddingBottom: "56.25%", cursor: "ew-resize", userSelect: "none", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+      {afterUrl ? (
+        <img src={afterUrl} alt={afterLabel} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
+      ) : (
+        <div style={{ position: "absolute", inset: 0, background: "#F0EBE0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ color: GOLD, fontSize: 13, fontFamily: FONT_BODY }}>Ảnh SAU (chưa cập nhật)</span>
+        </div>
+      )}
+      <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}>
+        {beforeUrl ? (
+          <img src={beforeUrl} alt={beforeLabel} style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", background: "#E8E0D0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>Ảnh TRƯỚC (chưa cập nhật)</span>
+          </div>
+        )}
+      </div>
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: `${sliderPos}%`, transform: "translateX(-50%)", width: 2, background: GOLD, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 40, height: 40, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 2px 12px rgba(139,105,20,0.4)` }}>
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none"><path d="M5 7H1M1 7L4 4M1 7L4 10" stroke="#FDFAF5" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 7H17M17 7L14 4M17 7L14 10" stroke="#FDFAF5" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        </div>
+      </div>
+      <div style={{ position: "absolute", top: 12, left: 14, background: "rgba(253,250,245,0.9)", color: GRAY, fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{beforeLabel}</div>
+      <div style={{ position: "absolute", top: 12, right: 14, background: `rgba(139,105,20,0.12)`, border: `1px solid rgba(139,105,20,0.4)`, color: GOLD, fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{afterLabel}</div>
+    </div>
+  );
+}
+
+// ─── SofaDemo interactive ─────────────────────────────────────────────────────
+const SOFA_POSITIONS = [
+  { id: "sofa", label: "Sofa ngồi", icon: "🛋️", desc: "Tư thế ngồi thoải mái, lưng thẳng, chân chạm sàn", backAngle: 100, footAngle: 90 },
+  { id: "relax", label: "Thư giãn", icon: "😌", desc: "Ngả lưng nhẹ, chân duỗi thẳng — lý tưởng xem TV", backAngle: 130, footAngle: 160 },
+  { id: "halfsleep", label: "Nửa nằm", icon: "📖", desc: "Lưng ngả 45°, chân duỗi — đọc sách, lướt điện thoại", backAngle: 145, footAngle: 175 },
+  { id: "sleep", label: "Nằm ngủ", icon: "🛏️", desc: "Trải phẳng hoàn toàn — giường ngủ êm ái", backAngle: 175, footAngle: 180 },
+];
+
+function SofaDemoSection() {
+  const [activePos, setActivePos] = useState(0);
+  const pos = SOFA_POSITIONS[activePos];
+  const backRad = (pos.backAngle * Math.PI) / 180;
+  const footRad = (pos.footAngle * Math.PI) / 180;
+  // SVG sofa simplified
+  const seatW = 120; const seatH = 18; const seatX = 40; const seatY = 100;
+  // Back cushion pivot at (seatX, seatY)
+  const backLen = 60;
+  const backX2 = seatX + backLen * Math.cos(backRad - Math.PI);
+  const backY2 = seatY + backLen * Math.sin(backRad - Math.PI);
+  // Foot rest pivot at (seatX + seatW, seatY)
+  const footLen = 50;
+  const footX2 = seatX + seatW + footLen * Math.cos(footRad);
+  const footY2 = seatY + footLen * Math.sin(footRad - Math.PI);
+
+  return (
+    <section id="demo" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+        <FadeIn>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <SectionLabel>Demo tương tác</SectionLabel>
+            <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+              Trải Nghiệm Sofa Giường
+            </h2>
+            <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
+              SMF12 — Đa Tư Thế Linh Hoạt
+            </div>
+            <GoldDivider />
+            <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY, maxWidth: 560, margin: "0 auto" }}>
+              Nhấn các tư thế bên dưới để xem sofa tự động chuyển đổi theo từng nhu cầu sử dụng thực tế
+            </p>
+          </div>
+        </FadeIn>
+        <FadeIn delay={100}>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 32 }}>
+            {SOFA_POSITIONS.map((p, i) => (
+              <button key={p.id} onClick={() => setActivePos(i)}
+                style={{ padding: "10px 20px", borderRadius: R_FULL, border: `1.5px solid ${i === activePos ? GOLD : BLACK_BORDER}`, background: i === activePos ? `rgba(139,105,20,0.1)` : "transparent", color: i === activePos ? GOLD : GRAY, fontSize: 13, fontWeight: i === activePos ? 600 : 400, cursor: "pointer", fontFamily: FONT_BODY, transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6 }}>
+                <span>{p.icon}</span> {p.label}
+              </button>
+            ))}
+          </div>
+        </FadeIn>
+        <FadeIn delay={200}>
+          <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+            {/* SVG Demo */}
+            <svg width="300" height="160" viewBox="0 0 300 160" style={{ transition: "all 0.5s ease" }}>
+              {/* Floor */}
+              <line x1="20" y1="130" x2="280" y2="130" stroke={BLACK_BORDER} strokeWidth="1.5"/>
+              {/* Seat */}
+              <rect x={seatX} y={seatY} width={seatW} height={seatH} rx="4" fill={`rgba(139,105,20,0.15)`} stroke={GOLD} strokeWidth="1.5"/>
+              {/* Back cushion */}
+              <line x1={seatX} y1={seatY} x2={backX2} y2={backY2} stroke={GOLD} strokeWidth="8" strokeLinecap="round"/>
+              <rect x={backX2 - 6} y={backY2 - 6} width={12} height={12} rx="3" fill={`rgba(139,105,20,0.3)`} stroke={GOLD} strokeWidth="1"/>
+              {/* Foot rest */}
+              <line x1={seatX + seatW} y1={seatY} x2={footX2} y2={footY2} stroke={GOLD} strokeWidth="8" strokeLinecap="round"/>
+              {/* Legs */}
+              <line x1={seatX + 10} y1={seatY + seatH} x2={seatX + 10} y2="130" stroke={GRAY_LIGHT} strokeWidth="3" strokeLinecap="round"/>
+              <line x1={seatX + seatW - 10} y1={seatY + seatH} x2={seatX + seatW - 10} y2="130" stroke={GRAY_LIGHT} strokeWidth="3" strokeLinecap="round"/>
+              {/* Person silhouette */}
+              <circle cx={seatX + 20} cy={backY2 - 8} r="8" fill={`rgba(139,105,20,0.4)`} stroke={GOLD} strokeWidth="1"/>
+            </svg>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 22, marginBottom: 8 }}>{pos.icon}</div>
+              <div style={{ color: GOLD, fontWeight: 600, fontSize: 16, fontFamily: FONT_HEADING, marginBottom: 6 }}>{pos.label}</div>
+              <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, fontFamily: FONT_BODY, maxWidth: 400, margin: "0 auto" }}>{pos.desc}</p>
+            </div>
+          </div>
+        </FadeIn>
+        <FadeIn delay={300}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 32 }}>
+            {[
+              { icon: "🛋️", label: "Sofa ban ngày", desc: "Tiếp khách, ngồi làm việc, thư giãn" },
+              { icon: "🌙", label: "Giường ban đêm", desc: "Trải phẳng hoàn toàn, ngủ êm ái" },
+              { icon: "📐", label: "Gấp gọn tiện lợi", desc: "Tiết kiệm không gian khi không dùng" },
+            ].map((f, i) => (
+              <div key={i} style={{ background: BLACK, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_MD, padding: "20px 16px", textAlign: "center" }}>
+                <div style={{ fontSize: 28, marginBottom: 10 }}>{f.icon}</div>
+                <div style={{ color: WHITE, fontWeight: 600, fontSize: 13, fontFamily: FONT_HEADING, marginBottom: 6 }}>{f.label}</div>
+                <p style={{ color: GRAY, fontSize: 11, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </FadeIn>
+      </div>
+    </section>
+  );
+}
+
+// ─── FAQ data ─────────────────────────────────────────────────────────────────
+const FAQ_ITEMS = [
+  { bkQ: "faq_1_q", defQ: "Sofa giường da PU SMF12 có bền không?", bkA: "faq_1_a", defA: "Da PU SMF12 được nhập khẩu từ nhà máy đạt chuẩn ISO, chịu được trên 50.000 lần gập mở mà không bong tróc. Bề mặt kháng nước, kháng bụi bẩn, dễ lau chùi." },
+  { bkQ: "faq_2_q", defQ: "Kích thước nào phù hợp với phòng của tôi?", bkA: "faq_2_a", defA: "SMF12 có 4 kích thước: 0,9m (phòng đơn), 1,2m (phòng nhỏ), 1,4m (phòng trung), 1,6m (phòng rộng). Khi gấp làm sofa, chiều sâu chỉ 90cm — rất tiết kiệm không gian." },
+  { bkQ: "faq_3_q", defQ: "Cơ cấu gập mở có phức tạp không?", bkA: "faq_3_a", defA: "Cơ cấu SmartFold được thiết kế 1 thao tác — chỉ kéo/đẩy nhẹ là chuyển đổi. Không cần tháo lắp, không cần dụng cụ. Phù hợp cả người cao tuổi và trẻ em." },
+  { bkQ: "faq_4_q", defQ: "Đệm ngồi và đệm nằm có thoải mái không?", bkA: "faq_4_a", defA: "Đệm foam D40 dày 12cm, kết hợp lớp memory foam 3cm trên cùng — đảm bảo êm ái khi ngồi và đủ cứng để hỗ trợ cột sống khi nằm ngủ." },
+  { bkQ: "faq_5_q", defQ: "Khung gỗ có bị mối mọt không?", bkA: "faq_5_a", defA: "Khung gỗ thông được xử lý chống mối mọt và sấy khô đạt độ ẩm < 12%. Kết hợp với thanh giằng thép mạ kẽm, đảm bảo độ bền trên 10 năm sử dụng bình thường." },
+  { bkQ: "faq_6_q", defQ: "Trả góp có được không?", bkA: "faq_6_a", defA: "Có. SmartFurni hỗ trợ trả góp 0% lãi suất qua các đối tác tài chính. Liên hệ hotline để được tư vấn phương thức phù hợp nhất." },
+];
+
+type EFn = (props: { bk: string; def: string; as?: "h1"|"h2"|"h3"|"h4"|"h5"|"h6"|"p"|"span"|"div"|"li"; style?: React.CSSProperties; multiline?: boolean }) => React.ReactNode;
+
+function FaqAccordion({ E: EditFn }: { E: EFn }) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {FAQ_ITEMS.map((item, i) => {
+        const isOpen = openIndex === i;
+        return (
+          <div key={i} style={{ border: `1px solid ${isOpen ? `rgba(139,105,20,0.4)` : BLACK_BORDER}`, borderRadius: R_MD, overflow: "hidden", transition: "border-color 0.2s", background: isOpen ? `rgba(139,105,20,0.04)` : BLACK }}>
+            <button onClick={() => setOpenIndex(isOpen ? null : i)}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+              <span style={{ color: WHITE, fontSize: 14, fontWeight: 500, fontFamily: FONT_BODY, lineHeight: 1.5, paddingRight: 16 }}>
+                {EditFn({ bk: item.bkQ, def: item.defQ, as: "span" })}
+              </span>
+              <span style={{ color: GOLD, fontSize: 18, fontWeight: 300, flexShrink: 0, transition: "transform 0.2s", transform: isOpen ? "rotate(45deg)" : "rotate(0deg)" }}>+</span>
+            </button>
+            {isOpen && (
+              <div style={{ padding: "0 20px 18px", color: GRAY, fontSize: 13, lineHeight: 1.8, fontFamily: FONT_BODY }}>
+                {EditFn({ bk: item.bkA, def: item.defA, as: "span", multiline: true })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── UrgencyBanner ────────────────────────────────────────────────────────────
+function UrgencyBanner({ E: EditFn }: { E: EFn }) {
+  const [timeLeft, setTimeLeft] = useState({ h: 23, m: 47, s: 12 });
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        let { h, m, s } = prev;
+        s--; if (s < 0) { s = 59; m--; } if (m < 0) { m = 59; h--; } if (h < 0) { h = 23; m = 59; s = 59; }
+        return { h, m, s };
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    <div style={{ background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, padding: "20px 24px" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+        <div>
+          <div style={{ color: "#FDFAF5", fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING, marginBottom: 4 }}>
+            {EditFn({ bk: "urgency_title", def: "⚡ Ưu đãi tháng này — Tặng bộ ga gối trị giá 890.000₫", as: "span" })}
+          </div>
+          <div style={{ color: "rgba(253,250,245,0.85)", fontSize: 12, fontFamily: FONT_BODY }}>
+            {EditFn({ bk: "urgency_sub", def: "Chỉ còn áp dụng cho 12 đơn hàng tiếp theo", as: "span" })}
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: "rgba(253,250,245,0.8)", fontSize: 12, fontFamily: FONT_BODY }}>Kết thúc sau:</span>
+          {[pad(timeLeft.h), pad(timeLeft.m), pad(timeLeft.s)].map((t, i) => (
+            <React.Fragment key={i}>
+              <div style={{ background: "rgba(26,18,0,0.2)", color: "#FDFAF5", fontWeight: 700, fontSize: 20, fontFamily: FONT_HEADING, padding: "6px 10px", borderRadius: R_SM, minWidth: 40, textAlign: "center" }}>{t}</div>
+              {i < 2 && <span style={{ color: "#FDFAF5", fontWeight: 700, fontSize: 18 }}>:</span>}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── StickyCta ────────────────────────────────────────────────────────────────
+function StickyCta({ scrollToForm, E: EditFn }: { scrollToForm: () => void; E: EFn }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const fn = () => setShow(window.scrollY > 400);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+  if (!show) return null;
+  return (
+    <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100, background: "rgba(253,250,245,0.97)", borderTop: `1px solid ${BLACK_BORDER}`, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(8px)" }}>
+      <div>
+        <div style={{ color: WHITE, fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING }}>
+          {EditFn({ bk: "sticky_price", def: "Từ 8.490.000 ₫", as: "span" })}
+        </div>
+        <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY }}>Miễn phí giao hàng + lắp đặt</div>
+      </div>
+      <GoldButton onClick={scrollToForm} style={{ padding: "12px 24px", fontSize: 12 }}>
+        {EditFn({ bk: "sticky_cta", def: "Đặt Hàng Ngay →", as: "span" })}
+      </GoldButton>
+    </div>
+  );
+}
+
+// ─── LeadForm ─────────────────────────────────────────────────────────────────
+function LeadForm({ submitLabel, selectedSize }: { submitLabel?: string; selectedSize?: string }) {
+  const [step, setStep] = useState(1);
+  const [quiz, setQuiz] = useState({ roomSize: "", usage: "", budget: "" });
+  const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [utms, setUtms] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    setUtms({ utmSource: p.get("utm_source") || "", utmMedium: p.get("utm_medium") || "", utmCampaign: p.get("utm_campaign") || "", utmContent: p.get("utm_content") || "" });
+  }, []);
+  const setF = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(prev => ({ ...prev, [k]: e.target.value }));
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.phone.trim()) { setError("Vui lòng điền đầy đủ Họ tên và Số điện thoại (*)"); return; }
+    if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.replace(/\s/g, ""))) { setError("Số điện thoại không hợp lệ"); return; }
+    setLoading(true); setError("");
+    try {
+      const noteStr = `Kích thước chọn: ${selectedSize || quiz.roomSize} | Mục đích: ${quiz.usage} | Ngân sách: ${quiz.budget} | Địa chỉ: ${form.address} | Ghi chú: ${form.note}`;
+      const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }) });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
+      setSuccess(true);
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
+    finally { setLoading(false); }
+  }
+  const inp: React.CSSProperties = { width: "100%", background: "rgba(139,105,20,0.04)", border: `1px solid rgba(139,105,20,0.2)`, color: WHITE, padding: "13px 16px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box" as const, transition: "border-color 0.2s", borderRadius: R_MD };
+  if (success) return (
+    <div style={{ textAlign: "center", padding: "56px 32px", background: BLACK_CARD, border: `1px solid ${GOLD}`, borderRadius: R_LG }}>
+      <div style={{ width: 72, height: 72, borderRadius: "50%", background: `rgba(139,105,20,0.1)`, border: `2px solid ${GOLD}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
+      <h3 style={{ fontSize: 24, fontWeight: 600, color: GOLD, marginBottom: 12, fontFamily: FONT_HEADING }}>Đặt hàng thành công!</h3>
+      <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY }}>Cảm ơn bạn đã tin tưởng SmartFurni.<br />Đội ngũ tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 2 giờ làm việc để xác nhận đơn hàng.</p>
+    </div>
+  );
+  return (
+    <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, padding: "clamp(24px,4vw,44px)", borderRadius: R_LG }}>
+      {/* Progress */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 16 }}>
+          {[1, 2].map((s) => (
+            <React.Fragment key={s}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: step >= s ? GOLD : `rgba(139,105,20,0.06)`, border: `1.5px solid ${step >= s ? GOLD : "rgba(139,105,20,0.25)"}`, color: step >= s ? "#FDFAF5" : GRAY, fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, transition: "all 0.3s" }}>
+                {step > s ? <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="#FDFAF5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> : s}
+              </div>
+              {s < 2 && <div style={{ flex: 1, height: 2, background: step > s ? GOLD : `rgba(139,105,20,0.15)`, transition: "background 0.3s" }} />}
+            </React.Fragment>
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ color: step === 1 ? GOLD : GRAY, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.06em" }}>BƯỚC 1 — Thông tin nhu cầu</span>
+          <span style={{ color: step === 2 ? GOLD : GRAY, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.06em" }}>BƯỚC 2 — Thông tin liên hệ</span>
+        </div>
+      </div>
+      {step === 1 && (
+        <div>
+          {/* Kích thước phòng */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 14, fontFamily: FONT_BODY }}>Diện tích phòng của bạn?</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+              {[{ v: "small", l: "Dưới 15m²", sub: "Phòng nhỏ / studio" }, { v: "medium", l: "15–25m²", sub: "Phòng trung bình" }, { v: "large", l: "25–40m²", sub: "Phòng rộng" }, { v: "xlarge", l: "Trên 40m²", sub: "Phòng lớn / căn hộ" }].map(o => (
+                <button key={o.v} onClick={() => setQuiz(q => ({ ...q, roomSize: o.v }))}
+                  style={{ padding: "14px 16px", border: `1.5px solid ${quiz.roomSize === o.v ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: quiz.roomSize === o.v ? `rgba(139,105,20,0.08)` : BLACK, cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                  <div style={{ color: quiz.roomSize === o.v ? GOLD : WHITE, fontWeight: 600, fontSize: 13, fontFamily: FONT_BODY }}>{o.l}</div>
+                  <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginTop: 2 }}>{o.sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Mục đích sử dụng */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 14, fontFamily: FONT_BODY }}>Mục đích sử dụng chính?</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+              {[{ v: "daily", l: "Ngủ hàng ngày", sub: "Phòng ngủ chính" }, { v: "guest", l: "Phòng khách", sub: "Tiếp khách + ngủ thỉnh thoảng" }, { v: "office", l: "Phòng làm việc", sub: "Nghỉ trưa, thư giãn" }, { v: "rental", l: "Cho thuê", sub: "Căn hộ dịch vụ, homestay" }].map(o => (
+                <button key={o.v} onClick={() => setQuiz(q => ({ ...q, usage: o.v }))}
+                  style={{ padding: "14px 16px", border: `1.5px solid ${quiz.usage === o.v ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: quiz.usage === o.v ? `rgba(139,105,20,0.08)` : BLACK, cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                  <div style={{ color: quiz.usage === o.v ? GOLD : WHITE, fontWeight: 600, fontSize: 13, fontFamily: FONT_BODY }}>{o.l}</div>
+                  <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginTop: 2 }}>{o.sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <GoldButton onClick={() => setStep(2)} style={{ width: "100%", justifyContent: "center" }}>
+            Tiếp theo — Nhận tư vấn →
+          </GoldButton>
+        </div>
+      )}
+      {step === 2 && (
+        <form onSubmit={handleSubmit}>
+          {(quiz.roomSize || selectedSize) && (
+            <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "12px 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>
+                {selectedSize ? `Kích thước đã chọn: ${selectedSize}` : `Phòng ${quiz.roomSize} · ${quiz.usage}`}
+              </span>
+            </div>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <input style={inp} placeholder="Họ và tên (*)" value={form.name} onChange={setF("name")} required />
+            <input style={inp} placeholder="Số điện thoại (*)" value={form.phone} onChange={setF("phone")} required />
+            <input style={inp} placeholder="Địa chỉ giao hàng" value={form.address} onChange={setF("address")} />
+            <textarea style={{ ...inp, minHeight: 80, resize: "vertical" }} placeholder="Ghi chú thêm (màu sắc, yêu cầu đặc biệt...)" value={form.note} onChange={setF("note")} />
+          </div>
+          {error && <div style={{ color: RED_SOFT, fontSize: 13, marginTop: 12, fontFamily: FONT_BODY }}>{error}</div>}
+          <GoldButton style={{ width: "100%", marginTop: 20, justifyContent: "center", fontSize: 14, padding: "16px 24px" }}>
+            {loading ? "Đang gửi..." : (submitLabel || "Tư Vấn & Đặt Hàng Ngay →")}
+          </GoldButton>
+          <p style={{ color: GRAY_LIGHT, fontSize: 11, textAlign: "center", marginTop: 12, fontFamily: FONT_BODY }}>
+            🔒 Thông tin của bạn được bảo mật tuyệt đối — không chia sẻ cho bên thứ ba
+          </p>
+        </form>
+      )}
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function LpSmf12Client({ isEditor = false, initialContent = {} }: Props) {
-  const [content, setContent] = useState<Record<string, string>>(initialContent);
-  const [editMode, setEditMode] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [heroImgIdx, setHeroImgIdx] = useState(0);
-  const formRef = useRef<HTMLDivElement>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [content, setContent] = useState<Record<string, string>>(initialContent);
+  const [editedCount, setEditedCount] = useState(0);
+  const [selectedSize, setSelectedSize] = useState("");
 
   useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    setScrollY(window.scrollY);
+    const fn = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  // Hero image slideshow
-  const heroImages = [0, 1, 2].map(i => content[`hero_bg_${i}`]).filter(Boolean);
-  useEffect(() => {
-    if (heroImages.length <= 1) return;
-    const t = setInterval(() => setHeroImgIdx(i => (i + 1) % heroImages.length), 5000);
-    return () => clearInterval(t);
-  }, [heroImages.length]);
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  const scrollToForm = useCallback(() => scrollTo("register-form"), []);
 
-  const heroOverlayOpacity = parseFloat(content["hero_overlay"] || "0.45");
+  const handleSaved = useCallback((key: string, val: string) => {
+    setContent(prev => ({ ...prev, [key]: val }));
+    setEditedCount(c => c + 1);
+  }, []);
+  const handleDeleted = useCallback((key: string) => {
+    setContent(prev => { const n = { ...prev }; delete n[key]; return n; });
+    setEditedCount(c => c + 1);
+  }, []);
 
-  function scrollToForm() {
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-  function scrollTo(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setMobileMenuOpen(false);
-  }
+  // EditableText shorthand
+  const E: EFn = useCallback(({ bk, def, as, style, multiline }) => (
+    <EditableText slug={LP_SLUG} blockKey={bk} defaultValue={def} editMode={editMode} as={as} style={style} multiline={multiline} savedValue={content[bk]} onSaved={handleSaved} onDeleted={handleDeleted} />
+  ), [editMode, content, handleSaved, handleDeleted]);
 
-  // EditableText helper
-  function E({ bk, def, as: Tag = "span", style }: { bk: string; def: string; as?: React.ElementType; style?: React.CSSProperties }) {
-    if (!editMode) {
-      const val = content[bk] ?? def;
-      return <Tag style={style} dangerouslySetInnerHTML={{ __html: val }} />;
-    }
-    return (
-      <EditableText
-        slug={LP_SLUG}
-        blockKey={bk}
-        defaultValue={def}
-        editMode={editMode}
-        as={Tag as "span"}
-        style={style}
-        savedValue={content[bk]}
-        onSaved={(key, val) => setContent(c => ({ ...c, [key]: val }))}
-        onDeleted={key => setContent(c => { const n = { ...c }; delete n[key]; return n; })}
-      />
-    );
-  }
+  const navScrolled = scrollY > 60;
+  const heroImages = ["hero_bg_0", "hero_bg_1", "hero_bg_2"].map(k => content[k] || "");
+  const heroOverlay = parseFloat(content["hero_overlay"] || "0.35");
 
-  const selectedSizeObj = SIZES.find(s => s.key === selectedSize);
-  const SECTION_PAD = "clamp(60px,8vw,100px) clamp(20px,5vw,80px)";
-  const NAV_ITEMS = [
-    { id: "product", label: "Sản Phẩm" },
-    { id: "features", label: "Điểm Mạnh" },
-    { id: "specs", label: "Thông Số" },
-    { id: "reviews", label: "Đánh Giá" },
-    { id: "order-form", label: "Đặt Hàng" },
+  // Size options
+  const SIZES = [
+    { id: "0.9m", label: "0,9m × 2,0m", price: "8.490.000 ₫", sub: "Phòng đơn / studio" },
+    { id: "1.2m", label: "1,2m × 2,0m", price: "9.290.000 ₫", sub: "Phòng nhỏ đến trung bình" },
+    { id: "1.4m", label: "1,4m × 2,0m", price: "10.490.000 ₫", sub: "Phòng trung bình", badge: "Bán chạy ★" },
+    { id: "1.6m", label: "1,6m × 2,0m", price: "11.890.000 ₫", sub: "Phòng rộng / căn hộ" },
   ];
 
   return (
-    <div style={{ background: BLACK, color: WHITE, fontFamily: FONT_BODY, overflowX: "hidden" }}>
+    <div style={{ fontFamily: FONT_BODY, background: BLACK, color: WHITE, minHeight: "100vh" }}>
       {/* ── EDIT BAR ── */}
-      <LpEditBar
-        isEditor={isEditor}
-        editMode={editMode}
-        onToggleEditMode={() => setEditMode(m => !m)}
-        editedCount={Object.keys(content).filter(k => !k.startsWith("hero_")).length}
-        slug={LP_SLUG}
-      />
+      {isEditor && (
+        <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(m => !m)} editedCount={editedCount} slug={LP_SLUG} />
+      )}
 
       {/* ── STICKY NAV ── */}
-      <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrollY > 60 ? "rgba(253,250,245,0.97)" : "transparent",
-        borderBottom: scrollY > 60 ? `1px solid ${gRgba(GOLD, 0.2)}` : "none",
-        backdropFilter: scrollY > 60 ? "blur(16px)" : "none",
-        WebkitBackdropFilter: scrollY > 60 ? "blur(16px)" : "none",
-        transition: "background 0.3s ease, border-color 0.3s ease",
-      }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 68, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <a href="/" style={{ flexShrink: 0, textDecoration: "none" }}>
-            <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 44, objectFit: "contain" }} />
+      <nav style={{ position: "fixed", top: isEditor ? 48 : 0, left: 0, right: 0, zIndex: 90, background: navScrolled ? "rgba(253,250,245,0.97)" : "transparent", borderBottom: navScrolled ? `1px solid ${BLACK_BORDER}` : "none", backdropFilter: navScrolled ? "blur(12px)" : "none", transition: "all 0.3s ease", padding: "0 24px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Logo */}
+          <a href="/lp/smf12" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 36, objectFit: "contain" }} />
           </a>
-          <div className="lp-nav-menu" style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" }}>
-            {NAV_ITEMS.map(item => (
-              <button key={item.id} onClick={() => scrollTo(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: GRAY, fontSize: 13, fontWeight: 500, fontFamily: FONT_BODY, padding: "8px 14px", borderRadius: R_SM, letterSpacing: "0.01em", transition: "color 0.2s, background 0.2s" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = GOLD; (e.currentTarget as HTMLElement).style.background = gRgba(GOLD, 0.07); }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = GRAY; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-                {item.label}
+          {/* Menu — desktop */}
+          <div className="lp-nav-menu" style={{ display: "flex", gap: 28, alignItems: "center" }}>
+            {[["demo", "Tính năng"], ["products", "Sản phẩm"], ["benefits", "Lợi ích"], ["testimonials", "Đánh giá"], ["register-form", "Đặt hàng"]].map(([id, label]) => (
+              <button key={id} onClick={() => scrollTo(id)} style={{ background: "none", border: "none", color: navScrolled ? GRAY : "rgba(253,250,245,0.85)", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: FONT_BODY, letterSpacing: "0.02em", padding: "4px 0", transition: "color 0.2s" }}>
+                {label}
               </button>
             ))}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button
-              onClick={scrollToForm}
-              className="lp-nav-cta"
-              style={{ background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, color: "#FFFFFF", border: "none", borderRadius: R_FULL, padding: "10px 22px", fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, cursor: "pointer", whiteSpace: "nowrap" as const, boxShadow: `0 2px 12px ${gRgba(GOLD, 0.3)}` }}>
-              Đặt Hàng Ngay
-            </button>
-            <button className="lp-hamburger" onClick={() => setMobileMenuOpen(m => !m)} style={{ background: "none", border: "none", cursor: "pointer", padding: 8, display: "none" }}>
-              <div style={{ width: 22, height: 2, background: GRAY, marginBottom: 5, transition: "transform 0.2s", transform: mobileMenuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
-              <div style={{ width: 22, height: 2, background: GRAY, marginBottom: 5, opacity: mobileMenuOpen ? 0 : 1, transition: "opacity 0.2s" }} />
-              <div style={{ width: 22, height: 2, background: GRAY, transition: "transform 0.2s", transform: mobileMenuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
-            </button>
+          {/* CTA */}
+          <div className="lp-nav-cta">
+            <GoldButton onClick={scrollToForm} style={{ padding: "10px 20px", fontSize: 12 }}>ĐẶT HÀNG NGAY</GoldButton>
           </div>
+          {/* Hamburger */}
+          <button className="lp-hamburger" onClick={() => setMobileMenuOpen(m => !m)} style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke={navScrolled ? WHITE : "#FDFAF5"} strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </button>
         </div>
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div style={{ background: "rgba(253,250,245,0.98)", backdropFilter: "blur(16px)", borderTop: `1px solid ${gRgba(GOLD, 0.15)}`, padding: "16px 24px 24px" }}>
-            {NAV_ITEMS.map(item => (
-              <button key={item.id} onClick={() => scrollTo(item.id)} style={{ display: "block", width: "100%", textAlign: "left" as const, background: "none", border: "none", cursor: "pointer", color: GRAY, fontSize: 15, fontFamily: FONT_BODY, padding: "12px 0", borderBottom: `1px solid ${gRgba(GOLD, 0.1)}` }}>
-                {item.label}
-              </button>
-            ))}
-            <button onClick={scrollToForm} style={{ marginTop: 16, width: "100%", background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, color: "#FFFFFF", border: "none", borderRadius: R_MD, padding: "14px", fontSize: 14, fontWeight: 700, fontFamily: FONT_BODY, cursor: "pointer" }}>
-              Đặt Hàng Ngay
-            </button>
-          </div>
-        )}
       </nav>
 
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 89, background: "rgba(253,250,245,0.98)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}>
+          <button onClick={() => setMobileMenuOpen(false)} style={{ position: "absolute", top: 20, right: 20, background: "none", border: "none", cursor: "pointer" }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke={WHITE} strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </button>
+          {[["demo", "Tính năng"], ["products", "Sản phẩm"], ["benefits", "Lợi ích"], ["testimonials", "Đánh giá"], ["register-form", "Đặt hàng"]].map(([id, label]) => (
+            <button key={id} onClick={() => { scrollTo(id); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", color: WHITE, fontSize: 22, fontWeight: 300, cursor: "pointer", fontFamily: FONT_HEADING, letterSpacing: "0.04em" }}>{label}</button>
+          ))}
+          <GoldButton onClick={() => { scrollToForm(); setMobileMenuOpen(false); }} style={{ marginTop: 16 }}>ĐẶT HÀNG NGAY</GoldButton>
+        </div>
+      )}
+
       {/* ── HERO ── */}
-      <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", paddingTop: 68, overflow: "hidden" }}>
-        {heroImages.length > 0 ? (
-          <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-            {heroImages.map((img, i) => (
-              <div key={i} style={{ position: "absolute", inset: 0, backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center", opacity: i === heroImgIdx ? 1 : 0, transition: "opacity 1.2s ease" }} />
-            ))}
-            <div style={{ position: "absolute", inset: 0, background: `rgba(10,8,2,${heroOverlayOpacity})` }} />
-          </div>
-        ) : (
-          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(135deg, #2C1F0E 0%, #1A1200 100%)` }} />
+      <section id="hero" style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
+        {/* Hero background */}
+        <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+          {heroImages[0] ? (
+            <img src={heroImages[0]} alt="SMF12 Hero" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${BLACK_CARD} 0%, ${BLACK_SOFT} 100%)` }} />
+          )}
+          <div style={{ position: "absolute", inset: 0, background: `rgba(26,18,0,${heroOverlay})` }} />
+        </div>
+        {/* Edit hero */}
+        {isEditor && editMode && (
+          <EditableHeroImage slug={LP_SLUG} imageKeys={["hero_bg_0", "hero_bg_1", "hero_bg_2"]} overlayKey="hero_overlay" imageUrls={heroImages} overlayOpacity={heroOverlay} editMode={editMode} onImageSaved={handleSaved} onOverlaySaved={(k, v) => handleSaved(k, String(v))} />
         )}
-        <EditableHeroImage
-          slug={LP_SLUG}
-          imageKeys={["hero_bg_0", "hero_bg_1", "hero_bg_2"]}
-          overlayKey="hero_overlay"
-          imageUrls={[content["hero_bg_0"] || "", content["hero_bg_1"] || "", content["hero_bg_2"] || ""]}
-          overlayOpacity={heroOverlayOpacity}
-          editMode={isEditor}
-          onImageSaved={(key, url) => setContent(c => ({ ...c, [key]: url }))}
-          onOverlaySaved={(key, opacity) => setContent(c => ({ ...c, [key]: String(opacity) }))}
-        />
-        {heroImages.length > 1 && (
-          <div style={{ position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 8, zIndex: 10 }}>
-            {heroImages.map((_, i) => (
-              <button key={i} onClick={() => setHeroImgIdx(i)} style={{ width: i === heroImgIdx ? 24 : 8, height: 8, borderRadius: 4, background: i === heroImgIdx ? GOLD : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", padding: 0, transition: "all 0.3s" }} />
-            ))}
-          </div>
-        )}
-        <div style={{ position: "relative", zIndex: 5, maxWidth: 1200, margin: "0 auto", padding: "clamp(60px,8vw,100px) clamp(20px,5vw,80px)", width: "100%" }}>
-          <FadeIn>
-            <SectionLabel>Sofa Giường Da PU Cao Cấp</SectionLabel>
-            <h1 style={{ fontSize: "clamp(32px,5.5vw,68px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 20, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", maxWidth: 700, color: "#FFFFFF" }}>
-              {E({ bk: "hero_title", def: "Sofa Giường Da PU SMF12 — Sang Trọng Từng Đường Nét", as: "span" })}
+        {/* Hero content */}
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "120px 24px 80px", width: "100%" }}>
+          <div style={{ maxWidth: 680 }}>
+            <SectionLabel>{E({ bk: "hero_section_label", def: "Sofa Giường Da PU Cao Cấp", as: "span" })}</SectionLabel>
+            <h1 style={{ fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 700, lineHeight: 1.1, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF" }}>
+              {E({ bk: "hero_title_1", def: "Sofa Ban Ngày —", as: "span", style: { display: "block" } })}
+              <span style={{ color: GOLD_PALE, fontStyle: "italic", fontFamily: FONT_BRAND }}>
+                {E({ bk: "hero_title_2", def: "Giường Êm Ban Đêm", as: "span" })}
+              </span>
             </h1>
-            <p style={{ fontSize: "clamp(15px,1.8vw,18px)", color: "rgba(255,255,255,0.85)", lineHeight: 1.75, marginBottom: 36, maxWidth: 560, fontFamily: FONT_BODY }}>
-              {E({ bk: "hero_desc", def: "Khung thép mạ kẽm, da PU nhập khẩu dày 1.2mm, cơ cấu gập mở 50.000 lần. Bảo hành 3 năm — giao hàng & lắp đặt miễn phí toàn quốc.", as: "span" })}
+            <p style={{ color: "rgba(253,250,245,0.85)", fontSize: "clamp(15px, 2vw, 18px)", lineHeight: 1.7, marginBottom: 36, fontFamily: FONT_BODY, maxWidth: 520 }}>
+              {E({ bk: "hero_desc", def: "Da PU nhập khẩu cao cấp. Cơ cấu SmartFold 1 thao tác. Đệm foam D40 dày 12cm. Giao hàng và lắp đặt tận nơi toàn quốc.", as: "span", multiline: true })}
             </p>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" as const, marginBottom: 40 }}>
-              <GoldButton onClick={scrollToForm} style={{ fontSize: 15, padding: "16px 36px" }}>
-                Đặt Hàng Ngay →
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 48 }}>
+              <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "16px 36px" }}>
+                {E({ bk: "hero_cta_primary", def: "Nhận Tư Vấn & Báo Giá Ngay", as: "span" })}
               </GoldButton>
-              <button onClick={() => scrollTo("product")} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", border: "1px solid rgba(255,255,255,0.4)", color: "#FFFFFF", fontWeight: 600, fontSize: 14, fontFamily: FONT_BODY, padding: "15px 28px", borderRadius: R_FULL, cursor: "pointer", transition: "border-color 0.2s, background 0.2s" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.8)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.4)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-                Xem Chi Tiết
-              </button>
+              <OutlineButton onClick={() => scrollTo("products")}>
+                {E({ bk: "hero_cta_secondary", def: "Xem sản phẩm ↓", as: "span" })}
+              </OutlineButton>
             </div>
             {/* Trust badges */}
-            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" as const }}>
+            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
               {[
-                { icon: "shield", text: "Bảo hành 3 năm" },
-                { icon: "truck", text: "Giao hàng miễn phí" },
-                { icon: "star", text: "500+ khách hàng" },
-                { icon: "zap", text: "Lắp đặt trong ngày" },
+                { num: "3 năm", label: "Bảo hành da" },
+                { num: "50.000", label: "Lần gập mở" },
+                { num: "D40", label: "Đệm foam cao cấp" },
+                { num: "100%", label: "Da PU nhập khẩu" },
               ].map((b, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <SvgIcon name={b.icon} size={14} color="rgba(255,255,255,0.7)" />
-                  <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, fontFamily: FONT_BODY }}>{b.text}</span>
+                <div key={i} style={{ textAlign: "center" }}>
+                  <div style={{ color: GOLD_PALE, fontSize: 20, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{b.num}</div>
+                  <div style={{ color: "rgba(253,250,245,0.65)", fontSize: 11, fontFamily: FONT_BODY, marginTop: 4, letterSpacing: "0.05em" }}>{b.label}</div>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PROBLEM / SOLUTION ── */}
+      <section id="problems" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "problem_section_label", def: "Thực trạng phòng ngủ Việt", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "problem_title_1", def: "Bạn Có Đang Lãng Phí", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
+                {E({ bk: "problem_title_2", def: "Không Gian Sống Của Mình?", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }} className="lp-problem-grid">
+            {/* Problems */}
+            <FadeIn>
+              <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "32px 28px" }}>
+                <div style={{ fontSize: 32, marginBottom: 16 }}>😰</div>
+                <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 20, fontFamily: FONT_HEADING }}>Vấn đề thường gặp</h3>
+                {[
+                  "Phòng nhỏ chật chội, không đủ chỗ cho cả sofa lẫn giường",
+                  "Sofa vải dễ bám bụi, khó vệ sinh, nhanh xuống màu",
+                  "Giường chỉ dùng ban đêm — lãng phí không gian ban ngày",
+                  "Khách đến chơi không có chỗ ngồi thoải mái",
+                ].map((p, i) => (
+                  <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
+                    <span style={{ color: RED_SOFT, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✕</span>
+                    <span style={{ color: GRAY, fontSize: 14, lineHeight: 1.6, fontFamily: FONT_BODY }}>{p}</span>
+                  </div>
+                ))}
+              </div>
+            </FadeIn>
+            {/* Solutions */}
+            <FadeIn delay={150}>
+              <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.3)`, borderRadius: R_LG, padding: "32px 28px" }}>
+                <div style={{ fontSize: 32, marginBottom: 16 }}>✨</div>
+                <h3 style={{ color: GOLD, fontSize: 16, fontWeight: 600, marginBottom: 20, fontFamily: FONT_HEADING }}>Giải pháp SMF12</h3>
+                {[
+                  "2-in-1: sofa tiếp khách ban ngày + giường ngủ ban đêm",
+                  "Da PU cao cấp — lau sạch trong 30 giây, kháng nước hoàn toàn",
+                  "Tiết kiệm 40% diện tích so với dùng riêng sofa + giường",
+                  "Cơ cấu SmartFold 1 thao tác — chuyển đổi trong 10 giây",
+                ].map((s, i) => (
+                  <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
+                    <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✓</span>
+                    <span style={{ color: GRAY, fontSize: 14, lineHeight: 1.6, fontFamily: FONT_BODY }}>{s}</span>
+                  </div>
+                ))}
+              </div>
+            </FadeIn>
+          </div>
+          <FadeIn delay={200}>
+            <p style={{ textAlign: "center", color: GRAY_LIGHT, fontSize: 13, marginTop: 24, fontFamily: FONT_BODY, fontStyle: "italic" }}>
+              Cùng một không gian — nhưng trải nghiệm hoàn toàn khác nhau
+            </p>
           </FadeIn>
         </div>
       </section>
 
-      {/* ── PRODUCT SHOWCASE ── */}
-      <section id="product" style={{ padding: SECTION_PAD, background: BLACK }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      {/* ── PRODUCT IMAGES ── */}
+      <section id="showcase" style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>Sản Phẩm</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
-                {E({ bk: "product_title", def: "Sofa Giường Da PU SMF12", as: "span" })}
+              <SectionLabel>{E({ bk: "showcase_section_label", def: "Hình ảnh sản phẩm", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "showcase_title_1", def: "SMF12 — Thiết Kế Tinh Tế", as: "span" })}
               </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "showcase_title_2", def: "Phù Hợp Mọi Không Gian", as: "span" })}
+              </div>
               <GoldDivider />
-              <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, maxWidth: 600, margin: "20px auto 0", fontFamily: FONT_BODY }}>
-                {E({ bk: "product_desc", def: "Thiết kế hiện đại, chất liệu da PU cao cấp, phù hợp mọi không gian phòng ngủ từ nhỏ đến lớn.", as: "span" })}
-              </p>
             </div>
           </FadeIn>
-
-          {/* Product images grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom: 48 }}>
-            {[0, 1, 2].map(i => {
-              const imgUrl = content[`product_img_${i}`] || "";
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="lp-showcase-grid">
+            {[
+              { bkImg: "showcase_img_0", badge: "CHẾ ĐỘ SOFA", bkCaption: "showcase_cap_0", defCaption: "Tư thế ngồi thoải mái — tiếp khách, làm việc" },
+              { bkImg: "showcase_img_1", badge: "CHẾ ĐỘ GIƯỜNG", bkCaption: "showcase_cap_1", defCaption: "Trải phẳng hoàn toàn — ngủ êm ái như giường thật" },
+              { bkImg: "showcase_img_2", badge: "CHI TIẾT DA PU", bkCaption: "showcase_cap_2", defCaption: "Da PU nhập khẩu — mịn mượt, kháng nước, bền màu" },
+            ].map((item, i) => {
+              const imgSrc = content[item.bkImg] || "";
               return (
-                <FadeIn key={i} delay={i * 80}>
-                  <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", background: BLACK_CARD, border: `1px solid ${gRgba(GOLD, 0.15)}`, aspectRatio: "4/3" }}>
-                    {imgUrl ? (
-                      <img src={imgUrl} alt={`Sofa SMF12 góc ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                    ) : (
-                      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 8, minHeight: 200 }}>
-                        <div style={{ fontSize: 32, opacity: 0.3 }}>🛋️</div>
-                        <p style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, margin: 0, textAlign: "center" as const }}>
-                          {isEditor ? "Bấm để upload ảnh" : "Chưa có ảnh sản phẩm"}
-                        </p>
-                      </div>
-                    )}
-                    {isEditor && editMode && (
-                      <button
-                        onClick={async () => {
-                          const url = prompt("Nhập URL ảnh:");
-                          if (url) setContent(c => ({ ...c, [`product_img_${i}`]: url }));
-                        }}
-                        style={{ position: "absolute", bottom: 10, right: 10, background: gRgba(GOLD, 0.9), color: "#fff", border: "none", borderRadius: R_SM, padding: "6px 12px", fontSize: 11, cursor: "pointer", fontFamily: FONT_BODY }}>
-                        Đổi ảnh
-                      </button>
-                    )}
+                <FadeIn key={i} delay={i * 100}>
+                  <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+                    <div style={{ position: "relative", paddingBottom: "75%", background: BLACK_CARD }}>
+                      {imgSrc ? (
+                        <Image src={imgSrc} alt={item.defCaption} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 33vw" />
+                      ) : (
+                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>Chưa có ảnh</div>
+                      )}
+                      {editMode && <ImageUploadOverlay blockKey={item.bkImg} currentUrl={imgSrc} onUploaded={handleSaved} />}
+                      {editMode && imgSrc && (
+                        <button onClick={async () => { await fetch(`/api/admin/lp-content?slug=${LP_SLUG}&blockKey=${item.bkImg}`, { method: "DELETE" }); handleDeleted(item.bkImg); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 20, background: "rgba(239,68,68,0.9)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>
+                      )}
+                    </div>
+                    <div style={{ position: "absolute", top: 12, left: 12, background: `rgba(139,105,20,0.9)`, color: "#FDFAF5", fontSize: 9, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.12em", fontFamily: FONT_BODY }}>
+                      {item.badge}
+                    </div>
+                    <div style={{ padding: "16px 16px 20px", background: BLACK_CARD }}>
+                      <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0 }}>
+                        {E({ bk: item.bkCaption, def: item.defCaption, as: "span", multiline: true })}
+                      </p>
+                    </div>
                   </div>
                 </FadeIn>
               );
             })}
           </div>
-
-          {/* Size selector */}
-          <FadeIn>
-            <div style={{ background: "#FFFFFF", border: `1px solid ${gRgba(GOLD, 0.2)}`, borderRadius: R_LG, padding: "clamp(24px,4vw,40px)", boxShadow: `0 4px 32px ${gRgba(GOLD, 0.06)}` }}>
-              <h3 style={{ color: WHITE, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 8 }}>Chọn Kích Thước</h3>
-              <p style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 24 }}>Chọn size phù hợp với không gian phòng của bạn</p>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
-                {SIZES.map(s => {
-                  const isSelected = selectedSize === s.key;
-                  return (
-                    <button key={s.key} onClick={() => setSelectedSize(s.key)} style={{
-                      background: isSelected ? `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)` : "#FDFAF5",
-                      border: `2px solid ${isSelected ? GOLD : gRgba(GOLD, 0.2)}`,
-                      borderRadius: R_MD, padding: "16px 12px", cursor: "pointer",
-                      transition: "all 0.2s", textAlign: "center" as const,
-                      boxShadow: isSelected ? `0 4px 16px ${gRgba(GOLD, 0.3)}` : "none",
-                    }}>
-                      <div style={{ color: isSelected ? "#FFFFFF" : GOLD, fontSize: 15, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 4 }}>{s.label}</div>
-                      <div style={{ color: isSelected ? "rgba(255,255,255,0.85)" : GRAY, fontSize: 12, fontFamily: FONT_BODY, marginBottom: 8 }}>{s.desc}</div>
-                      <div style={{ color: isSelected ? "#FFFFFF" : WHITE, fontSize: 14, fontWeight: 700, fontFamily: FONT_HEADING }}>{fmt(s.price)}</div>
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedSizeObj && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 16, padding: "20px 24px", background: gRgba(GOLD, 0.06), borderRadius: R_MD, border: `1px solid ${gRgba(GOLD, 0.2)}` }}>
-                  <div>
-                    <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, marginBottom: 4 }}>Tổng giá (đã bao gồm giao hàng & lắp đặt)</div>
-                    <div style={{ color: GOLD, fontSize: 28, fontWeight: 800, fontFamily: FONT_HEADING }}>{fmt(selectedSizeObj.price)}</div>
-                  </div>
-                  <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "14px 32px" }}>
-                    Đặt Hàng Size Này →
-                  </GoldButton>
-                </div>
-              )}
-              {!selectedSize && (
-                <div style={{ textAlign: "center", marginTop: 8 }}>
-                  <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "14px 32px" }}>
-                    Tư Vấn Chọn Size Miễn Phí →
-                  </GoldButton>
-                </div>
-              )}
-            </div>
-          </FadeIn>
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section id="features" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <FadeIn>
-            <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>Điểm Mạnh</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
-                {E({ bk: "features_title", def: "Vì Sao Chọn SMF12?", as: "span" })}
-              </h2>
-              <GoldDivider />
-            </div>
-          </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
-            {FEATURES.map((f, i) => (
-              <FadeIn key={i} delay={i * 60}>
-                <div style={{ background: "#FFFFFF", border: `1px solid ${gRgba(GOLD, 0.15)}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s, box-shadow 0.25s" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = gRgba(GOLD, 0.4); (e.currentTarget as HTMLDivElement).style.boxShadow = `0 8px 32px ${gRgba(GOLD, 0.1)}`; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = gRgba(GOLD, 0.15); (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}>
-                  <div style={{ fontSize: 32, marginBottom: 14 }}>{f.icon}</div>
-                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{f.title}</h3>
-                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SPECS ── */}
-      <section id="specs" style={{ padding: SECTION_PAD, background: BLACK }}>
+      {/* ── BEFORE / AFTER SLIDER ── */}
+      <section style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>Thông Số Kỹ Thuật</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
-                {E({ bk: "specs_title", def: "Chất Lượng Được Kiểm Chứng", as: "span" })}
+              <SectionLabel>{E({ bk: "ba_section_label", def: "Kết quả thực tế", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "ba_title_1", def: "Phòng Của Bạn", as: "span" })}
               </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
+                {E({ bk: "ba_title_2", def: "Trước Và Sau SMF12", as: "span" })}
+              </div>
               <GoldDivider />
+              <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY }}>
+                Kéo thanh trượt để xem sự khác biệt — cùng một căn phòng, hoàn toàn khác trải nghiệm
+              </p>
             </div>
           </FadeIn>
-          <FadeIn delay={80}>
-            <div style={{ background: "#FFFFFF", border: `1px solid ${gRgba(GOLD, 0.2)}`, borderRadius: R_LG, overflow: "hidden", boxShadow: `0 4px 32px ${gRgba(GOLD, 0.06)}` }}>
-              {SPECS.map((row, i) => (
-                <div key={i} style={{ display: "flex", borderBottom: i < SPECS.length - 1 ? `1px solid ${gRgba(GOLD, 0.12)}` : "none" }}>
-                  <div style={{ width: "40%", padding: "16px 20px", background: gRgba(GOLD, 0.04), borderRight: `1px solid ${gRgba(GOLD, 0.12)}` }}>
-                    <span style={{ color: GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{row.label}</span>
+          <FadeIn delay={100}>
+            <BeforeAfterSlider beforeUrl={content["ba_before_img"]} afterUrl={content["ba_after_img"]} beforeLabel="Sofa thường" afterLabel="Với SMF12" />
+            {editMode && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
+                {[{ k: "ba_before_img", label: "Ảnh TRƯỚC" }, { k: "ba_after_img", label: "Ảnh SAU" }].map(({ k, label }) => (
+                  <div key={k} style={{ position: "relative", height: 60, background: BLACK_CARD, border: `1px dashed ${GOLD}`, borderRadius: R_MD, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <ImageUploadOverlay blockKey={k} currentUrl={content[k] || ""} onUploaded={handleSaved} />
+                    <span style={{ color: GOLD, fontSize: 12, fontFamily: FONT_BODY }}>{label}</span>
                   </div>
-                  <div style={{ flex: 1, padding: "16px 20px" }}>
-                    <span style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>{row.value}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
+          </FadeIn>
+          <FadeIn delay={200}>
+            <p style={{ textAlign: "center", color: GRAY_LIGHT, fontSize: 12, marginTop: 16, fontFamily: FONT_BODY, fontStyle: "italic" }}>
+              Ảnh thực tế từ khách hàng — không chỉnh sửa
+            </p>
           </FadeIn>
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ── */}
-      <section id="reviews" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
-          <FadeIn>
-            <SectionLabel>Khách Hàng Nói Gì</SectionLabel>
-            <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
-              {E({ bk: "reviews_title", def: "Hơn 500 Gia Đình Hài Lòng", as: "span" })}
-            </h2>
-            <GoldDivider />
-          </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginTop: 40 }}>
-            {TESTIMONIALS.map((t, i) => (
-              <FadeIn key={i} delay={i * 80}>
-                <div style={{ background: "#FFFFFF", border: `1px solid ${gRgba(GOLD, 0.15)}`, borderRadius: R_LG, padding: "28px 24px", textAlign: "left" as const, boxShadow: `0 2px 16px ${gRgba(GOLD, 0.05)}` }}>
-                  <div style={{ display: "flex", gap: 2, marginBottom: 16 }}>
-                    {Array.from({ length: t.rating }).map((_, j) => (
-                      <span key={j} style={{ color: GOLD, fontSize: 14 }}>★</span>
-                    ))}
-                  </div>
-                  <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 20, fontStyle: "italic" }}>"{t.text}"</p>
-                  <div>
-                    <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{t.name}</div>
-                    <div style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY }}>{t.location}</div>
-                  </div>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ── SOFA DEMO INTERACTIVE ── */}
+      <SofaDemoSection />
 
-      {/* ── FAQ ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK }}>
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+      {/* ── VIDEO SECTION ── */}
+      <section id="video" style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>Câu Hỏi Thường Gặp</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
-                Giải Đáp Thắc Mắc
+              <SectionLabel>{E({ bk: "video_section_label", def: "Video thực tế", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "video_title_1", def: "Xem SMF12 Hoạt Động", as: "span" })}
               </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "video_title_2", def: "Thực Tế Từ Khách Hàng", as: "span" })}
+              </div>
               <GoldDivider />
             </div>
           </FadeIn>
-          <div style={{ display: "flex", flexDirection: "column" as const, gap: 12 }}>
-            {FAQ_ITEMS.map((item, i) => {
-              const isOpen = openFaq === i;
+          <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 24, alignItems: "start" }} className="lp-video-grid">
+            <FadeIn>
+              <div>
+                <YoutubeAutoplay videoId={content["video_main_id"] || "_placeholder_"} title="SMF12 Demo" />
+                <div style={{ marginTop: 16, padding: "16px 20px", background: BLACK_CARD, borderRadius: R_MD, border: `1px solid ${BLACK_BORDER}` }}>
+                  <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 8, fontFamily: FONT_BODY }}>VIDEO CHÍNH</div>
+                  <div style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 6 }}>
+                    {E({ bk: "video_main_title", def: "Demo đầy đủ tính năng sofa giường SMF12", as: "span" })}
+                  </div>
+                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0 }}>
+                    {E({ bk: "video_main_desc", def: "Xem cách chuyển đổi từ sofa sang giường trong 10 giây, cùng các tính năng nổi bật của SMF12.", as: "span", multiline: true })}
+                  </p>
+                </div>
+              </div>
+            </FadeIn>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {[
+                { bkId: "video_sub_1_id", bkTitle: "video_sub_1_title", defTitle: "Review sau 6 tháng sử dụng", tag: "REVIEW" },
+                { bkId: "video_sub_2_id", bkTitle: "video_sub_2_title", defTitle: "Hướng dẫn gấp mở SMF12", tag: "HƯỚNG DẪN" },
+                { bkId: "video_sub_3_id", bkTitle: "video_sub_3_title", defTitle: "So sánh SMF12 vs sofa thường", tag: "SO SÁNH" },
+              ].map((v, i) => (
+                <FadeIn key={i} delay={i * 100}>
+                  <div>
+                    <YoutubeThumbnailPlay videoId={content[v.bkId] || "_placeholder_"} title={v.defTitle} tag={v.tag} />
+                    <div style={{ marginTop: 8, color: WHITE, fontSize: 13, fontWeight: 500, fontFamily: FONT_BODY }}>
+                      {E({ bk: v.bkTitle, def: v.defTitle, as: "span" })}
+                    </div>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+          <FadeIn delay={200}>
+            <div style={{ textAlign: "center", marginTop: 32 }}>
+              <a href="https://www.youtube.com/@SmartFurni" target="_blank" rel="noopener noreferrer" style={{ color: GOLD, fontSize: 13, fontFamily: FONT_BODY, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                ▶ Xem thêm video trên kênh YouTube SmartFurni →
+              </a>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── PRODUCTS / SIZE SELECTOR ── */}
+      <section id="products" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "products_section_label", def: "Dòng sản phẩm", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "products_title_1", def: "Sofa Giường Da PU", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
+                {E({ bk: "products_title_2", def: "SmartFurni SMF12", as: "span" })}
+              </div>
+              <GoldDivider />
+              <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY }}>
+                Da PU nhập khẩu cao cấp, cơ cấu SmartFold bền bỉ — bảo hành 3 năm chính hãng
+              </p>
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20 }} className="lp-products-grid">
+            {SIZES.map((size, i) => {
+              const imgKey = `product_img_${i}`;
+              const imgSrc = content[imgKey] || "";
+              const isSelected = selectedSize === size.id;
               return (
-                <FadeIn key={i} delay={i * 40}>
-                  <div style={{ background: "#FFFFFF", border: `1px solid ${isOpen ? gRgba(GOLD, 0.35) : gRgba(GOLD, 0.15)}`, borderRadius: R_MD, overflow: "hidden", transition: "border-color 0.2s", boxShadow: isOpen ? `0 4px 20px ${gRgba(GOLD, 0.08)}` : "none" }}>
-                    <button onClick={() => setOpenFaq(isOpen ? null : i)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" as const, gap: 16 }}>
-                      <span style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY, lineHeight: 1.4 }}>{item.q}</span>
-                      <span style={{ color: GOLD, fontSize: 18, fontWeight: 700, flexShrink: 0, transform: isOpen ? "rotate(45deg)" : "none", transition: "transform 0.2s" }}>+</span>
-                    </button>
-                    {isOpen && (
-                      <div style={{ padding: "0 20px 18px", color: GRAY, fontSize: 14, lineHeight: 1.7, fontFamily: FONT_BODY }}>
-                        {item.a}
+                <FadeIn key={size.id} delay={i * 80}>
+                  <div style={{ background: BLACK_CARD, border: `1.5px solid ${isSelected ? GOLD : BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", transition: "border-color 0.2s, box-shadow 0.2s", boxShadow: isSelected ? `0 0 0 3px rgba(139,105,20,0.15)` : "none" }}>
+                    <div style={{ position: "relative", paddingBottom: "66%", background: BLACK }}>
+                      {imgSrc ? (
+                        <Image src={imgSrc} alt={`SMF12 ${size.label}`} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
+                      ) : (
+                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>Ảnh {size.label}</div>
+                      )}
+                      {editMode && <ImageUploadOverlay blockKey={imgKey} currentUrl={imgSrc} onUploaded={handleSaved} />}
+                      {size.badge && (
+                        <div style={{ position: "absolute", top: 12, left: 12, background: GOLD, color: "#FDFAF5", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>{size.badge}</div>
+                      )}
+                    </div>
+                    <div style={{ padding: "20px 20px 24px" }}>
+                      <div style={{ color: GRAY_LIGHT, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>SMF12-{size.id.replace(".", "").toUpperCase()}</div>
+                      <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 6, fontFamily: FONT_HEADING }}>
+                        Sofa Giường SMF12 — {size.label}
+                      </h3>
+                      <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, marginBottom: 16, fontFamily: FONT_BODY }}>
+                        {size.sub}. Da PU kháng nước, cơ cấu SmartFold, đệm foam D40 dày 12cm.
+                      </p>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                        <div style={{ color: GOLD, fontWeight: 700, fontSize: 18, fontFamily: FONT_HEADING }}>Từ {size.price}</div>
+                        <GoldButton onClick={() => { setSelectedSize(size.id); scrollToForm(); }} style={{ padding: "10px 20px", fontSize: 12 }}>
+                          Đặt hàng ngay →
+                        </GoldButton>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </FadeIn>
               );
@@ -774,91 +947,522 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         </div>
       </section>
 
-      {/* ── LEAD FORM ── */}
-      <section ref={formRef} id="order-form" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
+      {/* ── COMPARISON TABLE ── */}
+      <section style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
-            <SectionLabel>Đặt Hàng</SectionLabel>
-            <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
-              {E({ bk: "form_title", def: "Nhận Tư Vấn & Báo Giá Miễn Phí", as: "span" })}
-            </h2>
-            <GoldDivider />
-            <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, maxWidth: 560, margin: "20px auto 40px", fontFamily: FONT_BODY }}>
-              {E({ bk: "form_desc", def: "Điền thông tin bên dưới, nhân viên tư vấn sẽ liên hệ trong vòng 2 giờ làm việc.", as: "span" })}
-            </p>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "compare_section_label", def: "Tại sao chọn SMF12?", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "compare_title_1", def: "SMF12 Tiết Kiệm Hơn", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
+                {E({ bk: "compare_title_2", def: "Mua Riêng Sofa + Giường Đến 60%", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
           </FadeIn>
-          <FadeIn delay={80}>
-            <LeadForm
-              selectedSize={selectedSize || undefined}
-              selectedSizeLabel={selectedSizeObj?.label}
-              selectedPrice={selectedSizeObj?.price}
-              content={content}
-            />
+          <FadeIn delay={100}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT_BODY }}>
+                <thead>
+                  <tr style={{ background: BLACK_CARD }}>
+                    <th style={{ padding: "16px 20px", textAlign: "left", color: GRAY_LIGHT, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", borderBottom: `1px solid ${BLACK_BORDER}` }}>TIÊU CHÍ</th>
+                    <th style={{ padding: "16px 20px", textAlign: "center", color: GOLD, fontSize: 13, fontWeight: 700, borderBottom: `1px solid ${BLACK_BORDER}` }}>SmartFurni SMF12</th>
+                    <th style={{ padding: "16px 20px", textAlign: "center", color: GRAY, fontSize: 12, fontWeight: 600, borderBottom: `1px solid ${BLACK_BORDER}` }}>Sofa + Giường riêng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ["Chi phí", "8.490.000 ₫", "15–30 triệu ₫"],
+                    ["Diện tích chiếm dụng", "✓ Tiết kiệm 40%", "✗ Cần 2 vị trí riêng"],
+                    ["Vệ sinh", "✓ Lau sạch 30 giây", "✗ Sofa vải khó vệ sinh"],
+                    ["Chuyển đổi tư thế", "✓ 1 thao tác, 10 giây", "✗ Không thể"],
+                    ["Bảo hành da", "✓ 3 năm chính hãng", "6–12 tháng"],
+                    ["Đệm ngủ", "✓ Foam D40 dày 12cm", "Thường mỏng hơn"],
+                    ["Phù hợp phòng nhỏ", "✓ Từ 0,9m", "✗ Cần diện tích lớn"],
+                  ].map(([criteria, smf12, other], i) => (
+                    <tr key={i} style={{ background: i % 2 === 0 ? BLACK : BLACK_CARD, borderBottom: `1px solid ${BLACK_BORDER}` }}>
+                      <td style={{ padding: "14px 20px", color: GRAY, fontSize: 13 }}>{criteria}</td>
+                      <td style={{ padding: "14px 20px", textAlign: "center", color: smf12.startsWith("✓") ? GOLD : WHITE, fontSize: 13, fontWeight: smf12.startsWith("✓") ? 600 : 400 }}>{smf12}</td>
+                      <td style={{ padding: "14px 20px", textAlign: "center", color: other.startsWith("✗") ? RED_SOFT : GRAY, fontSize: 13 }}>{other}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ color: GRAY_LIGHT, fontSize: 11, marginTop: 12, fontFamily: FONT_BODY, fontStyle: "italic" }}>* Giá sofa + giường tham khảo thị trường 2024–2025</p>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── THÔNG SỐ KỸ THUẬT ── */}
+      <section id="specs" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "spec_section_label", def: "Thông số kỹ thuật", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "spec_title_1", def: "Thông Số Kỹ Thuật", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "spec_title_2", def: "SmartFurni SMF12", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <FadeIn delay={100}>
+            <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
+              {[
+                ["Kích thước (sofa)", "0,9m / 1,2m / 1,4m / 1,6m × 0,9m × 0,85m (C)"],
+                ["Kích thước (giường)", "0,9m / 1,2m / 1,4m / 1,6m × 2,0m"],
+                ["Tải trọng tối đa", "250 kg"],
+                ["Chất liệu bọc", "Da PU nhập khẩu — kháng nước, kháng UV"],
+                ["Đệm ngồi/nằm", "Foam D40 dày 12cm + memory foam 3cm"],
+                ["Khung chính", "Gỗ thông xử lý chống mối + thanh giằng thép mạ kẽm"],
+                ["Cơ cấu gập mở", "SmartFold — 1 thao tác, không cần dụng cụ"],
+                ["Số lần gập mở kiểm định", "50.000 lần"],
+                ["Chân sofa", "Gỗ sồi tự nhiên / thép sơn tĩnh điện (tuỳ phiên bản)"],
+                ["Màu sắc", "Đen, Nâu, Xám tro, Be (kem)"],
+                ["Bảo hành da", "3 năm chính hãng"],
+                ["Bảo hành khung", "2 năm"],
+                ["Trọng lượng", "~38 kg (1m4) / ~44 kg (1m6)"],
+                ["Xuất xứ", "Việt Nam — chất liệu nhập khẩu"],
+              ].map(([label, value], i) => (
+                <div key={i} style={{ display: "flex", padding: "14px 24px", background: i % 2 === 0 ? BLACK_CARD : BLACK, borderBottom: i < 13 ? `1px solid ${BLACK_BORDER}` : "none" }}>
+                  <div style={{ width: "40%", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, flexShrink: 0 }}>{label}</div>
+                  <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── 6 BENEFITS ── */}
+      <section id="benefits" style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "benefits_section_label", def: "Lý do chọn SmartFurni", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "benefits_title_1", def: "6 Lý Do Hàng Nghìn Gia Đình", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "benefits_title_2", def: "Tin Tưởng SmartFurni SMF12", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }} className="lp-benefits-grid">
+            {[
+              { icon: "◈", bkTitle: "benefit_1_title", defTitle: "Da PU Nhập Khẩu Cao Cấp", bkDesc: "benefit_1_desc", defDesc: "Bề mặt mịn mượt, kháng nước tuyệt đối, kháng UV — không bong tróc, không phai màu sau nhiều năm sử dụng.", badge: "Kháng nước 100%" },
+              { icon: "◇", bkTitle: "benefit_2_title", defTitle: "Cơ Cấu SmartFold Bền Bỉ", bkDesc: "benefit_2_desc", defDesc: "Kiểm định 50.000 lần gập mở — tương đương 136 năm sử dụng hàng ngày. Bảo hành cơ cấu 3 năm.", badge: "50.000 lần kiểm định" },
+              { icon: "◉", bkTitle: "benefit_3_title", defTitle: "Đệm Foam D40 Êm Ái", bkDesc: "benefit_3_desc", defDesc: "Foam D40 dày 12cm + memory foam 3cm — đủ êm để ngủ ngon, đủ cứng để hỗ trợ cột sống khi ngồi.", badge: "Foam D40 + Memory" },
+              { icon: "◐", bkTitle: "benefit_4_title", defTitle: "Khung Gỗ Chắc Chắn", bkDesc: "benefit_4_desc", defDesc: "Gỗ thông xử lý chống mối mọt, sấy khô đạt chuẩn. Thanh giằng thép mạ kẽm — tải trọng 250kg.", badge: "Tải trọng 250kg" },
+              { icon: "◑", bkTitle: "benefit_5_title", defTitle: "Giao Hàng & Lắp Đặt Miễn Phí", bkDesc: "benefit_5_desc", defDesc: "Giao hàng toàn quốc trong 3–7 ngày làm việc. Đội kỹ thuật lắp đặt tận nơi, không phát sinh chi phí.", badge: "Toàn quốc" },
+              { icon: "◒", bkTitle: "benefit_6_title", defTitle: "Bảo Hành 3 Năm Chính Hãng", bkDesc: "benefit_6_desc", defDesc: "Bảo hành da 3 năm, khung 2 năm. Đội kỹ thuật hỗ trợ tận nơi. Đổi mới sản phẩm nếu lỗi nhà sản xuất.", badge: "3 năm bảo hành" },
+            ].map((b, i) => (
+              <FadeIn key={i} delay={i * 80}>
+                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", height: "100%" }}>
+                  <div style={{ color: GOLD, fontSize: 28, marginBottom: 16 }}>{b.icon}</div>
+                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 10, fontFamily: FONT_HEADING, lineHeight: 1.4 }}>
+                    {E({ bk: b.bkTitle, def: b.defTitle, as: "span" })}
+                  </h3>
+                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: "0 0 16px" }}>
+                    {E({ bk: b.bkDesc, def: b.defDesc, as: "span", multiline: true })}
+                  </p>
+                  <div style={{ display: "inline-block", background: `rgba(139,105,20,0.08)`, border: `1px solid rgba(139,105,20,0.2)`, color: GOLD, fontSize: 10, fontWeight: 600, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>
+                    {b.badge}
+                  </div>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "howitworks_section_label", def: "Quy trình đặt hàng", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "howitworks_title_1", def: "Nhận SMF12 Tại Nhà", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "howitworks_title_2", def: "Chỉ Trong 4 Bước Đơn Giản", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }} className="lp-steps-grid">
+            {[
+              { step: 1, icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, bkTitle: "step_1_title", defTitle: "Chọn kích thước phù hợp", bkDesc: "step_1_desc", defDesc: "Chọn size 0,9m – 1,6m phù hợp với phòng của bạn. Đội tư vấn hỗ trợ đo đạc miễn phí." },
+              { step: 2, icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, bkTitle: "step_2_title", defTitle: "Xác nhận đơn qua Zalo/điện thoại", bkDesc: "step_2_desc", defDesc: "Tư vấn viên liên hệ trong 2 giờ làm việc để xác nhận đơn hàng và thông tin giao hàng." },
+              { step: 3, icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, bkTitle: "step_3_title", defTitle: "Giao hàng toàn quốc 3–7 ngày", bkDesc: "step_3_desc", defDesc: "Đóng gói cẩn thận, giao hàng tận nơi. Kiểm tra hàng trước khi nhận — không ưng không lấy." },
+              { step: 4, icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, bkTitle: "step_4_title", defTitle: "Lắp đặt miễn phí, tận hưởng ngay", bkDesc: "step_4_desc", defDesc: "Kỹ thuật viên lắp đặt tại nhà, hướng dẫn sử dụng. Bắt đầu tận hưởng sofa giường SMF12 ngay hôm đó." },
+            ].map((s, i) => (
+              <FadeIn key={i} delay={i * 100}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 16px" }}>
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" style={{ position: "absolute", inset: 0 }}>
+                      <circle cx="30" cy="30" r="28" stroke={GOLD} strokeWidth="0.75" opacity="0.3"/>
+                      <circle cx="30" cy="30" r="22" stroke={GOLD} strokeWidth="1.25" opacity="0.65"/>
+                    </svg>
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.icon}</div>
+                  </div>
+                  <div style={{ color: GOLD, fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", marginBottom: 8, fontFamily: FONT_BODY, opacity: 0.65 }}>BƯỚC {s.step}</div>
+                  <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>
+                    {E({ bk: s.bkTitle, def: s.defTitle, as: "span" })}
+                  </div>
+                  <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>
+                    {E({ bk: s.bkDesc, def: s.defDesc, as: "span", multiline: true })}
+                  </p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+          <FadeIn delay={300}>
+            <div style={{ textAlign: "center", marginTop: 52 }}>
+              <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "16px 40px" }}>
+                {E({ bk: "cta_bottom_gold", def: "Đặt Hàng Ngay — Giao Hàng Toàn Quốc", as: "span" })}
+              </GoldButton>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── VIDEO REELS (dọc) ── */}
+      <section style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <SectionLabel>{E({ bk: "reels_section_label", def: "Video ngắn từ khách hàng", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "reels_title", def: "Khách Hàng Nói Gì Về SMF12?", as: "span" })}
+              </h2>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="lp-reels-grid">
+            {[
+              { bkId: "reel_1_id", bkCaption: "reel_1_caption", defCaption: "Chị Lan — TP.HCM: 'Mua cho phòng trọ, tiết kiệm không gian cực kỳ!'" },
+              { bkId: "reel_2_id", bkCaption: "reel_2_caption", defCaption: "Anh Minh — Hà Nội: 'Da PU dễ lau, có con nhỏ không lo bẩn'" },
+              { bkId: "reel_3_id", bkCaption: "reel_3_caption", defCaption: "Chị Hương — Đà Nẵng: 'Gấp mở 1 tay, quá tiện luôn'" },
+            ].map((r, i) => (
+              <FadeIn key={i} delay={i * 100}>
+                <div>
+                  <div style={{ position: "relative", paddingBottom: "177.78%", background: "#111", borderRadius: R_MD, overflow: "hidden" }}>
+                    {content[r.bkId] && content[r.bkId] !== "_placeholder_" ? (
+                      <iframe src={`https://www.youtube.com/embed/${content[r.bkId]}?controls=1&rel=0`} title={r.defCaption} allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
+                    ) : (
+                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: BLACK_CARD }}>
+                        <span style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, textAlign: "center", padding: "0 16px" }}>Video chưa cập nhật</span>
+                      </div>
+                    )}
+                  </div>
+                  <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, marginTop: 10, fontFamily: FONT_BODY }}>
+                    {E({ bk: r.bkCaption, def: r.defCaption, as: "span", multiline: true })}
+                  </p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TRUST / SOCIAL PROOF ── */}
+      <section id="testimonials" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "trust_section_label", def: "Chứng nhận & Đánh giá", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "trust_title_1", def: "Được Tin Tưởng Bởi", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "trust_title_2", def: "Hàng Nghìn Gia Đình Việt Nam", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          {/* Social proof numbers */}
+          <FadeIn>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginBottom: 52 }} className="lp-stats-grid">
+              {[
+                { num: "3.200+", label: "Sản phẩm đã bán" },
+                { num: "4.8/5", label: "Đánh giá trung bình" },
+                { num: "98%", label: "Khách hàng hài lòng" },
+                { num: "3 năm", label: "Bảo hành chính hãng" },
+              ].map((s, i) => (
+                <div key={i} style={{ textAlign: "center", padding: "24px 16px", background: BLACK_CARD, borderRadius: R_MD, border: `1px solid ${BLACK_BORDER}` }}>
+                  <div style={{ color: GOLD, fontSize: 28, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 6 }}>{s.num}</div>
+                  <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+          {/* Reviews */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="lp-reviews-grid">
+            {[
+              { bkName: "review_1_name", defName: "Chị Nguyễn Thị Lan", bkLoc: "review_1_loc", defLoc: "TP. Hồ Chí Minh", bkText: "review_1_text", defText: "Mua cho phòng trọ 15m², tiết kiệm không gian cực kỳ. Da PU lau sạch trong 30 giây, có con nhỏ mà không lo bẩn. Cơ cấu gập mở mượt mà, dùng 8 tháng vẫn như mới.", stars: 5 },
+              { bkName: "review_2_name", defName: "Anh Trần Văn Minh", bkLoc: "review_2_loc", defLoc: "Hà Nội", bkText: "review_2_text", defText: "Ban đầu nghi ngờ về chất lượng da PU, nhưng sau 1 năm sử dụng thì thực sự ấn tượng. Không bong tróc, không phai màu. Giao hàng đúng hẹn, lắp đặt chuyên nghiệp.", stars: 5 },
+              { bkName: "review_3_name", defName: "Chị Phạm Thị Hương", bkLoc: "review_3_loc", defLoc: "Đà Nẵng", bkText: "review_3_text", defText: "Phòng khách nhỏ mà cần chỗ cho khách ngủ lại. SMF12 giải quyết hoàn hảo — ban ngày là sofa đẹp, tối khách nằm ngủ thoải mái. Đệm dày, êm hơn mong đợi.", stars: 5 },
+              { bkName: "review_4_name", defName: "Anh Lê Hoàng Nam", bkLoc: "review_4_loc", defLoc: "Bình Dương", bkText: "review_4_text", defText: "Mua cho phòng làm việc tại nhà. Trưa nằm nghỉ, tối tiếp khách. Màu nâu rất sang, hợp với nội thất gỗ. Sẽ mua thêm 1 cái nữa cho phòng ngủ phụ.", stars: 5 },
+              { bkName: "review_5_name", defName: "Chị Võ Thị Mai", bkLoc: "review_5_loc", defLoc: "Cần Thơ", bkText: "review_5_text", defText: "Giá hợp lý so với chất lượng. Khung gỗ chắc, da PU mịn. Gấp mở 1 tay dễ dàng dù tôi là phụ nữ. Bảo hành 3 năm yên tâm hơn nhiều so với hàng khác.", stars: 5 },
+              { bkName: "review_6_name", defName: "Anh Nguyễn Đức Thành", bkLoc: "review_6_loc", defLoc: "Hải Phòng", bkText: "review_6_text", defText: "Đặt hàng online, nhân viên tư vấn nhiệt tình. Giao hàng đúng hẹn, đóng gói cẩn thận. Lắp đặt xong trong 30 phút. Chất lượng vượt kỳ vọng ở tầm giá này.", stars: 5 },
+            ].map((r, i) => (
+              <FadeIn key={i} delay={i * 80}>
+                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "24px 20px" }}>
+                  <div style={{ display: "flex", gap: 2, marginBottom: 12 }}>
+                    {Array(r.stars).fill(0).map((_, si) => <span key={si} style={{ color: GOLD, fontSize: 14 }}>★</span>)}
+                  </div>
+                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, marginBottom: 16 }}>
+                    "{E({ bk: r.bkText, def: r.defText, as: "span", multiline: true })}"
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: `rgba(139,105,20,0.15)`, border: `1px solid rgba(139,105,20,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontWeight: 700, fontSize: 14, fontFamily: FONT_HEADING, flexShrink: 0 }}>
+                      {E({ bk: r.bkName, def: r.defName, as: "span" })?.toString().charAt(0)}
+                    </div>
+                    <div>
+                      <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>
+                        {E({ bk: r.bkName, def: r.defName, as: "span" })}
+                      </div>
+                      <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY }}>
+                        {E({ bk: r.bkLoc, def: r.defLoc, as: "span" })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── GUARANTEE ── */}
+      <section style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "guarantee_section_label", def: "Cam kết SmartFurni", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "guarantee_title_1", def: "Mua Hàng Không Lo Rủi Ro —", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "guarantee_title_2", def: "SmartFurni Cam Kết 100%", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="lp-guarantee-grid">
+            {[
+              { icon: "🛡️", bkTitle: "guarantee_1_title", defTitle: "Bảo hành 3 năm da PU", bkDesc: "guarantee_1_desc", defDesc: "Da bong tróc, phai màu, rách do lỗi sản xuất — SmartFurni thay mới hoàn toàn miễn phí trong 3 năm đầu." },
+              { icon: "🔄", bkTitle: "guarantee_2_title", defTitle: "Đổi trả trong 7 ngày", bkDesc: "guarantee_2_desc", defDesc: "Nhận hàng không ưng ý về chất lượng? Liên hệ trong 7 ngày — SmartFurni thu hồi và hoàn tiền 100%." },
+              { icon: "🚚", bkTitle: "guarantee_3_title", defTitle: "Giao hàng đúng hẹn", bkDesc: "guarantee_3_desc", defDesc: "Cam kết giao hàng trong 3–7 ngày làm việc. Trễ hẹn — SmartFurni tặng thêm bộ ga gối trị giá 890.000₫." },
+            ].map((g, i) => (
+              <FadeIn key={i} delay={i * 100}>
+                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", textAlign: "center" }}>
+                  <div style={{ fontSize: 36, marginBottom: 16 }}>{g.icon}</div>
+                  <h3 style={{ color: GOLD, fontSize: 15, fontWeight: 600, marginBottom: 12, fontFamily: FONT_HEADING }}>
+                    {E({ bk: g.bkTitle, def: g.defTitle, as: "span" })}
+                  </h3>
+                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>
+                    {E({ bk: g.bkDesc, def: g.defDesc, as: "span", multiline: true })}
+                  </p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── URGENCY BANNER ── */}
+      <UrgencyBanner E={E} />
+
+      {/* ── FAQ ── */}
+      <section id="faq" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "faq_section_label", def: "Câu hỏi thường gặp", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "faq_title_1", def: "Giải Đáp Mọi Thắc Mắc", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "faq_title_2", def: "Về Sofa Giường SMF12", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <FadeIn delay={100}>
+            <FaqAccordion E={E} />
+          </FadeIn>
+          <FadeIn delay={200}>
+            <div style={{ textAlign: "center", marginTop: 36, padding: "24px", background: BLACK_CARD, borderRadius: R_LG, border: `1px solid ${BLACK_BORDER}` }}>
+              <p style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, marginBottom: 16 }}>
+                Còn câu hỏi khác? Đội tư vấn SmartFurni sẵn sàng hỗ trợ bạn
+              </p>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                <a href="tel:0123456789" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD, color: "#FDFAF5", padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}>
+                  📞 Gọi ngay
+                </a>
+                <a href="https://zalo.me/0123456789" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: GOLD, border: `1px solid ${GOLD}`, padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}>
+                  💬 Chat Zalo
+                </a>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── REGISTER FORM ── */}
+      <section id="register-form" style={{ background: BLACK, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "form_section_label", def: "Đặt hàng ngay hôm nay", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "form_title_1", def: "Nhận Tư Vấn Miễn Phí", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "form_title_2", def: "Báo Giá Tức Thì Trong 2 Giờ", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 40, alignItems: "start" }} className="lp-form-grid">
+            {/* Left side — benefits */}
+            <FadeIn>
+              <div>
+                <div style={{ marginBottom: 32 }}>
+                  <div style={{ color: WHITE, fontSize: 16, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 20 }}>Khi đặt hàng hôm nay, bạn nhận được:</div>
+                  {[
+                    { icon: "✓", text: "Tư vấn kích thước phù hợp miễn phí" },
+                    { icon: "✓", text: "Báo giá chính xác theo nhu cầu" },
+                    { icon: "✓", text: "Giao hàng + lắp đặt miễn phí toàn quốc" },
+                    { icon: "✓", text: "Tặng bộ ga gối trị giá 890.000₫" },
+                    { icon: "✓", text: "Bảo hành 3 năm da PU chính hãng" },
+                    { icon: "✓", text: "Hỗ trợ kỹ thuật tận nơi suốt thời gian bảo hành" },
+                  ].map((b, i) => (
+                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}>
+                      <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>{b.icon}</span>
+                      <span style={{ color: GRAY, fontSize: 14, lineHeight: 1.6, fontFamily: FONT_BODY }}>{b.text}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Price range */}
+                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "24px 20px" }}>
+                  <div style={{ color: GRAY_LIGHT, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 12, fontFamily: FONT_BODY }}>BẢNG GIÁ SMF12</div>
+                  {SIZES.map((s, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < SIZES.length - 1 ? `1px solid ${BLACK_BORDER}` : "none" }}>
+                      <span style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>{s.label}</span>
+                      <span style={{ color: GOLD, fontWeight: 700, fontSize: 14, fontFamily: FONT_HEADING }}>{s.price}</span>
+                    </div>
+                  ))}
+                  <p style={{ color: GRAY_LIGHT, fontSize: 11, marginTop: 12, fontFamily: FONT_BODY, fontStyle: "italic" }}>
+                    * Đã bao gồm VAT, giao hàng và lắp đặt
+                  </p>
+                </div>
+              </div>
+            </FadeIn>
+            {/* Right side — form */}
+            <FadeIn delay={150}>
+              <LeadForm submitLabel="Đặt Hàng & Nhận Tư Vấn Ngay →" selectedSize={selectedSize} />
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA FINAL ── */}
+      <section style={{ background: `linear-gradient(135deg, ${BLACK_CARD} 0%, #EDE4D0 100%)`, padding: "80px 24px", textAlign: "center" }}>
+        <div style={{ maxWidth: 700, margin: "0 auto" }}>
+          <FadeIn>
+            <SectionLabel>{E({ bk: "cta_final_label", def: "Ưu đãi có giới hạn", as: "span" })}</SectionLabel>
+            <h2 style={{ fontSize: "clamp(24px, 3.5vw, 48px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+              {E({ bk: "cta_final_title_1", def: "Đừng Để Không Gian Sống", as: "span" })}
+            </h2>
+            <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 32px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 24 }}>
+              {E({ bk: "cta_final_title_2", def: "Bị Lãng Phí Thêm Một Ngày Nào Nữa", as: "span" })}
+            </div>
+            <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY, marginBottom: 36 }}>
+              {E({ bk: "cta_final_desc", def: "Hàng nghìn gia đình Việt Nam đã chọn SmartFurni SMF12 để tối ưu không gian sống. Đặt hàng hôm nay — nhận tư vấn trong 2 giờ, giao hàng trong 7 ngày.", as: "span", multiline: true })}
+            </p>
+            <GoldButton onClick={scrollToForm} style={{ fontSize: 15, padding: "18px 48px" }}>
+              {E({ bk: "cta_final_btn", def: "Đặt Hàng Ngay — Miễn Phí Giao Hàng →", as: "span" })}
+            </GoldButton>
+            <p style={{ color: GRAY_LIGHT, fontSize: 12, marginTop: 16, fontFamily: FONT_BODY }}>
+              🔒 Không cần đặt cọc — Xem hàng trước khi thanh toán
+            </p>
           </FadeIn>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ padding: "40px clamp(20px,5vw,80px)", background: BLACK_CARD, borderTop: `1px solid ${gRgba(GOLD, 0.15)}` }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", flexWrap: "wrap" as const, gap: 32, justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 40, objectFit: "contain", marginBottom: 12 }} />
-            <p style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, maxWidth: 280, lineHeight: 1.6, margin: 0 }}>
-              Chuyên sản xuất nội thất thông minh cao cấp. Bảo hành 3 năm, giao hàng toàn quốc.
+      <footer style={{ background: BLACK_CARD, borderTop: `1px solid ${BLACK_BORDER}`, padding: "48px 24px 32px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 40 }} className="lp-footer-grid">
+            {/* Brand */}
+            <div>
+              <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 40, objectFit: "contain", marginBottom: 16 }} />
+              <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, marginBottom: 20, maxWidth: 280 }}>
+                SmartFurni — Nội thất thông minh Việt Nam. Chuyên cung cấp sofa giường đa năng chất lượng cao, phù hợp với không gian sống hiện đại.
+              </p>
+              <div style={{ display: "flex", gap: 12 }}>
+                {["Facebook", "Zalo", "YouTube", "TikTok"].map(s => (
+                  <div key={s} style={{ width: 32, height: 32, borderRadius: "50%", background: `rgba(139,105,20,0.1)`, border: `1px solid rgba(139,105,20,0.2)`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <span style={{ color: GOLD, fontSize: 9, fontWeight: 700, fontFamily: FONT_BODY }}>{s.charAt(0)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Sản phẩm */}
+            <div>
+              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>SẢN PHẨM</div>
+              {["Sofa Giường SMF12", "Sofa Giường GSF150", "Sofa Giường Da Thật", "Xem tất cả"].map(l => (
+                <div key={l} style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 10, cursor: "pointer" }}>{l}</div>
+              ))}
+            </div>
+            {/* Hỗ trợ */}
+            <div>
+              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>HỖ TRỢ</div>
+              {["Chính sách bảo hành", "Hướng dẫn sử dụng", "Chính sách đổi trả", "Câu hỏi thường gặp"].map(l => (
+                <div key={l} style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 10, cursor: "pointer" }}>{l}</div>
+              ))}
+            </div>
+            {/* Liên hệ */}
+            <div>
+              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>LIÊN HỆ</div>
+              {[
+                { icon: "📞", text: "0123 456 789" },
+                { icon: "📧", text: "info@smartfurni.vn" },
+                { icon: "📍", text: "TP. Hồ Chí Minh" },
+                { icon: "⏰", text: "8:00 – 21:00 mỗi ngày" },
+              ].map((c, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 13 }}>{c.icon}</span>
+                  <span style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>{c.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <p style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>
+              © 2025 SmartFurni. Tất cả quyền được bảo lưu.
             </p>
-          </div>
-          <div style={{ display: "flex", gap: 48, flexWrap: "wrap" as const }}>
-            <div>
-              <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", fontFamily: FONT_BODY, marginBottom: 12 }}>LIÊN HỆ</div>
-              {[
-                { label: "Hotline", value: "1800 xxxx" },
-                { label: "Zalo", value: "0912 xxx xxx" },
-                { label: "Email", value: "info@smartfurni.com.vn" },
-              ].map(c => (
-                <div key={c.label} style={{ marginBottom: 8 }}>
-                  <span style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY }}>{c.label}: </span>
-                  <span style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{c.value}</span>
-                </div>
-              ))}
-            </div>
-            <div>
-              <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", fontFamily: FONT_BODY, marginBottom: 12 }}>SẢN PHẨM</div>
-              {[
-                { label: "Sofa Giường SMF12", href: "/lp/smf12" },
-                { label: "Sofa Giường Tuỳ Chỉnh", href: "/lp/sofa-giuong" },
-                { label: "Khung Giường GSF150", href: "/lp/gsf150" },
-              ].map(l => (
-                <div key={l.label} style={{ marginBottom: 8 }}>
-                  <a href={l.href} style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, textDecoration: "none" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = GOLD}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = GRAY}>
-                    {l.label}
-                  </a>
-                </div>
+            <div style={{ display: "flex", gap: 20 }}>
+              {["Chính sách bảo mật", "Điều khoản sử dụng"].map(l => (
+                <span key={l} style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, cursor: "pointer" }}>{l}</span>
               ))}
             </div>
           </div>
-        </div>
-        <div style={{ maxWidth: 1200, margin: "32px auto 0", paddingTop: 24, borderTop: `1px solid ${gRgba(GOLD, 0.1)}`, display: "flex", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 8 }}>
-          <p style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>© 2024 SmartFurni. Bảo lưu mọi quyền.</p>
-          <p style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>Sản xuất tại Việt Nam</p>
         </div>
       </footer>
 
-      {/* ── STICKY CTA MOBILE ── */}
-      {scrollY > 400 && (
-        <div className="lp-sticky-cta" style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 90, background: "rgba(253,250,245,0.97)", backdropFilter: "blur(12px)", borderTop: `1px solid ${gRgba(GOLD, 0.2)}`, padding: "12px 20px", display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>Sofa Giường Da PU SMF12</div>
-            <div style={{ color: GOLD, fontSize: 12, fontFamily: FONT_BODY }}>
-              {selectedSizeObj ? fmt(selectedSizeObj.price) : `Từ ${fmt(SIZES[0].price)}`}
-            </div>
-          </div>
-          <button onClick={scrollToForm} style={{ background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, color: "#FFFFFF", border: "none", borderRadius: R_FULL, padding: "12px 24px", fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, cursor: "pointer", whiteSpace: "nowrap" as const, boxShadow: `0 2px 12px ${gRgba(GOLD, 0.3)}` }}>
-            Đặt Hàng Ngay →
-          </button>
-        </div>
-      )}
+      {/* ── STICKY CTA ── */}
+      <StickyCta scrollToForm={scrollToForm} E={E} />
     </div>
   );
 }
