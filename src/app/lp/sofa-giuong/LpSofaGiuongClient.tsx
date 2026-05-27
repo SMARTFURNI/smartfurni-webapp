@@ -27,9 +27,15 @@ const DEFAULT_COLORS: LpColors = {
   GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT,
 };
 const LIGHT_COLORS: LpColors = {
-  GOLD: "#1A6B8A", GOLD_LIGHT: "#2E8FAD",
-  BLACK: "#FFFFFF", BLACK_SOFT: "#F4F7FA", BLACK_CARD: "#EEF3F8", BLACK_BORDER: "#D0DCE8",
-  WHITE: "#1A2332", GRAY: "#5A6A7A", GRAY_LIGHT: "#8A9AAA",
+  GOLD: "#B8922A",       // Vàng đồng đậm - accent chính (đọc được trên nền sáng)
+  GOLD_LIGHT: "#C9A84C", // Vàng đồng nhạt - accent phụ
+  BLACK: "#FDFAF5",      // Nền chính - trắng kem ấm
+  BLACK_SOFT: "#FAF6EE", // Nền section xen kẽ
+  BLACK_CARD: "#F5EFE0", // Nền card/surface
+  BLACK_BORDER: "#E8D9B8", // Border vàng nhạt
+  WHITE: "#2C1F0E",      // Chữ chính - nâu đen ấm
+  GRAY: "#7A6A55",       // Chữ phụ - nâu xám
+  GRAY_LIGHT: "#A89880", // Chữ mờ - nâu nhạt
 };
 const LpColorContext = React.createContext<LpColors>(DEFAULT_COLORS);
 const useLpColors = () => React.useContext(LpColorContext);
