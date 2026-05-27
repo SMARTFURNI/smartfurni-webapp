@@ -1118,7 +1118,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           <div style={{ maxWidth: 680 }}>
             {/* Badge nhãn hiệu */}
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-              <span style={{ display: "inline-block", width: 28, height: 1, background: `rgba(${GOLD_PALE},0.5)`, background: `linear-gradient(90deg, transparent, ${GOLD_PALE})` }} />
+              <span style={{ display: "inline-block", width: 28, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD_PALE})` }} />
               <span style={{ color: GOLD_PALE, fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", fontFamily: FONT_BODY, textTransform: "uppercase" as const }}>
                 {E({ bk: "hero_section_label", def: "Sofa Giường Da PU Cao Cấp", as: "span" })}
               </span>
