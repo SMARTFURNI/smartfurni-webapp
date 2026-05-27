@@ -117,36 +117,65 @@ function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string })
   );
 }
 
-function YoutubeThumbnailPlay({ videoId, title, tag }: { videoId: string; title: string; tag?: string }) {
+// ShortsCard: tỉ lệ 9:16, thumbnail tự động từ YouTube, nút play nhỏ gọn
+function ShortsCard({ videoId, title, tag }: { videoId: string; title: string; tag?: string }) {
   const [playing, setPlaying] = useState(false);
-  const thumbUrl = videoId && videoId !== "_placeholder_" ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
+  const hasVideo = videoId && videoId !== "_placeholder_";
+  const thumbHq = hasVideo ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
+  const thumbMax = hasVideo ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
   return (
-    <div style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#111", cursor: playing ? "default" : "pointer", borderRadius: R_MD }} onClick={() => { if (!playing) setPlaying(true); }}>
+    <div style={{ position: "relative", width: "100%", paddingBottom: "177.78%", background: "#111", cursor: playing ? "default" : "pointer", borderRadius: R_LG, overflow: "hidden" }}
+      onClick={() => { if (!playing && hasVideo) setPlaying(true); }}>
       {playing ? (
-        <iframe src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1`} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1`}
+          title={title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+        />
       ) : (
         <>
-          {thumbUrl ? (
-            <img src={thumbUrl} alt={title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`; }} />
+          {thumbMax ? (
+            <img src={thumbMax} alt={title}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              onError={(e) => { (e.target as HTMLImageElement).src = thumbHq!; }}
+            />
           ) : (
-            <div style={{ position: "absolute", inset: 0, background: "#1A1200", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: GOLD_PALE, fontSize: 13 }}>Video chưa cập nhật</span>
+            <div style={{ position: "absolute", inset: 0, background: "#1A1200", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" stroke={GOLD_PALE} strokeWidth="1.5"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill={GOLD_PALE}/></svg>
+              <span style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY }}>Chưa có video</span>
             </div>
           )}
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8 5l11 7-11 7V5z" fill="#1A1200"/></svg>
+          {/* Gradient overlay */}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)" }} />
+          {/* Nút play nhỏ gọn */}
+          {hasVideo && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.92)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.35)" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 5l11 7-11 7V5z" fill="#1A1200"/></svg>
+              </div>
             </div>
-          </div>
+          )}
+          {/* Tag badge */}
           {tag && (
-            <div style={{ position: "absolute", top: 12, left: 12, background: `rgba(139,105,20,0.9)`, color: "#fff", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>
+            <div style={{ position: "absolute", top: 10, left: 10, background: `rgba(139,105,20,0.88)`, color: "#fff", fontSize: 9, fontWeight: 700, padding: "3px 9px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>
               {tag}
             </div>
           )}
+          {/* Title ở dưới */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "10px 12px" }}>
+            <div style={{ color: "#fff", fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, lineHeight: 1.4, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>{title}</div>
+          </div>
         </>
       )}
     </div>
   );
+}
+
+// Legacy wrapper giữ tương thích với reels section
+function YoutubeThumbnailPlay({ videoId, title, tag }: { videoId: string; title: string; tag?: string }) {
+  return <ShortsCard videoId={videoId} title={title} tag={tag} />;
 }
 
 // ─── ImageUploadOverlay (với tính năng dán URL + upload file) ────────────────
@@ -1194,48 +1223,42 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               <GoldDivider />
             </div>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28, alignItems: "start" }} className="lp-video-grid">
-            <FadeIn>
-              <div>
-                <div style={{ position: "relative" }}>
-                  <YoutubeAutoplay videoId={content["video_main_id"] || "_placeholder_"} title="SMF12 Demo" />
-                </div>
-                {editMode && (
-                  <VideoEditOverlay blockKey="video_main_id" currentId={content["video_main_id"] || ""} onSaved={(k, v) => handleSaved(k, v)} />
-                )}
-                <div style={{ marginTop: 16, padding: "16px 20px", background: BLACK_CARD, borderRadius: R_MD, border: `1px solid ${BLACK_BORDER}` }}>
-                  <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 8, fontFamily: FONT_BODY }}>VIDEO CHÍNH</div>
-                  <div style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 6 }}>
-                    {E({ bk: "video_main_title", def: "Demo đầy đủ tính năng sofa giường SMF12", as: "span" })}
-                  </div>
-                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0 }}>
-                    {E({ bk: "video_main_desc", def: "Xem cách chuyển đổi từ sofa sang giường trong 10 giây, cùng các tính năng nổi bật của SMF12.", as: "span", multiline: true })}
-                  </p>
+          {/* Video chính 16:9 */}
+          <FadeIn>
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden" }}>
+                <YoutubeAutoplay videoId={content["video_main_id"] || "_placeholder_"} title="SMF12 Demo" />
+              </div>
+              {editMode && (
+                <VideoEditOverlay blockKey="video_main_id" currentId={content["video_main_id"] || ""} onSaved={(k, v) => handleSaved(k, v)} />
+              )}
+              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, background: `rgba(139,105,20,0.1)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "3px 10px", flexShrink: 0 }}>VIDEO CHÍNH</div>
+                <div style={{ color: WHITE, fontSize: 14, fontWeight: 500, fontFamily: FONT_HEADING }}>
+                  {E({ bk: "video_main_title", def: "Demo đầy đủ tính năng sofa giường SMF12", as: "span" })}
                 </div>
               </div>
-            </FadeIn>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            </div>
+          </FadeIn>
+
+          {/* 4 Shorts 9:16 hàng ngang — carousel trên mobile */}
+          <FadeIn delay={100}>
+            <div className="lp-shorts-grid">
               {[
                 { bkId: "video_sub_1_id", bkTitle: "video_sub_1_title", defTitle: "Review sau 6 tháng sử dụng", tag: "REVIEW" },
-                { bkId: "video_sub_2_id", bkTitle: "video_sub_2_title", defTitle: "Hướng dẫn gấp mở SMF12", tag: "HƯỚNG DẪN" },
+                { bkId: "video_sub_2_id", bkTitle: "video_sub_2_title", defTitle: "Hướng dẫn gấp mở SMF12", tag: "HƯỠNG DẪN" },
                 { bkId: "video_sub_3_id", bkTitle: "video_sub_3_title", defTitle: "So sánh SMF12 vs sofa thường", tag: "SO SÁNH" },
+                { bkId: "video_sub_4_id", bkTitle: "video_sub_4_title", defTitle: "Unboxing và lắp ráp SMF12", tag: "UNBOXING" },
               ].map((v, i) => (
-                <FadeIn key={i} delay={i * 100}>
-                  <div>
-                    <div style={{ position: "relative" }}>
-                      <YoutubeThumbnailPlay videoId={content[v.bkId] || "_placeholder_"} title={v.defTitle} tag={v.tag} />
-                    </div>
-                    {editMode && (
-                      <VideoEditOverlay blockKey={v.bkId} currentId={content[v.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />
-                    )}
-                    <div style={{ marginTop: 8, color: WHITE, fontSize: 13, fontWeight: 500, fontFamily: FONT_BODY }}>
-                      {E({ bk: v.bkTitle, def: v.defTitle, as: "span" })}
-                    </div>
-                  </div>
-                </FadeIn>
+                <div key={i} className="lp-shorts-item">
+                  <ShortsCard videoId={content[v.bkId] || "_placeholder_"} title={v.defTitle} tag={v.tag} />
+                  {editMode && (
+                    <VideoEditOverlay blockKey={v.bkId} currentId={content[v.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />
+                  )}
+                </div>
               ))}
             </div>
-          </div>
+          </FadeIn>
           <FadeIn delay={200}>
             <div style={{ textAlign: "center", marginTop: 32 }}>
               <a href="https://www.youtube.com/@SmartFurni" target="_blank" rel="noopener noreferrer" style={{ color: GOLD, fontSize: 13, fontFamily: FONT_BODY, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>

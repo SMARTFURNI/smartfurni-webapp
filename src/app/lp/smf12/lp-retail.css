@@ -360,3 +360,48 @@ nav[style*="position: fixed"] {
     gap: 10px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHORTS VIDEO GRID — 4 cột desktop, carousel swipe mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lp-shorts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.lp-shorts-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .lp-shorts-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Carousel swipe: hiển thị 1 video, scroll ngang */
+  .lp-shorts-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    gap: 12px !important;
+    padding-bottom: 12px !important;
+    /* Ẩn scrollbar nhưng vẫn scroll được */
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .lp-shorts-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .lp-shorts-item {
+    flex: 0 0 80vw !important;
+    scroll-snap-align: center !important;
+    max-width: 320px !important;
+  }
+}
