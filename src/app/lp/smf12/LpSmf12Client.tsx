@@ -1000,9 +1000,9 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       )}
 
       {/* ── HERO ── */}
-      <section id="hero" style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
+      <section id="hero" className="lp-hero-section" style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
         {/* Hero background */}
-        <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <div className="lp-hero-bg" style={{ position: "absolute", inset: 0, zIndex: 0 }}>
           {heroImages[0] ? (
             <img src={heroImages[0]} alt="SMF12 Hero" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (

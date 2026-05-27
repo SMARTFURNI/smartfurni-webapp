@@ -19,17 +19,49 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   HERO — padding nhỏ hơn, trust badges wrap 2×2
+   HERO MOBILE — Stack dọc: ảnh trên, chữ dưới (tách biệt hoàn toàn)
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
+  /* Section hero: đổi từ position:relative sang flex dọc */
+  .lp-hero-section {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    min-height: unset !important;
+    overflow: visible !important;
+  }
+
+  /* Ảnh nền: thoát khỏi position:absolute, trở thành khối ảnh cố định trên đầu */
+  .lp-hero-bg {
+    position: relative !important;
+    inset: unset !important;
+    width: 100% !important;
+    height: 56vw !important;      /* tỷ lệ ảnh ~16:9 */
+    min-height: 220px !important;
+    max-height: 320px !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+  }
+  .lp-hero-bg img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+  /* Bỏ overlay tối trên ảnh mobile */
+  .lp-hero-bg > div:last-child {
+    display: none !important;
+  }
+
+  /* Phần nội dung chữ: nền đen, padding đầy đủ */
   .lp-hero-content {
-    padding: 96px 20px 56px !important;
+    position: relative !important;
+    background: #0D0B00 !important;
+    padding: 28px 20px 40px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
-  .lp-hero-badges {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 16px 12px !important;
-  }
+
+  /* CTA row: 2 nút xếp dọc */
   .lp-hero-cta-row {
     flex-direction: column !important;
     gap: 10px !important;
@@ -38,6 +70,14 @@
     width: 100% !important;
     text-align: center !important;
     justify-content: center !important;
+  }
+
+  /* Trust badges: lưới 2×2 */
+  .lp-hero-badges {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px 12px !important;
+    margin-top: 24px !important;
   }
 }
 
