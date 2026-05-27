@@ -963,8 +963,8 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       {/* ── STICKY NAV ── */}
       <nav style={{
         position: "fixed", top: isEditor ? 48 : 0, left: 0, right: 0, zIndex: 100,
-        background: navScrolled ? "rgba(253,250,245,0.96)" : "transparent",
-        borderBottom: navScrolled ? `1px solid ${BLACK_BORDER}` : "none",
+        background: navScrolled ? "rgba(18,14,4,0.97)" : "transparent",
+        borderBottom: navScrolled ? `1px solid rgba(139,105,20,0.25)` : "none",
         backdropFilter: navScrolled ? "blur(16px)" : "none",
         WebkitBackdropFilter: navScrolled ? "blur(16px)" : "none",
         transition: "background 0.3s ease, border-color 0.3s ease",
@@ -995,7 +995,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                 onClick={() => scrollTo(id)}
                 style={{
                   background: "none", border: "none", cursor: "pointer",
-                  color: navScrolled ? GRAY : "rgba(253,250,245,0.85)",
+                  color: navScrolled ? "rgba(253,250,245,0.75)" : "rgba(253,250,245,0.85)",
                   fontSize: 13, fontWeight: 500,
                   fontFamily: FONT_BODY, padding: "8px 14px", borderRadius: R_SM,
                   letterSpacing: "0.01em", transition: "color 0.2s, background 0.2s",
@@ -1006,7 +1006,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                   (e.currentTarget as HTMLButtonElement).style.background = `rgba(139,105,20,0.08)`;
                 }}
                 onMouseLeave={e => {
-                  (e.currentTarget as HTMLButtonElement).style.color = navScrolled ? GRAY : "rgba(253,250,245,0.85)";
+                  (e.currentTarget as HTMLButtonElement).style.color = navScrolled ? "rgba(253,250,245,0.75)" : "rgba(253,250,245,0.85)";
                   (e.currentTarget as HTMLButtonElement).style.background = "none";
                 }}
               >
@@ -1046,7 +1046,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             aria-label="Menu"
           >
             {[0, 1, 2].map(i => (
-              <span key={i} style={{ display: "block", width: 20, height: 1.5, background: navScrolled ? GOLD : GOLD_LIGHT, borderRadius: 1 }} />
+              <span key={i} style={{ display: "block", width: 20, height: 1.5, background: GOLD_LIGHT, borderRadius: 1 }} />
             ))}
           </button>
         </div>
@@ -1116,37 +1116,54 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         {/* Hero content */}
         <div className="lp-hero-content" style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "120px 24px 80px", width: "100%" }}>
           <div style={{ maxWidth: 680 }}>
-            <SectionLabel>{E({ bk: "hero_section_label", def: "Sofa Giường Da PU Cao Cấp", as: "span" })}</SectionLabel>
-            <h1 style={{ fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 700, lineHeight: 1.1, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF" }}>
-              {E({ bk: "hero_title_1", def: "Sofa Ban Ngày —", as: "span", style: { display: "block" } })}
-              <span style={{ color: GOLD_PALE, fontStyle: "italic", fontFamily: FONT_BRAND }}>
-                {E({ bk: "hero_title_2", def: "Giường Êm Ban Đêm", as: "span" })}
+            {/* Badge nhãn hiệu */}
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+              <span style={{ display: "inline-block", width: 28, height: 1, background: `rgba(${GOLD_PALE},0.5)`, background: `linear-gradient(90deg, transparent, ${GOLD_PALE})` }} />
+              <span style={{ color: GOLD_PALE, fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", fontFamily: FONT_BODY, textTransform: "uppercase" as const }}>
+                {E({ bk: "hero_section_label", def: "Sofa Giường Da PU Cao Cấp", as: "span" })}
               </span>
+              <span style={{ display: "inline-block", width: 28, height: 1, background: `linear-gradient(90deg, ${GOLD_PALE}, transparent)` }} />
+            </div>
+
+            {/* Tiêu đề chính */}
+            <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 800, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_HEADING, letterSpacing: "-0.025em", color: "#FFFFFF" }}>
+              {E({ bk: "hero_title_1", def: "Sofa Ban Ngày", as: "span", style: { display: "block" } })}
             </h1>
-            <p style={{ color: "rgba(253,250,245,0.85)", fontSize: "clamp(15px, 2vw, 18px)", lineHeight: 1.7, marginBottom: 36, fontFamily: FONT_BODY, maxWidth: 520 }}>
+            <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_BRAND, fontStyle: "italic", color: GOLD_PALE, letterSpacing: "-0.01em" }}>
+              {E({ bk: "hero_title_2", def: "Giường ÊM Ban Đêm", as: "span" })}
+            </h1>
+
+            {/* Đường kẻ vàng */}
+            <div style={{ width: 48, height: 2, background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD_PALE})`, borderRadius: 2, marginBottom: 24 }} />
+
+            <p style={{ color: "rgba(253,250,245,0.80)", fontSize: "clamp(14px, 1.8vw, 17px)", lineHeight: 1.75, marginBottom: 36, fontFamily: FONT_BODY, maxWidth: 500, fontWeight: 300 }}>
               {E({ bk: "hero_desc", def: "Da PU nhập khẩu cao cấp. Cơ cấu SmartFold 1 thao tác. Đệm foam D40 dày 12cm. Giao hàng và lắp đặt tận nơi toàn quốc.", as: "span", multiline: true })}
             </p>
-            <div className="lp-hero-cta-row" style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 48 }}>
-              <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "16px 36px" }}>
-                {E({ bk: "hero_cta_primary", def: "Nhận Tư Vấn & Báo Giá Ngay", as: "span" })}
+
+            <div className="lp-hero-cta-row" style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 52 }}>
+              <GoldButton onClick={scrollToForm} style={{ fontSize: 13, padding: "15px 32px", letterSpacing: "0.08em" }}>
+                {E({ bk: "hero_cta_primary", def: "NHẬN TƯ VẤN & BÁO GIÁ NGAY", as: "span" })}
               </GoldButton>
               <OutlineButton onClick={() => scrollTo("products")}>
                 {E({ bk: "hero_cta_secondary", def: "Xem sản phẩm ↓", as: "span" })}
               </OutlineButton>
             </div>
-            {/* Trust badges */}
-            <div className="lp-hero-badges" style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-              {[
-                { num: "3 năm", label: "Bảo hành da" },
-                { num: "50.000", label: "Lần gập mở" },
-                { num: "D40", label: "Đệm foam cao cấp" },
-                { num: "100%", label: "Da PU nhập khẩu" },
-              ].map((b, i) => (
-                <div key={i} style={{ textAlign: "center" }}>
-                  <div style={{ color: GOLD_PALE, fontSize: 20, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{b.num}</div>
-                  <div style={{ color: "rgba(253,250,245,0.65)", fontSize: 11, fontFamily: FONT_BODY, marginTop: 4, letterSpacing: "0.05em" }}>{b.label}</div>
-                </div>
-              ))}
+
+            {/* Trust badges — có đường kẻ trên */}
+            <div style={{ borderTop: `1px solid rgba(139,105,20,0.25)`, paddingTop: 24 }}>
+              <div className="lp-hero-badges" style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
+                {[
+                  { num: "3 Năm", label: "Bảo hành da" },
+                  { num: "50.000", label: "Lần gập mở" },
+                  { num: "D40", label: "Đệm foam cao cấp" },
+                  { num: "100%", label: "Da PU nhập khẩu" },
+                ].map((b, i) => (
+                  <div key={i} style={{ textAlign: "center" }}>
+                    <div style={{ color: GOLD_PALE, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1, letterSpacing: "-0.01em" }}>{b.num}</div>
+                    <div style={{ color: "rgba(253,250,245,0.5)", fontSize: 10, fontFamily: FONT_BODY, marginTop: 5, letterSpacing: "0.07em", textTransform: "uppercase" as const }}>{b.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -52,13 +52,14 @@
     display: none !important;
   }
 
-  /* Phần nội dung chữ: nền đen, padding đầy đủ */
+  /* Phần nội dung chữ: nền đen chì sang trọng */
   .lp-hero-content {
     position: relative !important;
-    background: #0D0B00 !important;
-    padding: 28px 20px 40px !important;
+    background: linear-gradient(180deg, #0D0B00 0%, #1A1200 100%) !important;
+    padding: 32px 22px 44px !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    border-top: 1px solid rgba(139,105,20,0.3) !important;
   }
 
   /* CTA row: 2 nút xếp dọc */
