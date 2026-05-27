@@ -1,109 +1,189 @@
-/* ─── Landing Page Mobile Responsive ─────────────────────────────────────────
-   Breakpoint: 768px (tablet), 480px (mobile)
-   All className-based overrides for LpShowroomNemClient.tsx
+/* ─── SMF12 Landing Page — Mobile Responsive ──────────────────────────────────
+   Breakpoints:
+     768px  → tablet / large phone landscape
+     600px  → phone portrait (standard)
+     400px  → small phone (iPhone SE, Galaxy A)
    ──────────────────────────────────────────────────────────────────────────── */
 
-/* ── Nav: ẩn menu + CTA desktop trên mobile, hiện hamburger ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAV
+   ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .lp-nav-menu {
-    display: none !important;
-  }
-  .lp-nav-cta {
-    display: none !important;
-  }
-  .lp-nav-hamburger {
-    display: flex !important;
-  }
+  .lp-nav-menu  { display: none !important; }
+  .lp-nav-cta   { display: none !important; }
+  .lp-nav-hamburger { display: flex !important; }
 }
-
 @media (min-width: 769px) {
-  .lp-nav-hamburger {
-    display: none !important;
-  }
-  .lp-mobile-menu {
-    display: none !important;
-  }
+  .lp-nav-hamburger { display: none !important; }
+  .lp-mobile-menu   { display: none !important; }
 }
 
-/* ── Showroom Comparison: 3-col → 1-col trên mobile ── */
-@media (max-width: 768px) {
-  .lp-comp-grid {
-    grid-template-columns: 1fr !important;
-    gap: 24px !important;
-    padding: 0 16px !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO — padding nhỏ hơn, trust badges wrap 2×2
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-hero-content {
+    padding: 96px 20px 56px !important;
   }
-}
-
-/* ── Stats row: 2x2 grid trên mobile ── */
-@media (max-width: 480px) {
-  .lp-stats-row {
+  .lp-hero-badges {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    gap: 0 !important;
-    border-top: 1px solid #2E2800 !important;
-    padding-top: 32px !important;
-    margin-top: 48px !important;
+    gap: 16px 12px !important;
   }
-  .lp-stat-item {
-    border-left: none !important;
-    border-bottom: 1px solid #2E2800 !important;
-    padding: 16px 12px !important;
+  .lp-hero-cta-row {
+    flex-direction: column !important;
+    gap: 10px !important;
   }
-  .lp-stat-item:nth-child(2),
-  .lp-stat-item:nth-child(4) {
-    border-left: 1px solid #2E2800 !important;
-  }
-  .lp-stat-item:nth-child(3),
-  .lp-stat-item:nth-child(4) {
-    border-bottom: none !important;
+  .lp-hero-cta-row > * {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
   }
 }
 
-/* ── Footer: 4-col → 2-col → 1-col ── */
-@media (max-width: 900px) {
-  .lp-footer-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 36px 24px !important;
-  }
-}
-
-@media (max-width: 560px) {
-  .lp-footer-grid {
-    grid-template-columns: 1fr !important;
-    gap: 32px !important;
-  }
-}
-
-/* ── Reels grid: 4-col → 2-col → 1-col trên mobile ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROBLEM / SOLUTION — 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .lp-reels-grid {
+  .lp-problem-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHOWCASE — 3-col → 1-col (ảnh 1:1 đã đúng)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-showcase-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VIDEO SECTION — 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-video-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRODUCTS — 2-col giữ nguyên trên tablet, 1-col trên phone nhỏ
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 400px) {
+  .lp-products-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPARISON TABLE — font nhỏ hơn, padding nhỏ hơn
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-compare-table th,
+  .lp-compare-table td {
+    padding: 10px 8px !important;
+    font-size: 11px !important;
+  }
+  /* Cột đầu (tên tiêu chí) rộng hơn một chút */
+  .lp-compare-table th:first-child,
+  .lp-compare-table td:first-child {
+    font-size: 10.5px !important;
+    padding-left: 10px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPECS — 2-col minmax → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-spec-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BENEFITS — 3-col → 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-benefits-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
+    gap: 14px !important;
   }
 }
 @media (max-width: 400px) {
-  .lp-reels-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
+  .lp-benefits-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
   }
 }
 
-/* ── Social proof 4-col → 2x2 trên mobile ── */
-@media (max-width: 600px) {
-  .lp-social-proof-grid {
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOW IT WORKS (STEPS) — 4-col → 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-steps-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+@media (max-width: 400px) {
+  .lp-steps-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 }
 
-/* ── Chứng nhận 4-col → 2x2 trên mobile ── */
-@media (max-width: 600px) {
-  .lp-cert-grid {
+/* ═══════════════════════════════════════════════════════════════════════════
+   REELS — 3-col → 2-col (portrait 9:16 phù hợp 2 cột)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-reels-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
   }
 }
+@media (max-width: 380px) {
+  .lp-reels-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
 
-/* ── Cam kết 3-col → 1-col trên mobile ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATS — 4-col → 2×2
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REVIEWS — 3-col → 1-col (testimonial cards cần đọc đủ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .lp-reviews-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+@media (max-width: 600px) {
+  .lp-reviews-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GUARANTEE — 3-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
   .lp-guarantee-grid {
     grid-template-columns: 1fr !important;
@@ -111,291 +191,81 @@
   }
 }
 
-/* ── Thông số kỹ thuật: minmax(380px) → 1-col trên mobile ── */
-@media (max-width: 600px) {
-  .lp-spec-grid {
+/* ═══════════════════════════════════════════════════════════════════════════
+   FORM SECTION — 2-col → 1-col (form lên trên, benefits xuống dưới)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-form-grid {
     grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  /* Đổi thứ tự: form lên trên, benefits xuống dưới */
+  .lp-form-grid > *:first-child { order: 2; }
+  .lp-form-grid > *:last-child  { order: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOOTER — 4-col → 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 36px 24px !important;
+  }
+}
+@media (max-width: 560px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
   }
 }
 
-/* ── Bảng so sánh: font nhỏ hơn trên mobile ── */
-@media (max-width: 480px) {
-  .lp-compare-table th,
-  .lp-compare-table td {
-    padding: 10px 10px !important;
-    font-size: 11px !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOCIAL PROOF BADGES — 4-col → 2×2
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-social-proof-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .lp-cert-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
   }
 }
 
-/* ── Before/After slider: full width trên mobile ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   BEFORE / AFTER SLIDER
+   ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .lp-ba-slider {
     border-radius: 8px !important;
   }
 }
 
-/* ── Health posture grid: 2-col → 1-col trên mobile nhỏ ── */
-@media (max-width: 480px) {
-  .lp-health-posture-grid {
-    grid-template-columns: 1fr !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION PADDING — giảm padding dọc trên mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-section-pad {
+    padding-top: 52px !important;
+    padding-bottom: 52px !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
   }
 }
 
-/* ── 3 Bước steps: min-width nhỏ hơn trên mobile ── */
-@media (max-width: 480px) {
-  .lp-steps-grid {
-    grid-template-columns: 1fr !important;
-    gap: 32px !important;
-  }
-}
-
-/* ── Fix layout shift: nav dịch sang trái khi scrollbar xuất hiện ── */
-/* scrollbar-gutter: stable được set ở globals.css (html element) */
-/* Đảm bảo nav không bị ảnh hưởng bởi scrollbar width */
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAV FIXED — tránh layout shift khi scrollbar xuất hiện
+   ═══════════════════════════════════════════════════════════════════════════ */
 nav[style*="position: fixed"] {
-  /* Dùng left/right thay vì width để tránh layout shift */
   left: 0 !important;
   right: 0 !important;
   width: auto !important;
 }
 
-/* ── Fix install guide badges: wrap tốt hơn trên mobile ── */
-@media (max-width: 480px) {
-  .lp-install-badges {
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 10px !important;
-  }
-}
-
-/* ── Sofa Giường: Product Gallery 3-col → 2-col trên mobile ── */
-@media (max-width: 900px) {
-  .lp-sg-product-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 16px !important;
-  }
-}
-@media (max-width: 540px) {
-  .lp-sg-product-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
-  }
-  /* Ẩn price meta (mức giá / kích thước) trên mobile nhỏ để tránh wrap */
-  .lp-sg-price-meta {
-    display: none !important;
-  }
-  /* Giá chính chiếm full width */
-  .lp-sg-card-price {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 4px !important;
-  }
-}
-@media (max-width: 380px) {
-  .lp-sg-product-grid {
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
-  }
-}
-
-/* ── Sofa Giường: Quiz Modal Mobile Responsive ── */
-@media (max-width: 640px) {
-  /* Modal chiếm gần full màn hình */
-  .lp-sg-quiz-overlay {
-    padding: 0 !important;
-    align-items: flex-end !important;
-  }
-  .lp-sg-quiz-modal {
-    border-radius: 20px 20px 0 0 !important;
-    max-height: 92vh !important;
-  }
-  /* Ẩn left panel (ảnh + giá) trên mobile - quá chật */
-  .lp-sg-quiz-left-panel {
-    display: none !important;
-  }
-  /* Content area chiếm full width */
-  .lp-sg-quiz-body {
-    flex-direction: column !important;
-  }
-  .lp-sg-quiz-content {
-    padding: 16px !important;
-  }
-}
-
-/* ── Sofa Giường: Quiz Step 1 Product Grid Mobile ── */
-@media (max-width: 640px) {
-  /* Quiz product grid: 2 cột trên mobile */
-  .lp-sg-quiz-product-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-}
-
-/* ── Sofa Giường: Quiz Step 1 Product Grid Mobile ── */
-@media (max-width: 640px) {
-  .lp-sg-quiz-product-grid {
-  }
-}
-
-/* ── Sofa Giường: Quiz Options Grid – mobile responsive ── */
-/* Trên mobile: 2 cột, trên desktop: auto-fill */
-@media (max-width: 640px) {
-  /* Các bước quiz (hoc, tayVin, matTrang, doDay, aoNem) */
-  .lp-sg-quiz-content [style*="repeat(auto-fill, minmax(200px"] {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-  /* Bước size: 2 cột */
-  .lp-sg-quiz-content [style*="repeat(auto-fill, minmax(200px"] {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-  /* Giảm padding right panel trên mobile */
-  .lp-sg-quiz-content {
-    padding: 16px !important;
-  }
-}
-
-/* ── Sofa Giường: Quiz Options Grid – mobile responsive ── */
-@media (max-width: 640px) {
-  /* Các bước quiz options: 2 cột trên mobile */
-  .lp-sg-quiz-content div[style*="repeat(auto-fill"] {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-  /* Giảm padding right panel trên mobile */
-  .lp-sg-quiz-content {
-    padding: 16px !important;
-  }
-}
-
-/* ── 3 Sections: 2-col grid trên mobile - đồng bộ với card sản phẩm ── */
-/* Card sản phẩm: gap 12px, section padding ngang 20px, info padding 24px 24px 28px */
-@media (max-width: 640px) {
-
-  /* ── Section padding: đồng bộ với product gallery (ngang 20px) ── */
-  .lp-sg-pain-section,
-  .lp-sg-how-section,
-  .lp-sg-features-section {
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-  }
-
-  /* ── Grid: 2 cột, gap 12px (giống product grid mobile) ── */
-  .lp-sg-pain-grid,
-  .lp-sg-how-grid,
-  .lp-sg-features-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
-  }
-
-  /* ── Pain Points: ảnh sát mép trên, bo góc theo card ── */
-  .lp-sg-pain-card {
-    border-radius: 16px !important;
-    overflow: hidden !important;
-  }
-  /* Ảnh: tỉ lệ 4:3, sát mép trên (override inline paddingTop 56.25%) */
-  .lp-sg-pain-card-img {
-    padding-top: 72% !important;
-  }
-  /* Info: padding ngang sát viền */
-  .lp-sg-pain-card-info {
-    padding: 12px 10px 14px !important;
-  }
-  .lp-sg-pain-card-info > div:first-child {
-    margin-bottom: 6px !important;
-  }
-  .lp-sg-pain-card h3 {
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    margin-bottom: 5px !important;
-    line-height: 1.35 !important;
-  }
-  .lp-sg-pain-card p {
-    font-size: 11.5px !important;
-    line-height: 1.55 !important;
-  }
-
-  /* ── How It Works: giống pain card (padding nhỏ, sát viền) ── */
-  .lp-sg-how-card {
-    padding: 14px 10px 16px !important;
-    border-radius: 16px !important;
-  }
-  .lp-sg-how-card-icon {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
-    margin-bottom: 10px !important;
-  }
-  .lp-sg-how-card-step-bg {
-    font-size: 40px !important;
-    top: 8px !important;
-    right: 10px !important;
-  }
-  .lp-sg-how-card h3 {
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    margin-bottom: 5px !important;
-    line-height: 1.35 !important;
-  }
-  .lp-sg-how-card p {
-    font-size: 11.5px !important;
-    line-height: 1.55 !important;
-  }
-
-  /* ── Solution Cards: 2 cột, giống pain card ── */
-  .lp-sg-sol-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
-  }
-  .lp-sg-sol-card {
-    padding: 14px 10px 16px !important;
-    border-radius: 16px !important;
-    gap: 6px !important;
-  }
-  .lp-sg-sol-card-icon {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    min-height: 28px !important;
-  }
-  .lp-sg-sol-card h4 {
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    line-height: 1.35 !important;
-  }
-  .lp-sg-sol-card p {
-    font-size: 11.5px !important;
-    line-height: 1.55 !important;
-  }
-
-  /* ── Features/Benefits: giống pain card (padding nhỏ, sát viền) ── */
-  .lp-sg-feat-card {
-    padding: 14px 10px 16px !important;
-    border-radius: 16px !important;
-  }
-  .lp-sg-feat-card-icon {
-    margin-bottom: 10px !important;
-  }
-  .lp-sg-feat-card h3 {
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    margin-bottom: 5px !important;
-    line-height: 1.35 !important;
-  }
-  .lp-sg-feat-card p {
-    font-size: 11.5px !important;
-    line-height: 1.55 !important;
-  }
-}
-
-/* ── Typewriter cursor blink ── */
-@keyframes blink-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-/* ── Floating Buttons: Wave Ring Animation ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLOATING BUTTONS — Wave Ring Animation
+   ═══════════════════════════════════════════════════════════════════════════ */
 .lp-wave-ring {
   position: absolute;
   width: 54px;
@@ -404,32 +274,66 @@ nav[style*="position: fixed"] {
   animation: lp-wave-pulse 2s ease-out infinite;
   z-index: 1;
 }
-.lp-wave-ring-2 {
-  animation-delay: 0.7s;
-}
+.lp-wave-ring-2 { animation-delay: 0.7s; }
 @keyframes lp-wave-pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  70% {
-    transform: scale(2.2);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(2.2);
-    opacity: 0;
-  }
+  0%   { transform: scale(1);   opacity: 0.8; }
+  70%  { transform: scale(2.2); opacity: 0;   }
+  100% { transform: scale(2.2); opacity: 0;   }
 }
 
-/* ── Quiz Frame Group Row Slider ── */
-.lp-sg-quiz-row-slider {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+/* ═══════════════════════════════════════════════════════════════════════════
+   TYPEWRITER CURSOR
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
-.lp-sg-quiz-row-slider::-webkit-scrollbar {
-  display: none;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOFA GIƯỜNG — Product Gallery (kept for shared CSS file)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .lp-sg-product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
 }
-.lp-sg-quiz-row-slider > button {
-  scroll-snap-align: start;
+@media (max-width: 540px) {
+  .lp-sg-product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  .lp-sg-price-meta   { display: none !important; }
+  .lp-sg-card-price   { flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
 }
+@media (max-width: 380px) {
+  .lp-sg-product-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
+}
+
+/* ── Sofa Giường Quiz Modal ── */
+@media (max-width: 640px) {
+  .lp-sg-quiz-overlay     { padding: 0 !important; align-items: flex-end !important; }
+  .lp-sg-quiz-modal       { border-radius: 20px 20px 0 0 !important; max-height: 92vh !important; }
+  .lp-sg-quiz-left-panel  { display: none !important; }
+  .lp-sg-quiz-body        { flex-direction: column !important; }
+  .lp-sg-quiz-content     { padding: 16px !important; }
+  .lp-sg-quiz-product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  .lp-sg-quiz-content [style*="repeat(auto-fill, minmax(200px"] { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  .lp-sg-quiz-content div[style*="repeat(auto-fill"] { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+}
+
+/* ── Sofa Giường Pain / How / Features / Solution cards ── */
+@media (max-width: 640px) {
+  .lp-sg-pain-section, .lp-sg-how-section, .lp-sg-features-section { padding-left: 20px !important; padding-right: 20px !important; }
+  .lp-sg-pain-grid, .lp-sg-how-grid, .lp-sg-features-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  .lp-sg-pain-card      { border-radius: 16px !important; overflow: hidden !important; }
+  .lp-sg-pain-card-img  { padding-top: 72% !important; }
+  .lp-sg-pain-card-info { padding: 12px 10px 14px !important; }
+  .lp-sg-pain-card h3, .lp-sg-how-card h3, .lp-sg-feat-card h3 { font-size: 13px !important; font-weight: 600 !important; margin-bottom: 5px !important; line-height: 1.35 !important; }
+  .lp-sg-pain-card p,  .lp-sg-how-card p,  .lp-sg-feat-card p  { font-size: 11.5px !important; line-height: 1.55 !important; }
+  .lp-sg-how-card  { padding: 14px 10px 16px !important; border-radius: 16px !important; }
+  .lp-sg-feat-card { padding: 14px 10px 16px !important; border-radius: 16px !important; }
+  .lp-sg-sol-grid  { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  .lp-sg-sol-card  { padding: 14px 10px 16px !important; border-radius: 16px !important; gap: 6px !important; }
+  .lp-sg-sol-card h4 { font-size: 13px !important; font-weight: 600 !important; line-height: 1.35 !important; }
+  .lp-sg-sol-card p  { font-size: 11.5px !important; line-height: 1.55 !important; }
+}
+
+/* ── Quiz Row Slider (scrollable) ── */
+.lp-sg-quiz-row-slider { scrollbar-width: none; -ms-overflow-style: none; }
+.lp-sg-quiz-row-slider::-webkit-scrollbar { display: none; }
+.lp-sg-quiz-row-slider > button { scroll-snap-align: start; }

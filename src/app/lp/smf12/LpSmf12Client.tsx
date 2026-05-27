@@ -401,7 +401,7 @@ function SofaDemoSection() {
   const footY2 = seatY + footLen * Math.sin(footRad - Math.PI);
 
   return (
-    <section id="demo" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+    <section id="demo" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <FadeIn>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -801,7 +801,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           <EditableHeroImage slug={LP_SLUG} imageKeys={["hero_bg_0", "hero_bg_1", "hero_bg_2"]} overlayKey="hero_overlay" imageUrls={heroImages} overlayOpacity={heroOverlay} editMode={editMode} onImageSaved={handleSaved} onOverlaySaved={(k, v) => handleSaved(k, String(v))} />
         )}
         {/* Hero content */}
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "120px 24px 80px", width: "100%" }}>
+        <div className="lp-hero-content" style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "120px 24px 80px", width: "100%" }}>
           <div style={{ maxWidth: 680 }}>
             <SectionLabel>{E({ bk: "hero_section_label", def: "Sofa Giường Da PU Cao Cấp", as: "span" })}</SectionLabel>
             <h1 style={{ fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 700, lineHeight: 1.1, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF" }}>
@@ -813,7 +813,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             <p style={{ color: "rgba(253,250,245,0.85)", fontSize: "clamp(15px, 2vw, 18px)", lineHeight: 1.7, marginBottom: 36, fontFamily: FONT_BODY, maxWidth: 520 }}>
               {E({ bk: "hero_desc", def: "Da PU nhập khẩu cao cấp. Cơ cấu SmartFold 1 thao tác. Đệm foam D40 dày 12cm. Giao hàng và lắp đặt tận nơi toàn quốc.", as: "span", multiline: true })}
             </p>
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 48 }}>
+            <div className="lp-hero-cta-row" style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 48 }}>
               <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "16px 36px" }}>
                 {E({ bk: "hero_cta_primary", def: "Nhận Tư Vấn & Báo Giá Ngay", as: "span" })}
               </GoldButton>
@@ -822,7 +822,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               </OutlineButton>
             </div>
             {/* Trust badges */}
-            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+            <div className="lp-hero-badges" style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
               {[
                 { num: "3 năm", label: "Bảo hành da" },
                 { num: "50.000", label: "Lần gập mở" },
@@ -840,7 +840,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── PROBLEM / SOLUTION ── */}
-      <section id="problems" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+      <section id="problems" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -901,7 +901,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── PRODUCT IMAGES ── */}
-      <section id="showcase" style={{ background: BLACK, padding: "80px 24px" }}>
+      <section id="showcase" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -953,7 +953,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── BEFORE / AFTER SLIDER ── */}
-      <section style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+      <section className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -995,7 +995,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       <SofaDemoSection />
 
       {/* ── VIDEO SECTION ── */}
-      <section id="video" style={{ background: BLACK, padding: "80px 24px" }}>
+      <section id="video" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -1062,7 +1062,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── PRODUCTS / SIZE SELECTOR ── */}
-      <section id="products" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+      <section id="products" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1122,7 +1122,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── COMPARISON TABLE ── */}
-      <section style={{ background: BLACK, padding: "80px 24px" }}>
+      <section className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1171,7 +1171,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── THÔNG SỐ KỸ THUẬT ── */}
-      <section id="specs" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+      <section id="specs" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1214,7 +1214,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── 6 BENEFITS ── */}
-      <section id="benefits" style={{ background: BLACK, padding: "80px 24px" }}>
+      <section id="benefits" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1257,7 +1257,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+      <section className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1309,7 +1309,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── VIDEO REELS (dọc) ── */}
-      <section style={{ background: BLACK, padding: "80px 24px" }}>
+      <section className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -1351,7 +1351,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── TRUST / SOCIAL PROOF ── */}
-      <section id="testimonials" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+      <section id="testimonials" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1420,7 +1420,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── GUARANTEE ── */}
-      <section style={{ background: BLACK, padding: "80px 24px" }}>
+      <section className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1460,7 +1460,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       <UrgencyBanner E={E} />
 
       {/* ── FAQ ── */}
-      <section id="faq" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+      <section id="faq" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1496,7 +1496,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── REGISTER FORM ── */}
-      <section id="register-form" style={{ background: BLACK, padding: "80px 24px" }}>
+      <section id="register-form" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1554,7 +1554,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── CTA FINAL ── */}
-      <section style={{ background: `linear-gradient(135deg, ${BLACK_CARD} 0%, #EDE4D0 100%)`, padding: "80px 24px", textAlign: "center" }}>
+      <section className="lp-section-pad" style={{ background: `linear-gradient(135deg, ${BLACK_CARD} 0%, #EDE4D0 100%)`, padding: "80px 24px", textAlign: "center" }}>
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
           <FadeIn>
             <SectionLabel>{E({ bk: "cta_final_label", def: "Ưu đãi có giới hạn", as: "span" })}</SectionLabel>
