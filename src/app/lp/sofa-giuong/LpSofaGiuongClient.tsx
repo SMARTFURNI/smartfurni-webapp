@@ -363,7 +363,7 @@ function UrgencyBanner({ E }: { E: EFn }) {
   const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [stock] = useState(9);
   return (
-    <div style={{ background: "linear-gradient(135deg, #1A1000 0%, #0D0800 100%)", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 16, padding: "clamp(24px,3vw,40px) clamp(20px,4vw,48px)", maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
+    <div style={{ background: `linear-gradient(135deg, ${BLACK_CARD} 0%, ${BLACK_SOFT} 100%)`, border: `1px solid ${GOLD}59`, borderRadius: 16, padding: "clamp(24px,3vw,40px) clamp(20px,4vw,48px)", maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
       <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", fontFamily: FONT_BODY, marginBottom: 12 }}>
         {E({ bk: "urgency_label", def: "⚡ ƯU ĐÃI CÓ THỜI HẠN", as: "span" })}
       </div>
@@ -394,7 +394,7 @@ function StickyCta({ scrollToForm, E }: { scrollToForm: () => void; E: EFn }) {
   }, []);
   if (!visible) return null;
   return (
-    <div className="sticky-cta-bar" style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 900, background: "rgba(10,10,8,0.97)", borderTop: "1px solid rgba(201,168,76,0.25)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(12px)" }}>
+    <div className="sticky-cta-bar" style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 900, background: `${BLACK}F5`, borderTop: `1px solid ${GOLD_LIGHT}40`, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(12px)" }}>
       <div>
         <div style={{ color: GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>Từ 2.990.000 ₫</div>
         <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginTop: 2 }}>Miễn phí giao hàng + lắp đặt</div>
@@ -613,7 +613,7 @@ function GoldDivider() {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid rgba(201,168,76,0.35)", background: "rgba(201,168,76,0.06)", color: GOLD, fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", padding: "6px 16px", marginBottom: 18, borderRadius: R_FULL, textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${GOLD}59`, background: `${GOLD}0F`, color: GOLD, fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", padding: "6px 16px", marginBottom: 18, borderRadius: R_FULL, textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: GOLD, display: "inline-block" }} />
       {children}
     </div>
@@ -625,7 +625,7 @@ function GoldButton({ children, onClick, style }: { children: React.ReactNode; o
   const [hovered, setHovered] = useState(false);
   return (
     <button onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #0D5470 100%)`, color: BLACK, border: "none", padding: "15px 32px", fontWeight: 700, fontSize: 13, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderRadius: R_MD, boxShadow: hovered ? "0 12px 36px rgba(201,168,76,0.4)" : "0 6px 24px rgba(201,168,76,0.25)", transform: hovered ? "translateY(-2px)" : "translateY(0)", transition: "all 0.25s ease", fontFamily: FONT_BODY, ...style }}>
+      style={{ background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`, color: BLACK, border: "none", padding: "15px 32px", fontWeight: 700, fontSize: 13, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderRadius: R_MD, boxShadow: hovered ? "0 12px 36px rgba(201,168,76,0.4)" : "0 6px 24px rgba(201,168,76,0.25)", transform: hovered ? "translateY(-2px)" : "translateY(0)", transition: "all 0.25s ease", fontFamily: FONT_BODY, ...style }}>
       {children}
     </button>
   );
@@ -763,7 +763,7 @@ function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = leadSlug }: {
           onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
       </div>
       {error && <div style={{ color: "#FF6B6B", fontSize: 13, marginBottom: 16, padding: "12px 16px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: R_SM, fontFamily: FONT_BODY }}>{error}</div>}
-      <button type="submit" onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "17px", background: loading ? "#333333" : `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #0D5470 100%)`, color: BLACK, border: "none", fontWeight: 700, fontSize: 14, cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, boxShadow: loading ? "none" : "0 8px 28px rgba(201,168,76,0.3)", borderRadius: R_MD, fontFamily: FONT_BODY, transition: "all 0.25s ease" }}>
+      <button type="submit" onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "17px", background: loading ? "#333333" : `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`, color: BLACK, border: "none", fontWeight: 700, fontSize: 14, cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, boxShadow: loading ? "none" : "0 8px 28px rgba(201,168,76,0.3)", borderRadius: R_MD, fontFamily: FONT_BODY, transition: "all 0.25s ease" }}>
         {loading ? "Đang gửi…" : (submitLabel || "Tư Vấn & Đặt Hàng Ngay →")}
       </button>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14 }}>
@@ -1387,7 +1387,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
       <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, cursor: "pointer", textAlign: "left" as const, transition: "all 0.2s", width: "100%", overflow: "hidden", padding: 0, display: "flex", flexDirection: "column" as const }}>
         {/* Ảnh to ở trên - tỉ lệ 16:9 */}
         {localImgUrl ? (
-          <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: "#0D0800" }}>
+          <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: BLACK_CARD }}>
             <img src={localImgUrl} alt={label} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
             {/* Badge */}
             {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{badge}</span>}
@@ -2592,17 +2592,17 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent, slug: g
 
 export default function LpSofaGiuongClient({ isEditor = false, initialContent = {}, sofaProducts = [], lpSlug, colorTheme = "dark" }: Props) {
   const EFFECTIVE_SLUG = lpSlug || LP_SLUG;
-  // Color palette - light theme overrides dark defaults
-  const THEME_GOLD = colorTheme === "light" ? "#1A6B8A" : GOLD;
-  const THEME_GOLD_LIGHT = colorTheme === "light" ? "#2E8FAD" : GOLD_LIGHT;
-  const THEME_BLACK = colorTheme === "light" ? "#FFFFFF" : BLACK;
-  const THEME_BLACK_SOFT = colorTheme === "light" ? "#F4F7FA" : BLACK_SOFT;
-  const THEME_BLACK_CARD = colorTheme === "light" ? "#EEF3F8" : BLACK_CARD;
-  const THEME_BLACK_BORDER = colorTheme === "light" ? "#D0DCE8" : BLACK_BORDER;
-  const THEME_WHITE = colorTheme === "light" ? "#1A2332" : WHITE;
-  const THEME_GRAY = colorTheme === "light" ? "#5A6A7A" : GRAY;
-  const THEME_GRAY_LIGHT = colorTheme === "light" ? "#8A9AAA" : GRAY_LIGHT;
+  // Color palette - light theme uses LIGHT_COLORS, dark uses DEFAULT_COLORS
   const themeColors = colorTheme === "light" ? LIGHT_COLORS : DEFAULT_COLORS;
+  const THEME_GOLD = themeColors.GOLD;
+  const THEME_GOLD_LIGHT = themeColors.GOLD_LIGHT;
+  const THEME_BLACK = themeColors.BLACK;
+  const THEME_BLACK_SOFT = themeColors.BLACK_SOFT;
+  const THEME_BLACK_CARD = themeColors.BLACK_CARD;
+  const THEME_BLACK_BORDER = themeColors.BLACK_BORDER;
+  const THEME_WHITE = themeColors.WHITE;
+  const THEME_GRAY = themeColors.GRAY;
+  const THEME_GRAY_LIGHT = themeColors.GRAY_LIGHT;
   const [content, setContent] = useState<Record<string, string>>(initialContent);
   const [quizOpen, setQuizOpen] = useState(false);
   const [quizProductId, setQuizProductId] = useState<string | null>(null);
@@ -2849,7 +2849,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </div>
         )}
         {!heroImages.length && (
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #0A0A08 0%, #1A1200 100%)" }} />
+          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(135deg, ${THEME_BLACK_CARD} 0%, ${THEME_BLACK_SOFT} 100%)` }} />
         )}
         {/* Edit hero images button — chỉ hiện khi isEditor */}
         <EditableHeroImage
@@ -2895,7 +2895,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               <GoldButton onClick={() => openQuiz()} style={{ fontSize: 14, padding: "16px 36px" }}>
                 Bắt Đầu Thiết Kế →
               </GoldButton>
-              <button onClick={scrollToForm} style={{ background: "transparent", color: THEME_WHITE, border: "1px solid rgba(245,237,214,0.3)", borderRadius: R_MD, padding: "16px 32px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, transition: "all 0.25s" }}>
+              <button onClick={scrollToForm} style={{ background: "transparent", color: THEME_WHITE, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_MD, padding: "16px 32px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, transition: "all 0.25s" }}>
                 Xem Bảng Giá
               </button>
             </div>
@@ -3094,7 +3094,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
 
       {/* ── DETAILS GALLERY ── */}
-      <section style={{ padding: "clamp(40px,6vw,80px) 0", background: THEME_BLACK }}>
+      <section style={{ padding: "clamp(40px,6vw,80px) 0", background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", paddingLeft: "clamp(20px,5vw,80px)" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 40, paddingRight: "clamp(20px,5vw,80px)" }}>
@@ -3111,7 +3111,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
       {/* ── FEATURES / BENEFITS ── */}
-      <section id="features" className="lp-sg-features-section" style={{ padding: SECTION_PAD, background: THEME_BLACK }}>
+      <section id="features" className="lp-sg-features-section" style={{ padding: SECTION_PAD, background: THEME_BLACK_CARD }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -3259,7 +3259,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                         <div style={{ position: "absolute", inset: 0, border: "3px dashed rgba(201,168,76,0.8)", borderRadius: R_LG, zIndex: 20, pointerEvents: "none", background: "rgba(201,168,76,0.08)" }} />
                       )}
                       {/* Ảnh tỉ lệ 1:1 */}
-                      <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "#0D0800", flexShrink: 0 }}>
+                      <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: THEME_BLACK_CARD, flexShrink: 0 }}>
                         {(() => {
                           const galleryImgUrl = content[`gallery_product_img_${p.id}`] || p.imageUrl;
                           return galleryImgUrl
@@ -3392,7 +3392,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section id="testimonials" style={{ padding: SECTION_PAD, background: THEME_BLACK }}>
+      <section id="testimonials" style={{ padding: SECTION_PAD, background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
             <SectionLabel>Khách Hàng Nói Gì</SectionLabel>
@@ -3476,7 +3476,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── GUARANTEE ── */}
-      <section style={{ padding: SECTION_PAD, background: THEME_BLACK }}>
+      <section style={{ padding: SECTION_PAD, background: THEME_BLACK_CARD }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ background: "linear-gradient(160deg, #1c1200 0%, #0d0800 60%, #0a0600 100%)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "clamp(40px,5vw,64px) clamp(24px,4vw,56px)", textAlign: "center", position: "relative" as const, overflow: "hidden" }}>
@@ -3540,7 +3540,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: "#060500", borderTop: `1px solid ${THEME_BLACK_BORDER}`, paddingTop: 64 }}>
+      <footer style={{ background: THEME_BLACK_SOFT, borderTop: `1px solid ${THEME_BLACK_BORDER}`, paddingTop: 64 }}>
         <div style={{ height: 2, background: `linear-gradient(90deg, transparent 0%, ${THEME_GOLD} 30%, ${THEME_GOLD} 70%, transparent 100%)`, opacity: 0.5 }} />
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "56px 32px 0" }}>
           <div
@@ -3626,7 +3626,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               </p>
               <button
                 onClick={scrollToForm}
-                style={{ display: "block", width: "100%", textAlign: "center", background: `linear-gradient(135deg, ${THEME_GOLD_LIGHT} 0%, ${THEME_GOLD} 60%, #0D5470 100%)`, color: THEME_BLACK, fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, padding: "13px 20px", borderRadius: R_MD, border: "none", cursor: "pointer", fontFamily: FONT_BODY, boxShadow: "0 6px 24px rgba(201,168,76,0.25)", marginBottom: 12 }}
+                style={{ display: "block", width: "100%", textAlign: "center", background: `linear-gradient(135deg, ${THEME_GOLD_LIGHT} 0%, ${THEME_GOLD} 100%)`, color: THEME_BLACK, fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, padding: "13px 20px", borderRadius: R_MD, border: "none", cursor: "pointer", fontFamily: FONT_BODY, boxShadow: "0 6px 24px rgba(201,168,76,0.25)", marginBottom: 12 }}
               >
                 Đặt hàng ngay →
               </button>
