@@ -189,6 +189,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         initialContent={mergedContent}
         sofaProducts={sofaProducts}
         lpSlug={slug}
+        colorTheme={
+          (mergedContent["color_theme"] as "dark" | "light") ||
+          (slug === "sofa-giuong-02" ? "light" : "dark")
+        }
       />
     </>
   );

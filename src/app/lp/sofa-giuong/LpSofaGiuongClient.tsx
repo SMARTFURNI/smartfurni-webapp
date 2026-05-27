@@ -7,15 +7,32 @@ import type { CrmProduct } from "@/lib/crm-types";
 import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
 import { LpEditBar } from "@/components/lp/LpEditBar";
 
-const GOLD = "#1A6B8A";
-const GOLD_LIGHT = "#2E8FAD";
-const BLACK = "#FFFFFF";
-const BLACK_SOFT = "#F4F7FA";
-const BLACK_CARD = "#EEF3F8";
-const BLACK_BORDER = "#D0DCE8";
-const WHITE = "#1A2332";
-const GRAY = "#5A6A7A";
-const GRAY_LIGHT = "#8A9AAA";
+const GOLD = "#C9A84C";
+const GOLD_LIGHT = "#E2C97E";
+const BLACK = "#0D0B00";
+const BLACK_SOFT = "#1A1600";
+const BLACK_CARD = "#221D00";
+const BLACK_BORDER = "#2E2800";
+const WHITE = "#F5F0E8";
+const GRAY = "#7A7468";
+const GRAY_LIGHT = "#A8A090";
+
+// ─── Color Theme Context ──────────────────────────────────────────────────────
+interface LpColors {
+  GOLD: string; GOLD_LIGHT: string;
+  BLACK: string; BLACK_SOFT: string; BLACK_CARD: string; BLACK_BORDER: string;
+  WHITE: string; GRAY: string; GRAY_LIGHT: string;
+}
+const DEFAULT_COLORS: LpColors = {
+  GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT,
+};
+const LIGHT_COLORS: LpColors = {
+  GOLD: "#1A6B8A", GOLD_LIGHT: "#2E8FAD",
+  BLACK: "#FFFFFF", BLACK_SOFT: "#F4F7FA", BLACK_CARD: "#EEF3F8", BLACK_BORDER: "#D0DCE8",
+  WHITE: "#1A2332", GRAY: "#5A6A7A", GRAY_LIGHT: "#8A9AAA",
+};
+const LpColorContext = React.createContext<LpColors>(DEFAULT_COLORS);
+const useLpColors = () => React.useContext(LpColorContext);
 const LP_SLUG = "sofa-giuong";
 const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -160,7 +177,7 @@ const CountdownDisplay = React.memo(function CountdownDisplay() {
     <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 24 }}>
       {[{ val: pad(t.h), label: "GIỜ" }, { val: pad(t.m), label: "PHÚT" }, { val: pad(t.s), label: "GIÂY" }].map((u, i) => (
         <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          <div style={{ background: BLACK, border: "1px solid rgba(26,107,138,0.3)", borderRadius: 10, padding: "10px 18px", minWidth: 60 }}>
+          <div style={{ background: BLACK, border: "1px solid rgba(201,168,76,0.3)", borderRadius: 10, padding: "10px 18px", minWidth: 60 }}>
             <span style={{ color: GOLD, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{u.val}</span>
           </div>
           <span style={{ color: GRAY, fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_BODY }}>{u.label}</span>
@@ -260,7 +277,7 @@ function InlineEdit({ bk, def, as: Tag = "span", style, multiline = false, editM
         <select
           value={editFontSize}
           onChange={e => setEditFontSize(e.target.value)}
-          style={{ background: "rgba(26,35,50,0.95)", border: "1px solid rgba(26,107,138,0.4)",
+          style={{ background: "rgba(13,11,0,0.95)", border: "1px solid rgba(201,168,76,0.4)",
             borderRadius: 6, color: "#F5EDD6", fontSize: 11, padding: "3px 8px",
             fontFamily: "'Inter',sans-serif", cursor: "pointer", outline: "none" }}
         >
@@ -271,7 +288,7 @@ function InlineEdit({ bk, def, as: Tag = "span", style, multiline = false, editM
         </select>
         {editFontSize && (
           <span style={{ fontSize: editFontSize.startsWith("clamp") ? 14 : parseInt(editFontSize),
-            color: "#1A6B8A", fontFamily: "'Playfair Display',serif", lineHeight: 1 }}>
+            color: "#C9A84C", fontFamily: "'Playfair Display',serif", lineHeight: 1 }}>
             Aa
           </span>
         )}
@@ -280,21 +297,21 @@ function InlineEdit({ bk, def, as: Tag = "span", style, multiline = false, editM
       {multiline ? (
         <textarea ref={textareaRef} value={editText}
           onChange={e => setEditText(e.target.value)} onKeyDown={handleKeyDown} rows={4}
-          style={{ width: "100%", boxSizing: "border-box", background: "rgba(26,35,50,0.95)",
+          style={{ width: "100%", boxSizing: "border-box", background: "rgba(13,11,0,0.95)",
             border: "2px solid #C9A84C", borderRadius: 8, padding: "10px 12px",
             color: "#F5EDD6", fontSize: 14, fontFamily: "'Inter',sans-serif",
             lineHeight: 1.5, resize: "vertical", outline: "none" }} />
       ) : (
         <input ref={inputRef} type="text" value={editText}
           onChange={e => setEditText(e.target.value)} onKeyDown={handleKeyDown}
-          style={{ width: "100%", boxSizing: "border-box", background: "rgba(26,35,50,0.95)",
+          style={{ width: "100%", boxSizing: "border-box", background: "rgba(13,11,0,0.95)",
             border: "2px solid #C9A84C", borderRadius: 8, padding: "10px 14px",
             color: "#F5EDD6", fontSize: 15, fontFamily: "'Inter',sans-serif", outline: "none" }} />
       )}
       {/* Buttons */}
       <span style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
         <button onClick={handleSave} disabled={isSaving}
-          style={{ background: "#1A6B8A", color: "#FFFFFF", border: "none", borderRadius: 6,
+          style={{ background: "#C9A84C", color: "#0D0B00", border: "none", borderRadius: 6,
             padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer",
             opacity: isSaving ? 0.6 : 1, fontFamily: "'Inter',sans-serif" }}>
           {isSaving ? "Đang lưu..." : "✓ Lưu"}
@@ -314,7 +331,7 @@ function InlineEdit({ bk, def, as: Tag = "span", style, multiline = false, editM
 
   return (
     <Tag style={{ ...mergedStyle, position: "relative", cursor: "pointer",
-        outline: isHovered ? "2px dashed rgba(26,107,138,0.6)" : "2px dashed transparent",
+        outline: isHovered ? "2px dashed rgba(201,168,76,0.6)" : "2px dashed transparent",
         outlineOffset: 3, borderRadius: 4, transition: "outline 0.15s" }}
       onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
       onClick={openEdit} title="Click để chỉnh sửa">
@@ -323,7 +340,7 @@ function InlineEdit({ bk, def, as: Tag = "span", style, multiline = false, editM
         <span style={{ position: "absolute", top: -30, left: 0, zIndex: 200, display: "flex", gap: 4 }}
           onClick={e => e.stopPropagation()}>
           <button onClick={e => { e.stopPropagation(); openEdit(); }}
-            style={{ background: "#1A6B8A", color: "#FFFFFF", border: "none", borderRadius: 5,
+            style={{ background: "#C9A84C", color: "#0D0B00", border: "none", borderRadius: 5,
               padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer",
               whiteSpace: "nowrap", fontFamily: "'Inter',sans-serif" }}>
             ✏️ Sửa
@@ -337,9 +354,10 @@ function InlineEdit({ bk, def, as: Tag = "span", style, multiline = false, editM
 type EFn = (p: { bk: string; def: string; as?: keyof JSX.IntrinsicElements; style?: React.CSSProperties; multiline?: boolean }) => React.ReactNode;
 
 function UrgencyBanner({ E }: { E: EFn }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [stock] = useState(9);
   return (
-    <div style={{ background: "linear-gradient(135deg, #1A1000 0%, #0D0800 100%)", border: "1px solid rgba(26,107,138,0.35)", borderRadius: 16, padding: "clamp(24px,3vw,40px) clamp(20px,4vw,48px)", maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
+    <div style={{ background: "linear-gradient(135deg, #1A1000 0%, #0D0800 100%)", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 16, padding: "clamp(24px,3vw,40px) clamp(20px,4vw,48px)", maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
       <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", fontFamily: FONT_BODY, marginBottom: 12 }}>
         {E({ bk: "urgency_label", def: "⚡ ƯU ĐÃI CÓ THỜI HẠN", as: "span" })}
       </div>
@@ -361,6 +379,7 @@ function UrgencyBanner({ E }: { E: EFn }) {
 }
 
 function StickyCta({ scrollToForm, E }: { scrollToForm: () => void; E: EFn }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 600);
@@ -369,7 +388,7 @@ function StickyCta({ scrollToForm, E }: { scrollToForm: () => void; E: EFn }) {
   }, []);
   if (!visible) return null;
   return (
-    <div className="sticky-cta-bar" style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 900, background: "rgba(10,10,8,0.97)", borderTop: "1px solid rgba(26,107,138,0.25)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(12px)" }}>
+    <div className="sticky-cta-bar" style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 900, background: "rgba(10,10,8,0.97)", borderTop: "1px solid rgba(201,168,76,0.25)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(12px)" }}>
       <div>
         <div style={{ color: GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>Từ 2.990.000 ₫</div>
         <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginTop: 2 }}>Miễn phí giao hàng + lắp đặt</div>
@@ -389,6 +408,7 @@ function TypewriterText({ text, highlightWords = [], speed = 55, startDelay = 40
   startDelay?: number;
   cursorColor?: string;
 }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [displayed, setDisplayed] = React.useState("");
   const [done, setDone] = React.useState(false);
 
@@ -479,13 +499,14 @@ const SOL_CARDS = [
 ];
 
 function SolCardsGrid({ content, isEditor, E }: { content: Record<string, string>; isEditor: boolean; E: EFn }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   return (
     <div className="lp-sg-sol-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 24 }}>
       {SOL_CARDS.map((item, i) => {
         const descText = (content[item.bkDesc] ?? item.defDesc).split("||")[0];
         return (
           <div key={i} className="lp-sg-sol-card" style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: 16, padding: "24px 24px 28px", display: "flex", flexDirection: "column" as const, gap: 8 }}>
-            <div className="lp-sg-sol-card-icon" style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(26,107,138,0.12)", border: `1px solid rgba(26,107,138,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div className="lp-sg-sol-card-icon" style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <span style={{ color: GOLD, fontSize: 16, fontWeight: 700 }}>✓</span>
             </div>
             <h4 style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, margin: 0 }}>{E({ bk: item.bkTitle, def: item.defTitle, as: "span" })}</h4>
@@ -552,7 +573,7 @@ function InViewTypewriter({ text, speed = 22 }: { text: string; speed?: number }
   return (
     <span ref={ref}>
       {displayed}
-      {!done && <span style={{ display: "inline-block", width: 2, height: "0.8em", background: "rgba(26,107,138,0.7)", marginLeft: 2, verticalAlign: "middle", borderRadius: 1 }} />}
+      {!done && <span style={{ display: "inline-block", width: 2, height: "0.8em", background: "rgba(201,168,76,0.7)", marginLeft: 2, verticalAlign: "middle", borderRadius: 1 }} />}
     </span>
   );
 }
@@ -573,6 +594,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 }
 
 function GoldDivider() {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 auto 28px", maxWidth: 140 }}>
       <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, transparent, ${GOLD})` }} />
@@ -583,8 +605,9 @@ function GoldDivider() {
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid rgba(26,107,138,0.35)", background: "rgba(26,107,138,0.06)", color: GOLD, fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", padding: "6px 16px", marginBottom: 18, borderRadius: R_FULL, textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid rgba(201,168,76,0.35)", background: "rgba(201,168,76,0.06)", color: GOLD, fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", padding: "6px 16px", marginBottom: 18, borderRadius: R_FULL, textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: GOLD, display: "inline-block" }} />
       {children}
     </div>
@@ -592,10 +615,11 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function GoldButton({ children, onClick, style }: { children: React.ReactNode; onClick?: () => void; style?: React.CSSProperties }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [hovered, setHovered] = useState(false);
   return (
     <button onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #0D5470 100%)`, color: BLACK, border: "none", padding: "15px 32px", fontWeight: 700, fontSize: 13, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderRadius: R_MD, boxShadow: hovered ? "0 12px 36px rgba(26,107,138,0.4)" : "0 6px 24px rgba(26,107,138,0.25)", transform: hovered ? "translateY(-2px)" : "translateY(0)", transition: "all 0.25s ease", fontFamily: FONT_BODY, ...style }}>
+      style={{ background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #0D5470 100%)`, color: BLACK, border: "none", padding: "15px 32px", fontWeight: 700, fontSize: 13, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderRadius: R_MD, boxShadow: hovered ? "0 12px 36px rgba(201,168,76,0.4)" : "0 6px 24px rgba(201,168,76,0.25)", transform: hovered ? "translateY(-2px)" : "translateY(0)", transition: "all 0.25s ease", fontFamily: FONT_BODY, ...style }}>
       {children}
     </button>
   );
@@ -613,6 +637,7 @@ const FAQ_ITEMS = [
 ];
 
 function FaqAccordion({ E: EditFn }: { E: EFn }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -620,7 +645,7 @@ function FaqAccordion({ E: EditFn }: { E: EFn }) {
         const isOpen = openIndex === i;
         return (
           <FadeIn key={i} delay={i * 60}>
-            <div style={{ background: isOpen ? BLACK_CARD : BLACK_SOFT, border: `1px solid ${isOpen ? "rgba(26,107,138,0.45)" : BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", transition: "border-color 0.25s, background 0.25s" }}>
+            <div style={{ background: isOpen ? BLACK_CARD : BLACK_SOFT, border: `1px solid ${isOpen ? "rgba(201,168,76,0.45)" : BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", transition: "border-color 0.25s, background 0.25s" }}>
               <button onClick={() => setOpenIndex(isOpen ? null : i)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "22px 24px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" as const }}>
                 <span style={{ color: isOpen ? GOLD : WHITE, fontSize: "clamp(14px,1.8vw,16px)", fontWeight: 500, lineHeight: 1.5, fontFamily: FONT_HEADING, transition: "color 0.25s" }}>
                   {EditFn({ bk: item.bkQ, def: item.defQ, as: "span" })}
@@ -644,6 +669,7 @@ function FaqAccordion({ E: EditFn }: { E: EFn }) {
 
 // ─── Lead Form ────────────────────────────────────────────────────────────────
 function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = leadSlug }: { submitLabel?: string; prefilledConfig?: string; slug?: string }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -688,12 +714,12 @@ function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = leadSlug }: {
     finally { setLoading(false); }
   }
 
-  const inp: React.CSSProperties = { width: "100%", background: "rgba(245,237,214,0.04)", border: "1px solid rgba(26,107,138,0.2)", color: WHITE, padding: "13px 16px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box" as const, transition: "border-color 0.2s, box-shadow 0.2s", borderRadius: R_MD };
+  const inp: React.CSSProperties = { width: "100%", background: "rgba(245,237,214,0.04)", border: "1px solid rgba(201,168,76,0.2)", color: WHITE, padding: "13px 16px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box" as const, transition: "border-color 0.2s, box-shadow 0.2s", borderRadius: R_MD };
 
   if (success) return (
     <div style={{ textAlign: "center", padding: "56px 32px", background: BLACK_CARD, border: `1px solid ${GOLD}`, borderRadius: R_LG }}>
-      <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(26,107,138,0.1)", border: `2px solid ${GOLD}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1A6B8A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `2px solid ${GOLD}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </div>
       <h3 style={{ fontSize: 24, fontWeight: 600, color: GOLD, marginBottom: 12, fontFamily: FONT_HEADING }}>Đặt hàng thành công!</h3>
       <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY }}>Cảm ơn bạn đã tin tưởng SmartFurni.<br />Đội ngũ tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 2 giờ làm việc.</p>
@@ -703,7 +729,7 @@ function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = leadSlug }: {
   return (
     <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, padding: "clamp(24px,4vw,44px)", borderRadius: R_LG }}>
       {prefilledConfig && (
-        <div style={{ marginBottom: 20, padding: "12px 16px", background: "rgba(26,107,138,0.06)", border: "1px solid rgba(26,107,138,0.2)", borderRadius: R_MD }}>
+        <div style={{ marginBottom: 20, padding: "12px 16px", background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: R_MD }}>
           <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", fontFamily: FONT_BODY, marginBottom: 4 }}>✓ CẤU HÌNH ĐÃ CHỌN:</div>
           <div style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY }}>{prefilledConfig}</div>
         </div>
@@ -713,25 +739,25 @@ function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = leadSlug }: {
           <div key={f.k}>
             <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>{f.label}</label>
             <input type="text" placeholder={f.ph} value={form[f.k as keyof typeof form]} onChange={setF(f.k)} style={inp}
-              onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(26,107,138,0.12)"; }}
-              onBlur={e => { e.target.style.borderColor = "rgba(26,107,138,0.2)"; e.target.style.boxShadow = "none"; }} />
+              onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
           </div>
         ))}
       </div>
       <div style={{ marginBottom: 16 }}>
         <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Địa chỉ giao hàng</label>
         <input type="text" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành phố" value={form.address} onChange={setF("address")} style={inp}
-          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(26,107,138,0.12)"; }}
-          onBlur={e => { e.target.style.borderColor = "rgba(26,107,138,0.2)"; e.target.style.boxShadow = "none"; }} />
+          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
+          onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
       </div>
       <div style={{ marginBottom: 26 }}>
         <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Yêu cầu thêm (tuỳ chọn)</label>
         <textarea placeholder="Màu sắc, chất liệu đặc biệt, thời gian giao hàng…" rows={3} value={form.note} onChange={setF("note")} style={{ ...inp, resize: "vertical" }}
-          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(26,107,138,0.12)"; }}
-          onBlur={e => { e.target.style.borderColor = "rgba(26,107,138,0.2)"; e.target.style.boxShadow = "none"; }} />
+          onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)"; }}
+          onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.2)"; e.target.style.boxShadow = "none"; }} />
       </div>
       {error && <div style={{ color: "#FF6B6B", fontSize: 13, marginBottom: 16, padding: "12px 16px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: R_SM, fontFamily: FONT_BODY }}>{error}</div>}
-      <button type="submit" onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "17px", background: loading ? "#CCCCCC" : `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #0D5470 100%)`, color: BLACK, border: "none", fontWeight: 700, fontSize: 14, cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, boxShadow: loading ? "none" : "0 8px 28px rgba(26,107,138,0.3)", borderRadius: R_MD, fontFamily: FONT_BODY, transition: "all 0.25s ease" }}>
+      <button type="submit" onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "17px", background: loading ? "#333333" : `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 50%, #0D5470 100%)`, color: BLACK, border: "none", fontWeight: 700, fontSize: 14, cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, boxShadow: loading ? "none" : "0 8px 28px rgba(201,168,76,0.3)", borderRadius: R_MD, fontFamily: FONT_BODY, transition: "all 0.25s ease" }}>
         {loading ? "Đang gửi…" : (submitLabel || "Tư Vấn & Đặt Hàng Ngay →")}
       </button>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14 }}>
@@ -753,6 +779,7 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete, content, selec
   effectiveKey?: string;
   slug?: string;
 }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [form, setForm] = React.useState({ name: "", phone: "", note: "" });
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
@@ -799,7 +826,7 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete, content, selec
   // Base input style - fontSize 16px prevents iOS zoom
   const inp: React.CSSProperties = {
     background: "rgba(245,237,214,0.04)",
-    border: "1px solid rgba(26,107,138,0.2)",
+    border: "1px solid rgba(201,168,76,0.2)",
     borderRadius: R_SM,
     padding: "11px 14px",
     color: WHITE,
@@ -823,10 +850,10 @@ function QuizOrderForm({ cfg, product, total, onBack, onComplete, content, selec
 
   const focusStyle = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     e.target.style.borderColor = GOLD;
-    e.target.style.boxShadow = "0 0 0 3px rgba(26,107,138,0.12)";
+    e.target.style.boxShadow = "0 0 0 3px rgba(201,168,76,0.12)";
   };
   const blurStyle = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    e.target.style.borderColor = "rgba(26,107,138,0.2)";
+    e.target.style.borderColor = "rgba(201,168,76,0.2)";
     e.target.style.boxShadow = "none";
   };
 
@@ -1080,15 +1107,16 @@ const STEP_LABELS: Record<QuizStep, string> = {
 function QuizOption({ icon, label, desc, price, selected, badge, onClick }: {
   icon: string; label: string; desc: string; price: number; selected: boolean; badge?: string; onClick: () => void;
 }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   return (
-    <button onClick={onClick} style={{ background: selected ? "rgba(26,107,138,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(26,107,138,0.18)"}`, borderRadius: R_MD, padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left" as const, transition: "all 0.2s", width: "100%" }}>
-      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, borderRadius: R_SM, background: selected ? "rgba(26,107,138,0.15)" : "rgba(26,107,138,0.06)", border: `1px solid ${selected ? "rgba(26,107,138,0.4)" : "rgba(26,107,138,0.12)"}`, transition: "all 0.2s" }}>
-        <SvgIcon name={icon} size={20} color={selected ? GOLD : "rgba(26,107,138,0.6)"} />
+    <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left" as const, transition: "all 0.2s", width: "100%" }}>
+      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, borderRadius: R_SM, background: selected ? "rgba(201,168,76,0.15)" : "rgba(201,168,76,0.06)", border: `1px solid ${selected ? "rgba(201,168,76,0.4)" : "rgba(201,168,76,0.12)"}`, transition: "all 0.2s" }}>
+        <SvgIcon name={icon} size={20} color={selected ? GOLD : "rgba(201,168,76,0.6)"} />
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <span style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY }}>{label}</span>
-          {badge && <span style={{ background: selected ? GOLD : "rgba(26,107,138,0.15)", color: selected ? BLACK : GOLD, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{badge}</span>}
+          {badge && <span style={{ background: selected ? GOLD : "rgba(201,168,76,0.15)", color: selected ? BLACK : GOLD, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 100, fontFamily: FONT_BODY }}>{badge}</span>}
         </div>
         <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{desc}</div>
       </div>
@@ -1110,6 +1138,7 @@ function CropImageModal({ imgSrc, aspect, onDone, onCancel }: {
   onDone: (croppedBlob: Blob) => void;
   onCancel: () => void;
 }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [crop, setCrop] = React.useState<Crop>();
   const [completedCrop, setCompletedCrop] = React.useState<Crop>();
   const imgRef = React.useRef<HTMLImageElement>(null);
@@ -1148,7 +1177,7 @@ function CropImageModal({ imgSrc, aspect, onDone, onCancel }: {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 9999, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", padding: 24 }}
       onClick={e => e.stopPropagation()}>
-      <div style={{ background: "#FFFFFF", border: "1px solid rgba(26,107,138,0.3)", borderRadius: 16, padding: 20, maxWidth: 800, width: "100%", maxHeight: "90vh", overflow: "auto" }}>
+      <div style={{ background: "#0D0B00", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 16, padding: 20, maxWidth: 800, width: "100%", maxHeight: "90vh", overflow: "auto" }}>
         <div style={{ color: "#F5EDD6", fontSize: 14, fontWeight: 600, marginBottom: 12, fontFamily: "Inter, sans-serif" }}>
           ✂️ Kéo để chọn vùng hiển thị
         </div>
@@ -1159,7 +1188,7 @@ function CropImageModal({ imgSrc, aspect, onDone, onCancel }: {
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 16, justifyContent: "flex-end" }}>
           <button onClick={onCancel} style={{ background: "rgba(255,255,255,0.08)", color: "#A8A090", border: "none", borderRadius: 8, padding: "8px 18px", fontSize: 13, cursor: "pointer" }}>Huỷ</button>
-          <button onClick={handleDone} style={{ background: "#1A6B8A", color: "#0A0A08", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✓ Xác nhận cắt</button>
+          <button onClick={handleDone} style={{ background: "#C9A84C", color: "#0A0A08", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✓ Xác nhận cắt</button>
         </div>
       </div>
     </div>
@@ -1168,6 +1197,7 @@ function CropImageModal({ imgSrc, aspect, onDone, onCancel }: {
 
 // ─── PainPointImageEditor: Upload/URL ảnh cho pain point cards ───────────────
 function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url: string) => void }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [showUrlInput, setShowUrlInput] = React.useState(false);
   const [urlVal, setUrlVal] = React.useState("");
   const [cropSrc, setCropSrc] = React.useState<string | null>(null);
@@ -1184,7 +1214,7 @@ function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url
         <div style={{ color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY }}>Dán link URL ảnh</div>
         <input autoFocus value={urlVal} onChange={e => setUrlVal(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") saveUrl(urlVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlVal(""); } }}
-          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(26,107,138,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
+          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={() => saveUrl(urlVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Lưu</button>
           <button onClick={() => { setShowUrlInput(false); setUrlVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer" }}>Huỷ</button>
@@ -1195,7 +1225,7 @@ function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url
   return (
     <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, zIndex: 10 }}
       onClick={e => e.stopPropagation()}>
-      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(26,107,138,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
         <span style={{ fontSize: 13 }}>📷</span>
         <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Upload</span>
         <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
@@ -1208,7 +1238,7 @@ function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url
           e.target.value = "";
         }} />
       </label>
-      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(26,107,138,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
         <span style={{ fontSize: 13 }}>🔗</span>
         <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Dán URL</span>
       </button>
@@ -1237,6 +1267,7 @@ function PainPointImageEditor({ imgKey, onSave }: { imgKey: string; onSave: (url
   );
 }
 function GalleryImageEditor({ productId, onSave }: { productId: string; onSave: (url: string) => void }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [showUrlInput, setShowUrlInput] = React.useState(false);
   const [urlVal, setUrlVal] = React.useState("");
 
@@ -1254,7 +1285,7 @@ function GalleryImageEditor({ productId, onSave }: { productId: string; onSave: 
         <div style={{ color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY }}>Dán link URL ảnh</div>
         <input autoFocus value={urlVal} onChange={e => setUrlVal(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") saveUrl(urlVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlVal(""); } }}
-          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(26,107,138,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
+          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={() => saveUrl(urlVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Lưu</button>
           <button onClick={() => { setShowUrlInput(false); setUrlVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer" }}>Huỷ</button>
@@ -1266,7 +1297,7 @@ function GalleryImageEditor({ productId, onSave }: { productId: string; onSave: 
   return (
     <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, zIndex: 10 }}
       onClick={e => e.stopPropagation()}>
-      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(26,107,138,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
         <span style={{ fontSize: 13 }}>📷</span>
         <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Upload</span>
         <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
@@ -1284,7 +1315,7 @@ function GalleryImageEditor({ productId, onSave }: { productId: string; onSave: 
           } catch { alert("Lỗi kết nối"); }
         }} />
       </label>
-      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(26,107,138,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
         <span style={{ fontSize: 13 }}>🔗</span>
         <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Dán URL</span>
       </button>
@@ -1298,6 +1329,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
   isEditor?: boolean; optionKey?: string; slug?: string; imgUrl?: string; onImageUploaded?: (key: string, url: string) => void;
   onFieldSaved?: (key: string, field: string, val: string) => void;
 }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [editing, setEditing] = React.useState<null | "label" | "desc" | "price">(null);
   const [editLabel, setEditLabel] = React.useState(label);
   const [editDesc, setEditDesc] = React.useState(desc);
@@ -1346,13 +1378,13 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
 
   return (
     <div style={{ position: "relative" }}>
-      <button onClick={onClick} style={{ background: selected ? "rgba(26,107,138,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(26,107,138,0.18)"}`, borderRadius: R_MD, cursor: "pointer", textAlign: "left" as const, transition: "all 0.2s", width: "100%", overflow: "hidden", padding: 0, display: "flex", flexDirection: "column" as const }}>
+      <button onClick={onClick} style={{ background: selected ? "rgba(201,168,76,0.12)" : "rgba(245,237,214,0.03)", border: `1.5px solid ${selected ? GOLD : "rgba(201,168,76,0.18)"}`, borderRadius: R_MD, cursor: "pointer", textAlign: "left" as const, transition: "all 0.2s", width: "100%", overflow: "hidden", padding: 0, display: "flex", flexDirection: "column" as const }}>
         {/* Ảnh to ở trên - tỉ lệ 16:9 */}
         {localImgUrl ? (
-          <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: "#E8EFF5" }}>
+          <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: "#0D0800" }}>
             <img src={localImgUrl} alt={label} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
             {/* Badge */}
-            {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(26,107,138,0.85)", color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{badge}</span>}
+            {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{badge}</span>}
             {/* Tick selected */}
             {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
             {/* Edit ảnh khi isEditor */}
@@ -1368,7 +1400,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
                       onChange={e => setUrlInputVal(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") saveImgUrl(urlInputVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlInputVal(""); } }}
                       placeholder="https://..."
-                      style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(26,107,138,0.6)", borderRadius: 6, padding: "6px 10px", color: WHITE, fontSize: 11, fontFamily: FONT_BODY, outline: "none" }}
+                      style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: WHITE, fontSize: 11, fontFamily: FONT_BODY, outline: "none" }}
                     />
                     <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={() => saveImgUrl(urlInputVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT_BODY }}>✓ Lưu</button>
@@ -1412,11 +1444,11 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
             )}
           </div>
         ) : (
-          <div style={{ width: "100%", paddingTop: "100%", position: "relative", background: selected ? "rgba(26,107,138,0.08)" : "rgba(26,107,138,0.03)", borderBottom: `1px solid rgba(26,107,138,0.12)` }}>
+          <div style={{ width: "100%", paddingTop: "100%", position: "relative", background: selected ? "rgba(201,168,76,0.08)" : "rgba(201,168,76,0.03)", borderBottom: `1px solid rgba(201,168,76,0.12)` }}>
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <SvgIcon name={icon} size={32} color={selected ? GOLD : "rgba(26,107,138,0.5)"} />
+              <SvgIcon name={icon} size={32} color={selected ? GOLD : "rgba(201,168,76,0.5)"} />
             </div>
-            {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(26,107,138,0.85)", color: BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY }}>{badge}</span>}
+            {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : "rgba(201,168,76,0.85)", color: BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY }}>{badge}</span>}
             {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
             {/* Edit ảnh khi isEditor và chưa có ảnh */}
             {isEditor && optionKey && slug && (
@@ -1427,7 +1459,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
                     <div style={{ color: WHITE, fontSize: 11, fontFamily: FONT_BODY }}>Dán link URL ảnh</div>
                     <input autoFocus value={urlInputVal} onChange={e => setUrlInputVal(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") saveImgUrl(urlInputVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlInputVal(""); } }}
-                      placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(26,107,138,0.6)", borderRadius: 6, padding: "6px 10px", color: WHITE, fontSize: 11, fontFamily: FONT_BODY, outline: "none" }} />
+                      placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: WHITE, fontSize: 11, fontFamily: FONT_BODY, outline: "none" }} />
                     <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={() => saveImgUrl(urlInputVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Lưu</button>
                       <button onClick={() => { setShowUrlInput(false); setUrlInputVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer" }}>Huỷ</button>
@@ -1485,29 +1517,29 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
           {editing === "label" ? (
             <span style={{ display: "flex", gap: 4, alignItems: "center" }}>
               <input value={editLabel} onChange={e => setEditLabel(e.target.value)}
-                style={{ background: "rgba(26,35,50,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", width: 160 }} />
+                style={{ background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", width: 160 }} />
               <button onClick={() => saveField("label")} disabled={saving} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "✓"}</button>
               <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
             </span>
           ) : editing === "desc" ? (
             <span style={{ display: "flex", gap: 4, alignItems: "center", width: "100%" }}>
               <input value={editDesc} onChange={e => setEditDesc(e.target.value)}
-                style={{ background: "rgba(26,35,50,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", flex: 1 }} />
+                style={{ background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", flex: 1 }} />
               <button onClick={() => saveField("desc")} disabled={saving} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "✓"}</button>
               <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
             </span>
           ) : editing === "price" ? (
             <span style={{ display: "flex", gap: 4, alignItems: "center" }}>
               <input value={editPrice} onChange={e => setEditPrice(e.target.value)} type="number"
-                style={{ background: "rgba(26,35,50,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", width: 120 }} />
+                style={{ background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", width: 120 }} />
               <button onClick={() => saveField("price")} disabled={saving} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "✓"}</button>
               <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
             </span>
           ) : (
             <>
-              <button onClick={() => setEditing("label")} style={{ background: "rgba(26,107,138,0.12)", color: GOLD, border: "1px solid rgba(26,107,138,0.3)", borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Tên</button>
-              <button onClick={() => setEditing("desc")} style={{ background: "rgba(26,107,138,0.12)", color: GOLD, border: "1px solid rgba(26,107,138,0.3)", borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Mô tả</button>
-              <button onClick={() => setEditing("price")} style={{ background: "rgba(26,107,138,0.12)", color: GOLD, border: "1px solid rgba(26,107,138,0.3)", borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Giá</button>
+              <button onClick={() => setEditing("label")} style={{ background: "rgba(201,168,76,0.12)", color: GOLD, border: "1px solid rgba(201,168,76,0.3)", borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Tên</button>
+              <button onClick={() => setEditing("desc")} style={{ background: "rgba(201,168,76,0.12)", color: GOLD, border: "1px solid rgba(201,168,76,0.3)", borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Mô tả</button>
+              <button onClick={() => setEditing("price")} style={{ background: "rgba(201,168,76,0.12)", color: GOLD, border: "1px solid rgba(201,168,76,0.3)", borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Giá</button>
             </>
           )}
         </div>
@@ -1519,6 +1551,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
 function EditableText({ value, onSave, style, as: Tag = "div" }: {
   value: string; onSave: (v: string) => void; style?: React.CSSProperties; as?: "h3" | "p" | "div";
 }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [editing, setEditing] = React.useState(false);
   const [val, setVal] = React.useState(value);
   if (editing) {
@@ -1526,7 +1559,7 @@ function EditableText({ value, onSave, style, as: Tag = "div" }: {
       <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
         <input autoFocus value={val} onChange={e => setVal(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") { onSave(val); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
-          style={{ flex: 1, background: "rgba(26,35,50,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "4px 10px", color: "#F5EDD6", fontSize: 13, fontFamily: FONT_BODY, outline: "none" }} />
+          style={{ flex: 1, background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "4px 10px", color: "#F5EDD6", fontSize: 13, fontFamily: FONT_BODY, outline: "none" }} />
         <button onClick={() => { onSave(val); setEditing(false); }} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓</button>
         <button onClick={() => setEditing(false)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
       </div>
@@ -1541,6 +1574,7 @@ function EditableText({ value, onSave, style, as: Tag = "div" }: {
 
 // ─── QuizProductImageEditor: upload/URL ảnh cho product card trong quiz ──────
 function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: string; currentUrl: string; onSave: (url: string) => void }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [showUrlInput, setShowUrlInput] = React.useState(false);
   const [urlVal, setUrlVal] = React.useState("");
   const saveUrl = async (url: string) => {
@@ -1556,7 +1590,7 @@ function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: 
         <div style={{ color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY }}>Dán link URL ảnh</div>
         <input autoFocus value={urlVal} onChange={e => setUrlVal(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") saveUrl(urlVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlVal(""); } }}
-          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(26,107,138,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
+          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={() => saveUrl(urlVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Lưu</button>
           <button onClick={() => { setShowUrlInput(false); setUrlVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer" }}>Huỷ</button>
@@ -1567,7 +1601,7 @@ function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: 
   return (
     <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, zIndex: 10 }}
       onClick={e => e.stopPropagation()}>
-      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(26,107,138,0.6)", borderRadius: 20, padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, backdropFilter: "blur(4px)" }}>
+      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, backdropFilter: "blur(4px)" }}>
         <span style={{ fontSize: 12 }}>📷</span>
         <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Upload</span>
         <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => {
@@ -1585,7 +1619,7 @@ function QuizProductImageEditor({ productId, currentUrl, onSave }: { productId: 
           } catch { alert("Lỗi kết nối"); }
         }} />
       </label>
-      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(26,107,138,0.6)", borderRadius: 20, padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, backdropFilter: "blur(4px)" }}>
+      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, backdropFilter: "blur(4px)" }}>
         <span style={{ fontSize: 12 }}>🔗</span>
         <span style={{ color: GOLD, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Dán URL</span>
       </button>
@@ -1605,6 +1639,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   onContentSaved?: (key: string, val: string) => void;
   slug?: string;
 }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [step, setStep] = useState<QuizStep>(initialProductId ? "size" : "product");
   const [cfg, setCfg] = useState<ConfigState>({ productId: initialProductId || null, size: null, sizeIdx: null, hoc: null, doDay: null, aoNem: null });
   // Track which slotKey was selected (for image key lookup when slot has no real productId)
@@ -1867,8 +1902,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
               }
               setTimeout(() => goNext(), 200);
             }}
-              style={{ background: isSelected ? "rgba(26,107,138,0.12)" : (isEmpty ? "rgba(26,107,138,0.04)" : "rgba(245,237,214,0.03)"), border: `1.5px solid ${isSelected ? GOLD : (isEmpty ? "rgba(26,107,138,0.2)" : "rgba(26,107,138,0.18)")}`, borderRadius: R_MD, overflow: "hidden", cursor: isSelectable ? "pointer" : "default", textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", width: "100%" }}>
-              <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: isEmpty ? "rgba(26,107,138,0.04)" : "transparent" }}>
+              style={{ background: isSelected ? "rgba(201,168,76,0.12)" : (isEmpty ? "rgba(201,168,76,0.04)" : "rgba(245,237,214,0.03)"), border: `1.5px solid ${isSelected ? GOLD : (isEmpty ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.18)")}`, borderRadius: R_MD, overflow: "hidden", cursor: isSelectable ? "pointer" : "default", textAlign: "left" as const, transition: "all 0.2s", padding: 0, position: "relative", width: "100%" }}>
+              <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: isEmpty ? "rgba(201,168,76,0.04)" : "transparent" }}>
                 {displayImgUrl ? (
                   <img src={displayImgUrl} alt={displayName} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
@@ -1903,9 +1938,9 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                 {isEditor ? (
                   <div onClick={e => e.stopPropagation()}>
                     <input key={`name_${slotKey}`} defaultValue={displayName} onBlur={e => saveSlotField("name", e.target.value)} placeholder="Tên mẫu..."
-                      style={{ color: WHITE, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, background: "rgba(26,107,138,0.08)", border: "1px dashed rgba(26,107,138,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const }} />
+                      style={{ color: WHITE, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, lineHeight: 1.4, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const }} />
                     <input key={`price_${slotKey}`} defaultValue={displayPrice || (minPrice ? fmt(minPrice) : "")} onBlur={e => saveSlotField("price", e.target.value)} placeholder="Giá từ..."
-                      style={{ color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(26,107,138,0.08)", border: "1px dashed rgba(26,107,138,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const, marginTop: 4 }} />
+                      style={{ color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", boxSizing: "border-box" as const, marginTop: 4 }} />
                   </div>
                 ) : (
                   <>
@@ -1949,11 +1984,11 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     {isEditor ? (
                       <input defaultValue={group.label} onBlur={e => { const ng = frameGroups.map((g, i) => i === gIdx ? { ...g, label: e.target.value } : g); saveFrameGroups(ng); }}
-                        style={{ color: WHITE, fontSize: 14, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(26,107,138,0.08)", border: "1px dashed rgba(26,107,138,0.4)", borderRadius: 6, padding: "3px 8px", outline: "none", flex: 1 }} />
+                        style={{ color: WHITE, fontSize: 14, fontWeight: 700, fontFamily: FONT_BODY, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 6, padding: "3px 8px", outline: "none", flex: 1 }} />
                     ) : (
                       <div style={{ color: WHITE, fontSize: 14, fontWeight: 700, fontFamily: FONT_BODY }}>{group.label}</div>
                     )}
-                    <div style={{ height: 1, flex: 1, background: "rgba(26,107,138,0.2)" }} />
+                    <div style={{ height: 1, flex: 1, background: "rgba(201,168,76,0.2)" }} />
                     <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>{isEditor ? `${filledCount}/8 mẫu` : `${filledCount} mẫu`}</div>
                   </div>
                   {(() => {
@@ -2162,7 +2197,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
               </div>
             ))}
           </div>
-          <div style={{ background: "rgba(26,107,138,0.08)", border: "1px solid rgba(26,107,138,0.3)", borderRadius: R_MD, padding: "16px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: R_MD, padding: "16px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Tổng giá tham khảo</div>
               <div style={{ color: GOLD, fontSize: 26, fontWeight: 800, fontFamily: FONT_HEADING }}>{fmt(total)}</div>
@@ -2209,13 +2244,13 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             const done = i < stepIdx;
             const active = s === step;
             return (
-              <div key={s} style={{ padding: "4px 12px", borderRadius: 100, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const, background: active ? GOLD : done ? "rgba(26,107,138,0.15)" : "transparent", color: active ? BLACK : done ? GOLD : GRAY, border: `1px solid ${active ? GOLD : done ? "rgba(26,107,138,0.4)" : BLACK_BORDER}`, transition: "all 0.2s", position: "relative" as const, display: "flex", alignItems: "center", gap: 4 }}>
+              <div key={s} style={{ padding: "4px 12px", borderRadius: 100, fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const, background: active ? GOLD : done ? "rgba(201,168,76,0.15)" : "transparent", color: active ? BLACK : done ? GOLD : GRAY, border: `1px solid ${active ? GOLD : done ? "rgba(201,168,76,0.4)" : BLACK_BORDER}`, transition: "all 0.2s", position: "relative" as const, display: "flex", alignItems: "center", gap: 4 }}>
                 {done ? "✓ " : ""}
                 {isEditor && editingTab === s ? (
                   <span style={{ display: "flex", gap: 4, alignItems: "center" }} onClick={e => e.stopPropagation()}>
                     <input autoFocus value={tabLabelVal} onChange={e => setTabLabelVal(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") saveTabLabel(s, tabLabelVal); if (e.key === "Escape") setEditingTab(null); }}
-                      style={{ background: "rgba(26,35,50,0.95)", border: "1.5px solid #C9A84C", borderRadius: 4, padding: "1px 6px", color: "#F5EDD6", fontSize: 10, fontFamily: FONT_BODY, outline: "none", width: 80 }} />
+                      style={{ background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 4, padding: "1px 6px", color: "#F5EDD6", fontSize: 10, fontFamily: FONT_BODY, outline: "none", width: 80 }} />
                     <button onClick={() => saveTabLabel(s, tabLabelVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 3, padding: "1px 6px", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>✓</button>
                     <button onClick={() => setEditingTab(null)} style={{ background: "rgba(255,255,255,0.1)", color: GRAY, border: "none", borderRadius: 3, padding: "1px 4px", fontSize: 9, cursor: "pointer" }}>✕</button>
                   </span>
@@ -2312,6 +2347,7 @@ interface Props {
   isEditor?: boolean;
   initialContent?: Record<string, string>;
   sofaProducts?: import("@/lib/crm-types").CrmProduct[];
+  colorTheme?: "dark" | "light";
 }
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -2333,6 +2369,7 @@ function DetailLabelEditor({ itemKey, label, desc, isEditor, editMode, setConten
   setContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   slug?: string;
 }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [editingLabel, setEditingLabel] = React.useState(false);
   const [editingDesc, setEditingDesc] = React.useState(false);
   const [labelVal, setLabelVal] = React.useState(label);
@@ -2361,11 +2398,11 @@ function DetailLabelEditor({ itemKey, label, desc, isEditor, editMode, setConten
             <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
               <input autoFocus value={labelVal} onChange={e => setLabelVal(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") saveLabel(labelVal); if (e.key === "Escape") setEditingLabel(false); }}
-                style={{ flex: 1, background: "rgba(26,35,50,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 13, fontFamily: FONT_BODY, outline: "none" }} />
+                style={{ flex: 1, background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 13, fontFamily: FONT_BODY, outline: "none" }} />
               <button onClick={() => saveLabel(labelVal)} style={{ background: GOLD, border: "none", borderRadius: 4, padding: "3px 8px", color: BLACK, fontSize: 11, cursor: "pointer", fontWeight: 700 }}>OK</button>
             </div>
           ) : (
-            <div onClick={() => setEditingLabel(true)} style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, cursor: "text", borderBottom: "1px dashed rgba(26,107,138,0.3)", paddingBottom: 2 }}>
+            <div onClick={() => setEditingLabel(true)} style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY, marginBottom: 4, cursor: "text", borderBottom: "1px dashed rgba(201,168,76,0.3)", paddingBottom: 2 }}>
               {label} <span style={{ color: GOLD, fontSize: 10, opacity: 0.6 }}>pencil</span>
             </div>
           )}
@@ -2373,11 +2410,11 @@ function DetailLabelEditor({ itemKey, label, desc, isEditor, editMode, setConten
             <div style={{ display: "flex", gap: 4 }}>
               <textarea autoFocus value={descVal} onChange={e => setDescVal(e.target.value)}
                 onKeyDown={e => { if (e.key === "Escape") setEditingDesc(false); }}
-                style={{ flex: 1, background: "rgba(26,35,50,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#9BA1A6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", resize: "none", minHeight: 52 }} />
+                style={{ flex: 1, background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#9BA1A6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", resize: "none", minHeight: 52 }} />
               <button onClick={() => saveDesc(descVal)} style={{ background: GOLD, border: "none", borderRadius: 4, padding: "3px 8px", color: BLACK, fontSize: 11, cursor: "pointer", fontWeight: 700, alignSelf: "flex-start" }}>OK</button>
             </div>
           ) : (
-            <div onClick={() => setEditingDesc(true)} style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, cursor: "text", borderBottom: "1px dashed rgba(26,107,138,0.2)", paddingBottom: 2 }}>
+            <div onClick={() => setEditingDesc(true)} style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, cursor: "text", borderBottom: "1px dashed rgba(201,168,76,0.2)", paddingBottom: 2 }}>
               {desc} <span style={{ color: GOLD, fontSize: 10, opacity: 0.6 }}>pencil</span>
             </div>
           )}
@@ -2399,6 +2436,7 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent, slug: g
   setContent: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   slug?: string;
 }) {
+  const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const trackRef = React.useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = React.useState(false);
@@ -2509,13 +2547,13 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent, slug: g
           const imgKey = `details_gallery_img_${item.key}`;
           return (
             <div key={idx} style={{ flexShrink: 0, width: CARD_W }}>
-              <div style={{ position: "relative" as const, width: CARD_W, height: CARD_W, borderRadius: 16, overflow: "hidden", background: "rgba(245,237,214,0.04)", border: "1px solid rgba(26,107,138,0.15)" }}>
+              <div style={{ position: "relative" as const, width: CARD_W, height: CARD_W, borderRadius: 16, overflow: "hidden", background: "rgba(245,237,214,0.04)", border: "1px solid rgba(201,168,76,0.15)" }}>
                 {item.img ? (
                   <img src={item.img} alt={item.label} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} />
                 ) : (
                   <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
-                    <SvgIcon name="image" size={40} color="rgba(26,107,138,0.3)" />
-                    {isEditor && editMode && isOriginal && <span style={{ color: "rgba(26,107,138,0.5)", fontSize: 12, fontFamily: FONT_BODY }}>Them anh</span>}
+                    <SvgIcon name="image" size={40} color="rgba(201,168,76,0.3)" />
+                    {isEditor && editMode && isOriginal && <span style={{ color: "rgba(201,168,76,0.5)", fontSize: 12, fontFamily: FONT_BODY }}>Them anh</span>}
                   </div>
                 )}
                 {isEditor && editMode && isOriginal && (
@@ -2546,8 +2584,19 @@ function DetailsGalleryScroll({ content, isEditor, editMode, setContent, slug: g
   );
 }
 
-export default function LpSofaGiuongClient({ isEditor = false, initialContent = {}, sofaProducts = [], lpSlug }: Props) {
+export default function LpSofaGiuongClient({ isEditor = false, initialContent = {}, sofaProducts = [], lpSlug, colorTheme = "dark" }: Props) {
   const EFFECTIVE_SLUG = lpSlug || LP_SLUG;
+  // Color palette - light theme overrides dark defaults
+  const THEME_GOLD = colorTheme === "light" ? "#1A6B8A" : GOLD;
+  const THEME_GOLD_LIGHT = colorTheme === "light" ? "#2E8FAD" : GOLD_LIGHT;
+  const THEME_BLACK = colorTheme === "light" ? "#FFFFFF" : BLACK;
+  const THEME_BLACK_SOFT = colorTheme === "light" ? "#F4F7FA" : BLACK_SOFT;
+  const THEME_BLACK_CARD = colorTheme === "light" ? "#EEF3F8" : BLACK_CARD;
+  const THEME_BLACK_BORDER = colorTheme === "light" ? "#D0DCE8" : BLACK_BORDER;
+  const THEME_WHITE = colorTheme === "light" ? "#1A2332" : WHITE;
+  const THEME_GRAY = colorTheme === "light" ? "#5A6A7A" : GRAY;
+  const THEME_GRAY_LIGHT = colorTheme === "light" ? "#8A9AAA" : GRAY_LIGHT;
+  const themeColors = colorTheme === "light" ? LIGHT_COLORS : DEFAULT_COLORS;
   const [content, setContent] = useState<Record<string, string>>(initialContent);
   const [quizOpen, setQuizOpen] = useState(false);
   const [quizProductId, setQuizProductId] = useState<string | null>(null);
@@ -2656,14 +2705,15 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
   const editedCount = Object.keys(content).filter(k => !k.startsWith("hero_")).length;
 
   return (
-    <div style={{ background: BLACK, color: WHITE, fontFamily: FONT_BODY, overflowX: "hidden" }}>
+    <LpColorContext.Provider value={themeColors}>
+    <div style={{ background: THEME_BLACK, color: THEME_WHITE, fontFamily: FONT_BODY, overflowX: "hidden" }}>
       {/* ── EDIT BAR (admin only) ── */}
       <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(m => !m)} editedCount={editedCount} slug={EFFECTIVE_SLUG} />
       {/* ── STICKY NAV ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrollY > 60 ? "rgba(26,35,50,0.96)" : "transparent",
-        borderBottom: scrollY > 60 ? `1px solid ${BLACK_BORDER}` : "none",
+        background: scrollY > 60 ? "rgba(13,11,0,0.96)" : "transparent",
+        borderBottom: scrollY > 60 ? `1px solid ${THEME_BLACK_BORDER}` : "none",
         backdropFilter: scrollY > 60 ? "blur(16px)" : "none",
         WebkitBackdropFilter: scrollY > 60 ? "blur(16px)" : "none",
         transition: "background 0.3s ease, border-color 0.3s ease",
@@ -2697,8 +2747,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                   whiteSpace: "nowrap" as const,
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLButtonElement).style.color = GOLD;
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(26,107,138,0.08)";
+                  (e.currentTarget as HTMLButtonElement).style.color = THEME_GOLD;
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(201,168,76,0.08)";
                 }}
                 onMouseLeave={e => {
                   (e.currentTarget as HTMLButtonElement).style.color = "rgba(212,196,160,0.7)";
@@ -2712,8 +2762,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           {/* CTA */}
           <button onClick={() => openQuiz()} className="lp-nav-cta" style={{
             flexShrink: 0,
-            background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
-            color: BLACK, border: "none", padding: "9px 20px",
+            background: `linear-gradient(135deg, ${THEME_GOLD_LIGHT} 0%, ${THEME_GOLD} 100%)`,
+            color: THEME_BLACK, border: "none", padding: "9px 20px",
             fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", cursor: "pointer",
             textTransform: "uppercase" as const, borderRadius: R_MD, fontFamily: FONT_BODY,
             transition: "opacity 0.2s, transform 0.15s",
@@ -2728,14 +2778,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             className="lp-nav-hamburger"
             onClick={() => setMobileMenuOpen(v => !v)}
             style={{
-              background: "none", border: `1px solid rgba(26,107,138,0.35)`,
+              background: "none", border: `1px solid rgba(201,168,76,0.35)`,
               borderRadius: R_SM, padding: "8px 10px", cursor: "pointer",
               display: "flex", flexDirection: "column", gap: 5, flexShrink: 0,
             }}
             aria-label="Menu"
           >
             {[0, 1, 2].map(i => (
-              <span key={i} style={{ display: "block", width: 20, height: 1.5, background: GOLD_LIGHT, borderRadius: 1 }} />
+              <span key={i} style={{ display: "block", width: 20, height: 1.5, background: THEME_GOLD_LIGHT, borderRadius: 1 }} />
             ))}
           </button>
         </div>
@@ -2745,8 +2795,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       {mobileMenuOpen && (
         <div style={{
           position: "fixed", top: 68, left: 0, right: 0, zIndex: 99,
-          background: "rgba(26,35,50,0.98)", backdropFilter: "blur(16px)",
-          borderBottom: `1px solid ${BLACK_BORDER}`,
+          background: "rgba(13,11,0,0.98)", backdropFilter: "blur(16px)",
+          borderBottom: `1px solid ${THEME_BLACK_BORDER}`,
           padding: "16px 24px 24px",
         }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -2756,7 +2806,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 onClick={() => { scrollTo(item.id); setMobileMenuOpen(false); }}
                 style={{
                   background: "none", border: "none", cursor: "pointer",
-                  color: GRAY_LIGHT, fontSize: 15, fontWeight: 500,
+                  color: THEME_GRAY_LIGHT, fontSize: 15, fontWeight: 500,
                   fontFamily: FONT_BODY, padding: "14px 16px",
                   textAlign: "left" as const, borderRadius: R_SM,
                   letterSpacing: "0.02em",
@@ -2768,8 +2818,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             <button
               onClick={() => { openQuiz(); setMobileMenuOpen(false); }}
               style={{
-                background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
-                color: BLACK, border: "none", padding: "14px 20px",
+                background: `linear-gradient(135deg, ${THEME_GOLD_LIGHT} 0%, ${THEME_GOLD} 100%)`,
+                color: THEME_BLACK, border: "none", padding: "14px 20px",
                 fontWeight: 700, fontSize: 13, cursor: "pointer",
                 textTransform: "uppercase" as const, borderRadius: R_MD,
                 fontFamily: FONT_BODY, marginTop: 8, letterSpacing: "0.08em",
@@ -2816,7 +2866,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         {heroImages.length > 1 && (
           <div style={{ position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 8, zIndex: 10 }}>
             {heroImages.map((_, i) => (
-              <button key={i} onClick={() => setHeroImgIdx(i)} style={{ width: i === heroImgIdx ? 24 : 8, height: 8, borderRadius: 4, background: i === heroImgIdx ? GOLD : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", padding: 0, transition: "all 0.3s" }} />
+              <button key={i} onClick={() => setHeroImgIdx(i)} style={{ width: i === heroImgIdx ? 24 : 8, height: 8, borderRadius: 4, background: i === heroImgIdx ? THEME_GOLD : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", padding: 0, transition: "all 0.3s" }} />
             ))}
           </div>
         )}
@@ -2832,14 +2882,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 startDelay={300}
               />
             </h1>
-            <p style={{ fontSize: "clamp(15px,1.8vw,18px)", color: GRAY_LIGHT, lineHeight: 1.75, marginBottom: 36, maxWidth: 560, fontFamily: FONT_BODY }}>
+            <p style={{ fontSize: "clamp(15px,1.8vw,18px)", color: THEME_GRAY_LIGHT, lineHeight: 1.75, marginBottom: 36, maxWidth: 560, fontFamily: FONT_BODY }}>
               {E({ bk: "hero_desc", def: "Chọn mẫu, kích thước, chất liệu, màu sắc — mọi chi tiết đều do bạn quyết định. Nhận báo giá tức thì và giao hàng tận nơi.", as: "span" })}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 48 }}>
               <GoldButton onClick={() => openQuiz()} style={{ fontSize: 14, padding: "16px 36px" }}>
                 Bắt Đầu Thiết Kế →
               </GoldButton>
-              <button onClick={scrollToForm} style={{ background: "transparent", color: WHITE, border: "1px solid rgba(245,237,214,0.3)", borderRadius: R_MD, padding: "16px 32px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, transition: "all 0.25s" }}>
+              <button onClick={scrollToForm} style={{ background: "transparent", color: THEME_WHITE, border: "1px solid rgba(245,237,214,0.3)", borderRadius: R_MD, padding: "16px 32px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, transition: "all 0.25s" }}>
                 Xem Bảng Giá
               </button>
             </div>
@@ -2852,8 +2902,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 { icon: "shield", text: "Bảo hành 3 năm" },
               ].map((b, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <SvgIcon name={b.icon} size={18} color={GOLD} />
-                  <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{b.text}</span>
+                  <SvgIcon name={b.icon} size={18} color={THEME_GOLD} />
+                  <span style={{ color: THEME_GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{b.text}</span>
                 </div>
               ))}
             </div>
@@ -2862,7 +2912,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── PROBLEM / PAIN POINTS ── */}
-      <section className="lp-sg-pain-section" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section className="lp-sg-pain-section" style={{ padding: SECTION_PAD, background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
             <SectionLabel>{E({ bk: "pain_label", def: "Vấn Đề Thường Gặp", as: "span" })}</SectionLabel>
@@ -2870,7 +2920,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               {E({ bk: "problem_title", def: "Mua Sofa Giường Xong Lại Hối Hận?", as: "span" })}
             </h2>
             <GoldDivider />
-            <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, maxWidth: 640, margin: "0 auto 48px", fontFamily: FONT_BODY }}>
+            <p style={{ color: THEME_GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, maxWidth: 640, margin: "0 auto 48px", fontFamily: FONT_BODY }}>
               {E({ bk: "problem_desc", def: "Hầu hết người mua sofa giường đều gặp phải những vấn đề này — và SmartFurni được tạo ra để giải quyết triệt để.", as: "span" })}
             </p>
           </FadeIn>
@@ -2884,15 +2934,15 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               const imgUrl = content[p.imgKey] || "";
               return (
                 <FadeIn key={i} delay={i * 80}>
-                  <div className="lp-sg-pain-card" style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", textAlign: "left", position: "relative" }}>
+                  <div className="lp-sg-pain-card" style={{ background: THEME_BLACK_CARD, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", textAlign: "left", position: "relative" }}>
                     {/* Ảnh minh hoạ */}
                     <div className="lp-sg-pain-card-img" style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
                       {imgUrl ? (
                         <img src={imgUrl} alt={p.title} loading="lazy" decoding="async" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
                         <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
-                          <SvgIcon name={p.icon} size={40} color="rgba(26,107,138,0.35)" />
-                          {editMode && <span style={{ color: "rgba(26,107,138,0.5)", fontSize: 11, fontFamily: FONT_BODY }}>Chưa có ảnh</span>}
+                          <SvgIcon name={p.icon} size={40} color="rgba(201,168,76,0.35)" />
+                          {editMode && <span style={{ color: "rgba(201,168,76,0.5)", fontSize: 11, fontFamily: FONT_BODY }}>Chưa có ảnh</span>}
                         </div>
                       )}
                       {/* Edit overlay khi editMode */}
@@ -2900,9 +2950,9 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                     </div>
                     {/* Nội dung card */}
                     <div className="lp-sg-pain-card-info" style={{ padding: "24px 24px 28px" }}>
-                      <div style={{ marginBottom: 12 }}><SvgIcon name={p.icon} size={30} color="rgba(26,107,138,0.7)" /></div>
-                      <h3 style={{ color: WHITE, fontSize: 17, fontWeight: 600, marginBottom: 10, fontFamily: FONT_HEADING }}>{p.title}</h3>
-                      <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY, margin: 0 }}>{p.desc}</p>
+                      <div style={{ marginBottom: 12 }}><SvgIcon name={p.icon} size={30} color="rgba(201,168,76,0.7)" /></div>
+                      <h3 style={{ color: THEME_WHITE, fontSize: 17, fontWeight: 600, marginBottom: 10, fontFamily: FONT_HEADING }}>{p.title}</h3>
+                      <p style={{ color: THEME_GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY, margin: 0 }}>{p.desc}</p>
                     </div>
                   </div>
                 </FadeIn>
@@ -2918,11 +2968,11 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
               <SectionLabel>Giải Pháp SmartFurni</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
+              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: THEME_WHITE }}>
                 {E({ bk: "solution_title", def: "Tự Thiết Kế Sofa Giường Theo Sở Thích Của Bạn", as: "span" })}
               </h2>
               <GoldDivider />
-              <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, maxWidth: 600, margin: "0 auto", fontFamily: FONT_BODY }}>
+              <p style={{ color: THEME_GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, maxWidth: 600, margin: "0 auto", fontFamily: FONT_BODY }}>
                 {E({ bk: "solution_desc", def: "Không còn lo sai kích thước, sai chất liệu hay bị thổi giá — SmartFurni cho bạn tự quyết định mọi chi tiết trước khi đặt hàng.", as: "span" })}
               </p>
             </div>
@@ -2930,7 +2980,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
           {/* Ảnh full-width duy nhất: upload 1 ảnh ghép vấn đề + giải pháp */}
           <FadeIn delay={0}>
-            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: BLACK_CARD, border: `1px solid rgba(26,107,138,0.2)`, width: "100%" }}>
+            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: THEME_BLACK_CARD, border: `1px solid rgba(201,168,76,0.2)`, width: "100%" }}>
               {(() => {
                 const imgUrl = content["solution_main_img"] || "";
                 return (
@@ -2938,9 +2988,9 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                     {imgUrl ? (
                       <img src={imgUrl} alt="Vấn đề và giải pháp sofa giường SmartFurni" loading="lazy" decoding="async" style={{ width: "100%", height: "auto", display: "block" }} />
                     ) : (
-                      <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(26,107,138,0.04)" }}>
+                      <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(201,168,76,0.04)" }}>
                         <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
-                        <p style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, textAlign: "center" as const, margin: 0 }}>
+                        <p style={{ color: THEME_GRAY, fontSize: 13, fontFamily: FONT_BODY, textAlign: "center" as const, margin: 0 }}>
                           {editMode ? "Bấm nút bên dưới để upload ảnh" : "Chưa có ảnh — bật chỉnh sửa để upload"}
                         </p>
                       </div>
@@ -2954,7 +3004,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
           {/* Ảnh thứ 2 bên dưới solution_main_img */}
           <FadeIn delay={80}>
-            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: BLACK_CARD, border: `1px solid rgba(26,107,138,0.2)`, width: "100%", marginTop: 16 }}>
+            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: THEME_BLACK_CARD, border: `1px solid rgba(201,168,76,0.2)`, width: "100%", marginTop: 16 }}>
               {(() => {
                 const imgUrl2 = content["solution_main_img_2"] || "";
                 return (
@@ -2962,9 +3012,9 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                     {imgUrl2 ? (
                       <img src={imgUrl2} alt="Ảnh giải pháp sofa giường SmartFurni 2" loading="lazy" decoding="async" style={{ width: "100%", height: "auto", display: "block" }} />
                     ) : (
-                      <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(26,107,138,0.04)" }}>
+                      <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(201,168,76,0.04)" }}>
                         <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
-                        <p style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, textAlign: "center" as const, margin: 0 }}>
+                        <p style={{ color: THEME_GRAY, fontSize: 13, fontFamily: FONT_BODY, textAlign: "center" as const, margin: 0 }}>
                           {editMode ? "Bấm nút bên dưới để upload ảnh" : "Chưa có ảnh — bật chỉnh sửa để upload"}
                         </p>
                       </div>
@@ -2981,9 +3031,9 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           {/* CTA */}
           <FadeIn delay={200}>
             <div style={{ textAlign: "center", marginTop: 40 }}>
-              <button onClick={() => openQuiz()} style={{ display: "inline-flex", alignItems: "center", gap: 10, background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_LIGHT} 100%)`, color: BLACK, fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING, padding: "14px 36px", borderRadius: 50, border: "none", cursor: "pointer", boxShadow: `0 4px 24px rgba(26,107,138,0.35)`, transition: "transform 0.2s, box-shadow 0.2s" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(26,107,138,0.5)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 24px rgba(26,107,138,0.35)"; }}>
+              <button onClick={() => openQuiz()} style={{ display: "inline-flex", alignItems: "center", gap: 10, background: `linear-gradient(135deg, ${THEME_GOLD} 0%, ${THEME_GOLD_LIGHT} 100%)`, color: THEME_BLACK, fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING, padding: "14px 36px", borderRadius: 50, border: "none", cursor: "pointer", boxShadow: `0 4px 24px rgba(201,168,76,0.35)`, transition: "transform 0.2s, box-shadow 0.2s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(201,168,76,0.5)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 24px rgba(201,168,76,0.35)"; }}>
                 🎨 Bắt Đầu Thiết Kế Ngay →
               </button>
             </div>
@@ -2991,7 +3041,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="lp-sg-how-section" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section id="how-it-works" className="lp-sg-how-section" style={{ padding: SECTION_PAD, background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
             <SectionLabel>Quy Trình</SectionLabel>
@@ -3010,18 +3060,18 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               <FadeIn key={i} delay={i * 80}>
                 <div
                   className="lp-sg-how-card"
-                  style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s", position: "relative" as const, overflow: "hidden" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(26,107,138,0.35)"}
-                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER}
+                  style={{ background: THEME_BLACK_CARD, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s", position: "relative" as const, overflow: "hidden" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = THEME_BLACK_BORDER}
                 >
                   {/* Step number watermark */}
-                  <div className="lp-sg-how-card-step-bg" style={{ position: "absolute", top: 12, right: 16, color: "rgba(26,107,138,0.08)", fontSize: 56, fontWeight: 900, fontFamily: FONT_HEADING, lineHeight: 1, pointerEvents: "none", userSelect: "none" as const }}>{s.step}</div>
-                  <div className="lp-sg-how-card-icon" style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(26,107,138,0.1)", border: `1px solid rgba(26,107,138,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-                    <SvgIcon name={s.icon} size={24} color={GOLD} />
+                  <div className="lp-sg-how-card-step-bg" style={{ position: "absolute", top: 12, right: 16, color: "rgba(201,168,76,0.08)", fontSize: 56, fontWeight: 900, fontFamily: FONT_HEADING, lineHeight: 1, pointerEvents: "none", userSelect: "none" as const }}>{s.step}</div>
+                  <div className="lp-sg-how-card-icon" style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                    <SvgIcon name={s.icon} size={24} color={THEME_GOLD} />
                   </div>
-                  <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 8 }}>{s.step}</div>
-                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{s.title}</h3>
-                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{s.desc}</p>
+                  <div style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 8 }}>{s.step}</div>
+                  <h3 style={{ color: THEME_WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{s.title}</h3>
+                  <p style={{ color: THEME_GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{s.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -3038,7 +3088,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
 
       {/* ── DETAILS GALLERY ── */}
-      <section style={{ padding: "clamp(40px,6vw,80px) 0", background: BLACK }}>
+      <section style={{ padding: "clamp(40px,6vw,80px) 0", background: THEME_BLACK }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", paddingLeft: "clamp(20px,5vw,80px)" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 40, paddingRight: "clamp(20px,5vw,80px)" }}>
@@ -3046,7 +3096,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               <h2 style={{ fontSize: "clamp(22px,3vw,38px)", fontWeight: 700, marginBottom: 12, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
                 {E({ bk: "details_gallery_title", def: "Từng Chi Tiết Được Chăm Chút" })}
               </h2>
-              <p style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, margin: 0 }}>
+              <p style={{ color: THEME_GRAY, fontSize: 14, fontFamily: FONT_BODY, margin: 0 }}>
                 {E({ bk: "details_gallery_sub", def: "Khám phá các tuỳ chọn thiết kế để tạo nên chiếc sofa giường hoàn hảo cho không gian của bạn" })}
               </p>
             </div>
@@ -3055,7 +3105,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </section>
       {/* ── FEATURES / BENEFITS ── */}
-      <section id="features" className="lp-sg-features-section" style={{ padding: SECTION_PAD, background: BLACK }}>
+      <section id="features" className="lp-sg-features-section" style={{ padding: SECTION_PAD, background: THEME_BLACK }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -3076,12 +3126,12 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               { icon: "credit_card", title: "Trả góp 0% lãi suất", desc: "Hỗ trợ trả góp qua các đối tác tài chính. Sở hữu sofa giường mơ ước ngay hôm nay." },
             ].map((f, i) => (
               <FadeIn key={i} delay={i * 60}>
-                <div className="lp-sg-feat-card" style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(26,107,138,0.35)"}
-                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER}>
-                  <div className="lp-sg-feat-card-icon" style={{ marginBottom: 14 }}><SvgIcon name={f.icon} size={32} color={GOLD} /></div>
-                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{f.title}</h3>
-                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
+                <div className="lp-sg-feat-card" style={{ background: THEME_BLACK_CARD, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = THEME_BLACK_BORDER}>
+                  <div className="lp-sg-feat-card-icon" style={{ marginBottom: 14 }}><SvgIcon name={f.icon} size={32} color={THEME_GOLD} /></div>
+                  <h3 style={{ color: THEME_WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{f.title}</h3>
+                  <p style={{ color: THEME_GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -3090,7 +3140,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── SPEC TABLE ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section style={{ padding: SECTION_PAD, background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -3101,7 +3151,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               <GoldDivider />
             </div>
           </FadeIn>
-          <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
+          <div style={{ background: THEME_BLACK_CARD, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
             {[
               { bkL: "spec_row_0_label", defL: "Khung", bkV: "spec_row_0_value", defV: "Thép mạ kẽm 1.5mm, chịu tải 300kg" },
               { bkL: "spec_row_1_label", defL: "Cơ cấu mở gập", bkV: "spec_row_1_value", defV: "Gas-lift nhập khẩu, 50.000 lần kiểm định" },
@@ -3112,12 +3162,12 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               { bkL: "spec_row_6_label", defL: "Bảo hành", bkV: "spec_row_6_value", defV: "3 năm toàn diện (khung + cơ cấu + chất liệu)" },
               { bkL: "spec_row_7_label", defL: "Xuất xứ", bkV: "spec_row_7_value", defV: "Sản xuất tại Việt Nam, linh kiện nhập khẩu" },
             ].map((row, i) => (
-              <div key={i} style={{ display: "flex", borderBottom: i < 7 ? `1px solid ${BLACK_BORDER}` : "none" }}>
-                <div style={{ width: "40%", padding: "16px 20px", background: "rgba(26,107,138,0.04)", borderRight: `1px solid ${BLACK_BORDER}` }}>
-                  <span style={{ color: GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{E({ bk: row.bkL, def: row.defL, as: "span", style: { color: GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY } })}</span>
+              <div key={i} style={{ display: "flex", borderBottom: i < 7 ? `1px solid ${THEME_BLACK_BORDER}` : "none" }}>
+                <div style={{ width: "40%", padding: "16px 20px", background: "rgba(201,168,76,0.04)", borderRight: `1px solid ${THEME_BLACK_BORDER}` }}>
+                  <span style={{ color: THEME_GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{E({ bk: row.bkL, def: row.defL, as: "span", style: { color: THEME_GOLD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY } })}</span>
                 </div>
                 <div style={{ flex: 1, padding: "16px 20px" }}>
-                  <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{E({ bk: row.bkV, def: row.defV, as: "span", style: { color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY } })}</span>
+                  <span style={{ color: THEME_GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{E({ bk: row.bkV, def: row.defV, as: "span", style: { color: THEME_GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY } })}</span>
                 </div>
               </div>
             ))}
@@ -3126,18 +3176,18 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── PRODUCT GALLERY ── */}
-      <section id="product-gallery" style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section id="product-gallery" style={{ padding: SECTION_PAD, background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
               <SectionLabel >Bộ Sưu Tập</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: WHITE }}>
-                {E({ bk: "gallery_title_1", def: "Chọn Mẫu Yêu Thích", as: "span", style: { color: WHITE } })}
+              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: THEME_WHITE }}>
+                {E({ bk: "gallery_title_1", def: "Chọn Mẫu Yêu Thích", as: "span", style: { color: THEME_WHITE } })}
                 {" "}
-                {E({ bk: "gallery_title_2", def: "Và Bắt Đầu Tuỳ Chỉnh Thiết Kế", as: "span", style: { color: GOLD } })}
+                {E({ bk: "gallery_title_2", def: "Và Bắt Đầu Tuỳ Chỉnh Thiết Kế", as: "span", style: { color: THEME_GOLD } })}
               </h2>
               <GoldDivider />
-              <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, maxWidth: 560, margin: "0 auto", fontFamily: FONT_BODY }}>
+              <p style={{ color: THEME_GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, maxWidth: 560, margin: "0 auto", fontFamily: FONT_BODY }}>
                 {E({ bk: "gallery_desc", def: "Mỗi mẫu đều có thể tuỳ chỉnh hoàn toàn — kích thước, chất liệu, màu sắc theo ý bạn", as: "span" })}
               </p>
             </div>
@@ -3161,9 +3211,9 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 return (
                   <FadeIn key={p.id} delay={i * 60}>
                     <div
-                      style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: "pointer", transition: "border-color 0.25s, transform 0.25s", position: "relative", display: "flex", flexDirection: "column" }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(26,107,138,0.45)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
+                      style={{ background: THEME_BLACK_CARD, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: "pointer", transition: "border-color 0.25s, transform 0.25s", position: "relative", display: "flex", flexDirection: "column" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.45)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = THEME_BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
                       onClick={() => { if (!editMode) openQuiz(); }}
                       draggable={editMode}
                       onDragStart={e => { e.dataTransfer.setData("text/plain", p.id); e.dataTransfer.effectAllowed = "move"; }}
@@ -3194,16 +3244,16 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                           >✕</button>
                           <div
                             title="Kéo để sắp xếp"
-                            style={{ position: "absolute", top: 10, right: 10, zIndex: 10, background: "rgba(26,107,138,0.85)", color: "#000", borderRadius: 6, width: 28, height: 28, fontSize: 14, cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center" }}
+                            style={{ position: "absolute", top: 10, right: 10, zIndex: 10, background: "rgba(201,168,76,0.85)", color: "#000", borderRadius: 6, width: 28, height: 28, fontSize: 14, cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center" }}
                           >⠿</div>
                         </>
                       )}
                       {/* Drop highlight */}
                       {editMode && dragOverId === p.id && (
-                        <div style={{ position: "absolute", inset: 0, border: "3px dashed rgba(26,107,138,0.8)", borderRadius: R_LG, zIndex: 20, pointerEvents: "none", background: "rgba(26,107,138,0.08)" }} />
+                        <div style={{ position: "absolute", inset: 0, border: "3px dashed rgba(201,168,76,0.8)", borderRadius: R_LG, zIndex: 20, pointerEvents: "none", background: "rgba(201,168,76,0.08)" }} />
                       )}
                       {/* Ảnh tỉ lệ 1:1 */}
-                      <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "#E8EFF5", flexShrink: 0 }}>
+                      <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "#0D0800", flexShrink: 0 }}>
                         {(() => {
                           const galleryImgUrl = content[`gallery_product_img_${p.id}`] || p.imageUrl;
                           return galleryImgUrl
@@ -3211,14 +3261,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                                 onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.05)"; }}
                                 onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
                               />
-                            : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><SvgIcon name="sofa" size={48} color={GRAY} /></div>;
+                            : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><SvgIcon name="sofa" size={48} color={THEME_GRAY} /></div>;
                         })()}
                         {/* Hover overlay */}
                         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)", opacity: 0, transition: "opacity 0.25s", display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 20 }}
                           onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = "1"; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0"; }}
                         >
-                          <div style={{ background: GOLD, color: BLACK, padding: "10px 28px", borderRadius: 100, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>Thiết Kế Ngay →</div>
+                          <div style={{ background: THEME_GOLD, color: THEME_BLACK, padding: "10px 28px", borderRadius: 100, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>Thiết Kế Ngay →</div>
                         </div>
                         {/* Nút upload ảnh + dán URL khi editMode */}
                         {editMode && <GalleryImageEditor productId={p.id} onSave={url => setContent(prev => ({ ...prev, [`gallery_product_img_${p.id}`]: url }))} />}
@@ -3238,10 +3288,10 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                               // Đồng thời cập nhật SKU thực trong CRM
                               await fetch("/api/crm/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...p, sku: val }) });
                             }}
-                            style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.9, background: "rgba(26,107,138,0.08)", border: "1px dashed rgba(26,107,138,0.5)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", textTransform: "uppercase" as const }}
+                            style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.9, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.5)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", textTransform: "uppercase" as const }}
                           />
                         ) : (
-                          <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.8 }}>{content[`prod_sku_${p.id}`] || p.sku}</div>
+                          <div style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: FONT_BODY, opacity: 0.8 }}>{content[`prod_sku_${p.id}`] || p.sku}</div>
                         )}
                         {editMode ? (
                           <input
@@ -3251,10 +3301,10 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                               await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `prod_name_${p.id}`, content: val }) });
                               setContent(c => ({ ...c, [`prod_name_${p.id}`]: val }));
                             }}
-                            style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0, background: "rgba(26,107,138,0.08)", border: "1px dashed rgba(26,107,138,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none" }}
+                            style={{ color: THEME_WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none" }}
                           />
                         ) : (
-                          <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0 }}>{content[`prod_name_${p.id}`] || p.name.replace(/^Chia sẻ\s+/, "")}</h3>
+                          <h3 style={{ color: THEME_WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, lineHeight: 1.4, margin: 0 }}>{content[`prod_name_${p.id}`] || p.name.replace(/^Chia sẻ\s+/, "")}</h3>
                         )}
                         {editMode ? (
                           <textarea
@@ -3265,14 +3315,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                               await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `prod_desc_${p.id}`, content: val }) });
                               setContent(c => ({ ...c, [`prod_desc_${p.id}`]: val }));
                             }}
-                            style={{ color: "#6B5B3E", fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, background: "rgba(26,107,138,0.08)", border: "1px dashed rgba(26,107,138,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", resize: "none" }}
+                            style={{ color: "#6B5B3E", fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: "100%", outline: "none", resize: "none" }}
                           />
                         ) : (
-                          (content[`prod_desc_${p.id}`] || p.description) && <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{content[`prod_desc_${p.id}`] || p.description}</p>
+                          (content[`prod_desc_${p.id}`] || p.description) && <p style={{ color: THEME_GRAY, fontSize: 12, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{content[`prod_desc_${p.id}`] || p.description}</p>
                         )}
-                        <div className="lp-sg-card-price" style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${BLACK_BORDER}`, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+                        <div className="lp-sg-card-price" style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${THEME_BLACK_BORDER}`, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
                           <div>
-                            <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY, marginBottom: 2 }}>Giá bán lẻ từ</div>
+                            <div style={{ color: THEME_GRAY, fontSize: 10, fontFamily: FONT_BODY, marginBottom: 2 }}>Giá bán lẻ từ</div>
                             {editMode ? (
                               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                                 <input
@@ -3283,17 +3333,17 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                                     await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: EFFECTIVE_SLUG, blockKey: `prod_price_${p.id}`, content: String(val) }) });
                                     setContent(c => ({ ...c, [`prod_price_${p.id}`]: String(val) }));
                                   }}
-                                  style={{ color: GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, background: "rgba(26,107,138,0.08)", border: "1px dashed rgba(26,107,138,0.4)", borderRadius: 4, padding: "2px 6px", width: 120, outline: "none" }}
+                                  style={{ color: THEME_GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", borderRadius: 4, padding: "2px 6px", width: 120, outline: "none" }}
                                 />
-                                <span style={{ color: GRAY, fontSize: 11 }}>đ / size</span>
+                                <span style={{ color: THEME_GRAY, fontSize: 11 }}>đ / size</span>
                               </div>
                             ) : (
-                              <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{fmt(content[`prod_price_${p.id}`] ? parseInt(content[`prod_price_${p.id}`]) : (minPrice || 0))} <span style={{ color: GRAY, fontSize: 11, fontWeight: 400 }}>/ size</span></div>
+                              <div style={{ color: THEME_GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{fmt(content[`prod_price_${p.id}`] ? parseInt(content[`prod_price_${p.id}`]) : (minPrice || 0))} <span style={{ color: THEME_GRAY, fontSize: 11, fontWeight: 400 }}>/ size</span></div>
                             )}
                           </div>
                           <div className="lp-sg-price-meta" style={{ textAlign: "right" }}>
-                            <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{priceCount} mức giá</div>
-                            <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>theo kích thước</div>
+                            <div style={{ color: THEME_GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{priceCount} mức giá</div>
+                            <div style={{ color: THEME_GRAY, fontSize: 10, fontFamily: FONT_BODY }}>theo kích thước</div>
                           </div>
                         </div>
                       </div>
@@ -3303,13 +3353,13 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               })}
               {/* Nút Thêm sản phẩm khi editMode */}
               {editMode && hiddenProducts.length > 0 && (
-                <div style={{ background: "rgba(26,107,138,0.06)", border: "2px dashed rgba(26,107,138,0.35)", borderRadius: R_LG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "32px 16px", minHeight: 200 }}>
-                  <div style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textAlign: "center" }}>Thêm sản phẩm</div>
+                <div style={{ background: "rgba(201,168,76,0.06)", border: "2px dashed rgba(201,168,76,0.35)", borderRadius: R_LG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "32px 16px", minHeight: 200 }}>
+                  <div style={{ color: THEME_GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textAlign: "center" }}>Thêm sản phẩm</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
                     {hiddenProducts.map(hp => (
                       <button key={hp.id}
                         onClick={() => saveHiddenIds(hiddenProductIds.filter(id => id !== hp.id))}
-                        style={{ background: "rgba(26,107,138,0.12)", border: "1px solid rgba(26,107,138,0.3)", borderRadius: 8, padding: "8px 12px", color: GOLD, fontSize: 12, fontFamily: FONT_BODY, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}
+                        style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 8, padding: "8px 12px", color: THEME_GOLD, fontSize: 12, fontFamily: FONT_BODY, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}
                       >
                         <span style={{ fontSize: 16 }}>＋</span>
                         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hp.name.replace(/^Chia sẻ\s+/, "").substring(0, 40)}</span>
@@ -3321,7 +3371,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY }}>Đang tải danh sách sản phẩm…</div>
+              <div style={{ color: THEME_GRAY, fontSize: 14, fontFamily: FONT_BODY }}>Đang tải danh sách sản phẩm…</div>
             </div>
           );
           })()}
@@ -3336,7 +3386,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section id="testimonials" style={{ padding: SECTION_PAD, background: BLACK }}>
+      <section id="testimonials" style={{ padding: SECTION_PAD, background: THEME_BLACK }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
             <SectionLabel>Khách Hàng Nói Gì</SectionLabel>
@@ -3352,14 +3402,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               { name: "Chị Thu Hà", location: "Đà Nẵng", rating: 5, text: "Ban đầu lo không biết chọn gì nhưng quiz funnel hướng dẫn từng bước rất rõ ràng. Kết quả ra chiếc sofa giường đúng ý 100%." },
             ].map((t, i) => (
               <FadeIn key={i} delay={i * 80}>
-                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", textAlign: "left" }}>
+                <div style={{ background: THEME_BLACK_CARD, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", textAlign: "left" }}>
                   <div style={{ display: "flex", gap: 2, marginBottom: 16 }}>
-                    {Array.from({ length: t.rating }).map((_, j) => <span key={j} style={{ color: GOLD, fontSize: 14 }}>★</span>)}
+                    {Array.from({ length: t.rating }).map((_, j) => <span key={j} style={{ color: THEME_GOLD, fontSize: 14 }}>★</span>)}
                   </div>
-                  <p style={{ color: GRAY_LIGHT, fontSize: 14, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 20, fontStyle: "italic" }}>"{t.text}"</p>
+                  <p style={{ color: THEME_GRAY_LIGHT, fontSize: 14, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 20, fontStyle: "italic" }}>"{t.text}"</p>
                   <div>
-                    <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{t.name}</div>
-                    <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{t.location}</div>
+                    <div style={{ color: THEME_WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{t.name}</div>
+                    <div style={{ color: THEME_GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{t.location}</div>
                   </div>
                 </div>
               </FadeIn>
@@ -3369,7 +3419,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── URGENCY BANNER ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section style={{ padding: SECTION_PAD, background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <UrgencyBanner E={E} />
@@ -3378,7 +3428,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── LEAD FORM ── */}
-      <section ref={formRef} id="order-form" style={{ padding: SECTION_PAD, background: BLACK }}>
+      <section ref={formRef} id="order-form" style={{ padding: SECTION_PAD, background: THEME_BLACK }}>
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
             <SectionLabel>Đặt Hàng</SectionLabel>
@@ -3386,12 +3436,12 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               {E({ bk: "form_title", def: "Nhận Tư Vấn & Báo Giá Miễn Phí", as: "span" })}
             </h2>
             <GoldDivider />
-            <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, marginBottom: 36, fontFamily: FONT_BODY }}>
+            <p style={{ color: THEME_GRAY_LIGHT, fontSize: 15, lineHeight: 1.8, marginBottom: 36, fontFamily: FONT_BODY }}>
               {E({ bk: "form_desc", def: "Điền thông tin để nhận tư vấn chi tiết và báo giá chính xác nhất cho cấu hình bạn đã chọn", as: "span" })}
             </p>
             {!orderConfig && (
               <div style={{ marginBottom: 24 }}>
-                <button onClick={() => openQuiz()} style={{ background: "rgba(26,107,138,0.08)", border: "1px dashed rgba(26,107,138,0.4)", color: GOLD, borderRadius: R_MD, padding: "14px 28px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, fontWeight: 600 }}>
+                <button onClick={() => openQuiz()} style={{ background: "rgba(201,168,76,0.08)", border: "1px dashed rgba(201,168,76,0.4)", color: THEME_GOLD, borderRadius: R_MD, padding: "14px 28px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, fontWeight: 600 }}>
                   🎨 Thiết kế cấu hình trước →
                 </button>
               </div>
@@ -3404,7 +3454,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── FAQ ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK_SOFT }}>
+      <section style={{ padding: SECTION_PAD, background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -3420,41 +3470,41 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── GUARANTEE ── */}
-      <section style={{ padding: SECTION_PAD, background: BLACK }}>
+      <section style={{ padding: SECTION_PAD, background: THEME_BLACK }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <FadeIn>
-            <div style={{ background: "linear-gradient(160deg, #1c1200 0%, #0d0800 60%, #0a0600 100%)", border: "1px solid rgba(26,107,138,0.3)", borderRadius: 24, padding: "clamp(40px,5vw,64px) clamp(24px,4vw,56px)", textAlign: "center", position: "relative" as const, overflow: "hidden" }}>
+            <div style={{ background: "linear-gradient(160deg, #1c1200 0%, #0d0800 60%, #0a0600 100%)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "clamp(40px,5vw,64px) clamp(24px,4vw,56px)", textAlign: "center", position: "relative" as const, overflow: "hidden" }}>
               {/* Background glow */}
-              <div style={{ position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(26,107,138,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
+              <div style={{ position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
               {/* Icon SmartFurni — SVG shield với chữ SF */}
               <div style={{ marginBottom: 24, display: "flex", justifyContent: "center" }}>
                 <div style={{ position: "relative" as const, width: 72, height: 72 }}>
                   <svg viewBox="0 0 72 72" width="72" height="72" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <linearGradient id="shieldGrad" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" stopColor="#1A6B8A" />
+                        <stop offset="0%" stopColor="#C9A84C" />
                         <stop offset="100%" stopColor="#8B6914" />
                       </linearGradient>
                       <linearGradient id="shieldFill" x1="36" y1="4" x2="36" y2="68" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" stopColor="rgba(26,107,138,0.18)" />
-                        <stop offset="100%" stopColor="rgba(26,107,138,0.04)" />
+                        <stop offset="0%" stopColor="rgba(201,168,76,0.18)" />
+                        <stop offset="100%" stopColor="rgba(201,168,76,0.04)" />
                       </linearGradient>
                     </defs>
                     {/* Shield shape */}
                     <path d="M36 4L8 16v20c0 16.5 11.8 31.9 28 36 16.2-4.1 28-19.5 28-36V16L36 4z" fill="url(#shieldFill)" stroke="url(#shieldGrad)" strokeWidth="1.5"/>
                     {/* Inner shield line */}
-                    <path d="M36 10L13 20v16c0 13 9.4 25.2 23 28.8C49.6 61.2 59 49 59 36V20L36 10z" fill="none" stroke="rgba(26,107,138,0.25)" strokeWidth="0.75"/>
+                    <path d="M36 10L13 20v16c0 13 9.4 25.2 23 28.8C49.6 61.2 59 49 59 36V20L36 10z" fill="none" stroke="rgba(201,168,76,0.25)" strokeWidth="0.75"/>
                     {/* SF monogram */}
                     <text x="36" y="43" textAnchor="middle" fill="url(#shieldGrad)" fontSize="18" fontWeight="800" fontFamily="Georgia, serif" letterSpacing="-1">SF</text>
                     {/* Star at top */}
-                    <circle cx="36" cy="16" r="2.5" fill="#1A6B8A" opacity="0.8"/>
+                    <circle cx="36" cy="16" r="2.5" fill="#C9A84C" opacity="0.8"/>
                   </svg>
                 </div>
               </div>
-              <h2 style={{ color: GOLD, fontSize: "clamp(22px,3vw,34px)", fontWeight: 700, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
+              <h2 style={{ color: THEME_GOLD, fontSize: "clamp(22px,3vw,34px)", fontWeight: 700, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
                 {E({ bk: "guarantee_title", def: "Cam Kết SmartFurni", as: "span" })}
               </h2>
-              <p style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 32, marginTop: 8 }}>Mỗi sản phẩm đều được bảo đảm từ sản xuất đến tận nhà bạn</p>
+              <p style={{ color: THEME_GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 32, marginTop: 8 }}>Mỗi sản phẩm đều được bảo đảm từ sản xuất đến tận nhà bạn</p>
               <GoldDivider />
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20, marginTop: 32 }}>
                 {[
@@ -3463,18 +3513,18 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                   { icon: "shield", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện, sửa chữa tận nơi không tính phí", num: "03" },
                   { icon: "headphones", title: "Hỗ trợ 24/7", desc: "Đội ngũ kỹ thuật hỗ trợ qua Zalo bất cứ lúc nào", num: "04" },
                 ].map((g, i) => (
-                  <div key={i} style={{ background: "rgba(26,107,138,0.04)", border: "1px solid rgba(26,107,138,0.12)", borderRadius: 16, padding: "24px 20px", textAlign: "center", transition: "border-color 0.25s, background 0.25s", position: "relative" as const, overflow: "hidden" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(26,107,138,0.35)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(26,107,138,0.08)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(26,107,138,0.12)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(26,107,138,0.04)"; }}
+                  <div key={i} style={{ background: "rgba(201,168,76,0.04)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: 16, padding: "24px 20px", textAlign: "center", transition: "border-color 0.25s, background 0.25s", position: "relative" as const, overflow: "hidden" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.35)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(201,168,76,0.08)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,168,76,0.12)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(201,168,76,0.04)"; }}
                   >
                     {/* Number watermark */}
-                    <div style={{ position: "absolute", top: 8, right: 12, color: "rgba(26,107,138,0.08)", fontSize: 40, fontWeight: 900, fontFamily: FONT_HEADING, lineHeight: 1, pointerEvents: "none", userSelect: "none" as const }}>{g.num}</div>
+                    <div style={{ position: "absolute", top: 8, right: 12, color: "rgba(201,168,76,0.08)", fontSize: 40, fontWeight: 900, fontFamily: FONT_HEADING, lineHeight: 1, pointerEvents: "none", userSelect: "none" as const }}>{g.num}</div>
                     {/* Icon circle */}
-                    <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(26,107,138,0.1)", border: "1px solid rgba(26,107,138,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-                      <SvgIcon name={g.icon} size={24} color={GOLD} />
+                    <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                      <SvgIcon name={g.icon} size={24} color={THEME_GOLD} />
                     </div>
-                    <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 8 }}>{g.title}</div>
-                    <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{g.desc}</div>
+                    <div style={{ color: THEME_WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 8 }}>{g.title}</div>
+                    <div style={{ color: THEME_GRAY, fontSize: 12, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{g.desc}</div>
                   </div>
                 ))}
               </div>
@@ -3484,8 +3534,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: "#F0F4F8", borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 64 }}>
-        <div style={{ height: 2, background: `linear-gradient(90deg, transparent 0%, ${GOLD} 30%, ${GOLD} 70%, transparent 100%)`, opacity: 0.5 }} />
+      <footer style={{ background: "#060500", borderTop: `1px solid ${THEME_BLACK_BORDER}`, paddingTop: 64 }}>
+        <div style={{ height: 2, background: `linear-gradient(90deg, transparent 0%, ${THEME_GOLD} 30%, ${THEME_GOLD} 70%, transparent 100%)`, opacity: 0.5 }} />
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "56px 32px 0" }}>
           <div
             className="lp-footer-grid"
@@ -3500,7 +3550,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               <div style={{ marginBottom: 20 }}>
                 <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" loading="lazy" style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }} />
               </div>
-              <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.85, fontFamily: FONT_BODY, marginBottom: 24, maxWidth: 280 }}>
+              <p style={{ color: THEME_GRAY, fontSize: 13, lineHeight: 1.85, fontFamily: FONT_BODY, marginBottom: 24, maxWidth: 280 }}>
                 Tiên phong trong lĩnh vực nội thất cá nhân hoá tại Việt Nam. Sofa giường thiết kế theo ý bạn — sản xuất tại Việt Nam.
               </p>
               <div style={{ display: "flex", gap: 10 }}>
@@ -3510,9 +3560,9 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                   { label: "Zalo", icon: "Z", href: "https://zalo.me/0918326552" },
                 ].map((s) => (
                   <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
-                    style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(26,107,138,0.08)", border: `1px solid rgba(26,107,138,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textDecoration: "none", transition: "background 0.2s, border-color 0.2s" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(26,107,138,0.18)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = GOLD; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(26,107,138,0.08)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(26,107,138,0.25)"; }}
+                    style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: THEME_GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textDecoration: "none", transition: "background 0.2s, border-color 0.2s" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(201,168,76,0.18)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = THEME_GOLD; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(201,168,76,0.08)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(201,168,76,0.25)"; }}
                   >{s.icon}</a>
                 ))}
               </div>
@@ -3520,8 +3570,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             {/* Cột 2: Showroom */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2 }} />
-                <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Showroom</h4>
+                <div style={{ width: 3, height: 16, background: THEME_GOLD, borderRadius: 2 }} />
+                <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Showroom</h4>
               </div>
               {[
                 { icon: "map_pin", label: "TP. HCM", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
@@ -3529,10 +3579,10 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 { icon: "factory", label: "Xưởng SX", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
               ].map((a, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
-                  <SvgIcon name={a.icon} size={16} color={GOLD} style={{ marginTop: 2 }} />
+                  <SvgIcon name={a.icon} size={16} color={THEME_GOLD} style={{ marginTop: 2 }} />
                   <div>
-                    <div style={{ color: GOLD_LIGHT, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 2 }}>{a.label}</div>
-                    <div style={{ color: GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY }}>{a.val}</div>
+                    <div style={{ color: THEME_GOLD_LIGHT, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 2 }}>{a.label}</div>
+                    <div style={{ color: THEME_GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY }}>{a.val}</div>
                   </div>
                 </div>
               ))}
@@ -3540,8 +3590,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             {/* Cột 3: Liên hệ */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2 }} />
-                <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Liên hệ</h4>
+                <div style={{ width: 3, height: 16, background: THEME_GOLD, borderRadius: 2 }} />
+                <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Liên hệ</h4>
               </div>
               {[
                 { icon: "phone", label: "Hotline", val: "028.7122.0818", href: "tel:02871220818" },
@@ -3551,10 +3601,10 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               ].map((c, i) => (
                 <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
                   style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}>
-                  <SvgIcon name={c.icon} size={16} color={GOLD} style={{ marginTop: 2 }} />
+                  <SvgIcon name={c.icon} size={16} color={THEME_GOLD} style={{ marginTop: 2 }} />
                   <div>
-                    <div style={{ color: GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 1 }}>{c.label}</div>
-                    <div style={{ color: GOLD_LIGHT, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 700 }}>{c.val}</div>
+                    <div style={{ color: THEME_GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 1 }}>{c.label}</div>
+                    <div style={{ color: THEME_GOLD_LIGHT, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 700 }}>{c.val}</div>
                   </div>
                 </a>
               ))}
@@ -3562,25 +3612,25 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             {/* Cột 4: Đặt hàng */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                <div style={{ width: 3, height: 16, background: GOLD, borderRadius: 2 }} />
-                <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Đặt hàng ngay</h4>
+                <div style={{ width: 3, height: 16, background: THEME_GOLD, borderRadius: 2 }} />
+                <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Đặt hàng ngay</h4>
               </div>
-              <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT_BODY, marginBottom: 20 }}>
+              <p style={{ color: THEME_GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT_BODY, marginBottom: 20 }}>
                 Nhận tư vấn miễn phí &amp; xác nhận đơn hàng trong vòng 2 giờ làm việc.
               </p>
               <button
                 onClick={scrollToForm}
-                style={{ display: "block", width: "100%", textAlign: "center", background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 60%, #0D5470 100%)`, color: BLACK, fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, padding: "13px 20px", borderRadius: R_MD, border: "none", cursor: "pointer", fontFamily: FONT_BODY, boxShadow: "0 6px 24px rgba(26,107,138,0.25)", marginBottom: 12 }}
+                style={{ display: "block", width: "100%", textAlign: "center", background: `linear-gradient(135deg, ${THEME_GOLD_LIGHT} 0%, ${THEME_GOLD} 60%, #0D5470 100%)`, color: THEME_BLACK, fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, padding: "13px 20px", borderRadius: R_MD, border: "none", cursor: "pointer", fontFamily: FONT_BODY, boxShadow: "0 6px 24px rgba(201,168,76,0.25)", marginBottom: 12 }}
               >
                 Đặt hàng ngay →
               </button>
               <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer"
-                style={{ display: "block", textAlign: "center", background: "transparent", color: GRAY_LIGHT, fontWeight: 500, fontSize: 11, letterSpacing: "0.06em", padding: "12px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, border: `1px solid rgba(212,196,160,0.2)` }}>
+                style={{ display: "block", textAlign: "center", background: "transparent", color: THEME_GRAY_LIGHT, fontWeight: 500, fontSize: 11, letterSpacing: "0.06em", padding: "12px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, border: `1px solid rgba(212,196,160,0.2)` }}>
                 💬 Chat Zalo ngay
               </a>
             </div>
           </div>
-          <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${BLACK_BORDER} 20%, ${BLACK_BORDER} 80%, transparent)`, marginBottom: 24 }} />
+          <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${THEME_BLACK_BORDER} 20%, ${THEME_BLACK_BORDER} 80%, transparent)`, marginBottom: 24 }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" as const, gap: 12, paddingBottom: 28 }}>
             <p style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, margin: 0 }}>
               © 2025 Công ty Cổ phần SmartFurni. Tất cả quyền được bảo lưu.
@@ -3592,7 +3642,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 { label: "Chính sách bảo hành", href: "/bao-hanh" },
               ].map((l) => (
                 <a key={l.label} href={l.href} style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, textDecoration: "none" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = GRAY)}
+                  onMouseEnter={e => (e.currentTarget.style.color = THEME_GRAY)}
                   onMouseLeave={e => (e.currentTarget.style.color = "#3A3020")}
                 >{l.label}</a>
               ))}
@@ -3658,5 +3708,6 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         </div>
       </div>
     </div>
+    </LpColorContext.Provider>
   );
 }
