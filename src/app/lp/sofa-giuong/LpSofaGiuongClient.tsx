@@ -27,15 +27,15 @@ const DEFAULT_COLORS: LpColors = {
   GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT,
 };
 const LIGHT_COLORS: LpColors = {
-  GOLD: "#B8922A",       // Vàng đồng đậm - accent chính (đọc được trên nền sáng)
-  GOLD_LIGHT: "#C9A84C", // Vàng đồng nhạt - accent phụ
-  BLACK: "#FDFAF5",      // Nền chính - trắng kem ấm
-  BLACK_SOFT: "#FAF6EE", // Nền section xen kẽ
-  BLACK_CARD: "#F5EFE0", // Nền card/surface
-  BLACK_BORDER: "#E8D9B8", // Border vàng nhạt
-  WHITE: "#2C1F0E",      // Chữ chính - nâu đen ấm
-  GRAY: "#7A6A55",       // Chữ phụ - nâu xám
-  GRAY_LIGHT: "#A89880", // Chữ mờ - nâu nhạt
+  GOLD: "#9A6F2A",       // Vàng đồng đậm - accent chính (đọc được trên nền sáng)
+  GOLD_LIGHT: "#B8922A", // Vàng đồng nhạt - accent phụ
+  BLACK: "#FFFFFF",      // Nền chính - trắng tinh
+  BLACK_SOFT: "#F8F4EE", // Nền section xen kẽ - kem rất nhạt
+  BLACK_CARD: "#EDE8DF", // Nền card/surface - kem nhạt
+  BLACK_BORDER: "#D4C4A0", // Border vàng nhạt
+  WHITE: "#1A1200",      // Chữ chính - đen ấm đậm (contrast cao)
+  GRAY: "#4A3F2F",       // Chữ phụ - nâu đậm (dễ đọc)
+  GRAY_LIGHT: "#7A6A50", // Chữ mờ - nâu vừa
 };
 const LpColorContext = React.createContext<LpColors>(DEFAULT_COLORS);
 const useLpColors = () => React.useContext(LpColorContext);
@@ -2718,7 +2718,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       {/* ── STICKY NAV ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrollY > 60 ? "rgba(13,11,0,0.96)" : "transparent",
+        background: scrollY > 60 ? (colorTheme === "light" ? "rgba(253,250,245,0.96)" : "rgba(13,11,0,0.96)") : "transparent",
         borderBottom: scrollY > 60 ? `1px solid ${THEME_BLACK_BORDER}` : "none",
         backdropFilter: scrollY > 60 ? "blur(16px)" : "none",
         WebkitBackdropFilter: scrollY > 60 ? "blur(16px)" : "none",
@@ -2747,7 +2747,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 onClick={() => scrollTo(item.id)}
                 style={{
                   background: "none", border: "none", cursor: "pointer",
-                  color: "rgba(212,196,160,0.7)", fontSize: 13, fontWeight: 500,
+                  color: THEME_GRAY, fontSize: 13, fontWeight: 500,
                   fontFamily: FONT_BODY, padding: "8px 14px", borderRadius: R_SM,
                   letterSpacing: "0.01em", transition: "color 0.2s, background 0.2s",
                   whiteSpace: "nowrap" as const,
@@ -2757,7 +2757,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                   (e.currentTarget as HTMLButtonElement).style.background = "rgba(201,168,76,0.08)";
                 }}
                 onMouseLeave={e => {
-                  (e.currentTarget as HTMLButtonElement).style.color = "rgba(212,196,160,0.7)";
+                  (e.currentTarget as HTMLButtonElement).style.color = THEME_GRAY;
                   (e.currentTarget as HTMLButtonElement).style.background = "none";
                 }}
               >
@@ -2801,7 +2801,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       {mobileMenuOpen && (
         <div style={{
           position: "fixed", top: 68, left: 0, right: 0, zIndex: 99,
-          background: "rgba(13,11,0,0.98)", backdropFilter: "blur(16px)",
+          background: `rgba(${colorTheme === "light" ? "253,250,245" : "13,11,0"},0.98)`, backdropFilter: "blur(16px)",
           borderBottom: `1px solid ${THEME_BLACK_BORDER}`,
           padding: "16px 24px 24px",
         }}>
@@ -2845,7 +2845,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             {heroImages.map((img, i) => (
               <div key={i} style={{ position: "absolute", inset: 0, backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center", opacity: i === heroImgIdx ? 1 : 0, transition: "opacity 1.2s ease" }} />
             ))}
-            <div style={{ position: "absolute", inset: 0, background: `rgba(10,10,8,${heroOverlayOpacity})`, transition: "background 0.3s" }} />
+            <div style={{ position: "absolute", inset: 0, background: colorTheme === "light" ? `rgba(255,252,245,${Math.min(heroOverlayOpacity * 0.7, 0.55)})` : `rgba(10,10,8,${heroOverlayOpacity})`, transition: "background 0.3s" }} />
           </div>
         )}
         {!heroImages.length && (
@@ -2880,7 +2880,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         <div style={{ position: "relative", zIndex: 5, maxWidth: 1200, margin: "0 auto", padding: "clamp(60px,8vw,100px) clamp(20px,5vw,80px)", width: "100%" }}>
           <FadeIn>
             <SectionLabel>Sofa Giường Cá Nhân Hoá</SectionLabel>
-            <h1 style={{ fontSize: "clamp(32px,5.5vw,68px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 20, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", maxWidth: 700 }}>
+            <h1 style={{ fontSize: "clamp(32px,5.5vw,68px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 20, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", maxWidth: 700, color: "#FFFFFF" }}>
               <TypewriterText
                 text="Tự Thiết Kế Sofa Giường Theo Nhu Cầu Của Bạn"
                 highlightWords={["Theo Nhu Cầu Của Bạn"]}
@@ -2888,14 +2888,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 startDelay={300}
               />
             </h1>
-            <p style={{ fontSize: "clamp(15px,1.8vw,18px)", color: THEME_GRAY_LIGHT, lineHeight: 1.75, marginBottom: 36, maxWidth: 560, fontFamily: FONT_BODY }}>
+            <p style={{ fontSize: "clamp(15px,1.8vw,18px)", color: "rgba(255,255,255,0.85)", lineHeight: 1.75, marginBottom: 36, maxWidth: 560, fontFamily: FONT_BODY }}>
               {E({ bk: "hero_desc", def: "Chọn mẫu, kích thước, chất liệu, màu sắc — mọi chi tiết đều do bạn quyết định. Nhận báo giá tức thì và giao hàng tận nơi.", as: "span" })}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 48 }}>
               <GoldButton onClick={() => openQuiz()} style={{ fontSize: 14, padding: "16px 36px" }}>
                 Bắt Đầu Thiết Kế →
               </GoldButton>
-              <button onClick={scrollToForm} style={{ background: "transparent", color: THEME_WHITE, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_MD, padding: "16px 32px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, transition: "all 0.25s" }}>
+              <button onClick={scrollToForm} style={{ background: "transparent", color: "#FFFFFF", border: "1px solid rgba(255,255,255,0.4)", borderRadius: R_MD, padding: "16px 32px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, transition: "all 0.25s" }}>
                 Xem Bảng Giá
               </button>
             </div>
@@ -2909,7 +2909,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               ].map((b, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <SvgIcon name={b.icon} size={18} color={THEME_GOLD} />
-                  <span style={{ color: THEME_GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>{b.text}</span>
+                  <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontFamily: FONT_BODY }}>{b.text}</span>
                 </div>
               ))}
             </div>
@@ -2969,7 +2969,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       </section>
 
       {/* ── SOLUTION / TỰ THIẾT KẾ ── */}
-      <section style={{ padding: SECTION_PAD, background: "linear-gradient(180deg, #0D0C08 0%, #111109 100%)" }}>
+      <section style={{ padding: SECTION_PAD, background: `linear-gradient(180deg, ${THEME_BLACK_SOFT} 0%, ${THEME_BLACK_CARD} 100%)` }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
@@ -3479,7 +3479,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       <section style={{ padding: SECTION_PAD, background: THEME_BLACK_CARD }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <FadeIn>
-            <div style={{ background: "linear-gradient(160deg, #1c1200 0%, #0d0800 60%, #0a0600 100%)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "clamp(40px,5vw,64px) clamp(24px,4vw,56px)", textAlign: "center", position: "relative" as const, overflow: "hidden" }}>
+            <div style={{ background: `linear-gradient(160deg, ${THEME_BLACK_CARD} 0%, ${THEME_BLACK_SOFT} 60%, ${THEME_BLACK_CARD} 100%)`, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: 24, padding: "clamp(40px,5vw,64px) clamp(24px,4vw,56px)", textAlign: "center", position: "relative" as const, overflow: "hidden" }}>
               {/* Background glow */}
               <div style={{ position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
               {/* Icon SmartFurni — SVG shield với chữ SF */}
