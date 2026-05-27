@@ -405,3 +405,13 @@ nav[style*="position: fixed"] {
     max-width: 320px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GALLERY GRID — 3 cột desktop, 2 cột mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-gallery-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}

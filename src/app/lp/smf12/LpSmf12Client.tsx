@@ -1421,41 +1421,38 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         </div>
       </section>
 
-      {/* ── 6 BENEFITS ── */}
+      {/* ── HÌNH ẢNH THỰC TẾSẢN PHẨM ── */}
       <section id="benefits" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
-            <div style={{ textAlign: "center", marginBottom: 52 }}>
-              <SectionLabel>{E({ bk: "benefits_section_label", def: "Lý do chọn SmartFurni", as: "span" })}</SectionLabel>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <SectionLabel>{E({ bk: "gallery_section_label", def: "Hình ảnh thực tế", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
-                {E({ bk: "benefits_title_1", def: "6 Lý Do Hàng Nghìn Gia Đình", as: "span" })}
+                {E({ bk: "gallery_title_1", def: "Hình Ảnh Thực Tế", as: "span" })}
               </h2>
               <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
-                {E({ bk: "benefits_title_2", def: "Tin Tưởng SmartFurni SMF12", as: "span" })}
+                {E({ bk: "gallery_title_2", def: "Sản Phẩm SMF12 Tại Nhà Khách Hàng", as: "span" })}
               </div>
               <GoldDivider />
             </div>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }} className="lp-benefits-grid">
-            {[
-              { icon: <IconDiamond color={GOLD} size={28} />, bkTitle: "benefit_1_title", defTitle: "Da PU Nhập Khẩu Cao Cấp", bkDesc: "benefit_1_desc", defDesc: "Bề mặt mịn mượt, kháng nước tuyệt đối, kháng UV — không bong tróc, không phai màu sau nhiều năm sử dụng.", badge: "Kháng nước 100%" },
-              { icon: <IconLayers color={GOLD} size={28} />, bkTitle: "benefit_2_title", defTitle: "Cơ Cấu SmartFold Bền Bỉ", bkDesc: "benefit_2_desc", defDesc: "Kiểm định 50.000 lần gập mở — tương đương 136 năm sử dụng hàng ngày. Bảo hành cơ cấu 3 năm.", badge: "50.000 lần kiểm định" },
-              { icon: <IconTarget color={GOLD} size={28} />, bkTitle: "benefit_3_title", defTitle: "Đệm Foam D40 Êm Ái", bkDesc: "benefit_3_desc", defDesc: "Foam D40 dày 12cm + memory foam 3cm — đủ êm để ngủ ngon, đủ cứng để hỗ trợ cột sống khi ngồi.", badge: "Foam D40 + Memory" },
-              { icon: <IconBox color={GOLD} size={28} />, bkTitle: "benefit_4_title", defTitle: "Khung Gỗ Chắc Chắn", bkDesc: "benefit_4_desc", defDesc: "Gỗ thông xử lý chống mối mọt, sấy khô đạt chuẩn. Thanh giằng thép mạ kẽm — tải trọng 250kg.", badge: "Tải trọng 250kg" },
-              { icon: <IconTruck color={GOLD} size={28} />, bkTitle: "benefit_5_title", defTitle: "Giao Hàng & Lắp Đặt Miễn Phí", bkDesc: "benefit_5_desc", defDesc: "Giao hàng toàn quốc trong 3–7 ngày làm việc. Đội kỹ thuật lắp đặt tận nơi, không phát sinh chi phí.", badge: "Toàn quốc" },
-              { icon: <IconAward color={GOLD} size={28} />, bkTitle: "benefit_6_title", defTitle: "Bảo Hành 3 Năm Chính Hãng", bkDesc: "benefit_6_desc", defDesc: "Bảo hành da 3 năm, khung 2 năm. Đội kỹ thuật hỗ trợ tận nơi. Đổi mới sản phẩm nếu lỗi nhà sản xuất.", badge: "3 năm bảo hành" },
-            ].map((b, i) => (
-              <FadeIn key={i} delay={i * 80}>
-                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", height: "100%" }}>
-                  <div style={{ marginBottom: 16 }}>{b.icon}</div>
-                  <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 10, fontFamily: FONT_HEADING, lineHeight: 1.4 }}>
-                    {E({ bk: b.bkTitle, def: b.defTitle, as: "span" })}
-                  </h3>
-                  <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: "0 0 16px" }}>
-                    {E({ bk: b.bkDesc, def: b.defDesc, as: "span", multiline: true })}
-                  </p>
-                  <div style={{ display: "inline-block", background: `rgba(139,105,20,0.08)`, border: `1px solid rgba(139,105,20,0.2)`, color: GOLD, fontSize: 10, fontWeight: 600, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>
-                    {b.badge}
+          {/* Grid 3 cột, 2 hàng, ảnh 1:1 */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="lp-gallery-grid">
+            {["gallery_img_0","gallery_img_1","gallery_img_2","gallery_img_3","gallery_img_4","gallery_img_5"].map((bk, i) => (
+              <FadeIn key={i} delay={i * 60}>
+                <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+                  <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
+                    {content[bk] ? (
+                      <Image src={content[bk]} alt={`Ảnh thực tế SMF12 ${i + 1}`} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 50vw, 33vw" />
+                    ) : (
+                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        <span style={{ fontSize: 11, fontFamily: FONT_BODY }}>Chưa có ảnh</span>
+                      </div>
+                    )}
+                    {editMode && (
+                      <ImageUploadOverlay blockKey={bk} currentUrl={content[bk] || ""} onUploaded={(k, url) => handleSaved(k, url)} />
+                    )}
                   </div>
                 </div>
               </FadeIn>
