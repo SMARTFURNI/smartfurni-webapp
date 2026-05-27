@@ -455,3 +455,23 @@ nav[style*="position: fixed"] {
     gap: 10px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLOATING BUTTONS — Wave Ring Animation (giống sofa-giuong)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lp-wave-ring {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  animation: lp-wave-pulse 2s ease-out infinite;
+  z-index: 1;
+}
+.lp-wave-ring-2 {
+  animation-delay: 0.7s;
+}
+@keyframes lp-wave-pulse {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  70%  { transform: scale(2.2); opacity: 0;   }
+  100% { transform: scale(2.2); opacity: 0;   }
+}
