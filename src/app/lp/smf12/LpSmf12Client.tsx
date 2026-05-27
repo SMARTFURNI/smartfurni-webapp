@@ -1113,58 +1113,60 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         {isEditor && editMode && (
           <EditableHeroImage slug={LP_SLUG} imageKeys={["hero_bg_0", "hero_bg_1", "hero_bg_2"]} overlayKey="hero_overlay" imageUrls={heroImages} overlayOpacity={heroOverlay} editMode={editMode} onImageSaved={handleSaved} onOverlaySaved={(k, v) => handleSaved(k, String(v))} />
         )}
-        {/* Hero content */}
-        <div className="lp-hero-content" style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "120px 24px 80px", width: "100%" }}>
-          <div style={{ maxWidth: 680 }}>
-            {/* Badge nhãn hiệu */}
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-              <span style={{ display: "inline-block", width: 28, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD_PALE})` }} />
-              <span style={{ color: GOLD_PALE, fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", fontFamily: FONT_BODY, textTransform: "uppercase" as const }}>
-                {E({ bk: "hero_section_label", def: "Sofa Giường Da PU Cao Cấp", as: "span" })}
-              </span>
-              <span style={{ display: "inline-block", width: 28, height: 1, background: `linear-gradient(90deg, ${GOLD_PALE}, transparent)` }} />
-            </div>
-
-            {/* Tiêu đề chính */}
-            <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 800, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_HEADING, letterSpacing: "-0.025em", color: "#FFFFFF" }}>
-              {E({ bk: "hero_title_1", def: "Sofa Ban Ngày", as: "span", style: { display: "block" } })}
-            </h1>
-            <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_BRAND, fontStyle: "italic", color: GOLD_PALE, letterSpacing: "-0.01em" }}>
-              {E({ bk: "hero_title_2", def: "Giường ÊM Ban Đêm", as: "span" })}
-            </h1>
-
-            {/* Đường kẻ vàng */}
-            <div style={{ width: 48, height: 2, background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD_PALE})`, borderRadius: 2, marginBottom: 24 }} />
-
-            <p style={{ color: "rgba(253,250,245,0.80)", fontSize: "clamp(14px, 1.8vw, 17px)", lineHeight: 1.75, marginBottom: 36, fontFamily: FONT_BODY, maxWidth: 500, fontWeight: 300 }}>
-              {E({ bk: "hero_desc", def: "Da PU nhập khẩu cao cấp. Cơ cấu SmartFold 1 thao tác. Đệm foam D40 dày 12cm. Giao hàng và lắp đặt tận nơi toàn quốc.", as: "span", multiline: true })}
-            </p>
-
-            <div className="lp-hero-cta-row" style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 52 }}>
-              <GoldButton onClick={scrollToForm} style={{ fontSize: 13, padding: "15px 32px", letterSpacing: "0.08em" }}>
-                {E({ bk: "hero_cta_primary", def: "NHẬN TƯ VẤN & BÁO GIÁ NGAY", as: "span" })}
-              </GoldButton>
-              <OutlineButton onClick={() => scrollTo("products")}>
-                {E({ bk: "hero_cta_secondary", def: "Xem sản phẩm ↓", as: "span" })}
-              </OutlineButton>
-            </div>
-
-            {/* Trust badges — có đường kẻ trên */}
-            <div style={{ borderTop: `1px solid rgba(139,105,20,0.25)`, paddingTop: 24 }}>
-              <div className="lp-hero-badges" style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
-                {[
-                  { num: "3 Năm", label: "Bảo hành da" },
-                  { num: "50.000", label: "Lần gập mở" },
-                  { num: "D40", label: "Đệm foam cao cấp" },
-                  { num: "100%", label: "Da PU nhập khẩu" },
-                ].map((b, i) => (
-                  <div key={i} style={{ textAlign: "center" }}>
-                    <div style={{ color: GOLD_PALE, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1, letterSpacing: "-0.01em" }}>{b.num}</div>
-                    <div style={{ color: "rgba(253,250,245,0.5)", fontSize: 10, fontFamily: FONT_BODY, marginTop: 5, letterSpacing: "0.07em", textTransform: "uppercase" as const }}>{b.label}</div>
-                  </div>
-                ))}
+        {/* Hero content: wrapper flex dọc cho mobile order */}
+        <div className="lp-hero-content" style={{ position: "relative", zIndex: 1, width: "100%", display: "flex", flexDirection: "column" }}>
+          {/* Phần chữ chính */}
+          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "120px 24px 32px", width: "100%", boxSizing: "border-box" as const }}>
+            <div style={{ maxWidth: 680 }}>
+              {/* Badge nhãn hiệu */}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <span style={{ display: "inline-block", width: 28, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD_PALE})` }} />
+                <span style={{ color: GOLD_PALE, fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", fontFamily: FONT_BODY, textTransform: "uppercase" as const }}>
+                  {E({ bk: "hero_section_label", def: "Sofa Giường Da PU Cao Cấp", as: "span" })}
+                </span>
+                <span style={{ display: "inline-block", width: 28, height: 1, background: `linear-gradient(90deg, ${GOLD_PALE}, transparent)` }} />
               </div>
+
+              {/* Tiêu đề chính */}
+              <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 800, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_HEADING, letterSpacing: "-0.025em", color: "#FFFFFF" }}>
+                {E({ bk: "hero_title_1", def: "Sofa Ban Ngày", as: "span", style: { display: "block" } })}
+              </h1>
+              <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_BRAND, fontStyle: "italic", color: GOLD_PALE, letterSpacing: "-0.01em" }}>
+                {E({ bk: "hero_title_2", def: "Giường ÊM Ban Đêm", as: "span" })}
+              </h1>
+
+              {/* Đường kẻ vàng */}
+              <div style={{ width: 48, height: 2, background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD_PALE})`, borderRadius: 2, marginBottom: 24 }} />
+
+              <p style={{ color: "rgba(253,250,245,0.80)", fontSize: "clamp(14px, 1.8vw, 17px)", lineHeight: 1.75, marginBottom: 0, fontFamily: FONT_BODY, maxWidth: 500, fontWeight: 300 }}>
+                {E({ bk: "hero_desc", def: "Da PU nhập khẩu cao cấp. Cơ cấu SmartFold 1 thao tác. Đệm foam D40 dày 12cm. Giao hàng và lắp đặt tận nơi toàn quốc.", as: "span", multiline: true })}
+              </p>
             </div>
+          </div>
+
+          {/* CTA row — desktop: nằm trong flow bình thường; mobile: order 3 (sau ảnh) */}
+          <div className="lp-hero-cta-row" style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 0", width: "100%", boxSizing: "border-box" as const, display: "flex", gap: 14, flexWrap: "wrap" as const }}>
+            <GoldButton onClick={scrollToForm} style={{ fontSize: 13, padding: "15px 32px", letterSpacing: "0.08em" }}>
+              {E({ bk: "hero_cta_primary", def: "NHẬN TƯ VẤN & BÁO GIÁ NGAY", as: "span" })}
+            </GoldButton>
+            <OutlineButton onClick={() => scrollTo("products")}>
+              {E({ bk: "hero_cta_secondary", def: "Xem sản phẩm ↓", as: "span" })}
+            </OutlineButton>
+          </div>
+
+          {/* Trust badges — desktop: nằm trong flow; mobile: order 4 */}
+          <div className="lp-hero-badges" style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 24px 72px", width: "100%", boxSizing: "border-box" as const, borderTop: `1px solid rgba(139,105,20,0.25)`, marginTop: 28, display: "flex", gap: 32, flexWrap: "wrap" as const }}>
+            {[
+              { num: "3 Năm", label: "Bảo hành da" },
+              { num: "50.000", label: "Lần gập mở" },
+              { num: "D40", label: "Đệm foam cao cấp" },
+              { num: "100%", label: "Da PU nhập khẩu" },
+            ].map((b, i) => (
+              <div key={i} style={{ textAlign: "center" }}>
+                <div style={{ color: GOLD_PALE, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1, letterSpacing: "-0.01em" }}>{b.num}</div>
+                <div style={{ color: "rgba(253,250,245,0.5)", fontSize: 10, fontFamily: FONT_BODY, marginTop: 5, letterSpacing: "0.07em", textTransform: "uppercase" as const }}>{b.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

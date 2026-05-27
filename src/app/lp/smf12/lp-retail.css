@@ -22,55 +22,70 @@
    HERO MOBILE — Stack dọc: ảnh trên, chữ dưới (tách biệt hoàn toàn)
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
-  /* Section hero: đổi từ position:relative sang flex dọc */
+  /* Section hero: flex dọc — ảnh nền và content cùng level */
   .lp-hero-section {
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
     min-height: unset !important;
     overflow: visible !important;
+    background: linear-gradient(180deg, #0D0B00 0%, #1A1200 100%) !important;
   }
 
-  /* Ảnh nền: thoát khỏi position:absolute, trở thành khối ảnh cố định trên đầu */
+  /* Ảnh nền: order 2 (giữa) */
   .lp-hero-bg {
+    order: 2 !important;
     position: relative !important;
     inset: unset !important;
     width: 100% !important;
-    height: 56vw !important;      /* tỷ lệ ảnh ~16:9 */
-    min-height: 220px !important;
-    max-height: 320px !important;
+    height: 60vw !important;
+    min-height: 230px !important;
+    max-height: 310px !important;
     overflow: hidden !important;
     flex-shrink: 0 !important;
+    border-top: 1px solid rgba(139,105,20,0.25) !important;
+    border-bottom: 1px solid rgba(139,105,20,0.25) !important;
   }
   .lp-hero-bg img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
   }
-  /* Bỏ overlay tối trên ảnh mobile */
   .lp-hero-bg > div:last-child {
     display: none !important;
   }
 
-  /* Phần nội dung chữ: nền đen chì sang trọng */
+  /* Hero content wrapper: order 1 (trên cùng), flex dọc */
   .lp-hero-content {
+    order: 1 !important;
     position: relative !important;
-    background: linear-gradient(180deg, #0D0B00 0%, #1A1200 100%) !important;
-    padding: 32px 22px 44px !important;
+    background: transparent !important;
     width: 100% !important;
-    box-sizing: border-box !important;
-    border-top: 1px solid rgba(139,105,20,0.3) !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
-  /* CTA row: 2 nút xếp dọc */
+  /* Phần chữ: padding-top để tránh nav */
+  .lp-hero-content > div:first-child {
+    padding: 80px 22px 20px !important;
+  }
+
+  /* CTA row: sau ảnh (order 3 trong section, nhưng trong content thì sau ảnh nhờ section order) */
   .lp-hero-cta-row {
     flex-direction: column !important;
     gap: 10px !important;
+    padding: 20px 22px 0 !important;
+    margin: 0 !important;
+    max-width: unset !important;
   }
   .lp-hero-cta-row > * {
     width: 100% !important;
     text-align: center !important;
     justify-content: center !important;
+  }
+  .lp-hero-cta-row > a:last-child,
+  .lp-hero-cta-row > button:last-child {
+    display: none !important;
   }
 
   /* Trust badges: lưới 2×2 */
@@ -78,7 +93,11 @@
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 16px 12px !important;
-    margin-top: 24px !important;
+    padding: 20px 22px 36px !important;
+    margin: 0 !important;
+    max-width: unset !important;
+    border-top: 1px solid rgba(139,105,20,0.2) !important;
+    margin-top: 16px !important;
   }
 }
 
