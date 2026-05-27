@@ -215,6 +215,66 @@ function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: { blockKey: st
   );
 }
 
+
+// ─── VideoEditOverlay (chỉnh sửa link YouTube) ───────────────────────────────
+function VideoEditOverlay({ blockKey, currentId, onSaved }: { blockKey: string; currentId: string; onSaved: (key: string, id: string) => void }) {
+  const [show, setShow] = useState(false);
+  const [val, setVal] = useState("");
+
+  function extractYoutubeId(input: string): string {
+    const trimmed = input.trim();
+    // Nếu là ID thuần (11 ký tự)
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+    // Nếu là URL youtube.com/watch?v=...
+    const m1 = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+    if (m1) return m1[1];
+    // Nếu là URL youtu.be/...
+    const m2 = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    if (m2) return m2[1];
+    // Nếu là URL embed
+    const m3 = trimmed.match(/embed\/([a-zA-Z0-9_-]{11})/);
+    if (m3) return m3[1];
+    return trimmed;
+  }
+
+  async function saveVideo() {
+    if (!val.trim()) return;
+    const id = extractYoutubeId(val);
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey, content: id }) });
+    onSaved(blockKey, id);
+    setShow(false); setVal("");
+  }
+
+  if (show) {
+    return (
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.95)", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8, zIndex: 30, borderRadius: "0 0 8px 8px" }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY }}>Dán link YouTube (URL hoặc Video ID)</div>
+        <input autoFocus value={val} onChange={e => setVal(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") saveVideo(); if (e.key === "Escape") { setShow(false); setVal(""); } }}
+          placeholder="https://youtube.com/watch?v=... hoặc Video ID"
+          style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={saveVideo} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT_BODY, display: "flex", alignItems: "center", gap: 4 }}>
+            <IconCheck color={BLACK} size={12} /> Lưu
+          </button>
+          <button onClick={() => { setShow(false); setVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: "#A8A090", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: FONT_BODY }}>Huỷ</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.8)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(4px)", zIndex: 10, whiteSpace: "nowrap" as const }}
+      onClick={e => { e.stopPropagation(); setShow(true); setVal(currentId && currentId !== "_placeholder_" ? currentId : ""); }}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <span style={{ color: "#C9A84C", fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY }}>
+        {currentId && currentId !== "_placeholder_" ? "Đổi video" : "Thêm video"}
+      </span>
+    </button>
+  );
+}
 // ─── FadeIn ───────────────────────────────────────────────────────────────────
 function FadeIn({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -863,7 +923,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               return (
                 <FadeIn key={i} delay={i * 100}>
                   <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
-                    <div style={{ position: "relative", paddingBottom: "75%", background: BLACK_CARD }}>
+                    <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                       {imgSrc ? (
                         <Image src={imgSrc} alt={item.defCaption} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 33vw" />
                       ) : (
@@ -947,10 +1007,13 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               <GoldDivider />
             </div>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 24, alignItems: "start" }} className="lp-video-grid">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28, alignItems: "start" }} className="lp-video-grid">
             <FadeIn>
               <div>
-                <YoutubeAutoplay videoId={content["video_main_id"] || "_placeholder_"} title="SMF12 Demo" />
+                <div style={{ position: "relative" }}>
+                  <YoutubeAutoplay videoId={content["video_main_id"] || "_placeholder_"} title="SMF12 Demo" />
+                  {editMode && <VideoEditOverlay blockKey="video_main_id" currentId={content["video_main_id"] || ""} onSaved={(k, v) => handleSaved(k, v)} />}
+                </div>
                 <div style={{ marginTop: 16, padding: "16px 20px", background: BLACK_CARD, borderRadius: R_MD, border: `1px solid ${BLACK_BORDER}` }}>
                   <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 8, fontFamily: FONT_BODY }}>VIDEO CHÍNH</div>
                   <div style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 6 }}>
@@ -970,7 +1033,10 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               ].map((v, i) => (
                 <FadeIn key={i} delay={i * 100}>
                   <div>
-                    <YoutubeThumbnailPlay videoId={content[v.bkId] || "_placeholder_"} title={v.defTitle} tag={v.tag} />
+                    <div style={{ position: "relative" }}>
+                      <YoutubeThumbnailPlay videoId={content[v.bkId] || "_placeholder_"} title={v.defTitle} tag={v.tag} />
+                      {editMode && <VideoEditOverlay blockKey={v.bkId} currentId={content[v.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />}
+                    </div>
                     <div style={{ marginTop: 8, color: WHITE, fontSize: 13, fontWeight: 500, fontFamily: FONT_BODY }}>
                       {E({ bk: v.bkTitle, def: v.defTitle, as: "span" })}
                     </div>
@@ -1264,6 +1330,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                         <span style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, textAlign: "center", padding: "0 16px" }}>Video chưa cập nhật</span>
                       </div>
                     )}
+                    {editMode && <VideoEditOverlay blockKey={r.bkId} currentId={content[r.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />}
                   </div>
                   <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, marginTop: 10, fontFamily: FONT_BODY }}>
                     {E({ bk: r.bkCaption, def: r.defCaption, as: "span", multiline: true })}
