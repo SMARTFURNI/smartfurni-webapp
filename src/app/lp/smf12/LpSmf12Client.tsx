@@ -432,12 +432,12 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
           </div>
         </FadeIn>
 
-        {/* Item 1 — Thiết kế sản phẩm (16:9, full width) */}
+        {/* Item 1 — Thiết kế sản phẩm (4:3, cột ảnh lớn hơn) */}
         <FadeIn delay={0}>
           <div style={{ marginBottom: 48 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
+            <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
-                <div style={{ position: "relative", paddingBottom: "56.25%", background: BLACK_CARD }}>
+                <div style={{ position: "relative", paddingBottom: "75%", background: BLACK_CARD }}>
                   {content["detail_img_0"] ? (
                     <Image src={content["detail_img_0"]} alt="Thiết kế sản phẩm SMF12" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
                   ) : (
