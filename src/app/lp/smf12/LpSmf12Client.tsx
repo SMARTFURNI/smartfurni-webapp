@@ -111,7 +111,7 @@ function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string })
     ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=1&rel=0&modestbranding=1`
     : `https://www.youtube.com/embed/${videoId}?controls=1&rel=0&modestbranding=1`;
   return (
-    <div ref={containerRef} style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#000", borderRadius: R_MD, overflow: "hidden" }}>
+    <div ref={containerRef} style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#000", borderRadius: R_MD }}>
       <iframe src={src} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
     </div>
   );
@@ -121,7 +121,7 @@ function YoutubeThumbnailPlay({ videoId, title, tag }: { videoId: string; title:
   const [playing, setPlaying] = useState(false);
   const thumbUrl = videoId && videoId !== "_placeholder_" ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
   return (
-    <div style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#111", cursor: playing ? "default" : "pointer", borderRadius: R_MD, overflow: "hidden" }} onClick={() => { if (!playing) setPlaying(true); }}>
+    <div style={{ position: "relative", width: "100%", paddingBottom: "56.25%", background: "#111", cursor: playing ? "default" : "pointer", borderRadius: R_MD }} onClick={() => { if (!playing) setPlaying(true); }}>
       {playing ? (
         <iframe src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1`} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
       ) : (
@@ -247,7 +247,7 @@ function VideoEditOverlay({ blockKey, currentId, onSaved }: { blockKey: string; 
 
   if (show) {
     return (
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.95)", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8, zIndex: 30, borderRadius: "0 0 8px 8px" }}
+      <div style={{ width: "100%", background: "rgba(13,11,0,0.95)", border: "1.5px solid rgba(201,168,76,0.5)", borderRadius: 8, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8, zIndex: 30 }}
         onClick={e => e.stopPropagation()}>
         <div style={{ color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY }}>Dán link YouTube (URL hoặc Video ID)</div>
         <input autoFocus value={val} onChange={e => setVal(e.target.value)}
@@ -265,14 +265,16 @@ function VideoEditOverlay({ blockKey, currentId, onSaved }: { blockKey: string; 
   }
 
   return (
-    <button
-      style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.8)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(4px)", zIndex: 10, whiteSpace: "nowrap" as const }}
-      onClick={e => { e.stopPropagation(); setShow(true); setVal(currentId && currentId !== "_placeholder_" ? currentId : ""); }}>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-      <span style={{ color: "#C9A84C", fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY }}>
-        {currentId && currentId !== "_placeholder_" ? "Đổi video" : "Thêm video"}
-      </span>
-    </button>
+    <div style={{ width: "100%", display: "flex", justifyContent: "center", paddingTop: 6 }}>
+      <button
+        style={{ background: "rgba(13,11,0,0.85)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(4px)", whiteSpace: "nowrap" as const }}
+        onClick={e => { e.stopPropagation(); setShow(true); setVal(currentId && currentId !== "_placeholder_" ? currentId : ""); }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <span style={{ color: "#C9A84C", fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY }}>
+          {currentId && currentId !== "_placeholder_" ? "Đổi video" : "Thêm video"}
+        </span>
+      </button>
+    </div>
   );
 }
 // ─── FadeIn ───────────────────────────────────────────────────────────────────
@@ -1012,8 +1014,10 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               <div>
                 <div style={{ position: "relative" }}>
                   <YoutubeAutoplay videoId={content["video_main_id"] || "_placeholder_"} title="SMF12 Demo" />
-                  {editMode && <VideoEditOverlay blockKey="video_main_id" currentId={content["video_main_id"] || ""} onSaved={(k, v) => handleSaved(k, v)} />}
                 </div>
+                {editMode && (
+                  <VideoEditOverlay blockKey="video_main_id" currentId={content["video_main_id"] || ""} onSaved={(k, v) => handleSaved(k, v)} />
+                )}
                 <div style={{ marginTop: 16, padding: "16px 20px", background: BLACK_CARD, borderRadius: R_MD, border: `1px solid ${BLACK_BORDER}` }}>
                   <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 8, fontFamily: FONT_BODY }}>VIDEO CHÍNH</div>
                   <div style={{ color: WHITE, fontSize: 15, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 6 }}>
@@ -1035,8 +1039,10 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                   <div>
                     <div style={{ position: "relative" }}>
                       <YoutubeThumbnailPlay videoId={content[v.bkId] || "_placeholder_"} title={v.defTitle} tag={v.tag} />
-                      {editMode && <VideoEditOverlay blockKey={v.bkId} currentId={content[v.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />}
                     </div>
+                    {editMode && (
+                      <VideoEditOverlay blockKey={v.bkId} currentId={content[v.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />
+                    )}
                     <div style={{ marginTop: 8, color: WHITE, fontSize: 13, fontWeight: 500, fontFamily: FONT_BODY }}>
                       {E({ bk: v.bkTitle, def: v.defTitle, as: "span" })}
                     </div>
@@ -1322,7 +1328,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             ].map((r, i) => (
               <FadeIn key={i} delay={i * 100}>
                 <div>
-                  <div style={{ position: "relative", paddingBottom: "177.78%", background: "#111", borderRadius: R_MD, overflow: "hidden" }}>
+                  <div style={{ position: "relative", paddingBottom: "177.78%", background: "#111", borderRadius: R_MD }}>
                     {content[r.bkId] && content[r.bkId] !== "_placeholder_" ? (
                       <iframe src={`https://www.youtube.com/embed/${content[r.bkId]}?controls=1&rel=0`} title={r.defCaption} allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
                     ) : (
@@ -1330,8 +1336,10 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                         <span style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, textAlign: "center", padding: "0 16px" }}>Video chưa cập nhật</span>
                       </div>
                     )}
-                    {editMode && <VideoEditOverlay blockKey={r.bkId} currentId={content[r.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />}
                   </div>
+                  {editMode && (
+                    <VideoEditOverlay blockKey={r.bkId} currentId={content[r.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />
+                  )}
                   <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, marginTop: 10, fontFamily: FONT_BODY }}>
                     {E({ bk: r.bkCaption, def: r.defCaption, as: "span", multiline: true })}
                   </p>
