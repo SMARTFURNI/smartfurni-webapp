@@ -6,6 +6,71 @@ import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
 import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
 
+// ─── SVG Icon components (sang trọng, không dùng emoji) ──────────────────────
+function IconShield({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V6L12 2z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconRefresh({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconTruck({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="1" y="3" width="15" height="13" rx="1" stroke={color} strokeWidth="1.5"/><path d="M16 8h4l3 3v5h-7V8z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="5.5" cy="18.5" r="2.5" stroke={color} strokeWidth="1.5"/><circle cx="18.5" cy="18.5" r="2.5" stroke={color} strokeWidth="1.5"/></svg>;
+}
+function IconPhone({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .82h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconMail({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="2" stroke={color} strokeWidth="1.5"/><path d="M2 7l10 7 10-7" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></svg>;
+}
+function IconPin({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="10" r="3" stroke={color} strokeWidth="1.5"/></svg>;
+}
+function IconClock({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5"/><path d="M12 6v6l4 2" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconCheck({ color = "currentColor", size = 20 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconStar({ color = "currentColor", size = 16, filled = true }: { color?: string; size?: number; filled?: boolean }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : "none"}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconLock({ color = "currentColor", size = 16 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke={color} strokeWidth="1.5"/><path d="M7 11V7a5 5 0 0110 0v4" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></svg>;
+}
+function IconLeaf({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M17 8C8 10 5.9 16.17 3.82 19.34L5.71 21C9 17 11 15 17 14M17 8l2-2M17 8c0 0 0 6-4 8" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconDiamond({ color = "currentColor", size = 28 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M2.7 10.3l8.6 8.6a1 1 0 001.4 0l8.6-8.6a1 1 0 000-1.4L16.9 4.4a1 1 0 00-.7-.3H7.8a1 1 0 00-.7.3L2.7 8.9a1 1 0 000 1.4z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconLayers({ color = "currentColor", size = 28 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconTarget({ color = "currentColor", size = 28 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5"/><circle cx="12" cy="12" r="6" stroke={color} strokeWidth="1.5"/><circle cx="12" cy="12" r="2" stroke={color} strokeWidth="1.5"/></svg>;
+}
+function IconBox({ color = "currentColor", size = 28 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconAward({ color = "currentColor", size = 28 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="6" stroke={color} strokeWidth="1.5"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconZap({ color = "currentColor", size = 20 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconChat({ color = "currentColor", size = 16 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function IconSofa({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M20 9V7a2 2 0 00-2-2H6a2 2 0 00-2 2v2" stroke={color} strokeWidth="1.5" strokeLinecap="round"/><path d="M2 11a2 2 0 012-2h1a2 2 0 012 2v3H2v-3zM17 11a2 2 0 012-2h1a2 2 0 012 2v3h-5v-3z" stroke={color} strokeWidth="1.5"/><path d="M7 14h10v3a1 1 0 01-1 1H8a1 1 0 01-1-1v-3z" stroke={color} strokeWidth="1.5"/><path d="M7 17v2M17 17v2" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></svg>;
+}
+function IconBed({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M2 4v16M2 8h20v12M2 8c0-2.21 1.79-4 4-4h12c2.21 0 4 1.79 4 4" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M6 8v4M10 8v4" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></svg>;
+}
+function IconRuler({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+
 // ─── Design tokens — tông kem-vàng đồng (light theme) ────────────────────────
 const GOLD = "#8B6914";
 const GOLD_LIGHT = "#B8922A";
@@ -214,10 +279,10 @@ function BeforeAfterSlider({ beforeUrl, afterUrl, beforeLabel = "Sofa thường"
 
 // ─── SofaDemo interactive ─────────────────────────────────────────────────────
 const SOFA_POSITIONS = [
-  { id: "sofa", label: "Sofa ngồi", icon: "🛋️", desc: "Tư thế ngồi thoải mái, lưng thẳng, chân chạm sàn", backAngle: 100, footAngle: 90 },
-  { id: "relax", label: "Thư giãn", icon: "😌", desc: "Ngả lưng nhẹ, chân duỗi thẳng — lý tưởng xem TV", backAngle: 130, footAngle: 160 },
-  { id: "halfsleep", label: "Nửa nằm", icon: "📖", desc: "Lưng ngả 45°, chân duỗi — đọc sách, lướt điện thoại", backAngle: 145, footAngle: 175 },
-  { id: "sleep", label: "Nằm ngủ", icon: "🛏️", desc: "Trải phẳng hoàn toàn — giường ngủ êm ái", backAngle: 175, footAngle: 180 },
+  { id: "sofa", label: "Sofa ngồi", icon: <IconSofa color={GOLD} size={20} />, desc: "Tư thế ngồi thoải mái, lưng thẳng, chân chạm sàn", backAngle: 100, footAngle: 90 },
+  { id: "relax", label: "Thư giãn", icon: <IconLeaf color={GOLD} size={20} />, desc: "Ngả lưng nhẹ, chân duỗi thẳng — lý tưởng xem TV", backAngle: 130, footAngle: 160 },
+  { id: "halfsleep", label: "Nửa nằm", icon: <IconLayers color={GOLD} size={20} />, desc: "Lưng ngả 45°, chân duỗi — đọc sách, lướt điện thoại", backAngle: 145, footAngle: 175 },
+  { id: "sleep", label: "Nằm ngủ", icon: <IconBed color={GOLD} size={20} />, desc: "Trải phẳng hoàn toàn — giường ngủ êm ái", backAngle: 175, footAngle: 180 },
 ];
 
 function SofaDemoSection() {
@@ -293,9 +358,9 @@ function SofaDemoSection() {
         <FadeIn delay={300}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 32 }}>
             {[
-              { icon: "🛋️", label: "Sofa ban ngày", desc: "Tiếp khách, ngồi làm việc, thư giãn" },
+              { icon: <IconSofa color={GOLD} size={18} />, label: "Sofa ban ngày", desc: "Tiếp khách, ngồi làm việc, thư giãn" },
               { icon: "🌙", label: "Giường ban đêm", desc: "Trải phẳng hoàn toàn, ngủ êm ái" },
-              { icon: "📐", label: "Gấp gọn tiện lợi", desc: "Tiết kiệm không gian khi không dùng" },
+              { icon: <IconRuler color={GOLD} size={18} />, label: "Gấp gọn tiện lợi", desc: "Tiết kiệm không gian khi không dùng" },
             ].map((f, i) => (
               <div key={i} style={{ background: BLACK, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_MD, padding: "20px 16px", textAlign: "center" }}>
                 <div style={{ fontSize: 28, marginBottom: 10 }}>{f.icon}</div>
@@ -368,7 +433,7 @@ function UrgencyBanner({ E: EditFn }: { E: EFn }) {
       <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
         <div>
           <div style={{ color: "#FDFAF5", fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING, marginBottom: 4 }}>
-            {EditFn({ bk: "urgency_title", def: "⚡ Ưu đãi tháng này — Tặng bộ ga gối trị giá 890.000₫", as: "span" })}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><IconZap color={GOLD} size={18} />{EditFn({ bk: "urgency_title", def: "Ưu đãi tháng này — Tặng bộ ga gối trị giá 890.000₫", as: "span" })}</span>
           </div>
           <div style={{ color: "rgba(253,250,245,0.85)", fontSize: 12, fontFamily: FONT_BODY }}>
             {EditFn({ bk: "urgency_sub", def: "Chỉ còn áp dụng cho 12 đơn hàng tiếp theo", as: "span" })}
@@ -522,7 +587,7 @@ function LeadForm({ submitLabel, selectedSize }: { submitLabel?: string; selecte
             {loading ? "Đang gửi..." : (submitLabel || "Tư Vấn & Đặt Hàng Ngay →")}
           </GoldButton>
           <p style={{ color: GRAY_LIGHT, fontSize: 11, textAlign: "center", marginTop: 12, fontFamily: FONT_BODY }}>
-            🔒 Thông tin của bạn được bảo mật tuyệt đối — không chia sẻ cho bên thứ ba
+            
           </p>
         </form>
       )}
@@ -571,7 +636,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   const SIZES = [
     { id: "0.9m", label: "0,9m × 2,0m", price: "8.490.000 ₫", sub: "Phòng đơn / studio" },
     { id: "1.2m", label: "1,2m × 2,0m", price: "9.290.000 ₫", sub: "Phòng nhỏ đến trung bình" },
-    { id: "1.4m", label: "1,4m × 2,0m", price: "10.490.000 ₫", sub: "Phòng trung bình", badge: "Bán chạy ★" },
+    { id: "1.4m", label: "1,4m × 2,0m", price: "10.490.000 ₫", sub: "Phòng trung bình", badge: "Bán chạy nhất" },
     { id: "1.6m", label: "1,6m × 2,0m", price: "11.890.000 ₫", sub: "Phòng rộng / căn hộ" },
   ];
 
@@ -712,7 +777,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             {/* Solutions */}
             <FadeIn delay={150}>
               <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.3)`, borderRadius: R_LG, padding: "32px 28px" }}>
-                <div style={{ fontSize: 32, marginBottom: 16 }}>✨</div>
+                <div style={{ marginBottom: 16 }}><IconDiamond color={GOLD} size={32} /></div>
                 <h3 style={{ color: GOLD, fontSize: 16, fontWeight: 600, marginBottom: 20, fontFamily: FONT_HEADING }}>Giải pháp SMF12</h3>
                 {[
                   "2-in-1: sofa tiếp khách ban ngày + giường ngủ ban đêm",
@@ -721,7 +786,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                   "Cơ cấu SmartFold 1 thao tác — chuyển đổi trong 10 giây",
                 ].map((s, i) => (
                   <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
-                    <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✓</span>
+                    <span style={{ flexShrink: 0, marginTop: 2 }}><IconCheck color={GOLD} size={16} /></span>
                     <span style={{ color: GRAY, fontSize: 14, lineHeight: 1.6, fontFamily: FONT_BODY }}>{s}</span>
                   </div>
                 ))}
@@ -1056,16 +1121,16 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }} className="lp-benefits-grid">
             {[
-              { icon: "◈", bkTitle: "benefit_1_title", defTitle: "Da PU Nhập Khẩu Cao Cấp", bkDesc: "benefit_1_desc", defDesc: "Bề mặt mịn mượt, kháng nước tuyệt đối, kháng UV — không bong tróc, không phai màu sau nhiều năm sử dụng.", badge: "Kháng nước 100%" },
-              { icon: "◇", bkTitle: "benefit_2_title", defTitle: "Cơ Cấu SmartFold Bền Bỉ", bkDesc: "benefit_2_desc", defDesc: "Kiểm định 50.000 lần gập mở — tương đương 136 năm sử dụng hàng ngày. Bảo hành cơ cấu 3 năm.", badge: "50.000 lần kiểm định" },
-              { icon: "◉", bkTitle: "benefit_3_title", defTitle: "Đệm Foam D40 Êm Ái", bkDesc: "benefit_3_desc", defDesc: "Foam D40 dày 12cm + memory foam 3cm — đủ êm để ngủ ngon, đủ cứng để hỗ trợ cột sống khi ngồi.", badge: "Foam D40 + Memory" },
-              { icon: "◐", bkTitle: "benefit_4_title", defTitle: "Khung Gỗ Chắc Chắn", bkDesc: "benefit_4_desc", defDesc: "Gỗ thông xử lý chống mối mọt, sấy khô đạt chuẩn. Thanh giằng thép mạ kẽm — tải trọng 250kg.", badge: "Tải trọng 250kg" },
-              { icon: "◑", bkTitle: "benefit_5_title", defTitle: "Giao Hàng & Lắp Đặt Miễn Phí", bkDesc: "benefit_5_desc", defDesc: "Giao hàng toàn quốc trong 3–7 ngày làm việc. Đội kỹ thuật lắp đặt tận nơi, không phát sinh chi phí.", badge: "Toàn quốc" },
-              { icon: "◒", bkTitle: "benefit_6_title", defTitle: "Bảo Hành 3 Năm Chính Hãng", bkDesc: "benefit_6_desc", defDesc: "Bảo hành da 3 năm, khung 2 năm. Đội kỹ thuật hỗ trợ tận nơi. Đổi mới sản phẩm nếu lỗi nhà sản xuất.", badge: "3 năm bảo hành" },
+              { icon: <IconDiamond color={GOLD} size={28} />, bkTitle: "benefit_1_title", defTitle: "Da PU Nhập Khẩu Cao Cấp", bkDesc: "benefit_1_desc", defDesc: "Bề mặt mịn mượt, kháng nước tuyệt đối, kháng UV — không bong tróc, không phai màu sau nhiều năm sử dụng.", badge: "Kháng nước 100%" },
+              { icon: <IconLayers color={GOLD} size={28} />, bkTitle: "benefit_2_title", defTitle: "Cơ Cấu SmartFold Bền Bỉ", bkDesc: "benefit_2_desc", defDesc: "Kiểm định 50.000 lần gập mở — tương đương 136 năm sử dụng hàng ngày. Bảo hành cơ cấu 3 năm.", badge: "50.000 lần kiểm định" },
+              { icon: <IconTarget color={GOLD} size={28} />, bkTitle: "benefit_3_title", defTitle: "Đệm Foam D40 Êm Ái", bkDesc: "benefit_3_desc", defDesc: "Foam D40 dày 12cm + memory foam 3cm — đủ êm để ngủ ngon, đủ cứng để hỗ trợ cột sống khi ngồi.", badge: "Foam D40 + Memory" },
+              { icon: <IconBox color={GOLD} size={28} />, bkTitle: "benefit_4_title", defTitle: "Khung Gỗ Chắc Chắn", bkDesc: "benefit_4_desc", defDesc: "Gỗ thông xử lý chống mối mọt, sấy khô đạt chuẩn. Thanh giằng thép mạ kẽm — tải trọng 250kg.", badge: "Tải trọng 250kg" },
+              { icon: <IconTruck color={GOLD} size={28} />, bkTitle: "benefit_5_title", defTitle: "Giao Hàng & Lắp Đặt Miễn Phí", bkDesc: "benefit_5_desc", defDesc: "Giao hàng toàn quốc trong 3–7 ngày làm việc. Đội kỹ thuật lắp đặt tận nơi, không phát sinh chi phí.", badge: "Toàn quốc" },
+              { icon: <IconAward color={GOLD} size={28} />, bkTitle: "benefit_6_title", defTitle: "Bảo Hành 3 Năm Chính Hãng", bkDesc: "benefit_6_desc", defDesc: "Bảo hành da 3 năm, khung 2 năm. Đội kỹ thuật hỗ trợ tận nơi. Đổi mới sản phẩm nếu lỗi nhà sản xuất.", badge: "3 năm bảo hành" },
             ].map((b, i) => (
               <FadeIn key={i} delay={i * 80}>
                 <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", height: "100%" }}>
-                  <div style={{ color: GOLD, fontSize: 28, marginBottom: 16 }}>{b.icon}</div>
+                  <div style={{ marginBottom: 16 }}>{b.icon}</div>
                   <h3 style={{ color: WHITE, fontSize: 15, fontWeight: 600, marginBottom: 10, fontFamily: FONT_HEADING, lineHeight: 1.4 }}>
                     {E({ bk: b.bkTitle, def: b.defTitle, as: "span" })}
                   </h3>
@@ -1217,7 +1282,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               <FadeIn key={i} delay={i * 80}>
                 <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "24px 20px" }}>
                   <div style={{ display: "flex", gap: 2, marginBottom: 12 }}>
-                    {Array(r.stars).fill(0).map((_, si) => <span key={si} style={{ color: GOLD, fontSize: 14 }}>★</span>)}
+                    {Array(r.stars).fill(0).map((_, si) => <IconStar key={si} color={GOLD} size={14} filled={true} />)}
                   </div>
                   <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, marginBottom: 16 }}>
                     "{E({ bk: r.bkText, def: r.defText, as: "span", multiline: true })}"
@@ -1259,13 +1324,13 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="lp-guarantee-grid">
             {[
-              { icon: "🛡️", bkTitle: "guarantee_1_title", defTitle: "Bảo hành 3 năm da PU", bkDesc: "guarantee_1_desc", defDesc: "Da bong tróc, phai màu, rách do lỗi sản xuất — SmartFurni thay mới hoàn toàn miễn phí trong 3 năm đầu." },
-              { icon: "🔄", bkTitle: "guarantee_2_title", defTitle: "Đổi trả trong 7 ngày", bkDesc: "guarantee_2_desc", defDesc: "Nhận hàng không ưng ý về chất lượng? Liên hệ trong 7 ngày — SmartFurni thu hồi và hoàn tiền 100%." },
-              { icon: "🚚", bkTitle: "guarantee_3_title", defTitle: "Giao hàng đúng hẹn", bkDesc: "guarantee_3_desc", defDesc: "Cam kết giao hàng trong 3–7 ngày làm việc. Trễ hẹn — SmartFurni tặng thêm bộ ga gối trị giá 890.000₫." },
+              { icon: <IconShield color={GOLD} size={36} />, bkTitle: "guarantee_1_title", defTitle: "Bảo hành 3 năm da PU", bkDesc: "guarantee_1_desc", defDesc: "Da bong tróc, phai màu, rách do lỗi sản xuất — SmartFurni thay mới hoàn toàn miễn phí trong 3 năm đầu." },
+              { icon: <IconRefresh color={GOLD} size={36} />, bkTitle: "guarantee_2_title", defTitle: "Đổi trả trong 7 ngày", bkDesc: "guarantee_2_desc", defDesc: "Nhận hàng không ưng ý về chất lượng? Liên hệ trong 7 ngày — SmartFurni thu hồi và hoàn tiền 100%." },
+              { icon: <IconTruck color={GOLD} size={36} />, bkTitle: "guarantee_3_title", defTitle: "Giao hàng đúng hẹn", bkDesc: "guarantee_3_desc", defDesc: "Cam kết giao hàng trong 3–7 ngày làm việc. Trễ hẹn — SmartFurni tặng thêm bộ ga gối trị giá 890.000₫." },
             ].map((g, i) => (
               <FadeIn key={i} delay={i * 100}>
                 <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", textAlign: "center" }}>
-                  <div style={{ fontSize: 36, marginBottom: 16 }}>{g.icon}</div>
+                  <div style={{ marginBottom: 16 }}>{g.icon}</div>
                   <h3 style={{ color: GOLD, fontSize: 15, fontWeight: 600, marginBottom: 12, fontFamily: FONT_HEADING }}>
                     {E({ bk: g.bkTitle, def: g.defTitle, as: "span" })}
                   </h3>
@@ -1306,11 +1371,11 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                 Còn câu hỏi khác? Đội tư vấn SmartFurni sẵn sàng hỗ trợ bạn
               </p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                <a href="tel:0123456789" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD, color: "#FDFAF5", padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}>
-                  📞 Gọi ngay
+                <a href="tel:0123456789" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD, color: "#FDFAF5", padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconPhone color="#FDFAF5" size={14} />Gọi ngay
+                  
                 </a>
-                <a href="https://zalo.me/0123456789" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: GOLD, border: `1px solid ${GOLD}`, padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}>
-                  💬 Chat Zalo
+                <a href="https://zalo.me/0123456789" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: GOLD, border: `1px solid ${GOLD}`, padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconChat color={GOLD} size={14} />Chat Zalo
+                  
                 </a>
               </div>
             </div>
@@ -1340,12 +1405,12 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                 <div style={{ marginBottom: 32 }}>
                   <div style={{ color: WHITE, fontSize: 16, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 20 }}>Khi đặt hàng hôm nay, bạn nhận được:</div>
                   {[
-                    { icon: "✓", text: "Tư vấn kích thước phù hợp miễn phí" },
-                    { icon: "✓", text: "Báo giá chính xác theo nhu cầu" },
-                    { icon: "✓", text: "Giao hàng + lắp đặt miễn phí toàn quốc" },
-                    { icon: "✓", text: "Tặng bộ ga gối trị giá 890.000₫" },
-                    { icon: "✓", text: "Bảo hành 3 năm da PU chính hãng" },
-                    { icon: "✓", text: "Hỗ trợ kỹ thuật tận nơi suốt thời gian bảo hành" },
+                    { icon: <IconCheck color={GOLD} size={16} />, text: "Tư vấn kích thước phù hợp miễn phí" },
+                    { icon: <IconCheck color={GOLD} size={16} />, text: "Báo giá chính xác theo nhu cầu" },
+                    { icon: <IconCheck color={GOLD} size={16} />, text: "Giao hàng + lắp đặt miễn phí toàn quốc" },
+                    { icon: <IconCheck color={GOLD} size={16} />, text: "Tặng bộ ga gối trị giá 890.000₫" },
+                    { icon: <IconCheck color={GOLD} size={16} />, text: "Bảo hành 3 năm da PU chính hãng" },
+                    { icon: <IconCheck color={GOLD} size={16} />, text: "Hỗ trợ kỹ thuật tận nơi suốt thời gian bảo hành" },
                   ].map((b, i) => (
                     <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}>
                       <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>{b.icon}</span>
@@ -1394,7 +1459,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               {E({ bk: "cta_final_btn", def: "Đặt Hàng Ngay — Miễn Phí Giao Hàng →", as: "span" })}
             </GoldButton>
             <p style={{ color: GRAY_LIGHT, fontSize: 12, marginTop: 16, fontFamily: FONT_BODY }}>
-              🔒 Không cần đặt cọc — Xem hàng trước khi thanh toán
+              
             </p>
           </FadeIn>
         </div>
@@ -1436,13 +1501,13 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             <div>
               <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>LIÊN HỆ</div>
               {[
-                { icon: "📞", text: "0123 456 789" },
-                { icon: "📧", text: "info@smartfurni.vn" },
-                { icon: "📍", text: "TP. Hồ Chí Minh" },
-                { icon: "⏰", text: "8:00 – 21:00 mỗi ngày" },
+                { icon: <IconPhone color={GOLD} size={14} />, text: "0123 456 789" },
+                { icon: <IconMail color={GOLD} size={14} />, text: "info@smartfurni.vn" },
+                { icon: <IconPin color={GOLD} size={14} />, text: "TP. Hồ Chí Minh" },
+                { icon: <IconClock color={GOLD} size={14} />, text: "8:00 – 21:00 mỗi ngày" },
               ].map((c, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 13 }}>{c.icon}</span>
+                  <span style={{ flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
                   <span style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>{c.text}</span>
                 </div>
               ))}
