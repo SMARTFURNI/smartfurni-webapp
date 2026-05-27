@@ -432,12 +432,12 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
           </div>
         </FadeIn>
 
-        {/* Item 1 — Thiết kế sản phẩm (1:1) */}
+        {/* Item 1 — Thiết kế sản phẩm (16:9, full width) */}
         <FadeIn delay={0}>
           <div style={{ marginBottom: 48 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
-                <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
+                <div style={{ position: "relative", paddingBottom: "56.25%", background: BLACK_CARD }}>
                   {content["detail_img_0"] ? (
                     <Image src={content["detail_img_0"]} alt="Thiết kế sản phẩm SMF12" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
                   ) : (
@@ -613,6 +613,42 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
                     </div>
                   )}
                   {editMode && <ImageUploadOverlay blockKey="detail_img_4" currentUrl={content["detail_img_4"] || ""} onUploaded={handleSaved} />}
+                </div>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* Item 6 — Túi đựng sách, tạp chí, điều khiển 2 bên tay vịn (1:1 GIF) */}
+        <FadeIn delay={400}>
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+                <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
+                  {content["detail_img_5"] ? (
+                    <img src={content["detail_img_5"]} alt="Túi đựng sách tạp chí điều khiển SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                      <IconBox color={GOLD_PALE} size={40} />
+                      <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>GIF túi đựng 2 bên tay vịn</span>
+                    </div>
+                  )}
+                  {editMode && <ImageUploadOverlay blockKey="detail_img_5" currentUrl={content["detail_img_5"] || ""} onUploaded={handleSaved} />}
+                </div>
+              </div>
+              <div style={{ padding: "8px 0" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>06 / TÚI ĐỰNG</span>
+                </div>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Túi Đựng Sách &amp; Điều Khiển</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Thiết kế túi đựng tiện dụng 2 bên tay vịn — lưu trữ sách, tạp chí, điều khiển TV, điện thoại ngay tầm tay khi ngồi hoặc nằm.</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {["2 túi 2 bên, dễ tiếp cận", "Chứa được sách, tạp chí, điều khiển", "Chất liệu đồng bộ với áo nệm da PU"].map((t, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
