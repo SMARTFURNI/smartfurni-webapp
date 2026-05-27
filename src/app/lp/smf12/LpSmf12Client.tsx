@@ -376,97 +376,246 @@ function BeforeAfterSlider({ beforeUrl, afterUrl, beforeLabel = "Sofa thường"
   );
 }
 
-// ─── SofaDemo interactive ─────────────────────────────────────────────────────
-const SOFA_POSITIONS = [
-  { id: "sofa", label: "Sofa ngồi", icon: <IconSofa color={GOLD} size={20} />, desc: "Tư thế ngồi thoải mái, lưng thẳng, chân chạm sàn", backAngle: 100, footAngle: 90 },
-  { id: "relax", label: "Thư giãn", icon: <IconLeaf color={GOLD} size={20} />, desc: "Ngả lưng nhẹ, chân duỗi thẳng — lý tưởng xem TV", backAngle: 130, footAngle: 160 },
-  { id: "halfsleep", label: "Nửa nằm", icon: <IconLayers color={GOLD} size={20} />, desc: "Lưng ngả 45°, chân duỗi — đọc sách, lướt điện thoại", backAngle: 145, footAngle: 175 },
-  { id: "sleep", label: "Nằm ngủ", icon: <IconBed color={GOLD} size={20} />, desc: "Trải phẳng hoàn toàn — giường ngủ êm ái", backAngle: 175, footAngle: 180 },
+// ─── Product Detail Section ───────────────────────────────────────────────────
+const PRODUCT_DETAILS = [
+  {
+    key: "detail_img_0",
+    label: "Thiết kế sản phẩm",
+    desc: "Đường nét tinh tế, da PU nhập khẩu mịn mượt — sang trọng trong mọi không gian sống",
+    ratio: "100%",   // 1:1
+    isGif: false,
+  },
+  {
+    key: "detail_img_1",
+    label: "Thao tác sofa → giường ngủ",
+    desc: "Cơ cấu SmartFold 1 thao tác — chỉ kéo nhẹ là chuyển đổi hoàn toàn, không cần dụng cụ",
+    ratio: "100%",   // 1:1
+    isGif: true,
+  },
+  {
+    key: "detail_img_2",
+    label: "Khung thép mạ kẽm chắc chắn",
+    desc: "Khung thép mạ kẽm dày 2mm, chịu tải 800kg — bền bỉ trên 10 năm sử dụng",
+    ratio: "56.25%", // 16:9
+    isGif: false,
+  },
+  {
+    key: "detail_img_3",
+    label: "Ngăn chứa đồ ẩn dưới gầm",
+    desc: "Thiết kế ngăn chứa ẩn bên dưới gầm sofa — tối ưu không gian lưu trữ mà không lộ liễu",
+    ratio: "100%",   // 1:1
+    isGif: true,
+  },
+  {
+    key: "detail_img_4",
+    label: "Áo nệm Da PU có khoá kéo",
+    desc: "Áo nệm da PU cao cấp có khoá kéo — tháo ra thay nệm hoặc thay vỏ áo dễ dàng",
+    ratio: "100%",   // 1:1
+    isGif: true,
+  },
 ];
 
-function SofaDemoSection() {
-  const [activePos, setActivePos] = useState(0);
-  const pos = SOFA_POSITIONS[activePos];
-  const backRad = (pos.backAngle * Math.PI) / 180;
-  const footRad = (pos.footAngle * Math.PI) / 180;
-  // SVG sofa simplified
-  const seatW = 120; const seatH = 18; const seatX = 40; const seatY = 100;
-  // Back cushion pivot at (seatX, seatY)
-  const backLen = 60;
-  const backX2 = seatX + backLen * Math.cos(backRad - Math.PI);
-  const backY2 = seatY + backLen * Math.sin(backRad - Math.PI);
-  // Foot rest pivot at (seatX + seatW, seatY)
-  const footLen = 50;
-  const footX2 = seatX + seatW + footLen * Math.cos(footRad);
-  const footY2 = seatY + footLen * Math.sin(footRad - Math.PI);
-
+function ProductDetailSection({ editMode, content, handleSaved }: { editMode: boolean; content: Record<string, string>; handleSaved: (key: string, val: string) => void }) {
   return (
     <section id="demo" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1060, margin: "0 auto" }}>
         <FadeIn>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <SectionLabel>Demo tương tác</SectionLabel>
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <SectionLabel>Chi tiết sản phẩm</SectionLabel>
             <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
-              Trải Nghiệm Sofa Giường
+              Thông Tin Chi Tiết
             </h2>
             <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
-              SMF12 — Đa Tư Thế Linh Hoạt
+              SMF12 — Từng Chi Tiết Đều Được Chăm Chút
             </div>
             <GoldDivider />
-            <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY, maxWidth: 560, margin: "0 auto" }}>
-              Nhấn các tư thế bên dưới để xem sofa tự động chuyển đổi theo từng nhu cầu sử dụng thực tế
-            </p>
           </div>
         </FadeIn>
-        <FadeIn delay={100}>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 32 }}>
-            {SOFA_POSITIONS.map((p, i) => (
-              <button key={p.id} onClick={() => setActivePos(i)}
-                style={{ padding: "10px 20px", borderRadius: R_FULL, border: `1.5px solid ${i === activePos ? GOLD : BLACK_BORDER}`, background: i === activePos ? `rgba(139,105,20,0.1)` : "transparent", color: i === activePos ? GOLD : GRAY, fontSize: 13, fontWeight: i === activePos ? 600 : 400, cursor: "pointer", fontFamily: FONT_BODY, transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6 }}>
-                <span>{p.icon}</span> {p.label}
-              </button>
-            ))}
-          </div>
-        </FadeIn>
-        <FadeIn delay={200}>
-          <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
-            {/* SVG Demo */}
-            <svg width="300" height="160" viewBox="0 0 300 160" style={{ transition: "all 0.5s ease" }}>
-              {/* Floor */}
-              <line x1="20" y1="130" x2="280" y2="130" stroke={BLACK_BORDER} strokeWidth="1.5"/>
-              {/* Seat */}
-              <rect x={seatX} y={seatY} width={seatW} height={seatH} rx="4" fill={`rgba(139,105,20,0.15)`} stroke={GOLD} strokeWidth="1.5"/>
-              {/* Back cushion */}
-              <line x1={seatX} y1={seatY} x2={backX2} y2={backY2} stroke={GOLD} strokeWidth="8" strokeLinecap="round"/>
-              <rect x={backX2 - 6} y={backY2 - 6} width={12} height={12} rx="3" fill={`rgba(139,105,20,0.3)`} stroke={GOLD} strokeWidth="1"/>
-              {/* Foot rest */}
-              <line x1={seatX + seatW} y1={seatY} x2={footX2} y2={footY2} stroke={GOLD} strokeWidth="8" strokeLinecap="round"/>
-              {/* Legs */}
-              <line x1={seatX + 10} y1={seatY + seatH} x2={seatX + 10} y2="130" stroke={GRAY_LIGHT} strokeWidth="3" strokeLinecap="round"/>
-              <line x1={seatX + seatW - 10} y1={seatY + seatH} x2={seatX + seatW - 10} y2="130" stroke={GRAY_LIGHT} strokeWidth="3" strokeLinecap="round"/>
-              {/* Person silhouette */}
-              <circle cx={seatX + 20} cy={backY2 - 8} r="8" fill={`rgba(139,105,20,0.4)`} stroke={GOLD} strokeWidth="1"/>
-            </svg>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 22, marginBottom: 8 }}>{pos.icon}</div>
-              <div style={{ color: GOLD, fontWeight: 600, fontSize: 16, fontFamily: FONT_HEADING, marginBottom: 6 }}>{pos.label}</div>
-              <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, fontFamily: FONT_BODY, maxWidth: 400, margin: "0 auto" }}>{pos.desc}</p>
+
+        {/* Item 1 — Thiết kế sản phẩm (1:1) */}
+        <FadeIn delay={0}>
+          <div style={{ marginBottom: 48 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+                <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
+                  {content["detail_img_0"] ? (
+                    <Image src={content["detail_img_0"]} alt="Thiết kế sản phẩm SMF12" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
+                  ) : (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                      <IconDiamond color={GOLD_PALE} size={40} />
+                      <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>Ảnh thiết kế sản phẩm</span>
+                    </div>
+                  )}
+                  {editMode && <ImageUploadOverlay blockKey="detail_img_0" currentUrl={content["detail_img_0"] || ""} onUploaded={handleSaved} />}
+                </div>
+              </div>
+              <div style={{ padding: "8px 0" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>01 / THIẾT KẾ</span>
+                </div>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Thiết Kế Sản Phẩm</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Đường nét tinh tế, da PU nhập khẩu mịn mượt — sang trọng trong mọi không gian sống. Màu sắc trung tính dễ phối hợp với mọi phong cách nội thất.</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {["Da PU nhập khẩu cao cấp, kháng nước", "4 màu sắc: Nâu, Xám, Kem, Đen", "Đường may tỉ mỉ, không bong chỉ"].map((t, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </FadeIn>
-        <FadeIn delay={300}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 32 }}>
-            {[
-              { icon: <IconSofa color={GOLD} size={18} />, label: "Sofa ban ngày", desc: "Tiếp khách, ngồi làm việc, thư giãn" },
-              { icon: "🌙", label: "Giường ban đêm", desc: "Trải phẳng hoàn toàn, ngủ êm ái" },
-              { icon: <IconRuler color={GOLD} size={18} />, label: "Gấp gọn tiện lợi", desc: "Tiết kiệm không gian khi không dùng" },
-            ].map((f, i) => (
-              <div key={i} style={{ background: BLACK, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_MD, padding: "20px 16px", textAlign: "center" }}>
-                <div style={{ fontSize: 28, marginBottom: 10 }}>{f.icon}</div>
-                <div style={{ color: WHITE, fontWeight: 600, fontSize: 13, fontFamily: FONT_HEADING, marginBottom: 6 }}>{f.label}</div>
-                <p style={{ color: GRAY, fontSize: 11, lineHeight: 1.6, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
+
+        {/* Item 2 — Thao tác sofa → giường (1:1 GIF, text bên trái) */}
+        <FadeIn delay={80}>
+          <div style={{ marginBottom: 48 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
+              <div style={{ padding: "8px 0", order: 0 }} className="lp-detail-text-left">
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>02 / THAO TÁC</span>
+                </div>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Thao Tác Sofa → Giường Ngủ</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Cơ cấu SmartFold 1 thao tác — chỉ kéo nhẹ là chuyển đổi hoàn toàn từ sofa sang giường ngủ. Không cần dụng cụ, không cần tháo lắp.</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {["Chuyển đổi trong dưới 10 giây", "1 thao tác kéo/đẩy đơn giản", "Phù hợp cả người cao tuổi và trẻ em"].map((t, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+                <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
+                  {content["detail_img_1"] ? (
+                    <img src={content["detail_img_1"]} alt="Thao tác sofa thành giường SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                      <IconZap color={GOLD_PALE} size={40} />
+                      <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>GIF thao tác gập mở</span>
+                    </div>
+                  )}
+                  {editMode && <ImageUploadOverlay blockKey="detail_img_1" currentUrl={content["detail_img_1"] || ""} onUploaded={handleSaved} />}
+                </div>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* Item 3 — Khung thép mạ kẽm (16:9, full width) */}
+        <FadeIn delay={160}>
+          <div style={{ marginBottom: 48 }}>
+            <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}`, marginBottom: 24 }}>
+              <div style={{ position: "relative", paddingBottom: "56.25%", background: BLACK_CARD }}>
+                {content["detail_img_2"] ? (
+                  <Image src={content["detail_img_2"]} alt="Khung thép mạ kẽm SMF12" fill style={{ objectFit: "cover" }} sizes="100vw" />
+                ) : (
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                    <IconBox color={GOLD_PALE} size={48} />
+                    <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>Ảnh khung thép mạ kẽm (16:9)</span>
+                  </div>
+                )}
+                {editMode && <ImageUploadOverlay blockKey="detail_img_2" currentUrl={content["detail_img_2"] || ""} onUploaded={handleSaved} />}
+                {/* Overlay badge */}
+                <div style={{ position: "absolute", bottom: 20, left: 20, background: `rgba(26,18,0,0.75)`, backdropFilter: "blur(8px)", borderRadius: R_MD, padding: "12px 20px", border: `1px solid rgba(139,105,20,0.3)` }}>
+                  <div style={{ color: GOLD_PALE, fontSize: 22, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>800kg</div>
+                  <div style={{ color: "rgba(253,250,245,0.75)", fontSize: 11, fontFamily: FONT_BODY, marginTop: 3 }}>Tải trọng chịu đựng</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="lp-detail-stats">
+              {[
+                { num: "2mm", label: "Độ dày thép" },
+                { num: "Mạ kẽm", label: "Chống gỉ sét" },
+                { num: "10 năm", label: "Độ bền khung" },
+              ].map((s, i) => (
+                <div key={i} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_MD, padding: "16px", textAlign: "center" }}>
+                  <div style={{ color: GOLD, fontSize: 20, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 4 }}>{s.num}</div>
+                  <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 20, padding: "0 4px" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 12 }}>
+                <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>03 / KHUNG THÉP</span>
+              </div>
+              <h3 style={{ fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 10, fontFamily: FONT_HEADING, color: WHITE }}>Khung Thép Mạ Kẽm Chắc Chắn — Chịu Tải 800kg</h3>
+              <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.8, fontFamily: FONT_BODY }}>Khung thép mạ kẽm dày 2mm, xử lý chống gỉ sét — đảm bảo độ bền vượt trội. Kết hợp với khung gỗ thông sấy khô đạt độ ẩm &lt;12%, tạo nên bộ khung vững chắc chịu tải 800kg.</p>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* Item 4 — Ngăn chứa đồ ẩn (1:1 GIF) */}
+        <FadeIn delay={240}>
+          <div style={{ marginBottom: 48 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+                <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
+                  {content["detail_img_3"] ? (
+                    <img src={content["detail_img_3"]} alt="Ngăn chứa đồ ẩn SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                      <IconBox color={GOLD_PALE} size={40} />
+                      <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>GIF ngăn chứa đồ ẩn</span>
+                    </div>
+                  )}
+                  {editMode && <ImageUploadOverlay blockKey="detail_img_3" currentUrl={content["detail_img_3"] || ""} onUploaded={handleSaved} />}
+                </div>
+              </div>
+              <div style={{ padding: "8px 0" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>04 / NGĂN CHỨA</span>
+                </div>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Ngăn Chứa Đồ Thiết Kế Ẩn</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Thiết kế ngăn chứa ẩn bên dưới gầm sofa — tối ưu không gian lưu trữ mà không lộ liễu. Lý tưởng để chăn, gối, đồ dùng cá nhân.</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {["Dung tích lớn, chứa được chăn gối", "Mở/đóng dễ dàng bằng 1 thao tác", "Thiết kế ẩn, giữ không gian gọn gàng"].map((t, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* Item 5 — Áo nệm Da PU có khoá kéo (1:1 GIF, text bên trái) */}
+        <FadeIn delay={320}>
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
+              <div style={{ padding: "8px 0", order: 0 }} className="lp-detail-text-left">
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>05 / ÁO NỆM</span>
+                </div>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Áo Nệm Da PU Có Khoá Kéo</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Áo nệm da PU cao cấp có khoá kéo toàn thân — tháo ra thay nệm hoặc thay vỏ áo dễ dàng. Giặt sạch, bảo dưỡng tiện lợi.</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {["Khoá kéo YKK chịu lực, không kẹt", "Tháo/lắp trong vài phút", "Dễ dàng thay vỏ áo khi cần"].map((t, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+                <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
+                  {content["detail_img_4"] ? (
+                    <img src={content["detail_img_4"]} alt="Áo nệm da PU khoá kéo SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                      <IconAward color={GOLD_PALE} size={40} />
+                      <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>GIF áo nệm khoá kéo</span>
+                    </div>
+                  )}
+                  {editMode && <ImageUploadOverlay blockKey="detail_img_4" currentUrl={content["detail_img_4"] || ""} onUploaded={handleSaved} />}
+                </div>
+              </div>
+            </div>
           </div>
         </FadeIn>
       </div>
@@ -991,8 +1140,8 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         </div>
       </section>
 
-      {/* ── SOFA DEMO INTERACTIVE ── */}
-      <SofaDemoSection />
+      {/* ── PRODUCT DETAIL ── */}
+      <ProductDetailSection editMode={editMode} content={content} handleSaved={handleSaved} />
 
       {/* ── VIDEO SECTION ── */}
       <section id="video" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>

@@ -337,3 +337,26 @@ nav[style*="position: fixed"] {
 .lp-sg-quiz-row-slider { scrollbar-width: none; -ms-overflow-style: none; }
 .lp-sg-quiz-row-slider::-webkit-scrollbar { display: none; }
 .lp-sg-quiz-row-slider > button { scroll-snap-align: start; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRODUCT DETAIL SECTION — 2-col → 1-col trên mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-detail-row {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+  /* Đảo thứ tự: ảnh lên trên, text xuống dưới */
+  .lp-detail-text-left {
+    order: 2 !important;
+  }
+  .lp-detail-stats {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+@media (max-width: 400px) {
+  .lp-detail-stats {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
