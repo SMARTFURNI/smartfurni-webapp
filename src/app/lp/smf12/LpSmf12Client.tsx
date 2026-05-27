@@ -149,10 +149,12 @@ function YoutubeThumbnailPlay({ videoId, title, tag }: { videoId: string; title:
   );
 }
 
-// ─── ImageUploadOverlay ───────────────────────────────────────────────────────
+// ─── ImageUploadOverlay (với tính năng dán URL + upload file) ────────────────
 function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: { blockKey: string; currentUrl: string; onUploaded: (key: string, url: string) => void }) {
   const [uploading, setUploading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlVal, setUrlVal] = useState("");
+
   async function handleFile(file: File) {
     setUploading(true);
     try {
@@ -163,17 +165,52 @@ function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: { blockKey: st
       onUploaded(blockKey, url);
     } catch { alert("Upload thất bại"); } finally { setUploading(false); }
   }
-  return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(26,18,0,0.6)", cursor: "pointer" }} onClick={() => inputRef.current?.click()}>
-      <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-      {uploading ? (
+
+  async function saveUrl(url: string) {
+    if (!url.trim()) return;
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey, content: url.trim() }) });
+    onUploaded(blockKey, url.trim());
+    setShowUrlInput(false); setUrlVal("");
+  }
+
+  if (uploading) {
+    return (
+      <div style={{ position: "absolute", inset: 0, zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)" }}>
         <div style={{ color: "#fff", fontSize: 13, fontFamily: FONT_BODY }}>Đang upload...</div>
-      ) : (
-        <div style={{ textAlign: "center", color: "#fff" }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ marginBottom: 8 }}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          <div style={{ fontSize: 12, fontFamily: FONT_BODY }}>Nhấn để upload ảnh</div>
+      </div>
+    );
+  }
+
+  if (showUrlInput) {
+    return (
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.92)", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8, zIndex: 20 }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY }}>Dán link URL ảnh</div>
+        <input autoFocus value={urlVal} onChange={e => setUrlVal(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") saveUrl(urlVal); if (e.key === "Escape") { setShowUrlInput(false); setUrlVal(""); } }}
+          placeholder="https://..." style={{ width: "100%", background: "rgba(245,237,214,0.08)", border: "1.5px solid rgba(201,168,76,0.6)", borderRadius: 6, padding: "6px 10px", color: "#F5EDD6", fontSize: 11, fontFamily: FONT_BODY, outline: "none", boxSizing: "border-box" as const }} />
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={() => saveUrl(urlVal)} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT_BODY }}>
+            <IconCheck color={BLACK} size={12} /> Lưu
+          </button>
+          <button onClick={() => { setShowUrlInput(false); setUrlVal(""); }} style={{ background: "rgba(255,255,255,0.1)", color: "#A8A090", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: FONT_BODY }}>Huỷ</button>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, zIndex: 10 }}
+      onClick={e => e.stopPropagation()}>
+      <label style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <span style={{ color: "#C9A84C", fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Upload</span>
+        <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
+      </label>
+      <button onClick={() => setShowUrlInput(true)} style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(201,168,76,0.6)", borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(4px)" }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <span style={{ color: "#C9A84C", fontSize: 10, fontWeight: 600, fontFamily: FONT_BODY, whiteSpace: "nowrap" as const }}>Dán URL</span>
+      </button>
     </div>
   );
 }
