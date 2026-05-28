@@ -118,7 +118,7 @@ function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string })
 }
 
 // ShortsCard: tỉ lệ 9:16, thumbnail tự động từ YouTube, nút play nhỏ gọn
-function ShortsCard({ videoId, title, tag }: { videoId: string; title: string; tag?: string }) {
+function ShortsCard({ videoId, title, tag, titleNode }: { videoId: string; title: string; tag?: string; titleNode?: React.ReactNode }) {
   const [playing, setPlaying] = useState(false);
   const hasVideo = videoId && videoId !== "_placeholder_";
   const thumbHq = hasVideo ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
@@ -128,7 +128,7 @@ function ShortsCard({ videoId, title, tag }: { videoId: string; title: string; t
       onClick={() => { if (!playing && hasVideo) setPlaying(true); }}>
       {playing ? (
         <iframe
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1`}
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1&playsinline=1`}
           title={title}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -147,8 +147,8 @@ function ShortsCard({ videoId, title, tag }: { videoId: string; title: string; t
               <span style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY }}>Chưa có video</span>
             </div>
           )}
-          {/* Gradient overlay */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)" }} />
+          {/* Gradient overlay mạnh hơn ở dưới để title nổi bật */}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 45%, transparent 70%)" }} />
           {/* Nút play nhỏ gọn */}
           {hasVideo && (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -163,9 +163,11 @@ function ShortsCard({ videoId, title, tag }: { videoId: string; title: string; t
               {tag}
             </div>
           )}
-          {/* Title ở dưới */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "10px 12px" }}>
-            <div style={{ color: "#fff", fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, lineHeight: 1.4, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>{title}</div>
+          {/* Title nổi bật ở dưới — có thể chỉnh sửa */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "14px 12px 12px" }}>
+            {titleNode ? titleNode : (
+              <div style={{ color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1.35, textShadow: "0 1px 6px rgba(0,0,0,0.9)", letterSpacing: "-0.01em" }}>{title}</div>
+            )}
           </div>
         </>
       )}
@@ -1377,12 +1379,23 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             <div className="lp-shorts-grid">
               {[
                 { bkId: "video_sub_1_id", bkTitle: "video_sub_1_title", defTitle: "Review sau 6 tháng sử dụng", tag: "REVIEW" },
-                { bkId: "video_sub_2_id", bkTitle: "video_sub_2_title", defTitle: "Hướng dẫn gấp mở SMF12", tag: "HƯỠNG DẪN" },
+                { bkId: "video_sub_2_id", bkTitle: "video_sub_2_title", defTitle: "Hướng dẫn gấp mở SMF12", tag: "HƯỡNG DẪN" },
                 { bkId: "video_sub_3_id", bkTitle: "video_sub_3_title", defTitle: "So sánh SMF12 vs sofa thường", tag: "SO SÁNH" },
                 { bkId: "video_sub_4_id", bkTitle: "video_sub_4_title", defTitle: "Unboxing và lắp ráp SMF12", tag: "UNBOXING" },
               ].map((v, i) => (
                 <div key={i} className="lp-shorts-item">
-                  <ShortsCard videoId={content[v.bkId] || "_placeholder_"} title={v.defTitle} tag={v.tag} />
+                  <ShortsCard
+                    videoId={content[v.bkId] || "_placeholder_"}
+                    title={content[v.bkTitle] || v.defTitle}
+                    tag={v.tag}
+                    titleNode={
+                      <div style={{ display: "flex", alignItems: "flex-end", gap: 4 }}>
+                        <div style={{ color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1.35, textShadow: "0 1px 6px rgba(0,0,0,0.9)", letterSpacing: "-0.01em", flex: 1 }}>
+                          {E({ bk: v.bkTitle, def: v.defTitle, as: "span" })}
+                        </div>
+                      </div>
+                    }
+                  />
                   {editMode && (
                     <VideoEditOverlay blockKey={v.bkId} currentId={content[v.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />
                   )}
