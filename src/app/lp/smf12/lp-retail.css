@@ -25,8 +25,8 @@
   .lp-hero-section {
     position: relative !important;
     min-height: unset !important;
+    width: 100% !important;
     aspect-ratio: 4 / 3 !important;
-    display: block !important;
     overflow: hidden !important;
   }
   .lp-hero-section::before {
@@ -34,7 +34,12 @@
   }
   .lp-hero-bg {
     position: absolute !important;
-    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
   }
   .lp-hero-bg img {
     width: 100% !important;
@@ -42,14 +47,20 @@
     object-fit: contain !important;
     object-position: center !important;
     background: #0d0b06 !important;
+    display: block !important;
   }
   .lp-hero-content {
     position: absolute !important;
-    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     z-index: 1 !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
   }
 }
 

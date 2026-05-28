@@ -1120,7 +1120,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       )}
 
       {/* ── HERO ── */}
-      <section id="hero" className="lp-hero-section" style={{ position: "relative", display: "flex", alignItems: "center", overflow: "hidden" }}>
+      <section id="hero" className="lp-hero-section" style={{ position: "relative", overflow: "hidden" }}>
         {/* Hero background: 4:3 ratio wrapper */}
         <div className="lp-hero-bg" style={{ position: "absolute", inset: 0, zIndex: 0 }}>
           {heroImages[0] ? (
