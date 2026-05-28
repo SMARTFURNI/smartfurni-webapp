@@ -1172,7 +1172,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── PROBLEM / SOLUTION ── */}
-      <section id="problems" className="lp-section-pad" style={{ background: "#0D0B00", padding: "96px 24px", position: "relative" }}>
+      <section id="problems" className="lp-section-pad" style={{ background: "#1C1A14", padding: "96px 24px", position: "relative" }}>
         {/* Texture overlay */}
         <div style={{ position: "absolute", inset: 0, backgroundImage: `radial-gradient(ellipse at 20% 50%, rgba(139,105,20,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(139,105,20,0.04) 0%, transparent 50%)`, pointerEvents: "none" }} />
         <div style={{ maxWidth: 1060, margin: "0 auto", position: "relative" }}>
