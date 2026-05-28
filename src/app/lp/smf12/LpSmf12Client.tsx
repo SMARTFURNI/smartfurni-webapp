@@ -919,6 +919,45 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   const [editedCount, setEditedCount] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
   const [productPopup, setProductPopup] = useState<{ productIdx: number; sizeId: string; imgIdx: number; step: "detail" | "form" } | null>(null);
+
+  // Typewriter effect for hero titles
+  const TITLE_1 = content["hero_title_1"] || "Sofa Ban Ngày";
+  const TITLE_2 = content["hero_title_2"] || "Giường Ngủ Ban Đêm";
+  const [twText1, setTwText1] = useState("");
+  const [twText2, setTwText2] = useState("");
+  const [twDone1, setTwDone1] = useState(false);
+  const [twDone2, setTwDone2] = useState(false);
+  const [showCursor1, setShowCursor1] = useState(true);
+  const [showCursor2, setShowCursor2] = useState(false);
+  useEffect(() => {
+    setTwText1(""); setTwText2(""); setTwDone1(false); setTwDone2(false);
+    setShowCursor1(true); setShowCursor2(false);
+    let i = 0;
+    const speed = 55;
+    const t1 = setInterval(() => {
+      i++;
+      setTwText1(TITLE_1.slice(0, i));
+      if (i >= TITLE_1.length) {
+        clearInterval(t1);
+        setTwDone1(true);
+        setShowCursor1(false);
+        setShowCursor2(true);
+        let j = 0;
+        const t2 = setInterval(() => {
+          j++;
+          setTwText2(TITLE_2.slice(0, j));
+          if (j >= TITLE_2.length) {
+            clearInterval(t2);
+            setTwDone2(true);
+            // blink cursor for 2s then hide
+            setTimeout(() => setShowCursor2(false), 2000);
+          }
+        }, speed);
+      }
+    }, speed);
+    return () => clearInterval(t1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [popupForm, setPopupForm] = useState({ name: "", phone: "", address: "", note: "" });
   const [popupLoading, setPopupLoading] = useState(false);
   const [popupSuccess, setPopupSuccess] = useState(false);
@@ -1148,12 +1187,18 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                 <span style={{ display: "inline-block", width: 28, height: 1, background: `linear-gradient(90deg, ${GOLD_PALE}, transparent)` }} />
               </div>
 
-              {/* Tiêu đề chính */}
-              <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 400, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_BRAND, fontStyle: "italic", letterSpacing: "-0.01em", color: "#FFFFFF" }}>
-                {E({ bk: "hero_title_1", def: "Sofa Ban Ngày", as: "span", style: { display: "block" } })}
+              {/* Tiêu đề chính — Typewriter effect */}
+              <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 400, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_BRAND, fontStyle: "italic", letterSpacing: "-0.01em", color: "#FFFFFF", minHeight: "1.1em" }}>
+                {editMode
+                  ? E({ bk: "hero_title_1", def: "Sofa Ban Ngày", as: "span", style: { display: "block" } })
+                  : <span>{twText1}{showCursor1 && <span style={{ borderRight: "3px solid #FFFFFF", marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
+                }
               </h1>
-              <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_BRAND, fontStyle: "italic", color: GOLD_PALE, letterSpacing: "-0.01em" }}>
-                {E({ bk: "hero_title_2", def: "Giường Ngủ Ban Đêm", as: "span" })}
+              <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_BRAND, fontStyle: "italic", color: GOLD_PALE, letterSpacing: "-0.01em", minHeight: "1.1em" }}>
+                {editMode
+                  ? E({ bk: "hero_title_2", def: "Giường Ngủ Ban Đêm", as: "span" })
+                  : <span>{twDone1 ? twText2 : ""}{showCursor2 && <span style={{ borderRight: `3px solid ${GOLD_PALE}`, marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
+                }
               </h1>
 
               {/* Đường kẻ vàng */}
@@ -1166,7 +1211,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           </div>
 
           {/* CTA row — desktop: nằm trong flow bình thường; mobile: order 3 (sau ảnh) */}
-          <div className="lp-hero-cta-row" style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 0", width: "100%", boxSizing: "border-box" as const, display: "flex", gap: 14, flexWrap: "wrap" as const }}>
+          <div className="lp-hero-cta-row" style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 0", width: "100%", boxSizing: "border-box" as const, display: "flex", gap: 14, flexWrap: "wrap" as const, justifyContent: "flex-start" }}>
             <GoldButton onClick={scrollToForm} style={{ fontSize: 13, padding: "12px 24px", letterSpacing: "0.08em" }}>
               {E({ bk: "hero_cta_primary", def: "NHẬN TƯ VẤN", as: "span" })}
             </GoldButton>
