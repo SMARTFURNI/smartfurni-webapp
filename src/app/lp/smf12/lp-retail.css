@@ -19,19 +19,18 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   HERO DESKTOP — Tỷ lệ 4:3 (padding-bottom 75%)
+   HERO DESKTOP — Tỷ lệ 4:3 dùng aspect-ratio
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (min-width: 601px) {
   .lp-hero-section {
+    position: relative !important;
     min-height: unset !important;
-    padding-bottom: 0 !important;
-  }
-  /* Tạo tỷ lệ 4:3 bằng pseudo-element */
-  .lp-hero-section::before {
-    content: "" !important;
+    aspect-ratio: 4 / 3 !important;
     display: block !important;
-    padding-top: 75% !important; /* 4:3 ratio */
-    pointer-events: none !important;
+    overflow: hidden !important;
+  }
+  .lp-hero-section::before {
+    display: none !important;
   }
   .lp-hero-bg {
     position: absolute !important;
@@ -48,6 +47,8 @@
     position: absolute !important;
     inset: 0 !important;
     z-index: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
     justify-content: center !important;
   }
 }
