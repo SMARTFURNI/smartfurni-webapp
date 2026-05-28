@@ -19,6 +19,40 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   HERO DESKTOP — Tỷ lệ 4:3 (padding-bottom 75%)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 601px) {
+  .lp-hero-section {
+    min-height: unset !important;
+    padding-bottom: 0 !important;
+  }
+  /* Tạo tỷ lệ 4:3 bằng pseudo-element */
+  .lp-hero-section::before {
+    content: "" !important;
+    display: block !important;
+    padding-top: 75% !important; /* 4:3 ratio */
+    pointer-events: none !important;
+  }
+  .lp-hero-bg {
+    position: absolute !important;
+    inset: 0 !important;
+  }
+  .lp-hero-bg img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    background: #0d0b06 !important;
+  }
+  .lp-hero-content {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 1 !important;
+    justify-content: center !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    HERO MOBILE — Stack dọc: ảnh trên, chữ dưới (tách biệt hoàn toàn)
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
@@ -31,25 +65,33 @@
     overflow: visible !important;
     background: linear-gradient(180deg, #1C1A14 0%, #252018 100%) !important;
   }
+  /* Xoá pseudo-element 4:3 trên mobile */
+  .lp-hero-section::before {
+    display: none !important;
+  }
 
-  /* Ảnh nền: order 2 (giữa) */
+  /* Ảnh nền: order 2 (giữa), tỷ lệ 4:3 = padding-bottom 75% */
   .lp-hero-bg {
     order: 2 !important;
     position: relative !important;
     inset: unset !important;
     width: 100% !important;
-    height: 60vw !important;
-    min-height: 230px !important;
-    max-height: 310px !important;
+    height: 0 !important;
+    padding-bottom: 75% !important; /* 4:3 */
     overflow: hidden !important;
     flex-shrink: 0 !important;
     border-top: 1px solid rgba(139,105,20,0.25) !important;
     border-bottom: 1px solid rgba(139,105,20,0.25) !important;
   }
   .lp-hero-bg img {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    object-fit: cover !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    background: #0d0b06 !important;
   }
   .lp-hero-bg > div:last-child {
     display: none !important;
