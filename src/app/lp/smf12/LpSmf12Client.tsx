@@ -1317,6 +1317,49 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         </div>
       </section>
 
+      {/* ── THÔNG SỐ KỸ THUẬT ── */}
+      <section id="specs" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 52 }}>
+              <SectionLabel>{E({ bk: "spec_section_label", def: "Thông số kỹ thuật", as: "span" })}</SectionLabel>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+                {E({ bk: "spec_title_1", def: "Thông Số Kỹ Thuật", as: "span" })}
+              </h2>
+              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+                {E({ bk: "spec_title_2", def: "SmartFurni SMF12", as: "span" })}
+              </div>
+              <GoldDivider />
+            </div>
+          </FadeIn>
+          <FadeIn delay={100}>
+            <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
+              {[
+                ["Kích thước (sofa)", "0,9m / 1,2m / 1,4m / 1,6m × 0,9m × 0,85m (C)"],
+                ["Kích thước (giường)", "0,9m / 1,2m / 1,4m / 1,6m × 2,0m"],
+                ["Tải trọng tối đa", "250 kg"],
+                ["Chất liệu bọc", "Da PU nhập khẩu — kháng nước, kháng UV"],
+                ["Đệm ngồi/nằm", "Foam D40 dày 12cm + memory foam 3cm"],
+                ["Khung chính", "Gỗ thông xử lý chống mối + thanh giằng thép mạ kẽm"],
+                ["Cơ cấu gập mở", "SmartFold — 1 thao tác, không cần dụng cụ"],
+                ["Số lần gập mở kiểm định", "50.000 lần"],
+                ["Chân sofa", "Gỗ sồi tự nhiên / thép sơn tĩnh điện (tuỳ phiên bản)"],
+                ["Màu sắc", "Đen, Nâu, Xám tro, Be (kem)"],
+                ["Bảo hành da", "3 năm chính hãng"],
+                ["Bảo hành khung", "2 năm"],
+                ["Trọng lượng", "~38 kg (1m4) / ~44 kg (1m6)"],
+                ["Xuất xứ", "Việt Nam — chất liệu nhập khẩu"],
+              ].map(([label, value], i) => (
+                <div key={i} style={{ display: "flex", padding: "14px 24px", background: i % 2 === 0 ? BLACK_CARD : BLACK, borderBottom: i < 13 ? `1px solid ${BLACK_BORDER}` : "none" }}>
+                  <div style={{ width: "40%", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, flexShrink: 0 }}>{label}</div>
+                  <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ── BEFORE / AFTER SLIDER ── */}
       <section className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -1522,48 +1565,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         </div>
       </section>
 
-      {/* ── THÔNG SỐ KỸ THUẬT ── */}
-      <section id="specs" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <FadeIn>
-            <div style={{ textAlign: "center", marginBottom: 52 }}>
-              <SectionLabel>{E({ bk: "spec_section_label", def: "Thông số kỹ thuật", as: "span" })}</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
-                {E({ bk: "spec_title_1", def: "Thông Số Kỹ Thuật", as: "span" })}
-              </h2>
-              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
-                {E({ bk: "spec_title_2", def: "SmartFurni SMF12", as: "span" })}
-              </div>
-              <GoldDivider />
-            </div>
-          </FadeIn>
-          <FadeIn delay={100}>
-            <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
-              {[
-                ["Kích thước (sofa)", "0,9m / 1,2m / 1,4m / 1,6m × 0,9m × 0,85m (C)"],
-                ["Kích thước (giường)", "0,9m / 1,2m / 1,4m / 1,6m × 2,0m"],
-                ["Tải trọng tối đa", "250 kg"],
-                ["Chất liệu bọc", "Da PU nhập khẩu — kháng nước, kháng UV"],
-                ["Đệm ngồi/nằm", "Foam D40 dày 12cm + memory foam 3cm"],
-                ["Khung chính", "Gỗ thông xử lý chống mối + thanh giằng thép mạ kẽm"],
-                ["Cơ cấu gập mở", "SmartFold — 1 thao tác, không cần dụng cụ"],
-                ["Số lần gập mở kiểm định", "50.000 lần"],
-                ["Chân sofa", "Gỗ sồi tự nhiên / thép sơn tĩnh điện (tuỳ phiên bản)"],
-                ["Màu sắc", "Đen, Nâu, Xám tro, Be (kem)"],
-                ["Bảo hành da", "3 năm chính hãng"],
-                ["Bảo hành khung", "2 năm"],
-                ["Trọng lượng", "~38 kg (1m4) / ~44 kg (1m6)"],
-                ["Xuất xứ", "Việt Nam — chất liệu nhập khẩu"],
-              ].map(([label, value], i) => (
-                <div key={i} style={{ display: "flex", padding: "14px 24px", background: i % 2 === 0 ? BLACK_CARD : BLACK, borderBottom: i < 13 ? `1px solid ${BLACK_BORDER}` : "none" }}>
-                  <div style={{ width: "40%", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, flexShrink: 0 }}>{label}</div>
-                  <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{value}</div>
-                </div>
-              ))}
-            </div>
-          </FadeIn>
-        </div>
-      </section>
+
 
       {/* ── HÌNH ẢNH THỰC TẾSẢN PHẨM ── */}
       <section id="benefits" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
