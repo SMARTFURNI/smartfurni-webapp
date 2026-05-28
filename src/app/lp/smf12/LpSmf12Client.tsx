@@ -1372,24 +1372,6 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               <GoldDivider />
             </div>
           </FadeIn>
-          {/* Video chính 16:9 */}
-          <FadeIn>
-            <div style={{ marginBottom: 32 }}>
-              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden" }}>
-                <YoutubeAutoplay videoId={content["video_main_id"] || "_placeholder_"} title="SMF12 Demo" />
-              </div>
-              {editMode && (
-                <VideoEditOverlay blockKey="video_main_id" currentId={content["video_main_id"] || ""} onSaved={(k, v) => handleSaved(k, v)} />
-              )}
-              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, background: `rgba(139,105,20,0.1)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "3px 10px", flexShrink: 0 }}>VIDEO CHÍNH</div>
-                <div style={{ color: WHITE, fontSize: 14, fontWeight: 500, fontFamily: FONT_HEADING }}>
-                  {E({ bk: "video_main_title", def: "Demo đầy đủ tính năng sofa giường SMF12", as: "span" })}
-                </div>
-              </div>
-            </div>
-          </FadeIn>
-
           {/* 4 Shorts 9:16 hàng ngang — carousel trên mobile */}
           <FadeIn delay={100}>
             <div className="lp-shorts-grid">
