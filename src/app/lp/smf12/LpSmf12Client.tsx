@@ -1149,11 +1149,11 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               </div>
 
               {/* Tiêu đề chính */}
-              <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 800, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_HEADING, letterSpacing: "-0.025em", color: "#FFFFFF" }}>
+              <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 400, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_BRAND, fontStyle: "italic", letterSpacing: "-0.01em", color: "#FFFFFF" }}>
                 {E({ bk: "hero_title_1", def: "Sofa Ban Ngày", as: "span", style: { display: "block" } })}
               </h1>
               <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_BRAND, fontStyle: "italic", color: GOLD_PALE, letterSpacing: "-0.01em" }}>
-                {E({ bk: "hero_title_2", def: "Giường ÊM Ban Đêm", as: "span" })}
+                {E({ bk: "hero_title_2", def: "Giường Ngủ Ban Đêm", as: "span" })}
               </h1>
 
               {/* Đường kẻ vàng */}
@@ -1167,8 +1167,8 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
 
           {/* CTA row — desktop: nằm trong flow bình thường; mobile: order 3 (sau ảnh) */}
           <div className="lp-hero-cta-row" style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 0", width: "100%", boxSizing: "border-box" as const, display: "flex", gap: 14, flexWrap: "wrap" as const }}>
-            <GoldButton onClick={scrollToForm} style={{ fontSize: 13, padding: "15px 32px", letterSpacing: "0.08em" }}>
-              {E({ bk: "hero_cta_primary", def: "NHẬN TƯ VẤN & BÁO GIÁ NGAY", as: "span" })}
+            <GoldButton onClick={scrollToForm} style={{ fontSize: 13, padding: "12px 24px", letterSpacing: "0.08em" }}>
+              {E({ bk: "hero_cta_primary", def: "NHẬN TƯ VẤN", as: "span" })}
             </GoldButton>
             <OutlineButton onClick={() => scrollTo("products")}>
               {E({ bk: "hero_cta_secondary", def: "Xem sản phẩm ↓", as: "span" })}
