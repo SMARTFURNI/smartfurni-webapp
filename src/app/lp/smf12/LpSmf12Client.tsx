@@ -918,6 +918,11 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   const [content, setContent] = useState<Record<string, string>>(initialContent);
   const [editedCount, setEditedCount] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
+  const [productPopup, setProductPopup] = useState<{ productIdx: number; sizeId: string; imgIdx: number; step: "detail" | "form" } | null>(null);
+  const [popupForm, setPopupForm] = useState({ name: "", phone: "", address: "", note: "" });
+  const [popupLoading, setPopupLoading] = useState(false);
+  const [popupSuccess, setPopupSuccess] = useState(false);
+  const [popupError, setPopupError] = useState("");
 
   useEffect(() => {
     setScrollY(window.scrollY);
@@ -947,7 +952,21 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   const heroImages = ["hero_bg_0", "hero_bg_1", "hero_bg_2"].map(k => content[k] || "");
   const heroOverlay = parseFloat(content["hero_overlay"] || "0.35");
 
-  // Size options
+  // Product cards (3 cards)
+  const PRODUCTS = [
+    { id: "smf12-classic", name: "SMF12 Classic", price: "Từ 8.490.000 ₫", badge: "Bán chạy nhất", sub: "Thiết kế thanh lịch, phù hợp mọi không gian" },
+    { id: "smf12-premium", name: "SMF12 Premium", price: "Từ 9.290.000 ₫", badge: "", sub: "Nệm cao cấp, đường nét hiện đại" },
+    { id: "smf12-luxury", name: "SMF12 Luxury", price: "Từ 10.490.000 ₫", badge: "Mới", sub: "Thiết kế sang trọng, da PU cao cấp" },
+  ];
+  // Size options per product (same for all 3)
+  const POPUP_SIZES = [
+    { id: "0.9m", label: "Ngang 0,9M x Dài 1M9", priceKey: "popup_price_0" },
+    { id: "1.2m", label: "Ngang 1M2 x Dài 1M9", priceKey: "popup_price_1" },
+    { id: "1.5m", label: "Ngang 1M5 x Dài 1M9", priceKey: "popup_price_2" },
+    { id: "1.8m", label: "Ngang 1M8 x Dài 1M9", priceKey: "popup_price_3" },
+  ];
+  const POPUP_DEFAULT_PRICES = ["8.490.000 ₫", "9.290.000 ₫", "10.490.000 ₫", "11.890.000 ₫"];
+  // SIZES kept for legacy compatibility
   const SIZES = [
     { id: "0.9m", label: "0,9m × 2,0m", price: "8.490.000 ₫", sub: "Phòng đơn / studio" },
     { id: "1.2m", label: "1,2m × 2,0m", price: "9.290.000 ₫", sub: "Phòng nhỏ đến trung bình" },
@@ -1482,10 +1501,10 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             <div style={{ textAlign: "center", marginBottom: 52 }}>
               <SectionLabel>{E({ bk: "products_section_label", def: "Dòng sản phẩm", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
-                {E({ bk: "products_title_1", def: "Sofa Giường Da PU", as: "span" })}
+                {E({ bk: "products_title_1", def: "Các Mẫu Sofa Giường Da PU SmartFurni", as: "span" })}
               </h2>
               <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
-                {E({ bk: "products_title_2", def: "SmartFurni SMF12", as: "span" })}
+                {E({ bk: "products_title_2", def: "Kết Cấu Và Chất Liệu Giống Nhau, Chỉ Khác Kiểu Dáng Thiết Kế", as: "span" })}
               </div>
               <GoldDivider />
               <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY }}>
@@ -1493,38 +1512,51 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               </p>
             </div>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20 }} className="lp-products-grid">
-            {SIZES.map((size, i) => {
-              const imgKey = `product_img_${i}`;
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="lp-products-grid">
+            {PRODUCTS.map((product, pi) => {
+              const imgKey = `product_img_${pi}`;
               const imgSrc = content[imgKey] || "";
-              const isSelected = selectedSize === size.id;
+              const nameKey = `product_name_${pi}`;
+              const priceKey = `product_price_${pi}`;
+              const displayName = content[nameKey] || product.name;
+              const displayPrice = content[priceKey] || product.price;
               return (
-                <FadeIn key={size.id} delay={i * 80}>
-                  <div style={{ background: BLACK_CARD, border: `1.5px solid ${isSelected ? GOLD : BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", transition: "border-color 0.2s, box-shadow 0.2s", boxShadow: isSelected ? `0 0 0 3px rgba(139,105,20,0.15)` : "none" }}>
-                    <div style={{ position: "relative", paddingBottom: "66%", background: BLACK }}>
+                <FadeIn key={product.id} delay={pi * 80}>
+                  <div
+                    onClick={() => !editMode && setProductPopup({ productIdx: pi, sizeId: "0.9m", imgIdx: 0, step: "detail" })}
+                    style={{ background: BLACK_CARD, border: `1.5px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: editMode ? "default" : "pointer", transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s" }}
+                    onMouseEnter={e => { if (!editMode) { (e.currentTarget as HTMLDivElement).style.borderColor = GOLD; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; } }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
+                  >
+                    <div style={{ position: "relative", paddingBottom: "100%", background: BLACK }}>
                       {imgSrc ? (
-                        <Image src={imgSrc} alt={`SMF12 ${size.label}`} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
+                        <Image src={imgSrc} alt={displayName} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 33vw" />
                       ) : (
-                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>Ảnh {size.label}</div>
+                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
+                          <span style={{ fontSize: 12, fontFamily: FONT_BODY }}>Aảnh sản phẩm</span>
+                        </div>
                       )}
                       {editMode && <ImageUploadOverlay blockKey={imgKey} currentUrl={imgSrc} onUploaded={handleSaved} />}
-                      {size.badge && (
-                        <div style={{ position: "absolute", top: 12, left: 12, background: GOLD, color: "#FDFAF5", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>{size.badge}</div>
+                      {product.badge && (
+                        <div style={{ position: "absolute", top: 12, left: 12, background: GOLD, color: "#FDFAF5", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>{product.badge}</div>
+                      )}
+                      {!editMode && (
+                        <div style={{ position: "absolute", bottom: 12, right: 12, background: "rgba(139,105,20,0.9)", color: "#FDFAF5", fontSize: 11, fontWeight: 600, padding: "6px 12px", borderRadius: R_FULL, fontFamily: FONT_BODY }}>Xem chi tiết →</div>
                       )}
                     </div>
                     <div style={{ padding: "20px 20px 24px" }}>
-                      <div style={{ color: GRAY_LIGHT, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>SMF12-{size.id.replace(".", "").toUpperCase()}</div>
-                      <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 6, fontFamily: FONT_HEADING }}>
-                        Sofa Giường SMF12 — {size.label}
+                      <div style={{ color: GRAY_LIGHT, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{product.id.toUpperCase()}</div>
+                      <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 4, fontFamily: FONT_HEADING }}>
+                        {editMode ? (
+                          <EditableText slug={LP_SLUG} blockKey={nameKey} defaultValue={product.name} editMode={editMode} as="span" savedValue={content[nameKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
+                        ) : displayName}
                       </h3>
-                      <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, marginBottom: 16, fontFamily: FONT_BODY }}>
-                        {size.sub}. Da PU kháng nước, cơ cấu SmartFold, đệm foam D40 dày 12cm.
-                      </p>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-                        <div style={{ color: GOLD, fontWeight: 700, fontSize: 18, fontFamily: FONT_HEADING }}>Từ {size.price}</div>
-                        <GoldButton onClick={() => { setSelectedSize(size.id); scrollToForm(); }} style={{ padding: "10px 20px", fontSize: 12 }}>
-                          Đặt hàng ngay →
-                        </GoldButton>
+                      <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, marginBottom: 12, fontFamily: FONT_BODY }}>{product.sub}</p>
+                      <div style={{ color: GOLD, fontWeight: 700, fontSize: 18, fontFamily: FONT_HEADING }}>
+                        {editMode ? (
+                          <EditableText slug={LP_SLUG} blockKey={priceKey} defaultValue={product.price} editMode={editMode} as="span" savedValue={content[priceKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
+                        ) : displayPrice}
                       </div>
                     </div>
                   </div>
@@ -1534,6 +1566,208 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           </div>
         </div>
       </section>
+
+      {/* ── PRODUCT POPUP ── */}
+      {productPopup !== null && (() => {
+        const pp = productPopup;
+        const product = PRODUCTS[pp.productIdx];
+        const displayName = content[`product_name_${pp.productIdx}`] || product.name;
+        // 6 images per product
+        const popupImgs = Array.from({ length: 6 }, (_, i) => content[`popup_img_${pp.productIdx}_${i}`] || "");
+        const selectedSizeObj = POPUP_SIZES.find(s => s.id === pp.sizeId) || POPUP_SIZES[0];
+        const sizePrice = content[selectedSizeObj.priceKey] || POPUP_DEFAULT_PRICES[POPUP_SIZES.indexOf(selectedSizeObj)];
+
+        async function handlePopupSubmit(e: React.FormEvent) {
+          e.preventDefault();
+          if (!popupForm.name.trim() || !popupForm.phone.trim()) { setPopupError("Vui lòng điền Họ tên và Số điện thoại (*)"); return; }
+          if (!/^(0|\+84)[0-9]{8,10}$/.test(popupForm.phone.replace(/\s/g, ""))) { setPopupError("Số điện thoại không hợp lệ"); return; }
+          setPopupLoading(true); setPopupError("");
+          try {
+            const noteStr = `Sản phẩm: ${displayName} | Kích thước: ${selectedSizeObj.label} | Giá: ${sizePrice} | Địa chỉ: ${popupForm.address} | Ghi chú: ${popupForm.note}`;
+            const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: popupForm.name, phone: popupForm.phone, email: "", note: noteStr }) });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
+            setPopupSuccess(true);
+          } catch (err: unknown) { setPopupError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
+          finally { setPopupLoading(false); }
+        }
+
+        return (
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={e => { if (e.target === e.currentTarget) { setProductPopup(null); setPopupSuccess(false); setPopupError(""); setPopupForm({ name: "", phone: "", address: "", note: "" }); } }}
+          >
+            <div style={{ background: BLACK_CARD, borderRadius: R_LG, width: "100%", maxWidth: 860, maxHeight: "90vh", overflowY: "auto", position: "relative", border: `1px solid ${BLACK_BORDER}` }}>
+              {/* Close button */}
+              <button
+                onClick={() => { setProductPopup(null); setPopupSuccess(false); setPopupError(""); setPopupForm({ name: "", phone: "", address: "", note: "" }); }}
+                style={{ position: "absolute", top: 16, right: 16, zIndex: 10, background: "rgba(0,0,0,0.15)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: WHITE }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke={WHITE} strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 500 }} className="lp-popup-grid">
+                {/* LEFT: Image swiper */}
+                <div style={{ background: BLACK, borderRadius: `${R_LG}px 0 0 ${R_LG}px`, overflow: "hidden", position: "relative" }} className="lp-popup-left">
+                  {/* Main image */}
+                  <div style={{ position: "relative", paddingBottom: "100%", background: BLACK }}>
+                    {popupImgs[pp.imgIdx] ? (
+                      <Image src={popupImgs[pp.imgIdx]} alt={displayName} fill style={{ objectFit: "cover" }} sizes="50vw" />
+                    ) : (
+                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>Aảnh {pp.imgIdx + 1}</span>
+                      </div>
+                    )}
+                    {editMode && <ImageUploadOverlay blockKey={`popup_img_${pp.productIdx}_${pp.imgIdx}`} currentUrl={popupImgs[pp.imgIdx]} onUploaded={handleSaved} />}
+                    {/* Prev/Next arrows */}
+                    {pp.imgIdx > 0 && (
+                      <button onClick={() => setProductPopup(prev => prev ? { ...prev, imgIdx: prev.imgIdx - 1 } : null)}
+                        style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
+                      </button>
+                    )}
+                    {pp.imgIdx < 5 && (
+                      <button onClick={() => setProductPopup(prev => prev ? { ...prev, imgIdx: prev.imgIdx + 1 } : null)}
+                        style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
+                      </button>
+                    )}
+                  </div>
+                  {/* Thumbnail strip */}
+                  <div style={{ display: "flex", gap: 6, padding: "10px 12px", background: BLACK, overflowX: "auto" }}>
+                    {popupImgs.map((imgUrl, ti) => (
+                      <div key={ti}
+                        onClick={() => setProductPopup(prev => prev ? { ...prev, imgIdx: ti } : null)}
+                        style={{ flexShrink: 0, width: 52, height: 52, borderRadius: R_SM, overflow: "hidden", border: `2px solid ${pp.imgIdx === ti ? GOLD : "transparent"}`, cursor: "pointer", background: BLACK_CARD, position: "relative" }}
+                      >
+                        {imgUrl ? (
+                          <Image src={imgUrl} alt={`${displayName} ${ti + 1}`} fill style={{ objectFit: "cover" }} sizes="52px" />
+                        ) : (
+                          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: GRAY_LIGHT, fontSize: 10, fontFamily: FONT_BODY }}>{ti + 1}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* RIGHT: Info + Sizes + CTA / Form */}
+                <div style={{ padding: "32px 28px", display: "flex", flexDirection: "column", gap: 20, overflowY: "auto" }}>
+                  {pp.step === "detail" ? (
+                    <>
+                      <div>
+                        <div style={{ color: GRAY_LIGHT, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{product.id.toUpperCase()}</div>
+                        <h2 style={{ color: WHITE, fontSize: 22, fontWeight: 700, marginBottom: 6, fontFamily: FONT_HEADING }}>
+                          {editMode ? (
+                            <EditableText slug={LP_SLUG} blockKey={`product_name_${pp.productIdx}`} defaultValue={product.name} editMode={editMode} as="span" savedValue={content[`product_name_${pp.productIdx}`]} onSaved={handleSaved} onDeleted={handleDeleted} />
+                          ) : displayName}
+                        </h2>
+                        <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, fontFamily: FONT_BODY }}>{product.sub}</p>
+                      </div>
+
+                      {/* Size options */}
+                      <div>
+                        <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, marginBottom: 12, fontFamily: FONT_BODY }}>Chọn kích thước:</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {POPUP_SIZES.map(sz => {
+                            const szPrice = content[sz.priceKey] || POPUP_DEFAULT_PRICES[POPUP_SIZES.indexOf(sz)];
+                            const isActive = pp.sizeId === sz.id;
+                            return (
+                              <div key={sz.id}
+                                onClick={() => setProductPopup(prev => prev ? { ...prev, sizeId: sz.id } : null)}
+                                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", border: `1.5px solid ${isActive ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: isActive ? `rgba(139,105,20,0.06)` : BLACK, cursor: "pointer", transition: "all 0.15s" }}
+                              >
+                                <span style={{ color: isActive ? GOLD : WHITE, fontSize: 13, fontWeight: isActive ? 600 : 400, fontFamily: FONT_BODY }}>{sz.label}</span>
+                                <span style={{ color: GOLD, fontSize: 14, fontWeight: 700, fontFamily: FONT_HEADING }}>
+                                  {editMode ? (
+                                    <EditableText slug={LP_SLUG} blockKey={sz.priceKey} defaultValue={POPUP_DEFAULT_PRICES[POPUP_SIZES.indexOf(sz)]} editMode={editMode} as="span" savedValue={content[sz.priceKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
+                                  ) : szPrice}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Selected price summary */}
+                      <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "14px 16px" }}>
+                        <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Kích thước đã chọn</div>
+                        <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{selectedSizeObj.label}</div>
+                        <div style={{ color: GOLD, fontSize: 20, fontWeight: 700, fontFamily: FONT_HEADING, marginTop: 4 }}>{sizePrice}</div>
+                      </div>
+
+                      <GoldButton
+                        onClick={() => setProductPopup(prev => prev ? { ...prev, step: "form" } : null)}
+                        style={{ width: "100%", justifyContent: "center", fontSize: 14, padding: "16px 24px" }}
+                      >
+                        Đặt mua ngay →
+                      </GoldButton>
+                      <p style={{ color: GRAY_LIGHT, fontSize: 11, textAlign: "center", fontFamily: FONT_BODY }}>
+                        Miễn phí giao hàng + lắp đặt • Bảo hành 3 năm
+                      </p>
+                    </>
+                  ) : popupSuccess ? (
+                    <div style={{ textAlign: "center", padding: "40px 16px" }}>
+                      <div style={{ width: 72, height: 72, borderRadius: "50%", background: `rgba(139,105,20,0.1)`, border: `2px solid ${GOLD}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      <h3 style={{ fontSize: 22, fontWeight: 600, color: GOLD, marginBottom: 12, fontFamily: FONT_HEADING }}>Đặt hàng thành công!</h3>
+                      <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.75, fontFamily: FONT_BODY }}>Cảm ơn bạn đã tin tưởng SmartFurni.<br />Đội ngũ tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 2 giờ làm việc.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Back button */}
+                      <button
+                        onClick={() => setProductPopup(prev => prev ? { ...prev, step: "detail" } : null)}
+                        style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: GOLD, cursor: "pointer", fontSize: 13, fontFamily: FONT_BODY, padding: 0 }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke={GOLD} strokeWidth="2" strokeLinecap="round"/></svg>
+                        Quay lại chọn kích thước
+                      </button>
+
+                      {/* Order summary */}
+                      <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "12px 16px" }}>
+                        <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Sản phẩm đã chọn</div>
+                        <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{displayName} — {selectedSizeObj.label}</div>
+                        <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, marginTop: 2 }}>{sizePrice}</div>
+                      </div>
+
+                      {/* Form */}
+                      <form onSubmit={handlePopupSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_BODY }}>Thông tin nhận hàng</div>
+                        {([
+                          { key: "name", placeholder: "Họ và tên (*)", type: "text" },
+                          { key: "phone", placeholder: "Số điện thoại (*)", type: "tel" },
+                          { key: "address", placeholder: "Địa chỉ giao hàng", type: "text" },
+                        ] as { key: keyof typeof popupForm; placeholder: string; type: string }[]).map(f => (
+                          <input
+                            key={f.key}
+                            type={f.type}
+                            placeholder={f.placeholder}
+                            value={popupForm[f.key]}
+                            onChange={e => setPopupForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                            style={{ width: "100%", background: "rgba(139,105,20,0.04)", border: `1px solid rgba(139,105,20,0.2)`, color: WHITE, padding: "13px 16px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD }}
+                          />
+                        ))}
+                        <textarea
+                          placeholder="Ghi chú thêm (màu sắc, yêu cầu đặc biệt...)"
+                          value={popupForm.note}
+                          onChange={e => setPopupForm(prev => ({ ...prev, note: e.target.value }))}
+                          style={{ width: "100%", background: "rgba(139,105,20,0.04)", border: `1px solid rgba(139,105,20,0.2)`, color: WHITE, padding: "13px 16px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD, minHeight: 72, resize: "vertical" }}
+                        />
+                        {popupError && <div style={{ color: RED_SOFT, fontSize: 13, fontFamily: FONT_BODY }}>{popupError}</div>}
+                        <GoldButton style={{ width: "100%", justifyContent: "center", fontSize: 14, padding: "16px 24px" }}>
+                          {popupLoading ? "Đang gửi..." : "Xác nhận Đặt Hàng →"}
+                        </GoldButton>
+                        <p style={{ color: GRAY_LIGHT, fontSize: 11, textAlign: "center", fontFamily: FONT_BODY }}>Miễn phí giao hàng + lắp đặt • Bảo hành 3 năm chính hãng</p>
+                      </form>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── COMPARISON TABLE ── */}
       <section className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>

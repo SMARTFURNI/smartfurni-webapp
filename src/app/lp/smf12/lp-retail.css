@@ -502,3 +502,21 @@ nav[style*="position: fixed"] {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ── Products: 3 cột desktop, 1 cột mobile ── */
+@media (max-width: 768px) {
+  .lp-products-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* ── Popup: 2 cột desktop, 1 cột mobile ── */
+@media (max-width: 640px) {
+  .lp-popup-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .lp-popup-left {
+    border-radius: 16px 16px 0 0 !important;
+  }
+}
