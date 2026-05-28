@@ -495,3 +495,10 @@ nav[style*="position: fixed"] {
   70%  { transform: scale(2.2); opacity: 0;   }
   100% { transform: scale(2.2); opacity: 0;   }
 }
+
+/* ── Specs layout: 2 cột desktop, 1 cột mobile ── */
+@media (max-width: 768px) {
+  .lp-specs-layout {
+    grid-template-columns: 1fr !important;
+  }
+}

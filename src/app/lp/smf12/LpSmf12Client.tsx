@@ -1333,28 +1333,47 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             </div>
           </FadeIn>
           <FadeIn delay={100}>
-            <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
-              {[
-                ["Kích thước (sofa)", "0,9m / 1,2m / 1,4m / 1,6m × 0,9m × 0,85m (C)"],
-                ["Kích thước (giường)", "0,9m / 1,2m / 1,4m / 1,6m × 2,0m"],
-                ["Tải trọng tối đa", "250 kg"],
-                ["Chất liệu bọc", "Da PU nhập khẩu — kháng nước, kháng UV"],
-                ["Đệm ngồi/nằm", "Foam D40 dày 12cm + memory foam 3cm"],
-                ["Khung chính", "Gỗ thông xử lý chống mối + thanh giằng thép mạ kẽm"],
-                ["Cơ cấu gập mở", "SmartFold — 1 thao tác, không cần dụng cụ"],
-                ["Số lần gập mở kiểm định", "50.000 lần"],
-                ["Chân sofa", "Gỗ sồi tự nhiên / thép sơn tĩnh điện (tuỳ phiên bản)"],
-                ["Màu sắc", "Đen, Nâu, Xám tro, Be (kem)"],
-                ["Bảo hành da", "3 năm chính hãng"],
-                ["Bảo hành khung", "2 năm"],
-                ["Trọng lượng", "~38 kg (1m4) / ~44 kg (1m6)"],
-                ["Xuất xứ", "Việt Nam — chất liệu nhập khẩu"],
-              ].map(([label, value], i) => (
-                <div key={i} style={{ display: "flex", padding: "14px 24px", background: i % 2 === 0 ? BLACK_CARD : BLACK, borderBottom: i < 13 ? `1px solid ${BLACK_BORDER}` : "none" }}>
-                  <div style={{ width: "40%", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, flexShrink: 0 }}>{label}</div>
-                  <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{value}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }} className="lp-specs-layout">
+              {/* Bảng thông số bên trái */}
+              <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
+                {[
+                  ["Kích thước (sofa)", "0,9m / 1,2m / 1,4m / 1,6m × 0,9m × 0,85m (C)"],
+                  ["Kích thước (giường)", "0,9m / 1,2m / 1,4m / 1,6m × 2,0m"],
+                  ["Tải trọng tối đa", "250 kg"],
+                  ["Chất liệu bọc", "Da PU nhập khẩu — kháng nước, kháng UV"],
+                  ["Đệm ngồi/nằm", "Foam D40 dày 12cm + memory foam 3cm"],
+                  ["Khung chính", "Gỗ thông xử lý chống mối + thanh giằng thép mạ kẽm"],
+                  ["Cơ cấu gập mở", "SmartFold — 1 thao tác, không cần dụng cụ"],
+                  ["Số lần gập mở kiểm định", "50.000 lần"],
+                  ["Chân sofa", "Gỗ sồi tự nhiên / thép sơn tĩnh điện (tuỳ phiên bản)"],
+                  ["Màu sắc", "Đen, Nâu, Xám tro, Be (kem)"],
+                  ["Bảo hành da", "3 năm chính hãng"],
+                  ["Bảo hành khung", "2 năm"],
+                  ["Trọng lượng", "~38 kg (1m4) / ~44 kg (1m6)"],
+                  ["Xuất xứ", "Việt Nam — chất liệu nhập khẩu"],
+                ].map(([label, value], i) => (
+                  <div key={i} style={{ display: "flex", padding: "14px 24px", background: i % 2 === 0 ? BLACK_CARD : BLACK, borderBottom: i < 13 ? `1px solid ${BLACK_BORDER}` : "none" }}>
+                    <div style={{ width: "40%", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, flexShrink: 0 }}>{label}</div>
+                    <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Ảnh 1:1 bên phải */}
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+                <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
+                  {content["specs_img"] ? (
+                    <Image src={content["specs_img"]} alt="SmartFurni SMF12" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
+                  ) : (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
+                      <span style={{ fontSize: 12, fontFamily: FONT_BODY }}>Ảnh sản phẩm</span>
+                    </div>
+                  )}
+                  {editMode && (
+                    <ImageUploadOverlay blockKey="specs_img" currentUrl={content["specs_img"] || ""} onUploaded={handleSaved} />
+                  )}
                 </div>
-              ))}
+              </div>
             </div>
           </FadeIn>
         </div>
