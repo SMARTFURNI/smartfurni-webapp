@@ -1657,47 +1657,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         </div>
       </section>
 
-      {/* ── VIDEO REELS (dọc) ── */}
-      <section className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
-        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
-          <FadeIn>
-            <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>{E({ bk: "reels_section_label", def: "Video ngắn từ khách hàng", as: "span" })}</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
-                {E({ bk: "reels_title", def: "Khách Hàng Nói Gì Về SMF12?", as: "span" })}
-              </h2>
-              <GoldDivider />
-            </div>
-          </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="lp-reels-grid">
-            {[
-              { bkId: "reel_1_id", bkCaption: "reel_1_caption", defCaption: "Chị Lan — TP.HCM: 'Mua cho phòng trọ, tiết kiệm không gian cực kỳ!'" },
-              { bkId: "reel_2_id", bkCaption: "reel_2_caption", defCaption: "Anh Minh — Hà Nội: 'Da PU dễ lau, có con nhỏ không lo bẩn'" },
-              { bkId: "reel_3_id", bkCaption: "reel_3_caption", defCaption: "Chị Hương — Đà Nẵng: 'Gấp mở 1 tay, quá tiện luôn'" },
-            ].map((r, i) => (
-              <FadeIn key={i} delay={i * 100}>
-                <div>
-                  <div style={{ position: "relative", paddingBottom: "177.78%", background: "#111", borderRadius: R_MD }}>
-                    {content[r.bkId] && content[r.bkId] !== "_placeholder_" ? (
-                      <iframe src={`https://www.youtube.com/embed/${content[r.bkId]}?controls=1&rel=0`} title={r.defCaption} allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
-                    ) : (
-                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: BLACK_CARD }}>
-                        <span style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, textAlign: "center", padding: "0 16px" }}>Video chưa cập nhật</span>
-                      </div>
-                    )}
-                  </div>
-                  {editMode && (
-                    <VideoEditOverlay blockKey={r.bkId} currentId={content[r.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />
-                  )}
-                  <p style={{ color: GRAY, fontSize: 12, lineHeight: 1.6, marginTop: 10, fontFamily: FONT_BODY }}>
-                    {E({ bk: r.bkCaption, def: r.defCaption, as: "span", multiline: true })}
-                  </p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* ── TRUST / SOCIAL PROOF ── */}
       <section id="testimonials" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
