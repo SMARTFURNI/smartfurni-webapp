@@ -1223,9 +1223,9 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           {/* Trust badges — desktop: nằm trong flow; mobile: order 4 */}
           <div className="lp-hero-badges" style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 24px 72px", width: "100%", boxSizing: "border-box" as const, borderTop: `1px solid rgba(139,105,20,0.25)`, marginTop: 28, display: "flex", gap: 32, flexWrap: "wrap" as const }}>
             {[
-              { num: "3 Năm", label: "Bảo hành da" },
+              { num: "2 Năm", label: "Bảo hành da" },
               { num: "50.000", label: "Lần gập mở" },
-              { num: "D40", label: "Đệm foam cao cấp" },
+              { num: "10CM", label: "Đệm foam cao cấp" },
               { num: "100%", label: "Da PU nhập khẩu" },
             ].map((b, i) => (
               <div key={i} style={{ textAlign: "center" }}>
