@@ -783,7 +783,9 @@ function StickyCta({ scrollToForm, E: EditFn }: { scrollToForm: () => void; E: E
         <div style={{ color: WHITE, fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING }}>
           {EditFn({ bk: "sticky_price", def: "Từ 8.490.000 ₫", as: "span" })}
         </div>
-        <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY }}>Miễn phí giao hàng + lắp đặt</div>
+        <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY }}>
+          {EditFn({ bk: "sticky_sub", def: "Miễn phí giao hàng + lắp đặt", as: "span" })}
+        </div>
       </div>
       <GoldButton onClick={scrollToForm} style={{ padding: "12px 24px", fontSize: 12 }}>
         {EditFn({ bk: "sticky_cta", def: "Đặt Hàng Ngay →", as: "span" })}
@@ -793,7 +795,7 @@ function StickyCta({ scrollToForm, E: EditFn }: { scrollToForm: () => void; E: E
 }
 
 // ─── LeadForm ─────────────────────────────────────────────────────────────────
-function LeadForm({ submitLabel, selectedSize }: { submitLabel?: string; selectedSize?: string }) {
+function LeadForm({ E: EditFn, content, submitLabelKey = "form_submit", submitLabelDefault = "Tư Vấn & Đặt Hàng Ngay →", selectedSize }: { E: EFn; content: Record<string, string>; submitLabelKey?: string; submitLabelDefault?: string; selectedSize?: string }) {
   const [step, setStep] = useState(1);
   const [quiz, setQuiz] = useState({ roomSize: "", usage: "", budget: "" });
   const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
@@ -806,17 +808,18 @@ function LeadForm({ submitLabel, selectedSize }: { submitLabel?: string; selecte
     setUtms({ utmSource: p.get("utm_source") || "", utmMedium: p.get("utm_medium") || "", utmCampaign: p.get("utm_campaign") || "", utmContent: p.get("utm_content") || "" });
   }, []);
   const setF = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(prev => ({ ...prev, [k]: e.target.value }));
+  const getText = (key: string, def: string) => content[key] || def;
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim()) { setError("Vui lòng điền đầy đủ Họ tên và Số điện thoại (*)"); return; }
-    if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.replace(/\s/g, ""))) { setError("Số điện thoại không hợp lệ"); return; }
+    if (!form.name.trim() || !form.phone.trim()) { setError(getText("form_error_required", "Vui lòng điền đầy đủ Họ tên và Số điện thoại (*)")); return; }
+    if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.replace(/\s/g, ""))) { setError(getText("form_error_phone", "Số điện thoại không hợp lệ")); return; }
     setLoading(true); setError("");
     try {
-      const noteStr = `Kích thước chọn: ${selectedSize || quiz.roomSize} | Mục đích: ${quiz.usage} | Ngân sách: ${quiz.budget} | Địa chỉ: ${form.address} | Ghi chú: ${form.note}`;
+      const noteStr = `${getText("form_payload_size_prefix", "Kích thước chọn")}: ${selectedSize || quiz.roomSize} | ${getText("form_payload_usage_prefix", "Mục đích")}: ${quiz.usage} | ${getText("form_payload_budget_prefix", "Ngân sách")}: ${quiz.budget} | ${getText("form_payload_address_prefix", "Địa chỉ")}: ${form.address} | ${getText("form_payload_note_prefix", "Ghi chú")}: ${form.note}`;
       const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }) });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || getText("form_error_server", "Lỗi server")); }
       setSuccess(true);
-    } catch (err: unknown) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : getText("form_error_unknown", "Có lỗi xảy ra, vui lòng thử lại")); }
     finally { setLoading(false); }
   }
   const inp: React.CSSProperties = { width: "100%", background: "rgba(139,105,20,0.04)", border: `1px solid rgba(139,105,20,0.2)`, color: WHITE, padding: "13px 16px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box" as const, transition: "border-color 0.2s", borderRadius: R_MD };
@@ -825,8 +828,8 @@ function LeadForm({ submitLabel, selectedSize }: { submitLabel?: string; selecte
       <div style={{ width: 72, height: 72, borderRadius: "50%", background: `rgba(139,105,20,0.1)`, border: `2px solid ${GOLD}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </div>
-      <h3 style={{ fontSize: 24, fontWeight: 600, color: GOLD, marginBottom: 12, fontFamily: FONT_HEADING }}>Đặt hàng thành công!</h3>
-      <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY }}>Cảm ơn bạn đã tin tưởng SmartFurni.<br />Đội ngũ tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 2 giờ làm việc để xác nhận đơn hàng.</p>
+      <h3 style={{ fontSize: 24, fontWeight: 600, color: GOLD, marginBottom: 12, fontFamily: FONT_HEADING }}>{EditFn({ bk: "form_success_title", def: "Đặt hàng thành công!", as: "span" })}</h3>
+      <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY }}>{EditFn({ bk: "form_success_desc", def: "Cảm ơn bạn đã tin tưởng SmartFurni. Đội ngũ tư vấn sẽ liên hệ qua Zalo / điện thoại trong vòng 2 giờ làm việc để xác nhận đơn hàng.", as: "span", multiline: true })}</p>
     </div>
   );
   return (
@@ -844,30 +847,40 @@ function LeadForm({ submitLabel, selectedSize }: { submitLabel?: string; selecte
           ))}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: step === 1 ? GOLD : GRAY, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.06em" }}>BƯỚC 1 — Thông tin nhu cầu</span>
-          <span style={{ color: step === 2 ? GOLD : GRAY, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.06em" }}>BƯỚC 2 — Thông tin liên hệ</span>
+          <span style={{ color: step === 1 ? GOLD : GRAY, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.06em" }}>{EditFn({ bk: "form_step_1_label", def: "BƯỚC 1 — Thông tin nhu cầu", as: "span" })}</span>
+          <span style={{ color: step === 2 ? GOLD : GRAY, fontSize: 11, fontWeight: 600, fontFamily: FONT_BODY, letterSpacing: "0.06em" }}>{EditFn({ bk: "form_step_2_label", def: "BƯỚC 2 — Thông tin liên hệ", as: "span" })}</span>
         </div>
       </div>
       {step === 1 && (
         <div>
           {/* Kích thước phòng */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 14, fontFamily: FONT_BODY }}>Diện tích phòng của bạn?</div>
+            <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 14, fontFamily: FONT_BODY }}>{EditFn({ bk: "form_room_question", def: "Diện tích phòng của bạn?", as: "span" })}</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
-              {[{ v: "small", l: "Dưới 15m²", sub: "Phòng nhỏ / studio" }, { v: "medium", l: "15–25m²", sub: "Phòng trung bình" }, { v: "large", l: "25–40m²", sub: "Phòng rộng" }, { v: "xlarge", l: "Trên 40m²", sub: "Phòng lớn / căn hộ" }].map(o => (
+              {[
+                { v: "small", labelKey: "form_room_0_label", l: "Dưới 15m²", subKey: "form_room_0_sub", sub: "Phòng nhỏ / studio" },
+                { v: "medium", labelKey: "form_room_1_label", l: "15–25m²", subKey: "form_room_1_sub", sub: "Phòng trung bình" },
+                { v: "large", labelKey: "form_room_2_label", l: "25–40m²", subKey: "form_room_2_sub", sub: "Phòng rộng" },
+                { v: "xlarge", labelKey: "form_room_3_label", l: "Trên 40m²", subKey: "form_room_3_sub", sub: "Phòng lớn / căn hộ" },
+              ].map(o => (
                 <button key={o.v} onClick={() => setQuiz(q => ({ ...q, roomSize: o.v }))}
                   style={{ padding: "14px 16px", border: `1.5px solid ${quiz.roomSize === o.v ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: quiz.roomSize === o.v ? `rgba(139,105,20,0.08)` : BLACK, cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
-                  <div style={{ color: quiz.roomSize === o.v ? GOLD : WHITE, fontWeight: 600, fontSize: 13, fontFamily: FONT_BODY }}>{o.l}</div>
-                  <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginTop: 2 }}>{o.sub}</div>
+                  <div style={{ color: quiz.roomSize === o.v ? GOLD : WHITE, fontWeight: 600, fontSize: 13, fontFamily: FONT_BODY }}>{EditFn({ bk: o.labelKey, def: o.l, as: "span" })}</div>
+                  <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginTop: 2 }}>{EditFn({ bk: o.subKey, def: o.sub, as: "span" })}</div>
                 </button>
               ))}
             </div>
           </div>
           {/* Mục đích sử dụng */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 14, fontFamily: FONT_BODY }}>Mục đích sử dụng chính?</div>
+            <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 14, fontFamily: FONT_BODY }}>{EditFn({ bk: "form_usage_question", def: "Mục đích sử dụng chính?", as: "span" })}</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
-              {[{ v: "daily", l: "Ngủ hàng ngày", sub: "Phòng ngủ chính" }, { v: "guest", l: "Phòng khách", sub: "Tiếp khách + ngủ thỉnh thoảng" }, { v: "office", l: "Phòng làm việc", sub: "Nghỉ trưa, thư giãn" }, { v: "rental", l: "Cho thuê", sub: "Căn hộ dịch vụ, homestay" }].map(o => (
+              {[
+                { v: "daily", labelKey: "form_usage_0_label", l: "Ngủ hàng ngày", subKey: "form_usage_0_sub", sub: "Phòng ngủ chính" },
+                { v: "guest", labelKey: "form_usage_1_label", l: "Phòng khách", subKey: "form_usage_1_sub", sub: "Tiếp khách + ngủ thỉnh thoảng" },
+                { v: "office", labelKey: "form_usage_2_label", l: "Phòng làm việc", subKey: "form_usage_2_sub", sub: "Nghỉ trưa, thư giãn" },
+                { v: "rental", labelKey: "form_usage_3_label", l: "Cho thuê", subKey: "form_usage_3_sub", sub: "Căn hộ dịch vụ, homestay" },
+              ].map(o => (
                 <button key={o.v} onClick={() => setQuiz(q => ({ ...q, usage: o.v }))}
                   style={{ padding: "14px 16px", border: `1.5px solid ${quiz.usage === o.v ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: quiz.usage === o.v ? `rgba(139,105,20,0.08)` : BLACK, cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
                   <div style={{ color: quiz.usage === o.v ? GOLD : WHITE, fontWeight: 600, fontSize: 13, fontFamily: FONT_BODY }}>{o.l}</div>
@@ -877,7 +890,7 @@ function LeadForm({ submitLabel, selectedSize }: { submitLabel?: string; selecte
             </div>
           </div>
           <GoldButton onClick={() => setStep(2)} style={{ width: "100%", justifyContent: "center" }}>
-            Tiếp theo — Nhận tư vấn →
+            {EditFn({ bk: "form_next_btn", def: "Tiếp theo — Nhận tư vấn →", as: "span" })}
           </GoldButton>
         </div>
       )}
@@ -887,19 +900,19 @@ function LeadForm({ submitLabel, selectedSize }: { submitLabel?: string; selecte
             <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "12px 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               <span style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>
-                {selectedSize ? `Kích thước đã chọn: ${selectedSize}` : `Phòng ${quiz.roomSize} · ${quiz.usage}`}
+                {selectedSize ? `${getText("form_selected_size_prefix", "Kích thước đã chọn")}: ${selectedSize}` : `${getText("form_room_summary_prefix", "Phòng")} ${quiz.roomSize} · ${quiz.usage}`}
               </span>
             </div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <input style={inp} placeholder="Họ và tên (*)" value={form.name} onChange={setF("name")} required />
-            <input style={inp} placeholder="Số điện thoại (*)" value={form.phone} onChange={setF("phone")} required />
-            <input style={inp} placeholder="Địa chỉ giao hàng" value={form.address} onChange={setF("address")} />
-            <textarea style={{ ...inp, minHeight: 80, resize: "vertical" }} placeholder="Ghi chú thêm (màu sắc, yêu cầu đặc biệt...)" value={form.note} onChange={setF("note")} />
+            <input style={inp} placeholder={getText("form_name_placeholder", "Họ và tên (*)")} value={form.name} onChange={setF("name")} required />
+            <input style={inp} placeholder={getText("form_phone_placeholder", "Số điện thoại (*)")} value={form.phone} onChange={setF("phone")} required />
+            <input style={inp} placeholder={getText("form_address_placeholder", "Địa chỉ giao hàng")} value={form.address} onChange={setF("address")} />
+            <textarea style={{ ...inp, minHeight: 80, resize: "vertical" }} placeholder={getText("form_note_placeholder", "Ghi chú thêm (màu sắc, yêu cầu đặc biệt...)")} value={form.note} onChange={setF("note")} />
           </div>
           {error && <div style={{ color: RED_SOFT, fontSize: 13, marginTop: 12, fontFamily: FONT_BODY }}>{error}</div>}
           <GoldButton style={{ width: "100%", marginTop: 20, justifyContent: "center", fontSize: 14, padding: "16px 24px" }}>
-            {loading ? "Đang gửi..." : (submitLabel || "Tư Vấn & Đặt Hàng Ngay →")}
+            {loading ? getText("form_loading", "Đang gửi...") : EditFn({ bk: submitLabelKey, def: submitLabelDefault, as: "span" })}
           </GoldButton>
           <p style={{ color: GRAY_LIGHT, fontSize: 11, textAlign: "center", marginTop: 12, fontFamily: FONT_BODY }}>
             
@@ -1223,14 +1236,18 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           {/* Trust badges — desktop: nằm trong flow; mobile: order 4 */}
           <div className="lp-hero-badges" style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 24px 72px", width: "100%", boxSizing: "border-box" as const, borderTop: `1px solid rgba(139,105,20,0.25)`, marginTop: 28, display: "flex", gap: 32, flexWrap: "wrap" as const }}>
             {[
-              { num: "2 Năm", label: "Bảo hành da" },
-              { num: "50.000", label: "Lần gập mở" },
-              { num: "10CM", label: "Đệm foam cao cấp" },
-              { num: "100%", label: "Da PU nhập khẩu" },
+              { numKey: "hero_badge_0_num", num: "2 Năm", labelKey: "hero_badge_0_label", label: "Bảo hành da" },
+              { numKey: "hero_badge_1_num", num: "50.000", labelKey: "hero_badge_1_label", label: "Lần gập mở" },
+              { numKey: "hero_badge_2_num", num: "10CM", labelKey: "hero_badge_2_label", label: "Đệm foam cao cấp" },
+              { numKey: "hero_badge_3_num", num: "100%", labelKey: "hero_badge_3_label", label: "Da PU nhập khẩu" },
             ].map((b, i) => (
               <div key={i} style={{ textAlign: "center" }}>
-                <div style={{ color: GOLD_PALE, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1, letterSpacing: "-0.01em" }}>{b.num}</div>
-                <div style={{ color: "rgba(253,250,245,0.5)", fontSize: 10, fontFamily: FONT_BODY, marginTop: 5, letterSpacing: "0.07em", textTransform: "uppercase" as const }}>{b.label}</div>
+                <div style={{ color: GOLD_PALE, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1, letterSpacing: "-0.01em" }}>
+                  {E({ bk: b.numKey, def: b.num, as: "span" })}
+                </div>
+                <div style={{ color: "rgba(253,250,245,0.5)", fontSize: 10, fontFamily: FONT_BODY, marginTop: 5, letterSpacing: "0.07em", textTransform: "uppercase" as const }}>
+                  {E({ bk: b.labelKey, def: b.label, as: "span" })}
+                </div>
               </div>
             ))}
           </div>
@@ -2089,13 +2106,13 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           <FadeIn delay={200}>
             <div style={{ textAlign: "center", marginTop: 36, padding: "24px", background: BLACK_CARD, borderRadius: R_LG, border: `1px solid ${BLACK_BORDER}` }}>
               <p style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, marginBottom: 16 }}>
-                Còn câu hỏi khác? Đội tư vấn SmartFurni sẵn sàng hỗ trợ bạn
+                {E({ bk: "faq_help_text", def: "Còn câu hỏi khác? Đội tư vấn SmartFurni sẵn sàng hỗ trợ bạn", as: "span" })}
               </p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                <a href="tel:0123456789" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD, color: "#FDFAF5", padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconPhone color="#FDFAF5" size={14} />Gọi ngay
+                <a href="tel:0123456789" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD, color: "#FDFAF5", padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconPhone color="#FDFAF5" size={14} />{E({ bk: "faq_call_btn", def: "Gọi ngay", as: "span" })}
                   
                 </a>
-                <a href="https://zalo.me/0123456789" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: GOLD, border: `1px solid ${GOLD}`, padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconChat color={GOLD} size={14} />Chat Zalo
+                <a href="https://zalo.me/0123456789" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: GOLD, border: `1px solid ${GOLD}`, padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconChat color={GOLD} size={14} />{E({ bk: "faq_zalo_btn", def: "Chat Zalo", as: "span" })}
                   
                 </a>
               </div>
@@ -2124,24 +2141,24 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             <FadeIn>
               <div>
                 <div style={{ marginBottom: 32 }}>
-                  <div style={{ color: WHITE, fontSize: 16, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 20 }}>Khi đặt hàng hôm nay, bạn nhận được:</div>
+                  <div style={{ color: WHITE, fontSize: 16, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 20 }}>{E({ bk: "form_benefits_title", def: "Khi đặt hàng hôm nay, bạn nhận được:", as: "span" })}</div>
                   {[
-                    { icon: <IconCheck color={GOLD} size={16} />, text: "Tư vấn kích thước phù hợp miễn phí" },
-                    { icon: <IconCheck color={GOLD} size={16} />, text: "Báo giá chính xác theo nhu cầu" },
-                    { icon: <IconCheck color={GOLD} size={16} />, text: "Giao hàng + lắp đặt miễn phí toàn quốc" },
-                    { icon: <IconCheck color={GOLD} size={16} />, text: "Tặng bộ ga gối trị giá 890.000₫" },
-                    { icon: <IconCheck color={GOLD} size={16} />, text: "Bảo hành 3 năm da PU chính hãng" },
-                    { icon: <IconCheck color={GOLD} size={16} />, text: "Hỗ trợ kỹ thuật tận nơi suốt thời gian bảo hành" },
+                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_0", text: "Tư vấn kích thước phù hợp miễn phí" },
+                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_1", text: "Báo giá chính xác theo nhu cầu" },
+                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_2", text: "Giao hàng + lắp đặt miễn phí toàn quốc" },
+                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_3", text: "Tặng bộ ga gối trị giá 890.000₫" },
+                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_4", text: "Bảo hành 3 năm da PU chính hãng" },
+                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_5", text: "Hỗ trợ kỹ thuật tận nơi suốt thời gian bảo hành" },
                   ].map((b, i) => (
                     <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}>
                       <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>{b.icon}</span>
-                      <span style={{ color: GRAY, fontSize: 14, lineHeight: 1.6, fontFamily: FONT_BODY }}>{b.text}</span>
+                      <span style={{ color: GRAY, fontSize: 14, lineHeight: 1.6, fontFamily: FONT_BODY }}>{E({ bk: b.key, def: b.text, as: "span" })}</span>
                     </div>
                   ))}
                 </div>
                 {/* Price range */}
                 <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "24px 20px" }}>
-                  <div style={{ color: GRAY_LIGHT, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 12, fontFamily: FONT_BODY }}>BẢNG GIÁ SMF12</div>
+                  <div style={{ color: GRAY_LIGHT, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 12, fontFamily: FONT_BODY }}>{E({ bk: "form_price_title", def: "BẢNG GIÁ SMF12", as: "span" })}</div>
                   {SIZES.map((s, i) => (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < SIZES.length - 1 ? `1px solid ${BLACK_BORDER}` : "none" }}>
                       <span style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>{s.label}</span>
@@ -2149,14 +2166,14 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                     </div>
                   ))}
                   <p style={{ color: GRAY_LIGHT, fontSize: 11, marginTop: 12, fontFamily: FONT_BODY, fontStyle: "italic" }}>
-                    * Đã bao gồm VAT, giao hàng và lắp đặt
+                    {E({ bk: "form_price_note", def: "* Đã bao gồm VAT, giao hàng và lắp đặt", as: "span" })}
                   </p>
                 </div>
               </div>
             </FadeIn>
             {/* Right side — form */}
             <FadeIn delay={150}>
-              <LeadForm submitLabel="Đặt Hàng & Nhận Tư Vấn Ngay →" selectedSize={selectedSize} />
+              <LeadForm E={E} content={content} submitLabelKey="form_submit_register" submitLabelDefault="Đặt Hàng & Nhận Tư Vấn Ngay →" selectedSize={selectedSize} />
             </FadeIn>
           </div>
         </div>
@@ -2194,7 +2211,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             <div>
               <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 40, objectFit: "contain", marginBottom: 16 }} />
               <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, marginBottom: 20, maxWidth: 280 }}>
-                SmartFurni — Nội thất thông minh Việt Nam. Chuyên cung cấp sofa giường đa năng chất lượng cao, phù hợp với không gian sống hiện đại.
+                {E({ bk: "footer_brand_desc", def: "SmartFurni — Nội thất thông minh Việt Nam. Chuyên cung cấp sofa giường đa năng chất lượng cao, phù hợp với không gian sống hiện đại.", as: "span", multiline: true })}
               </p>
               <div style={{ display: "flex", gap: 12 }}>
                 {["Facebook", "Zalo", "YouTube", "TikTok"].map(s => (
@@ -2206,41 +2223,54 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             </div>
             {/* Sản phẩm */}
             <div>
-              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>SẢN PHẨM</div>
-              {["Sofa Giường SMF12", "Sofa Giường GSF150", "Sofa Giường Da Thật", "Xem tất cả"].map(l => (
-                <div key={l} style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 10, cursor: "pointer" }}>{l}</div>
+              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>{E({ bk: "footer_products_title", def: "SẢN PHẨM", as: "span" })}</div>
+              {[
+                { key: "footer_product_0", text: "Sofa Giường SMF12" },
+                { key: "footer_product_1", text: "Sofa Giường GSF150" },
+                { key: "footer_product_2", text: "Sofa Giường Da Thật" },
+                { key: "footer_product_3", text: "Xem tất cả" },
+              ].map(l => (
+                <div key={l.key} style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 10, cursor: "pointer" }}>{E({ bk: l.key, def: l.text, as: "span" })}</div>
               ))}
             </div>
             {/* Hỗ trợ */}
             <div>
-              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>HỖ TRỢ</div>
-              {["Chính sách bảo hành", "Hướng dẫn sử dụng", "Chính sách đổi trả", "Câu hỏi thường gặp"].map(l => (
-                <div key={l} style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 10, cursor: "pointer" }}>{l}</div>
+              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>{E({ bk: "footer_support_title", def: "HỖ TRỢ", as: "span" })}</div>
+              {[
+                { key: "footer_support_0", text: "Chính sách bảo hành" },
+                { key: "footer_support_1", text: "Hướng dẫn sử dụng" },
+                { key: "footer_support_2", text: "Chính sách đổi trả" },
+                { key: "footer_support_3", text: "Câu hỏi thường gặp" },
+              ].map(l => (
+                <div key={l.key} style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 10, cursor: "pointer" }}>{E({ bk: l.key, def: l.text, as: "span" })}</div>
               ))}
             </div>
             {/* Liên hệ */}
             <div>
-              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>LIÊN HỆ</div>
+              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>{E({ bk: "footer_contact_title", def: "LIÊN HỆ", as: "span" })}</div>
               {[
-                { icon: <IconPhone color={GOLD} size={14} />, text: "0123 456 789" },
-                { icon: <IconMail color={GOLD} size={14} />, text: "info@smartfurni.vn" },
-                { icon: <IconPin color={GOLD} size={14} />, text: "TP. Hồ Chí Minh" },
-                { icon: <IconClock color={GOLD} size={14} />, text: "8:00 – 21:00 mỗi ngày" },
+                { icon: <IconPhone color={GOLD} size={14} />, key: "footer_contact_phone", text: "0123 456 789" },
+                { icon: <IconMail color={GOLD} size={14} />, key: "footer_contact_email", text: "info@smartfurni.vn" },
+                { icon: <IconPin color={GOLD} size={14} />, key: "footer_contact_city", text: "TP. Hồ Chí Minh" },
+                { icon: <IconClock color={GOLD} size={14} />, key: "footer_contact_time", text: "8:00 – 21:00 mỗi ngày" },
               ].map((c, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "flex-start" }}>
                   <span style={{ flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
-                  <span style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>{c.text}</span>
+                  <span style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>{E({ bk: c.key, def: c.text, as: "span" })}</span>
                 </div>
               ))}
             </div>
           </div>
           <div style={{ borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
             <p style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>
-              © 2025 SmartFurni. Tất cả quyền được bảo lưu.
+              {E({ bk: "footer_copyright", def: "© 2025 SmartFurni. Tất cả quyền được bảo lưu.", as: "span" })}
             </p>
             <div style={{ display: "flex", gap: 20 }}>
-              {["Chính sách bảo mật", "Điều khoản sử dụng"].map(l => (
-                <span key={l} style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, cursor: "pointer" }}>{l}</span>
+              {[
+                { key: "footer_policy_0", text: "Chính sách bảo mật" },
+                { key: "footer_policy_1", text: "Điều khoản sử dụng" },
+              ].map(l => (
+                <span key={l.key} style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, cursor: "pointer" }}>{E({ bk: l.key, def: l.text, as: "span" })}</span>
               ))}
             </div>
           </div>
