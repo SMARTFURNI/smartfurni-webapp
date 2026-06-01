@@ -950,6 +950,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   const [editedCount, setEditedCount] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
   const [productPopup, setProductPopup] = useState<{ productIdx: number; sizeId: string; imgIdx: number; step: "detail" | "form" } | null>(null);
+  const popupSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Typewriter effect for hero titles
   const TITLE_1 = content["hero_title_1"] || "Sofa Ban Ngày";
@@ -1003,6 +1004,33 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   const scrollToForm = useCallback(() => scrollTo("register-form"), []);
+
+  const goToPopupImage = useCallback((direction: -1 | 1) => {
+    setProductPopup(prev => {
+      if (!prev) return null;
+      const nextImgIdx = prev.imgIdx + direction;
+      if (nextImgIdx < 0 || nextImgIdx > 5) return prev;
+      return { ...prev, imgIdx: nextImgIdx };
+    });
+  }, []);
+
+  const handlePopupSwipeStart = useCallback((touch: React.Touch) => {
+    popupSwipeStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }, []);
+
+  const handlePopupSwipeEnd = useCallback((touch: React.Touch) => {
+    const start = popupSwipeStartRef.current;
+    popupSwipeStartRef.current = null;
+    if (!start) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (absX < 45 || absX < absY * 1.2) return;
+    goToPopupImage(deltaX < 0 ? 1 : -1);
+  }, [goToPopupImage]);
 
   const handleSaved = useCallback((key: string, val: string) => {
     setContent(prev => ({ ...prev, [key]: val }));
@@ -1690,7 +1718,11 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                 {/* LEFT: Image swiper */}
                 <div style={{ background: BLACK, borderRadius: `${R_LG}px 0 0 ${R_LG}px`, overflow: "hidden", position: "relative" }} className="lp-popup-left">
                   {/* Main image */}
-                  <div style={{ position: "relative", paddingBottom: "100%", background: BLACK }}>
+                  <div
+                    style={{ position: "relative", paddingBottom: "100%", background: BLACK, touchAction: "pan-y", userSelect: "none" }}
+                    onTouchStart={e => handlePopupSwipeStart(e.changedTouches[0])}
+                    onTouchEnd={e => handlePopupSwipeEnd(e.changedTouches[0])}
+                  >
                     {popupImgs[pp.imgIdx] ? (
                       <Image src={optimizeCldUrl(popupImgs[pp.imgIdx], 900)} alt={displayName} fill style={{ objectFit: "cover" }} sizes="50vw" />
                     ) : (
@@ -1702,13 +1734,13 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                     {editMode && <ImageUploadOverlay blockKey={`popup_img_${pp.productIdx}_${pp.imgIdx}`} currentUrl={popupImgs[pp.imgIdx]} onUploaded={handleSaved} />}
                     {/* Prev/Next arrows */}
                     {pp.imgIdx > 0 && (
-                      <button onClick={() => setProductPopup(prev => prev ? { ...prev, imgIdx: prev.imgIdx - 1 } : null)}
+                      <button onClick={() => goToPopupImage(-1)}
                         style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5 }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
                       </button>
                     )}
                     {pp.imgIdx < 5 && (
-                      <button onClick={() => setProductPopup(prev => prev ? { ...prev, imgIdx: prev.imgIdx + 1 } : null)}
+                      <button onClick={() => goToPopupImage(1)}
                         style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5 }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
                       </button>
