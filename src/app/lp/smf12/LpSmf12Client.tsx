@@ -1384,7 +1384,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             {[
               { bkImg: "showcase_img_0", badge: "CHẾ ĐỘ SOFA", bkCaption: "showcase_cap_0", defCaption: "Tư thế ngồi thoải mái — tiếp khách, làm việc" },
               { bkImg: "showcase_img_1", badge: "CHẾ ĐỘ GIƯỜNG", bkCaption: "showcase_cap_1", defCaption: "Trải phẳng hoàn toàn — ngủ êm ái như giường thật" },
-              { bkImg: "showcase_img_2", badge: "CHI TIẾT DA PU", bkCaption: "showcase_cap_2", defCaption: "Da PU nhập khẩu — mịn mượt, kháng nước, bền màu" },
+              { bkImg: "showcase_img_2", badge: "HỘC CHỨA ĐỒ", bkCaption: "showcase_cap_2", defCaption: "Hộc chứa đồ chăn mền gối ẩn dưới gầm. Tối ưu không gian" },
             ].map((item, i) => {
               const imgSrc = content[item.bkImg] || "";
               return (
