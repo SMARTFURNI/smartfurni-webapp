@@ -464,18 +464,18 @@ const PRODUCT_DETAILS = [
   },
 ];
 
-function ProductDetailSection({ editMode, content, handleSaved }: { editMode: boolean; content: Record<string, string>; handleSaved: (key: string, val: string) => void }) {
+function ProductDetailSection({ editMode, content, handleSaved, E: EditFn }: { editMode: boolean; content: Record<string, string>; handleSaved: (key: string, val: string) => void; E: EFn }) {
   return (
     <section id="demo" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
       <div style={{ maxWidth: 1060, margin: "0 auto" }}>
         <FadeIn>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <SectionLabel>Chi tiết sản phẩm</SectionLabel>
+            <SectionLabel>{EditFn({ bk: "detail_section_label", def: "Chi tiết sản phẩm", as: "span" })}</SectionLabel>
             <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
-              Thông Tin Chi Tiết
+              {EditFn({ bk: "detail_title_1", def: "Thông Tin Chi Tiết", as: "span" })}
             </h2>
             <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING, marginBottom: 8 }}>
-              SMF12 — Từng Chi Tiết Đều Được Chăm Chút
+              {EditFn({ bk: "detail_title_2", def: "SMF12 — Từng Chi Tiết Đều Được Chăm Chút", as: "span" })}
             </div>
             <GoldDivider />
           </div>
@@ -500,15 +500,19 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
               </div>
               <div style={{ padding: "8px 0" }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
-                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>01 / THIẾT KẾ</span>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>{EditFn({ bk: "detail_1_badge", def: "01 / THIẾT KẾ", as: "span" })}</span>
                 </div>
-                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Thiết Kế Sản Phẩm</h3>
-                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Đường nét tinh tế, da PU nhập khẩu mịn mượt — sang trọng trong mọi không gian sống. Màu sắc trung tính dễ phối hợp với mọi phong cách nội thất.</p>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>{EditFn({ bk: "detail_1_title", def: "Thiết Kế Sản Phẩm", as: "span" })}</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>{EditFn({ bk: "detail_1_desc", def: "Đường nét tinh tế, da PU nhập khẩu mịn mượt — sang trọng trong mọi không gian sống. Màu sắc trung tính dễ phối hợp với mọi phong cách nội thất.", as: "span", multiline: true })}</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {["Da PU nhập khẩu cao cấp, kháng nước", "4 màu sắc: Nâu, Xám, Kem, Đen", "Đường may tỉ mỉ, không bong chỉ"].map((t, i) => (
+                  {[
+                    { bk: "detail_1_bullet_1", def: "Da PU nhập khẩu cao cấp, kháng nước" },
+                    { bk: "detail_1_bullet_2", def: "4 màu sắc: Nâu, Xám, Kem, Đen" },
+                    { bk: "detail_1_bullet_3", def: "Đường may tỉ mỉ, không bong chỉ" },
+                  ].map((t, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                       <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
-                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{EditFn({ bk: t.bk, def: t.def, as: "span" })}</span>
                     </div>
                   ))}
                 </div>
@@ -523,15 +527,19 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
               <div style={{ padding: "8px 0", order: 0 }} className="lp-detail-text-left">
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
-                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>02 / THAO TÁC</span>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>{EditFn({ bk: "detail_2_badge", def: "02 / THAO TÁC", as: "span" })}</span>
                 </div>
-                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Thao Tác Sofa → Giường Ngủ</h3>
-                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Cơ cấu SmartFold 1 thao tác — chỉ kéo nhẹ là chuyển đổi hoàn toàn từ sofa sang giường ngủ. Không cần dụng cụ, không cần tháo lắp.</p>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>{EditFn({ bk: "detail_2_title", def: "Thao Tác Sofa → Giường Ngủ", as: "span" })}</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>{EditFn({ bk: "detail_2_desc", def: "Cơ cấu SmartFold 1 thao tác — chỉ kéo nhẹ là chuyển đổi hoàn toàn từ sofa sang giường ngủ. Không cần dụng cụ, không cần tháo lắp.", as: "span", multiline: true })}</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {["Chuyển đổi trong dưới 10 giây", "1 thao tác kéo/đẩy đơn giản", "Phù hợp cả người cao tuổi và trẻ em"].map((t, i) => (
+                  {[
+                    { bk: "detail_2_bullet_1", def: "Chuyển đổi trong dưới 10 giây" },
+                    { bk: "detail_2_bullet_2", def: "1 thao tác kéo/đẩy đơn giản" },
+                    { bk: "detail_2_bullet_3", def: "Phù hợp cả người cao tuổi và trẻ em" },
+                  ].map((t, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                       <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
-                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{EditFn({ bk: t.bk, def: t.def, as: "span" })}</span>
                     </div>
                   ))}
                 </div>
@@ -569,29 +577,29 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
                 {editMode && <ImageUploadOverlay blockKey="detail_img_2" currentUrl={content["detail_img_2"] || ""} onUploaded={handleSaved} />}
                 {/* Overlay badge */}
                 <div style={{ position: "absolute", bottom: 20, left: 20, background: `rgba(26,18,0,0.75)`, backdropFilter: "blur(8px)", borderRadius: R_MD, padding: "12px 20px", border: `1px solid rgba(139,105,20,0.3)` }}>
-                  <div style={{ color: GOLD_PALE, fontSize: 22, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>800kg</div>
-                  <div style={{ color: "rgba(253,250,245,0.75)", fontSize: 11, fontFamily: FONT_BODY, marginTop: 3 }}>Tải trọng chịu đựng</div>
+                  <div style={{ color: GOLD_PALE, fontSize: 22, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{EditFn({ bk: "detail_3_overlay_num", def: "800kg", as: "span" })}</div>
+                  <div style={{ color: "rgba(253,250,245,0.75)", fontSize: 11, fontFamily: FONT_BODY, marginTop: 3 }}>{EditFn({ bk: "detail_3_overlay_label", def: "Tải trọng chịu đựng", as: "span" })}</div>
                 </div>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="lp-detail-stats">
               {[
-                { num: "2mm", label: "Độ dày thép" },
-                { num: "Mạ kẽm", label: "Chống gỉ sét" },
-                { num: "10 năm", label: "Độ bền khung" },
+                { bkNum: "detail_3_stat_1_num", defNum: "2mm", bkLabel: "detail_3_stat_1_label", defLabel: "Độ dày thép" },
+                { bkNum: "detail_3_stat_2_num", defNum: "Mạ kẽm", bkLabel: "detail_3_stat_2_label", defLabel: "Chống gỉ sét" },
+                { bkNum: "detail_3_stat_3_num", defNum: "10 năm", bkLabel: "detail_3_stat_3_label", defLabel: "Độ bền khung" },
               ].map((s, i) => (
                 <div key={i} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_MD, padding: "16px", textAlign: "center" }}>
-                  <div style={{ color: GOLD, fontSize: 20, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 4 }}>{s.num}</div>
-                  <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{s.label}</div>
+                  <div style={{ color: GOLD, fontSize: 20, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 4 }}>{EditFn({ bk: s.bkNum, def: s.defNum, as: "span" })}</div>
+                  <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{EditFn({ bk: s.bkLabel, def: s.defLabel, as: "span" })}</div>
                 </div>
               ))}
             </div>
             <div style={{ marginTop: 20, padding: "0 4px" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 12 }}>
-                <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>03 / KHUNG THÉP</span>
+                <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>{EditFn({ bk: "detail_3_badge", def: "03 / KHUNG THÉP", as: "span" })}</span>
               </div>
-              <h3 style={{ fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 10, fontFamily: FONT_HEADING, color: WHITE }}>Khung Thép Mạ Kẽm Chắc Chắn — Chịu Tải 800kg</h3>
-              <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.8, fontFamily: FONT_BODY }}>Khung thép mạ kẽm dày 2mm, xử lý chống gỉ sét — đảm bảo độ bền vượt trội. Kết hợp với khung gỗ thông sấy khô đạt độ ẩm &lt;12%, tạo nên bộ khung vững chắc chịu tải 800kg.</p>
+              <h3 style={{ fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 10, fontFamily: FONT_HEADING, color: WHITE }}>{EditFn({ bk: "detail_3_title", def: "Khung Thép Mạ Kẽm Chắc Chắn — Chịu Tải 800kg", as: "span" })}</h3>
+              <p style={{ color: GRAY, fontSize: 14, lineHeight: 1.8, fontFamily: FONT_BODY }}>{EditFn({ bk: "detail_3_desc", def: "Khung thép mạ kẽm dày 2mm, xử lý chống gỉ sét — đảm bảo độ bền vượt trội. Kết hợp với khung gỗ thông sấy khô đạt độ ẩm <12%, tạo nên bộ khung vững chắc chịu tải 800kg.", as: "span", multiline: true })}</p>
             </div>
           </div>
         </FadeIn>
@@ -615,15 +623,19 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
               </div>
               <div style={{ padding: "8px 0" }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
-                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>04 / NGĂN CHỨA</span>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>{EditFn({ bk: "detail_4_badge", def: "04 / NGĂN CHỨA", as: "span" })}</span>
                 </div>
-                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Ngăn Chứa Đồ Thiết Kế Ẩn</h3>
-                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Thiết kế ngăn chứa ẩn bên dưới gầm sofa — tối ưu không gian lưu trữ mà không lộ liễu. Lý tưởng để chăn, gối, đồ dùng cá nhân.</p>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>{EditFn({ bk: "detail_4_title", def: "Ngăn Chứa Đồ Thiết Kế Ẩn", as: "span" })}</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>{EditFn({ bk: "detail_4_desc", def: "Thiết kế ngăn chứa ẩn bên dưới gầm sofa — tối ưu không gian lưu trữ mà không lộ liễu. Lý tưởng để chăn, gối, đồ dùng cá nhân.", as: "span", multiline: true })}</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {["Dung tích lớn, chứa được chăn gối", "Mở/đóng dễ dàng bằng 1 thao tác", "Thiết kế ẩn, giữ không gian gọn gàng"].map((t, i) => (
+                  {[
+                    { bk: "detail_4_bullet_1", def: "Dung tích lớn, chứa được chăn gối" },
+                    { bk: "detail_4_bullet_2", def: "Mở/đóng dễ dàng bằng 1 thao tác" },
+                    { bk: "detail_4_bullet_3", def: "Thiết kế ẩn, giữ không gian gọn gàng" },
+                  ].map((t, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                       <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
-                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{EditFn({ bk: t.bk, def: t.def, as: "span" })}</span>
                     </div>
                   ))}
                 </div>
@@ -638,15 +650,19 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="lp-detail-row">
               <div style={{ padding: "8px 0", order: 0 }} className="lp-detail-text-left">
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
-                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>05 / ÁO NỆM</span>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>{EditFn({ bk: "detail_5_badge", def: "05 / ÁO NỆM", as: "span" })}</span>
                 </div>
-                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Áo Nệm Da PU Có Khoá Kéo</h3>
-                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Áo nệm da PU cao cấp có khoá kéo toàn thân — tháo ra thay nệm hoặc thay vỏ áo dễ dàng. Giặt sạch, bảo dưỡng tiện lợi.</p>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>{EditFn({ bk: "detail_5_title", def: "Áo Nệm Da PU Có Khoá Kéo", as: "span" })}</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>{EditFn({ bk: "detail_5_desc", def: "Áo nệm da PU cao cấp có khoá kéo toàn thân — tháo ra thay nệm hoặc thay vỏ áo dễ dàng. Giặt sạch, bảo dưỡng tiện lợi.", as: "span", multiline: true })}</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {["Khoá kéo YKK chịu lực, không kẹt", "Tháo/lắp trong vài phút", "Dễ dàng thay vỏ áo khi cần"].map((t, i) => (
+                  {[
+                    { bk: "detail_5_bullet_1", def: "Khoá kéo YKK chịu lực, không kẹt" },
+                    { bk: "detail_5_bullet_2", def: "Tháo/lắp trong vài phút" },
+                    { bk: "detail_5_bullet_3", def: "Dễ dàng thay vỏ áo khi cần" },
+                  ].map((t, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                       <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
-                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{EditFn({ bk: t.bk, def: t.def, as: "span" })}</span>
                     </div>
                   ))}
                 </div>
@@ -687,15 +703,19 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
               </div>
               <div style={{ padding: "8px 0" }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `rgba(139,105,20,0.08)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_FULL, padding: "6px 16px", marginBottom: 20 }}>
-                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>06 / TÚI ĐỰNG</span>
+                  <span style={{ color: GOLD, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", fontFamily: FONT_BODY }}>{EditFn({ bk: "detail_6_badge", def: "06 / TÚI ĐỰNG", as: "span" })}</span>
                 </div>
-                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>Túi Đựng Sách &amp; Điều Khiển</h3>
-                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>Thiết kế túi đựng tiện dụng 2 bên tay vịn — lưu trữ sách, tạp chí, điều khiển TV, điện thoại ngay tầm tay khi ngồi hoặc nằm.</p>
+                <h3 style={{ fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 300, lineHeight: 1.2, marginBottom: 16, fontFamily: FONT_HEADING, color: WHITE }}>{EditFn({ bk: "detail_6_title", def: "Túi Đựng Sách & Điều Khiển", as: "span" })}</h3>
+                <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 24 }}>{EditFn({ bk: "detail_6_desc", def: "Thiết kế túi đựng tiện dụng 2 bên tay vịn — lưu trữ sách, tạp chí, điều khiển TV, điện thoại ngay tầm tay khi ngồi hoặc nằm.", as: "span", multiline: true })}</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {["2 túi 2 bên, dễ tiếp cận", "Chứa được sách, tạp chí, điều khiển", "Chất liệu đồng bộ với áo nệm da PU"].map((t, i) => (
+                  {[
+                    { bk: "detail_6_bullet_1", def: "2 túi 2 bên, dễ tiếp cận" },
+                    { bk: "detail_6_bullet_2", def: "Chứa được sách, tạp chí, điều khiển" },
+                    { bk: "detail_6_bullet_3", def: "Chất liệu đồng bộ với áo nệm da PU" },
+                  ].map((t, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                       <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 7, flexShrink: 0 }} />
-                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{t}</span>
+                      <span style={{ color: GRAY, fontSize: 14, fontFamily: FONT_BODY, lineHeight: 1.6 }}>{EditFn({ bk: t.bk, def: t.def, as: "span" })}</span>
                     </div>
                   ))}
                 </div>
@@ -1465,24 +1485,24 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               {/* Bảng thông số bên trái */}
               <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
                 {[
-                  ["Kích thước (sofa)", "0,9m / 1,2m / 1,4m / 1,6m × 0,9m × 0,85m (C)"],
-                  ["Kích thước (giường)", "0,9m / 1,2m / 1,4m / 1,6m × 2,0m"],
-                  ["Tải trọng tối đa", "250 kg"],
-                  ["Chất liệu bọc", "Da PU nhập khẩu — kháng nước, kháng UV"],
-                  ["Đệm ngồi/nằm", "Foam D40 dày 12cm + memory foam 3cm"],
-                  ["Khung chính", "Gỗ thông xử lý chống mối + thanh giằng thép mạ kẽm"],
-                  ["Cơ cấu gập mở", "SmartFold — 1 thao tác, không cần dụng cụ"],
-                  ["Số lần gập mở kiểm định", "50.000 lần"],
-                  ["Chân sofa", "Gỗ sồi tự nhiên / thép sơn tĩnh điện (tuỳ phiên bản)"],
-                  ["Màu sắc", "Đen, Nâu, Xám tro, Be (kem)"],
-                  ["Bảo hành da", "3 năm chính hãng"],
-                  ["Bảo hành khung", "2 năm"],
-                  ["Trọng lượng", "~38 kg (1m4) / ~44 kg (1m6)"],
-                  ["Xuất xứ", "Việt Nam — chất liệu nhập khẩu"],
-                ].map(([label, value], i) => (
+                  { bkLabel: "spec_row_1_label", defLabel: "Kích thước (sofa)", bkValue: "spec_row_1_value", defValue: "0,9m / 1,2m / 1,4m / 1,6m × 0,9m × 0,85m (C)" },
+                  { bkLabel: "spec_row_2_label", defLabel: "Kích thước (giường)", bkValue: "spec_row_2_value", defValue: "0,9m / 1,2m / 1,4m / 1,6m × 2,0m" },
+                  { bkLabel: "spec_row_3_label", defLabel: "Tải trọng tối đa", bkValue: "spec_row_3_value", defValue: "250 kg" },
+                  { bkLabel: "spec_row_4_label", defLabel: "Chất liệu bọc", bkValue: "spec_row_4_value", defValue: "Da PU nhập khẩu — kháng nước, kháng UV" },
+                  { bkLabel: "spec_row_5_label", defLabel: "Đệm ngồi/nằm", bkValue: "spec_row_5_value", defValue: "Foam D40 dày 12cm + memory foam 3cm" },
+                  { bkLabel: "spec_row_6_label", defLabel: "Khung chính", bkValue: "spec_row_6_value", defValue: "Gỗ thông xử lý chống mối + thanh giằng thép mạ kẽm" },
+                  { bkLabel: "spec_row_7_label", defLabel: "Cơ cấu gập mở", bkValue: "spec_row_7_value", defValue: "SmartFold — 1 thao tác, không cần dụng cụ" },
+                  { bkLabel: "spec_row_8_label", defLabel: "Số lần gập mở kiểm định", bkValue: "spec_row_8_value", defValue: "50.000 lần" },
+                  { bkLabel: "spec_row_9_label", defLabel: "Chân sofa", bkValue: "spec_row_9_value", defValue: "Gỗ sồi tự nhiên / thép sơn tĩnh điện (tuỳ phiên bản)" },
+                  { bkLabel: "spec_row_10_label", defLabel: "Màu sắc", bkValue: "spec_row_10_value", defValue: "Đen, Nâu, Xám tro, Be (kem)" },
+                  { bkLabel: "spec_row_11_label", defLabel: "Bảo hành da", bkValue: "spec_row_11_value", defValue: "3 năm chính hãng" },
+                  { bkLabel: "spec_row_12_label", defLabel: "Bảo hành khung", bkValue: "spec_row_12_value", defValue: "2 năm" },
+                  { bkLabel: "spec_row_13_label", defLabel: "Trọng lượng", bkValue: "spec_row_13_value", defValue: "~38 kg (1m4) / ~44 kg (1m6)" },
+                  { bkLabel: "spec_row_14_label", defLabel: "Xuất xứ", bkValue: "spec_row_14_value", defValue: "Việt Nam — chất liệu nhập khẩu" },
+                ].map((row, i) => (
                   <div key={i} style={{ display: "flex", padding: "14px 24px", background: i % 2 === 0 ? BLACK_CARD : BLACK, borderBottom: i < 13 ? `1px solid ${BLACK_BORDER}` : "none" }}>
-                    <div style={{ width: "40%", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, flexShrink: 0 }}>{label}</div>
-                    <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{value}</div>
+                    <div style={{ width: "40%", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, flexShrink: 0 }}>{E({ bk: row.bkLabel, def: row.defLabel, as: "span" })}</div>
+                    <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{E({ bk: row.bkValue, def: row.defValue, as: "span", multiline: true })}</div>
                   </div>
                 ))}
               </div>
@@ -1547,7 +1567,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── PRODUCT DETAIL ── */}
-      <ProductDetailSection editMode={editMode} content={content} handleSaved={handleSaved} />
+      <ProductDetailSection editMode={editMode} content={content} handleSaved={handleSaved} E={E} />
 
       {/* ── VIDEO SECTION ── */}
       <section id="video" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
@@ -1902,31 +1922,31 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT_BODY }}>
                 <thead>
                   <tr style={{ background: BLACK_CARD }}>
-                    <th style={{ padding: "16px 20px", textAlign: "left", color: GRAY_LIGHT, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", borderBottom: `1px solid ${BLACK_BORDER}` }}>TIÊU CHÍ</th>
-                    <th style={{ padding: "16px 20px", textAlign: "center", color: GOLD, fontSize: 13, fontWeight: 700, borderBottom: `1px solid ${BLACK_BORDER}` }}>SmartFurni SMF12</th>
-                    <th style={{ padding: "16px 20px", textAlign: "center", color: GRAY, fontSize: 12, fontWeight: 600, borderBottom: `1px solid ${BLACK_BORDER}` }}>Sofa + Giường riêng</th>
+                    <th style={{ padding: "16px 20px", textAlign: "left", color: GRAY_LIGHT, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", borderBottom: `1px solid ${BLACK_BORDER}` }}>{E({ bk: "compare_header_criteria", def: "TIÊU CHÍ", as: "span" })}</th>
+                    <th style={{ padding: "16px 20px", textAlign: "center", color: GOLD, fontSize: 13, fontWeight: 700, borderBottom: `1px solid ${BLACK_BORDER}` }}>{E({ bk: "compare_header_smf12", def: "SmartFurni SMF12", as: "span" })}</th>
+                    <th style={{ padding: "16px 20px", textAlign: "center", color: GRAY, fontSize: 12, fontWeight: 600, borderBottom: `1px solid ${BLACK_BORDER}` }}>{E({ bk: "compare_header_other", def: "Sofa + Giường riêng", as: "span" })}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    ["Chi phí", "8.490.000 ₫", "15–30 triệu ₫"],
-                    ["Diện tích chiếm dụng", "✓ Tiết kiệm 40%", "✗ Cần 2 vị trí riêng"],
-                    ["Vệ sinh", "✓ Lau sạch 30 giây", "✗ Sofa vải khó vệ sinh"],
-                    ["Chuyển đổi tư thế", "✓ 1 thao tác, 10 giây", "✗ Không thể"],
-                    ["Bảo hành da", "✓ 3 năm chính hãng", "6–12 tháng"],
-                    ["Đệm ngủ", "✓ Foam D40 dày 12cm", "Thường mỏng hơn"],
-                    ["Phù hợp phòng nhỏ", "✓ Từ 0,9m", "✗ Cần diện tích lớn"],
-                  ].map(([criteria, smf12, other], i) => (
+                    { bkCriteria: "compare_row_1_criteria", defCriteria: "Chi phí", bkSmf12: "compare_row_1_smf12", defSmf12: "8.490.000 ₫", bkOther: "compare_row_1_other", defOther: "15–30 triệu ₫" },
+                    { bkCriteria: "compare_row_2_criteria", defCriteria: "Diện tích chiếm dụng", bkSmf12: "compare_row_2_smf12", defSmf12: "✓ Tiết kiệm 40%", bkOther: "compare_row_2_other", defOther: "✗ Cần 2 vị trí riêng" },
+                    { bkCriteria: "compare_row_3_criteria", defCriteria: "Vệ sinh", bkSmf12: "compare_row_3_smf12", defSmf12: "✓ Lau sạch 30 giây", bkOther: "compare_row_3_other", defOther: "✗ Sofa vải khó vệ sinh" },
+                    { bkCriteria: "compare_row_4_criteria", defCriteria: "Chuyển đổi tư thế", bkSmf12: "compare_row_4_smf12", defSmf12: "✓ 1 thao tác, 10 giây", bkOther: "compare_row_4_other", defOther: "✗ Không thể" },
+                    { bkCriteria: "compare_row_5_criteria", defCriteria: "Bảo hành da", bkSmf12: "compare_row_5_smf12", defSmf12: "✓ 3 năm chính hãng", bkOther: "compare_row_5_other", defOther: "6–12 tháng" },
+                    { bkCriteria: "compare_row_6_criteria", defCriteria: "Đệm ngủ", bkSmf12: "compare_row_6_smf12", defSmf12: "✓ Foam D40 dày 12cm", bkOther: "compare_row_6_other", defOther: "Thường mỏng hơn" },
+                    { bkCriteria: "compare_row_7_criteria", defCriteria: "Phù hợp phòng nhỏ", bkSmf12: "compare_row_7_smf12", defSmf12: "✓ Từ 0,9m", bkOther: "compare_row_7_other", defOther: "✗ Cần diện tích lớn" },
+                  ].map((row, i) => (
                     <tr key={i} style={{ background: i % 2 === 0 ? BLACK : BLACK_CARD, borderBottom: `1px solid ${BLACK_BORDER}` }}>
-                      <td style={{ padding: "14px 20px", color: GRAY, fontSize: 13 }}>{criteria}</td>
-                      <td style={{ padding: "14px 20px", textAlign: "center", color: smf12.startsWith("✓") ? GOLD : WHITE, fontSize: 13, fontWeight: smf12.startsWith("✓") ? 600 : 400 }}>{smf12}</td>
-                      <td style={{ padding: "14px 20px", textAlign: "center", color: other.startsWith("✗") ? RED_SOFT : GRAY, fontSize: 13 }}>{other}</td>
+                      <td style={{ padding: "14px 20px", color: GRAY, fontSize: 13 }}>{E({ bk: row.bkCriteria, def: row.defCriteria, as: "span" })}</td>
+                      <td style={{ padding: "14px 20px", textAlign: "center", color: row.defSmf12.startsWith("✓") ? GOLD : WHITE, fontSize: 13, fontWeight: row.defSmf12.startsWith("✓") ? 600 : 400 }}>{E({ bk: row.bkSmf12, def: row.defSmf12, as: "span" })}</td>
+                      <td style={{ padding: "14px 20px", textAlign: "center", color: row.defOther.startsWith("✗") ? RED_SOFT : GRAY, fontSize: 13 }}>{E({ bk: row.bkOther, def: row.defOther, as: "span" })}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p style={{ color: GRAY_LIGHT, fontSize: 11, marginTop: 12, fontFamily: FONT_BODY, fontStyle: "italic" }}>* Giá sofa + giường tham khảo thị trường 2024–2025</p>
+            <p style={{ color: GRAY_LIGHT, fontSize: 11, marginTop: 12, fontFamily: FONT_BODY, fontStyle: "italic" }}>{E({ bk: "compare_note", def: "* Giá sofa + giường tham khảo thị trường 2024–2025", as: "span" })}</p>
           </FadeIn>
         </div>
       </section>
@@ -2004,7 +2024,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                     </svg>
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.icon}</div>
                   </div>
-                  <div style={{ color: GOLD, fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", marginBottom: 8, fontFamily: FONT_BODY, opacity: 0.65 }}>BƯỚC {s.step}</div>
+                  <div style={{ color: GOLD, fontSize: 9, fontWeight: 700, letterSpacing: "0.25em", marginBottom: 8, fontFamily: FONT_BODY, opacity: 0.65 }}>{E({ bk: `step_${s.step}_label`, def: `BƯỚC ${s.step}`, as: "span" })}</div>
                   <div style={{ color: WHITE, fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>
                     {E({ bk: s.bkTitle, def: s.defTitle, as: "span" })}
                   </div>
@@ -2046,14 +2066,14 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           <FadeIn>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginBottom: 52 }} className="lp-stats-grid">
               {[
-                { num: "3.200+", label: "Sản phẩm đã bán" },
-                { num: "4.8/5", label: "Đánh giá trung bình" },
-                { num: "98%", label: "Khách hàng hài lòng" },
-                { num: "3 năm", label: "Bảo hành chính hãng" },
+                { bkNum: "trust_stat_1_num", defNum: "3.200+", bkLabel: "trust_stat_1_label", defLabel: "Sản phẩm đã bán" },
+                { bkNum: "trust_stat_2_num", defNum: "4.8/5", bkLabel: "trust_stat_2_label", defLabel: "Đánh giá trung bình" },
+                { bkNum: "trust_stat_3_num", defNum: "98%", bkLabel: "trust_stat_3_label", defLabel: "Khách hàng hài lòng" },
+                { bkNum: "trust_stat_4_num", defNum: "3 năm", bkLabel: "trust_stat_4_label", defLabel: "Bảo hành chính hãng" },
               ].map((s, i) => (
                 <div key={i} style={{ textAlign: "center", padding: "24px 16px", background: BLACK_CARD, borderRadius: R_MD, border: `1px solid ${BLACK_BORDER}` }}>
-                  <div style={{ color: GOLD, fontSize: 28, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 6 }}>{s.num}</div>
-                  <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{s.label}</div>
+                  <div style={{ color: GOLD, fontSize: 28, fontWeight: 700, fontFamily: FONT_HEADING, marginBottom: 6 }}>{E({ bk: s.bkNum, def: s.defNum, as: "span" })}</div>
+                  <div style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{E({ bk: s.bkLabel, def: s.defLabel, as: "span" })}</div>
                 </div>
               ))}
             </div>
