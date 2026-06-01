@@ -142,7 +142,7 @@ function SvgIcon({ name, size = 24, color = "currentColor", className = "", styl
       className={className}
       style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: size, height: size, color, flexShrink: 0, ...style }}
     >
-      {React.cloneElement(icon as React.ReactElement, { width: size, height: size })}
+      {React.cloneElement(icon as React.ReactElement<React.SVGProps<SVGSVGElement>>, { width: size, height: size })}
     </span>
   );
 }
@@ -177,7 +177,7 @@ function getProductImages(p: CrmProduct): string[] {
 
 
 // ─── CountdownDisplay ─────────────────────────────────────────────────────────
-const CountdownDisplay = React.memo(function CountdownDisplay() {
+const CountdownDisplay = React.memo(function CountdownDisplay({ E }: { E: EFn }) {
   const calcTime = () => {
     const now = new Date();
     const end = new Date(now); end.setHours(23, 59, 59, 0);
@@ -189,12 +189,16 @@ const CountdownDisplay = React.memo(function CountdownDisplay() {
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
     <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 24 }}>
-      {[{ val: pad(t.h), label: "GIỜ" }, { val: pad(t.m), label: "PHÚT" }, { val: pad(t.s), label: "GIÂY" }].map((u, i) => (
+      {[
+        { val: pad(t.h), bk: "countdown_hours_label", label: "GIỜ" },
+        { val: pad(t.m), bk: "countdown_minutes_label", label: "PHÚT" },
+        { val: pad(t.s), bk: "countdown_seconds_label", label: "GIÂY" },
+      ].map((u, i) => (
         <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
           <div style={{ background: BLACK, border: `1px solid ${gRgba(GOLD, 0.3)}`, borderRadius: 10, padding: "10px 18px", minWidth: 60 }}>
             <span style={{ color: GOLD, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{u.val}</span>
           </div>
-          <span style={{ color: GRAY, fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_BODY }}>{u.label}</span>
+          <span style={{ color: GRAY, fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_BODY }}>{E({ bk: u.bk, def: u.label, as: "span" })}</span>
         </div>
       ))}
     </div>
@@ -213,7 +217,7 @@ const FONT_SIZES = [
 interface InlineEditProps {
   bk: string;
   def: string;
-  as?: keyof JSX.IntrinsicElements;
+  as?: React.ElementType;
   style?: React.CSSProperties;
   multiline?: boolean;
   editMode: boolean;
@@ -365,7 +369,7 @@ function InlineEdit({ bk, def, as: Tag = "span", style, multiline = false, editM
   );
 }
 
-type EFn = (p: { bk: string; def: string; as?: keyof JSX.IntrinsicElements; style?: React.CSSProperties; multiline?: boolean }) => React.ReactNode;
+type EFn = (p: { bk: string; def: string; as?: React.ElementType; style?: React.CSSProperties; multiline?: boolean }) => React.ReactNode;
 
 function UrgencyBanner({ E }: { E: EFn }) {
   const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
@@ -381,7 +385,7 @@ function UrgencyBanner({ E }: { E: EFn }) {
       <p style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 24 }}>
         {E({ bk: "urgency_subtitle", def: "Ưu đãi kết thúc lúc 23:59 hôm nay — Đặt hàng ngay để không bỏ lỡ", as: "span" })}
       </p>
-      <CountdownDisplay />
+      <CountdownDisplay E={E} />
       <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 100, padding: "6px 16px" }}>
         <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#EF4444", display: "inline-block" }} />
         <span style={{ color: "#FCA5A5", fontSize: 12, fontWeight: 600, fontFamily: FONT_BODY }}>
@@ -404,8 +408,8 @@ function StickyCta({ scrollToForm, E }: { scrollToForm: () => void; E: EFn }) {
   return (
     <div className="sticky-cta-bar" style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 900, background: `${BLACK}F5`, borderTop: `1px solid ${GOLD_LIGHT}40`, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(12px)" }}>
       <div>
-        <div style={{ color: GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>Từ 2.990.000 ₫</div>
-        <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginTop: 2 }}>Miễn phí giao hàng + lắp đặt</div>
+        <div style={{ color: GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{E({ bk: "sticky_cta_price", def: "Từ 2.990.000 ₫", as: "span" })}</div>
+        <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginTop: 2 }}>{E({ bk: "sticky_cta_subtitle", def: "Miễn phí giao hàng + lắp đặt", as: "span" })}</div>
       </div>
       <button onClick={scrollToForm} style={{ background: `linear-gradient(135deg, ${GOLD} 0%, #E2C97E 100%)`, color: BLACK, border: "none", borderRadius: 100, padding: "12px 28px", fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, cursor: "pointer", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
         {E({ bk: "sticky_cta_btn", def: "Thiết Kế & Đặt Hàng →", as: "span" })}
@@ -682,7 +686,7 @@ function FaqAccordion({ E: EditFn }: { E: EFn }) {
 }
 
 // ─── Lead Form ────────────────────────────────────────────────────────────────
-function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = LP_SLUG }: { submitLabel?: string; prefilledConfig?: string; slug?: string }) {
+function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = LP_SLUG, E, content, editMode }: { submitLabel?: React.ReactNode; prefilledConfig?: string; slug?: string; E: EFn; content: Record<string, string>; editMode: boolean }) {
   const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
   const [loading, setLoading] = useState(false);
@@ -696,11 +700,12 @@ function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = LP_SLUG }: { 
   }, []);
 
   const setF = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(prev => ({ ...prev, [k]: e.target.value }));
+  const T = (bk: string, def: string) => (content[bk] ?? def).split("||")[0] || def;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim()) { setError("Vui lòng điền đầy đủ Họ tên và Số điện thoại (*)"); return; }
-    if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.replace(/\s/g, ""))) { setError("Số điện thoại không hợp lệ"); return; }
+    if (!form.name.trim() || !form.phone.trim()) { setError(T("lead_validation_required", "Vui lòng điền đầy đủ Họ tên và Số điện thoại (*)")); return; }
+    if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.replace(/\s/g, ""))) { setError(T("lead_validation_phone", "Số điện thoại không hợp lệ")); return; }
     setLoading(true); setError("");
     try {
       const noteStr = `${prefilledConfig ? "[Cấu hình: " + prefilledConfig + "] " : ""}Địa chỉ: ${form.address} | Ghi chú: ${form.note}`;
@@ -712,19 +717,19 @@ function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = LP_SLUG }: { 
           name: form.name,
           phone: form.phone,
           email: "",
-          province: selProvince?.full_name || "",
-          district: selDistrict?.full_name || "",
-          ward: selWard?.full_name || "",
-          address: streetAddress || "",
-          configStr,
-          totalPrice: fmt(total),
-          note: form.note || "",
+          province: "",
+          district: "",
+          ward: "",
+          address: form.address || "",
+          configStr: prefilledConfig || "",
+          totalPrice: "",
+          note: noteStr,
           ...utms,
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
       setSuccess(true);
-    } catch (err: unknown) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : T("lead_validation_generic", "Có lỗi xảy ra, vui lòng thử lại")); }
     finally { setLoading(false); }
   }
 
@@ -735,8 +740,8 @@ function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = LP_SLUG }: { 
       <div style={{ width: 72, height: 72, borderRadius: "50%", background: `${gRgba(GOLD, 0.1)}`, border: `2px solid ${GOLD}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </div>
-      <h3 style={{ fontSize: 24, fontWeight: 600, color: GOLD, marginBottom: 12, fontFamily: FONT_HEADING }}>Đặt hàng thành công!</h3>
-      <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY }}>Cảm ơn bạn đã tin tưởng SmartFurni.<br />Đội ngũ tư vấn sẽ liên hệ qua <strong style={{ color: GOLD }}>Zalo / điện thoại</strong> trong vòng 2 giờ làm việc.</p>
+      <h3 style={{ fontSize: 24, fontWeight: 600, color: GOLD, marginBottom: 12, fontFamily: FONT_HEADING }}>{E({ bk: "lead_success_title", def: "Đặt hàng thành công!", as: "span" })}</h3>
+      <p style={{ color: GRAY_LIGHT, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY }}>{E({ bk: "lead_success_message", def: "Cảm ơn bạn đã tin tưởng SmartFurni. Đội ngũ tư vấn sẽ liên hệ qua Zalo / điện thoại trong vòng 2 giờ làm việc.", as: "span", multiline: true })}</p>
     </div>
   );
 
@@ -744,39 +749,53 @@ function LeadForm({ submitLabel, prefilledConfig, slug: leadSlug = LP_SLUG }: { 
     <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, padding: "clamp(24px,4vw,44px)", borderRadius: R_LG }}>
       {prefilledConfig && (
         <div style={{ marginBottom: 20, padding: "12px 16px", background: `${gRgba(GOLD, 0.06)}`, border: `1px solid ${gRgba(GOLD, 0.2)}`, borderRadius: R_MD }}>
-          <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", fontFamily: FONT_BODY, marginBottom: 4 }}>✓ CẤU HÌNH ĐÃ CHỌN:</div>
+          <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", fontFamily: FONT_BODY, marginBottom: 4 }}>{E({ bk: "lead_selected_config_label", def: "✓ CẤU HÌNH ĐÃ CHỌN:", as: "span" })}</div>
           <div style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY }}>{prefilledConfig}</div>
         </div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 16 }}>
-        {[{ k: "name", label: "Họ và tên *", ph: "Nguyễn Văn A" }, { k: "phone", label: "Số điện thoại (Zalo) *", ph: "0912 345 678" }].map(f => (
+        {[
+          { k: "name", labelKey: "lead_name_label", label: "Họ và tên *", phKey: "lead_name_placeholder", ph: "Nguyễn Văn A" },
+          { k: "phone", labelKey: "lead_phone_label", label: "Số điện thoại (Zalo) *", phKey: "lead_phone_placeholder", ph: "0912 345 678" },
+        ].map(f => (
           <div key={f.k}>
-            <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>{f.label}</label>
-            <input type="text" placeholder={f.ph} value={form[f.k as keyof typeof form]} onChange={setF(f.k)} style={inp}
+            <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>{E({ bk: f.labelKey, def: f.label, as: "span" })}</label>
+            <input type="text" placeholder={T(f.phKey, f.ph)} value={form[f.k as keyof typeof form]} onChange={setF(f.k)} style={inp}
               onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px ${gRgba(GOLD, 0.12)}`; }}
               onBlur={e => { e.target.style.borderColor = `${gRgba(GOLD, 0.2)}`; e.target.style.boxShadow = "none"; }} />
+            {editMode && <div style={{ color: GRAY, fontSize: 10, marginTop: 6, fontFamily: FONT_BODY }}>Placeholder: {E({ bk: f.phKey, def: f.ph, as: "span" })}</div>}
           </div>
         ))}
       </div>
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Địa chỉ giao hàng</label>
-        <input type="text" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành phố" value={form.address} onChange={setF("address")} style={inp}
+        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>{E({ bk: "lead_address_label", def: "Địa chỉ giao hàng", as: "span" })}</label>
+        <input type="text" placeholder={T("lead_address_placeholder", "Số nhà, đường, quận/huyện, tỉnh/thành phố")} value={form.address} onChange={setF("address")} style={inp}
           onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px ${gRgba(GOLD, 0.12)}`; }}
           onBlur={e => { e.target.style.borderColor = `${gRgba(GOLD, 0.2)}`; e.target.style.boxShadow = "none"; }} />
+        {editMode && <div style={{ color: GRAY, fontSize: 10, marginTop: 6, fontFamily: FONT_BODY }}>Placeholder: {E({ bk: "lead_address_placeholder", def: "Số nhà, đường, quận/huyện, tỉnh/thành phố", as: "span" })}</div>}
       </div>
       <div style={{ marginBottom: 26 }}>
-        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>Yêu cầu thêm (tuỳ chọn)</label>
-        <textarea placeholder="Màu sắc, chất liệu đặc biệt, thời gian giao hàng…" rows={3} value={form.note} onChange={setF("note")} style={{ ...inp, resize: "vertical" }}
+        <label style={{ display: "block", color: GRAY_LIGHT, fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY }}>{E({ bk: "lead_note_label", def: "Yêu cầu thêm (tuỳ chọn)", as: "span" })}</label>
+        <textarea placeholder={T("lead_note_placeholder", "Màu sắc, chất liệu đặc biệt, thời gian giao hàng…")} rows={3} value={form.note} onChange={setF("note")} style={{ ...inp, resize: "vertical" }}
           onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px ${gRgba(GOLD, 0.12)}`; }}
           onBlur={e => { e.target.style.borderColor = `${gRgba(GOLD, 0.2)}`; e.target.style.boxShadow = "none"; }} />
+        {editMode && <div style={{ color: GRAY, fontSize: 10, marginTop: 6, fontFamily: FONT_BODY }}>Placeholder: {E({ bk: "lead_note_placeholder", def: "Màu sắc, chất liệu đặc biệt, thời gian giao hàng…", as: "span" })}</div>}
       </div>
+      {editMode && (
+        <div style={{ marginBottom: 16, padding: 12, border: `1px dashed ${gRgba(GOLD, 0.25)}`, borderRadius: R_SM, textAlign: "left" as const }}>
+          <div style={{ color: GOLD, fontSize: 11, fontWeight: 700, marginBottom: 8, fontFamily: FONT_BODY }}>Nội dung thông báo form</div>
+          <div style={{ color: GRAY, fontSize: 11, lineHeight: 1.8, fontFamily: FONT_BODY }}>Bắt buộc: {E({ bk: "lead_validation_required", def: "Vui lòng điền đầy đủ Họ tên và Số điện thoại (*)", as: "span" })}</div>
+          <div style={{ color: GRAY, fontSize: 11, lineHeight: 1.8, fontFamily: FONT_BODY }}>Sai số điện thoại: {E({ bk: "lead_validation_phone", def: "Số điện thoại không hợp lệ", as: "span" })}</div>
+          <div style={{ color: GRAY, fontSize: 11, lineHeight: 1.8, fontFamily: FONT_BODY }}>Lỗi chung: {E({ bk: "lead_validation_generic", def: "Có lỗi xảy ra, vui lòng thử lại", as: "span" })}</div>
+        </div>
+      )}
       {error && <div style={{ color: "#FF6B6B", fontSize: 13, marginBottom: 16, padding: "12px 16px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: R_SM, fontFamily: FONT_BODY }}>{error}</div>}
       <button type="submit" onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "17px", background: loading ? "#333333" : `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`, color: BLACK, border: "none", fontWeight: 700, fontSize: 14, cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.08em", textTransform: "uppercase" as const, boxShadow: loading ? "none" : `0 8px 28px ${gRgba(GOLD, 0.3)}`, borderRadius: R_MD, fontFamily: FONT_BODY, transition: "all 0.25s ease" }}>
-        {loading ? "Đang gửi…" : (submitLabel || "Tư Vấn & Đặt Hàng Ngay →")}
+        {loading ? E({ bk: "lead_loading_text", def: "Đang gửi…", as: "span" }) : (submitLabel || E({ bk: "lead_submit_default", def: "Tư Vấn & Đặt Hàng Ngay →", as: "span" }))}
       </button>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14 }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#687076" strokeWidth="1.5" strokeLinejoin="round"/></svg>
-        <p style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>Thông tin được bảo mật tuyệt đối. Không spam.</p>
+        <p style={{ color: GRAY, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: "lead_privacy_text", def: "Thông tin được bảo mật tuyệt đối. Không spam.", as: "span" })}</p>
       </div>
     </div>
   );
@@ -1344,10 +1363,11 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
   onFieldSaved?: (key: string, field: string, val: string) => void;
 }) {
   const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
-  const [editing, setEditing] = React.useState<null | "label" | "desc" | "price">(null);
+  const [editing, setEditing] = React.useState<null | "label" | "desc" | "price" | "badge">(null);
   const [editLabel, setEditLabel] = React.useState(label);
   const [editDesc, setEditDesc] = React.useState(desc);
   const [editPrice, setEditPrice] = React.useState(String(price));
+  const [editBadge, setEditBadge] = React.useState(badge || "");
   const [saving, setSaving] = React.useState(false);
   const [localImgUrl, setLocalImgUrl] = React.useState(imgUrl);
   // Sync tất cả local state khi props thay đổi (ví dụ khi chuyển sang sản phẩm khác hoặc step khác)
@@ -1355,6 +1375,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
   React.useEffect(() => { setEditLabel(label); }, [label]);
   React.useEffect(() => { setEditDesc(desc); }, [desc]);
   React.useEffect(() => { setEditPrice(String(price)); }, [price]);
+  React.useEffect(() => { setEditBadge(badge || ""); }, [badge]);
   const [showUrlInput, setShowUrlInput] = React.useState(false);
   const [urlInputVal, setUrlInputVal] = React.useState("");
 
@@ -1370,10 +1391,10 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
     } catch (err) { alert("Lỗi kết nối khi lưu ảnh. Vui lòng thử lại."); }
   };
 
-  const saveField = async (field: "label" | "desc" | "price") => {
+  const saveField = async (field: "label" | "desc" | "price" | "badge") => {
     if (!optionKey || !slug) return;
     setSaving(true);
-    const val = field === "label" ? editLabel : field === "desc" ? editDesc : editPrice;
+    const val = field === "label" ? editLabel : field === "desc" ? editDesc : field === "badge" ? editBadge : editPrice;
     try {
       await fetch("/api/admin/lp-content", {
         method: "POST",
@@ -1389,6 +1410,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
   const displayLabel = editLabel;
   const displayDesc = editDesc;
   const displayPrice = Number(editPrice) || 0;
+  const displayBadge = editBadge.trim();
 
   return (
     <div style={{ position: "relative" }}>
@@ -1398,7 +1420,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
           <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: BLACK_CARD }}>
             <img src={localImgUrl} alt={label} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} />
             {/* Badge */}
-            {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : `${gRgba(GOLD, 0.85)}`, color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{badge}</span>}
+            {displayBadge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : `${gRgba(GOLD, 0.85)}`, color: selected ? BLACK : BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY, backdropFilter: "blur(4px)" }}>{displayBadge}</span>}
             {/* Tick selected */}
             {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
             {/* Edit ảnh khi isEditor */}
@@ -1462,7 +1484,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <SvgIcon name={icon} size={32} color={selected ? GOLD : `${gRgba(GOLD, 0.5)}`} />
             </div>
-            {badge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : `${gRgba(GOLD, 0.85)}`, color: BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY }}>{badge}</span>}
+            {displayBadge && <span style={{ position: "absolute", top: 8, left: 8, background: selected ? GOLD : `${gRgba(GOLD, 0.85)}`, color: BLACK, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100, fontFamily: FONT_BODY }}>{displayBadge}</span>}
             {selected && <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: BLACK, fontSize: 13, fontWeight: 700 }}>✓</span></div>}
             {/* Edit ảnh khi isEditor và chưa có ảnh */}
             {isEditor && optionKey && slug && (
@@ -1549,11 +1571,19 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
               <button onClick={() => saveField("price")} disabled={saving} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "✓"}</button>
               <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
             </span>
+          ) : editing === "badge" ? (
+            <span style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <input value={editBadge} onChange={e => setEditBadge(e.target.value)} placeholder="Badge..."
+                style={{ background: "rgba(13,11,0,0.95)", border: "1.5px solid #C9A84C", borderRadius: 6, padding: "3px 8px", color: "#F5EDD6", fontSize: 12, fontFamily: FONT_BODY, outline: "none", width: 140 }} />
+              <button onClick={() => saveField("badge")} disabled={saving} style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 5, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "✓"}</button>
+              <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.08)", color: GRAY, border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✕</button>
+            </span>
           ) : (
             <>
               <button onClick={() => setEditing("label")} style={{ background: `${gRgba(GOLD, 0.12)}`, color: GOLD, border: `1px solid ${gRgba(GOLD, 0.3)}`, borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Tên</button>
               <button onClick={() => setEditing("desc")} style={{ background: `${gRgba(GOLD, 0.12)}`, color: GOLD, border: `1px solid ${gRgba(GOLD, 0.3)}`, borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Mô tả</button>
               <button onClick={() => setEditing("price")} style={{ background: `${gRgba(GOLD, 0.12)}`, color: GOLD, border: `1px solid ${gRgba(GOLD, 0.3)}`, borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Giá</button>
+              <button onClick={() => setEditing("badge")} style={{ background: `${gRgba(GOLD, 0.12)}`, color: GOLD, border: `1px solid ${gRgba(GOLD, 0.3)}`, borderRadius: 5, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: FONT_BODY }}>✏️ Badge</button>
             </>
           )}
         </div>
@@ -1563,7 +1593,7 @@ function QuizEditableOption({ icon, label, desc, price, selected, badge, onClick
 }
 // ─── EditableText: inline editable text for step titles ──────────────────────
 function EditableText({ value, onSave, style, as: Tag = "div" }: {
-  value: string; onSave: (v: string) => void; style?: React.CSSProperties; as?: "h3" | "p" | "div";
+  value: string; onSave: (v: string) => void; style?: React.CSSProperties; as?: "h3" | "p" | "div" | "span";
 }) {
   const { GOLD, GOLD_LIGHT, BLACK, BLACK_SOFT, BLACK_CARD, BLACK_BORDER, WHITE, GRAY, GRAY_LIGHT } = useLpColors();
   const [editing, setEditing] = React.useState(false);
@@ -1793,6 +1823,20 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
   function getStepLabel(s: QuizStep) { return localContent[`quiz_step_label_${s}`] || STEP_LABELS[s]; }
   function getStepTitle(s: QuizStep, fallback: string) { return localContent[`quiz_step_title_${s}`] || fallback; }
   function getStepSubtitle(s: QuizStep, fallback: string) { return localContent[`quiz_step_subtitle_${s}`] || fallback; }
+  function getQuizText(blockKey: string, fallback: string) { return localContent[`quiz_text_${blockKey}`] || content[`quiz_text_${blockKey}`] || fallback; }
+  async function saveQuizText(blockKey: string, val: string) {
+    if (!val.trim()) return;
+    try {
+      await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: quizSlug, blockKey: `quiz_text_${blockKey}`, content: val.trim() }) });
+      setLocalContent(prev => ({ ...prev, [`quiz_text_${blockKey}`]: val.trim() }));
+      onContentSaved?.(`quiz_text_${blockKey}`, val.trim());
+    } catch {}
+  }
+  const QuizText = ({ as = "span", blockKey, fallback, style }: { as?: "span" | "div" | "p" | "h3"; blockKey: string; fallback: string; style?: React.CSSProperties }) => (
+    isEditor
+      ? <EditableText as={as} value={getQuizText(blockKey, fallback)} onSave={v => saveQuizText(blockKey, v)} style={style} />
+      : React.createElement(as, { style }, getQuizText(blockKey, fallback))
+  );
 
   const selectedProduct = products.find(p => p.id === cfg.productId) || null;
   // effectiveKey: use selectedSlotKey if productId is a slotKey (no real product), else use productId
@@ -2068,7 +2112,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
               return sizes.map((s, idx) => {
                 const sizeKey = `${effectiveKey}_size_${idx}`;
                 const imgUrl = localContent[`quiz_opt_img_${sizeKey}`] || content[`quiz_opt_img_${sizeKey}`] || defaultSizeImgs[idx] || defaultSizeImgs[0];
-                const sizeDesc = idx === 0 ? "Phù hợp phòng nhỏ, 1 người" : idx === 1 ? "Tiêu chuẩn, 1–2 người" : idx === 2 ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng";
+                const defaultSizeDesc = idx === 0 ? "Phù hợp phòng nhỏ, 1 người" : idx === 1 ? "Tiêu chuẩn, 1–2 người" : idx === 2 ? "Rộng rãi, 2 người thoải mái" : "Cỡ lớn, không gian sang trọng";
+                const sizeDesc = (localContent[`quiz_opt_${sizeKey}_desc`] || content[`quiz_opt_${sizeKey}_desc`]) || defaultSizeDesc;
                 // Load saved label and price from DB content
                 const savedLabel = localContent[`quiz_opt_${sizeKey}_label`] || content[`quiz_opt_${sizeKey}_label`] || s.size;
                 const savedPriceStr = localContent[`quiz_opt_${sizeKey}_price`] || content[`quiz_opt_${sizeKey}_price`];
@@ -2098,8 +2143,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             </>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="box" label={(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_label`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_label`]) || "Có hộc để đồ"} desc="Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng" price={Number(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || "700000") || 700000} badge="Phổ biến nhất" selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey={`${effectiveKey}_có_hộc_để_đồ`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_có_hộc_để_đồ`] || content[`quiz_opt_img_${effectiveKey}_có_hộc_để_đồ`]) || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
-            <QuizEditableOption icon="minus_circle" label={(localContent[`quiz_opt_${effectiveKey}_không_hộc_label`] || content[`quiz_opt_${effectiveKey}_không_hộc_label`]) || "Không hộc"} desc="Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ" price={Number(localContent[`quiz_opt_${effectiveKey}_không_hộc_price`] || content[`quiz_opt_${effectiveKey}_không_hộc_price`] || "0") || 0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey={`${effectiveKey}_không_hộc`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_không_hộc`] || content[`quiz_opt_img_${effectiveKey}_không_hộc`]) || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+            <QuizEditableOption icon="box" label={(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_label`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_label`]) || "Có hộc để đồ"} desc={(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_desc`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_desc`]) || "Ngăn chứa lớn bên dưới, cơ cấu gas-lift êm ái, chứa chăn gối gọn gàng"} price={Number(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_price`] || "700000") || 700000} badge={(localContent[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_badge`] || content[`quiz_opt_${effectiveKey}_có_hộc_để_đồ_badge`]) || "Phổ biến nhất"} selected={cfg.hoc === "co_hoc"} onClick={() => selectAndAdvance("hoc", "co_hoc")}  isEditor={isEditor} optionKey={`${effectiveKey}_có_hộc_để_đồ`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_có_hộc_để_đồ`] || content[`quiz_opt_img_${effectiveKey}_có_hộc_để_đồ`]) || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+            <QuizEditableOption icon="minus_circle" label={(localContent[`quiz_opt_${effectiveKey}_không_hộc_label`] || content[`quiz_opt_${effectiveKey}_không_hộc_label`]) || "Không hộc"} desc={(localContent[`quiz_opt_${effectiveKey}_không_hộc_desc`] || content[`quiz_opt_${effectiveKey}_không_hộc_desc`]) || "Thiết kế gọn nhẹ hơn, phù hợp phòng đã có tủ lưu trữ"} price={Number(localContent[`quiz_opt_${effectiveKey}_không_hộc_price`] || content[`quiz_opt_${effectiveKey}_không_hộc_price`] || "0") || 0} selected={cfg.hoc === "khong_hoc"} onClick={() => selectAndAdvance("hoc", "khong_hoc")}  isEditor={isEditor} optionKey={`${effectiveKey}_không_hộc`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_không_hộc`] || content[`quiz_opt_img_${effectiveKey}_không_hộc`]) || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
           </div>
         </div>
       );
@@ -2120,8 +2165,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
             </>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            <QuizEditableOption icon="layers" label={(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_label`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_label`]) || "Nệm 7cm"} desc="Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian" price={Number(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || "0") || 0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey={`${effectiveKey}_nệm_7cm`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_nệm_7cm`] || content[`quiz_opt_img_${effectiveKey}_nệm_7cm`]) || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
-            <QuizEditableOption icon="bed" label={(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_label`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_label`]) || "Nệm 10cm"} desc="Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng" price={Number(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || "800000") || 800000} badge="Bán chạy" selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey={`${effectiveKey}_nệm_10cm`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_nệm_10cm`] || content[`quiz_opt_img_${effectiveKey}_nệm_10cm`]) || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+            <QuizEditableOption icon="layers" label={(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_label`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_label`]) || "Nệm 7cm"} desc={(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_desc`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_desc`]) || "Êm ái, phù hợp người thích nệm vừa phải, tiết kiệm không gian"} price={Number(localContent[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_7cm_price`] || "0") || 0} selected={cfg.doDay === "7cm"} onClick={() => selectAndAdvance("doDay", "7cm")}  isEditor={isEditor} optionKey={`${effectiveKey}_nệm_7cm`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_nệm_7cm`] || content[`quiz_opt_img_${effectiveKey}_nệm_7cm`]) || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
+            <QuizEditableOption icon="bed" label={(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_label`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_label`]) || "Nệm 10cm"} desc={(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_desc`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_desc`]) || "Dày hơn, êm hơn, hỗ trợ cột sống tốt hơn — lý tưởng cho người đau lưng"} price={Number(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_price`] || "800000") || 800000} badge={(localContent[`quiz_opt_${effectiveKey}_nệm_10cm_badge`] || content[`quiz_opt_${effectiveKey}_nệm_10cm_badge`]) || "Bán chạy"} selected={cfg.doDay === "10cm"} onClick={() => selectAndAdvance("doDay", "10cm")}  isEditor={isEditor} optionKey={`${effectiveKey}_nệm_10cm`} slug={quizSlug} imgUrl={(localContent[`quiz_opt_img_${effectiveKey}_nệm_10cm`] || content[`quiz_opt_img_${effectiveKey}_nệm_10cm`]) || "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200&h=200&fit=crop&crop=bottom"} onImageUploaded={(k, u) => { setLocalContent(prev => ({...prev, [`quiz_opt_img_${k}`]: u})); onContentSaved?.(`quiz_opt_img_${k}`, u); }} onFieldSaved={(k, field, val) => { setLocalContent(prev => ({...prev, [`quiz_opt_${k}_${field}`]: val})); onContentSaved?.(`quiz_opt_${k}_${field}`, val); }} />
           </div>
         </div>
       );
@@ -2141,7 +2186,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           ) : (
             <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>{getStepTitle("aoNem", "Áo nệm")}</h3>
           )}
-          <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Lớp bọc ngoài nệm, có thể tháo ra giặt dễ dàng</p>
+          <QuizText as="p" blockKey="ao_nem_subtitle" fallback="Lớp bọc ngoài nệm, có thể tháo ra giặt dễ dàng" style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {aoNemOptions.map(opt => (
               <QuizEditableOption
@@ -2193,16 +2238,16 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         return fromContent || ADDON_LABELS[cfg.aoNem] || cfg.aoNem;
       })();
       const summaryItems = [
-        { label: "Mẫu sản phẩm", value: summaryProductLabel },
-        { label: "Kích thước", value: cfg.size || "—" },
-        { label: "Hộc để đồ", value: cfg.hoc ? ADDON_LABELS[cfg.hoc] : "—" },
-        { label: "Độ dày nệm", value: cfg.doDay ? ADDON_LABELS[cfg.doDay] : "—" },
-        { label: "Áo nệm", value: summaryAoNemLabel },
+        { label: getQuizText("summary_item_product", "Mẫu sản phẩm"), value: summaryProductLabel },
+        { label: getQuizText("summary_item_size", "Kích thước"), value: cfg.size || "—" },
+        { label: getQuizText("summary_item_storage", "Hộc để đồ"), value: cfg.hoc ? ADDON_LABELS[cfg.hoc] : "—" },
+        { label: getQuizText("summary_item_mattress", "Độ dày nệm"), value: cfg.doDay ? ADDON_LABELS[cfg.doDay] : "—" },
+        { label: getQuizText("summary_item_cover", "Áo nệm"), value: summaryAoNemLabel },
       ];
       return (
         <div>
-          <h3 style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }}>Cấu hình của bạn</h3>
-          <p style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }}>Xem lại và xác nhận để nhận tư vấn chính xác nhất</p>
+          <QuizText as="h3" blockKey="summary_title" fallback="Cấu hình của bạn" style={{ color: GOLD, fontSize: 17, fontWeight: 700, marginBottom: 6, fontFamily: FONT_BODY }} />
+          <QuizText as="p" blockKey="summary_subtitle" fallback="Xem lại và xác nhận để nhận tư vấn chính xác nhất" style={{ color: GRAY, fontSize: 13, marginBottom: 20, fontFamily: FONT_BODY }} />
           <div style={{ background: "rgba(245,237,214,0.03)", border: `1px solid ${BLACK_BORDER}`, borderRadius: R_MD, overflow: "hidden", marginBottom: 20 }}>
             {summaryItems.map((item, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "12px 16px", borderBottom: i < summaryItems.length - 1 ? `1px solid ${BLACK_BORDER}` : "none", gap: 12 }}>
@@ -2213,18 +2258,18 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
           </div>
           <div style={{ background: `${gRgba(GOLD, 0.08)}`, border: `1px solid ${gRgba(GOLD, 0.3)}`, borderRadius: R_MD, padding: "16px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Tổng giá tham khảo</div>
+              <QuizText as="div" blockKey="summary_price_label" fallback="Tổng giá tham khảo" style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }} />
               <div style={{ color: GOLD, fontSize: 26, fontWeight: 800, fontFamily: FONT_HEADING }}>{fmt(total)}</div>
-              <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginTop: 4 }}>Miễn phí giao hàng + lắp đặt toàn quốc</div>
+              <QuizText as="div" blockKey="summary_shipping_note" fallback="Miễn phí giao hàng + lắp đặt toàn quốc" style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY, marginTop: 4 }} />
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-            <button onClick={goPrev} style={{ flex: "0 0 auto", background: "transparent", border: `1px solid ${BLACK_BORDER}`, color: GRAY, borderRadius: R_MD, padding: "16px 20px", cursor: "pointer", fontFamily: FONT_BODY, fontSize: 13 }}>← Quay lại</button>
+            <button onClick={goPrev} style={{ flex: "0 0 auto", background: "transparent", border: `1px solid ${BLACK_BORDER}`, color: GRAY, borderRadius: R_MD, padding: "16px 20px", cursor: "pointer", fontFamily: FONT_BODY, fontSize: 13 }}><QuizText blockKey="summary_back_button" fallback="← Quay lại" /></button>
             <GoldButton onClick={() => goNext("order_form")} style={{ flex: 1, borderRadius: R_MD, fontSize: 14, padding: "16px" }}>
-              Xác Nhận & Đặt Hàng →
+              {getQuizText("summary_confirm_button", "Xác Nhận & Đặt Hàng →")}
             </GoldButton>
           </div>
-          <div style={{ textAlign: "center", marginTop: 4, color: GRAY, fontSize: 12, fontFamily: FONT_BODY }}>Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút</div>
+          <QuizText as="div" blockKey="summary_contact_note" fallback="Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút" style={{ textAlign: "center", marginTop: 4, color: GRAY, fontSize: 12, fontFamily: FONT_BODY }} />
         </div>
       );
     }
@@ -2242,7 +2287,7 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         <div style={{ padding: "20px 24px", borderBottom: `1px solid ${BLACK_BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <div>
             <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", fontFamily: FONT_BODY, marginBottom: 4 }}>
-              THIẾT KẾ CÁ NHÂN HOÁ — BƯỚC {stepIdx + 1}/{QUIZ_STEPS.length}
+              {getQuizText("modal_step_prefix", "THIẾT KẾ CÁ NHÂN HOÁ — BƯỚC")} {stepIdx + 1}/{QUIZ_STEPS.length}
             </div>
             <div style={{ color: WHITE, fontSize: 17, fontWeight: 700, fontFamily: FONT_HEADING }}>{getStepLabel(step)}</div>
           </div>
@@ -2326,9 +2371,9 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
                 )}
               </div>
               <div style={{ padding: "14px", borderTop: `1px solid ${BLACK_BORDER}` }}>
-                <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY, marginBottom: 4 }}>Giá tham khảo</div>
+                <QuizText as="div" blockKey="sidebar_price_label" fallback="Giá tham khảo" style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY, marginBottom: 4 }} />
                 <div style={{ color: GOLD, fontSize: 20, fontWeight: 800, fontFamily: FONT_HEADING }}>{total > 0 ? fmt(total) : "—"}</div>
-                <div style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY, marginTop: 4 }}>Miễn phí giao + lắp đặt</div>
+                <QuizText as="div" blockKey="sidebar_shipping_note" fallback="Miễn phí giao + lắp đặt" style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY, marginTop: 4 }} />
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 3 }}>
                   {cfg.size && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{cfg.size}</span></div>}
                   {cfg.hoc && <div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: GOLD, flexShrink: 0 }} /><span style={{ color: GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{ADDON_LABELS[cfg.hoc]}</span></div>}
@@ -2346,8 +2391,8 @@ function QuizFunnelModal({ products, initialProductId, onClose, onComplete, isEd
         {/* Footer nav */}
         {step !== "product" && step !== "summary" && step !== "order_form" && (
           <div style={{ padding: "14px 24px", borderTop: `1px solid ${BLACK_BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-            <button onClick={goPrev} style={{ background: "transparent", border: `1px solid ${BLACK_BORDER}`, color: GRAY, borderRadius: 8, padding: "8px 18px", cursor: "pointer", fontFamily: FONT_BODY, fontSize: 13 }}>← Quay lại</button>
-            <div style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }}>Chọn một tuỳ chọn để tiếp tục</div>
+            <button onClick={goPrev} style={{ background: "transparent", border: `1px solid ${BLACK_BORDER}`, color: GRAY, borderRadius: 8, padding: "8px 18px", cursor: "pointer", fontFamily: FONT_BODY, fontSize: 13 }}><QuizText blockKey="modal_back_button" fallback="← Quay lại" /></button>
+            <QuizText as="div" blockKey="modal_continue_hint" fallback="Chọn một tuỳ chọn để tiếp tục" style={{ color: GRAY, fontSize: 11, fontFamily: FONT_BODY }} />
           </div>
         )}
       </div>
@@ -2650,7 +2695,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
   }, []);
 
   // Shorthand để render InlineEdit với props chung
-  const E = useCallback((p: { bk: string; def: string; as?: keyof JSX.IntrinsicElements; style?: React.CSSProperties; multiline?: boolean }) => (
+  const E = useCallback((p: { bk: string; def: string; as?: React.ElementType; style?: React.CSSProperties; multiline?: boolean }) => (
     <InlineEdit
       bk={p.bk} def={p.def} as={p.as} style={p.style} multiline={p.multiline}
       editMode={editMode} slug={EFFECTIVE_SLUG}
@@ -2658,6 +2703,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       onSaved={handleSaved}
     />
   ), [editMode, content, handleSaved]);
+  const T = useCallback((bk: string, def: string) => (content[bk] ?? def).split("||")[0] || def, [content]);
 
   useEffect(() => {
     setScrollY(window.scrollY);
@@ -2669,11 +2715,11 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
   const NAV_ITEMS = [
-    { label: "Mẫu sản phẩm", id: "product-gallery" },
-    { label: "Cách thiết kế", id: "how-it-works" },
-    { label: "Điểm mạnh", id: "features" },
-    { label: "Đánh giá", id: "testimonials" },
-    { label: "Đặt hàng", id: "order-form" },
+    { bk: "nav_products", label: "Mẫu sản phẩm", id: "product-gallery" },
+    { bk: "nav_how", label: "Cách thiết kế", id: "how-it-works" },
+    { bk: "nav_features", label: "Điểm mạnh", id: "features" },
+    { bk: "nav_testimonials", label: "Đánh giá", id: "testimonials" },
+    { bk: "nav_order", label: "Đặt hàng", id: "order-form" },
   ];
 
   const scrollToForm = useCallback(() => {
@@ -2702,12 +2748,12 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
   function handleQuizComplete(cfg: ConfigState, product: CrmProduct, total: number) {
     const parts = [
-      `Mẫu: ${product.sku}`,
-      cfg.size ? `Kích thước: ${cfg.size}` : null,
+      `${T("quiz_order_prefix_model", "Mẫu")}: ${product.sku}`,
+      cfg.size ? `${T("quiz_order_prefix_size", "Kích thước")}: ${cfg.size}` : null,
       cfg.hoc ? ADDON_LABELS[cfg.hoc] : null,
       cfg.doDay ? ADDON_LABELS[cfg.doDay] : null,
       cfg.aoNem ? (ADDON_LABELS[cfg.aoNem] || cfg.aoNem) : null,
-      `Tổng: ${fmt(total)}`,
+      `${T("quiz_order_prefix_total", "Tổng")}: ${fmt(total)}`,
     ].filter(Boolean);
     setOrderConfig(parts.join(" | "));
     setQuizOpen(false);
@@ -2769,7 +2815,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                   (e.currentTarget as HTMLButtonElement).style.background = "none";
                 }}
               >
-                {item.label}
+                {E({ bk: item.bk, def: item.label, as: "span" })}
               </button>
             ))}
           </div>
@@ -2785,7 +2831,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}>
-            THIẾT KẾ NGAY
+            {E({ bk: "nav_cta", def: "THIẾT KẾ NGAY", as: "span" })}
           </button>
           {/* Hamburger */}
           <button
@@ -2826,7 +2872,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                   letterSpacing: "0.02em",
                 }}
               >
-                {item.label}
+                {E({ bk: item.bk, def: item.label, as: "span" })}
               </button>
             ))}
             <button
@@ -2839,7 +2885,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 fontFamily: FONT_BODY, marginTop: 8, letterSpacing: "0.08em",
               }}
             >
-              Thiết Kế Ngay →
+              {E({ bk: "mobile_nav_cta", def: "Thiết Kế Ngay →", as: "span" })}
             </button>
           </div>
         </div>
@@ -2887,11 +2933,13 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
 
         <div style={{ position: "relative", zIndex: 5, maxWidth: 1200, margin: "0 auto", padding: "clamp(60px,8vw,100px) clamp(20px,5vw,80px)", width: "100%" }}>
           <FadeIn>
-            <SectionLabel>Sofa Giường Cá Nhân Hoá</SectionLabel>
+            <SectionLabel>{E({ bk: "hero_label", def: "Sofa Giường Cá Nhân Hoá", as: "span" })}</SectionLabel>
+            {editMode && <div style={{ color: THEME_GOLD, fontSize: 12, marginBottom: 8, fontFamily: FONT_BODY }}>{E({ bk: "hero_title", def: "Tự Thiết Kế Sofa Giường Theo Nhu Cầu Của Bạn", as: "span" })}</div>}
+            {editMode && <div style={{ color: THEME_GOLD, fontSize: 11, marginBottom: 8, fontFamily: FONT_BODY }}>Từ/cụm highlight: {E({ bk: "hero_highlight", def: "Theo Nhu Cầu Của Bạn", as: "span" })}</div>}
             <h1 style={{ fontSize: "clamp(32px,5.5vw,68px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 20, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", maxWidth: 700, color: "#FFFFFF" }}>
               <TypewriterText
-                text="Tự Thiết Kế Sofa Giường Theo Nhu Cầu Của Bạn"
-                highlightWords={["Theo Nhu Cầu Của Bạn"]}
+                text={T("hero_title", "Tự Thiết Kế Sofa Giường Theo Nhu Cầu Của Bạn")}
+                highlightWords={[T("hero_highlight", "Theo Nhu Cầu Của Bạn")]}
                 speed={55}
                 startDelay={300}
               />
@@ -2901,23 +2949,23 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 48 }}>
               <GoldButton onClick={() => openQuiz()} style={{ fontSize: 14, padding: "16px 36px" }}>
-                Bắt Đầu Thiết Kế →
+                {E({ bk: "hero_primary_cta", def: "Bắt Đầu Thiết Kế →", as: "span" })}
               </GoldButton>
               <button onClick={scrollToForm} style={{ background: "transparent", color: "#FFFFFF", border: "1px solid rgba(255,255,255,0.4)", borderRadius: R_MD, padding: "16px 32px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, transition: "all 0.25s" }}>
-                Xem Bảng Giá
+                {E({ bk: "hero_secondary_cta", def: "Xem Bảng Giá", as: "span" })}
               </button>
             </div>
             {/* Trust badges */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
               {[
-                { icon: "palette", text: "7 bước tuỳ chỉnh" },
-                { icon: "price_tag", text: "Giá nhảy realtime" },
-                { icon: "truck", text: "Miễn phí giao + lắp" },
-                { icon: "shield", text: "Bảo hành 3 năm" },
+                { icon: "palette", bk: "hero_badge_1", text: "7 bước tuỳ chỉnh" },
+                { icon: "price_tag", bk: "hero_badge_2", text: "Giá nhảy realtime" },
+                { icon: "truck", bk: "hero_badge_3", text: "Miễn phí giao + lắp" },
+                { icon: "shield", bk: "hero_badge_4", text: "Bảo hành 3 năm" },
               ].map((b, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <SvgIcon name={b.icon} size={18} color={THEME_GOLD} />
-                  <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontFamily: FONT_BODY }}>{b.text}</span>
+                  <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontFamily: FONT_BODY }}>{E({ bk: b.bk, def: b.text, as: "span" })}</span>
                 </div>
               ))}
             </div>
@@ -2952,7 +3000,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                     {/* Ảnh minh hoạ */}
                     <div className="lp-sg-pain-card-img" style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
                       {imgUrl ? (
-                        <img src={imgUrl} alt={p.title} loading="lazy" decoding="async" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={imgUrl} alt={`Minh họa vấn đề ${i + 1}`} loading="lazy" decoding="async" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
                         <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
                           <SvgIcon name={p.icon} size={40} color={`${gRgba(GOLD, 0.35)}`} />
@@ -2981,7 +3029,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
-              <SectionLabel>Giải Pháp SmartFurni</SectionLabel>
+              <SectionLabel>{E({ bk: "solution_label", def: "Giải Pháp SmartFurni", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: THEME_WHITE }}>
                 {E({ bk: "solution_title", def: "Tự Thiết Kế Sofa Giường Theo Sở Thích Của Bạn", as: "span" })}
               </h2>
@@ -3005,7 +3053,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                       <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: `${gRgba(GOLD, 0.04)}` }}>
                         <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
                         <p style={{ color: THEME_GRAY, fontSize: 13, fontFamily: FONT_BODY, textAlign: "center" as const, margin: 0 }}>
-                          {editMode ? "Bấm nút bên dưới để upload ảnh" : "Chưa có ảnh — bật chỉnh sửa để upload"}
+                          {editMode ? E({ bk: "solution_image_upload_hint", def: "Bấm nút bên dưới để upload ảnh", as: "span" }) : E({ bk: "solution_image_empty_hint", def: "Chưa có ảnh — bật chỉnh sửa để upload", as: "span" })}
                         </p>
                       </div>
                     )}
@@ -3029,7 +3077,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                       <div style={{ minHeight: 280, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 12, background: `${gRgba(GOLD, 0.04)}` }}>
                         <div style={{ fontSize: 40, opacity: 0.3 }}>🖼</div>
                         <p style={{ color: THEME_GRAY, fontSize: 13, fontFamily: FONT_BODY, textAlign: "center" as const, margin: 0 }}>
-                          {editMode ? "Bấm nút bên dưới để upload ảnh" : "Chưa có ảnh — bật chỉnh sửa để upload"}
+                          {editMode ? E({ bk: "solution_image_2_upload_hint", def: "Bấm nút bên dưới để upload ảnh", as: "span" }) : E({ bk: "solution_image_2_empty_hint", def: "Chưa có ảnh — bật chỉnh sửa để upload", as: "span" })}
                         </p>
                       </div>
                     )}
@@ -3048,7 +3096,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               <button onClick={() => openQuiz()} style={{ display: "inline-flex", alignItems: "center", gap: 10, background: `linear-gradient(135deg, ${THEME_GOLD} 0%, ${THEME_GOLD_LIGHT} 100%)`, color: THEME_BLACK, fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING, padding: "14px 36px", borderRadius: 50, border: "none", cursor: "pointer", boxShadow: `0 4px 24px ${gRgba(GOLD, 0.35)}`, transition: "transform 0.2s, box-shadow 0.2s" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px ${gRgba(GOLD, 0.5)}`; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 24px ${gRgba(GOLD, 0.35)}`; }}>
-                🎨 Bắt Đầu Thiết Kế Ngay →
+                {E({ bk: "solution_cta", def: "🎨 Bắt Đầu Thiết Kế Ngay →", as: "span" })}
               </button>
             </div>
           </FadeIn>
@@ -3058,7 +3106,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       <section id="how-it-works" className="lp-sg-how-section" style={{ padding: SECTION_PAD, background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
-            <SectionLabel>Quy Trình</SectionLabel>
+            <SectionLabel>{E({ bk: "how_label", def: "Quy Trình", as: "span" })}</SectionLabel>
             <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
               {E({ bk: "how_title", def: "Thiết Kế Trong 3 Phút", as: "span" })}
             </h2>
@@ -3066,10 +3114,10 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
           <div className="lp-sg-how-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24, marginTop: 16 }}>
             {[
-              { step: "01", icon: "sofa", title: "Chọn mẫu", desc: "Duyệt qua bộ sưu tập và chọn mẫu sofa giường yêu thích" },
-              { step: "02", icon: "sliders", title: "Tuỳ chỉnh", desc: "Chọn kích thước, hộc, tay vịn, chất liệu, nệm theo sở thích" },
-              { step: "03", icon: "calculator", title: "Xem giá ngay", desc: "Giá tổng cập nhật realtime theo từng lựa chọn của bạn" },
-              { step: "04", icon: "phone", title: "Nhận tư vấn", desc: "Điền thông tin, nhân viên liên hệ xác nhận trong 30 phút" },
+              { step: "01", icon: "sofa", titleKey: "how_step_1_title", title: "Chọn mẫu", descKey: "how_step_1_desc", desc: "Duyệt qua bộ sưu tập và chọn mẫu sofa giường yêu thích" },
+              { step: "02", icon: "sliders", titleKey: "how_step_2_title", title: "Tuỳ chỉnh", descKey: "how_step_2_desc", desc: "Chọn kích thước, hộc, tay vịn, chất liệu, nệm theo sở thích" },
+              { step: "03", icon: "calculator", titleKey: "how_step_3_title", title: "Xem giá ngay", descKey: "how_step_3_desc", desc: "Giá tổng cập nhật realtime theo từng lựa chọn của bạn" },
+              { step: "04", icon: "phone", titleKey: "how_step_4_title", title: "Nhận tư vấn", descKey: "how_step_4_desc", desc: "Điền thông tin, nhân viên liên hệ xác nhận trong 30 phút" },
             ].map((s, i) => (
               <FadeIn key={i} delay={i * 80}>
                 <div
@@ -3084,8 +3132,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                     <SvgIcon name={s.icon} size={24} color={THEME_GOLD} />
                   </div>
                   <div style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", fontFamily: FONT_BODY, marginBottom: 8 }}>{s.step}</div>
-                  <h3 style={{ color: THEME_WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{s.title}</h3>
-                  <p style={{ color: THEME_GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{s.desc}</p>
+                  <h3 style={{ color: THEME_WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{E({ bk: s.titleKey, def: s.title, as: "span" })}</h3>
+                  <p style={{ color: THEME_GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: s.descKey, def: s.desc, as: "span", multiline: true })}</p>
                 </div>
               </FadeIn>
             ))}
@@ -3093,7 +3141,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           <FadeIn delay={200}>
             <div style={{ marginTop: 40 }}>
               <GoldButton onClick={() => openQuiz()} style={{ fontSize: 14, padding: "16px 40px" }}>
-                Bắt Đầu Thiết Kế Ngay →
+                {E({ bk: "how_cta_button", def: "Bắt Đầu Thiết Kế Ngay →", as: "span" })}
               </GoldButton>
             </div>
           </FadeIn>
@@ -3106,7 +3154,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         <div style={{ maxWidth: 1200, margin: "0 auto", paddingLeft: "clamp(20px,5vw,80px)" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 40, paddingRight: "clamp(20px,5vw,80px)" }}>
-              <SectionLabel>Chi Tiết Sản Phẩm</SectionLabel>
+              <SectionLabel>{E({ bk: "details_gallery_label", def: "Chi Tiết Sản Phẩm", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(22px,3vw,38px)", fontWeight: 700, marginBottom: 12, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
                 {E({ bk: "details_gallery_title", def: "Từng Chi Tiết Được Chăm Chút" })}
               </h2>
@@ -3123,7 +3171,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>Điểm Mạnh</SectionLabel>
+              <SectionLabel>{E({ bk: "features_label", def: "Điểm Mạnh", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
                 {E({ bk: "features_title", def: "Vì Sao Chọn SmartFurni?", as: "span" })}
               </h2>
@@ -3132,20 +3180,20 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
           <div className="lp-sg-features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
             {[
-              { icon: "star_circle", title: "Cá nhân hoá 100%", desc: "7 bước tuỳ chỉnh — kích thước, hộc, tay vịn, chất liệu, nệm, áo nệm. Mỗi chiếc sofa giường là duy nhất." },
-              { icon: "price_tag", title: "Giá minh bạch", desc: "Giá tổng nhảy realtime khi bạn chọn từng tuỳ chọn. Không ẩn phí, không bất ngờ khi thanh toán." },
-              { icon: "factory", title: "Sản xuất tại Việt Nam", desc: "Khung thép mạ kẽm, cơ cấu gas-lift nhập khẩu, chất liệu bọc đạt chuẩn xuất khẩu." },
-              { icon: "truck", title: "Miễn phí giao + lắp đặt", desc: "Giao hàng toàn quốc, đội kỹ thuật lắp đặt tận nơi. Chỉ cần mở cửa đón hàng." },
-              { icon: "shield", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện khung, cơ cấu và chất liệu bọc. Đổi mới ngay nếu có lỗi nhà sản xuất." },
-              { icon: "credit_card", title: "Trả góp 0% lãi suất", desc: "Hỗ trợ trả góp qua các đối tác tài chính. Sở hữu sofa giường mơ ước ngay hôm nay." },
+              { icon: "star_circle", titleKey: "feature_1_title", title: "Cá nhân hoá 100%", descKey: "feature_1_desc", desc: "7 bước tuỳ chỉnh — kích thước, hộc, tay vịn, chất liệu, nệm, áo nệm. Mỗi chiếc sofa giường là duy nhất." },
+              { icon: "price_tag", titleKey: "feature_2_title", title: "Giá minh bạch", descKey: "feature_2_desc", desc: "Giá tổng nhảy realtime khi bạn chọn từng tuỳ chọn. Không ẩn phí, không bất ngờ khi thanh toán." },
+              { icon: "factory", titleKey: "feature_3_title", title: "Sản xuất tại Việt Nam", descKey: "feature_3_desc", desc: "Khung thép mạ kẽm, cơ cấu gas-lift nhập khẩu, chất liệu bọc đạt chuẩn xuất khẩu." },
+              { icon: "truck", titleKey: "feature_4_title", title: "Miễn phí giao + lắp đặt", descKey: "feature_4_desc", desc: "Giao hàng toàn quốc, đội kỹ thuật lắp đặt tận nơi. Chỉ cần mở cửa đón hàng." },
+              { icon: "shield", titleKey: "feature_5_title", title: "Bảo hành 3 năm", descKey: "feature_5_desc", desc: "Bảo hành toàn diện khung, cơ cấu và chất liệu bọc. Đổi mới ngay nếu có lỗi nhà sản xuất." },
+              { icon: "credit_card", titleKey: "feature_6_title", title: "Trả góp 0% lãi suất", descKey: "feature_6_desc", desc: "Hỗ trợ trả góp qua các đối tác tài chính. Sở hữu sofa giường mơ ước ngay hôm nay." },
             ].map((f, i) => (
               <FadeIn key={i} delay={i * 60}>
                 <div className="lp-sg-feat-card" style={{ background: THEME_BLACK_CARD, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", transition: "border-color 0.25s" }}
                   onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = `${gRgba(GOLD, 0.35)}`}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = THEME_BLACK_BORDER}>
                   <div className="lp-sg-feat-card-icon" style={{ marginBottom: 14 }}><SvgIcon name={f.icon} size={32} color={THEME_GOLD} /></div>
-                  <h3 style={{ color: THEME_WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{f.title}</h3>
-                  <p style={{ color: THEME_GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{f.desc}</p>
+                  <h3 style={{ color: THEME_WHITE, fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: FONT_HEADING }}>{E({ bk: f.titleKey, def: f.title, as: "span" })}</h3>
+                  <p style={{ color: THEME_GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: f.descKey, def: f.desc, as: "span", multiline: true })}</p>
                 </div>
               </FadeIn>
             ))}
@@ -3194,7 +3242,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel >Bộ Sưu Tập</SectionLabel>
+              <SectionLabel>{E({ bk: "gallery_label", def: "Bộ Sưu Tập", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25, color: THEME_WHITE }}>
                 {E({ bk: "gallery_title_1", def: "Chọn Mẫu Yêu Thích", as: "span", style: { color: THEME_WHITE } })}
                 {" "}
@@ -3282,7 +3330,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                           onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = "1"; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0"; }}
                         >
-                          <div style={{ background: THEME_GOLD, color: THEME_BLACK, padding: "10px 28px", borderRadius: 100, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>Thiết Kế Ngay →</div>
+                          <div style={{ background: THEME_GOLD, color: THEME_BLACK, padding: "10px 28px", borderRadius: 100, fontSize: 12, fontWeight: 700, fontFamily: FONT_BODY }}>{E({ bk: "product_card_cta", def: "Thiết Kế Ngay →", as: "span" })}</div>
                         </div>
                         {/* Nút upload ảnh + dán URL khi editMode */}
                         {editMode && <GalleryImageEditor productId={p.id} onSave={url => setContent(prev => ({ ...prev, [`gallery_product_img_${p.id}`]: url }))} />}
@@ -3336,7 +3384,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                         )}
                         <div className="lp-sg-card-price" style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${THEME_BLACK_BORDER}`, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
                           <div>
-                            <div style={{ color: THEME_GRAY, fontSize: 10, fontFamily: FONT_BODY, marginBottom: 2 }}>Giá bán lẻ từ</div>
+                            <div style={{ color: THEME_GRAY, fontSize: 10, fontFamily: FONT_BODY, marginBottom: 2 }}>{E({ bk: "product_price_label", def: "Giá bán lẻ từ", as: "span" })}</div>
                             {editMode ? (
                               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                                 <input
@@ -3349,15 +3397,15 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                                   }}
                                   style={{ color: THEME_GOLD, fontSize: 16, fontWeight: 700, fontFamily: FONT_HEADING, background: `${gRgba(GOLD, 0.08)}`, border: `1px dashed ${gRgba(GOLD, 0.4)}`, borderRadius: 4, padding: "2px 6px", width: 120, outline: "none" }}
                                 />
-                                <span style={{ color: THEME_GRAY, fontSize: 11 }}>đ / size</span>
+                                <span style={{ color: THEME_GRAY, fontSize: 11 }}>{E({ bk: "product_price_unit_edit", def: "đ / size", as: "span" })}</span>
                               </div>
                             ) : (
-                              <div style={{ color: THEME_GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{fmt(content[`prod_price_${p.id}`] ? parseInt(content[`prod_price_${p.id}`]) : (minPrice || 0))} <span style={{ color: THEME_GRAY, fontSize: 11, fontWeight: 400 }}>/ size</span></div>
+                              <div style={{ color: THEME_GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{fmt(content[`prod_price_${p.id}`] ? parseInt(content[`prod_price_${p.id}`]) : (minPrice || 0))} <span style={{ color: THEME_GRAY, fontSize: 11, fontWeight: 400 }}>{E({ bk: "product_price_unit", def: "/ size", as: "span" })}</span></div>
                             )}
                           </div>
                           <div className="lp-sg-price-meta" style={{ textAlign: "right" }}>
-                            <div style={{ color: THEME_GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{priceCount} mức giá</div>
-                            <div style={{ color: THEME_GRAY, fontSize: 10, fontFamily: FONT_BODY }}>theo kích thước</div>
+                            <div style={{ color: THEME_GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{priceCount} {E({ bk: "product_price_count_suffix", def: "mức giá", as: "span" })}</div>
+                            <div style={{ color: THEME_GRAY, fontSize: 10, fontFamily: FONT_BODY }}>{E({ bk: "product_price_by_size", def: "theo kích thước", as: "span" })}</div>
                           </div>
                         </div>
                       </div>
@@ -3368,7 +3416,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               {/* Nút Thêm sản phẩm khi editMode */}
               {editMode && hiddenProducts.length > 0 && (
                 <div style={{ background: `${gRgba(GOLD, 0.06)}`, border: `2px dashed ${gRgba(GOLD, 0.35)}`, borderRadius: R_LG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "32px 16px", minHeight: 200 }}>
-                  <div style={{ color: THEME_GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textAlign: "center" }}>Thêm sản phẩm</div>
+                  <div style={{ color: THEME_GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textAlign: "center" }}>{E({ bk: "product_add_back_title", def: "Thêm sản phẩm", as: "span" })}</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
                     {hiddenProducts.map(hp => (
                       <button key={hp.id}
@@ -3385,14 +3433,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ color: THEME_GRAY, fontSize: 14, fontFamily: FONT_BODY }}>Đang tải danh sách sản phẩm…</div>
+              <div style={{ color: THEME_GRAY, fontSize: 14, fontFamily: FONT_BODY }}>{E({ bk: "product_loading_text", def: "Đang tải danh sách sản phẩm…", as: "span" })}</div>
             </div>
           );
           })()}
           <FadeIn delay={200}>
             <div style={{ textAlign: "center", marginTop: 40 }}>
               <GoldButton onClick={() => openQuiz()} style={{ fontSize: 14, padding: "16px 40px" }}>
-                Thiết Kế Sofa Giường Của Bạn →
+                {E({ bk: "gallery_cta", def: "Thiết Kế Sofa Giường Của Bạn →", as: "span" })}
               </GoldButton>
             </div>
           </FadeIn>
@@ -3403,7 +3451,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       <section id="testimonials" style={{ padding: SECTION_PAD, background: THEME_BLACK_SOFT }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
-            <SectionLabel>Khách Hàng Nói Gì</SectionLabel>
+            <SectionLabel>{E({ bk: "testimonials_label", def: "Khách Hàng Nói Gì", as: "span" })}</SectionLabel>
             <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
               {E({ bk: "testimonials_title", def: "Hơn 500 Gia Đình Tin Tưởng", as: "span" })}
             </h2>
@@ -3411,19 +3459,19 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginTop: 16 }}>
             {[
-              { name: "Chị Minh Trang", location: "Hà Nội", rating: 5, text: "Thiết kế online rất thú vị, chọn từng chi tiết một và thấy giá ngay. Sofa về đúng như mong đợi, chất liệu da PU rất đẹp và bền." },
-              { name: "Anh Hoàng Nam", location: "TP.HCM", rating: 5, text: "Phòng ngủ nhỏ nên chọn size 1,2M không hộc. Nhân viên tư vấn rất nhiệt tình, giao hàng đúng hẹn và lắp đặt chuyên nghiệp." },
-              { name: "Chị Thu Hà", location: "Đà Nẵng", rating: 5, text: "Ban đầu lo không biết chọn gì nhưng quiz funnel hướng dẫn từng bước rất rõ ràng. Kết quả ra chiếc sofa giường đúng ý 100%." },
+              { nameKey: "testimonial_1_name", name: "Chị Minh Trang", locationKey: "testimonial_1_location", location: "Hà Nội", rating: 5, textKey: "testimonial_1_text", text: "Thiết kế online rất thú vị, chọn từng chi tiết một và thấy giá ngay. Sofa về đúng như mong đợi, chất liệu da PU rất đẹp và bền." },
+              { nameKey: "testimonial_2_name", name: "Anh Hoàng Nam", locationKey: "testimonial_2_location", location: "TP.HCM", rating: 5, textKey: "testimonial_2_text", text: "Phòng ngủ nhỏ nên chọn size 1,2M không hộc. Nhân viên tư vấn rất nhiệt tình, giao hàng đúng hẹn và lắp đặt chuyên nghiệp." },
+              { nameKey: "testimonial_3_name", name: "Chị Thu Hà", locationKey: "testimonial_3_location", location: "Đà Nẵng", rating: 5, textKey: "testimonial_3_text", text: "Ban đầu lo không biết chọn gì nhưng quiz funnel hướng dẫn từng bước rất rõ ràng. Kết quả ra chiếc sofa giường đúng ý 100%." },
             ].map((t, i) => (
               <FadeIn key={i} delay={i * 80}>
                 <div style={{ background: THEME_BLACK_CARD, border: `1px solid ${THEME_BLACK_BORDER}`, borderRadius: R_LG, padding: "28px 24px", textAlign: "left" }}>
                   <div style={{ display: "flex", gap: 2, marginBottom: 16 }}>
                     {Array.from({ length: t.rating }).map((_, j) => <span key={j} style={{ color: THEME_GOLD, fontSize: 14 }}>★</span>)}
                   </div>
-                  <p style={{ color: THEME_GRAY_LIGHT, fontSize: 14, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 20, fontStyle: "italic" }}>"{t.text}"</p>
+                  <p style={{ color: THEME_GRAY_LIGHT, fontSize: 14, lineHeight: 1.8, fontFamily: FONT_BODY, marginBottom: 20, fontStyle: "italic" }}>“{E({ bk: t.textKey, def: t.text, as: "span", multiline: true })}”</p>
                   <div>
-                    <div style={{ color: THEME_WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{t.name}</div>
-                    <div style={{ color: THEME_GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{t.location}</div>
+                    <div style={{ color: THEME_WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{E({ bk: t.nameKey, def: t.name, as: "span" })}</div>
+                    <div style={{ color: THEME_GRAY, fontSize: 12, fontFamily: FONT_BODY }}>{E({ bk: t.locationKey, def: t.location, as: "span" })}</div>
                   </div>
                 </div>
               </FadeIn>
@@ -3445,7 +3493,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       <section ref={formRef} id="order-form" style={{ padding: SECTION_PAD, background: THEME_BLACK }}>
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
           <FadeIn>
-            <SectionLabel>Đặt Hàng</SectionLabel>
+            <SectionLabel>{E({ bk: "form_label", def: "Đặt Hàng", as: "span" })}</SectionLabel>
             <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
               {E({ bk: "form_title", def: "Nhận Tư Vấn & Báo Giá Miễn Phí", as: "span" })}
             </h2>
@@ -3456,13 +3504,13 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             {!orderConfig && (
               <div style={{ marginBottom: 24 }}>
                 <button onClick={() => openQuiz()} style={{ background: `${gRgba(GOLD, 0.08)}`, border: `1px dashed ${gRgba(GOLD, 0.4)}`, color: THEME_GOLD, borderRadius: R_MD, padding: "14px 28px", fontSize: 13, cursor: "pointer", fontFamily: FONT_BODY, fontWeight: 600 }}>
-                  🎨 Thiết kế cấu hình trước →
+                  {E({ bk: "form_config_cta", def: "🎨 Thiết kế cấu hình trước →", as: "span" })}
                 </button>
               </div>
             )}
           </FadeIn>
           <FadeIn delay={100}>
-            <LeadForm submitLabel="Đặt Hàng Ngay →" prefilledConfig={orderConfig || undefined} slug={EFFECTIVE_SLUG} />
+            <LeadForm submitLabel={E({ bk: "lead_submit_order", def: "Đặt Hàng Ngay →", as: "span" })} prefilledConfig={orderConfig || undefined} slug={EFFECTIVE_SLUG} E={E} content={content} editMode={editMode} />
           </FadeIn>
         </div>
       </section>
@@ -3472,7 +3520,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <SectionLabel>Câu Hỏi Thường Gặp</SectionLabel>
+              <SectionLabel>{E({ bk: "faq_label", def: "Câu Hỏi Thường Gặp", as: "span" })}</SectionLabel>
               <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontWeight: 700, marginBottom: 16, fontFamily: FONT_HEADING, lineHeight: 1.25 }}>
                 {E({ bk: "faq_title", def: "Giải Đáp Thắc Mắc", as: "span" })}
               </h2>
@@ -3518,14 +3566,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               <h2 style={{ color: THEME_GOLD, fontSize: "clamp(22px,3vw,34px)", fontWeight: 700, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em" }}>
                 {E({ bk: "guarantee_title", def: "Cam Kết SmartFurni", as: "span" })}
               </h2>
-              <p style={{ color: THEME_GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 32, marginTop: 8 }}>Mỗi sản phẩm đều được bảo đảm từ sản xuất đến tận nhà bạn</p>
+              <p style={{ color: THEME_GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 32, marginTop: 8 }}>{E({ bk: "guarantee_subtitle", def: "Mỗi sản phẩm đều được bảo đảm từ sản xuất đến tận nhà bạn", as: "span" })}</p>
               <GoldDivider />
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20, marginTop: 32 }}>
                 {[
-                  { icon: "check_circle", title: "Đúng như thiết kế", desc: "Sản phẩm giao đúng cấu hình đã chọn, không sai lệch", num: "01" },
-                  { icon: "refresh", title: "Đổi trả 30 ngày", desc: "Không hài lòng, đổi trả miễn phí trong 30 ngày đầu", num: "02" },
-                  { icon: "shield", title: "Bảo hành 3 năm", desc: "Bảo hành toàn diện, sửa chữa tận nơi không tính phí", num: "03" },
-                  { icon: "headphones", title: "Hỗ trợ 24/7", desc: "Đội ngũ kỹ thuật hỗ trợ qua Zalo bất cứ lúc nào", num: "04" },
+                  { icon: "check_circle", titleKey: "guarantee_1_title", title: "Đúng như thiết kế", descKey: "guarantee_1_desc", desc: "Sản phẩm giao đúng cấu hình đã chọn, không sai lệch", num: "01" },
+                  { icon: "refresh", titleKey: "guarantee_2_title", title: "Đổi trả 30 ngày", descKey: "guarantee_2_desc", desc: "Không hài lòng, đổi trả miễn phí trong 30 ngày đầu", num: "02" },
+                  { icon: "shield", titleKey: "guarantee_3_title", title: "Bảo hành 3 năm", descKey: "guarantee_3_desc", desc: "Bảo hành toàn diện, sửa chữa tận nơi không tính phí", num: "03" },
+                  { icon: "headphones", titleKey: "guarantee_4_title", title: "Hỗ trợ 24/7", descKey: "guarantee_4_desc", desc: "Đội ngũ kỹ thuật hỗ trợ qua Zalo bất cứ lúc nào", num: "04" },
                 ].map((g, i) => (
                   <div key={i} style={{ background: `${gRgba(GOLD, 0.04)}`, border: `1px solid ${gRgba(GOLD, 0.12)}`, borderRadius: 16, padding: "24px 20px", textAlign: "center", transition: "border-color 0.25s, background 0.25s", position: "relative" as const, overflow: "hidden" }}
                     onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `${gRgba(GOLD, 0.35)}`; (e.currentTarget as HTMLDivElement).style.background = `${gRgba(GOLD, 0.08)}`; }}
@@ -3537,8 +3585,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                     <div style={{ width: 52, height: 52, borderRadius: "50%", background: `${gRgba(GOLD, 0.1)}`, border: `1px solid ${gRgba(GOLD, 0.25)}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
                       <SvgIcon name={g.icon} size={24} color={THEME_GOLD} />
                     </div>
-                    <div style={{ color: THEME_WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 8 }}>{g.title}</div>
-                    <div style={{ color: THEME_GRAY, fontSize: 12, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{g.desc}</div>
+                    <div style={{ color: THEME_WHITE, fontSize: 14, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 8 }}>{E({ bk: g.titleKey, def: g.title, as: "span" })}</div>
+                    <div style={{ color: THEME_GRAY, fontSize: 12, fontFamily: FONT_BODY, lineHeight: 1.65 }}>{E({ bk: g.descKey, def: g.desc, as: "span", multiline: true })}</div>
                   </div>
                 ))}
               </div>
@@ -3565,7 +3613,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" loading="lazy" style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }} />
               </div>
               <p style={{ color: THEME_GRAY, fontSize: 13, lineHeight: 1.85, fontFamily: FONT_BODY, marginBottom: 24, maxWidth: 280 }}>
-                Tiên phong trong lĩnh vực nội thất cá nhân hoá tại Việt Nam. Sofa giường thiết kế theo ý bạn — sản xuất tại Việt Nam.
+                {E({ bk: "footer_brand_desc", def: "Tiên phong trong lĩnh vực nội thất cá nhân hoá tại Việt Nam. Sofa giường thiết kế theo ý bạn — sản xuất tại Việt Nam.", as: "span", multiline: true })}
               </p>
               <div style={{ display: "flex", gap: 10 }}>
                 {[
@@ -3585,18 +3633,18 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                 <div style={{ width: 3, height: 16, background: THEME_GOLD, borderRadius: 2 }} />
-                <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Showroom</h4>
+                <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: "footer_showroom_title", def: "Showroom", as: "span" })}</h4>
               </div>
               {[
-                { icon: "map_pin", label: "TP. HCM", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
-                { icon: "map_pin", label: "Hà Nội", val: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
-                { icon: "factory", label: "Xưởng SX", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
+                { icon: "map_pin", labelKey: "footer_showroom_1_label", label: "TP. HCM", valKey: "footer_showroom_1_value", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
+                { icon: "map_pin", labelKey: "footer_showroom_2_label", label: "Hà Nội", valKey: "footer_showroom_2_value", val: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
+                { icon: "factory", labelKey: "footer_showroom_3_label", label: "Xưởng SX", valKey: "footer_showroom_3_value", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
               ].map((a, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
                   <SvgIcon name={a.icon} size={16} color={THEME_GOLD} style={{ marginTop: 2 }} />
                   <div>
-                    <div style={{ color: THEME_GOLD_LIGHT, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 2 }}>{a.label}</div>
-                    <div style={{ color: THEME_GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY }}>{a.val}</div>
+                    <div style={{ color: THEME_GOLD_LIGHT, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 2 }}>{E({ bk: a.labelKey, def: a.label, as: "span" })}</div>
+                    <div style={{ color: THEME_GRAY, fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY }}>{E({ bk: a.valKey, def: a.val, as: "span", multiline: true })}</div>
                   </div>
                 </div>
               ))}
@@ -3605,20 +3653,20 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                 <div style={{ width: 3, height: 16, background: THEME_GOLD, borderRadius: 2 }} />
-                <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Liên hệ</h4>
+                <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: "footer_contact_title", def: "Liên hệ", as: "span" })}</h4>
               </div>
               {[
-                { icon: "phone", label: "Hotline", val: "028.7122.0818", href: "tel:02871220818" },
-                { icon: "message_circle", label: "Zalo tư vấn", val: "0918.326.552", href: "https://zalo.me/0918326552" },
-                { icon: "mail", label: "Email", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
-                { icon: "globe", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
+                { icon: "phone", labelKey: "footer_contact_1_label", label: "Hotline", valKey: "footer_contact_1_value", val: "028.7122.0818", href: "tel:02871220818" },
+                { icon: "message_circle", labelKey: "footer_contact_2_label", label: "Zalo tư vấn", valKey: "footer_contact_2_value", val: "0918.326.552", href: "https://zalo.me/0918326552" },
+                { icon: "mail", labelKey: "footer_contact_3_label", label: "Email", valKey: "footer_contact_3_value", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
+                { icon: "globe", labelKey: "footer_contact_4_label", label: "Website", valKey: "footer_contact_4_value", val: "smartfurni.vn", href: "https://smartfurni.vn" },
               ].map((c, i) => (
                 <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
                   style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}>
                   <SvgIcon name={c.icon} size={16} color={THEME_GOLD} style={{ marginTop: 2 }} />
                   <div>
-                    <div style={{ color: THEME_GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 1 }}>{c.label}</div>
-                    <div style={{ color: THEME_GOLD_LIGHT, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 700 }}>{c.val}</div>
+                    <div style={{ color: THEME_GRAY, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 1 }}>{E({ bk: c.labelKey, def: c.label, as: "span" })}</div>
+                    <div style={{ color: THEME_GOLD_LIGHT, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 700 }}>{E({ bk: c.valKey, def: c.val, as: "span" })}</div>
                   </div>
                 </a>
               ))}
@@ -3627,38 +3675,38 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                 <div style={{ width: 3, height: 16, background: THEME_GOLD, borderRadius: 2 }} />
-                <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Đặt hàng ngay</h4>
+                <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: "footer_order_title", def: "Đặt hàng ngay", as: "span" })}</h4>
               </div>
               <p style={{ color: THEME_GRAY, fontSize: 12, lineHeight: 1.75, fontFamily: FONT_BODY, marginBottom: 20 }}>
-                Nhận tư vấn miễn phí &amp; xác nhận đơn hàng trong vòng 2 giờ làm việc.
+                {E({ bk: "footer_order_desc", def: "Nhận tư vấn miễn phí & xác nhận đơn hàng trong vòng 2 giờ làm việc.", as: "span", multiline: true })}
               </p>
               <button
                 onClick={scrollToForm}
                 style={{ display: "block", width: "100%", textAlign: "center", background: `linear-gradient(135deg, ${THEME_GOLD_LIGHT} 0%, ${THEME_GOLD} 100%)`, color: THEME_BLACK, fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, padding: "13px 20px", borderRadius: R_MD, border: "none", cursor: "pointer", fontFamily: FONT_BODY, boxShadow: `0 6px 24px ${gRgba(GOLD, 0.25)}`, marginBottom: 12 }}
               >
-                Đặt hàng ngay →
+                {E({ bk: "footer_order_cta", def: "Đặt hàng ngay →", as: "span" })}
               </button>
               <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer"
                 style={{ display: "block", textAlign: "center", background: "transparent", color: THEME_GRAY_LIGHT, fontWeight: 500, fontSize: 11, letterSpacing: "0.06em", padding: "12px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, border: `1px solid rgba(212,196,160,0.2)` }}>
-                💬 Chat Zalo ngay
+                {E({ bk: "footer_zalo_cta", def: "💬 Chat Zalo ngay", as: "span" })}
               </a>
             </div>
           </div>
           <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${THEME_BLACK_BORDER} 20%, ${THEME_BLACK_BORDER} 80%, transparent)`, marginBottom: 24 }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" as const, gap: 12, paddingBottom: 28 }}>
             <p style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, margin: 0 }}>
-              © 2025 Công ty Cổ phần SmartFurni. Tất cả quyền được bảo lưu.
+              {E({ bk: "footer_copyright", def: "© 2025 Công ty Cổ phần SmartFurni. Tất cả quyền được bảo lưu.", as: "span" })}
             </p>
             <div style={{ display: "flex", gap: 20 }}>
               {[
-                { label: "Chính sách bảo mật", href: "/privacy" },
-                { label: "Điều khoản sử dụng", href: "/terms" },
-                { label: "Chính sách bảo hành", href: "/bao-hanh" },
+                { labelKey: "footer_policy_privacy", label: "Chính sách bảo mật", href: "/privacy" },
+                { labelKey: "footer_policy_terms", label: "Điều khoản sử dụng", href: "/terms" },
+                { labelKey: "footer_policy_warranty", label: "Chính sách bảo hành", href: "/bao-hanh" },
               ].map((l) => (
                 <a key={l.label} href={l.href} style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, textDecoration: "none" }}
                   onMouseEnter={e => (e.currentTarget.style.color = THEME_GRAY)}
                   onMouseLeave={e => (e.currentTarget.style.color = "#3A3020")}
-                >{l.label}</a>
+                >{E({ bk: l.labelKey, def: l.label, as: "span" })}</a>
               ))}
             </div>
           </div>

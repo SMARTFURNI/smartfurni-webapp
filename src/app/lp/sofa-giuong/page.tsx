@@ -6,30 +6,44 @@ import type { CrmProduct } from "@/lib/crm-types";
 import LpSofaGiuongClient from "./LpSofaGiuongClient";
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Thiết Kế Sofa Giường Theo Ý Bạn — SmartFurni",
-  description:
-    "Tự thiết kế sofa giường cá nhân hoá: chọn mẫu, kích thước, hộc, tay vịn, chất liệu, nệm. Khung thép mạ kẽm bền vững. Từ 2.990.000 ₫ — Giao hàng & lắp đặt miễn phí toàn quốc.",
-  keywords: [
-    "sofa giường",
-    "sofa giường SmartFurni",
-    "sofa giường thông minh",
-    "sofa giường khung thép",
-    "sofa giường có hộc",
-    "sofa giường da PU",
-    "thiết kế sofa giường",
-    "sofa giường cá nhân hoá",
-  ],
-  openGraph: {
-    title: "Thiết Kế Sofa Giường Theo Ý Bạn — SmartFurni",
-    description: "Tự thiết kế sofa giường cá nhân hoá. Khung thép mạ kẽm, từ 2.990.000 ₫.",
-    url: "https://smartfurni.com.vn/lp/sofa-giuong",
-    siteName: "SmartFurni",
-    locale: "vi_VN",
-    type: "website",
-  },
-  robots: { index: true, follow: true },
-};
+const DEFAULT_META_TITLE = "Thiết Kế Sofa Giường Theo Ý Bạn — SmartFurni";
+const DEFAULT_META_DESCRIPTION = "Tự thiết kế sofa giường cá nhân hoá: chọn mẫu, kích thước, hộc, tay vịn, chất liệu, nệm. Khung thép mạ kẽm bền vững. Từ 2.990.000 ₫ — Giao hàng & lắp đặt miễn phí toàn quốc.";
+const DEFAULT_META_KEYWORDS = [
+  "sofa giường",
+  "sofa giường SmartFurni",
+  "sofa giường thông minh",
+  "sofa giường khung thép",
+  "sofa giường có hộc",
+  "sofa giường da PU",
+  "thiết kế sofa giường",
+  "sofa giường cá nhân hoá",
+];
+const DEFAULT_OG_DESCRIPTION = "Tự thiết kế sofa giường cá nhân hoá. Khung thép mạ kẽm, từ 2.990.000 ₫.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getLpContent();
+  const title = content["meta_title"] || DEFAULT_META_TITLE;
+  const description = content["meta_description"] || DEFAULT_META_DESCRIPTION;
+  const keywords = (content["meta_keywords"] || "")
+    .split(",")
+    .map((kw) => kw.trim())
+    .filter(Boolean);
+
+  return {
+    title,
+    description,
+    keywords: keywords.length ? keywords : DEFAULT_META_KEYWORDS,
+    openGraph: {
+      title: content["meta_og_title"] || title,
+      description: content["meta_og_description"] || content["meta_description"] || DEFAULT_OG_DESCRIPTION,
+      url: "https://smartfurni.com.vn/lp/sofa-giuong",
+      siteName: content["meta_site_name"] || "SmartFurni",
+      locale: "vi_VN",
+      type: "website",
+    },
+    robots: { index: true, follow: true },
+  };
+}
 
 const LP_SLUG = "sofa-giuong";
 
