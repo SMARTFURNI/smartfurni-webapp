@@ -6,6 +6,24 @@ import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
 import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
 
+function optimizeCldUrl(url: string | undefined, width = 900): string {
+  const rawUrl = url?.trim() || "";
+  if (!rawUrl || !rawUrl.includes("res.cloudinary.com") || !rawUrl.includes("/image/upload/")) return rawUrl;
+
+  const [prefix, uploadPath] = rawUrl.split("/image/upload/");
+  if (!prefix || !uploadPath) return rawUrl;
+
+  const segments = uploadPath.split("/");
+  const firstSegment = segments[0] || "";
+  const isVersionSegment = /^v\d+$/.test(firstSegment);
+  const isTransformationSegment = !isVersionSegment && (
+    firstSegment.includes(",") || /^(f|q|w|h|c|dpr|fl|e|g|x|y|r|a|b|co|ar|bo|l|o|t|u|z)_/.test(firstSegment)
+  );
+  const assetPath = isTransformationSegment ? segments.slice(1).join("/") : uploadPath;
+
+  return `${prefix}/image/upload/f_auto,q_auto:good,w_${width},c_limit/${assetPath}`;
+}
+
 // ─── SVG Icon components (sang trọng, không dùng emoji) ──────────────────────
 function IconShield({ color = "currentColor", size = 24 }: { color?: string; size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V6L12 2z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
@@ -381,7 +399,7 @@ function BeforeAfterSlider({ beforeUrl, afterUrl, beforeLabel = "Sofa thường"
     <div ref={containerRef} onMouseDown={() => { dragging.current = true; }} onMouseMove={(e) => { if (dragging.current) updatePos(e.clientX); }} onMouseUp={() => { dragging.current = false; }} onMouseLeave={() => { dragging.current = false; }} onTouchMove={(e) => updatePos(e.touches[0].clientX)}
       style={{ position: "relative", width: "100%", paddingBottom: "56.25%", cursor: "ew-resize", userSelect: "none", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
       {afterUrl ? (
-        <img src={afterUrl} alt={afterLabel} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
+        <img src={optimizeCldUrl(afterUrl, 1200)} alt={afterLabel} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
       ) : (
         <div style={{ position: "absolute", inset: 0, background: "#F0EBE0", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ color: GOLD, fontSize: 13, fontFamily: FONT_BODY }}>Ảnh SAU (chưa cập nhật)</span>
@@ -389,7 +407,7 @@ function BeforeAfterSlider({ beforeUrl, afterUrl, beforeLabel = "Sofa thường"
       )}
       <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}>
         {beforeUrl ? (
-          <img src={beforeUrl} alt={beforeLabel} style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
+          <img src={optimizeCldUrl(beforeUrl, 1200)} alt={beforeLabel} style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
         ) : (
           <div style={{ width: "100%", height: "100%", background: "#E8E0D0", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>Ảnh TRƯỚC (chưa cập nhật)</span>
@@ -470,7 +488,7 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "75%", background: BLACK_CARD }}>
                   {content["detail_img_0"] ? (
-                    <Image src={content["detail_img_0"]} alt="Thiết kế sản phẩm SMF12" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
+                    <Image src={optimizeCldUrl(content["detail_img_0"], 1000)} alt="Thiết kế sản phẩm SMF12" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <IconDiamond color={GOLD_PALE} size={40} />
@@ -521,7 +539,7 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["detail_img_1"] ? (
-                    <img src={content["detail_img_1"]} alt="Thao tác sofa thành giường SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={optimizeCldUrl(content["detail_img_1"], 900)} alt="Thao tác sofa thành giường SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <IconZap color={GOLD_PALE} size={40} />
@@ -541,7 +559,7 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
             <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}`, marginBottom: 24 }}>
               <div style={{ position: "relative", paddingBottom: "56.25%", background: BLACK_CARD }}>
                 {content["detail_img_2"] ? (
-                  <Image src={content["detail_img_2"]} alt="Khung thép mạ kẽm SMF12" fill style={{ objectFit: "cover" }} sizes="100vw" />
+                  <Image src={optimizeCldUrl(content["detail_img_2"], 1200)} alt="Khung thép mạ kẽm SMF12" fill style={{ objectFit: "cover" }} sizes="100vw" />
                 ) : (
                   <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                     <IconBox color={GOLD_PALE} size={48} />
@@ -585,7 +603,7 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["detail_img_3"] ? (
-                    <img src={content["detail_img_3"]} alt="Ngăn chứa đồ ẩn SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={optimizeCldUrl(content["detail_img_3"], 900)} alt="Ngăn chứa đồ ẩn SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <IconBox color={GOLD_PALE} size={40} />
@@ -636,7 +654,7 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["detail_img_4"] ? (
-                    <img src={content["detail_img_4"]} alt="Áo nệm da PU khoá kéo SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={optimizeCldUrl(content["detail_img_4"], 900)} alt="Áo nệm da PU khoá kéo SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <IconAward color={GOLD_PALE} size={40} />
@@ -657,7 +675,7 @@ function ProductDetailSection({ editMode, content, handleSaved }: { editMode: bo
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["detail_img_5"] ? (
-                    <img src={content["detail_img_5"]} alt="Túi đựng sách tạp chí điều khiển SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={optimizeCldUrl(content["detail_img_5"], 900)} alt="Túi đựng sách tạp chí điều khiển SMF12" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <IconBox color={GOLD_PALE} size={40} />
@@ -1001,7 +1019,8 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   ), [editMode, content, handleSaved, handleDeleted]);
 
   const navScrolled = scrollY > 60;
-  const heroImages = ["hero_bg_0", "hero_bg_1", "hero_bg_2"].map(k => content[k] || "");
+  const heroSourceImages = ["hero_bg_0", "hero_bg_1", "hero_bg_2"].map(k => content[k] || "");
+  const heroImages = heroSourceImages.map(url => optimizeCldUrl(url, 1600));
   const heroOverlay = parseFloat(content["hero_overlay"] || "0.35");
 
   // Product cards (3 cards)
@@ -1184,7 +1203,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         </div>
         {/* Edit hero */}
         {isEditor && editMode && (
-          <EditableHeroImage slug={LP_SLUG} imageKeys={["hero_bg_0", "hero_bg_1", "hero_bg_2"]} overlayKey="hero_overlay" imageUrls={heroImages} overlayOpacity={heroOverlay} editMode={editMode} onImageSaved={handleSaved} onOverlaySaved={(k, v) => handleSaved(k, String(v))} />
+          <EditableHeroImage slug={LP_SLUG} imageKeys={["hero_bg_0", "hero_bg_1", "hero_bg_2"]} overlayKey="hero_overlay" imageUrls={heroSourceImages} overlayOpacity={heroOverlay} editMode={editMode} onImageSaved={handleSaved} onOverlaySaved={(k, v) => handleSaved(k, String(v))} />
         )}
         {/* Hero content: wrapper flex dọc cho mobile order */}
         <div className="lp-hero-content" style={{ position: "relative", zIndex: 1, width: "100%", display: "flex", flexDirection: "column" }}>
@@ -1373,7 +1392,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                   <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                     <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                       {imgSrc ? (
-                        <Image src={imgSrc} alt={item.defCaption} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 33vw" />
+                        <Image src={optimizeCldUrl(imgSrc, 700)} alt={item.defCaption} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 33vw" />
                       ) : (
                         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>Chưa có ảnh</div>
                       )}
@@ -1443,7 +1462,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["specs_img"] ? (
-                    <Image src={content["specs_img"]} alt="SmartFurni SMF12" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
+                    <Image src={optimizeCldUrl(content["specs_img"], 900)} alt="SmartFurni SMF12" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -1592,7 +1611,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                   >
                     <div style={{ position: "relative", paddingBottom: "100%", background: BLACK }}>
                       {imgSrc ? (
-                        <Image src={imgSrc} alt={displayName} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 33vw" />
+                        <Image src={optimizeCldUrl(imgSrc, 700)} alt={displayName} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 33vw" />
                       ) : (
                         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                           <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -1673,7 +1692,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                   {/* Main image */}
                   <div style={{ position: "relative", paddingBottom: "100%", background: BLACK }}>
                     {popupImgs[pp.imgIdx] ? (
-                      <Image src={popupImgs[pp.imgIdx]} alt={displayName} fill style={{ objectFit: "cover" }} sizes="50vw" />
+                      <Image src={optimizeCldUrl(popupImgs[pp.imgIdx], 900)} alt={displayName} fill style={{ objectFit: "cover" }} sizes="50vw" />
                     ) : (
                       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -1703,7 +1722,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                         style={{ flexShrink: 0, width: 52, height: 52, borderRadius: R_SM, overflow: "hidden", border: `2px solid ${pp.imgIdx === ti ? GOLD : "transparent"}`, cursor: "pointer", background: BLACK_CARD, position: "relative" }}
                       >
                         {imgUrl ? (
-                          <Image src={imgUrl} alt={`${displayName} ${ti + 1}`} fill style={{ objectFit: "cover" }} sizes="52px" />
+                          <Image src={optimizeCldUrl(imgUrl, 160)} alt={`${displayName} ${ti + 1}`} fill style={{ objectFit: "cover" }} sizes="52px" />
                         ) : (
                           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: GRAY_LIGHT, fontSize: 10, fontFamily: FONT_BODY }}>{ti + 1}</div>
                         )}
@@ -1904,7 +1923,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                 <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                   <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                     {content[bk] ? (
-                      <Image src={content[bk]} alt={`Ảnh thực tế SMF12 ${i + 1}`} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 50vw, 33vw" />
+                      <Image src={optimizeCldUrl(content[bk], 700)} alt={`Ảnh thực tế SMF12 ${i + 1}`} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 50vw, 33vw" />
                     ) : (
                       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
