@@ -1077,14 +1077,20 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
     { id: "smf12-premium", name: "SMF12 Premium", price: "Từ 9.290.000 ₫", badge: "", sub: "Nệm cao cấp, đường nét hiện đại" },
     { id: "smf12-luxury", name: "SMF12 Luxury", price: "Từ 10.490.000 ₫", badge: "Mới", sub: "Thiết kế sang trọng, da PU cao cấp" },
   ];
-  // Size options per product (same for all 3)
+  // Size options shared across products; prices are stored separately per product + size.
   const POPUP_SIZES = [
-    { id: "0.9m", label: "Ngang 0,9M x Dài 1M9", priceKey: "popup_price_0" },
-    { id: "1.2m", label: "Ngang 1M2 x Dài 1M9", priceKey: "popup_price_1" },
-    { id: "1.5m", label: "Ngang 1M5 x Dài 1M9", priceKey: "popup_price_2" },
-    { id: "1.8m", label: "Ngang 1M8 x Dài 1M9", priceKey: "popup_price_3" },
+    { id: "0.9m", label: "Ngang 0,9M x Dài 1M9" },
+    { id: "1.2m", label: "Ngang 1M2 x Dài 1M9" },
+    { id: "1.5m", label: "Ngang 1M5 x Dài 1M9" },
+    { id: "1.8m", label: "Ngang 1M8 x Dài 1M9" },
   ];
-  const POPUP_DEFAULT_PRICES = ["8.490.000 ₫", "9.290.000 ₫", "10.490.000 ₫", "11.890.000 ₫"];
+  const POPUP_DEFAULT_PRICES = [
+    ["8.490.000 ₫", "9.290.000 ₫", "10.490.000 ₫", "11.890.000 ₫"],
+    ["9.290.000 ₫", "10.490.000 ₫", "11.890.000 ₫", "13.490.000 ₫"],
+    ["10.490.000 ₫", "11.890.000 ₫", "13.490.000 ₫", "15.490.000 ₫"],
+  ];
+  const getPopupPriceKey = (productIdx: number, sizeIdx: number) => `popup_price_${productIdx}_${sizeIdx}`;
+  const getPopupDefaultPrice = (productIdx: number, sizeIdx: number) => POPUP_DEFAULT_PRICES[productIdx]?.[sizeIdx] || POPUP_DEFAULT_PRICES[0]?.[sizeIdx] || "";
   // SIZES kept for legacy compatibility
   const SIZES = [
     { id: "0.9m", label: "0,9m × 2,0m", price: "8.490.000 ₫", sub: "Phòng đơn / studio" },
@@ -1703,8 +1709,10 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         const displayName = content[`product_name_${pp.productIdx}`] || product.name;
         // 6 images per product
         const popupImgs = Array.from({ length: 6 }, (_, i) => content[`popup_img_${pp.productIdx}_${i}`] || "");
-        const selectedSizeObj = POPUP_SIZES.find(s => s.id === pp.sizeId) || POPUP_SIZES[0];
-        const sizePrice = content[selectedSizeObj.priceKey] || POPUP_DEFAULT_PRICES[POPUP_SIZES.indexOf(selectedSizeObj)];
+        const selectedSizeIndex = Math.max(0, POPUP_SIZES.findIndex(s => s.id === pp.sizeId));
+        const selectedSizeObj = POPUP_SIZES[selectedSizeIndex];
+        const selectedPriceKey = getPopupPriceKey(pp.productIdx, selectedSizeIndex);
+        const sizePrice = content[selectedPriceKey] || getPopupDefaultPrice(pp.productIdx, selectedSizeIndex);
 
         async function handlePopupSubmit(e: React.FormEvent) {
           e.preventDefault();
@@ -1801,8 +1809,10 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                       <div>
                         <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, marginBottom: 12, fontFamily: FONT_BODY }}>Chọn kích thước:</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          {POPUP_SIZES.map(sz => {
-                            const szPrice = content[sz.priceKey] || POPUP_DEFAULT_PRICES[POPUP_SIZES.indexOf(sz)];
+                          {POPUP_SIZES.map((sz, sizeIdx) => {
+                            const szPriceKey = getPopupPriceKey(pp.productIdx, sizeIdx);
+                            const szDefaultPrice = getPopupDefaultPrice(pp.productIdx, sizeIdx);
+                            const szPrice = content[szPriceKey] || szDefaultPrice;
                             const isActive = pp.sizeId === sz.id;
                             return (
                               <div key={sz.id}
@@ -1812,7 +1822,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                                 <span style={{ color: isActive ? GOLD : WHITE, fontSize: 13, fontWeight: isActive ? 600 : 400, fontFamily: FONT_BODY }}>{sz.label}</span>
                                 <span style={{ color: GOLD, fontSize: 14, fontWeight: 700, fontFamily: FONT_HEADING }}>
                                   {editMode ? (
-                                    <EditableText slug={LP_SLUG} blockKey={sz.priceKey} defaultValue={POPUP_DEFAULT_PRICES[POPUP_SIZES.indexOf(sz)]} editMode={editMode} as="span" savedValue={content[sz.priceKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
+                                    <EditableText slug={LP_SLUG} blockKey={szPriceKey} defaultValue={szDefaultPrice} editMode={editMode} as="span" savedValue={content[szPriceKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
                                   ) : szPrice}
                                 </span>
                               </div>
