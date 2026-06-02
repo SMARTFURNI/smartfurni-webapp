@@ -969,7 +969,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   const [content, setContent] = useState<Record<string, string>>(initialContent);
   const [editedCount, setEditedCount] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
-  const [productPopup, setProductPopup] = useState<{ productIdx: number; sizeId: string; imgIdx: number; step: "detail" | "form" } | null>(null);
+  const [productPopup, setProductPopup] = useState<{ productIdx: number; sizeId: string; colorId: string; imgIdx: number; step: "detail" | "form" } | null>(null);
   const popupSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Typewriter effect for hero titles
@@ -1091,6 +1091,11 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   ];
   const getPopupPriceKey = (productIdx: number, sizeIdx: number) => `popup_price_${productIdx}_${sizeIdx}`;
   const getPopupDefaultPrice = (productIdx: number, sizeIdx: number) => POPUP_DEFAULT_PRICES[productIdx]?.[sizeIdx] || POPUP_DEFAULT_PRICES[0]?.[sizeIdx] || "";
+  const POPUP_COLORS = [
+    { id: "brown", label: "Da PU Màu Nâu" },
+    { id: "black", label: "Da PU Màu Đen" },
+    { id: "beige", label: "Da PU Màu Be" },
+  ];
   // SIZES kept for legacy compatibility
   const SIZES = [
     { id: "0.9m", label: "0,9m × 2,0m", price: "8.490.000 ₫", sub: "Phòng đơn / studio" },
@@ -1658,7 +1663,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               return (
                 <FadeIn key={product.id} delay={pi * 80}>
                   <div
-                    onClick={() => !editMode && setProductPopup({ productIdx: pi, sizeId: "0.9m", imgIdx: 0, step: "detail" })}
+                    onClick={() => !editMode && setProductPopup({ productIdx: pi, sizeId: "0.9m", colorId: "brown", imgIdx: 0, step: "detail" })}
                     style={{ background: BLACK_CARD, border: `1.5px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: editMode ? "default" : "pointer", transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s" }}
                     onMouseEnter={e => { if (!editMode) { (e.currentTarget as HTMLDivElement).style.borderColor = GOLD; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; } }}
                     onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
@@ -1713,6 +1718,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         const selectedSizeObj = POPUP_SIZES[selectedSizeIndex];
         const selectedPriceKey = getPopupPriceKey(pp.productIdx, selectedSizeIndex);
         const sizePrice = content[selectedPriceKey] || getPopupDefaultPrice(pp.productIdx, selectedSizeIndex);
+        const selectedColorObj = POPUP_COLORS.find(c => c.id === pp.colorId) || POPUP_COLORS[0];
 
         async function handlePopupSubmit(e: React.FormEvent) {
           e.preventDefault();
@@ -1720,7 +1726,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           if (!/^(0|\+84)[0-9]{8,10}$/.test(popupForm.phone.replace(/\s/g, ""))) { setPopupError("Số điện thoại không hợp lệ"); return; }
           setPopupLoading(true); setPopupError("");
           try {
-            const noteStr = `Sản phẩm: ${displayName} | Kích thước: ${selectedSizeObj.label} | Giá: ${sizePrice} | Địa chỉ: ${popupForm.address} | Ghi chú: ${popupForm.note}`;
+            const noteStr = `Sản phẩm: ${displayName} | Kích thước: ${selectedSizeObj.label} | Màu sắc: ${selectedColorObj.label} | Giá: ${sizePrice} | Địa chỉ: ${popupForm.address} | Ghi chú: ${popupForm.note}`;
             const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: popupForm.name, phone: popupForm.phone, email: "", note: noteStr }) });
             if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
             setPopupSuccess(true);
@@ -1831,10 +1837,30 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                         </div>
                       </div>
 
+                      {/* Color options */}
+                      <div>
+                        <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, marginBottom: 12, fontFamily: FONT_BODY }}>Chọn màu sắc:</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {POPUP_COLORS.map(color => {
+                            const isActive = pp.colorId === color.id;
+                            return (
+                              <div key={color.id}
+                                onClick={() => setProductPopup(prev => prev ? { ...prev, colorId: color.id } : null)}
+                                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", border: `1.5px solid ${isActive ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: isActive ? `rgba(139,105,20,0.06)` : BLACK, cursor: "pointer", transition: "all 0.15s" }}
+                              >
+                                <span style={{ color: isActive ? GOLD : WHITE, fontSize: 13, fontWeight: isActive ? 600 : 400, fontFamily: FONT_BODY }}>{color.label}</span>
+                                {isActive && <IconCheck color={GOLD} size={16} />}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
                       {/* Selected price summary */}
                       <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "14px 16px" }}>
-                        <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Kích thước đã chọn</div>
+                        <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Lựa chọn đã chọn</div>
                         <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{selectedSizeObj.label}</div>
+                        <div style={{ color: GRAY, fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, marginTop: 2 }}>{selectedColorObj.label}</div>
                         <div style={{ color: GOLD, fontSize: 20, fontWeight: 700, fontFamily: FONT_HEADING, marginTop: 4 }}>{sizePrice}</div>
                       </div>
 
@@ -1871,6 +1897,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                       <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "12px 16px" }}>
                         <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Sản phẩm đã chọn</div>
                         <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{displayName} — {selectedSizeObj.label}</div>
+                        <div style={{ color: GRAY, fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, marginTop: 2 }}>{selectedColorObj.label}</div>
                         <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, marginTop: 2 }}>{sizePrice}</div>
                       </div>
 
