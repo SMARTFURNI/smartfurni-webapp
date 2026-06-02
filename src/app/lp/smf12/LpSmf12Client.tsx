@@ -136,17 +136,30 @@ function YoutubeAutoplay({ videoId, title }: { videoId: string; title: string })
 }
 
 // ShortsCard: tỉ lệ 9:16, thumbnail tự động từ YouTube, nút play nhỏ gọn
-function ShortsCard({ videoId, title, tag, titleNode }: { videoId: string; title: string; tag?: string; titleNode?: React.ReactNode }) {
+function ShortsCard({ videoId, title, tag, autoplayOnVisible = false }: { videoId: string; title: string; tag?: string; autoplayOnVisible?: boolean }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
   const hasVideo = videoId && videoId !== "_placeholder_";
   const thumbHq = hasVideo ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
   const thumbMax = hasVideo ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
+
+  useEffect(() => {
+    if (!autoplayOnVisible || !hasVideo || playing) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setPlaying(true);
+    }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [autoplayOnVisible, hasVideo, playing]);
+
   return (
-    <div style={{ position: "relative", width: "100%", paddingBottom: "177.78%", background: "#111", cursor: playing ? "default" : "pointer", borderRadius: R_LG, overflow: "hidden" }}
+    <div ref={containerRef} style={{ position: "relative", width: "100%", paddingBottom: "177.78%", background: "#111", cursor: playing ? "default" : "pointer", borderRadius: R_LG, overflow: "hidden" }}
       onClick={() => { if (!playing && hasVideo) setPlaying(true); }}>
       {playing ? (
         <iframe
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1&playsinline=1`}
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`}
           title={title}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -165,9 +178,7 @@ function ShortsCard({ videoId, title, tag, titleNode }: { videoId: string; title
               <span style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY }}>Chưa có video</span>
             </div>
           )}
-          {/* Gradient overlay mạnh hơn ở dưới để title nổi bật */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 45%, transparent 70%)" }} />
-          {/* Nút play nhỏ gọn */}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.18) 45%, transparent 70%)" }} />
           {hasVideo && (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.92)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.35)" }}>
@@ -175,18 +186,11 @@ function ShortsCard({ videoId, title, tag, titleNode }: { videoId: string; title
               </div>
             </div>
           )}
-          {/* Tag badge */}
           {tag && (
             <div style={{ position: "absolute", top: 10, left: 10, background: `rgba(139,105,20,0.88)`, color: "#fff", fontSize: 9, fontWeight: 700, padding: "3px 9px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>
               {tag}
             </div>
           )}
-          {/* Title nổi bật ở dưới — có thể chỉnh sửa */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "14px 12px 12px" }}>
-            {titleNode ? titleNode : (
-              <div style={{ color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1.35, textShadow: "0 1px 6px rgba(0,0,0,0.9)", letterSpacing: "-0.01em" }}>{title}</div>
-            )}
-          </div>
         </>
       )}
     </div>
@@ -1644,13 +1648,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                     videoId={content[v.bkId] || "_placeholder_"}
                     title={content[v.bkTitle] || v.defTitle}
                     tag={v.tag}
-                    titleNode={
-                      <div style={{ display: "flex", alignItems: "flex-end", gap: 4 }}>
-                        <div style={{ color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1.35, textShadow: "0 1px 6px rgba(0,0,0,0.9)", letterSpacing: "-0.01em", flex: 1 }}>
-                          {E({ bk: v.bkTitle, def: v.defTitle, as: "span" })}
-                        </div>
-                      </div>
-                    }
+                    autoplayOnVisible={i === 0}
                   />
                   {editMode && (
                     <VideoEditOverlay blockKey={v.bkId} currentId={content[v.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />
