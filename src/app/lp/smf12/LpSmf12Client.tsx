@@ -89,6 +89,25 @@ function IconRuler({ color = "currentColor", size = 24 }: { color?: string; size
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 }
 
+const FOOTER_SVG_ICONS: Record<string, React.ReactElement<React.SVGProps<SVGSVGElement>>> = {
+  map_pin: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  factory: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20V9l6-4v4l6-4v4l6-4v15H2z"/><line x1="2" y1="20" x2="22" y2="20"/><rect x="9" y="14" width="2" height="6"/><rect x="13" y="14" width="2" height="6"/></svg>,
+  phone: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012.18 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.16a16 16 0 006.93 6.93l1.52-1.52a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
+  message_circle: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  mail: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+  globe: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+};
+
+function FooterSvgIcon({ name, size = 24, color = "currentColor", style }: { name: string; size?: number; color?: string; style?: React.CSSProperties }) {
+  const icon = FOOTER_SVG_ICONS[name];
+  if (!icon) return <span style={{ fontSize: size * 0.8, lineHeight: 1 }}>{name}</span>;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: size, height: size, color, flexShrink: 0, ...style }}>
+      {React.cloneElement(icon, { width: size, height: size })}
+    </span>
+  );
+}
+
 // ─── Design tokens — tông kem-vàng đồng (light theme) ────────────────────────
 const GOLD = "#8B6914";
 const GOLD_LIGHT = "#B8922A";
@@ -2431,73 +2450,117 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: BLACK_CARD, borderTop: `1px solid ${BLACK_BORDER}`, padding: "48px 24px 32px" }}>
-        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 40 }} className="lp-footer-grid">
-            {/* Brand */}
+      <footer style={{ background: "#0D0B08", borderTop: "1px solid rgba(201,168,76,0.12)", paddingTop: 64 }}>
+        <div style={{ height: 2, background: `linear-gradient(90deg, transparent 0%, ${GOLD} 30%, ${GOLD} 70%, transparent 100%)`, opacity: 0.5 }} />
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "56px 32px 0" }}>
+          <div
+            className="lp-footer-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.6fr 1.2fr 1.2fr 1fr",
+              gap: "48px 40px",
+              marginBottom: 52,
+            }}>
+            {/* Cột 1: Logo + giới thiệu + social */}
             <div>
-              <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" style={{ height: 40, objectFit: "contain", marginBottom: 16 }} />
-              <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, fontFamily: FONT_BODY, marginBottom: 20, maxWidth: 280 }}>
-                {E({ bk: "footer_brand_desc", def: "SmartFurni — Nội thất thông minh Việt Nam. Chuyên cung cấp sofa giường đa năng chất lượng cao, phù hợp với không gian sống hiện đại.", as: "span", multiline: true })}
+              <div style={{ marginBottom: 20 }}>
+                <img src="/smartfurni-logo-transparent.png" alt="SmartFurni" loading="lazy" style={{ height: 48, objectFit: "contain", filter: "brightness(1.05)" }} />
+              </div>
+              <p style={{ color: "#B7A98E", fontSize: 13, lineHeight: 1.85, fontFamily: FONT_BODY, marginBottom: 24, maxWidth: 280 }}>
+                {E({ bk: "footer_brand_desc", def: "Tiên phong trong lĩnh vực nội thất cá nhân hoá tại Việt Nam. Sofa giường thiết kế theo ý bạn — sản xuất tại Việt Nam.", as: "span", multiline: true })}
               </p>
-              <div style={{ display: "flex", gap: 12 }}>
-                {["Facebook", "Zalo", "YouTube", "TikTok"].map(s => (
-                  <div key={s} style={{ width: 32, height: 32, borderRadius: "50%", background: `rgba(139,105,20,0.1)`, border: `1px solid rgba(139,105,20,0.2)`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                    <span style={{ color: GOLD, fontSize: 9, fontWeight: 700, fontFamily: FONT_BODY }}>{s.charAt(0)}</span>
-                  </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                {[
+                  { label: "Facebook", icon: "f", href: "https://facebook.com/smartfurni" },
+                  { label: "YouTube", icon: "▶", href: "https://youtube.com/@smartfurni" },
+                  { label: "Zalo", icon: "Z", href: CONTACT_ZALO_HREF },
+                ].map((s) => (
+                  <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
+                    style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: GOLD_PALE, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textDecoration: "none", transition: "background 0.2s, border-color 0.2s" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(201,168,76,0.18)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = GOLD_PALE; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(201,168,76,0.08)"; (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(201,168,76,0.25)"; }}
+                  >{s.icon}</a>
                 ))}
               </div>
             </div>
-            {/* Sản phẩm */}
+            {/* Cột 2: Showroom */}
             <div>
-              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>{E({ bk: "footer_products_title", def: "SẢN PHẨM", as: "span" })}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ width: 3, height: 16, background: GOLD_PALE, borderRadius: 2 }} />
+                <h4 style={{ color: GOLD_PALE, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: "footer_showroom_title", def: "Showroom", as: "span" })}</h4>
+              </div>
               {[
-                { key: "footer_product_0", text: "Sofa Giường SMF12" },
-                { key: "footer_product_1", text: "Sofa Giường GSF150" },
-                { key: "footer_product_2", text: "Sofa Giường Da Thật" },
-                { key: "footer_product_3", text: "Xem tất cả" },
-              ].map(l => (
-                <div key={l.key} style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 10, cursor: "pointer" }}>{E({ bk: l.key, def: l.text, as: "span" })}</div>
-              ))}
-            </div>
-            {/* Hỗ trợ */}
-            <div>
-              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>{E({ bk: "footer_support_title", def: "HỖ TRỢ", as: "span" })}</div>
-              {[
-                { key: "footer_support_0", text: "Chính sách bảo hành" },
-                { key: "footer_support_1", text: "Hướng dẫn sử dụng" },
-                { key: "footer_support_2", text: "Chính sách đổi trả" },
-                { key: "footer_support_3", text: "Câu hỏi thường gặp" },
-              ].map(l => (
-                <div key={l.key} style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY, marginBottom: 10, cursor: "pointer" }}>{E({ bk: l.key, def: l.text, as: "span" })}</div>
-              ))}
-            </div>
-            {/* Liên hệ */}
-            <div>
-              <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16, letterSpacing: "0.05em" }}>{E({ bk: "footer_contact_title", def: "LIÊN HỆ", as: "span" })}</div>
-              {[
-                { icon: <IconPhone color={GOLD} size={14} />, key: "footer_contact_phone", text: "0123 456 789" },
-                { icon: <IconMail color={GOLD} size={14} />, key: "footer_contact_email", text: "info@smartfurni.vn" },
-                { icon: <IconPin color={GOLD} size={14} />, key: "footer_contact_city", text: "TP. Hồ Chí Minh" },
-                { icon: <IconClock color={GOLD} size={14} />, key: "footer_contact_time", text: "8:00 – 21:00 mỗi ngày" },
-              ].map((c, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "flex-start" }}>
-                  <span style={{ flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
-                  <span style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>{E({ bk: c.key, def: c.text, as: "span" })}</span>
+                { icon: "map_pin", labelKey: "footer_showroom_1_label", label: "TP. HCM", valKey: "footer_showroom_1_value", val: "74 Nguyễn Thị Nhung, KĐT Vạn Phúc City, TP. Thủ Đức" },
+                { icon: "map_pin", labelKey: "footer_showroom_2_label", label: "Hà Nội", valKey: "footer_showroom_2_value", val: "B46-29, KĐT Geleximco B, Lê Trọng Tấn, Q. Hà Đông" },
+                { icon: "factory", labelKey: "footer_showroom_3_label", label: "Xưởng SX", valKey: "footer_showroom_3_value", val: "202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn" },
+              ].map((a, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
+                  <FooterSvgIcon name={a.icon} size={16} color={GOLD_PALE} style={{ marginTop: 2 }} />
+                  <div>
+                    <div style={{ color: "#E4C56F", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 2 }}>{E({ bk: a.labelKey, def: a.label, as: "span" })}</div>
+                    <div style={{ color: "#B7A98E", fontSize: 12, lineHeight: 1.65, fontFamily: FONT_BODY }}>{E({ bk: a.valKey, def: a.val, as: "span", multiline: true })}</div>
+                  </div>
                 </div>
               ))}
             </div>
+            {/* Cột 3: Liên hệ */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ width: 3, height: 16, background: GOLD_PALE, borderRadius: 2 }} />
+                <h4 style={{ color: GOLD_PALE, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: "footer_contact_title", def: "Liên hệ", as: "span" })}</h4>
+              </div>
+              {[
+                { icon: "phone", labelKey: "footer_contact_1_label", label: "Hotline", valKey: "footer_contact_1_value", val: "028.7122.0818", href: "tel:02871220818" },
+                { icon: "message_circle", labelKey: "footer_contact_2_label", label: "Zalo tư vấn", valKey: "footer_contact_2_value", val: "0918.326.552", href: CONTACT_ZALO_HREF },
+                { icon: "mail", labelKey: "footer_contact_3_label", label: "Email", valKey: "footer_contact_3_value", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
+                { icon: "globe", labelKey: "footer_contact_4_label", label: "Website", valKey: "footer_contact_4_value", val: "smartfurni.vn", href: "https://smartfurni.vn" },
+              ].map((c, i) => (
+                <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
+                  style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}>
+                  <FooterSvgIcon name={c.icon} size={16} color={GOLD_PALE} style={{ marginTop: 2 }} />
+                  <div>
+                    <div style={{ color: "#B7A98E", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, marginBottom: 1 }}>{E({ bk: c.labelKey, def: c.label, as: "span" })}</div>
+                    <div style={{ color: "#E4C56F", fontSize: 13, fontFamily: FONT_BODY, fontWeight: 700 }}>{E({ bk: c.valKey, def: c.val, as: "span" })}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+            {/* Cột 4: Đặt hàng */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ width: 3, height: 16, background: GOLD_PALE, borderRadius: 2 }} />
+                <h4 style={{ color: GOLD_PALE, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: "footer_order_title", def: "Đặt hàng ngay", as: "span" })}</h4>
+              </div>
+              <p style={{ color: "#B7A98E", fontSize: 12, lineHeight: 1.75, fontFamily: FONT_BODY, marginBottom: 20 }}>
+                {E({ bk: "footer_order_desc", def: "Nhận tư vấn miễn phí & xác nhận đơn hàng trong vòng 2 giờ làm việc.", as: "span", multiline: true })}
+              </p>
+              <button
+                onClick={openSmf12OrderPopup}
+                style={{ display: "block", width: "100%", textAlign: "center", background: `linear-gradient(135deg, ${GOLD_PALE} 0%, ${GOLD} 100%)`, color: "#0D0B08", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, padding: "13px 20px", borderRadius: R_MD, border: "none", cursor: "pointer", fontFamily: FONT_BODY, boxShadow: "0 6px 24px rgba(201,168,76,0.25)", marginBottom: 12 }}
+              >
+                {E({ bk: "footer_order_cta", def: "Đặt hàng ngay →", as: "span" })}
+              </button>
+              <a href={CONTACT_ZALO_HREF} target="_blank" rel="noopener noreferrer"
+                style={{ display: "block", textAlign: "center", background: "transparent", color: "#D9CBAE", fontWeight: 500, fontSize: 11, letterSpacing: "0.06em", padding: "12px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, border: "1px solid rgba(212,196,160,0.2)" }}>
+                {E({ bk: "footer_zalo_cta", def: "💬 Chat Zalo ngay", as: "span" })}
+              </a>
+            </div>
           </div>
-          <div style={{ borderTop: `1px solid ${BLACK_BORDER}`, paddingTop: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-            <p style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, margin: 0 }}>
-              {E({ bk: "footer_copyright", def: "© 2025 SmartFurni. Tất cả quyền được bảo lưu.", as: "span" })}
+          <div style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(201,168,76,0.12) 20%, rgba(201,168,76,0.12) 80%, transparent)", marginBottom: 24 }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" as const, gap: 12, paddingBottom: 28 }}>
+            <p style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, margin: 0 }}>
+              {E({ bk: "footer_copyright", def: "© 2025 Công ty Cổ phần SmartFurni. Tất cả quyền được bảo lưu.", as: "span" })}
             </p>
             <div style={{ display: "flex", gap: 20 }}>
               {[
-                { key: "footer_policy_0", text: "Chính sách bảo mật" },
-                { key: "footer_policy_1", text: "Điều khoản sử dụng" },
-              ].map(l => (
-                <span key={l.key} style={{ color: GRAY_LIGHT, fontSize: 12, fontFamily: FONT_BODY, cursor: "pointer" }}>{E({ bk: l.key, def: l.text, as: "span" })}</span>
+                { labelKey: "footer_policy_privacy", label: "Chính sách bảo mật", href: "/privacy" },
+                { labelKey: "footer_policy_terms", label: "Điều khoản sử dụng", href: "/terms" },
+                { labelKey: "footer_policy_warranty", label: "Chính sách bảo hành", href: "/bao-hanh" },
+              ].map((l) => (
+                <a key={l.label} href={l.href} style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT_BODY, textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "#B7A98E")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "#3A3020")}
+                >{E({ bk: l.labelKey, def: l.label, as: "span" })}</a>
               ))}
             </div>
           </div>
