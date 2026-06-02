@@ -110,13 +110,13 @@
     object-position: center center !important;
     background: #1C1A14 !important;
   }
-  /* Gradient fade trên/dưới ảnh để hòa với nền */
+  /* Gradient fade nhẹ trên/dưới ảnh để ảnh sản phẩm rõ hơn trên mobile */
   .lp-hero-bg::before {
     content: '' !important;
     position: absolute !important;
     top: 0 !important; left: 0 !important; right: 0 !important;
-    height: 80px !important;
-    background: linear-gradient(to bottom, #1C1A14 0%, transparent 100%) !important;
+    height: 28px !important;
+    background: linear-gradient(to bottom, rgba(28,26,20,0.72) 0%, rgba(28,26,20,0) 100%) !important;
     z-index: 2 !important;
     pointer-events: none !important;
   }
@@ -124,8 +124,8 @@
     content: '' !important;
     position: absolute !important;
     bottom: 0 !important; left: 0 !important; right: 0 !important;
-    height: 100px !important;
-    background: linear-gradient(to top, #1C1A14 0%, transparent 100%) !important;
+    height: 42px !important;
+    background: linear-gradient(to top, rgba(28,26,20,0.78) 0%, rgba(28,26,20,0) 100%) !important;
     z-index: 2 !important;
     pointer-events: none !important;
   }
