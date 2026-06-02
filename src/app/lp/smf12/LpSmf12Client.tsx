@@ -2271,28 +2271,31 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               <GoldDivider />
             </div>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 40, alignItems: "start" }} className="lp-form-grid">
-            {/* Left side — benefits */}
+          <FadeIn>
+            <div style={{ background: `rgba(139,105,20,0.05)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "20px 24px", marginBottom: 28 }}>
+              <div style={{ color: WHITE, fontSize: 16, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16 }}>{E({ bk: "form_benefits_title", def: "Khi đặt hàng hôm nay, bạn nhận được:", as: "span" })}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "10px 24px" }} className="lp-benefits-grid">
+                {[
+                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_0", text: "Tư vấn kích thước phù hợp miễn phí" },
+                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_1", text: "Báo giá chính xác theo nhu cầu" },
+                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_2", text: "Giao hàng + lắp đặt miễn phí toàn quốc" },
+                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_3", text: "Tặng bộ ga gối trị giá 890.000₫" },
+                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_4", text: "Bảo hành 3 năm da PU chính hãng" },
+                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_5", text: "Hỗ trợ kỹ thuật tận nơi suốt thời gian bảo hành" },
+                ].map((b, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{b.icon}</span>
+                    <span style={{ color: GRAY, fontSize: 13, lineHeight: 1.55, fontFamily: FONT_BODY }}>{E({ bk: b.key, def: b.text, as: "span" })}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
+
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 28, alignItems: "start" }} className="lp-form-grid">
+            {/* Left side — quick order form */}
             <FadeIn>
-              <div>
-                <div style={{ marginBottom: 32 }}>
-                  <div style={{ color: WHITE, fontSize: 16, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 20 }}>{E({ bk: "form_benefits_title", def: "Khi đặt hàng hôm nay, bạn nhận được:", as: "span" })}</div>
-                  {[
-                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_0", text: "Tư vấn kích thước phù hợp miễn phí" },
-                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_1", text: "Báo giá chính xác theo nhu cầu" },
-                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_2", text: "Giao hàng + lắp đặt miễn phí toàn quốc" },
-                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_3", text: "Tặng bộ ga gối trị giá 890.000₫" },
-                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_4", text: "Bảo hành 3 năm da PU chính hãng" },
-                    { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_5", text: "Hỗ trợ kỹ thuật tận nơi suốt thời gian bảo hành" },
-                  ].map((b, i) => (
-                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}>
-                      <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>{b.icon}</span>
-                      <span style={{ color: GRAY, fontSize: 14, lineHeight: 1.6, fontFamily: FONT_BODY }}>{E({ bk: b.key, def: b.text, as: "span" })}</span>
-                    </div>
-                  ))}
-                </div>
-                {/* Quick order form */}
-                <form onSubmit={handleInlineOrderSubmit} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "24px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
+              <form onSubmit={handleInlineOrderSubmit} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "24px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
                     <div style={{ color: GRAY_LIGHT, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{E({ bk: "inline_order_label", def: "ĐẶT HÀNG NHANH SMF12", as: "span" })}</div>
                     <div style={{ color: WHITE, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING }}>{E({ bk: "inline_order_title", def: "Chọn cấu hình sofa giường", as: "span" })}</div>
@@ -2370,8 +2373,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                   <GoldButton style={{ width: "100%", justifyContent: "center", fontSize: 14, padding: "16px 24px" }}>
                     {inlineOrderLoading ? "Đang gửi..." : "Xác nhận Đặt Hàng →"}
                   </GoldButton>
-                </form>
-              </div>
+              </form>
             </FadeIn>
             {/* Right side — form */}
             <FadeIn delay={150}>
