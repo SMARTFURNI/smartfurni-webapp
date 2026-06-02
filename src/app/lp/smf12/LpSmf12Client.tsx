@@ -2571,7 +2571,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       <StickyCta openOrderPopup={openSmf12OrderPopup} E={E} />
 
       {/* ── FLOATING ZALO + CALL BUTTONS ── */}
-      <div style={{ position: "fixed", bottom: 80, right: 18, zIndex: 850, display: "flex", flexDirection: "column", gap: 14, alignItems: "center" }}>
+      <div style={{ position: "fixed", bottom: "calc(168px + env(safe-area-inset-bottom, 0px))", right: 18, zIndex: 850, display: "flex", flexDirection: "column", gap: 14, alignItems: "center" }}>
         {/* Nút Gọi điện */}
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span className="lp-wave-ring" style={{ background: "rgba(34,197,94,0.25)" }} />
