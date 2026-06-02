@@ -107,6 +107,9 @@ const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-
 const FONT_BRAND = "'Cormorant Garamond', Georgia, serif";
 const STICKY_PRICE_TEXT = "Từ 4.790.000 ₫";
 const LEGACY_STICKY_PRICE_TEXTS = new Set(["Từ 8.490.000 ₫", "Từ 8.490.000 đ"]);
+const CONTACT_PHONE_NUMBER = "0918326552";
+const CONTACT_PHONE_HREF = `tel:${CONTACT_PHONE_NUMBER}`;
+const CONTACT_ZALO_HREF = `https://zalo.me/${CONTACT_PHONE_NUMBER}`;
 const R_SM = 8;
 const R_MD = 12;
 const R_LG = 16;
@@ -2264,10 +2267,10 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                 {E({ bk: "faq_help_text", def: "Còn câu hỏi khác? Đội tư vấn SmartFurni sẵn sàng hỗ trợ bạn", as: "span" })}
               </p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                <a href="tel:0123456789" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD, color: "#FDFAF5", padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconPhone color="#FDFAF5" size={14} />{E({ bk: "faq_call_btn", def: "Gọi ngay", as: "span" })}
+                <a href={CONTACT_PHONE_HREF} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD, color: "#FDFAF5", padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconPhone color="#FDFAF5" size={14} />{E({ bk: "faq_call_btn", def: "Gọi ngay", as: "span" })}
                   
                 </a>
-                <a href="https://zalo.me/0123456789" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: GOLD, border: `1px solid ${GOLD}`, padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconChat color={GOLD} size={14} />{E({ bk: "faq_zalo_btn", def: "Chat Zalo", as: "span" })}
+                <a href={CONTACT_ZALO_HREF} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: GOLD, border: `1px solid ${GOLD}`, padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconChat color={GOLD} size={14} />{E({ bk: "faq_zalo_btn", def: "Chat Zalo", as: "span" })}
                   
                 </a>
               </div>
@@ -2510,7 +2513,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span className="lp-wave-ring" style={{ background: "rgba(34,197,94,0.25)" }} />
           <span className="lp-wave-ring lp-wave-ring-2" style={{ background: "rgba(34,197,94,0.15)" }} />
-          <a href="tel:0918326552" title="Gọi điện tư vấn"
+          <a href={CONTACT_PHONE_HREF} title="Gọi điện tư vấn"
             style={{ position: "relative", zIndex: 2, width: 46, height: 46, borderRadius: "50%", background: "linear-gradient(135deg,#22c55e,#16a34a)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(34,197,94,0.45)", textDecoration: "none", transition: "transform 0.2s" }}
             onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
             onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
@@ -2524,7 +2527,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span className="lp-wave-ring" style={{ background: "rgba(0,104,255,0.25)" }} />
           <span className="lp-wave-ring lp-wave-ring-2" style={{ background: "rgba(0,104,255,0.15)" }} />
-          <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer" title="Chat Zalo"
+          <a href={CONTACT_ZALO_HREF} target="_blank" rel="noopener noreferrer" title="Chat Zalo"
             style={{ position: "relative", zIndex: 2, width: 46, height: 46, borderRadius: "50%", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "transform 0.2s" }}
             onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
             onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
