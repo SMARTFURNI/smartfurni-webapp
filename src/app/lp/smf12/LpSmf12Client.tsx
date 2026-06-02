@@ -811,7 +811,7 @@ function UrgencyBanner({ E: EditFn }: { E: EFn }) {
 }
 
 // ─── StickyCta ────────────────────────────────────────────────────────────────
-function StickyCta({ scrollToForm, E: EditFn }: { scrollToForm: () => void; E: EFn }) {
+function StickyCta({ openOrderPopup, E: EditFn }: { openOrderPopup: () => void; E: EFn }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const fn = () => setShow(window.scrollY > 400);
@@ -829,7 +829,7 @@ function StickyCta({ scrollToForm, E: EditFn }: { scrollToForm: () => void; E: E
           {EditFn({ bk: "sticky_sub", def: "Miễn phí giao hàng + lắp đặt", as: "span" })}
         </div>
       </div>
-      <GoldButton onClick={scrollToForm} style={{ padding: "12px 24px", fontSize: 12 }}>
+      <GoldButton onClick={openOrderPopup} style={{ padding: "12px 24px", fontSize: 12 }}>
         {EditFn({ bk: "sticky_cta", def: "Đặt Hàng Ngay →", as: "span" })}
       </GoldButton>
     </div>
@@ -1034,6 +1034,12 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   const scrollToForm = useCallback(() => scrollTo("register-form"), []);
+  const openSmf12OrderPopup = useCallback(() => {
+    setPopupSuccess(false);
+    setPopupError("");
+    setPopupForm({ name: "", phone: "", address: "", note: "" });
+    setProductPopup({ productIdx: 0, sizeId: "0.9m", colorId: "brown", imgIdx: 0, step: "detail" });
+  }, []);
 
   const goToPopupImage = useCallback((direction: -1 | 1) => {
     setProductPopup(prev => {
@@ -1197,7 +1203,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             ] as [string, string][]).map(([id, label]) => (
               <button
                 key={id}
-                onClick={() => scrollTo(id)}
+                onClick={() => id === "register-form" ? openSmf12OrderPopup() : scrollTo(id)}
                 style={{
                   background: "none", border: "none", cursor: "pointer",
                   color: navScrolled ? "rgba(253,250,245,0.75)" : "rgba(253,250,245,0.85)",
@@ -1222,7 +1228,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
 
           {/* CTA button — ẩn trên mobile */}
           <button
-            onClick={scrollToForm}
+            onClick={openSmf12OrderPopup}
             className="lp-nav-cta"
             style={{
               flexShrink: 0,
@@ -1275,7 +1281,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             ] as [string, string][]).map(([id, label]) => (
               <button
                 key={id}
-                onClick={() => { scrollTo(id); setMobileMenuOpen(false); }}
+                onClick={() => { if (id === "register-form") openSmf12OrderPopup(); else scrollTo(id); setMobileMenuOpen(false); }}
                 style={{
                   background: "none", border: "none", cursor: "pointer",
                   color: GRAY, fontSize: 15, fontWeight: 500,
@@ -1288,7 +1294,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               </button>
             ))}
             <button
-              onClick={() => { scrollToForm(); setMobileMenuOpen(false); }}
+              onClick={() => { openSmf12OrderPopup(); setMobileMenuOpen(false); }}
               style={{
                 background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 100%)`,
                 color: BLACK, border: "none", padding: "14px 20px",
@@ -2107,7 +2113,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           </div>
           <FadeIn delay={300}>
             <div style={{ textAlign: "center", marginTop: 52 }}>
-              <GoldButton onClick={scrollToForm} style={{ fontSize: 14, padding: "16px 40px" }}>
+              <GoldButton onClick={openSmf12OrderPopup} style={{ fontSize: 14, padding: "16px 40px" }}>
                 {E({ bk: "cta_bottom_gold", def: "Đặt Hàng Ngay — Giao Hàng Toàn Quốc", as: "span" })}
               </GoldButton>
             </div>
@@ -2403,7 +2409,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             <p style={{ color: GRAY, fontSize: 15, lineHeight: 1.75, fontFamily: FONT_BODY, marginBottom: 36 }}>
               {E({ bk: "cta_final_desc", def: "Hàng nghìn gia đình Việt Nam đã chọn SmartFurni SMF12 để tối ưu không gian sống. Đặt hàng hôm nay — nhận tư vấn trong 2 giờ, giao hàng trong 7 ngày.", as: "span", multiline: true })}
             </p>
-            <GoldButton onClick={scrollToForm} style={{ fontSize: 15, padding: "18px 48px" }}>
+            <GoldButton onClick={openSmf12OrderPopup} style={{ fontSize: 15, padding: "18px 48px" }}>
               {E({ bk: "cta_final_btn", def: "Đặt Hàng Ngay — Miễn Phí Giao Hàng →", as: "span" })}
             </GoldButton>
             <p style={{ color: GRAY_LIGHT, fontSize: 12, marginTop: 16, fontFamily: FONT_BODY }}>
@@ -2488,7 +2494,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </footer>
 
       {/* ── STICKY CTA ── */}
-      <StickyCta scrollToForm={scrollToForm} E={E} />
+      <StickyCta openOrderPopup={openSmf12OrderPopup} E={E} />
 
       {/* ── FLOATING ZALO + CALL BUTTONS ── */}
       <div style={{ position: "fixed", bottom: 80, right: 18, zIndex: 850, display: "flex", flexDirection: "column", gap: 14, alignItems: "center" }}>
