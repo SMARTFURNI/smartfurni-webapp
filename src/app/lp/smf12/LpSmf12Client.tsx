@@ -1140,12 +1140,12 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
 
       {/* ── STICKY NAV ── */}
       <nav style={{
-        position: "fixed", top: isEditor ? 48 : 0, left: 0, right: 0, zIndex: 100,
+        position: "fixed", top: navScrolled ? 0 : (isEditor ? 48 : 0), left: 0, right: 0, zIndex: 100,
         background: navScrolled ? "rgba(18,14,4,0.97)" : "transparent",
         borderBottom: navScrolled ? `1px solid rgba(139,105,20,0.25)` : "none",
         backdropFilter: navScrolled ? "blur(16px)" : "none",
         WebkitBackdropFilter: navScrolled ? "blur(16px)" : "none",
-        transition: "background 0.3s ease, border-color 0.3s ease",
+        transition: "top 0.25s ease, background 0.3s ease, border-color 0.3s ease",
       }}>
         <div style={{
           maxWidth: 1200, margin: "0 auto",
