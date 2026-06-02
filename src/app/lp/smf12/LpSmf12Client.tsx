@@ -1014,6 +1014,12 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   const [popupLoading, setPopupLoading] = useState(false);
   const [popupSuccess, setPopupSuccess] = useState(false);
   const [popupError, setPopupError] = useState("");
+  const [inlineOrderSizeId, setInlineOrderSizeId] = useState("0.9m");
+  const [inlineOrderColorId, setInlineOrderColorId] = useState("brown");
+  const [inlineOrderForm, setInlineOrderForm] = useState({ name: "", phone: "", address: "", note: "" });
+  const [inlineOrderLoading, setInlineOrderLoading] = useState(false);
+  const [inlineOrderSuccess, setInlineOrderSuccess] = useState(false);
+  const [inlineOrderError, setInlineOrderError] = useState("");
 
   useEffect(() => {
     setScrollY(window.scrollY);
@@ -1096,6 +1102,27 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
     { id: "black", label: "Da PU Màu Đen" },
     { id: "beige", label: "Da PU Màu Be" },
   ];
+  const inlineOrderProductName = content["product_name_0"] || "Sofa Giường Da PU SMF12";
+  const inlineOrderSizeIndex = Math.max(0, POPUP_SIZES.findIndex(s => s.id === inlineOrderSizeId));
+  const inlineOrderSizeObj = POPUP_SIZES[inlineOrderSizeIndex];
+  const inlineOrderPriceKey = getPopupPriceKey(0, inlineOrderSizeIndex);
+  const inlineOrderPrice = content[inlineOrderPriceKey] || getPopupDefaultPrice(0, inlineOrderSizeIndex);
+  const inlineOrderColorObj = POPUP_COLORS.find(c => c.id === inlineOrderColorId) || POPUP_COLORS[0];
+
+  async function handleInlineOrderSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!inlineOrderForm.name.trim() || !inlineOrderForm.phone.trim()) { setInlineOrderError("Vui lòng điền Họ tên và Số điện thoại (*)"); return; }
+    if (!/^(0|\+84)[0-9]{8,10}$/.test(inlineOrderForm.phone.replace(/\s/g, ""))) { setInlineOrderError("Số điện thoại không hợp lệ"); return; }
+    setInlineOrderLoading(true); setInlineOrderError("");
+    try {
+      const noteStr = `Nguồn: Form đặt hàng tại section chính | Sản phẩm: ${inlineOrderProductName} | Kích thước: ${inlineOrderSizeObj.label} | Màu sắc: ${inlineOrderColorObj.label} | Giá: ${inlineOrderPrice} | Địa chỉ: ${inlineOrderForm.address} | Ghi chú: ${inlineOrderForm.note}`;
+      const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: inlineOrderForm.name, phone: inlineOrderForm.phone, email: "", note: noteStr }) });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
+      setInlineOrderSuccess(true);
+      setInlineOrderForm({ name: "", phone: "", address: "", note: "" });
+    } catch (err: unknown) { setInlineOrderError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
+    finally { setInlineOrderLoading(false); }
+  }
   // SIZES kept for legacy compatibility
   const SIZES = [
     { id: "0.9m", label: "0,9m × 2,0m", price: "8.490.000 ₫", sub: "Phòng đơn / studio" },
@@ -2264,19 +2291,86 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                     </div>
                   ))}
                 </div>
-                {/* Price range */}
-                <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "24px 20px" }}>
-                  <div style={{ color: GRAY_LIGHT, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 12, fontFamily: FONT_BODY }}>{E({ bk: "form_price_title", def: "BẢNG GIÁ SMF12", as: "span" })}</div>
-                  {SIZES.map((s, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < SIZES.length - 1 ? `1px solid ${BLACK_BORDER}` : "none" }}>
-                      <span style={{ color: GRAY, fontSize: 13, fontFamily: FONT_BODY }}>{s.label}</span>
-                      <span style={{ color: GOLD, fontWeight: 700, fontSize: 14, fontFamily: FONT_HEADING }}>{s.price}</span>
+                {/* Quick order form */}
+                <form onSubmit={handleInlineOrderSubmit} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "24px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
+                  <div>
+                    <div style={{ color: GRAY_LIGHT, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{E({ bk: "inline_order_label", def: "ĐẶT HÀNG NHANH SMF12", as: "span" })}</div>
+                    <div style={{ color: WHITE, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING }}>{E({ bk: "inline_order_title", def: "Chọn cấu hình sofa giường", as: "span" })}</div>
+                  </div>
+
+                  <div>
+                    <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, marginBottom: 10, fontFamily: FONT_BODY }}>Chọn kích thước:</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {POPUP_SIZES.map((sz, sizeIdx) => {
+                        const szPriceKey = getPopupPriceKey(0, sizeIdx);
+                        const szPrice = content[szPriceKey] || getPopupDefaultPrice(0, sizeIdx);
+                        const isActive = inlineOrderSizeId === sz.id;
+                        return (
+                          <button key={sz.id} type="button"
+                            onClick={() => setInlineOrderSizeId(sz.id)}
+                            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", border: `1.5px solid ${isActive ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: isActive ? `rgba(139,105,20,0.06)` : BLACK, cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}
+                          >
+                            <span style={{ color: isActive ? GOLD : WHITE, fontSize: 13, fontWeight: isActive ? 600 : 400, fontFamily: FONT_BODY }}>{sz.label}</span>
+                            <span style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING }}>{szPrice}</span>
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))}
-                  <p style={{ color: GRAY_LIGHT, fontSize: 11, marginTop: 12, fontFamily: FONT_BODY, fontStyle: "italic" }}>
-                    {E({ bk: "form_price_note", def: "* Đã bao gồm VAT, giao hàng và lắp đặt", as: "span" })}
-                  </p>
-                </div>
+                  </div>
+
+                  <div>
+                    <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, marginBottom: 10, fontFamily: FONT_BODY }}>Chọn màu sắc:</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {POPUP_COLORS.map(color => {
+                        const isActive = inlineOrderColorId === color.id;
+                        return (
+                          <button key={color.id} type="button"
+                            onClick={() => setInlineOrderColorId(color.id)}
+                            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", border: `1.5px solid ${isActive ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: isActive ? `rgba(139,105,20,0.06)` : BLACK, cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}
+                          >
+                            <span style={{ color: isActive ? GOLD : WHITE, fontSize: 13, fontWeight: isActive ? 600 : 400, fontFamily: FONT_BODY }}>{color.label}</span>
+                            {isActive && <IconCheck color={GOLD} size={16} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "12px 14px" }}>
+                    <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Lựa chọn đã chọn</div>
+                    <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{inlineOrderSizeObj.label}</div>
+                    <div style={{ color: GRAY, fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, marginTop: 2 }}>{inlineOrderColorObj.label}</div>
+                    <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, marginTop: 4 }}>{inlineOrderPrice}</div>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {([
+                      { key: "name", placeholder: "Họ và tên (*)", type: "text" },
+                      { key: "phone", placeholder: "Số điện thoại (*)", type: "tel" },
+                      { key: "address", placeholder: "Địa chỉ giao hàng", type: "text" },
+                    ] as { key: keyof typeof inlineOrderForm; placeholder: string; type: string }[]).map(f => (
+                      <input key={f.key}
+                        type={f.type}
+                        placeholder={f.placeholder}
+                        value={inlineOrderForm[f.key]}
+                        onChange={e => setInlineOrderForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                        style={{ width: "100%", background: "rgba(139,105,20,0.04)", border: `1px solid rgba(139,105,20,0.2)`, color: WHITE, padding: "13px 14px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD }}
+                      />
+                    ))}
+                    <textarea
+                      placeholder="Ghi chú thêm"
+                      value={inlineOrderForm.note}
+                      onChange={e => setInlineOrderForm(prev => ({ ...prev, note: e.target.value }))}
+                      style={{ width: "100%", background: "rgba(139,105,20,0.04)", border: `1px solid rgba(139,105,20,0.2)`, color: WHITE, padding: "13px 14px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD, minHeight: 72, resize: "vertical" }}
+                    />
+                  </div>
+
+                  {inlineOrderError && <div style={{ color: RED_SOFT, fontSize: 13, fontFamily: FONT_BODY }}>{inlineOrderError}</div>}
+                  {inlineOrderSuccess && <div style={{ color: GOLD, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.6 }}>Đặt hàng thành công! Đội ngũ tư vấn sẽ liên hệ qua Zalo / điện thoại trong vòng 2 giờ làm việc.</div>}
+                  <GoldButton style={{ width: "100%", justifyContent: "center", fontSize: 14, padding: "16px 24px" }}>
+                    {inlineOrderLoading ? "Đang gửi..." : "Xác nhận Đặt Hàng →"}
+                  </GoldButton>
+                </form>
               </div>
             </FadeIn>
             {/* Right side — form */}
