@@ -105,6 +105,8 @@ const LP_SLUG = "smf12";
 const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BRAND = "'Cormorant Garamond', Georgia, serif";
+const STICKY_PRICE_TEXT = "Từ 4.790.000 ₫";
+const LEGACY_STICKY_PRICE_TEXTS = new Set(["Từ 8.490.000 ₫", "Từ 8.490.000 đ"]);
 const R_SM = 8;
 const R_MD = 12;
 const R_LG = 16;
@@ -823,7 +825,7 @@ function StickyCta({ openOrderPopup, E: EditFn }: { openOrderPopup: () => void; 
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100, background: "rgba(253,250,245,0.97)", borderTop: `1px solid ${BLACK_BORDER}`, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(8px)" }}>
       <div>
         <div style={{ color: WHITE, fontWeight: 700, fontSize: 15, fontFamily: FONT_HEADING }}>
-          {EditFn({ bk: "sticky_price", def: "Từ 8.490.000 ₫", as: "span" })}
+          {EditFn({ bk: "sticky_price", def: STICKY_PRICE_TEXT, as: "span" })}
         </div>
         <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY }}>
           {EditFn({ bk: "sticky_sub", def: "Miễn phí giao hàng + lắp đặt", as: "span" })}
@@ -970,7 +972,13 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [content, setContent] = useState<Record<string, string>>(initialContent);
+  const [content, setContent] = useState<Record<string, string>>(() => {
+    const next = { ...initialContent };
+    if (LEGACY_STICKY_PRICE_TEXTS.has(next.sticky_price?.trim() || "")) {
+      next.sticky_price = STICKY_PRICE_TEXT;
+    }
+    return next;
+  });
   const [editedCount, setEditedCount] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
   const [productPopup, setProductPopup] = useState<{ productIdx: number; sizeId: string; colorId: string; imgIdx: number; step: "detail" | "form" } | null>(null);
