@@ -1108,6 +1108,29 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
   const inlineOrderPriceKey = getPopupPriceKey(0, inlineOrderSizeIndex);
   const inlineOrderPrice = content[inlineOrderPriceKey] || getPopupDefaultPrice(0, inlineOrderSizeIndex);
   const inlineOrderColorObj = POPUP_COLORS.find(c => c.id === inlineOrderColorId) || POPUP_COLORS[0];
+  const getEditableDisplayValue = (blockKey: string, defaultValue: string) => (
+    Object.prototype.hasOwnProperty.call(content, blockKey) ? (content[blockKey] ?? "") : defaultValue
+  );
+  const SPEC_ROWS = [
+    { bkLabel: "spec_row_1_label", defLabel: "Kích thước (sofa)", bkValue: "spec_row_1_value", defValue: "0,9m / 1m2 / 1m5 / 1m8 × rộng 68cm" },
+    { bkLabel: "spec_row_2_label", defLabel: "Kích thước (giường)", bkValue: "spec_row_2_value", defValue: "0,9m / 1m2 / 1m5 / 1m8 × dài 1M9" },
+    { bkLabel: "spec_row_3_label", defLabel: "Tải trọng tối đa", bkValue: "spec_row_3_value", defValue: "500kg" },
+    { bkLabel: "spec_row_4_label", defLabel: "Chất liệu bọc", bkValue: "spec_row_4_value", defValue: "Da PU nhập khẩu — kháng nước, kháng bụi bẩn" },
+    { bkLabel: "spec_row_5_label", defLabel: "Đệm ngồi/nằm", bkValue: "spec_row_5_value", defValue: "Mút ép đàn hồi cao dày 10cm" },
+    { bkLabel: "spec_row_6_label", defLabel: "Khung chính", bkValue: "spec_row_6_value", defValue: "Thép mạ kẽm" },
+    { bkLabel: "spec_row_7_label", defLabel: "Cơ cấu đóng mở", bkValue: "spec_row_7_value", defValue: "Trượt, kéo dễ dàng có bánh xe" },
+    { bkLabel: "spec_row_8_label", defLabel: "Số lần gập mở kiểm định", bkValue: "spec_row_8_value", defValue: "50.000 lần" },
+    { bkLabel: "spec_row_9_label", defLabel: "Chân sofa", bkValue: "spec_row_9_value", defValue: "Gỗ sồi tự nhiên / thép sơn tĩnh điện" },
+    { bkLabel: "spec_row_10_label", defLabel: "Màu sắc da PU", bkValue: "spec_row_10_value", defValue: "Đen, Nâu, Be (kem)" },
+    { bkLabel: "spec_row_11_label", defLabel: "Bảo hành da", bkValue: "spec_row_11_value", defValue: "3 năm chính hãng" },
+    { bkLabel: "spec_row_12_label", defLabel: "Bảo hành khung", bkValue: "spec_row_12_value", defValue: "5 năm" },
+    { bkLabel: "spec_row_13_label", defLabel: "Trọng lượng", bkValue: "spec_row_13_value", defValue: "~70 kg (1m5) / ~80 kg (1m8)" },
+    { bkLabel: "spec_row_14_label", defLabel: "Xuất xứ", bkValue: "spec_row_14_value", defValue: "Việt Nam, sản xuất bởi SmartFurni" },
+  ].filter(row => {
+    const label = getEditableDisplayValue(row.bkLabel, row.defLabel).trim();
+    const value = getEditableDisplayValue(row.bkValue, row.defValue).trim();
+    return label.length > 0 || value.length > 0;
+  });
 
   async function handleInlineOrderSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -1519,36 +1542,21 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             </div>
           </FadeIn>
           <FadeIn delay={100}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }} className="lp-specs-layout">
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 24, alignItems: "stretch" }} className="lp-specs-layout">
               {/* Bảng thông số bên trái */}
-              <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden" }}>
-                {[
-                  { bkLabel: "spec_row_1_label", defLabel: "Kích thước (sofa)", bkValue: "spec_row_1_value", defValue: "0,9m / 1,2m / 1,4m / 1,6m × 0,9m × 0,85m (C)" },
-                  { bkLabel: "spec_row_2_label", defLabel: "Kích thước (giường)", bkValue: "spec_row_2_value", defValue: "0,9m / 1,2m / 1,4m / 1,6m × 2,0m" },
-                  { bkLabel: "spec_row_3_label", defLabel: "Tải trọng tối đa", bkValue: "spec_row_3_value", defValue: "250 kg" },
-                  { bkLabel: "spec_row_4_label", defLabel: "Chất liệu bọc", bkValue: "spec_row_4_value", defValue: "Da PU nhập khẩu — kháng nước, kháng UV" },
-                  { bkLabel: "spec_row_5_label", defLabel: "Đệm ngồi/nằm", bkValue: "spec_row_5_value", defValue: "Foam D40 dày 12cm + memory foam 3cm" },
-                  { bkLabel: "spec_row_6_label", defLabel: "Khung chính", bkValue: "spec_row_6_value", defValue: "Gỗ thông xử lý chống mối + thanh giằng thép mạ kẽm" },
-                  { bkLabel: "spec_row_7_label", defLabel: "Cơ cấu gập mở", bkValue: "spec_row_7_value", defValue: "SmartFold — 1 thao tác, không cần dụng cụ" },
-                  { bkLabel: "spec_row_8_label", defLabel: "Số lần gập mở kiểm định", bkValue: "spec_row_8_value", defValue: "50.000 lần" },
-                  { bkLabel: "spec_row_9_label", defLabel: "Chân sofa", bkValue: "spec_row_9_value", defValue: "Gỗ sồi tự nhiên / thép sơn tĩnh điện (tuỳ phiên bản)" },
-                  { bkLabel: "spec_row_10_label", defLabel: "Màu sắc", bkValue: "spec_row_10_value", defValue: "Đen, Nâu, Xám tro, Be (kem)" },
-                  { bkLabel: "spec_row_11_label", defLabel: "Bảo hành da", bkValue: "spec_row_11_value", defValue: "3 năm chính hãng" },
-                  { bkLabel: "spec_row_12_label", defLabel: "Bảo hành khung", bkValue: "spec_row_12_value", defValue: "2 năm" },
-                  { bkLabel: "spec_row_13_label", defLabel: "Trọng lượng", bkValue: "spec_row_13_value", defValue: "~38 kg (1m4) / ~44 kg (1m6)" },
-                  { bkLabel: "spec_row_14_label", defLabel: "Xuất xứ", bkValue: "spec_row_14_value", defValue: "Việt Nam — chất liệu nhập khẩu" },
-                ].map((row, i) => (
-                  <div key={i} style={{ display: "flex", padding: "14px 24px", background: i % 2 === 0 ? BLACK_CARD : BLACK, borderBottom: i < 13 ? `1px solid ${BLACK_BORDER}` : "none" }}>
-                    <div style={{ width: "40%", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY, flexShrink: 0 }}>{E({ bk: row.bkLabel, def: row.defLabel, as: "span" })}</div>
-                    <div style={{ color: WHITE, fontSize: 13, fontFamily: FONT_BODY, fontWeight: 500 }}>{E({ bk: row.bkValue, def: row.defValue, as: "span", multiline: true })}</div>
+              <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", alignSelf: "center" }}>
+                {SPEC_ROWS.map((row, i) => (
+                  <div key={`${row.bkLabel}-${row.bkValue}`} style={{ display: "flex", alignItems: "center", gap: 18, padding: "11px 20px", minHeight: 44, background: i % 2 === 0 ? BLACK_CARD : BLACK, borderBottom: i < SPEC_ROWS.length - 1 ? `1px solid ${BLACK_BORDER}` : "none" }}>
+                    <div style={{ width: "38%", color: GRAY_LIGHT, fontSize: 13, lineHeight: 1.45, fontFamily: FONT_BODY, flexShrink: 0 }}>{E({ bk: row.bkLabel, def: row.defLabel, as: "span" })}</div>
+                    <div style={{ color: WHITE, fontSize: 13, lineHeight: 1.45, fontFamily: FONT_BODY, fontWeight: 500, flex: 1 }}>{E({ bk: row.bkValue, def: row.defValue, as: "span", multiline: true })}</div>
                   </div>
                 ))}
               </div>
               {/* Ảnh 1:1 bên phải */}
-              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}`, alignSelf: "center" }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["specs_img"] ? (
-                    <Image src={optimizeCldUrl(content["specs_img"], 900)} alt="SmartFurni SMF12" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
+                    <Image src={optimizeCldUrl(content["specs_img"], 900)} alt="SmartFurni SMF12" fill style={{ objectFit: "contain", background: WHITE }} sizes="(max-width: 768px) 100vw, 50vw" />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
