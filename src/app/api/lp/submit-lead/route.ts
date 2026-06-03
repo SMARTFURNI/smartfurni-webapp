@@ -3,6 +3,7 @@ import { google } from "googleapis";
 import { createRawLead } from "@/lib/crm-raw-lead-store";
 import { getCrmSettings } from "@/lib/crm-settings-store";
 import { query } from "@/lib/db";
+import { findZaloUserByPhone, sendZaloMessage } from "@/lib/zalo-gateway";
 
 const NOTIFY_EMAIL = "phamtuat0820@gmail.com";
 const MAX_ORDER_NOTIFY_EMAILS = 5;
@@ -37,7 +38,8 @@ async function getLandingDeliverySettings(slug: string) {
       `SELECT block_key, content FROM lp_content
        WHERE slug = $1 AND block_key IN (
         'tracking_order_notify_email',
-        'tracking_order_google_sheet_url'
+        'tracking_order_google_sheet_url',
+        'tracking_contact_zalo'
        )`,
       [slug]
     );
@@ -47,10 +49,11 @@ async function getLandingDeliverySettings(slug: string) {
     return {
       notifyEmails: notifyEmails.length ? notifyEmails : [NOTIFY_EMAIL],
       googleSheetUrl: result.tracking_order_google_sheet_url?.trim() || "",
+      zaloNotifyPhone: result.tracking_contact_zalo?.trim() || "",
     };
   } catch (e) {
     console.error("[submit-lead] get delivery settings failed:", e);
-    return { notifyEmails: [NOTIFY_EMAIL], googleSheetUrl: "" };
+    return { notifyEmails: [NOTIFY_EMAIL], googleSheetUrl: "", zaloNotifyPhone: "" };
   }
 }
 
@@ -180,6 +183,84 @@ type LeadNotificationData = {
   totalPrice?: string;
   slug: string;
 };
+
+function normalizeVietnamPhone(value?: string | null) {
+  const compact = (value || "").replace(/[\s.()-]/g, "").trim();
+  if (!compact) return "";
+  if (compact.startsWith("+84")) return `0${compact.slice(3)}`;
+  if (compact.startsWith("84") && compact.length >= 10) return `0${compact.slice(2)}`;
+  return compact;
+}
+
+function buildZaloLeadMessage(data: LeadNotificationData & { leadId?: number | string }) {
+  const now = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+  const addressParts = [data.ward, data.district, data.province].filter(Boolean).join(", ");
+  const fullAddress = [data.address, addressParts].filter(Boolean).join(", ");
+  const configLines = data.configStr
+    ? data.configStr.split("|").map(s => s.trim()).filter(Boolean).map(s => `- ${s}`)
+    : [];
+
+  return [
+    "SMARTFURNI - ĐƠN HÀNG MỚI",
+    data.leadId ? `Mã lead: #${data.leadId}` : null,
+    `Thời gian: ${now}`,
+    `Landing page: ${data.slug}`,
+    "",
+    `Khách hàng: ${data.fullName}`,
+    `Số điện thoại: ${data.phone}`,
+    data.email ? `Email: ${data.email}` : null,
+    fullAddress ? `Địa chỉ: ${fullAddress}` : null,
+    data.totalPrice ? `Giá tham khảo: ${data.totalPrice}` : null,
+    configLines.length ? `Cấu hình:
+${configLines.join("\n")}` : null,
+    data.note ? `Ghi chú: ${data.note}` : null,
+    "",
+    "Vui lòng kiểm tra và chăm sóc khách trong CRM."
+  ].filter(Boolean).join("\n");
+}
+
+async function sendZaloLeadNotification(data: LeadNotificationData & { leadId?: number | string; zaloNotifyPhone?: string }) {
+  const phone = normalizeVietnamPhone(data.zaloNotifyPhone);
+  if (!phone) {
+    console.warn("[submit-lead] Zalo notification skipped:", { slug: data.slug, reason: "missing_tracking_contact_zalo" });
+    return;
+  }
+
+  const found = await findZaloUserByPhone(phone);
+  if (!found.success || !found.user?.uid) {
+    console.warn("[submit-lead] Zalo notification skipped:", {
+      slug: data.slug,
+      phone,
+      reason: "zalo_user_not_found",
+      error: found.error,
+    });
+    return;
+  }
+
+  const sent = await sendZaloMessage({
+    conversationId: found.user.uid,
+    content: buildZaloLeadMessage(data),
+    senderName: "SmartFurni CRM",
+    senderId: "landing-page-order",
+  });
+
+  if (!sent.success) {
+    console.error("[submit-lead] Zalo notification failed:", {
+      slug: data.slug,
+      phone,
+      userId: found.user.uid,
+      error: sent.error,
+    });
+    return;
+  }
+
+  console.log("[submit-lead] Zalo notification sent:", {
+    slug: data.slug,
+    phone,
+    userId: found.user.uid,
+    messageId: sent.messageId,
+  });
+}
 
 async function sendLeadNotification(data: LeadNotificationData & { notifyEmails?: string[] }) {
   const resendKey = process.env.RESEND_API_KEY;
@@ -355,6 +436,7 @@ export async function POST(req: NextRequest) {
         totalPrice,
         notifyEmails: deliverySettings.notifyEmails,
         googleSheetUrl: deliverySettings.googleSheetUrl,
+        zaloNotifyPhone: deliverySettings.zaloNotifyPhone,
         submittedAt: new Date().toISOString(),
       },
     });
@@ -374,6 +456,22 @@ export async function POST(req: NextRequest) {
       slug,
       notifyEmails: deliverySettings.notifyEmails,
     }).catch(err => console.error("[submit-lead] email notification failed:", err));
+
+    sendZaloLeadNotification({
+      fullName,
+      phone,
+      email,
+      province,
+      district,
+      ward,
+      address,
+      note: note || message,
+      configStr,
+      totalPrice,
+      slug,
+      leadId: lead.id,
+      zaloNotifyPhone: deliverySettings.zaloNotifyPhone,
+    }).catch(err => console.error("[submit-lead] Zalo notification unexpected failure:", { slug, error: err }));
 
     appendLeadToConfiguredSheet({
       fullName,

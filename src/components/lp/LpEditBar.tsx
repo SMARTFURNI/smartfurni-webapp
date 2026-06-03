@@ -212,7 +212,7 @@ nhanvien2@smartfurni.vn`}
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={label}>Số Zalo hiển thị</label>
+            <label style={label}>Số Zalo nhận đơn hàng</label>
             <input
               value={contactZalo}
               onChange={e => setContactZalo(e.target.value)}
@@ -221,7 +221,7 @@ nhanvien2@smartfurni.vn`}
               onFocus={e => { e.target.style.borderColor = GOLD; }}
               onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.3)"; }}
             />
-            <p style={{ color: "#687076", fontSize: 10, marginTop: 3, fontFamily: FONT }}>Để trống sẽ dùng cùng số hotline mặc định</p>
+            <p style={{ color: "#687076", fontSize: 10, marginTop: 3, fontFamily: FONT }}>Số này vừa hiển thị trên landing page vừa nhận thông báo đơn hàng qua Zalo personal trong CRM. Để trống sẽ không gửi Zalo tự động.</p>
           </div>
 
           <div style={{ height: 1, background: "rgba(201,168,76,0.16)", margin: "4px 0 16px" }} />
