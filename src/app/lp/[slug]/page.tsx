@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 // Các slug tĩnh đã có route riêng — không xử lý ở đây
 const STATIC_SLUGS = new Set(["sofa-giuong", "gsf150", "doi-tac-showroom-nem", "smf12"]);
+const DEFAULT_SMF12_PU_FB_PIXEL_ID = "1018174204502230";
 
 // Hỗ trợ tất cả LP variants được tạo trong DB (không giới hạn pattern)
 
@@ -143,7 +144,7 @@ export default async function LpVariantPage({ params }: Props) {
   }
 
   // Tracking IDs (ưu tiên variant, fallback parent)
-  const fbPixelId = mergedContent["tracking_fb_pixel_id"] || "";
+  const fbPixelId = mergedContent["tracking_fb_pixel_id"]?.trim() || (slug === "smf12-pu" ? DEFAULT_SMF12_PU_FB_PIXEL_ID : "");
   const googleAdsId = mergedContent["tracking_google_ads_id"] || "";
   const googleAdsLabel = mergedContent["tracking_google_ads_label"] || "";
   const gtmId = mergedContent["tracking_gtm_id"] || "";
