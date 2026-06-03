@@ -30,6 +30,7 @@ export const metadata: Metadata = {
 };
 
 const LP_SLUG = "smf12";
+const DEFAULT_FB_PIXEL_ID = "1018174204502230";
 
 async function getLpContent(): Promise<Record<string, string>> {
   try {
@@ -72,5 +73,30 @@ export default async function LpSmf12Page() {
   } catch {
     isEditor = false;
   }
-  return <LpSmf12Client isEditor={isEditor} initialContent={initialContent} />;
+  const fbPixelId = initialContent["tracking_fb_pixel_id"]?.trim() || DEFAULT_FB_PIXEL_ID;
+
+  return (
+    <>
+      {/* Facebook Pixel */}
+      {fbPixelId && (
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window,document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','${fbPixelId}');
+fbq('track','PageView');
+window.__FB_PIXEL_ID='${fbPixelId}';
+`,
+          }}
+        />
+      )}
+      <LpSmf12Client isEditor={isEditor} initialContent={initialContent} />
+    </>
+  );
 }

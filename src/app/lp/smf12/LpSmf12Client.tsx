@@ -143,6 +143,23 @@ const R_MD = 12;
 const R_LG = 16;
 const R_FULL = 999;
 
+function trackFacebookLeadEvent(source: string) {
+  try {
+    if (typeof window === "undefined") return;
+    const trackingWindow = window as unknown as {
+      fbq?: (...args: unknown[]) => void;
+      __FB_PIXEL_ID?: string;
+    };
+    if (trackingWindow.fbq && trackingWindow.__FB_PIXEL_ID) {
+      trackingWindow.fbq("track", "Lead", {
+        content_name: "SMF12 da PU - Sơn",
+        content_category: "Landing Page",
+        source,
+      });
+    }
+  } catch {}
+}
+
 interface Props {
   isEditor?: boolean;
   initialContent?: Record<string, string>;
@@ -895,6 +912,7 @@ function LeadForm({ lpSlug, E: EditFn, content, submitLabelKey = "form_submit", 
       const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || getText("form_error_server", "Lỗi server")); }
       setSuccess(true);
+      trackFacebookLeadEvent("quiz_lead_form");
     } catch (err: unknown) { setError(err instanceof Error ? err.message : getText("form_error_unknown", "Có lỗi xảy ra, vui lòng thử lại")); }
     finally { setLoading(false); }
   }
@@ -1199,6 +1217,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
       const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: inlineOrderForm.name, phone: inlineOrderForm.phone, email: "", note: noteStr }) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
       setInlineOrderSuccess(true);
+      trackFacebookLeadEvent("inline_order_form");
       setInlineOrderForm({ name: "", phone: "", address: "", note: "" });
     } catch (err: unknown) { setInlineOrderError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
     finally { setInlineOrderLoading(false); }
@@ -1816,6 +1835,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
             const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: popupForm.name, phone: popupForm.phone, email: "", note: noteStr }) });
             if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
             setPopupSuccess(true);
+            trackFacebookLeadEvent("product_popup_form");
           } catch (err: unknown) { setPopupError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
           finally { setPopupLoading(false); }
         }
