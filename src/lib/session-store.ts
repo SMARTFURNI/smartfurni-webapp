@@ -23,6 +23,7 @@ export interface SessionEvent {
   id: string;
   sessionId: string;
   path: string;
+  fullUrl: string;
   title: string;
   enteredAt: string;   // ISO timestamp
   duration: number;    // seconds spent on this page (0 = still active)
@@ -40,8 +41,17 @@ export interface VisitorSession {
   os: string;
   country: string;
   referrer: string;
+  referrerUrl: string;
+  sourceDetail: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmTerm: string;
+  utmContent: string;
   entryPage: string;
+  entryUrl: string;
   exitPage: string;
+  exitUrl: string;
   isActive: boolean;   // last seen < 15s ago (heartbeat-based)
   events: SessionEvent[];
 }
@@ -56,8 +66,17 @@ export interface SessionListItem {
   browser: string;
   os: string;
   referrer: string;
+  referrerUrl: string;
+  sourceDetail: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmTerm: string;
+  utmContent: string;
   entryPage: string;
+  entryUrl: string;
   exitPage: string;
+  exitUrl: string;
   isActive: boolean;
 }
 
@@ -130,6 +149,16 @@ export async function ensureSessionTables(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_vs_last_seen ON visitor_sessions(last_seen_at DESC);
     `);
     await pool.query(`
+      ALTER TABLE visitor_sessions ADD COLUMN IF NOT EXISTS referrer_url TEXT DEFAULT '';
+      ALTER TABLE visitor_sessions ADD COLUMN IF NOT EXISTS entry_url TEXT DEFAULT '';
+      ALTER TABLE visitor_sessions ADD COLUMN IF NOT EXISTS exit_url TEXT DEFAULT '';
+      ALTER TABLE visitor_sessions ADD COLUMN IF NOT EXISTS utm_source TEXT DEFAULT '';
+      ALTER TABLE visitor_sessions ADD COLUMN IF NOT EXISTS utm_medium TEXT DEFAULT '';
+      ALTER TABLE visitor_sessions ADD COLUMN IF NOT EXISTS utm_campaign TEXT DEFAULT '';
+      ALTER TABLE visitor_sessions ADD COLUMN IF NOT EXISTS utm_term TEXT DEFAULT '';
+      ALTER TABLE visitor_sessions ADD COLUMN IF NOT EXISTS utm_content TEXT DEFAULT '';
+    `);
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS session_events (
         id            TEXT PRIMARY KEY,
         session_id    TEXT NOT NULL REFERENCES visitor_sessions(session_id) ON DELETE CASCADE,
@@ -140,6 +169,9 @@ export async function ensureSessionTables(): Promise<void> {
         seq           INT DEFAULT 0
       );
       CREATE INDEX IF NOT EXISTS idx_se_session ON session_events(session_id, seq);
+    `);
+    await pool.query(`
+      ALTER TABLE session_events ADD COLUMN IF NOT EXISTS full_url TEXT DEFAULT '';
     `);
   } catch (err) {
     console.error("[session-store] ensureSessionTables error:", (err as Error).message);
@@ -153,24 +185,61 @@ export async function trackSessionPage(params: {
   path: string;
   title: string;
   referrer: string;
+  referrerUrl?: string;
+  fullUrl?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
   ua: string;
   prevPath?: string;
+  prevFullUrl?: string;
   prevDuration?: number;
 }): Promise<void> {
   const pool = getPool();
   if (!pool) return;
-  const { sessionId, path, title, referrer, ua, prevPath, prevDuration } = params;
-  const cleanRef = cleanReferrer(referrer);
+  const {
+    sessionId,
+    path,
+    title,
+    referrer,
+    referrerUrl = referrer,
+    fullUrl = path,
+    utmSource = "",
+    utmMedium = "",
+    utmCampaign = "",
+    utmTerm = "",
+    utmContent = "",
+    ua,
+    prevPath,
+    prevFullUrl,
+    prevDuration,
+  } = params;
+  const cleanRef = cleanReferrer(referrerUrl || referrer);
+  const safeFullUrl = fullUrl || path;
   try {
     await pool.query(
-      `INSERT INTO visitor_sessions (session_id, started_at, last_seen_at, ua, referrer, entry_page, exit_page, page_count, total_duration)
-       VALUES ($1, NOW(), NOW(), $2, $3, $4, $4, 1, 0)
+      `INSERT INTO visitor_sessions (
+         session_id, started_at, last_seen_at, ua, referrer, referrer_url,
+         entry_page, entry_url, exit_page, exit_url,
+         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+         page_count, total_duration
+       )
+       VALUES ($1, NOW(), NOW(), $2, $3, $4, $5, $6, $5, $6, $7, $8, $9, $10, $11, 1, 0)
        ON CONFLICT (session_id) DO UPDATE SET
          last_seen_at = NOW(),
-         exit_page = $4,
+         exit_page = $5,
+         exit_url = $6,
+         referrer_url = COALESCE(NULLIF(visitor_sessions.referrer_url, ''), $4),
+         utm_source = COALESCE(NULLIF(visitor_sessions.utm_source, ''), $7),
+         utm_medium = COALESCE(NULLIF(visitor_sessions.utm_medium, ''), $8),
+         utm_campaign = COALESCE(NULLIF(visitor_sessions.utm_campaign, ''), $9),
+         utm_term = COALESCE(NULLIF(visitor_sessions.utm_term, ''), $10),
+         utm_content = COALESCE(NULLIF(visitor_sessions.utm_content, ''), $11),
          page_count = visitor_sessions.page_count + 1
       `,
-      [sessionId, ua, cleanRef, path]
+      [sessionId, ua, cleanRef, referrerUrl || referrer || '', path, safeFullUrl, utmSource, utmMedium, utmCampaign, utmTerm, utmContent]
     );
     if (prevPath && prevDuration && prevDuration > 0) {
       await pool.query(
@@ -178,10 +247,10 @@ export async function trackSessionPage(params: {
          SET duration = $1
          WHERE id = (
            SELECT id FROM session_events
-           WHERE session_id = $2 AND path = $3 AND duration = 0
+           WHERE session_id = $2 AND path = $3 AND ($4 = '' OR full_url = $4) AND duration = 0
            ORDER BY entered_at DESC LIMIT 1
          )`,
-        [prevDuration, sessionId, prevPath]
+        [prevDuration, sessionId, prevPath, prevFullUrl || '']
       );
       await pool.query(
         `UPDATE visitor_sessions SET total_duration = total_duration + $1 WHERE session_id = $2`,
@@ -195,9 +264,9 @@ export async function trackSessionPage(params: {
     const seq = seqRes.rows[0]?.next_seq || 1;
     const eventId = `${sessionId}_${seq}_${Date.now()}`;
     await pool.query(
-      `INSERT INTO session_events (id, session_id, path, title, entered_at, duration, seq)
-       VALUES ($1, $2, $3, $4, NOW(), 0, $5)`,
-      [eventId, sessionId, path, title || path, seq]
+      `INSERT INTO session_events (id, session_id, path, full_url, title, entered_at, duration, seq)
+       VALUES ($1, $2, $3, $4, $5, NOW(), 0, $6)`,
+      [eventId, sessionId, path, safeFullUrl, title || path, seq]
     );
   } catch (err) {
     console.error("[session-store] trackSessionPage error:", (err as Error).message);
@@ -261,6 +330,7 @@ export async function getSessions(params: {
     const [sessionsRes, countRes, activeRes] = await Promise.all([
       pool.query(
         `SELECT session_id, started_at, last_seen_at, ua, referrer, entry_page, exit_page, page_count, total_duration
+         , referrer_url, entry_url, exit_url, utm_source, utm_medium, utm_campaign, utm_term, utm_content
          FROM visitor_sessions
          ${whereClause}
          ORDER BY last_seen_at DESC
@@ -289,8 +359,17 @@ export async function getSessions(params: {
         browser,
         os,
         referrer: r.referrer || "Direct",
+        referrerUrl: r.referrer_url || "",
+        sourceDetail: r.utm_source || r.referrer_url || r.referrer || "Direct",
+        utmSource: r.utm_source || "",
+        utmMedium: r.utm_medium || "",
+        utmCampaign: r.utm_campaign || "",
+        utmTerm: r.utm_term || "",
+        utmContent: r.utm_content || "",
         entryPage: r.entry_page || "/",
+        entryUrl: r.entry_url || r.entry_page || "/",
         exitPage: r.exit_page || "/",
+        exitUrl: r.exit_url || r.exit_page || "/",
         isActive,
       };
     });
@@ -313,11 +392,12 @@ export async function getSessionDetail(sessionId: string): Promise<VisitorSessio
     const [sessionRes, eventsRes] = await Promise.all([
       pool.query(
         `SELECT session_id, started_at, last_seen_at, ua, referrer, entry_page, exit_page, page_count, total_duration
+         , referrer_url, entry_url, exit_url, utm_source, utm_medium, utm_campaign, utm_term, utm_content
          FROM visitor_sessions WHERE session_id = $1`,
         [sessionId]
       ),
       pool.query(
-        `SELECT id, session_id, path, title, entered_at, duration, seq
+        `SELECT id, session_id, path, full_url, title, entered_at, duration, seq
          FROM session_events WHERE session_id = $1 ORDER BY seq ASC`,
         [sessionId]
       ),
@@ -336,6 +416,7 @@ export async function getSessionDetail(sessionId: string): Promise<VisitorSessio
       id: e.id,
       sessionId: e.session_id,
       path: e.path,
+      fullUrl: e.full_url || e.path,
       title: e.title || e.path,
       enteredAt: new Date(e.entered_at).toISOString(),
       duration: parseInt(e.duration) || 0,
@@ -353,8 +434,17 @@ export async function getSessionDetail(sessionId: string): Promise<VisitorSessio
       os,
       country: "Việt Nam",
       referrer: s.referrer || "Direct",
+      referrerUrl: s.referrer_url || "",
+      sourceDetail: s.utm_source || s.referrer_url || s.referrer || "Direct",
+      utmSource: s.utm_source || "",
+      utmMedium: s.utm_medium || "",
+      utmCampaign: s.utm_campaign || "",
+      utmTerm: s.utm_term || "",
+      utmContent: s.utm_content || "",
       entryPage: s.entry_page || "/",
+      entryUrl: s.entry_url || s.entry_page || "/",
       exitPage: s.exit_page || "/",
+      exitUrl: s.exit_url || s.exit_page || "/",
       isActive,
       events,
     };
@@ -370,16 +460,17 @@ export async function getSessionDetail(sessionId: string): Promise<VisitorSessio
 export async function updateSessionHeartbeat(
   sessionId: string,
   currentPath: string,
-  currentTitle: string
+  currentTitle: string,
+  currentFullUrl?: string
 ): Promise<void> {
   const pool = getPool();
   if (!pool) return;
   try {
     await pool.query(
       `UPDATE visitor_sessions
-       SET last_seen_at = NOW(), exit_page = $2
+       SET last_seen_at = NOW(), exit_page = $2, exit_url = $3
        WHERE session_id = $1`,
-      [sessionId, currentPath]
+      [sessionId, currentPath, currentFullUrl || currentPath]
     );
     // Cập nhật duration của event hiện tại (event cuối cùng có duration = 0)
     await pool.query(

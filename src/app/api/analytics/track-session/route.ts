@@ -14,7 +14,24 @@ export async function POST(req: NextRequest) {
   try {
     await ensureTables();
     const body = await req.json();
-    const { type, sessionId, path, title, referrer, prevPath, prevDuration, duration } = body;
+    const {
+      type,
+      sessionId,
+      path,
+      fullUrl,
+      title,
+      referrer,
+      referrerUrl,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent,
+      prevPath,
+      prevFullUrl,
+      prevDuration,
+      duration,
+    } = body;
 
     if (!sessionId) {
       return NextResponse.json({ error: "sessionId required" }, { status: 400 });
@@ -28,8 +45,16 @@ export async function POST(req: NextRequest) {
         path: path || "/",
         title: title || path || "/",
         referrer: referrer || "",
+        referrerUrl: referrerUrl || referrer || "",
+        fullUrl: fullUrl || path || "/",
+        utmSource: utmSource || "",
+        utmMedium: utmMedium || "",
+        utmCampaign: utmCampaign || "",
+        utmTerm: utmTerm || "",
+        utmContent: utmContent || "",
         ua,
         prevPath,
+        prevFullUrl,
         prevDuration,
       });
     } else if (type === "duration") {

@@ -29,7 +29,9 @@ function sendBeaconData(url: string, data: object) {
 
 export default function AnalyticsTracker() {
   const pathname = usePathname();
+  const safePathname = pathname || "";
   const prevPathRef = useRef<string>("");
+  const prevFullUrlRef = useRef<string>("");
   const enterTimeRef = useRef<number>(0);
   const sessionIdRef = useRef<string>("");
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -42,7 +44,19 @@ export default function AnalyticsTracker() {
 
   // Track page navigation
   useEffect(() => {
-    if (pathname.startsWith("/admin") || pathname.startsWith("/api")) return;
+    if (safePathname.startsWith("/admin") || safePathname.startsWith("/api")) return;
+
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    const currentPath = search ? `${safePathname}${search}` : safePathname;
+    const currentFullUrl = typeof window !== "undefined" ? window.location.href : currentPath;
+    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const utm = {
+      utmSource: urlParams.get("utm_source") || "",
+      utmMedium: urlParams.get("utm_medium") || "",
+      utmCampaign: urlParams.get("utm_campaign") || "",
+      utmTerm: urlParams.get("utm_term") || "",
+      utmContent: urlParams.get("utm_content") || "",
+    };
 
     const sessionId = sessionIdRef.current || getOrCreateSessionId();
     sessionIdRef.current = sessionId;
@@ -62,11 +76,15 @@ export default function AnalyticsTracker() {
       body: JSON.stringify({
         type: "pageview",
         sessionId,
-        path: pathname,
-        title: document.title || pathname,
+        path: currentPath,
+        fullUrl: currentFullUrl,
+        title: document.title || currentPath,
         referrer,
+        referrerUrl: referrer,
+        ...utm,
         ua: navigator.userAgent,
         prevPath: prevDuration > 0 ? prevPath : undefined,
+        prevFullUrl: prevDuration > 0 ? prevFullUrlRef.current : undefined,
         prevDuration: prevDuration > 0 ? prevDuration : undefined,
       }),
     }).catch(() => {});
@@ -75,16 +93,17 @@ export default function AnalyticsTracker() {
     fetch("/api/analytics/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: pathname, referrer, sessionId }),
+      body: JSON.stringify({ path: currentPath, referrer, sessionId }),
     }).catch(() => {});
 
-    prevPathRef.current = pathname;
+    prevPathRef.current = currentPath;
+    prevFullUrlRef.current = currentFullUrl;
     enterTimeRef.current = now;
-  }, [pathname]);
+  }, [safePathname]);
 
   // Heartbeat mỗi 5 giây — cập nhật URL hiện tại và last_seen_at
   useEffect(() => {
-    if (pathname.startsWith("/admin") || pathname.startsWith("/api")) return;
+    if (safePathname.startsWith("/admin") || safePathname.startsWith("/api")) return;
 
     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
 
@@ -96,7 +115,8 @@ export default function AnalyticsTracker() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId,
-          currentPath: pathname,
+          currentPath: typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : safePathname,
+          currentFullUrl: typeof window !== "undefined" ? window.location.href : safePathname,
           currentTitle: document.title,
           action: "heartbeat",
         }),
@@ -106,7 +126,7 @@ export default function AnalyticsTracker() {
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
-  }, [pathname]);
+  }, [safePathname]);
 
   // Offline detection — gửi beacon NGAY KHI thoát
   useEffect(() => {
