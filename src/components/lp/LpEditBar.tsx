@@ -4,6 +4,22 @@ import React, { useState, useEffect } from "react";
 const GOLD = "#C9A84C";
 const BLACK = "#0D0B00";
 const FONT = "'Inter', sans-serif";
+const MAX_ORDER_NOTIFY_EMAILS = 5;
+
+function parseOrderNotifyEmails(value: string) {
+  return value
+    .split(/[\s,;]+/)
+    .map(email => email.trim())
+    .filter(Boolean);
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function normalizeOrderNotifyEmails(value: string) {
+  return parseOrderNotifyEmails(value).slice(0, MAX_ORDER_NOTIFY_EMAILS).join("\n");
+}
 
 interface LpEditBarProps {
   isEditor: boolean;
@@ -67,12 +83,26 @@ export function LpEditBar({
   async function saveTracking() {
     setSaving(true);
     try {
+      const orderNotifyEmails = parseOrderNotifyEmails(orderNotifyEmail);
+      const invalidOrderNotifyEmails = orderNotifyEmails.filter(email => !isValidEmail(email));
+      const normalizedOrderNotifyEmails = orderNotifyEmails.slice(0, MAX_ORDER_NOTIFY_EMAILS).join("\n");
+      if (orderNotifyEmails.length > MAX_ORDER_NOTIFY_EMAILS) {
+        alert(`Chỉ được nhập tối đa ${MAX_ORDER_NOTIFY_EMAILS} email nhận đơn hàng.`);
+        setOrderNotifyEmail(normalizedOrderNotifyEmails);
+        return;
+      }
+      if (invalidOrderNotifyEmails.length) {
+        alert(`Email không hợp lệ: ${invalidOrderNotifyEmails.join(", ")}`);
+        return;
+      }
+      setOrderNotifyEmail(normalizedOrderNotifyEmails);
+
       const responses = await Promise.all([
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_fb_pixel_id", content: fbPixelId }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_google_ads_id", content: googleAdsId }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_google_ads_label", content: googleAdsLabel }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_gtm_id", content: gtmId }) }),
-        fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_order_notify_email", content: orderNotifyEmail }) }),
+        fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_order_notify_email", content: normalizedOrderNotifyEmails }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_order_google_sheet_url", content: orderGoogleSheetUrl }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_contact_hotline", content: contactHotline }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_contact_zalo", content: contactZalo }) }),
@@ -136,15 +166,24 @@ export function LpEditBar({
           {/* Nhận đơn hàng */}
           <div style={{ marginBottom: 12 }}>
             <label style={label}>Email nhận đơn hàng</label>
-            <input
+            <textarea
               value={orderNotifyEmail}
               onChange={e => setOrderNotifyEmail(e.target.value)}
-              placeholder="Ví dụ: nhanvien@smartfurni.vn"
-              style={inp}
+              placeholder={`Ví dụ:
+nhanvien1@smartfurni.vn
+nhanvien2@smartfurni.vn`}
+              style={{ ...inp, minHeight: 76, resize: "vertical", lineHeight: 1.45 }}
               onFocus={e => { e.target.style.borderColor = GOLD; }}
-              onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.3)"; }}
+              onBlur={e => {
+                e.target.style.borderColor = "rgba(201,168,76,0.3)";
+                if (parseOrderNotifyEmails(e.target.value).every(isValidEmail)) {
+                  setOrderNotifyEmail(normalizeOrderNotifyEmails(e.target.value));
+                }
+              }}
             />
-            <p style={{ color: "#687076", fontSize: 10, marginTop: 3, fontFamily: FONT }}>Đơn của landing page này sẽ gửi về email riêng của nhân viên phụ trách</p>
+            <p style={{ color: "#687076", fontSize: 10, marginTop: 3, fontFamily: FONT }}>
+              Nhập tối đa {MAX_ORDER_NOTIFY_EMAILS} email, mỗi email một dòng hoặc cách nhau bằng dấu phẩy. Hiện có {parseOrderNotifyEmails(orderNotifyEmail).length}/{MAX_ORDER_NOTIFY_EMAILS} email.
+            </p>
           </div>
 
           <div style={{ marginBottom: 12 }}>

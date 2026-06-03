@@ -5,6 +5,17 @@ import { getCrmSettings } from "@/lib/crm-settings-store";
 import { query } from "@/lib/db";
 
 const NOTIFY_EMAIL = "phamtuat0820@gmail.com";
+const MAX_ORDER_NOTIFY_EMAILS = 5;
+
+function parseOrderNotifyEmails(value?: string | null) {
+  const emails = (value || "")
+    .split(/[\s,;]+/)
+    .map(email => email.trim())
+    .filter(Boolean)
+    .filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+
+  return Array.from(new Set(emails)).slice(0, MAX_ORDER_NOTIFY_EMAILS);
+}
 
 async function ensureLpContentTable() {
   await query(`
@@ -32,13 +43,14 @@ async function getLandingDeliverySettings(slug: string) {
     );
     const result: Record<string, string> = {};
     for (const row of rows || []) result[row.block_key] = row.content;
+    const notifyEmails = parseOrderNotifyEmails(result.tracking_order_notify_email);
     return {
-      notifyEmail: result.tracking_order_notify_email?.trim() || NOTIFY_EMAIL,
+      notifyEmails: notifyEmails.length ? notifyEmails : [NOTIFY_EMAIL],
       googleSheetUrl: result.tracking_order_google_sheet_url?.trim() || "",
     };
   } catch (e) {
     console.error("[submit-lead] get delivery settings failed:", e);
-    return { notifyEmail: NOTIFY_EMAIL, googleSheetUrl: "" };
+    return { notifyEmails: [NOTIFY_EMAIL], googleSheetUrl: "" };
   }
 }
 
@@ -169,7 +181,7 @@ type LeadNotificationData = {
   slug: string;
 };
 
-async function sendLeadNotification(data: LeadNotificationData & { notifyEmail?: string }) {
+async function sendLeadNotification(data: LeadNotificationData & { notifyEmails?: string[] }) {
   const resendKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@smartfurni.vn";
   if (!resendKey) return;
@@ -242,7 +254,8 @@ async function sendLeadNotification(data: LeadNotificationData & { notifyEmail?:
 </body>
 </html>`;
 
-  await fetch("https://api.resend.com/emails", {
+  const recipients = (data.notifyEmails?.length ? data.notifyEmails : [NOTIFY_EMAIL]).slice(0, MAX_ORDER_NOTIFY_EMAILS);
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${resendKey}`,
@@ -250,11 +263,17 @@ async function sendLeadNotification(data: LeadNotificationData & { notifyEmail?:
     },
     body: JSON.stringify({
       from: `SmartFurni <${fromEmail}>`,
-      to: [data.notifyEmail || NOTIFY_EMAIL],
+      to: recipients,
       subject: `🛋️ Đơn mới: ${data.fullName} — ${data.phone}`,
       html,
     }),
   });
+
+  if (!response.ok) {
+    console.error("[submit-lead] Resend notification failed:", { status: response.status, recipients });
+  } else {
+    console.log("[submit-lead] email notification sent:", { recipients });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -334,7 +353,7 @@ export async function POST(req: NextRequest) {
         showroomName,
         configStr,
         totalPrice,
-        notifyEmail: deliverySettings.notifyEmail,
+        notifyEmails: deliverySettings.notifyEmails,
         googleSheetUrl: deliverySettings.googleSheetUrl,
         submittedAt: new Date().toISOString(),
       },
@@ -353,7 +372,7 @@ export async function POST(req: NextRequest) {
       configStr,
       totalPrice,
       slug,
-      notifyEmail: deliverySettings.notifyEmail,
+      notifyEmails: deliverySettings.notifyEmails,
     }).catch(err => console.error("[submit-lead] email notification failed:", err));
 
     appendLeadToConfiguredSheet({
