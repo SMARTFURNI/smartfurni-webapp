@@ -3,6 +3,7 @@ import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { getCrmProducts } from "@/lib/crm-store";
 import type { CrmProduct } from "@/lib/crm-types";
+import { buildFacebookPixelPageViewScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import LpSofaGiuongClient from "./LpSofaGiuongClient";
 export const dynamic = "force-dynamic";
 
@@ -96,7 +97,7 @@ export default async function LpSofaGiuongPage() {
   }
 
   // Tracking IDs from DB
-  const fbPixelId = initialContent["tracking_fb_pixel_id"] || "";
+  const fbPixelIds = getLpFacebookPixelIds(initialContent);
   const googleAdsId = initialContent["tracking_google_ads_id"] || "";
   const googleAdsLabel = initialContent["tracking_google_ads_label"] || "";
   const gtmId = initialContent["tracking_gtm_id"] || "";
@@ -104,21 +105,10 @@ export default async function LpSofaGiuongPage() {
   return (
     <>
       {/* Facebook Pixel */}
-      {fbPixelId && (
+      {fbPixelIds.length > 0 && (
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window,document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init','${fbPixelId}');
-fbq('track','PageView');
-window.__FB_PIXEL_ID='${fbPixelId}';
-`,
+            __html: buildFacebookPixelPageViewScript(fbPixelIds),
           }}
         />
       )}

@@ -4,6 +4,7 @@ import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { getCrmProducts } from "@/lib/crm-store";
 import type { CrmProduct } from "@/lib/crm-types";
+import { buildFacebookPixelPageViewScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import LpSofaGiuongClient from "../sofa-giuong/LpSofaGiuongClient";
 import LpSmf12Client from "../smf12/LpSmf12Client";
 
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 // Các slug tĩnh đã có route riêng — không xử lý ở đây
 const STATIC_SLUGS = new Set(["sofa-giuong", "gsf150", "doi-tac-showroom-nem", "smf12"]);
-const DEFAULT_SMF12_PU_FB_PIXEL_ID = "1018174204502230";
+const DEFAULT_SMF12_PU_FB_PIXEL_IDS = ["1018174204502230"];
 
 // Hỗ trợ tất cả LP variants được tạo trong DB (không giới hạn pattern)
 
@@ -144,7 +145,7 @@ export default async function LpVariantPage({ params }: Props) {
   }
 
   // Tracking IDs (ưu tiên variant, fallback parent)
-  const fbPixelId = mergedContent["tracking_fb_pixel_id"]?.trim() || (slug === "smf12-pu" ? DEFAULT_SMF12_PU_FB_PIXEL_ID : "");
+  const fbPixelIds = getLpFacebookPixelIds(mergedContent, slug === "smf12-pu" ? DEFAULT_SMF12_PU_FB_PIXEL_IDS : []);
   const googleAdsId = mergedContent["tracking_google_ads_id"] || "";
   const googleAdsLabel = mergedContent["tracking_google_ads_label"] || "";
   const gtmId = mergedContent["tracking_gtm_id"] || "";
@@ -152,21 +153,10 @@ export default async function LpVariantPage({ params }: Props) {
   return (
     <>
       {/* Facebook Pixel */}
-      {fbPixelId && (
+      {fbPixelIds.length > 0 && (
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window,document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init','${fbPixelId}');
-fbq('track','PageView');
-window.__FB_PIXEL_ID='${fbPixelId}';
-`,
+            __html: buildFacebookPixelPageViewScript(fbPixelIds),
           }}
         />
       )}

@@ -3,6 +3,7 @@ import { getCrmProducts } from "@/lib/crm-store";
 import type { CrmProduct } from "@/lib/crm-types";
 import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
+import { buildFacebookPixelPageViewScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import LpShowroomNemClient from "./LpShowroomNemClient";
 
 export const dynamic = "force-dynamic";
@@ -83,11 +84,22 @@ export default async function LpShowroomNemPage() {
     isEditor = false;
   }
 
+  const fbPixelIds = getLpFacebookPixelIds(initialContent);
+
   return (
-    <LpShowroomNemClient
-      products={ergonomicBeds}
-      isEditor={isEditor}
-      initialContent={initialContent}
-    />
+    <>
+      {fbPixelIds.length > 0 && (
+        <script
+          dangerouslySetInnerHTML={{
+            __html: buildFacebookPixelPageViewScript(fbPixelIds),
+          }}
+        />
+      )}
+      <LpShowroomNemClient
+        products={ergonomicBeds}
+        isEditor={isEditor}
+        initialContent={initialContent}
+      />
+    </>
   );
 }

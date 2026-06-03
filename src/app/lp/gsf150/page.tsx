@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
+import { buildFacebookPixelPageViewScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import LpGsf150Client from "./LpGsf150Client";
 
 export const dynamic = "force-dynamic";
@@ -71,5 +72,18 @@ export default async function LpGsf150Page() {
   } catch {
     isEditor = false;
   }
-  return <LpGsf150Client isEditor={isEditor} initialContent={initialContent} />;
+  const fbPixelIds = getLpFacebookPixelIds(initialContent);
+
+  return (
+    <>
+      {fbPixelIds.length > 0 && (
+        <script
+          dangerouslySetInnerHTML={{
+            __html: buildFacebookPixelPageViewScript(fbPixelIds),
+          }}
+        />
+      )}
+      <LpGsf150Client isEditor={isEditor} initialContent={initialContent} />
+    </>
+  );
 }

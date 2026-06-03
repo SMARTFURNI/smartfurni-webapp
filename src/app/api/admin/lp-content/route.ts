@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
+import { parseLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 
 async function checkAuth(): Promise<boolean> {
   const isAdmin = await getAdminSession();
@@ -132,8 +133,10 @@ export async function GET(req: NextRequest) {
       );
       const result: Record<string, string> = {};
       for (const row of rows) result[row.block_key] = row.content;
+      const fbPixelIds = parseLpFacebookPixelIds(result["tracking_fb_pixel_ids"] || result["tracking_fb_pixel_id"] || "");
       return NextResponse.json({
-        fbPixelId: result["tracking_fb_pixel_id"] || "",
+        fbPixelIds: fbPixelIds.join("\n"),
+        fbPixelId: fbPixelIds[0] || "",
         googleAdsId: result["tracking_google_ads_id"] || "",
         googleAdsLabel: result["tracking_google_ads_label"] || "",
         gtmId: result["tracking_gtm_id"] || "",
@@ -145,6 +148,7 @@ export async function GET(req: NextRequest) {
     } catch (e) {
       console.error("get-tracking error:", e);
       return NextResponse.json({
+        fbPixelIds: "",
         fbPixelId: "",
         googleAdsId: "",
         googleAdsLabel: "",

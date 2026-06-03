@@ -5,6 +5,18 @@ const GOLD = "#C9A84C";
 const BLACK = "#0D0B00";
 const FONT = "'Inter', sans-serif";
 const MAX_ORDER_NOTIFY_EMAILS = 5;
+const MAX_FACEBOOK_PIXEL_IDS = 5;
+
+function parseFacebookPixelIds(value: string) {
+  return value
+    .split(/[\s,;]+/)
+    .map(id => id.trim())
+    .filter(Boolean);
+}
+
+function normalizeFacebookPixelIds(value: string) {
+  return Array.from(new Set(parseFacebookPixelIds(value))).slice(0, MAX_FACEBOOK_PIXEL_IDS).join("\n");
+}
 
 function parseOrderNotifyEmails(value: string) {
   return value
@@ -28,6 +40,7 @@ interface LpEditBarProps {
   editedCount: number;
   slug?: string;
   initialTracking?: {
+    fbPixelIds?: string;
     fbPixelId?: string;
     googleAdsId?: string;
     googleAdsLabel?: string;
@@ -51,7 +64,7 @@ export function LpEditBar({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const [fbPixelId, setFbPixelId] = useState(initialTracking.fbPixelId || "");
+  const [fbPixelIds, setFbPixelIds] = useState(initialTracking.fbPixelIds || initialTracking.fbPixelId || "");
   const [googleAdsId, setGoogleAdsId] = useState(initialTracking.googleAdsId || "");
   const [googleAdsLabel, setGoogleAdsLabel] = useState(initialTracking.googleAdsLabel || "");
   const [gtmId, setGtmId] = useState(initialTracking.gtmId || "");
@@ -66,7 +79,8 @@ export function LpEditBar({
     fetch(`/api/admin/lp-content?slug=${slug}&action=get-tracking`)
       .then(r => r.json())
       .then(d => {
-        if (d.fbPixelId !== undefined) setFbPixelId(d.fbPixelId || "");
+        if (d.fbPixelIds !== undefined) setFbPixelIds(d.fbPixelIds || d.fbPixelId || "");
+        else if (d.fbPixelId !== undefined) setFbPixelIds(d.fbPixelId || "");
         if (d.googleAdsId !== undefined) setGoogleAdsId(d.googleAdsId || "");
         if (d.googleAdsLabel !== undefined) setGoogleAdsLabel(d.googleAdsLabel || "");
         if (d.gtmId !== undefined) setGtmId(d.gtmId || "");
@@ -97,8 +111,18 @@ export function LpEditBar({
       }
       setOrderNotifyEmail(normalizedOrderNotifyEmails);
 
+      const facebookPixelIds = parseFacebookPixelIds(fbPixelIds);
+      const normalizedFacebookPixelIds = normalizeFacebookPixelIds(fbPixelIds);
+      if (facebookPixelIds.length > MAX_FACEBOOK_PIXEL_IDS) {
+        alert(`Chỉ được nhập tối đa ${MAX_FACEBOOK_PIXEL_IDS} Facebook Pixel ID cho mỗi landing page.`);
+        setFbPixelIds(normalizedFacebookPixelIds);
+        return;
+      }
+      setFbPixelIds(normalizedFacebookPixelIds);
+
       const responses = await Promise.all([
-        fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_fb_pixel_id", content: fbPixelId }) }),
+        fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_fb_pixel_ids", content: normalizedFacebookPixelIds }) }),
+        fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_fb_pixel_id", content: parseFacebookPixelIds(normalizedFacebookPixelIds)[0] || "" }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_google_ads_id", content: googleAdsId }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_google_ads_label", content: googleAdsLabel }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_gtm_id", content: gtmId }) }),
@@ -229,15 +253,20 @@ nhanvien2@smartfurni.vn`}
           {/* Facebook Pixel */}
           <div style={{ marginBottom: 12 }}>
             <label style={label}>Facebook Pixel ID</label>
-            <input
-              value={fbPixelId}
-              onChange={e => setFbPixelId(e.target.value)}
-              placeholder="Ví dụ: 1234567890123456"
-              style={inp}
+            <textarea
+              value={fbPixelIds}
+              onChange={e => setFbPixelIds(e.target.value)}
+              placeholder={`Ví dụ:\n1234567890123456\n2345678901234567`}
+              style={{ ...inp, minHeight: 82, resize: "vertical", lineHeight: 1.45 }}
               onFocus={e => { e.target.style.borderColor = GOLD; }}
-              onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.3)"; }}
+              onBlur={e => {
+                e.target.style.borderColor = "rgba(201,168,76,0.3)";
+                setFbPixelIds(normalizeFacebookPixelIds(e.target.value));
+              }}
             />
-            <p style={{ color: "#687076", fontSize: 10, marginTop: 3, fontFamily: FONT }}>Tự động fire PageView + Lead khi khách đặt hàng</p>
+            <p style={{ color: "#687076", fontSize: 10, marginTop: 3, fontFamily: FONT }}>
+              Nhập tối đa {MAX_FACEBOOK_PIXEL_IDS} Pixel ID, mỗi ID một dòng hoặc cách nhau bằng dấu phẩy. Hiện có {parseFacebookPixelIds(fbPixelIds).length}/{MAX_FACEBOOK_PIXEL_IDS} Pixel. Tự động fire PageView + Lead khi khách đặt hàng.
+            </p>
           </div>
 
           {/* Google Ads */}
