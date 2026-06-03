@@ -67,7 +67,7 @@ export function LpEditBar({
   async function saveTracking() {
     setSaving(true);
     try {
-      await Promise.all([
+      const responses = await Promise.all([
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_fb_pixel_id", content: fbPixelId }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_google_ads_id", content: googleAdsId }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_google_ads_label", content: googleAdsLabel }) }),
@@ -77,6 +77,8 @@ export function LpEditBar({
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_contact_hotline", content: contactHotline }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_contact_zalo", content: contactZalo }) }),
       ]);
+      const failed = responses.find(r => !r.ok);
+      if (failed) throw new Error(`Không lưu được cấu hình tracking (${failed.status})`);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch {

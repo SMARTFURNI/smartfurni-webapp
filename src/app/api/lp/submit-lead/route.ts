@@ -49,9 +49,21 @@ function extractSpreadsheetId(urlOrId: string) {
   return match?.[1] || (/^[a-zA-Z0-9-_]{20,}$/.test(raw) ? raw : "");
 }
 
-async function appendLeadToConfiguredSheet(data: LeadNotificationData & { googleSheetUrl: string }) {
+type SheetAppendResult =
+  | { ok: true; mode: "google_sheet" | "apps_script"; detail: string }
+  | { ok: false; mode: "google_sheet" | "apps_script" | "none"; reason: string; detail?: string };
+
+function maskIdentifier(value: string) {
+  if (!value) return "";
+  if (value.length <= 10) return value;
+  return `${value.slice(0, 6)}…${value.slice(-4)}`;
+}
+
+async function appendLeadToConfiguredSheet(data: LeadNotificationData & { googleSheetUrl: string }): Promise<SheetAppendResult> {
   const url = data.googleSheetUrl.trim();
-  if (!url) return;
+  if (!url) {
+    return { ok: false, mode: "none", reason: "missing_landing_google_sheet_url" };
+  }
 
   const nowIso = new Date().toISOString();
   const addressParts = [data.ward, data.district, data.province].filter(Boolean).join(", ");
@@ -72,7 +84,7 @@ async function appendLeadToConfiguredSheet(data: LeadNotificationData & { google
   ];
 
   if (/script\.google\.com\/macros\/s\//.test(url)) {
-    await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -91,23 +103,37 @@ async function appendLeadToConfiguredSheet(data: LeadNotificationData & { google
         row,
       }),
     });
-    return;
+
+    if (!response.ok) {
+      return { ok: false, mode: "apps_script", reason: "apps_script_http_error", detail: `${response.status} ${response.statusText}` };
+    }
+
+    return { ok: true, mode: "apps_script", detail: `HTTP ${response.status}` };
   }
 
   const spreadsheetId = extractSpreadsheetId(url);
   if (!spreadsheetId) {
-    console.warn("[submit-lead] invalid Google Sheet URL:", url);
-    return;
+    return { ok: false, mode: "google_sheet", reason: "invalid_google_sheet_url" };
   }
 
   const settings = await getCrmSettings();
   const serviceAccountKey = settings.googleSheet?.serviceAccountKey;
   if (!serviceAccountKey) {
-    console.warn("[submit-lead] Google Sheet service account is not configured");
-    return;
+    return {
+      ok: false,
+      mode: "google_sheet",
+      reason: "missing_service_account_key",
+      detail: `spreadsheetId=${maskIdentifier(spreadsheetId)}`,
+    };
   }
 
-  const credentials = JSON.parse(serviceAccountKey);
+  let credentials: { client_email?: string };
+  try {
+    credentials = JSON.parse(serviceAccountKey);
+  } catch {
+    return { ok: false, mode: "google_sheet", reason: "invalid_service_account_json" };
+  }
+
   const auth = new google.auth.GoogleAuth({
     credentials,
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
@@ -121,6 +147,12 @@ async function appendLeadToConfiguredSheet(data: LeadNotificationData & { google
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [row] },
   });
+
+  return {
+    ok: true,
+    mode: "google_sheet",
+    detail: `spreadsheetId=${maskIdentifier(spreadsheetId)}, serviceAccount=${credentials.client_email || "unknown"}`,
+  };
 }
 
 type LeadNotificationData = {
@@ -337,7 +369,15 @@ export async function POST(req: NextRequest) {
       totalPrice,
       slug,
       googleSheetUrl: deliverySettings.googleSheetUrl,
-    }).catch(err => console.error("[submit-lead] Google Sheet append failed:", err));
+    })
+      .then(result => {
+        if (result.ok) {
+          console.log("[submit-lead] Google Sheet append success:", { slug, mode: result.mode, detail: result.detail });
+        } else {
+          console.warn("[submit-lead] Google Sheet append skipped:", { slug, mode: result.mode, reason: result.reason, detail: result.detail });
+        }
+      })
+      .catch(err => console.error("[submit-lead] Google Sheet append failed:", { slug, error: err }));
 
     return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
   } catch (e) {
