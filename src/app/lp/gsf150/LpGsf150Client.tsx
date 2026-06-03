@@ -21,6 +21,20 @@ const GRAY_LIGHT = "#A8A090";
 const RED_SOFT = "#FF6B6B";
 const LP_SLUG = "gsf150";
 
+const DEFAULT_CONTACT_PHONE_NUMBER = "0918326552";
+
+function normalizePhoneNumber(value: string) {
+  return (value || "").replace(/[^0-9+]/g, "");
+}
+
+function formatPhoneDisplay(value: string) {
+  const digits = normalizePhoneNumber(value);
+  if (!digits) return "0918.326.552";
+  if (/^0\d{9}$/.test(digits)) return `${digits.slice(0, 4)}.${digits.slice(4, 7)}.${digits.slice(7)}`;
+  return value || digits;
+}
+
+
 const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BRAND = "'Cormorant Garamond', Georgia, serif";
@@ -240,7 +254,7 @@ const CountdownDisplay = React.memo(function CountdownDisplay() {
   );
 });
 // ─── UrgencyBanner ────────────────────────────────────────────────────────────
-function UrgencyBanner({ E }: { E: (p: { bk: string; def: string; as: string; style?: React.CSSProperties }) => React.ReactNode }) {
+function UrgencyBanner({ E }: { E: EFn }) {
   const [stock, setStock] = useState(7);
 
 
@@ -285,7 +299,7 @@ function UrgencyBanner({ E }: { E: (p: { bk: string; def: string; as: string; st
 }
 
 // ─── StickyCta ─────────────────────────────────────────────────────────────
-function StickyCta({ scrollToForm, E }: { scrollToForm: () => void; E: (p: { bk: string; def: string; as: string }) => React.ReactNode }) {
+function StickyCta({ scrollToForm, E }: { scrollToForm: () => void; E: EFn }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 600);
@@ -968,11 +982,18 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
       savedValue={content[bk]} onSaved={handleSaved} onDeleted={handleDeleted} />
   ), [editMode, content, handleSaved, handleDeleted]);
 
+  const contactPhoneNumber = normalizePhoneNumber(content["tracking_contact_hotline"] || DEFAULT_CONTACT_PHONE_NUMBER) || DEFAULT_CONTACT_PHONE_NUMBER;
+  const contactZaloNumber = normalizePhoneNumber(content["tracking_contact_zalo"] || contactPhoneNumber) || contactPhoneNumber;
+  const contactPhoneHref = `tel:${contactPhoneNumber}`;
+  const contactZaloHref = `https://zalo.me/${contactZaloNumber}`;
+  const contactPhoneDisplay = formatPhoneDisplay(content["tracking_contact_hotline"] || contactPhoneNumber);
+  const contactZaloDisplay = formatPhoneDisplay(content["tracking_contact_zalo"] || contactZaloNumber);
+
   return (
     <div style={{ background: BLACK, color: WHITE, fontFamily: FONT_BODY, overflowX: "hidden" }}>
 
       {/* ── EDIT BAR ── */}
-      <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(v => !v)} editedCount={editedCount} />
+      <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(v => !v)} editedCount={editedCount} slug={LP_SLUG} />
 
       {/* ── STICKY NAV ── */}
       <nav style={{
@@ -2311,7 +2332,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                 {[
                   { label: "Facebook", icon: "f", href: "https://facebook.com/smartfurni" },
                   { label: "YouTube", icon: "▶", href: "https://youtube.com/@smartfurni" },
-                  { label: "Zalo", icon: "Z", href: "https://zalo.me/0918326552" },
+                  { label: "Zalo", icon: "Z", href: contactZaloHref },
                 ].map((s) => (
                   <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
                     style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: `1px solid rgba(201,168,76,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textDecoration: "none", transition: "background 0.2s, border-color 0.2s" }}
@@ -2346,8 +2367,8 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                 <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Liên hệ</h4>
               </div>
               {[
-                { icon: "📞", label: "Hotline", val: "028.7122.0818", href: "tel:02871220818" },
-                { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: "https://zalo.me/0918326552" },
+                { icon: "📞", label: "Hotline", val: contactPhoneDisplay, href: contactPhoneHref },
+                { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: contactZaloHref },
                 { icon: "✉️", label: "Email", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
                 { icon: "🌐", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
               ].map((c, i) => (
@@ -2373,7 +2394,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {} }
                 style={{ display: "block", textAlign: "center", background: `linear-gradient(135deg, ${GOLD_LIGHT} 0%, ${GOLD} 60%, #9A7A2E 100%)`, color: BLACK, fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, padding: "13px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, boxShadow: "0 6px 24px rgba(201,168,76,0.25)", marginBottom: 12 }}>
                 {E({ bk: "footer_cta_primary", def: "Đặt hàng ngay →", as: "span" })}
               </a>
-              <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer"
+              <a href={contactZaloHref} target="_blank" rel="noopener noreferrer"
                 style={{ display: "block", textAlign: "center", background: "transparent", color: GRAY_LIGHT, fontWeight: 500, fontSize: 11, letterSpacing: "0.06em", padding: "12px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, border: `1px solid rgba(212,196,160,0.2)` }}>
                 {E({ bk: "footer_cta_zalo", def: "💬 Chat Zalo ngay", as: "span" })}
               </a>

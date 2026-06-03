@@ -1,9 +1,129 @@
 import { NextRequest, NextResponse } from "next/server";
+import { google } from "googleapis";
 import { createRawLead } from "@/lib/crm-raw-lead-store";
+import { getCrmSettings } from "@/lib/crm-settings-store";
+import { query } from "@/lib/db";
 
 const NOTIFY_EMAIL = "phamtuat0820@gmail.com";
 
-async function sendLeadNotification(data: {
+async function ensureLpContentTable() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS lp_content (
+      id SERIAL PRIMARY KEY,
+      slug VARCHAR(255) NOT NULL,
+      block_key VARCHAR(255) NOT NULL,
+      content TEXT NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (slug, block_key)
+    )
+  `);
+}
+
+async function getLandingDeliverySettings(slug: string) {
+  try {
+    await ensureLpContentTable();
+    const rows = await query<{ block_key: string; content: string }>(
+      `SELECT block_key, content FROM lp_content
+       WHERE slug = $1 AND block_key IN (
+        'tracking_order_notify_email',
+        'tracking_order_google_sheet_url'
+       )`,
+      [slug]
+    );
+    const result: Record<string, string> = {};
+    for (const row of rows || []) result[row.block_key] = row.content;
+    return {
+      notifyEmail: result.tracking_order_notify_email?.trim() || NOTIFY_EMAIL,
+      googleSheetUrl: result.tracking_order_google_sheet_url?.trim() || "",
+    };
+  } catch (e) {
+    console.error("[submit-lead] get delivery settings failed:", e);
+    return { notifyEmail: NOTIFY_EMAIL, googleSheetUrl: "" };
+  }
+}
+
+function extractSpreadsheetId(urlOrId: string) {
+  const raw = (urlOrId || "").trim();
+  if (!raw) return "";
+  const match = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return match?.[1] || (/^[a-zA-Z0-9-_]{20,}$/.test(raw) ? raw : "");
+}
+
+async function appendLeadToConfiguredSheet(data: LeadNotificationData & { googleSheetUrl: string }) {
+  const url = data.googleSheetUrl.trim();
+  if (!url) return;
+
+  const nowIso = new Date().toISOString();
+  const addressParts = [data.ward, data.district, data.province].filter(Boolean).join(", ");
+  const fullAddress = [data.address, addressParts].filter(Boolean).join(", ");
+  const row = [
+    nowIso,
+    data.slug,
+    data.fullName,
+    data.phone,
+    data.email || "",
+    data.province || "",
+    data.district || "",
+    data.ward || "",
+    fullAddress,
+    data.configStr || "",
+    data.totalPrice || "",
+    data.note || "",
+  ];
+
+  if (/script\.google\.com\/macros\/s\//.test(url)) {
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        submittedAt: nowIso,
+        landingPage: data.slug,
+        fullName: data.fullName,
+        phone: data.phone,
+        email: data.email || "",
+        province: data.province || "",
+        district: data.district || "",
+        ward: data.ward || "",
+        address: fullAddress,
+        configStr: data.configStr || "",
+        totalPrice: data.totalPrice || "",
+        note: data.note || "",
+        row,
+      }),
+    });
+    return;
+  }
+
+  const spreadsheetId = extractSpreadsheetId(url);
+  if (!spreadsheetId) {
+    console.warn("[submit-lead] invalid Google Sheet URL:", url);
+    return;
+  }
+
+  const settings = await getCrmSettings();
+  const serviceAccountKey = settings.googleSheet?.serviceAccountKey;
+  if (!serviceAccountKey) {
+    console.warn("[submit-lead] Google Sheet service account is not configured");
+    return;
+  }
+
+  const credentials = JSON.parse(serviceAccountKey);
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+  const sheets = google.sheets({ version: "v4", auth });
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: "A:L",
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values: [row] },
+  });
+}
+
+type LeadNotificationData = {
   fullName: string;
   phone: string;
   email?: string;
@@ -15,7 +135,9 @@ async function sendLeadNotification(data: {
   configStr?: string;
   totalPrice?: string;
   slug: string;
-}) {
+};
+
+async function sendLeadNotification(data: LeadNotificationData & { notifyEmail?: string }) {
   const resendKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@smartfurni.vn";
   if (!resendKey) return;
@@ -96,7 +218,7 @@ async function sendLeadNotification(data: {
     },
     body: JSON.stringify({
       from: `SmartFurni <${fromEmail}>`,
-      to: [NOTIFY_EMAIL],
+      to: [data.notifyEmail || NOTIFY_EMAIL],
       subject: `🛋️ Đơn mới: ${data.fullName} — ${data.phone}`,
       html,
     }),
@@ -147,6 +269,8 @@ export async function POST(req: NextRequest) {
     const addressParts = [ward, district, province].filter(Boolean).join(", ");
     const fullAddress = [address, addressParts].filter(Boolean).join(", ");
 
+    const deliverySettings = await getLandingDeliverySettings(slug);
+
     const lead = await createRawLead({
       fullName,
       phone,
@@ -178,6 +302,8 @@ export async function POST(req: NextRequest) {
         showroomName,
         configStr,
         totalPrice,
+        notifyEmail: deliverySettings.notifyEmail,
+        googleSheetUrl: deliverySettings.googleSheetUrl,
         submittedAt: new Date().toISOString(),
       },
     });
@@ -195,7 +321,23 @@ export async function POST(req: NextRequest) {
       configStr,
       totalPrice,
       slug,
+      notifyEmail: deliverySettings.notifyEmail,
     }).catch(err => console.error("[submit-lead] email notification failed:", err));
+
+    appendLeadToConfiguredSheet({
+      fullName,
+      phone,
+      email,
+      province,
+      district,
+      ward,
+      address,
+      note: note || message,
+      configStr,
+      totalPrice,
+      slug,
+      googleSheetUrl: deliverySettings.googleSheetUrl,
+    }).catch(err => console.error("[submit-lead] Google Sheet append failed:", err));
 
     return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
   } catch (e) {

@@ -16,6 +16,10 @@ interface LpEditBarProps {
     googleAdsId?: string;
     googleAdsLabel?: string;
     gtmId?: string;
+    orderNotifyEmail?: string;
+    orderGoogleSheetUrl?: string;
+    contactHotline?: string;
+    contactZalo?: string;
   };
 }
 
@@ -35,6 +39,10 @@ export function LpEditBar({
   const [googleAdsId, setGoogleAdsId] = useState(initialTracking.googleAdsId || "");
   const [googleAdsLabel, setGoogleAdsLabel] = useState(initialTracking.googleAdsLabel || "");
   const [gtmId, setGtmId] = useState(initialTracking.gtmId || "");
+  const [orderNotifyEmail, setOrderNotifyEmail] = useState(initialTracking.orderNotifyEmail || "");
+  const [orderGoogleSheetUrl, setOrderGoogleSheetUrl] = useState(initialTracking.orderGoogleSheetUrl || "");
+  const [contactHotline, setContactHotline] = useState(initialTracking.contactHotline || "");
+  const [contactZalo, setContactZalo] = useState(initialTracking.contactZalo || "");
 
   // Load từ DB khi mount
   useEffect(() => {
@@ -46,6 +54,10 @@ export function LpEditBar({
         if (d.googleAdsId !== undefined) setGoogleAdsId(d.googleAdsId || "");
         if (d.googleAdsLabel !== undefined) setGoogleAdsLabel(d.googleAdsLabel || "");
         if (d.gtmId !== undefined) setGtmId(d.gtmId || "");
+        if (d.orderNotifyEmail !== undefined) setOrderNotifyEmail(d.orderNotifyEmail || "");
+        if (d.orderGoogleSheetUrl !== undefined) setOrderGoogleSheetUrl(d.orderGoogleSheetUrl || "");
+        if (d.contactHotline !== undefined) setContactHotline(d.contactHotline || "");
+        if (d.contactZalo !== undefined) setContactZalo(d.contactZalo || "");
       })
       .catch(() => {});
   }, [isEditor, slug]);
@@ -60,6 +72,10 @@ export function LpEditBar({
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_google_ads_id", content: googleAdsId }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_google_ads_label", content: googleAdsLabel }) }),
         fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_gtm_id", content: gtmId }) }),
+        fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_order_notify_email", content: orderNotifyEmail }) }),
+        fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_order_google_sheet_url", content: orderGoogleSheetUrl }) }),
+        fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_contact_hotline", content: contactHotline }) }),
+        fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey: "tracking_contact_zalo", content: contactZalo }) }),
       ]);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -104,7 +120,9 @@ export function LpEditBar({
           border: "1px solid rgba(201,168,76,0.3)",
           borderRadius: 14,
           padding: "20px 20px 16px",
-          width: 320,
+          width: 360,
+          maxHeight: "calc(100vh - 130px)",
+          overflowY: "auto",
           boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
           backdropFilter: "blur(16px)",
         }}>
@@ -112,6 +130,60 @@ export function LpEditBar({
             <span style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT }}>⚙️ Cài đặt Tracking</span>
             <button onClick={() => setShowTracking(false)} style={{ background: "none", border: "none", color: "#687076", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>✕</button>
           </div>
+
+          {/* Nhận đơn hàng */}
+          <div style={{ marginBottom: 12 }}>
+            <label style={label}>Email nhận đơn hàng</label>
+            <input
+              value={orderNotifyEmail}
+              onChange={e => setOrderNotifyEmail(e.target.value)}
+              placeholder="Ví dụ: nhanvien@smartfurni.vn"
+              style={inp}
+              onFocus={e => { e.target.style.borderColor = GOLD; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.3)"; }}
+            />
+            <p style={{ color: "#687076", fontSize: 10, marginTop: 3, fontFamily: FONT }}>Đơn của landing page này sẽ gửi về email riêng của nhân viên phụ trách</p>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={label}>Link Google Sheet nhận đơn</label>
+            <input
+              value={orderGoogleSheetUrl}
+              onChange={e => setOrderGoogleSheetUrl(e.target.value)}
+              placeholder="Dán link Google Sheet hoặc Apps Script Web App"
+              style={inp}
+              onFocus={e => { e.target.style.borderColor = GOLD; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.3)"; }}
+            />
+            <p style={{ color: "#687076", fontSize: 10, marginTop: 3, fontFamily: FONT }}>Nếu dùng link Google Sheet thường, cần share sheet cho service account trong CRM Settings</p>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={label}>Hotline hiển thị</label>
+            <input
+              value={contactHotline}
+              onChange={e => setContactHotline(e.target.value)}
+              placeholder="Ví dụ: 0918.326.552"
+              style={inp}
+              onFocus={e => { e.target.style.borderColor = GOLD; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.3)"; }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={label}>Số Zalo hiển thị</label>
+            <input
+              value={contactZalo}
+              onChange={e => setContactZalo(e.target.value)}
+              placeholder="Ví dụ: 0918.326.552"
+              style={inp}
+              onFocus={e => { e.target.style.borderColor = GOLD; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(201,168,76,0.3)"; }}
+            />
+            <p style={{ color: "#687076", fontSize: 10, marginTop: 3, fontFamily: FONT }}>Để trống sẽ dùng cùng số hotline mặc định</p>
+          </div>
+
+          <div style={{ height: 1, background: "rgba(201,168,76,0.16)", margin: "4px 0 16px" }} />
 
           {/* Facebook Pixel */}
           <div style={{ marginBottom: 12 }}>
@@ -183,7 +255,7 @@ export function LpEditBar({
               transition: "all 0.2s",
             }}
           >
-            {saving ? "Đang lưu…" : saved ? "✓ Đã lưu!" : "Lưu cài đặt tracking"}
+            {saving ? "Đang lưu…" : saved ? "✓ Đã lưu!" : "Lưu cài đặt"}
           </button>
         </div>
       )}
@@ -224,7 +296,7 @@ export function LpEditBar({
         {editMode && (
           <button
             onClick={() => setShowTracking(v => !v)}
-            title="Cài đặt tracking pixel"
+            title="Cài đặt tracking, nhận đơn, hotline và Zalo"
             style={{
               background: showTracking ? "rgba(13,11,0,0.3)" : "rgba(13,11,0,0.15)",
               color: BLACK,

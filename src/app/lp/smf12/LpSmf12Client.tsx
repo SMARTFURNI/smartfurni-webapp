@@ -126,9 +126,18 @@ const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-
 const FONT_BRAND = "'Cormorant Garamond', Georgia, serif";
 const STICKY_PRICE_TEXT = "Từ 4.790.000 ₫";
 const LEGACY_STICKY_PRICE_TEXTS = new Set(["Từ 8.490.000 ₫", "Từ 8.490.000 đ"]);
-const CONTACT_PHONE_NUMBER = "0918326552";
-const CONTACT_PHONE_HREF = `tel:${CONTACT_PHONE_NUMBER}`;
-const CONTACT_ZALO_HREF = `https://zalo.me/${CONTACT_PHONE_NUMBER}`;
+const DEFAULT_CONTACT_PHONE_NUMBER = "0918326552";
+
+function normalizePhoneNumber(value: string) {
+  return (value || "").replace(/[^0-9+]/g, "");
+}
+
+function formatPhoneDisplay(value: string) {
+  const digits = normalizePhoneNumber(value);
+  if (!digits) return "0918.326.552";
+  if (/^0\d{9}$/.test(digits)) return `${digits.slice(0, 4)}.${digits.slice(4, 7)}.${digits.slice(7)}`;
+  return value || digits;
+}
 const R_SM = 8;
 const R_MD = 12;
 const R_LG = 16;
@@ -1112,6 +1121,13 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
   const E: EFn = useCallback(({ bk, def, as, style, multiline }) => (
     <EditableText slug={lpSlug} blockKey={bk} defaultValue={def} editMode={editMode} as={as} style={style} multiline={multiline} savedValue={content[bk]} onSaved={handleSaved} onDeleted={handleDeleted} />
   ), [editMode, content, handleSaved, handleDeleted]);
+
+  const contactPhoneNumber = normalizePhoneNumber(content["tracking_contact_hotline"] || DEFAULT_CONTACT_PHONE_NUMBER) || DEFAULT_CONTACT_PHONE_NUMBER;
+  const contactZaloNumber = normalizePhoneNumber(content["tracking_contact_zalo"] || contactPhoneNumber) || contactPhoneNumber;
+  const contactPhoneHref = `tel:${contactPhoneNumber}`;
+  const contactZaloHref = `https://zalo.me/${contactZaloNumber}`;
+  const contactPhoneDisplay = formatPhoneDisplay(content["tracking_contact_hotline"] || contactPhoneNumber);
+  const contactZaloDisplay = formatPhoneDisplay(content["tracking_contact_zalo"] || contactZaloNumber);
 
   const navScrolled = scrollY > 60;
   const heroSourceImages = ["hero_bg_0", "hero_bg_1", "hero_bg_2"].map(k => content[k] || "");
@@ -2287,10 +2303,10 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
                 {E({ bk: "faq_help_text", def: "Còn câu hỏi khác? Đội tư vấn SmartFurni sẵn sàng hỗ trợ bạn", as: "span" })}
               </p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                <a href={CONTACT_PHONE_HREF} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD, color: "#FDFAF5", padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconPhone color="#FDFAF5" size={14} />{E({ bk: "faq_call_btn", def: "Gọi ngay", as: "span" })}
+                <a href={contactPhoneHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD, color: "#FDFAF5", padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconPhone color="#FDFAF5" size={14} />{E({ bk: "faq_call_btn", def: "Gọi ngay", as: "span" })}
                   
                 </a>
-                <a href={CONTACT_ZALO_HREF} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: GOLD, border: `1px solid ${GOLD}`, padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconChat color={GOLD} size={14} />{E({ bk: "faq_zalo_btn", def: "Chat Zalo", as: "span" })}
+                <a href={contactZaloHref} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: GOLD, border: `1px solid ${GOLD}`, padding: "10px 20px", borderRadius: R_MD, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY, textDecoration: "none" }}><IconChat color={GOLD} size={14} />{E({ bk: "faq_zalo_btn", def: "Chat Zalo", as: "span" })}
                   
                 </a>
               </div>
@@ -2474,7 +2490,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
                 {[
                   { label: "Facebook", icon: "f", href: "https://facebook.com/smartfurni" },
                   { label: "YouTube", icon: "▶", href: "https://youtube.com/@smartfurni" },
-                  { label: "Zalo", icon: "Z", href: CONTACT_ZALO_HREF },
+                  { label: "Zalo", icon: "Z", href: contactZaloHref },
                 ].map((s) => (
                   <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
                     style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: GOLD_PALE, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textDecoration: "none", transition: "background 0.2s, border-color 0.2s" }}
@@ -2511,8 +2527,8 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
                 <h4 style={{ color: GOLD_PALE, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: "footer_contact_title", def: "Liên hệ", as: "span" })}</h4>
               </div>
               {[
-                { icon: "phone", labelKey: "footer_contact_1_label", label: "Hotline", valKey: "footer_contact_1_value", val: "028.7122.0818", href: "tel:02871220818" },
-                { icon: "message_circle", labelKey: "footer_contact_2_label", label: "Zalo tư vấn", valKey: "footer_contact_2_value", val: "0918.326.552", href: CONTACT_ZALO_HREF },
+                { icon: "phone", labelKey: "footer_contact_1_label", label: "Hotline", valKey: "footer_contact_1_value", val: contactPhoneDisplay, href: contactPhoneHref },
+                { icon: "message_circle", labelKey: "footer_contact_2_label", label: "Zalo tư vấn", valKey: "footer_contact_2_value", val: contactZaloDisplay, href: contactZaloHref },
                 { icon: "mail", labelKey: "footer_contact_3_label", label: "Email", valKey: "footer_contact_3_value", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
                 { icon: "globe", labelKey: "footer_contact_4_label", label: "Website", valKey: "footer_contact_4_value", val: "smartfurni.vn", href: "https://smartfurni.vn" },
               ].map((c, i) => (
@@ -2541,7 +2557,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
               >
                 {E({ bk: "footer_order_cta", def: "Đặt hàng ngay →", as: "span" })}
               </button>
-              <a href={CONTACT_ZALO_HREF} target="_blank" rel="noopener noreferrer"
+              <a href={contactZaloHref} target="_blank" rel="noopener noreferrer"
                 style={{ display: "block", textAlign: "center", background: "transparent", color: "#D9CBAE", fontWeight: 500, fontSize: 11, letterSpacing: "0.06em", padding: "12px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, border: "1px solid rgba(212,196,160,0.2)" }}>
                 {E({ bk: "footer_zalo_cta", def: "💬 Chat Zalo ngay", as: "span" })}
               </a>
@@ -2577,7 +2593,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span className="lp-wave-ring" style={{ background: "rgba(34,197,94,0.25)" }} />
           <span className="lp-wave-ring lp-wave-ring-2" style={{ background: "rgba(34,197,94,0.15)" }} />
-          <a href={CONTACT_PHONE_HREF} title="Gọi điện tư vấn"
+          <a href={contactPhoneHref} title="Gọi điện tư vấn"
             style={{ position: "relative", zIndex: 2, width: 46, height: 46, borderRadius: "50%", background: "linear-gradient(135deg,#22c55e,#16a34a)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(34,197,94,0.45)", textDecoration: "none", transition: "transform 0.2s" }}
             onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
             onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
@@ -2591,7 +2607,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span className="lp-wave-ring" style={{ background: "rgba(0,104,255,0.25)" }} />
           <span className="lp-wave-ring lp-wave-ring-2" style={{ background: "rgba(0,104,255,0.15)" }} />
-          <a href={CONTACT_ZALO_HREF} target="_blank" rel="noopener noreferrer" title="Chat Zalo"
+          <a href={contactZaloHref} target="_blank" rel="noopener noreferrer" title="Chat Zalo"
             style={{ position: "relative", zIndex: 2, width: 46, height: 46, borderRadius: "50%", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "transform 0.2s" }}
             onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
             onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>

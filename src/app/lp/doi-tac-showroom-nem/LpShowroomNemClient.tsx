@@ -20,6 +20,20 @@ const GRAY_LIGHT = "#D4C4A0";
 const RED_SOFT = "#FF6B6B";
 const LP_SLUG = "doi-tac-showroom-nem";
 
+const DEFAULT_CONTACT_PHONE_NUMBER = "0918326552";
+
+function normalizePhoneNumber(value: string) {
+  return (value || "").replace(/[^0-9+]/g, "");
+}
+
+function formatPhoneDisplay(value: string) {
+  const digits = normalizePhoneNumber(value);
+  if (!digits) return "0918.326.552";
+  if (/^0\d{9}$/.test(digits)) return `${digits.slice(0, 4)}.${digits.slice(4, 7)}.${digits.slice(7)}`;
+  return value || digits;
+}
+
+
 // Font stack đồng bộ với website chính
 // Website chính dùng Inter cho TẤT CẢ (H1 fw:300, H2 fw:700, H3 fw:600, body fw:400)
 // Cormorant Garamond CHỈ dùng cho .font-brand (logo text, letter-spacing: 0.12em)
@@ -775,11 +789,18 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
       savedValue={content[bk]} onSaved={handleSaved} onDeleted={handleDeleted} />
   ), [editMode, content, handleSaved, handleDeleted]);
 
+  const contactPhoneNumber = normalizePhoneNumber(content["tracking_contact_hotline"] || DEFAULT_CONTACT_PHONE_NUMBER) || DEFAULT_CONTACT_PHONE_NUMBER;
+  const contactZaloNumber = normalizePhoneNumber(content["tracking_contact_zalo"] || contactPhoneNumber) || contactPhoneNumber;
+  const contactPhoneHref = `tel:${contactPhoneNumber}`;
+  const contactZaloHref = `https://zalo.me/${contactZaloNumber}`;
+  const contactPhoneDisplay = formatPhoneDisplay(content["tracking_contact_hotline"] || contactPhoneNumber);
+  const contactZaloDisplay = formatPhoneDisplay(content["tracking_contact_zalo"] || contactZaloNumber);
+
   return (
     <div style={{ background: BLACK, color: WHITE, fontFamily: FONT_BODY, overflowX: "hidden" }}>
 
       {/* ── EDIT BAR ── */}
-      <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(v => !v)} editedCount={editedCount} />
+      <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(v => !v)} editedCount={editedCount} slug={LP_SLUG} />
 
       {/* ── STICKY NAV ── */}
       <nav style={{
@@ -1458,7 +1479,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                 {[
                   { label: "Facebook", icon: "f", href: "https://facebook.com/smartfurni" },
                   { label: "YouTube", icon: "▶", href: "https://youtube.com/@smartfurni" },
-                  { label: "Zalo", icon: "Z", href: "https://zalo.me/0918326552" },
+                  { label: "Zalo", icon: "Z", href: contactZaloHref },
                 ].map((s) => (
                   <a
                     key={s.label}
@@ -1512,8 +1533,8 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                 <h4 style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>Liên hệ</h4>
               </div>
               {[
-                { icon: "📞", label: "Hotline", val: "028.7122.0818", href: "tel:02871220818" },
-                { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: "https://zalo.me/0918326552" },
+                { icon: "📞", label: "Hotline", val: contactPhoneDisplay, href: contactPhoneHref },
+                { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: contactZaloHref },
                 { icon: "✉️", label: "Email", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
                 { icon: "🌐", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
               ].map((c, i) => (
@@ -1559,7 +1580,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                 {E({ bk: "footer_cta_primary", def: "Đăng ký đại lý →", as: "span" })}
               </a>
               <a
-                href="https://zalo.me/0918326552"
+                href={contactZaloHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

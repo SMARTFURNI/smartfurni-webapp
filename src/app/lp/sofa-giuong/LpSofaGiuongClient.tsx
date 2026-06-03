@@ -48,6 +48,20 @@ function gRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 const LP_SLUG = "sofa-giuong";
+
+const DEFAULT_CONTACT_PHONE_NUMBER = "0918326552";
+
+function normalizePhoneNumber(value: string) {
+  return (value || "").replace(/[^0-9+]/g, "");
+}
+
+function formatPhoneDisplay(value: string) {
+  const digits = normalizePhoneNumber(value);
+  if (!digits) return "0918.326.552";
+  if (/^0\d{9}$/.test(digits)) return `${digits.slice(0, 4)}.${digits.slice(4, 7)}.${digits.slice(7)}`;
+  return value || digits;
+}
+
 const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const R_SM = 8;
@@ -2703,6 +2717,14 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
       onSaved={handleSaved}
     />
   ), [editMode, content, handleSaved]);
+
+  const contactPhoneNumber = normalizePhoneNumber(content["tracking_contact_hotline"] || DEFAULT_CONTACT_PHONE_NUMBER) || DEFAULT_CONTACT_PHONE_NUMBER;
+  const contactZaloNumber = normalizePhoneNumber(content["tracking_contact_zalo"] || contactPhoneNumber) || contactPhoneNumber;
+  const contactPhoneHref = `tel:${contactPhoneNumber}`;
+  const contactZaloHref = `https://zalo.me/${contactZaloNumber}`;
+  const contactPhoneDisplay = formatPhoneDisplay(content["tracking_contact_hotline"] || contactPhoneNumber);
+  const contactZaloDisplay = formatPhoneDisplay(content["tracking_contact_zalo"] || contactZaloNumber);
+
   const T = useCallback((bk: string, def: string) => (content[bk] ?? def).split("||")[0] || def, [content]);
 
   useEffect(() => {
@@ -3619,7 +3641,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 {[
                   { label: "Facebook", icon: "f", href: "https://facebook.com/smartfurni" },
                   { label: "YouTube", icon: "▶", href: "https://youtube.com/@smartfurni" },
-                  { label: "Zalo", icon: "Z", href: "https://zalo.me/0918326552" },
+                  { label: "Zalo", icon: "Z", href: contactZaloHref },
                 ].map((s) => (
                   <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
                     style={{ width: 36, height: 36, borderRadius: "50%", background: `${gRgba(GOLD, 0.08)}`, border: `1px solid ${gRgba(GOLD, 0.25)}`, display: "flex", alignItems: "center", justifyContent: "center", color: THEME_GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY, textDecoration: "none", transition: "background 0.2s, border-color 0.2s" }}
@@ -3656,8 +3678,8 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
                 <h4 style={{ color: THEME_GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const, fontFamily: FONT_BODY, margin: 0 }}>{E({ bk: "footer_contact_title", def: "Liên hệ", as: "span" })}</h4>
               </div>
               {[
-                { icon: "phone", labelKey: "footer_contact_1_label", label: "Hotline", valKey: "footer_contact_1_value", val: "028.7122.0818", href: "tel:02871220818" },
-                { icon: "message_circle", labelKey: "footer_contact_2_label", label: "Zalo tư vấn", valKey: "footer_contact_2_value", val: "0918.326.552", href: "https://zalo.me/0918326552" },
+                { icon: "phone", labelKey: "footer_contact_1_label", label: "Hotline", valKey: "footer_contact_1_value", val: contactPhoneDisplay, href: contactPhoneHref },
+                { icon: "message_circle", labelKey: "footer_contact_2_label", label: "Zalo tư vấn", valKey: "footer_contact_2_value", val: "0918.326.552", href: contactZaloHref },
                 { icon: "mail", labelKey: "footer_contact_3_label", label: "Email", valKey: "footer_contact_3_value", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
                 { icon: "globe", labelKey: "footer_contact_4_label", label: "Website", valKey: "footer_contact_4_value", val: "smartfurni.vn", href: "https://smartfurni.vn" },
               ].map((c, i) => (
@@ -3686,7 +3708,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
               >
                 {E({ bk: "footer_order_cta", def: "Đặt hàng ngay →", as: "span" })}
               </button>
-              <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer"
+              <a href={contactZaloHref} target="_blank" rel="noopener noreferrer"
                 style={{ display: "block", textAlign: "center", background: "transparent", color: THEME_GRAY_LIGHT, fontWeight: 500, fontSize: 11, letterSpacing: "0.06em", padding: "12px 20px", borderRadius: R_MD, textDecoration: "none", fontFamily: FONT_BODY, border: `1px solid rgba(212,196,160,0.2)` }}>
                 {E({ bk: "footer_zalo_cta", def: "💬 Chat Zalo ngay", as: "span" })}
               </a>
@@ -3737,7 +3759,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           {/* Sóng lan toả */}
           <span className="lp-wave-ring" style={{ background: "rgba(34,197,94,0.25)" }} />
           <span className="lp-wave-ring lp-wave-ring-2" style={{ background: "rgba(34,197,94,0.15)" }} />
-          <a href="tel:0918326552" title="Gọi điện tư vấn"
+          <a href={contactPhoneHref} title="Gọi điện tư vấn"
             style={{ position: "relative", zIndex: 2, width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg,#22c55e,#16a34a)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(34,197,94,0.45)", textDecoration: "none", transition: "transform 0.2s" }}
             onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
             onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
@@ -3752,7 +3774,7 @@ export default function LpSofaGiuongClient({ isEditor = false, initialContent = 
           {/* Sóng lan toả */}
           <span className="lp-wave-ring" style={{ background: "rgba(0,104,255,0.25)" }} />
           <span className="lp-wave-ring lp-wave-ring-2" style={{ background: "rgba(0,104,255,0.15)" }} />
-          <a href="https://zalo.me/0918326552" target="_blank" rel="noopener noreferrer" title="Chat Zalo"
+          <a href={contactZaloHref} target="_blank" rel="noopener noreferrer" title="Chat Zalo"
             style={{ position: "relative", zIndex: 2, width: 44, height: 44, borderRadius: "50%", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "none", textDecoration: "none", transition: "transform 0.2s" }}
             onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
             onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>

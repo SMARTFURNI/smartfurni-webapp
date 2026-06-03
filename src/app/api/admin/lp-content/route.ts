@@ -137,10 +137,23 @@ export async function GET(req: NextRequest) {
         googleAdsId: result["tracking_google_ads_id"] || "",
         googleAdsLabel: result["tracking_google_ads_label"] || "",
         gtmId: result["tracking_gtm_id"] || "",
+        orderNotifyEmail: result["tracking_order_notify_email"] || "",
+        orderGoogleSheetUrl: result["tracking_order_google_sheet_url"] || "",
+        contactHotline: result["tracking_contact_hotline"] || "",
+        contactZalo: result["tracking_contact_zalo"] || "",
       });
     } catch (e) {
       console.error("get-tracking error:", e);
-      return NextResponse.json({ fbPixelId: "", googleAdsId: "", googleAdsLabel: "", gtmId: "" });
+      return NextResponse.json({
+        fbPixelId: "",
+        googleAdsId: "",
+        googleAdsLabel: "",
+        gtmId: "",
+        orderNotifyEmail: "",
+        orderGoogleSheetUrl: "",
+        contactHotline: "",
+        contactZalo: "",
+      });
     }
   }
 
