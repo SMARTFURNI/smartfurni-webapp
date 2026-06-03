@@ -1218,7 +1218,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
         }}>
           {/* Logo */}
-          <a href="/lp/smf12" style={{ flexShrink: 0, textDecoration: "none" }}>
+          <a href={`/lp/${lpSlug}`} style={{ flexShrink: 0, textDecoration: "none" }}>
             <img src="/smartfurni-logo-transparent.png" alt="SmartFurni"
               style={{ height: 44, objectFit: "contain", filter: "brightness(1.05)" }} />
           </a>
