@@ -271,67 +271,108 @@ async function sendLeadNotification(data: LeadNotificationData & { notifyEmails?
   const addressParts = [data.ward, data.district, data.province].filter(Boolean).join(", ");
   const fullAddress = [data.address, addressParts].filter(Boolean).join(", ");
 
-  const configRows = data.configStr
-    ? data.configStr.split("|").map(s => s.trim()).filter(Boolean).map(s =>
-        `<tr><td colspan="2" style="padding: 4px 0; font-size: 13px; color: #444;">• ${s}</td></tr>`
-      ).join("")
-    : "";
+  const escapeHtml = (value?: string | null) => String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  const brandGold = "#C9A84C";
+  const brandGoldDark = "#8B6914";
+  const brandInk = "#1A1200";
+  const brandCream = "#FDFAF5";
+  const logoUrl = "https://smartfurni.com.vn/smartfurni-logo-transparent.png";
+  const safeName = escapeHtml(data.fullName);
+  const safePhone = escapeHtml(data.phone);
+  const safeEmail = escapeHtml(data.email);
+  const safeAddress = escapeHtml(fullAddress);
+  const safeNote = escapeHtml(data.note);
+  const safeTotalPrice = escapeHtml(data.totalPrice);
+  const safeSlug = escapeHtml(data.slug);
+  const configItems = data.configStr
+    ? data.configStr.split("|").map(s => s.trim()).filter(Boolean)
+    : [];
+  const configRows = configItems.map(item => `
+        <tr>
+          <td style="padding: 10px 0; vertical-align: top; width: 18px; color: ${brandGold}; font-size: 16px; line-height: 20px;">•</td>
+          <td style="padding: 10px 0; color: #3F3527; font-size: 14px; line-height: 20px; border-bottom: 1px solid rgba(139,105,20,0.10);">${escapeHtml(item)}</td>
+        </tr>`).join("");
+
+  const infoRow = (label: string, value: string, extraValueStyle = "") => value ? `
+        <tr>
+          <td style="padding: 14px 0; border-bottom: 1px solid rgba(139,105,20,0.12); color: #7A6A55; font-size: 12px; line-height: 18px; text-transform: uppercase; letter-spacing: 0.08em; width: 150px; vertical-align: top;">${label}</td>
+          <td style="padding: 14px 0; border-bottom: 1px solid rgba(139,105,20,0.12); color: ${brandInk}; font-size: 15px; line-height: 22px; font-weight: 700; vertical-align: top; ${extraValueStyle}">${value}</td>
+        </tr>` : "";
 
   const html = `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px;">
-  <div style="max-width: 580px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.1);">
-    <div style="background: linear-gradient(135deg, #1a1200 0%, #3d2c00 100%); padding: 28px 32px; text-align: center;">
-      <div style="color: #C9A84C; font-size: 22px; font-weight: 700; letter-spacing: 1px;">🛋️ SMARTFURNI</div>
-      <div style="color: #fff; font-size: 16px; margin-top: 8px; font-weight: 600;">Đơn đặt hàng mới từ Landing Page</div>
-      <div style="color: #C9A84C; font-size: 13px; margin-top: 4px;">${now}</div>
-    </div>
-    <div style="padding: 28px 32px;">
-      <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px; width: 130px;">Họ và tên</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-weight: 700; font-size: 16px; color: #1a1a1a;">${data.fullName}</td>
-        </tr>
-        <tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px;">Số điện thoại</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-weight: 700; font-size: 16px;">
-            <a href="tel:${data.phone}" style="color: #C9A84C; text-decoration: none;">${data.phone}</a>
-          </td>
-        </tr>
-        ${data.email ? `<tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px;">Email</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">${data.email}</td>
-        </tr>` : ""}
-        ${fullAddress ? `<tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px;">Địa chỉ</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">${fullAddress}</td>
-        </tr>` : ""}
-        ${data.configStr ? `<tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 13px; vertical-align: top;">Cấu hình</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
-            <table style="width: 100%; border-collapse: collapse;">${configRows}</table>
-          </td>
-        </tr>` : ""}
-        ${data.totalPrice ? `<tr>
-          <td style="padding: 12px 0 4px; color: #888; font-size: 13px;">Giá tham khảo</td>
-          <td style="padding: 12px 0 4px; font-weight: 700; font-size: 20px; color: #C9A84C;">${data.totalPrice}</td>
-        </tr>` : ""}
-        ${data.note ? `<tr>
-          <td style="padding: 10px 0; color: #888; font-size: 13px; vertical-align: top;">Ghi chú</td>
-          <td style="padding: 10px 0; font-size: 13px; color: #555;">${data.note}</td>
-        </tr>` : ""}
-      </table>
-      <div style="margin-top: 28px; text-align: center;">
-        <a href="https://smartfurni.com.vn/admin/crm" style="display: inline-block; background: linear-gradient(135deg, #C9A84C, #e8c96a); color: #1a1200; font-weight: 700; font-size: 14px; padding: 12px 32px; border-radius: 50px; text-decoration: none;">
-          📋 Xem trong CRM →
-        </a>
-      </div>
-    </div>
-    <div style="background: #f9f9f9; padding: 14px 32px; text-align: center; color: #aaa; font-size: 12px; border-top: 1px solid #eee;">
-      SmartFurni — Sofa Giường Thông Minh | smartfurni.com.vn
-    </div>
-  </div>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartFurni - Đơn đặt hàng mới</title>
+</head>
+<body style="margin: 0; padding: 0; background: #F4F0E7; font-family: Arial, Helvetica, sans-serif; color: ${brandInk};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; background: #F4F0E7; padding: 0; margin: 0;">
+    <tr>
+      <td align="center" style="padding: 28px 12px;">
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 640px; border-collapse: collapse; border-radius: 22px; overflow: hidden; background: ${brandCream}; box-shadow: 0 18px 48px rgba(26,18,0,0.16); border: 1px solid rgba(139,105,20,0.18);">
+          <tr>
+            <td style="background: linear-gradient(135deg, rgba(26,18,0,0.98), rgba(61,44,0,0.96)); padding: 30px 34px 26px; text-align: center; border-bottom: 3px solid ${brandGold};">
+              <img src="${logoUrl}" alt="SmartFurni" width="170" style="display: block; width: 170px; max-width: 70%; height: auto; margin: 0 auto 18px; object-fit: contain;">
+              <div style="font-family: Georgia, 'Times New Roman', serif; color: #FFFFFF; font-size: 30px; line-height: 36px; font-style: italic; font-weight: 400; letter-spacing: -0.02em; margin: 0;">Đơn đặt hàng mới</div>
+              <div style="height: 1px; width: 72px; background: ${brandGold}; margin: 16px auto 14px;"></div>
+              <div style="color: #E9D18A; font-size: 13px; line-height: 20px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;">Landing Page ${safeSlug}</div>
+              <div style="color: rgba(253,250,245,0.76); font-size: 13px; line-height: 20px; margin-top: 4px;">${now}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 28px 34px 10px; background: ${brandCream};">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 18px 20px; background: #FFFFFF; border: 1px solid rgba(139,105,20,0.15); border-radius: 16px;">
+                    <div style="color: #7A6A55; font-size: 12px; line-height: 18px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 6px;">Khách hàng cần chăm sóc</div>
+                    <div style="font-size: 24px; line-height: 31px; font-weight: 800; color: ${brandInk}; margin-bottom: 8px;">${safeName}</div>
+                    <a href="tel:${safePhone}" style="display: inline-block; color: ${brandGoldDark}; font-size: 20px; line-height: 26px; font-weight: 800; text-decoration: none;">${safePhone}</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 34px 4px; background: ${brandCream};">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                ${infoRow("Email", safeEmail)}
+                ${infoRow("Địa chỉ", safeAddress, "font-weight: 600;")}
+                ${infoRow("Giá tham khảo", safeTotalPrice, `font-size: 22px; line-height: 28px; color: ${brandGoldDark};`)}
+                ${safeNote ? infoRow("Ghi chú", safeNote, "font-weight: 600;") : ""}
+              </table>
+            </td>
+          </tr>
+          ${configRows ? `<tr>
+            <td style="padding: 18px 34px 4px; background: ${brandCream};">
+              <div style="background: #FFFFFF; border: 1px solid rgba(139,105,20,0.15); border-radius: 16px; padding: 18px 20px;">
+                <div style="color: ${brandGoldDark}; font-size: 13px; line-height: 19px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Cấu hình khách chọn</div>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">${configRows}</table>
+              </div>
+            </td>
+          </tr>` : ""}
+          <tr>
+            <td align="center" style="padding: 26px 34px 32px; background: ${brandCream};">
+              <a href="https://smartfurni.com.vn/admin/crm" style="display: inline-block; background: linear-gradient(135deg, #B8922A, #E8C96A); color: ${brandInk}; font-weight: 800; font-size: 14px; line-height: 18px; padding: 14px 30px; border-radius: 999px; text-decoration: none; box-shadow: 0 10px 24px rgba(139,105,20,0.24); letter-spacing: 0.02em;">Xem đơn trong CRM</a>
+              <div style="color: #7A6A55; font-size: 12px; line-height: 18px; margin-top: 14px;">Email này được gửi tự động từ hệ thống landing page SmartFurni.</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #1A1200; padding: 18px 30px; text-align: center; border-top: 1px solid rgba(201,168,76,0.24);">
+              <div style="color: ${brandGold}; font-size: 13px; line-height: 20px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;">SmartFurni</div>
+              <div style="color: rgba(253,250,245,0.72); font-size: 12px; line-height: 18px; margin-top: 4px;">Sofa Giường Thông Minh | smartfurni.com.vn</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 
@@ -345,7 +386,7 @@ async function sendLeadNotification(data: LeadNotificationData & { notifyEmails?
     body: JSON.stringify({
       from: `SmartFurni <${fromEmail}>`,
       to: recipients,
-      subject: `🛋️ Đơn mới: ${data.fullName} — ${data.phone}`,
+      subject: `Đơn mới SmartFurni: ${data.fullName} — ${data.phone}`,
       html,
     }),
   });
