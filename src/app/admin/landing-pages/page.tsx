@@ -38,6 +38,15 @@ const STATIC_PAGES: LandingPage[] = [
     status: "active",
     createdAt: "2026-05-05",
   },
+  {
+    slug: "smf12",
+    title: "Sofa Giường SMF12",
+    description: "Landing page bán lẻ sofa giường thông minh SMF12",
+    url: "/lp/smf12",
+    status: "active",
+    createdAt: "2026-06-03",
+    customDomain: "smartfurni.com.vn/lp/smf12",
+  },
 ];
 
 export default function AdminLandingPagesPage() {
