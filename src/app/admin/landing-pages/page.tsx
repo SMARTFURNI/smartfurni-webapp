@@ -11,6 +11,7 @@ type LandingPage = {
   leadCount?: number;
   createdAt?: string;
   customDomain?: string;
+  parentSlug?: string | null;
 };
 
 const STATIC_PAGES: LandingPage[] = [
@@ -79,6 +80,7 @@ export default function AdminLandingPagesPage() {
             status: p.status as "active" | "draft",
             createdAt: p.created_at,
             customDomain: p.custom_domain,
+            parentSlug: p.parent_slug || null,
           }));
           // Merge: DB pages override STATIC_PAGES by slug, then add remaining static pages
           const dbSlugs = new Set(dbPages.map((p: LandingPage) => p.slug));
@@ -172,6 +174,7 @@ export default function AdminLandingPagesPage() {
     if (!sourcePage) return;
     const slug = cloneForm.slug.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     const customDomain = cloneForm.customDomain || `smartfurni.com.vn/lp/${slug}`;
+    const parentSlug = sourcePage.parentSlug || cloneSource;
     
     // Lưu vào database
     fetch("/api/admin/lp-content", {
@@ -184,6 +187,7 @@ export default function AdminLandingPagesPage() {
         title: cloneForm.title,
         description: sourcePage.description,
         customDomain,
+        parentSlug,
       }),
     })
       .then((r) => r.json())
@@ -211,6 +215,7 @@ export default function AdminLandingPagesPage() {
                   status: "draft",
                   createdAt: new Date().toISOString().split("T")[0],
                   customDomain,
+                  parentSlug,
                 },
               ]);
               setShowCloneDialog(false);

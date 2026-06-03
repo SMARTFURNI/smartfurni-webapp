@@ -5,13 +5,21 @@ import { query } from "@/lib/db";
 import { getCrmProducts } from "@/lib/crm-store";
 import type { CrmProduct } from "@/lib/crm-types";
 import LpSofaGiuongClient from "../sofa-giuong/LpSofaGiuongClient";
+import LpSmf12Client from "../smf12/LpSmf12Client";
 
 export const dynamic = "force-dynamic";
 
 // Các slug tĩnh đã có route riêng — không xử lý ở đây
-const STATIC_SLUGS = new Set(["sofa-giuong", "gsf150", "doi-tac-showroom-nem"]);
+const STATIC_SLUGS = new Set(["sofa-giuong", "gsf150", "doi-tac-showroom-nem", "smf12"]);
 
 // Hỗ trợ tất cả LP variants được tạo trong DB (không giới hạn pattern)
+
+function inferParentSlug(slug: string): string {
+  if (slug === "smf12" || slug.startsWith("smf12-")) return "smf12";
+  if (slug === "gsf150" || slug.startsWith("gsf150-")) return "gsf150";
+  if (slug === "doi-tac-showroom-nem" || slug.startsWith("doi-tac-showroom-nem-")) return "doi-tac-showroom-nem";
+  return "sofa-giuong";
+}
 
 async function getLpPageInfo(slug: string): Promise<{ title: string; description: string; parentSlug: string | null } | null> {
   try {
@@ -108,7 +116,7 @@ export default async function LpVariantPage({ params }: Props) {
   const variantContent = await getLpContent(slug);
 
   // Lấy nội dung từ bản gốc (fallback)
-  const parentSlug = pageInfo.parentSlug || "sofa-giuong";
+  const parentSlug = pageInfo.parentSlug || inferParentSlug(slug);
   const parentContent = await getParentLpContent(parentSlug);
 
   // Merge: nội dung variant override lên parent
@@ -184,16 +192,24 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </>
       )}
-      <LpSofaGiuongClient
-        isEditor={isEditor}
-        initialContent={mergedContent}
-        sofaProducts={sofaProducts}
-        lpSlug={slug}
-        colorTheme={
-          (mergedContent["color_theme"] as "dark" | "light") ||
-          (slug === "sofa-giuong-02" ? "light" : "dark")
-        }
-      />
+      {parentSlug === "smf12" ? (
+        <LpSmf12Client
+          isEditor={isEditor}
+          initialContent={mergedContent}
+          lpSlug={slug}
+        />
+      ) : (
+        <LpSofaGiuongClient
+          isEditor={isEditor}
+          initialContent={mergedContent}
+          sofaProducts={sofaProducts}
+          lpSlug={slug}
+          colorTheme={
+            (mergedContent["color_theme"] as "dark" | "light") ||
+            (slug === "sofa-giuong-02" ? "light" : "dark")
+          }
+        />
+      )}
     </>
   );
 }

@@ -137,6 +137,7 @@ const R_FULL = 999;
 interface Props {
   isEditor?: boolean;
   initialContent?: Record<string, string>;
+  lpSlug?: string;
 }
 
 // ─── YouTube helpers ─────────────────────────────────────────────────────────
@@ -227,7 +228,7 @@ function YoutubeThumbnailPlay({ videoId, title, tag }: { videoId: string; title:
 }
 
 // ─── ImageUploadOverlay (với tính năng dán URL + upload file) ────────────────
-function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: { blockKey: string; currentUrl: string; onUploaded: (key: string, url: string) => void }) {
+function ImageUploadOverlay({ slug, blockKey, currentUrl, onUploaded }: { slug: string; blockKey: string; currentUrl: string; onUploaded: (key: string, url: string) => void }) {
   const [uploading, setUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlVal, setUrlVal] = useState("");
@@ -235,7 +236,7 @@ function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: { blockKey: st
   async function handleFile(file: File) {
     setUploading(true);
     try {
-      const fd = new FormData(); fd.append("file", file); fd.append("slug", LP_SLUG); fd.append("blockKey", blockKey);
+      const fd = new FormData(); fd.append("file", file); fd.append("slug", slug); fd.append("blockKey", blockKey);
       const res = await fetch("/api/admin/lp-upload-image", { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
       const { url } = await res.json();
@@ -245,7 +246,7 @@ function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: { blockKey: st
 
   async function saveUrl(url: string) {
     if (!url.trim()) return;
-    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey, content: url.trim() }) });
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey, content: url.trim() }) });
     onUploaded(blockKey, url.trim());
     setShowUrlInput(false); setUrlVal("");
   }
@@ -294,7 +295,7 @@ function ImageUploadOverlay({ blockKey, currentUrl, onUploaded }: { blockKey: st
 
 
 // ─── VideoEditOverlay (chỉnh sửa link YouTube) ───────────────────────────────
-function VideoEditOverlay({ blockKey, currentId, onSaved }: { blockKey: string; currentId: string; onSaved: (key: string, id: string) => void }) {
+function VideoEditOverlay({ slug, blockKey, currentId, onSaved }: { slug: string; blockKey: string; currentId: string; onSaved: (key: string, id: string) => void }) {
   const [show, setShow] = useState(false);
   const [val, setVal] = useState("");
 
@@ -317,7 +318,7 @@ function VideoEditOverlay({ blockKey, currentId, onSaved }: { blockKey: string; 
   async function saveVideo() {
     if (!val.trim()) return;
     const id = extractYoutubeId(val);
-    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: LP_SLUG, blockKey, content: id }) });
+    await fetch("/api/admin/lp-content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, blockKey, content: id }) });
     onSaved(blockKey, id);
     setShow(false); setVal("");
   }
@@ -492,7 +493,7 @@ const PRODUCT_DETAILS = [
   },
 ];
 
-function ProductDetailSection({ editMode, content, handleSaved, E: EditFn }: { editMode: boolean; content: Record<string, string>; handleSaved: (key: string, val: string) => void; E: EFn }) {
+function ProductDetailSection({ lpSlug, editMode, content, handleSaved, E: EditFn }: { lpSlug: string; editMode: boolean; content: Record<string, string>; handleSaved: (key: string, val: string) => void; E: EFn }) {
   return (
     <section id="demo" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
       <div style={{ maxWidth: 1060, margin: "0 auto" }}>
@@ -523,7 +524,7 @@ function ProductDetailSection({ editMode, content, handleSaved, E: EditFn }: { e
                       <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>Ảnh thiết kế sản phẩm</span>
                     </div>
                   )}
-                  {editMode && <ImageUploadOverlay blockKey="detail_img_0" currentUrl={content["detail_img_0"] || ""} onUploaded={handleSaved} />}
+                  {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="detail_img_0" currentUrl={content["detail_img_0"] || ""} onUploaded={handleSaved} />}
                 </div>
               </div>
               <div style={{ padding: "8px 0" }}>
@@ -582,7 +583,7 @@ function ProductDetailSection({ editMode, content, handleSaved, E: EditFn }: { e
                       <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>GIF thao tác gập mở</span>
                     </div>
                   )}
-                  {editMode && <ImageUploadOverlay blockKey="detail_img_1" currentUrl={content["detail_img_1"] || ""} onUploaded={handleSaved} />}
+                  {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="detail_img_1" currentUrl={content["detail_img_1"] || ""} onUploaded={handleSaved} />}
                 </div>
               </div>
             </div>
@@ -602,7 +603,7 @@ function ProductDetailSection({ editMode, content, handleSaved, E: EditFn }: { e
                     <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>Ảnh khung thép mạ kẽm (16:9)</span>
                   </div>
                 )}
-                {editMode && <ImageUploadOverlay blockKey="detail_img_2" currentUrl={content["detail_img_2"] || ""} onUploaded={handleSaved} />}
+                {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="detail_img_2" currentUrl={content["detail_img_2"] || ""} onUploaded={handleSaved} />}
                 {/* Overlay badge */}
                 <div style={{ position: "absolute", bottom: 20, left: 20, background: `rgba(26,18,0,0.75)`, backdropFilter: "blur(8px)", borderRadius: R_MD, padding: "12px 20px", border: `1px solid rgba(139,105,20,0.3)` }}>
                   <div style={{ color: GOLD_PALE, fontSize: 22, fontWeight: 700, fontFamily: FONT_HEADING, lineHeight: 1 }}>{EditFn({ bk: "detail_3_overlay_num", def: "800kg", as: "span" })}</div>
@@ -646,7 +647,7 @@ function ProductDetailSection({ editMode, content, handleSaved, E: EditFn }: { e
                       <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>GIF ngăn chứa đồ ẩn</span>
                     </div>
                   )}
-                  {editMode && <ImageUploadOverlay blockKey="detail_img_3" currentUrl={content["detail_img_3"] || ""} onUploaded={handleSaved} />}
+                  {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="detail_img_3" currentUrl={content["detail_img_3"] || ""} onUploaded={handleSaved} />}
                 </div>
               </div>
               <div style={{ padding: "8px 0" }}>
@@ -705,7 +706,7 @@ function ProductDetailSection({ editMode, content, handleSaved, E: EditFn }: { e
                       <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>GIF áo nệm khoá kéo</span>
                     </div>
                   )}
-                  {editMode && <ImageUploadOverlay blockKey="detail_img_4" currentUrl={content["detail_img_4"] || ""} onUploaded={handleSaved} />}
+                  {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="detail_img_4" currentUrl={content["detail_img_4"] || ""} onUploaded={handleSaved} />}
                 </div>
               </div>
             </div>
@@ -726,7 +727,7 @@ function ProductDetailSection({ editMode, content, handleSaved, E: EditFn }: { e
                       <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>GIF túi đựng 2 bên tay vịn</span>
                     </div>
                   )}
-                  {editMode && <ImageUploadOverlay blockKey="detail_img_5" currentUrl={content["detail_img_5"] || ""} onUploaded={handleSaved} />}
+                  {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="detail_img_5" currentUrl={content["detail_img_5"] || ""} onUploaded={handleSaved} />}
                 </div>
               </div>
               <div style={{ padding: "8px 0" }}>
@@ -861,7 +862,7 @@ function StickyCta({ openOrderPopup, E: EditFn }: { openOrderPopup: () => void; 
 }
 
 // ─── LeadForm ─────────────────────────────────────────────────────────────────
-function LeadForm({ E: EditFn, content, submitLabelKey = "form_submit", submitLabelDefault = "Tư Vấn & Đặt Hàng Ngay →", selectedSize }: { E: EFn; content: Record<string, string>; submitLabelKey?: string; submitLabelDefault?: string; selectedSize?: string }) {
+function LeadForm({ lpSlug, E: EditFn, content, submitLabelKey = "form_submit", submitLabelDefault = "Tư Vấn & Đặt Hàng Ngay →", selectedSize }: { lpSlug: string; E: EFn; content: Record<string, string>; submitLabelKey?: string; submitLabelDefault?: string; selectedSize?: string }) {
   const [step, setStep] = useState(1);
   const [quiz, setQuiz] = useState({ roomSize: "", usage: "", budget: "" });
   const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
@@ -882,7 +883,7 @@ function LeadForm({ E: EditFn, content, submitLabelKey = "form_submit", submitLa
     setLoading(true); setError("");
     try {
       const noteStr = `${getText("form_payload_size_prefix", "Kích thước chọn")}: ${selectedSize || quiz.roomSize} | ${getText("form_payload_usage_prefix", "Mục đích")}: ${quiz.usage} | ${getText("form_payload_budget_prefix", "Ngân sách")}: ${quiz.budget} | ${getText("form_payload_address_prefix", "Địa chỉ")}: ${form.address} | ${getText("form_payload_note_prefix", "Ghi chú")}: ${form.note}`;
-      const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }) });
+      const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || getText("form_error_server", "Lỗi server")); }
       setSuccess(true);
     } catch (err: unknown) { setError(err instanceof Error ? err.message : getText("form_error_unknown", "Có lỗi xảy ra, vui lòng thử lại")); }
@@ -990,7 +991,7 @@ function LeadForm({ E: EditFn, content, submitLabelKey = "form_submit", submitLa
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function LpSmf12Client({ isEditor = false, initialContent = {} }: Props) {
+export default function LpSmf12Client({ isEditor = false, initialContent = {}, lpSlug = LP_SLUG }: Props) {
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -1109,7 +1110,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
 
   // EditableText shorthand
   const E: EFn = useCallback(({ bk, def, as, style, multiline }) => (
-    <EditableText slug={LP_SLUG} blockKey={bk} defaultValue={def} editMode={editMode} as={as} style={style} multiline={multiline} savedValue={content[bk]} onSaved={handleSaved} onDeleted={handleDeleted} />
+    <EditableText slug={lpSlug} blockKey={bk} defaultValue={def} editMode={editMode} as={as} style={style} multiline={multiline} savedValue={content[bk]} onSaved={handleSaved} onDeleted={handleDeleted} />
   ), [editMode, content, handleSaved, handleDeleted]);
 
   const navScrolled = scrollY > 60;
@@ -1179,7 +1180,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
     setInlineOrderLoading(true); setInlineOrderError("");
     try {
       const noteStr = `Nguồn: Form đặt hàng tại section chính | Sản phẩm: ${inlineOrderProductName} | Kích thước: ${inlineOrderSizeObj.label} | Màu sắc: ${inlineOrderColorObj.label} | Giá: ${inlineOrderPrice} | Địa chỉ: ${inlineOrderForm.address} | Ghi chú: ${inlineOrderForm.note}`;
-      const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: inlineOrderForm.name, phone: inlineOrderForm.phone, email: "", note: noteStr }) });
+      const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: inlineOrderForm.name, phone: inlineOrderForm.phone, email: "", note: noteStr }) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
       setInlineOrderSuccess(true);
       setInlineOrderForm({ name: "", phone: "", address: "", note: "" });
@@ -1198,7 +1199,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
     <div style={{ fontFamily: FONT_BODY, background: BLACK, color: WHITE, minHeight: "100vh" }}>
       {/* ── EDIT BAR ── */}
       {isEditor && (
-        <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(m => !m)} editedCount={editedCount} slug={LP_SLUG} />
+        <LpEditBar isEditor={isEditor} editMode={editMode} onToggleEditMode={() => setEditMode(m => !m)} editedCount={editedCount} slug={lpSlug} />
       )}
 
       {/* ── STICKY NAV ── */}
@@ -1352,7 +1353,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
         </div>
         {/* Edit hero */}
         {isEditor && editMode && (
-          <EditableHeroImage slug={LP_SLUG} imageKeys={["hero_bg_0", "hero_bg_1", "hero_bg_2"]} overlayKey="hero_overlay" imageUrls={heroSourceImages} overlayOpacity={heroOverlay} editMode={editMode} onImageSaved={handleSaved} onOverlaySaved={(k, v) => handleSaved(k, String(v))} />
+          <EditableHeroImage slug={lpSlug} imageKeys={["hero_bg_0", "hero_bg_1", "hero_bg_2"]} overlayKey="hero_overlay" imageUrls={heroSourceImages} overlayOpacity={heroOverlay} editMode={editMode} onImageSaved={handleSaved} onOverlaySaved={(k, v) => handleSaved(k, String(v))} />
         )}
         {/* Hero content: wrapper flex dọc cho mobile order */}
         <div className="lp-hero-content" style={{ position: "relative", zIndex: 1, width: "100%", display: "flex", flexDirection: "column" }}>
@@ -1545,9 +1546,9 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                       ) : (
                         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>Chưa có ảnh</div>
                       )}
-                      {editMode && <ImageUploadOverlay blockKey={item.bkImg} currentUrl={imgSrc} onUploaded={handleSaved} />}
+                      {editMode && <ImageUploadOverlay slug={lpSlug} blockKey={item.bkImg} currentUrl={imgSrc} onUploaded={handleSaved} />}
                       {editMode && imgSrc && (
-                        <button onClick={async () => { await fetch(`/api/admin/lp-content?slug=${LP_SLUG}&blockKey=${item.bkImg}`, { method: "DELETE" }); handleDeleted(item.bkImg); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 20, background: "rgba(239,68,68,0.9)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>
+                        <button onClick={async () => { await fetch(`/api/admin/lp-content?slug=${lpSlug}&blockKey=${item.bkImg}`, { method: "DELETE" }); handleDeleted(item.bkImg); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 20, background: "rgba(239,68,68,0.9)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>
                       )}
                     </div>
                     <div style={{ position: "absolute", top: 12, left: 12, background: `rgba(139,105,20,0.9)`, color: "#FDFAF5", fontSize: 9, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.12em", fontFamily: FONT_BODY }}>
@@ -1604,7 +1605,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                     </div>
                   )}
                   {editMode && (
-                    <ImageUploadOverlay blockKey="specs_img" currentUrl={content["specs_img"] || ""} onUploaded={handleSaved} />
+                    <ImageUploadOverlay slug={lpSlug} blockKey="specs_img" currentUrl={content["specs_img"] || ""} onUploaded={handleSaved} />
                   )}
                 </div>
               </div>
@@ -1637,7 +1638,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
                 {[{ k: "ba_before_img", label: "Ảnh TRƯỚC" }, { k: "ba_after_img", label: "Ảnh SAU" }].map(({ k, label }) => (
                   <div key={k} style={{ position: "relative", height: 60, background: BLACK_CARD, border: `1px dashed ${GOLD}`, borderRadius: R_MD, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                    <ImageUploadOverlay blockKey={k} currentUrl={content[k] || ""} onUploaded={handleSaved} />
+                    <ImageUploadOverlay slug={lpSlug} blockKey={k} currentUrl={content[k] || ""} onUploaded={handleSaved} />
                     <span style={{ color: GOLD, fontSize: 12, fontFamily: FONT_BODY }}>{label}</span>
                   </div>
                 ))}
@@ -1653,7 +1654,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
       </section>
 
       {/* ── PRODUCT DETAIL ── */}
-      <ProductDetailSection editMode={editMode} content={content} handleSaved={handleSaved} E={E} />
+      <ProductDetailSection lpSlug={lpSlug} editMode={editMode} content={content} handleSaved={handleSaved} E={E} />
 
       {/* ── VIDEO SECTION ── */}
       <section id="video" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
@@ -1687,7 +1688,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                     autoplayOnVisible={i === 0}
                   />
                   {editMode && (
-                    <VideoEditOverlay blockKey={v.bkId} currentId={content[v.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />
+                    <VideoEditOverlay slug={lpSlug} blockKey={v.bkId} currentId={content[v.bkId] || ""} onSaved={(k, val) => handleSaved(k, val)} />
                   )}
                 </div>
               ))}
@@ -1746,7 +1747,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                           <span style={{ fontSize: 12, fontFamily: FONT_BODY }}>Aảnh sản phẩm</span>
                         </div>
                       )}
-                      {editMode && <ImageUploadOverlay blockKey={imgKey} currentUrl={imgSrc} onUploaded={handleSaved} />}
+                      {editMode && <ImageUploadOverlay slug={lpSlug} blockKey={imgKey} currentUrl={imgSrc} onUploaded={handleSaved} />}
                       {product.badge && (
                         <div style={{ position: "absolute", top: 12, left: 12, background: GOLD, color: "#FDFAF5", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: R_FULL, letterSpacing: "0.1em", fontFamily: FONT_BODY }}>{product.badge}</div>
                       )}
@@ -1758,13 +1759,13 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                       <div style={{ color: GRAY_LIGHT, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{product.id.toUpperCase()}</div>
                       <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 4, fontFamily: FONT_HEADING }}>
                         {editMode ? (
-                          <EditableText slug={LP_SLUG} blockKey={nameKey} defaultValue={product.name} editMode={editMode} as="span" savedValue={content[nameKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
+                          <EditableText slug={lpSlug} blockKey={nameKey} defaultValue={product.name} editMode={editMode} as="span" savedValue={content[nameKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
                         ) : displayName}
                       </h3>
                       <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, marginBottom: 12, fontFamily: FONT_BODY }}>{product.sub}</p>
                       <div style={{ color: GOLD, fontWeight: 700, fontSize: 18, fontFamily: FONT_HEADING }}>
                         {editMode ? (
-                          <EditableText slug={LP_SLUG} blockKey={priceKey} defaultValue={product.price} editMode={editMode} as="span" savedValue={content[priceKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
+                          <EditableText slug={lpSlug} blockKey={priceKey} defaultValue={product.price} editMode={editMode} as="span" savedValue={content[priceKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
                         ) : displayPrice}
                       </div>
                     </div>
@@ -1796,7 +1797,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
           setPopupLoading(true); setPopupError("");
           try {
             const noteStr = `Sản phẩm: ${displayName} | Kích thước: ${selectedSizeObj.label} | Màu sắc: ${selectedColorObj.label} | Giá: ${sizePrice} | Địa chỉ: ${popupForm.address} | Ghi chú: ${popupForm.note}`;
-            const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: popupForm.name, phone: popupForm.phone, email: "", note: noteStr }) });
+            const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: popupForm.name, phone: popupForm.phone, email: "", note: noteStr }) });
             if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
             setPopupSuccess(true);
           } catch (err: unknown) { setPopupError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
@@ -1834,7 +1835,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                         <span style={{ fontSize: 13, fontFamily: FONT_BODY }}>Aảnh {pp.imgIdx + 1}</span>
                       </div>
                     )}
-                    {editMode && <ImageUploadOverlay blockKey={`popup_img_${pp.productIdx}_${pp.imgIdx}`} currentUrl={popupImgs[pp.imgIdx]} onUploaded={handleSaved} />}
+                    {editMode && <ImageUploadOverlay slug={lpSlug} blockKey={`popup_img_${pp.productIdx}_${pp.imgIdx}`} currentUrl={popupImgs[pp.imgIdx]} onUploaded={handleSaved} />}
                     {/* Prev/Next arrows */}
                     {pp.imgIdx > 0 && (
                       <button onClick={() => goToPopupImage(-1)}
@@ -1874,7 +1875,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                         <div style={{ color: GRAY_LIGHT, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{product.id.toUpperCase()}</div>
                         <h2 style={{ color: WHITE, fontSize: 22, fontWeight: 700, marginBottom: 6, fontFamily: FONT_HEADING }}>
                           {editMode ? (
-                            <EditableText slug={LP_SLUG} blockKey={`product_name_${pp.productIdx}`} defaultValue={product.name} editMode={editMode} as="span" savedValue={content[`product_name_${pp.productIdx}`]} onSaved={handleSaved} onDeleted={handleDeleted} />
+                            <EditableText slug={lpSlug} blockKey={`product_name_${pp.productIdx}`} defaultValue={product.name} editMode={editMode} as="span" savedValue={content[`product_name_${pp.productIdx}`]} onSaved={handleSaved} onDeleted={handleDeleted} />
                           ) : displayName}
                         </h2>
                         <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.6, fontFamily: FONT_BODY }}>{product.sub}</p>
@@ -1897,7 +1898,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                                 <span style={{ color: isActive ? GOLD : WHITE, fontSize: 13, fontWeight: isActive ? 600 : 400, fontFamily: FONT_BODY }}>{sz.label}</span>
                                 <span style={{ color: GOLD, fontSize: 14, fontWeight: 700, fontFamily: FONT_HEADING }}>
                                   {editMode ? (
-                                    <EditableText slug={LP_SLUG} blockKey={szPriceKey} defaultValue={szDefaultPrice} editMode={editMode} as="span" savedValue={content[szPriceKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
+                                    <EditableText slug={lpSlug} blockKey={szPriceKey} defaultValue={szDefaultPrice} editMode={editMode} as="span" savedValue={content[szPriceKey]} onSaved={handleSaved} onDeleted={handleDeleted} />
                                   ) : szPrice}
                                 </span>
                               </div>
@@ -2089,7 +2090,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
                       </div>
                     )}
                     {editMode && (
-                      <ImageUploadOverlay blockKey={bk} currentUrl={content[bk] || ""} onUploaded={(k, url) => handleSaved(k, url)} />
+                      <ImageUploadOverlay slug={lpSlug} blockKey={bk} currentUrl={content[bk] || ""} onUploaded={(k, url) => handleSaved(k, url)} />
                     )}
                   </div>
                 </div>
@@ -2419,7 +2420,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {} }:
             </FadeIn>
             {/* Right side — form */}
             <FadeIn delay={150}>
-              <LeadForm E={E} content={content} submitLabelKey="form_submit_register" submitLabelDefault="Đặt Hàng & Nhận Tư Vấn Ngay →" selectedSize={selectedSize} />
+              <LeadForm lpSlug={lpSlug} E={E} content={content} submitLabelKey="form_submit_register" submitLabelDefault="Đặt Hàng & Nhận Tư Vấn Ngay →" selectedSize={selectedSize} />
             </FadeIn>
           </div>
         </div>

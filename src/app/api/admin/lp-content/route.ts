@@ -34,9 +34,10 @@ async function ensureLandingPagesTable() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
-  // Migration: thêm cột custom_domain nếu chưa có
+  // Migration: thêm cột custom_domain và parent_slug nếu chưa có
   try {
     await query(`ALTER TABLE lp_pages ADD COLUMN IF NOT EXISTS custom_domain VARCHAR(255)`);
+    await query(`ALTER TABLE lp_pages ADD COLUMN IF NOT EXISTS parent_slug VARCHAR(255) DEFAULT NULL`);
   } catch {
     // Ignore if column already exists or ALTER not supported
   }
@@ -54,8 +55,8 @@ export async function GET(req: NextRequest) {
     if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
       await ensureLandingPagesTable();
-      const rows = await query<{ slug: string; title: string; description: string; status: string; custom_domain: string; created_at: string }>(
-        `SELECT slug, title, description, status, custom_domain, created_at FROM lp_pages ORDER BY created_at DESC`
+      const rows = await query<{ slug: string; title: string; description: string; status: string; custom_domain: string; parent_slug: string | null; created_at: string }>(
+        `SELECT slug, title, description, status, custom_domain, parent_slug, created_at FROM lp_pages ORDER BY created_at DESC`
       );
       return NextResponse.json({ pages: rows || [] });
     } catch (e) {
@@ -185,15 +186,15 @@ export async function POST(req: NextRequest) {
 
   // Tạo landing page mới
   if (bodyAction === "create-page") {
-    const { title, description, customDomain } = body;
+    const { title, description, customDomain, parentSlug } = body;
     if (!slug || !title) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     try {
       await ensureLandingPagesTable();
       await query(
-        `INSERT INTO lp_pages (slug, title, description, status, custom_domain, created_at, updated_at)
-         VALUES ($1, $2, $3, 'draft', $4, CURRENT_DATE, NOW())
+        `INSERT INTO lp_pages (slug, title, description, status, custom_domain, parent_slug, created_at, updated_at)
+         VALUES ($1, $2, $3, 'draft', $4, $5, CURRENT_DATE, NOW())
          ON CONFLICT (slug) DO NOTHING`,
-        [slug, title, description || "", customDomain || `smartfurni.com.vn/lp/${slug}`]
+        [slug, title, description || "", customDomain || `smartfurni.com.vn/lp/${slug}`, parentSlug || null]
       );
       return NextResponse.json({ ok: true });
     } catch (e) {
