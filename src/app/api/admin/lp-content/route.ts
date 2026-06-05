@@ -259,6 +259,20 @@ export async function POST(req: NextRequest) {
     return res;
   }
 
+  // Đăng xuất phiên chỉnh sửa landing page: xóa cookie httpOnly ở phía server
+  if (bodyAction === "logout-edit") {
+    if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(getLpEditCookieName(slug), "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 0,
+    });
+    return res;
+  }
+
   // Cài/cập nhật/xóa mật khẩu chỉnh sửa riêng cho landing page (admin/staff only)
   if (bodyAction === "set-edit-password") {
     const ok = await checkAuth();

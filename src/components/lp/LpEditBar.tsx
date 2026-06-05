@@ -1,11 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const GOLD = "#C9A84C";
 const BLACK = "#0D0B00";
 const FONT = "'Inter', sans-serif";
 const MAX_ORDER_NOTIFY_EMAILS = 5;
 const MAX_FACEBOOK_PIXEL_IDS = 5;
+const EDIT_SESSION_SECONDS = 10 * 60;
 
 function parseFacebookPixelIds(value: string) {
   return value
@@ -31,6 +32,21 @@ function isValidEmail(value: string) {
 
 function normalizeOrderNotifyEmails(value: string) {
   return parseOrderNotifyEmails(value).slice(0, MAX_ORDER_NOTIFY_EMAILS).join("\n");
+}
+
+function formatEditSessionTime(totalSeconds: number) {
+  const safeSeconds = Math.max(0, totalSeconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function buildLoggedOutLandingPageUrl() {
+  const url = new URL(window.location.href);
+  url.pathname = url.pathname.replace(/\/admin\/?$/, "") || "/";
+  url.searchParams.delete("admin");
+  url.searchParams.delete("edit");
+  return url.toString();
 }
 
 interface LpEditBarProps {
@@ -63,6 +79,9 @@ export function LpEditBar({
   const [showTracking, setShowTracking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(EDIT_SESSION_SECONDS);
+  const editModeRef = useRef(editMode);
+  const onToggleEditModeRef = useRef(onToggleEditMode);
 
   const [fbPixelIds, setFbPixelIds] = useState(initialTracking.fbPixelIds || initialTracking.fbPixelId || "");
   const [googleAdsId, setGoogleAdsId] = useState(initialTracking.googleAdsId || "");
@@ -72,6 +91,44 @@ export function LpEditBar({
   const [orderGoogleSheetUrl, setOrderGoogleSheetUrl] = useState(initialTracking.orderGoogleSheetUrl || "");
   const [contactHotline, setContactHotline] = useState(initialTracking.contactHotline || "");
   const [contactZalo, setContactZalo] = useState(initialTracking.contactZalo || "");
+
+  useEffect(() => {
+    editModeRef.current = editMode;
+  }, [editMode]);
+
+  useEffect(() => {
+    onToggleEditModeRef.current = onToggleEditMode;
+  }, [onToggleEditMode]);
+
+  useEffect(() => {
+    if (!isEditor) return;
+
+    setTimeLeft(EDIT_SESSION_SECONDS);
+    const intervalId = window.setInterval(() => {
+      setTimeLeft(previousTimeLeft => {
+        if (previousTimeLeft <= 1) {
+          window.clearInterval(intervalId);
+          void fetch("/api/admin/lp-content", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "logout-edit", slug }),
+            keepalive: true,
+          }).catch(() => {});
+          setShowTracking(false);
+          if (editModeRef.current) onToggleEditModeRef.current();
+          window.alert("Phiên chỉnh sửa landing page đã hết hạn sau 10 phút. Trang sẽ được tải lại ở chế độ xem.");
+          window.location.replace(buildLoggedOutLandingPageUrl());
+          return 0;
+        }
+        return previousTimeLeft - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [isEditor, slug]);
+
+  const formattedTimeLeft = formatEditSessionTime(timeLeft);
+  const isTimeAlmostExpired = timeLeft <= 60;
 
   // Load từ DB khi mount
   useEffect(() => {
@@ -353,6 +410,23 @@ nhanvien2@smartfurni.vn`}
         }}>
           {editMode ? "Chế độ chỉnh sửa" : "Chế độ xem"}
         </span>
+        {editMode && (
+          <span
+            title="Phiên chỉnh sửa tự động hết hạn sau 10 phút"
+            style={{
+              background: isTimeAlmostExpired ? "rgba(127,29,29,0.16)" : "rgba(13,11,0,0.16)",
+              color: isTimeAlmostExpired ? "#7F1D1D" : BLACK,
+              borderRadius: 20,
+              padding: "1px 8px",
+              fontSize: 11,
+              fontWeight: 800,
+              fontVariantNumeric: "tabular-nums",
+              fontFamily: FONT,
+            }}
+          >
+            Còn {formattedTimeLeft}
+          </span>
+        )}
         {editedCount > 0 && (
           <span style={{
             background: editMode ? "rgba(13,11,0,0.2)" : "rgba(201,168,76,0.2)",

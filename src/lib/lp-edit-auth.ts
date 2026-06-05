@@ -6,7 +6,7 @@ const COOKIE_PREFIX = "sf_lp_edit_";
 const PBKDF2_ITERATIONS = 120_000;
 const KEY_LENGTH = 32;
 const DIGEST = "sha256";
-const UNLOCK_MAX_AGE_SECONDS = 60 * 60 * 12;
+const UNLOCK_MAX_AGE_SECONDS = 60 * 10;
 
 export type LpEditPasswordMeta = {
   passwordHash: string | null;
