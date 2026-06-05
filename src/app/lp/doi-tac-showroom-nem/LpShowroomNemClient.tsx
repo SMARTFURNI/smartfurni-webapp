@@ -5,6 +5,7 @@ import type { CrmProduct } from "@/lib/crm-types";
 import Image from "next/image";
 import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
+import { redirectToLpThankYou } from "@/lib/lp-thank-you";
 import { BedDemoSection } from "./BedDemoSection";
 
 // ─── Design tokens — đồng bộ với website chính ────────────────────────────────
@@ -681,7 +682,7 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
     try {
       const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.ownerName, phone: form.phone, email: "", note: `Showroom: ${form.showroomName} | Địa chỉ: ${form.address} | Thương hiệu nệm: ${form.mattressBrand} | Ghi chú: ${form.note}`, ...utms }) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
-      setSuccess(true);
+      redirectToLpThankYou(LP_SLUG);
     } catch (err: unknown) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
     finally { setLoading(false); }
   }

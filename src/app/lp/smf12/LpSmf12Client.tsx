@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
+import { redirectToLpThankYou } from "@/lib/lp-thank-you";
 import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
 
 function optimizeCldUrl(url: string | undefined, width = 900): string {
@@ -142,23 +143,6 @@ const R_SM = 8;
 const R_MD = 12;
 const R_LG = 16;
 const R_FULL = 999;
-
-function trackFacebookLeadEvent(source: string) {
-  try {
-    if (typeof window === "undefined") return;
-    const trackingWindow = window as unknown as {
-      fbq?: (...args: unknown[]) => void;
-      __FB_PIXEL_ID?: string;
-    };
-    if (trackingWindow.fbq && trackingWindow.__FB_PIXEL_ID) {
-      trackingWindow.fbq("track", "Lead", {
-        content_name: "SMF12 da PU - Sơn",
-        content_category: "Landing Page",
-        source,
-      });
-    }
-  } catch {}
-}
 
 interface Props {
   isEditor?: boolean;
@@ -911,8 +895,7 @@ function LeadForm({ lpSlug, E: EditFn, content, submitLabelKey = "form_submit", 
       const noteStr = `${getText("form_payload_size_prefix", "Kích thước chọn")}: ${selectedSize || quiz.roomSize} | ${getText("form_payload_usage_prefix", "Mục đích")}: ${quiz.usage} | ${getText("form_payload_budget_prefix", "Ngân sách")}: ${quiz.budget} | ${getText("form_payload_address_prefix", "Địa chỉ")}: ${form.address} | ${getText("form_payload_note_prefix", "Ghi chú")}: ${form.note}`;
       const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || getText("form_error_server", "Lỗi server")); }
-      setSuccess(true);
-      trackFacebookLeadEvent("quiz_lead_form");
+      redirectToLpThankYou(lpSlug);
     } catch (err: unknown) { setError(err instanceof Error ? err.message : getText("form_error_unknown", "Có lỗi xảy ra, vui lòng thử lại")); }
     finally { setLoading(false); }
   }
@@ -1216,9 +1199,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
       const noteStr = `Nguồn: Form đặt hàng tại section chính | Sản phẩm: ${inlineOrderProductName} | Kích thước: ${inlineOrderSizeObj.label} | Màu sắc: ${inlineOrderColorObj.label} | Giá: ${inlineOrderPrice} | Địa chỉ: ${inlineOrderForm.address} | Ghi chú: ${inlineOrderForm.note}`;
       const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: inlineOrderForm.name, phone: inlineOrderForm.phone, email: "", note: noteStr }) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
-      setInlineOrderSuccess(true);
-      trackFacebookLeadEvent("inline_order_form");
-      setInlineOrderForm({ name: "", phone: "", address: "", note: "" });
+      redirectToLpThankYou(lpSlug);
     } catch (err: unknown) { setInlineOrderError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
     finally { setInlineOrderLoading(false); }
   }
@@ -1834,8 +1815,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
             const noteStr = `Sản phẩm: ${displayName} | Kích thước: ${selectedSizeObj.label} | Màu sắc: ${selectedColorObj.label} | Giá: ${sizePrice} | Địa chỉ: ${popupForm.address} | Ghi chú: ${popupForm.note}`;
             const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: popupForm.name, phone: popupForm.phone, email: "", note: noteStr }) });
             if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
-            setPopupSuccess(true);
-            trackFacebookLeadEvent("product_popup_form");
+            redirectToLpThankYou(lpSlug);
           } catch (err: unknown) { setPopupError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
           finally { setPopupLoading(false); }
         }

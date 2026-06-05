@@ -23,8 +23,8 @@ export function getLpFacebookPixelIds(
   return Array.from(new Set(fallbackIds.map((id) => id.trim()).filter(Boolean))).slice(0, MAX_LP_FACEBOOK_PIXEL_IDS);
 }
 
-export function buildFacebookPixelPageViewScript(pixelIds: string[]): string {
-  const ids = pixelIds.slice(0, MAX_LP_FACEBOOK_PIXEL_IDS);
+function buildFacebookPixelBootstrapScript(pixelIds: string[]): string {
+  const ids = Array.from(new Set(pixelIds.map((id) => id.trim()).filter(Boolean))).slice(0, MAX_LP_FACEBOOK_PIXEL_IDS);
   const serializedIds = JSON.stringify(ids);
 
   return `
@@ -37,8 +37,20 @@ s.parentNode.insertBefore(t,s)}(window,document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 var __lpFacebookPixelIds=${serializedIds};
 __lpFacebookPixelIds.forEach(function(pixelId){fbq('init', pixelId);});
-fbq('track','PageView');
 window.__FB_PIXEL_IDS=__lpFacebookPixelIds;
 window.__FB_PIXEL_ID=__lpFacebookPixelIds[0] || '';
+`;
+}
+
+export function buildFacebookPixelPageViewScript(pixelIds: string[]): string {
+  return `${buildFacebookPixelBootstrapScript(pixelIds)}
+fbq('track','PageView');
+`;
+}
+
+export function buildFacebookPixelThankYouScript(pixelIds: string[]): string {
+  return `${buildFacebookPixelBootstrapScript(pixelIds)}
+fbq('track','PageView');
+fbq('track','Lead');
 `;
 }

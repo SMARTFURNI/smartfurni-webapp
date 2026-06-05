@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { EditableText } from "@/components/lp/EditableText";
 import { LpEditBar } from "@/components/lp/LpEditBar";
+import { redirectToLpThankYou } from "@/lib/lp-thank-you";
 import { EditableHeroImage } from "@/components/lp/EditableHeroImage";
 import { BedDemoSection } from "../doi-tac-showroom-nem/BedDemoSection";
 import { InstallGuideSection } from "./InstallGuideSection";
@@ -556,7 +557,7 @@ function LeadForm({ submitLabel }: { submitLabel?: string }) {
         body: JSON.stringify({ landingPageSlug: LP_SLUG, name: form.name, phone: form.phone, email: "", note: noteStr, ...utms }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
-      setSuccess(true);
+      redirectToLpThankYou(LP_SLUG);
     } catch (err: unknown) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra, vui lòng thử lại"); }
     finally { setLoading(false); }
   }
