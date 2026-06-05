@@ -48,6 +48,15 @@ const STATIC_PAGES: LandingPage[] = [
     createdAt: "2026-06-03",
     customDomain: "smartfurni.com.vn/lp/smf12",
   },
+  {
+    slug: "thank-you",
+    title: "Thank You — Đặt hàng thành công",
+    description: "Landing page cảm ơn khách hàng sau khi đặt hàng thành công, dùng để đo chuyển đổi Facebook Pixel và Google Ads/GTM",
+    url: "/lp/thank-you",
+    status: "active",
+    createdAt: "2026-06-05",
+    customDomain: "smartfurni.com.vn/lp/thank-you",
+  },
 ];
 
 export default function AdminLandingPagesPage() {
@@ -608,7 +617,7 @@ export default function AdminLandingPagesPage() {
                       Dừng
                     </button>
                   )}
-                  {page.slug !== "doi-tac-showroom-nem" && page.slug !== "gsf150" && (
+                  {page.slug !== "doi-tac-showroom-nem" && page.slug !== "gsf150" && page.slug !== "thank-you" && (
                     <button
                       onClick={() => deletePage(page.slug)}
                       className="text-xs px-2 py-1 rounded border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"

@@ -51,6 +51,14 @@ export default async function CrmLandingPagesPage() {
       status: "active",
       leads: totalCount,
     },
+    {
+      slug: "thank-you",
+      title: "Thank You — Đặt hàng thành công",
+      description: "Landing page cảm ơn khách hàng sau khi đặt hàng thành công và đo chuyển đổi quảng cáo",
+      url: "/lp/thank-you",
+      status: "active",
+      leads: 0,
+    },
   ];
 
   return (

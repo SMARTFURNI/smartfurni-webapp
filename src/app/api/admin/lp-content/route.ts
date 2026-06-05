@@ -3,6 +3,17 @@ import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { parseLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 
+const BUILTIN_LANDING_PAGES = [
+  {
+    slug: "thank-you",
+    title: "Thank You — Đặt hàng thành công",
+    description: "Landing page cảm ơn khách hàng sau khi đặt hàng thành công, dùng để đo chuyển đổi Facebook Pixel và Google Ads/GTM",
+    status: "active",
+    customDomain: "smartfurni.com.vn/lp/thank-you",
+    parentSlug: null as string | null,
+  },
+];
+
 async function checkAuth(): Promise<boolean> {
   const isAdmin = await getAdminSession();
   if (isAdmin) return true;
@@ -44,6 +55,18 @@ async function ensureLandingPagesTable() {
   }
 }
 
+async function ensureBuiltinLandingPages() {
+  await ensureLandingPagesTable();
+  for (const page of BUILTIN_LANDING_PAGES) {
+    await query(
+      `INSERT INTO lp_pages (slug, title, description, status, custom_domain, parent_slug, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, NOW())
+       ON CONFLICT (slug) DO NOTHING`,
+      [page.slug, page.title, page.description, page.status, page.customDomain, page.parentSlug]
+    );
+  }
+}
+
 // GET: Lấy tất cả content blocks cho một slug hoặc danh sách landing pages
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -55,7 +78,7 @@ export async function GET(req: NextRequest) {
     const ok = await checkAuth();
     if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
-      await ensureLandingPagesTable();
+      await ensureBuiltinLandingPages();
       const rows = await query<{ slug: string; title: string; description: string; status: string; custom_domain: string; parent_slug: string | null; created_at: string }>(
         `SELECT slug, title, description, status, custom_domain, parent_slug, created_at FROM lp_pages ORDER BY created_at DESC`
       );
