@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { buildFacebookPixelThankYouScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
+import ThankYouClient from "./ThankYouClient";
 
 export const dynamic = "force-dynamic";
 
 const DEFAULT_SMF12_PU_FB_PIXEL_IDS = ["1018174204502230"];
 const STATIC_SLUGS = new Set(["sofa-giuong", "gsf150", "doi-tac-showroom-nem", "smf12"]);
+const THANK_YOU_SLUG = "thank-you";
+const THANK_YOU_BASE_SLUG = "smf12";
 
 export const metadata: Metadata = {
-  title: "Cảm ơn quý khách — SmartFurni",
-  description: "SmartFurni đã nhận thông tin của quý khách và sẽ liên hệ tư vấn trong thời gian sớm nhất.",
+  title: "Cảm ơn Quý Khách đã đặt hàng thành công — SmartFurni",
+  description: "SmartFurni đã nhận đơn hàng của Quý Khách và sẽ liên hệ xác nhận trong thời gian sớm nhất.",
   robots: { index: false, follow: false },
 };
 
@@ -108,6 +111,23 @@ async function getMergedTrackingContent(sourceSlug: string): Promise<Record<stri
   return { ...parentContent, ...sourceContent };
 }
 
+async function getThankYouDisplayContent(): Promise<Record<string, string>> {
+  const baseContent = await getLpContent(THANK_YOU_BASE_SLUG);
+  const thankYouContent = await getLpContent(THANK_YOU_SLUG);
+  return { ...baseContent, ...thankYouContent };
+}
+
+async function getIsEditor(): Promise<boolean> {
+  try {
+    const isAdmin = await getAdminSession();
+    if (isAdmin) return true;
+    const staff = await getStaffSession();
+    return !!staff;
+  } catch {
+    return false;
+  }
+}
+
 function buildGoogleAdsScripts(googleAdsId: string, googleAdsLabel: string): string {
   const safeGoogleAdsId = JSON.stringify(googleAdsId);
   const safeGoogleAdsLabel = JSON.stringify(googleAdsLabel);
@@ -134,16 +154,18 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 export default async function ThankYouPage({ searchParams }: Props) {
   const params = searchParams ? await searchParams : {};
   const sourceSlug = normalizeSlug(firstParam(params.source || params.slug || params.lp));
-  const content = await getMergedTrackingContent(sourceSlug);
+  const trackingContent = await getMergedTrackingContent(sourceSlug);
+  const displayContent = await getThankYouDisplayContent();
+  const isEditor = await getIsEditor();
 
   const fbPixelIds = getLpFacebookPixelIds(
-    content,
+    trackingContent,
     sourceSlug === "smf12-pu" ? DEFAULT_SMF12_PU_FB_PIXEL_IDS : []
   );
-  const googleAdsId = content["tracking_google_ads_id"] || "";
-  const googleAdsLabel = content["tracking_google_ads_label"] || "";
-  const gtmId = content["tracking_gtm_id"] || "";
-  const sourcePath = sourceSlug ? `/lp/${sourceSlug}` : "/";
+  const googleAdsId = trackingContent["tracking_google_ads_id"] || "";
+  const googleAdsLabel = trackingContent["tracking_google_ads_label"] || "";
+  const gtmId = trackingContent["tracking_gtm_id"] || "";
+  const sourcePath = sourceSlug ? `/lp/${sourceSlug}` : "/lp/smf12";
 
   return (
     <>
@@ -185,62 +207,12 @@ export default async function ThankYouPage({ searchParams }: Props) {
         </noscript>
       )}
 
-      <main className="min-h-screen bg-[#f8f5ef] px-4 py-10 text-[#1f2933] sm:px-6 lg:px-8">
-        <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-3xl items-center justify-center">
-          <div className="w-full overflow-hidden rounded-[32px] border border-[#eadfce] bg-white shadow-[0_24px_80px_rgba(76,58,35,0.16)]">
-            <div className="bg-gradient-to-br from-[#fff8eb] via-white to-[#f1e5d0] px-6 py-10 text-center sm:px-10 sm:py-14">
-              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[#d6b46a] bg-[#fff8e6] shadow-inner">
-                <span className="text-4xl" aria-hidden="true">✓</span>
-              </div>
-              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-[#b58a2a]">SmartFurni đã nhận thông tin</p>
-              <h1 className="mx-auto max-w-2xl text-3xl font-bold leading-tight text-[#172026] sm:text-4xl">
-                Cảm ơn quý khách đã gửi yêu cầu tư vấn
-              </h1>
-              <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[#52616b] sm:text-lg">
-                Đội ngũ SmartFurni sẽ kiểm tra thông tin và liên hệ qua Zalo hoặc điện thoại trong thời gian sớm nhất để xác nhận nhu cầu, cấu hình sản phẩm và ưu đãi phù hợp.
-              </p>
-            </div>
-
-            <div className="grid gap-4 px-6 py-8 sm:grid-cols-3 sm:px-10">
-              <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b58a2a]">Bước 1</p>
-                <p className="mt-2 font-semibold text-[#172026]">Xác nhận thông tin</p>
-                <p className="mt-2 text-sm leading-6 text-[#66717a]">Tư vấn viên rà soát yêu cầu và số điện thoại quý khách vừa gửi.</p>
-              </div>
-              <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b58a2a]">Bước 2</p>
-                <p className="mt-2 font-semibold text-[#172026]">Tư vấn cấu hình</p>
-                <p className="mt-2 text-sm leading-6 text-[#66717a]">SmartFurni tư vấn kích thước, chất liệu và phương án tối ưu theo không gian.</p>
-              </div>
-              <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b58a2a]">Bước 3</p>
-                <p className="mt-2 font-semibold text-[#172026]">Chốt ưu đãi</p>
-                <p className="mt-2 text-sm leading-6 text-[#66717a]">Quý khách nhận báo giá, thời gian giao hàng và chính sách bảo hành rõ ràng.</p>
-              </div>
-            </div>
-
-            <div className="border-t border-[#eadfce] bg-[#fbf7f0] px-6 py-6 text-center sm:px-10">
-              <p className="text-sm leading-6 text-[#66717a]">
-                {sourceSlug ? `Nguồn đăng ký: ${sourceSlug}` : "Trang cảm ơn dùng chung cho các landing page SmartFurni."}
-              </p>
-              <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
-                <Link
-                  href={sourcePath}
-                  className="rounded-full border border-[#c7a04a] px-6 py-3 text-sm font-semibold text-[#8a6516] transition hover:bg-[#fff4d8]"
-                >
-                  Quay lại trang sản phẩm
-                </Link>
-                <Link
-                  href="/"
-                  className="rounded-full bg-[#172026] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#2c3740]"
-                >
-                  Về trang chủ SmartFurni
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
+      <ThankYouClient
+        isEditor={isEditor}
+        initialContent={displayContent}
+        sourceSlug={sourceSlug}
+        sourcePath={sourcePath}
+      />
     </>
   );
 }
