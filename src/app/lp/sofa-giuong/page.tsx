@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { getCrmProducts } from "@/lib/crm-store";
 import type { CrmProduct } from "@/lib/crm-types";
 import { buildFacebookPixelPageViewScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import LpSofaGiuongClient from "./LpSofaGiuongClient";
+import LpEditPasswordGate from "@/components/lp/LpEditPasswordGate";
+import { hasLandingPageEditCookie, hasLandingPageEditPassword } from "@/lib/lp-edit-auth";
 export const dynamic = "force-dynamic";
 
 const DEFAULT_META_TITLE = "Thiết Kế Sofa Giường Theo Ý Bạn — SmartFurni";
@@ -83,18 +84,10 @@ export default async function LpSofaGiuongPage() {
   const sofaProducts = allProducts.filter(
     (p) => p.category === "sofa_bed" || p.name.toLowerCase().includes("sofa")
   );
-  let isEditor = false;
-  try {
-    const isAdmin = await getAdminSession();
-    if (isAdmin) {
-      isEditor = true;
-    } else {
-      const staff = await getStaffSession();
-      isEditor = !!staff;
-    }
-  } catch {
-    isEditor = false;
-  }
+  const [isEditor, hasEditPassword] = await Promise.all([
+    hasLandingPageEditCookie(LP_SLUG),
+    hasLandingPageEditPassword(LP_SLUG),
+  ]);
 
   // Tracking IDs from DB
   const fbPixelIds = getLpFacebookPixelIds(initialContent);
@@ -135,6 +128,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </>
       )}
+      <LpEditPasswordGate slug={LP_SLUG} isEditor={isEditor} hasPassword={hasEditPassword} />
       <LpSofaGiuongClient
         isEditor={isEditor}
         initialContent={initialContent}

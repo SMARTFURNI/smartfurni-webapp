@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { parseLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
+import {
+  buildLpEditToken,
+  ensureLpEditPasswordColumns,
+  getLandingPageEditPasswordMeta,
+  getLpEditCookieName,
+  getLpEditMaxAgeSeconds,
+  hasLandingPageEditCookie,
+  hashLandingPageEditPassword,
+  verifyLandingPageEditPassword,
+} from "@/lib/lp-edit-auth";
 
 const BUILTIN_LANDING_PAGES = [
   {
@@ -19,6 +29,15 @@ async function checkAuth(): Promise<boolean> {
   if (isAdmin) return true;
   const staff = await getStaffSession();
   return !!staff;
+}
+
+async function checkLandingPageEditAuth(slug: string | null | undefined): Promise<boolean> {
+  if (!slug) return false;
+  try {
+    return await hasLandingPageEditCookie(slug);
+  } catch {
+    return false;
+  }
 }
 
 async function ensureTable() {
@@ -46,10 +65,9 @@ async function ensureLandingPagesTable() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
-  // Migration: thêm cột custom_domain và parent_slug nếu chưa có
+  // Migration: thêm các cột cấu hình nếu chưa có
   try {
-    await query(`ALTER TABLE lp_pages ADD COLUMN IF NOT EXISTS custom_domain VARCHAR(255)`);
-    await query(`ALTER TABLE lp_pages ADD COLUMN IF NOT EXISTS parent_slug VARCHAR(255) DEFAULT NULL`);
+    await ensureLpEditPasswordColumns();
   } catch {
     // Ignore if column already exists or ALTER not supported
   }
@@ -79,8 +97,10 @@ export async function GET(req: NextRequest) {
     if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
       await ensureBuiltinLandingPages();
-      const rows = await query<{ slug: string; title: string; description: string; status: string; custom_domain: string; parent_slug: string | null; created_at: string }>(
-        `SELECT slug, title, description, status, custom_domain, parent_slug, created_at FROM lp_pages ORDER BY created_at DESC`
+      const rows = await query<{ slug: string; title: string; description: string; status: string; custom_domain: string; parent_slug: string | null; created_at: string; has_edit_password: boolean }>(
+        `SELECT slug, title, description, status, custom_domain, parent_slug, created_at,
+                (edit_password_hash IS NOT NULL AND edit_password_hash <> '') AS has_edit_password
+         FROM lp_pages ORDER BY created_at DESC`
       );
       return NextResponse.json({ pages: rows || [] });
     } catch (e) {
@@ -144,9 +164,24 @@ export async function GET(req: NextRequest) {
 
   if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
 
+  // Kiểm tra trạng thái mật khẩu chỉnh sửa landing page
+  if (action === "edit-password-status") {
+    try {
+      const meta = await getLandingPageEditPasswordMeta(slug);
+      const unlocked = await checkLandingPageEditAuth(slug);
+      return NextResponse.json({
+        hasPassword: !!(meta.passwordHash && meta.passwordSalt),
+        unlocked,
+      });
+    } catch (e) {
+      console.error("edit-password-status error:", e);
+      return NextResponse.json({ hasPassword: false, unlocked: false });
+    }
+  }
+
   // Lấy tracking settings cho landing page
   if (action === "get-tracking") {
-    const ok = await checkAuth();
+    const ok = await checkLandingPageEditAuth(slug);
     if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
       await ensureTable();
@@ -203,11 +238,66 @@ export async function GET(req: NextRequest) {
 
 // POST: Lưu hoặc cập nhật một content block
 export async function POST(req: NextRequest) {
-  const ok = await checkAuth();
-  if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const body = await req.json();
   const { slug, blockKey, content, action: bodyAction } = body;
+
+  // Xác thực mật khẩu chỉnh sửa riêng của landing page
+  if (bodyAction === "verify-edit-password") {
+    const { password } = body;
+    const result = await verifyLandingPageEditPassword(slug, password);
+    if (!result.ok || !result.token) {
+      return NextResponse.json({ error: "Sai mật khẩu quản trị landing page" }, { status: 401 });
+    }
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(getLpEditCookieName(slug), result.token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: getLpEditMaxAgeSeconds(),
+    });
+    return res;
+  }
+
+  // Cài/cập nhật/xóa mật khẩu chỉnh sửa riêng cho landing page (admin/staff only)
+  if (bodyAction === "set-edit-password") {
+    const ok = await checkAuth();
+    if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const password = String(body.password || "");
+    if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+
+    try {
+      await ensureLandingPagesTable();
+      if (!password) {
+        await query(
+          `UPDATE lp_pages SET edit_password_hash = NULL, edit_password_salt = NULL, updated_at = NOW() WHERE slug = $1`,
+          [slug]
+        );
+        return NextResponse.json({ ok: true, hasPassword: false });
+      }
+
+      if (password.length < 6) {
+        return NextResponse.json({ error: "Mật khẩu cần tối thiểu 6 ký tự" }, { status: 400 });
+      }
+
+      const { passwordHash, passwordSalt } = hashLandingPageEditPassword(password);
+      await query(
+        `UPDATE lp_pages SET edit_password_hash = $1, edit_password_salt = $2, updated_at = NOW() WHERE slug = $3`,
+        [passwordHash, passwordSalt, slug]
+      );
+      return NextResponse.json({ ok: true, hasPassword: true, token: buildLpEditToken(slug, passwordHash) });
+    } catch (e) {
+      console.error("set-edit-password error:", e);
+      return NextResponse.json({ error: "DB error" }, { status: 500 });
+    }
+  }
+
+  const adminOnlyActions = new Set(["create-page", "clone-content"]);
+  const ok = adminOnlyActions.has(bodyAction) || (slug && blockKey === "custom_domain")
+    ? await checkAuth()
+    : await checkLandingPageEditAuth(slug);
+  if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   
   // Xử lý cập nhật custom domain
   if (slug && blockKey === "custom_domain") {
@@ -289,13 +379,13 @@ export async function POST(req: NextRequest) {
 
 // DELETE: Xóa một content block (reset về default)
 export async function DELETE(req: NextRequest) {
-  const ok = await checkAuth();
-  if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get("slug");
   const blockKey = searchParams.get("blockKey");
   const action = searchParams.get("action");
+
+  const ok = action === "delete-page" ? await checkAuth() : await checkLandingPageEditAuth(slug);
+  if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Xóa landing page
   if (action === "delete-page") {

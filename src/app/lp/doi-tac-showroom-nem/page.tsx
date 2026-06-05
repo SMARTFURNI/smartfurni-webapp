@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { getCrmProducts } from "@/lib/crm-store";
 import type { CrmProduct } from "@/lib/crm-types";
-import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { buildFacebookPixelPageViewScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import LpShowroomNemClient from "./LpShowroomNemClient";
+import LpEditPasswordGate from "@/components/lp/LpEditPasswordGate";
+import { hasLandingPageEditCookie, hasLandingPageEditPassword } from "@/lib/lp-edit-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -71,18 +72,10 @@ export default async function LpShowroomNemPage() {
   const initialContent = await getLpContent();
 
   // Check if current user is editor (admin or CRM staff)
-  let isEditor = false;
-  try {
-    const isAdmin = await getAdminSession();
-    if (isAdmin) {
-      isEditor = true;
-    } else {
-      const staff = await getStaffSession();
-      isEditor = !!staff;
-    }
-  } catch {
-    isEditor = false;
-  }
+  const [isEditor, hasEditPassword] = await Promise.all([
+    hasLandingPageEditCookie(LP_SLUG),
+    hasLandingPageEditPassword(LP_SLUG),
+  ]);
 
   const fbPixelIds = getLpFacebookPixelIds(initialContent);
 
@@ -95,6 +88,7 @@ export default async function LpShowroomNemPage() {
           }}
         />
       )}
+      <LpEditPasswordGate slug={LP_SLUG} isEditor={isEditor} hasPassword={hasEditPassword} />
       <LpShowroomNemClient
         products={ergonomicBeds}
         isEditor={isEditor}

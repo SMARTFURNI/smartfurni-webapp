@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { getCrmProducts } from "@/lib/crm-store";
 import type { CrmProduct } from "@/lib/crm-types";
 import { buildFacebookPixelPageViewScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import LpSofaGiuongClient from "../sofa-giuong/LpSofaGiuongClient";
 import LpSmf12Client from "../smf12/LpSmf12Client";
+import LpEditPasswordGate from "@/components/lp/LpEditPasswordGate";
+import { hasLandingPageEditCookie, hasLandingPageEditPassword } from "@/lib/lp-edit-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -131,18 +132,10 @@ export default async function LpVariantPage({ params }: Props) {
   );
 
   // Kiểm tra quyền chỉnh sửa
-  let isEditor = false;
-  try {
-    const isAdmin = await getAdminSession();
-    if (isAdmin) {
-      isEditor = true;
-    } else {
-      const staff = await getStaffSession();
-      isEditor = !!staff;
-    }
-  } catch {
-    isEditor = false;
-  }
+  const [isEditor, hasEditPassword] = await Promise.all([
+    hasLandingPageEditCookie(slug),
+    hasLandingPageEditPassword(slug),
+  ]);
 
   // Tracking IDs (ưu tiên variant, fallback parent)
   const fbPixelIds = getLpFacebookPixelIds(mergedContent, slug === "smf12-pu" ? DEFAULT_SMF12_PU_FB_PIXEL_IDS : []);
@@ -183,6 +176,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </>
       )}
+      <LpEditPasswordGate slug={slug} isEditor={isEditor} hasPassword={hasEditPassword} />
       {parentSlug === "smf12" ? (
         <LpSmf12Client
           isEditor={isEditor}

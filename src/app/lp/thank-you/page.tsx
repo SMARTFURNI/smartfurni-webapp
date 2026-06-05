@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { buildFacebookPixelThankYouScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import ThankYouClient from "./ThankYouClient";
+import LpEditPasswordGate from "@/components/lp/LpEditPasswordGate";
+import { hasLandingPageEditCookie, hasLandingPageEditPassword } from "@/lib/lp-edit-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -117,17 +118,6 @@ async function getThankYouDisplayContent(): Promise<Record<string, string>> {
   return { ...baseContent, ...thankYouContent };
 }
 
-async function getIsEditor(): Promise<boolean> {
-  try {
-    const isAdmin = await getAdminSession();
-    if (isAdmin) return true;
-    const staff = await getStaffSession();
-    return !!staff;
-  } catch {
-    return false;
-  }
-}
-
 function buildGoogleAdsScripts(googleAdsId: string, googleAdsLabel: string): string {
   const safeGoogleAdsId = JSON.stringify(googleAdsId);
   const safeGoogleAdsLabel = JSON.stringify(googleAdsLabel);
@@ -156,7 +146,10 @@ export default async function ThankYouPage({ searchParams }: Props) {
   const sourceSlug = normalizeSlug(firstParam(params.source || params.slug || params.lp));
   const trackingContent = await getMergedTrackingContent(sourceSlug);
   const displayContent = await getThankYouDisplayContent();
-  const isEditor = await getIsEditor();
+  const [isEditor, hasEditPassword] = await Promise.all([
+    hasLandingPageEditCookie(THANK_YOU_SLUG),
+    hasLandingPageEditPassword(THANK_YOU_SLUG),
+  ]);
 
   const fbPixelIds = getLpFacebookPixelIds(
     trackingContent,
@@ -207,6 +200,7 @@ export default async function ThankYouPage({ searchParams }: Props) {
         </noscript>
       )}
 
+      <LpEditPasswordGate slug={THANK_YOU_SLUG} isEditor={isEditor} hasPassword={hasEditPassword} />
       <ThankYouClient
         isEditor={isEditor}
         initialContent={displayContent}

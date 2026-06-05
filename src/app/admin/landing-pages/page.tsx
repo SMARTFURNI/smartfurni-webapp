@@ -12,6 +12,7 @@ type LandingPage = {
   createdAt?: string;
   customDomain?: string;
   parentSlug?: string | null;
+  hasEditPassword?: boolean;
 };
 
 const STATIC_PAGES: LandingPage[] = [
@@ -72,6 +73,10 @@ export default function AdminLandingPagesPage() {
   const [cloneForm, setCloneForm] = useState({ title: "", slug: "", customDomain: "" });
   const [showDomainDialog, setShowDomainDialog] = useState<string | null>(null);
   const [domainForm, setDomainForm] = useState("");
+  const [passwordDialogSlug, setPasswordDialogSlug] = useState<string | null>(null);
+  const [passwordForm, setPasswordForm] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // Load landing pages từ database
@@ -90,6 +95,7 @@ export default function AdminLandingPagesPage() {
             createdAt: p.created_at,
             customDomain: p.custom_domain,
             parentSlug: p.parent_slug || null,
+            hasEditPassword: !!p.has_edit_password,
           }));
           // Merge: DB pages override STATIC_PAGES by slug, then add remaining static pages
           const dbSlugs = new Set(dbPages.map((p: LandingPage) => p.slug));
@@ -167,6 +173,7 @@ export default function AdminLandingPagesPage() {
               status: "draft",
               createdAt: new Date().toISOString().split("T")[0],
               customDomain,
+              hasEditPassword: false,
             },
           ]);
           setNewPage({ slug: "", title: "", description: "" });
@@ -225,6 +232,7 @@ export default function AdminLandingPagesPage() {
                   createdAt: new Date().toISOString().split("T")[0],
                   customDomain,
                   parentSlug,
+                  hasEditPassword: false,
                 },
               ]);
               setShowCloneDialog(false);
@@ -278,6 +286,46 @@ export default function AdminLandingPagesPage() {
         }
       })
       .catch(() => {});
+  }
+
+  function openPasswordDialog(slug: string) {
+    setPasswordDialogSlug(slug);
+    setPasswordForm("");
+    setPasswordMessage(null);
+  }
+
+  function handleSetEditPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!passwordDialogSlug) return;
+    setPasswordSaving(true);
+    setPasswordMessage(null);
+
+    fetch("/api/admin/lp-content", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "set-edit-password",
+        slug: passwordDialogSlug,
+        password: passwordForm,
+      }),
+    })
+      .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok || !data.ok) {
+          setPasswordMessage(data.error || "Không thể lưu mật khẩu");
+          return;
+        }
+        setPages((prev) =>
+          prev.map((p) =>
+            p.slug === passwordDialogSlug ? { ...p, hasEditPassword: !!data.hasPassword } : p
+          )
+        );
+        setPasswordForm("");
+        setPasswordMessage(data.hasPassword ? "Đã cài/cập nhật mật khẩu chỉnh sửa." : "Đã xóa mật khẩu chỉnh sửa.");
+      })
+      .catch(() => setPasswordMessage("Không thể kết nối máy chủ"))
+      .finally(() => setPasswordSaving(false));
   }
 
   const filteredPages = pages.filter((p) =>
@@ -498,6 +546,56 @@ export default function AdminLandingPagesPage() {
         </form>
       )}
 
+
+        {/* Password Dialog */}
+        {passwordDialogSlug && (
+          <form
+            onSubmit={handleSetEditPassword}
+            className="mb-6 bg-gray-900 border border-gray-700 rounded-lg p-6"
+          >
+            <h2 className="text-lg font-semibold text-white mb-2">Cài mật khẩu quản trị landing page</h2>
+            <p className="text-sm text-gray-400 mb-4">
+              Landing page: <span className="font-mono text-yellow-500">{passwordDialogSlug}</span>. Người truy cập đường dẫn sửa sẽ phải nhập đúng mật khẩu này trước khi chỉnh sửa nội dung.
+            </p>
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-200 mb-2 block">Mật khẩu mới</label>
+              <input
+                type="password"
+                value={passwordForm}
+                onChange={(e) => setPasswordForm(e.target.value)}
+                placeholder="Nhập mật khẩu tối thiểu 6 ký tự; để trống rồi lưu để xóa mật khẩu"
+                className="w-full px-3 py-2 rounded-lg border border-gray-700 bg-gray-800 text-white text-sm focus:outline-none focus:border-yellow-600 placeholder-gray-500"
+              />
+            </div>
+            {passwordMessage && (
+              <p className={`text-sm mb-4 ${passwordMessage.includes("Đã") ? "text-green-400" : "text-red-400"}`}>
+                {passwordMessage}
+              </p>
+            )}
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="submit"
+                disabled={passwordSaving}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}
+              >
+                {passwordSaving ? "Đang lưu..." : passwordForm ? "Lưu mật khẩu" : "Xóa mật khẩu"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordDialogSlug(null);
+                  setPasswordForm("");
+                  setPasswordMessage(null);
+                }}
+                className="px-4 py-2 rounded-lg text-sm border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800"
+              >
+                Đóng
+              </button>
+            </div>
+          </form>
+        )}
+
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -579,6 +677,13 @@ export default function AdminLandingPagesPage() {
                     Sửa
                   </Link>
                   <button
+                    onClick={() => openPasswordDialog(page.slug)}
+                    className={`text-xs px-2 py-1 rounded border transition-colors ${page.hasEditPassword ? "border-green-500/40 text-green-400 hover:bg-green-500/10" : "border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"}`}
+                    title="Cài mật khẩu quản trị riêng"
+                  >
+                    {page.hasEditPassword ? "Đã khóa" : "Mật khẩu"}
+                  </button>
+                  <button
                     onClick={() => {
                       setCloneSource(page.slug);
                       setShowCloneDialog(true);
@@ -651,7 +756,8 @@ export default function AdminLandingPagesPage() {
         <div className="mt-8 p-4 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-400">
           <strong className="text-white">💡 Hướng dẫn:</strong>
           <ul className="mt-2 space-y-1 ml-4">
-            <li>• Nhấn <strong className="text-gray-300">Sửa</strong> để chỉnh sửa nội dung landing page inline</li>
+            <li>• Nhấn <strong className="text-gray-300">Mật khẩu</strong> để cài mật khẩu quản trị riêng cho từng landing page</li>
+            <li>• Nhấn <strong className="text-gray-300">Sửa</strong> để mở trang chỉnh sửa; người dùng phải nhập đúng mật khẩu mới chỉnh sửa được</li>
             <li>• Nhấn <strong className="text-gray-300">Sao chép</strong> để tạo landing page mới từ template hiện tại</li>
             <li>• Nhấn <strong className="text-gray-300">Domain</strong> để thay đổi tên miền tùy chỉnh</li>
             <li>• Nội dung được lưu vào PostgreSQL, không mất khi deploy lại</li>

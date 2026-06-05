@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { buildFacebookPixelPageViewScript, getLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import LpGsf150Client from "./LpGsf150Client";
+import LpEditPasswordGate from "@/components/lp/LpEditPasswordGate";
+import { hasLandingPageEditCookie, hasLandingPageEditPassword } from "@/lib/lp-edit-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -60,18 +61,10 @@ async function getLpContent(): Promise<Record<string, string>> {
 
 export default async function LpGsf150Page() {
   const initialContent = await getLpContent();
-  let isEditor = false;
-  try {
-    const isAdmin = await getAdminSession();
-    if (isAdmin) {
-      isEditor = true;
-    } else {
-      const staff = await getStaffSession();
-      isEditor = !!staff;
-    }
-  } catch {
-    isEditor = false;
-  }
+  const [isEditor, hasEditPassword] = await Promise.all([
+    hasLandingPageEditCookie(LP_SLUG),
+    hasLandingPageEditPassword(LP_SLUG),
+  ]);
   const fbPixelIds = getLpFacebookPixelIds(initialContent);
 
   return (
@@ -83,6 +76,7 @@ export default async function LpGsf150Page() {
           }}
         />
       )}
+      <LpEditPasswordGate slug={LP_SLUG} isEditor={isEditor} hasPassword={hasEditPassword} />
       <LpGsf150Client isEditor={isEditor} initialContent={initialContent} />
     </>
   );
