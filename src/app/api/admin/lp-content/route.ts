@@ -15,6 +15,38 @@ import {
 
 const BUILTIN_LANDING_PAGES = [
   {
+    slug: "doi-tac-showroom-nem",
+    title: "Đối tác Showroom Nệm",
+    description: "Landing page B2B thu hút chủ showroom nệm đăng ký đại lý SmartFurni",
+    status: "active",
+    customDomain: "smartfurni.com.vn/lp/doi-tac-showroom-nem",
+    parentSlug: null as string | null,
+  },
+  {
+    slug: "gsf150",
+    title: "SmartFurni GSF150 — Bán Lẻ",
+    description: "Landing page bán lẻ khung giường công thái học GSF150 hướng tới khách hàng tiêu dùng cuối",
+    status: "active",
+    customDomain: "smartfurni.com.vn/lp/gsf150",
+    parentSlug: null as string | null,
+  },
+  {
+    slug: "sofa-giuong",
+    title: "Sofa Giường SmartFurni",
+    description: "Landing page bán lẻ sofa giường SmartFurni 2 dòng Tiêu Chuẩn và Nâng Cao",
+    status: "active",
+    customDomain: "smartfurni.com.vn/lp/sofa-giuong",
+    parentSlug: null as string | null,
+  },
+  {
+    slug: "smf12",
+    title: "Sofa Giường SMF12",
+    description: "Landing page bán lẻ sofa giường thông minh SMF12",
+    status: "active",
+    customDomain: "smartfurni.com.vn/lp/smf12",
+    parentSlug: null as string | null,
+  },
+  {
     slug: "thank-you",
     title: "Thank You — Đặt hàng thành công",
     description: "Landing page cảm ơn khách hàng sau khi đặt hàng thành công, dùng để đo chuyển đổi Facebook Pixel và Google Ads/GTM",
@@ -79,10 +111,33 @@ async function ensureBuiltinLandingPages() {
     await query(
       `INSERT INTO lp_pages (slug, title, description, status, custom_domain, parent_slug, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, NOW())
-       ON CONFLICT (slug) DO NOTHING`,
+       ON CONFLICT (slug) DO UPDATE SET
+         title = COALESCE(NULLIF(lp_pages.title, ''), EXCLUDED.title),
+         description = COALESCE(lp_pages.description, EXCLUDED.description),
+         status = COALESCE(lp_pages.status, EXCLUDED.status),
+         custom_domain = COALESCE(lp_pages.custom_domain, EXCLUDED.custom_domain),
+         parent_slug = COALESCE(lp_pages.parent_slug, EXCLUDED.parent_slug)`,
       [page.slug, page.title, page.description, page.status, page.customDomain, page.parentSlug]
     );
   }
+}
+
+async function ensureLandingPageRowForSlug(slug: string) {
+  await ensureLandingPagesTable();
+  const builtin = BUILTIN_LANDING_PAGES.find((page) => page.slug === slug);
+  await query(
+    `INSERT INTO lp_pages (slug, title, description, status, custom_domain, parent_slug, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, NOW())
+     ON CONFLICT (slug) DO NOTHING`,
+    [
+      slug,
+      builtin?.title || slug,
+      builtin?.description || "",
+      builtin?.status || "active",
+      builtin?.customDomain || `smartfurni.com.vn/lp/${slug}`,
+      builtin?.parentSlug || null,
+    ]
+  );
 }
 
 // GET: Lấy tất cả content blocks cho một slug hoặc danh sách landing pages
@@ -282,7 +337,7 @@ export async function POST(req: NextRequest) {
     if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
 
     try {
-      await ensureLandingPagesTable();
+      await ensureLandingPageRowForSlug(slug);
       if (!password) {
         await query(
           `UPDATE lp_pages SET edit_password_hash = NULL, edit_password_salt = NULL, updated_at = NOW() WHERE slug = $1`,
