@@ -9,6 +9,7 @@ import StaticProductsSection from "@/components/landing/StaticProductsSection";
 import VideoSection from "@/components/landing/VideoSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import CatalogueSection from "@/components/landing/CatalogueSection";
+import HomepageConversionSections from "@/components/landing/HomepageConversionSections";
 import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export default async function HomePage() {
 
       <Navbar theme={theme} />
       <HeroSection theme={theme} />
+      <HomepageConversionSections theme={theme} />
 
       {/* Video section — quản lý qua Admin → Cài đặt giao diện → Video */}
       <VideoSection theme={theme} />

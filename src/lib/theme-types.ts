@@ -262,6 +262,12 @@ export interface HomepageFeatureItem {
   desc: string;
 }
 
+export type HomepageContentCard = HomepageFeatureItem;
+
+export interface HomepageGenericSection extends HomepageSectionHeader {
+  items: HomepageContentCard[];
+}
+
 export interface HomepageFeaturesSection extends HomepageSectionHeader {
   items: HomepageFeatureItem[];
 }
@@ -284,6 +290,15 @@ export interface HomepageSections {
   features: HomepageFeaturesSection;
   testimonials: HomepageTestimonialsSection;
   download: HomepageDownloadSection;
+  problems: HomepageGenericSection;
+  solutions: HomepageGenericSection;
+  technology: HomepageGenericSection;
+  postures: HomepageGenericSection;
+  comparison: HomepageGenericSection;
+  trust: HomepageGenericSection;
+  process: HomepageGenericSection;
+  b2b: HomepageGenericSection;
+  faq: HomepageGenericSection;
 }
 
 export interface SiteTheme {

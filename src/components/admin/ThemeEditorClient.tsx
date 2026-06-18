@@ -13,6 +13,8 @@ import type {
   PageReturns,
   TextBlock,
   HomepageFeatureItem,
+  HomepageContentCard,
+  HomepageGenericSection,
 } from "@/lib/theme-store";
 
 interface PresetTheme {
@@ -46,6 +48,15 @@ const SECTION_GROUPS = [
       { id: "layout", label: "Bố cục & Hiệu ứng", icon: "⚡" },
       { id: "seo", label: "SEO & Analytics", icon: "📈" },
       { id: "video", label: "Section Video", icon: "🎥" },
+      { id: "homepageProblems", label: "Trang chủ: Vấn đề", icon: "❗" },
+      { id: "homepageSolutions", label: "Trang chủ: Giải pháp", icon: "🧭" },
+      { id: "homepageTechnology", label: "Trang chủ: Công nghệ", icon: "⚙️" },
+      { id: "homepagePostures", label: "Trang chủ: Tư thế", icon: "🛌" },
+      { id: "homepageComparison", label: "Trang chủ: So sánh", icon: "⇄" },
+      { id: "homepageTrust", label: "Trang chủ: Tin cậy", icon: "🛡️" },
+      { id: "homepageProcess", label: "Trang chủ: Quy trình", icon: "①" },
+      { id: "homepageB2B", label: "Trang chủ: B2B", icon: "🤝" },
+      { id: "homepageFAQ", label: "Trang chủ: FAQ", icon: "?" },
       { id: "homepageFeatures", label: "Section Tính năng", icon: "⚙️" },
       { id: "homepageTestimonials", label: "Section Đánh giá", icon: "⭐" },
       { id: "homepageDownload", label: "Section Tải app", icon: "📱" },
@@ -74,9 +85,41 @@ const SECTION_PREVIEW_URL: Record<string, string> = {
   pageBlog: "/blog", pageCart: "/cart", pageCheckout: "/checkout",
   pageWarranty: "/warranty", pageReturns: "/returns",
   video: "/",
+  homepageProblems: "/",
+  homepageSolutions: "/",
+  homepageTechnology: "/",
+  homepagePostures: "/",
+  homepageComparison: "/",
+  homepageTrust: "/",
+  homepageProcess: "/",
+  homepageB2B: "/",
+  homepageFAQ: "/",
   homepageFeatures: "/",
   homepageTestimonials: "/",
   homepageDownload: "/",
+};
+
+type HomepageGenericSectionKey =
+  | "problems"
+  | "solutions"
+  | "technology"
+  | "postures"
+  | "comparison"
+  | "trust"
+  | "process"
+  | "b2b"
+  | "faq";
+
+const HOMEPAGE_GENERIC_SECTION_LABELS: Record<HomepageGenericSectionKey, { title: string; itemLabel: string; addLabel: string }> = {
+  problems: { title: "Khối Vấn đề khách hàng", itemLabel: "Vấn đề", addLabel: "Thêm vấn đề" },
+  solutions: { title: "Khối Giải pháp theo nhu cầu", itemLabel: "Nhóm nhu cầu", addLabel: "Thêm nhóm nhu cầu" },
+  technology: { title: "Khối Công nghệ bên trong", itemLabel: "Điểm công nghệ", addLabel: "Thêm điểm công nghệ" },
+  postures: { title: "Khối Tư thế & sức khỏe", itemLabel: "Tư thế", addLabel: "Thêm tư thế" },
+  comparison: { title: "Khối So sánh lựa chọn", itemLabel: "Dòng so sánh", addLabel: "Thêm dòng so sánh" },
+  trust: { title: "Khối Bằng chứng tin cậy", itemLabel: "Bằng chứng", addLabel: "Thêm bằng chứng" },
+  process: { title: "Khối Quy trình mua hàng", itemLabel: "Bước", addLabel: "Thêm bước" },
+  b2b: { title: "Khối B2B & đại lý", itemLabel: "Quyền lợi B2B", addLabel: "Thêm quyền lợi" },
+  faq: { title: "Khối FAQ nổi bật", itemLabel: "Câu hỏi", addLabel: "Thêm câu hỏi" },
 };
 
 // ─── WCAG Contrast Ratio Calculator ──────────────────────────────────────────
@@ -797,6 +840,99 @@ export default function ThemeEditorClient({
     return `${Math.floor(hours / 24)} ngày trước`;
   };
 
+  const updateHomepageGenericSection = (key: HomepageGenericSectionKey, section: HomepageGenericSection) => {
+    updateSection("homepageSections", { ...theme.homepageSections, [key]: section });
+  };
+
+  const renderHomepageGenericSection = (key: HomepageGenericSectionKey) => {
+    const section = theme.homepageSections?.[key];
+    if (!section) return null;
+    const labels = HOMEPAGE_GENERIC_SECTION_LABELS[key];
+
+    return (
+      <div className="space-y-5">
+        <SectionCard title={labels.title}>
+          <TextBlockEditor
+            label="Badge (nhãn nhỏ phía trên)"
+            value={section.badge}
+            onChange={(v) => updateHomepageGenericSection(key, { ...section, badge: v })}
+          />
+          <TextBlockEditor
+            label="Tiêu đề dòng 1"
+            value={section.title}
+            onChange={(v) => updateHomepageGenericSection(key, { ...section, title: v })}
+          />
+          <TextBlockEditor
+            label="Tiêu đề dòng 2 (màu nhấn)"
+            value={section.titleAccent}
+            onChange={(v) => updateHomepageGenericSection(key, { ...section, titleAccent: v })}
+          />
+          <TextBlockEditor
+            label="Mô tả section"
+            value={section.subtitle}
+            onChange={(v) => updateHomepageGenericSection(key, { ...section, subtitle: v })}
+          />
+        </SectionCard>
+
+        <SectionCard title={`Danh sách ${labels.itemLabel.toLowerCase()}`}>
+          <div className="space-y-3">
+            {section.items.map((item: HomepageContentCard, idx: number) => (
+              <div key={idx} className="p-3 rounded-xl border border-[rgba(255,200,100,0.14)] bg-[#1a1200] space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="text-xs text-[rgba(245,237,214,0.70)]">{labels.itemLabel} {idx + 1}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextItems = section.items.filter((_: HomepageContentCard, i: number) => i !== idx);
+                      updateHomepageGenericSection(key, { ...section, items: nextItems });
+                    }}
+                    className="text-xs text-red-300 hover:text-red-200"
+                  >
+                    Xóa
+                  </button>
+                </div>
+                <TextInput
+                  label={key === "faq" ? "Câu hỏi" : "Tiêu đề"}
+                  value={item.title}
+                  onChange={(v) => {
+                    const nextItems = section.items.map((it: HomepageContentCard, i: number) => i === idx ? { ...it, title: v } : it);
+                    updateHomepageGenericSection(key, { ...section, items: nextItems });
+                  }}
+                />
+                <TextInput
+                  label={key === "faq" ? "Câu trả lời" : "Mô tả"}
+                  value={item.desc}
+                  onChange={(v) => {
+                    const nextItems = section.items.map((it: HomepageContentCard, i: number) => i === idx ? { ...it, desc: v } : it);
+                    updateHomepageGenericSection(key, { ...section, items: nextItems });
+                  }}
+                />
+                <TextInput
+                  label="Biểu tượng / số thứ tự"
+                  value={item.icon}
+                  onChange={(v) => {
+                    const nextItems = section.items.map((it: HomepageContentCard, i: number) => i === idx ? { ...it, icon: v } : it);
+                    updateHomepageGenericSection(key, { ...section, items: nextItems });
+                  }}
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => updateHomepageGenericSection(key, { ...section, items: [...section.items, { icon: key === "process" ? String(section.items.length + 1) : key === "faq" ? "?" : "✦", title: "Nội dung mới", desc: "Nhập mô tả tại đây." }] })}
+              className="w-full rounded-xl border border-dashed border-[rgba(255,200,100,0.35)] px-3 py-2 text-sm text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors"
+            >
+              + {labels.addLabel}
+            </button>
+          </div>
+        </SectionCard>
+      </div>
+    );
+  };
+
   // ─── Panel renderers ───────────────────────────────────────────────────────
   const renderPanel = () => {
     switch (activeSection) {
@@ -1408,6 +1544,25 @@ export default function ThemeEditorClient({
             </SectionCard>
           </div>
         );
+
+      case "homepageProblems":
+        return renderHomepageGenericSection("problems");
+      case "homepageSolutions":
+        return renderHomepageGenericSection("solutions");
+      case "homepageTechnology":
+        return renderHomepageGenericSection("technology");
+      case "homepagePostures":
+        return renderHomepageGenericSection("postures");
+      case "homepageComparison":
+        return renderHomepageGenericSection("comparison");
+      case "homepageTrust":
+        return renderHomepageGenericSection("trust");
+      case "homepageProcess":
+        return renderHomepageGenericSection("process");
+      case "homepageB2B":
+        return renderHomepageGenericSection("b2b");
+      case "homepageFAQ":
+        return renderHomepageGenericSection("faq");
 
       case "homepageFeatures": {
         const feat = theme.homepageSections?.features;
