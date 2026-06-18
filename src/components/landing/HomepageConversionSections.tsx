@@ -36,34 +36,34 @@ const DEFAULT_MEDIA: Record<SectionKey, SectionMediaItem[]> = {
     { label: "Video demo", title: "Thấy rõ chuyển động trước khi mua", desc: "Xem cách giường nâng đầu, nâng chân và trở về tư thế nằm chỉ bằng một thao tác.", type: "video", imageUrl: "/gsf150-standalone.jpg", linkUrl: "#demo", videoUrl: "#demo" },
   ],
   solutions: [
-    { label: "Gợi ý chọn", title: "Bắt đầu từ nhu cầu của gia đình", desc: "Chọn theo người dùng, không gian và cách sử dụng để tìm mẫu phù hợp nhanh hơn.", type: "image", imageUrl: "/gsf150-wood-frame.jpg", linkUrl: "/products" },
+    { label: "Gợi ý chọn", title: "Chọn mẫu hợp với gia đình", desc: "Bắt đầu từ người sử dụng, diện tích phòng và thói quen sinh hoạt để tìm mẫu phù hợp nhanh hơn.", type: "image", imageUrl: "/gsf150-wood-frame.jpg", linkUrl: "/products" },
     { label: "Tư vấn", title: "Cần mẫu nào, hỏi ngay mẫu đó", desc: "Đặt lịch trải nghiệm hoặc nhận tư vấn theo kích thước phòng, loại nệm và ngân sách.", type: "video", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/contact", videoUrl: "#demo" },
   ],
   technology: [
-    { label: "Bên trong", title: "Motor, khung và cơ cấu nâng", desc: "Các chi tiết quan trọng được trình bày rõ để khách hiểu vì sao sản phẩm vận hành ổn định.", type: "image", imageUrl: "/gsf150-exploded.jpg", linkUrl: "/products/gsf150" },
-    { label: "Demo", title: "Vận hành êm trong từng chuyển động", desc: "Video cận cảnh remote, motor và các tư thế cài sẵn giúp khách yên tâm hơn.", type: "video", imageUrl: "/gsf150-standalone.jpg", linkUrl: "#demo", videoUrl: "#demo" },
+    { label: "Bên trong", title: "Motor, khung và cơ cấu nâng", desc: "Các chi tiết quan trọng được trình bày rõ để bạn yên tâm hơn về độ ổn định khi sử dụng lâu dài.", type: "image", imageUrl: "/gsf150-exploded.jpg", linkUrl: "/products/gsf150" },
+    { label: "Demo", title: "Vận hành êm trong từng chuyển động", desc: "Xem cận cảnh remote, motor và các tư thế cài sẵn để dễ hình dung trải nghiệm thực tế.", type: "video", imageUrl: "/gsf150-standalone.jpg", linkUrl: "#demo", videoUrl: "#demo" },
   ],
   postures: [
-    { label: "Tư thế", title: "Từ nằm nghỉ đến ngồi thư giãn", desc: "Một khung hình trực quan giúp khách hiểu ngay giường thay đổi tư thế như thế nào.", type: "image", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/products" },
+    { label: "Tư thế", title: "Từ nằm nghỉ đến ngồi thư giãn", desc: "Một khung hình trực quan giúp bạn thấy ngay giường có thể thay đổi tư thế như thế nào.", type: "image", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/products" },
     { label: "Video", title: "Chuyển tư thế thực tế", desc: "Clip ngắn mô tả các tư thế thường dùng: đọc sách, xem TV, nâng chân và nghỉ ngơi.", type: "video", imageUrl: "/gsf150-standalone.jpg", linkUrl: "#demo", videoUrl: "#demo" },
   ],
   comparison: [
-    { label: "So sánh", title: "Giường thường hay giường thông minh?", desc: "Bảng đối chiếu ngắn giúp khách thấy khác biệt trong thẩm mỹ, tư thế và tiện ích hằng ngày.", type: "image", imageUrl: "/gsf150-standalone.jpg", linkUrl: "/products" },
+    { label: "So sánh", title: "Giường thường hay giường thông minh?", desc: "Bảng đối chiếu ngắn giúp bạn thấy khác biệt trong thẩm mỹ, tư thế và tiện ích hằng ngày.", type: "image", imageUrl: "/gsf150-standalone.jpg", linkUrl: "/products" },
   ],
   trust: [
-    { label: "Showroom", title: "Trải nghiệm sản phẩm thật", desc: "Khách có thể xem mẫu, thử tư thế và trao đổi trực tiếp trước khi quyết định.", type: "image", imageUrl: "/gsf150-standalone.jpg", linkUrl: "/contact" },
+    { label: "Showroom", title: "Trải nghiệm sản phẩm thật", desc: "Bạn có thể xem mẫu, thử tư thế và trao đổi trực tiếp trước khi quyết định.", type: "image", imageUrl: "/gsf150-standalone.jpg", linkUrl: "/contact" },
     { label: "Thực tế", title: "Video bàn giao tại nhà", desc: "Quy trình giao lắp, hướng dẫn sử dụng và kiểm tra vận hành được thể hiện rõ ràng.", type: "video", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "#demo", videoUrl: "#demo" },
   ],
   process: [
-    { label: "Quy trình", title: "Từ tư vấn đến bảo hành", desc: "Mỗi bước mua hàng được trình bày rõ để khách biết cần chuẩn bị gì và nhận được gì.", type: "image", imageUrl: "/gsf150-wood-frame.jpg", linkUrl: "/contact" },
+    { label: "Quy trình", title: "Từ lúc chọn mẫu đến khi sử dụng", desc: "Mỗi bước mua hàng được trình bày rõ để bạn biết cần chuẩn bị gì và sẽ nhận được gì.", type: "image", imageUrl: "/gsf150-wood-frame.jpg", linkUrl: "/contact" },
     { label: "Bàn giao", title: "Hướng dẫn sử dụng sau lắp đặt", desc: "Kỹ thuật viên kiểm tra giường, hướng dẫn remote và các lưu ý sử dụng tại nhà.", type: "video", imageUrl: "/gsf150-standalone.jpg", linkUrl: "#demo", videoUrl: "#demo" },
   ],
   b2b: [
-    { label: "Đối tác", title: "Bộ trưng bày cho showroom", desc: "Đại lý có catalogue, hình ảnh, video và nội dung tư vấn để bắt đầu bán hàng nhanh.", type: "image", imageUrl: "/gsf150-exploded.jpg", linkUrl: "/lp/doi-tac-showroom-nem" },
-    { label: "Đào tạo", title: "Training sản phẩm và lắp đặt", desc: "Tài liệu bán hàng, hướng dẫn tư vấn và quy trình kỹ thuật được chuẩn hóa cho đội ngũ.", type: "video", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/lp/doi-tac-showroom-nem#dang-ky", videoUrl: "#demo" },
+    { label: "Không gian cao cấp", title: "Cho biệt thự, căn hộ và phòng mẫu", desc: "Tạo trải nghiệm phòng ngủ khác biệt cho những không gian cần sự tiện nghi và điểm nhấn hiện đại.", type: "image", imageUrl: "/gsf150-exploded.jpg", linkUrl: "/contact" },
+    { label: "Dự án", title: "Tư vấn theo từng không gian", desc: "SmartFurni có thể trao đổi theo số lượng, phong cách nội thất và yêu cầu lắp đặt thực tế.", type: "video", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/contact", videoUrl: "#demo" },
   ],
   faq: [
-    { label: "Hỏi nhanh", title: "Giải đáp trước khi đặt lịch", desc: "Các câu hỏi quan trọng được gom lại để khách tự tin hơn trước khi liên hệ tư vấn.", type: "image", imageUrl: "/smartfurni-logo-transparent.png", linkUrl: "/contact#faq" },
+    { label: "Hỏi nhanh", title: "Giải đáp trước khi đặt lịch", desc: "Các câu hỏi quan trọng được gom lại để bạn tự tin hơn trước khi liên hệ tư vấn.", type: "image", imageUrl: "/smartfurni-logo-transparent.png", linkUrl: "/contact#faq" },
   ],
 };
 
@@ -426,8 +426,8 @@ function B2BSection({ section, fallback }: { section?: EditableSection; fallback
           </div>
           <ScrollReveal variant="fadeUp" delay={360}>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link href="/lp/doi-tac-showroom-nem#dang-ky" className="rounded-full bg-[#C9A84C] px-6 py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-[#E2C97E]">Đăng ký đối tác B2B</Link>
-              <Link href="/catalogue" className="rounded-full border border-[#C9A84C]/35 px-6 py-3 text-center text-sm font-semibold text-[#C9A84C] transition-colors hover:bg-[#C9A84C]/10">Xem catalogue</Link>
+              <Link href="/contact" className="rounded-full bg-[#C9A84C] px-6 py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-[#E2C97E]">Tư vấn cho không gian của bạn</Link>
+              <Link href="/products" className="rounded-full border border-[#C9A84C]/35 px-6 py-3 text-center text-sm font-semibold text-[#C9A84C] transition-colors hover:bg-[#C9A84C]/10">Xem các mẫu giường</Link>
             </div>
           </ScrollReveal>
         </div>
@@ -437,8 +437,8 @@ function B2BSection({ section, fallback }: { section?: EditableSection; fallback
             {media[1] && <MediaFrame media={media[1]} variant="compact" />}
             <ScrollReveal variant="fadeLeft" delay={220}>
               <div className="rounded-[1.5rem] border border-[#C9A84C]/16 bg-white/[0.03] p-5 backdrop-blur-md">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-[#C9A84C]">Partner Kit</p>
-                <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#F5EDD6]">Ảnh, video, catalogue, training.</p>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-[#C9A84C]">Tư vấn theo không gian</p>
+                <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#F5EDD6]">Chọn mẫu theo diện tích, phong cách và nhu cầu sử dụng.</p>
               </div>
             </ScrollReveal>
           </div>
@@ -491,56 +491,56 @@ function SectionShell({ id, children, className = "" }: { id: string; children: 
 
 const FALLBACKS: Record<string, EditableSection> = {
   problems: {
-    badge: { text: "KHI NÀO CẦN GIƯỜNG THÔNG MINH", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
-    title: { text: "Bắt đầu từ", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
-    titleAccent: { text: "nhu cầu mỗi ngày", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
-    subtitle: { text: "Thay vì nói nhiều về công nghệ, phần này giúp khách nhận ra ngay những tình huống quen thuộc mà giường điều chỉnh điện có thể giải quyết.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+    badge: { text: "GIƯỜNG THÔNG MINH PHÙ HỢP KHI NÀO", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+    title: { text: "Thoải mái hơn", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+    titleAccent: { text: "trong từng sinh hoạt", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+    subtitle: { text: "Nếu bạn thường đọc sách, xem TV, nghỉ ngơi hoặc chăm sóc người thân ngay trên giường, khả năng nâng hạ linh hoạt sẽ giúp sinh hoạt mỗi ngày nhẹ nhàng và dễ chịu hơn.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Đọc sách, xem TV trên giường", desc: "Nâng phần đầu vừa đủ để lưng và cổ dễ chịu hơn, không phải kê nhiều gối." },
-      { icon: "", title: "Muốn ngồi dậy nhẹ nhàng", desc: "Hỗ trợ chuyển từ nằm sang ngồi thuận tiện hơn, đặc biệt với người lớn tuổi." },
-      { icon: "", title: "Cần thư giãn sau ngày dài", desc: "Nâng chân hoặc chọn tư thế nghỉ giúp cơ thể thả lỏng nhanh hơn." },
-      { icon: "", title: "Phòng ngủ cần gọn và đa năng", desc: "Một chiếc giường có thể phục vụ nghỉ ngơi, đọc sách, xem phim và chăm sóc sức khỏe." },
+      { icon: "", title: "Đọc sách, xem phim thoải mái", desc: "Nâng phần đầu đến góc dễ chịu để tựa lưng chắc hơn, hạn chế phải kê chồng nhiều gối." },
+      { icon: "", title: "Ngồi dậy nhẹ nhàng hơn", desc: "Chỉ cần điều chỉnh phần đầu giường, bạn có thể chuyển từ nằm sang ngồi chủ động và đỡ mất sức hơn." },
+      { icon: "", title: "Thả lỏng sau một ngày dài", desc: "Nâng chân thư giãn hoặc chọn tư thế nghỉ yêu thích để cơ thể được nâng đỡ và thư giãn tốt hơn." },
+      { icon: "", title: "Phòng ngủ gọn mà đa năng", desc: "Một chiếc giường dùng được cho nghỉ ngơi, giải trí nhẹ nhàng và chăm sóc người thân trong cùng một không gian." },
     ],
     media: DEFAULT_MEDIA.problems,
   },
   solutions: {
-    badge: { text: "CHỌN THEO NHU CẦU", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
-    title: { text: "Bạn thuộc", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
-    titleAccent: { text: "nhóm nào?", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
-    subtitle: { text: "Mỗi nhóm khách có một lý do mua khác nhau. Chọn đúng nhu cầu trước sẽ giúp xem sản phẩm nhanh hơn và tránh bị rối bởi quá nhiều thông số.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+    badge: { text: "CHỌN THEO NGƯỜI SỬ DỤNG", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+    title: { text: "Bạn đang mua", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+    titleAccent: { text: "cho ai?", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+    subtitle: { text: "Mỗi gia đình có một lý do khác nhau khi chọn giường thông minh. Hãy bắt đầu từ người sẽ sử dụng nhiều nhất để chọn đúng tính năng, kích thước và cách tư vấn phù hợp.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Cho bố mẹ", desc: "Ưu tiên remote dễ dùng, chuyển tư thế êm và hỗ trợ ngồi dậy." },
-      { icon: "", title: "Cho thư giãn cá nhân", desc: "Phù hợp người thích đọc sách, xem TV, nghỉ ngơi và dùng preset một chạm." },
-      { icon: "", title: "Cho căn hộ hiện đại", desc: "Thiết kế gọn, sang và dùng được cho nhiều hoạt động trong cùng một không gian." },
-      { icon: "", title: "Cho người thích công nghệ", desc: "Quan tâm remote, app, chế độ nhớ tư thế và trải nghiệm điều khiển thông minh." },
-      { icon: "", title: "Cho showroom/đại lý", desc: "Cần bộ demo, catalogue, chính sách trưng bày và tài liệu bán hàng rõ ràng." },
+      { icon: "", title: "Cho bố mẹ hoặc người lớn tuổi", desc: "Ưu tiên thao tác đơn giản, nâng đầu nhẹ nhàng và hỗ trợ ngồi dậy thuận tiện hơn." },
+      { icon: "", title: "Cho phòng ngủ cá nhân", desc: "Phù hợp nếu bạn thích đọc sách, xem phim, nghỉ ngơi và lưu tư thế yêu thích chỉ bằng một chạm." },
+      { icon: "", title: "Cho căn hộ hiện đại", desc: "Giúp phòng ngủ gọn gàng, sang hơn và linh hoạt cho nhiều thói quen sinh hoạt." },
+      { icon: "", title: "Cho người thích tiện nghi thông minh", desc: "Dễ điều khiển bằng remote hoặc ứng dụng, có thể lưu tư thế thường dùng để sử dụng nhanh mỗi ngày." },
+      { icon: "", title: "Cho khách sạn, homestay hoặc dự án", desc: "Tạo điểm nhấn cao cấp cho không gian lưu trú, phòng mẫu hoặc các dự án nội thất cần trải nghiệm khác biệt." },
     ],
     media: DEFAULT_MEDIA.solutions,
   },
   technology: {
-    badge: { text: "BÊN TRONG VẬN HÀNH THẾ NÀO", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
-    title: { text: "Hiểu nhanh", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
-    titleAccent: { text: "phần kỹ thuật", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
-    subtitle: { text: "Phần công nghệ được viết lại theo cách dễ hiểu: khách chỉ cần biết bộ phận nào quan trọng, nó giúp gì và vì sao nên yên tâm khi sử dụng lâu dài.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+    badge: { text: "VẬN HÀNH ÊM VÀ AN TÂM", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+    title: { text: "Êm ái từ", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+    titleAccent: { text: "bên trong", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+    subtitle: { text: "Bạn không cần hiểu quá nhiều thuật ngữ kỹ thuật. Điều quan trọng là giường nâng hạ êm, giữ form chắc, dễ điều khiển và được tư vấn rõ trước khi chọn mua.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Motor nâng hạ", desc: "Giúp giường chuyển tư thế mượt, ổn định và hạn chế tiếng ồn khi sử dụng." },
-      { icon: "", title: "Khung chịu lực", desc: "Kết cấu chắc chắn giữ form giường ổn định trong quá trình nâng đầu hoặc nâng chân." },
-      { icon: "", title: "Preset một chạm", desc: "Lưu tư thế thường dùng để quay lại nhanh khi đọc sách, xem TV hoặc nghỉ ngơi." },
-      { icon: "", title: "Remote và ứng dụng", desc: "Điều khiển đơn giản cho cả gia đình, dễ hướng dẫn khi bàn giao tại nhà." },
+      { icon: "", title: "Motor nâng hạ êm", desc: "Giúp chuyển từ nằm sang ngồi hoặc nâng chân mượt hơn, hạn chế làm phiền người nằm cạnh." },
+      { icon: "", title: "Khung giường chắc chắn", desc: "Giữ giường ổn định khi thay đổi tư thế, tạo cảm giác an tâm khi sử dụng lâu dài." },
+      { icon: "", title: "Lưu tư thế yêu thích", desc: "Đặt sẵn góc nằm quen thuộc để mỗi lần sử dụng chỉ cần bấm một lần là trở lại đúng tư thế." },
+      { icon: "", title: "Điều khiển dễ dùng", desc: "Nút bấm rõ ràng, dễ làm quen để cả gia đình có thể sử dụng hằng ngày." },
     ],
     media: DEFAULT_MEDIA.technology,
   },
   postures: {
-    badge: { text: "TƯ THẾ THƯỜNG DÙNG", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+    badge: { text: "CÁC TƯ THẾ THƯ GIÃN", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
     title: { text: "Một chiếc giường", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
-    titleAccent: { text: "nhiều cách nghỉ", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
-    subtitle: { text: "Khách không cần đọc mô tả dài. Mỗi card tương ứng một tình huống sử dụng thực tế, nhìn là hiểu giường giúp gì trong sinh hoạt hằng ngày.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+    titleAccent: { text: "cho nhiều cách nghỉ", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+    subtitle: { text: "Từ đọc sách, xem phim đến nghỉ ngơi sau ngày dài, bạn có thể điều chỉnh giường theo tư thế phù hợp thay vì cố nằm theo một mặt phẳng cố định.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Zero Gravity", desc: "Tư thế thư giãn giúp cơ thể được nâng đỡ đồng đều hơn." },
-      { icon: "", title: "Đọc sách/xem TV", desc: "Nâng phần đầu để tầm nhìn thoải mái, hạn chế gập cổ." },
-      { icon: "", title: "Nghỉ ngơi nhẹ", desc: "Chọn góc nâng vừa phải khi cần thư giãn nhưng chưa muốn ngủ." },
-      { icon: "", title: "Nâng chân", desc: "Phù hợp lúc cần thả lỏng chân sau khi đứng hoặc di chuyển nhiều." },
-      { icon: "", title: "Hỗ trợ ngồi dậy", desc: "Giúp việc ra khỏi giường chủ động và nhẹ nhàng hơn." },
+      { icon: "", title: "Zero Gravity", desc: "Tư thế nâng đỡ toàn thân, tạo cảm giác nhẹ người và thư giãn sâu hơn." },
+      { icon: "", title: "Đọc sách, xem phim", desc: "Nâng phần đầu để tầm nhìn vừa mắt hơn, lưng được tựa ổn định hơn khi giải trí." },
+      { icon: "", title: "Nghỉ ngơi trong ngày", desc: "Chọn góc nâng vừa phải để chợp mắt, nghe nhạc hoặc thư giãn mà chưa cần nằm ngủ hẳn." },
+      { icon: "", title: "Nâng chân thư giãn", desc: "Phù hợp sau khi đi lại nhiều, giúp đôi chân được nâng đỡ và dễ chịu hơn." },
+      { icon: "", title: "Hỗ trợ ngồi dậy", desc: "Nâng phần đầu để bạn chuyển sang tư thế ngồi thuận tiện hơn trước khi bước xuống giường." },
     ],
     media: DEFAULT_MEDIA.postures,
   },
@@ -548,51 +548,51 @@ const FALLBACKS: Record<string, EditableSection> = {
     badge: { text: "SO SÁNH NHANH", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
     title: { text: "Giường thường", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
     titleAccent: { text: "khác gì SmartFurni?", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
-    subtitle: { text: "Bảng so sánh được rút gọn để khách nắm khác biệt chính trong vài giây: tư thế, sự tiện lợi, thẩm mỹ và khả năng chăm sóc sau mua.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+    subtitle: { text: "Nếu bạn đang phân vân giữa giường thường và giường thông minh, hãy nhìn vào những khác biệt dễ cảm nhận nhất trong quá trình sử dụng mỗi ngày.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "Cố định, ít thay đổi", title: "Tư thế nằm", desc: "Điều chỉnh đầu/chân theo nhu cầu sử dụng." },
-      { icon: "Phải kê gối thủ công", title: "Đọc sách/xem TV", desc: "Nâng phần đầu bằng remote hoặc preset một chạm." },
-      { icon: "Ít tiện ích", title: "Trải nghiệm", desc: "Có remote/app, chế độ nhớ tư thế và video hướng dẫn." },
-      { icon: "Khó hình dung trước", title: "Tư vấn & bàn giao", desc: "Có showroom, demo, quy trình giao lắp và bảo hành rõ ràng." },
+      { icon: "Cố định, ít thay đổi", title: "Tư thế sử dụng", desc: "Có thể nâng đầu hoặc nâng chân theo từng hoạt động." },
+      { icon: "Phải kê gối thủ công", title: "Đọc sách, xem phim", desc: "Tựa lưng thoải mái hơn bằng remote hoặc tư thế đã lưu." },
+      { icon: "Ít tiện ích", title: "Sự tiện nghi", desc: "Dễ điều chỉnh tư thế, dễ ghi nhớ góc nằm quen thuộc và sử dụng hằng ngày." },
+      { icon: "Khó hình dung trước", title: "Trước và sau khi mua", desc: "Được tư vấn kích thước, trải nghiệm mẫu, giao lắp và hướng dẫn sử dụng rõ ràng." },
     ],
     media: DEFAULT_MEDIA.comparison,
   },
   trust: {
-    badge: { text: "VÌ SAO YÊN TÂM", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
-    title: { text: "Không chỉ đẹp", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
-    titleAccent: { text: "mà còn rõ ràng", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
-    subtitle: { text: "Sau khi hiểu sản phẩm và quy trình, khách cần bằng chứng cụ thể: showroom thật, video bàn giao, thông số minh bạch và hỗ trợ sau mua.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+    badge: { text: "YÊN TÂM KHI CHỌN SMARTFURNI", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+    title: { text: "Mua giường mới", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+    titleAccent: { text: "cần sự rõ ràng", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+    subtitle: { text: "Với một sản phẩm sử dụng lâu dài trong phòng ngủ, bạn cần được xem rõ thông số, thử trải nghiệm nếu cần và biết chắc ai sẽ hỗ trợ sau khi bàn giao.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Thông số minh bạch", desc: "Tư vấn rõ kích thước, tải trọng, góc nâng, cấu hình và chính sách bảo hành." },
-      { icon: "", title: "Có nơi để trải nghiệm", desc: "Khách có thể đặt lịch xem mẫu, thử tư thế và hỏi kỹ trước khi chốt đơn." },
-      { icon: "", title: "Bàn giao có hướng dẫn", desc: "Kỹ thuật viên kiểm tra vận hành và hướng dẫn sử dụng remote tại nhà." },
+      { icon: "", title: "Tư vấn thông số rõ ràng", desc: "Bạn được tư vấn kích thước, tải trọng, góc nâng, chất liệu, nệm phù hợp và chính sách bảo hành trước khi đặt mua." },
+      { icon: "", title: "Có thể xem và trải nghiệm", desc: "Bạn có thể đặt lịch xem mẫu, thử tư thế và trao đổi trực tiếp để chọn cấu hình phù hợp." },
+      { icon: "", title: "Giao lắp có hướng dẫn", desc: "Khi lắp đặt tại nhà, kỹ thuật viên kiểm tra vận hành và hướng dẫn bạn cách dùng cơ bản." },
     ],
     media: DEFAULT_MEDIA.trust,
   },
   process: {
-    badge: { text: "QUY TRÌNH MUA HÀNG", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
-    title: { text: "Từ tư vấn", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
-    titleAccent: { text: "đến bảo hành", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
-    subtitle: { text: "Khách biết trước từng bước sẽ dễ ra quyết định hơn, đặc biệt với sản phẩm cần chọn kích thước, chất liệu, nệm và phương án giao lắp phù hợp.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+    badge: { text: "MUA GIƯỜNG THÔNG MINH NHƯ THẾ NÀO", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+    title: { text: "Từ lúc chọn mẫu", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+    titleAccent: { text: "đến khi sử dụng", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+    subtitle: { text: "SmartFurni giúp bạn đi từng bước rõ ràng: hiểu nhu cầu, chọn mẫu phù hợp, chốt cấu hình, giao lắp tại nhà và tiếp tục hỗ trợ trong quá trình sử dụng.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "1", title: "Hiểu nhu cầu", desc: "Trao đổi người dùng chính, thói quen nằm, kích thước phòng và loại nệm hiện có." },
-      { icon: "2", title: "Xem mẫu/demo", desc: "Trải nghiệm tại showroom hoặc xem video tư vấn theo mẫu phù hợp." },
-      { icon: "3", title: "Chốt cấu hình", desc: "Chọn kích thước, chất liệu, tính năng và phương án giao lắp." },
-      { icon: "4", title: "Giao lắp tại nhà", desc: "Kỹ thuật viên lắp đặt, kiểm tra vận hành và hướng dẫn sử dụng." },
-      { icon: "5", title: "Hỗ trợ sau mua", desc: "Tiếp nhận bảo hành, bảo trì và các câu hỏi trong quá trình sử dụng." },
+      { icon: "1", title: "Chia sẻ nhu cầu", desc: "Cho SmartFurni biết ai sẽ dùng giường, thói quen sinh hoạt, kích thước phòng và loại nệm bạn đang có." },
+      { icon: "2", title: "Xem mẫu hoặc video tư vấn", desc: "Bạn có thể trải nghiệm tại showroom hoặc xem video minh họa để dễ hình dung cách giường vận hành." },
+      { icon: "3", title: "Chọn cấu hình phù hợp", desc: "Cùng tư vấn viên chọn kích thước, chất liệu, tính năng, nệm đi kèm và phương án giao lắp." },
+      { icon: "4", title: "Lắp đặt tại nhà", desc: "Kỹ thuật viên lắp đặt, kiểm tra nâng hạ và hướng dẫn bạn thao tác cơ bản." },
+      { icon: "5", title: "Hỗ trợ khi cần", desc: "Khi cần hỏi thêm về sử dụng, bảo hành hoặc bảo trì, bạn có kênh liên hệ rõ ràng để được hỗ trợ." },
     ],
     media: DEFAULT_MEDIA.process,
   },
   b2b: {
-    badge: { text: "DÀNH CHO ĐỐI TÁC", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
-    title: { text: "Bán hàng dễ hơn", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
-    titleAccent: { text: "khi có đủ bộ công cụ", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
-    subtitle: { text: "Phần này tách riêng cho showroom, đại lý và đơn vị thiết kế nội thất: tập trung vào cách trưng bày, tư vấn, đào tạo và tạo lead bán hàng.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+    badge: { text: "GIẢI PHÁP CHO KHÔNG GIAN CAO CẤP", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+    title: { text: "Nâng tầm", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+    titleAccent: { text: "phòng ngủ và lưu trú", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+    subtitle: { text: "Nếu bạn đang hoàn thiện biệt thự, căn hộ mẫu, khách sạn, homestay hoặc showroom nội thất, giường thông minh giúp tạo trải nghiệm nghỉ ngơi khác biệt và cao cấp hơn.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Bộ trưng bày", desc: "Gợi ý mẫu demo, hình ảnh, video và catalogue để tư vấn tại showroom." },
-      { icon: "", title: "Chính sách hợp tác", desc: "Trao đổi chiết khấu, khu vực bán hàng, POSM và điều kiện trưng bày." },
-      { icon: "", title: "Đào tạo đội ngũ", desc: "Hướng dẫn tư vấn tính năng, cách demo sản phẩm và quy trình lắp đặt." },
-      { icon: "", title: "Hỗ trợ marketing", desc: "Landing page, nội dung quảng cáo, tư liệu sản phẩm và luồng nhận lead." },
+      { icon: "", title: "Cho biệt thự và căn hộ cao cấp", desc: "Tạo điểm nhấn tiện nghi trong phòng ngủ master, phòng ngủ phụ hoặc không gian nghỉ dưỡng riêng tư." },
+      { icon: "", title: "Cho khách sạn và homestay", desc: "Mang lại trải nghiệm lưu trú khác biệt cho khách, đặc biệt ở các phòng cao cấp hoặc phòng suite." },
+      { icon: "", title: "Cho showroom nội thất", desc: "Dễ kết hợp với nệm, sofa, tủ đầu giường và các giải pháp phòng ngủ thông minh." },
+      { icon: "", title: "Cho dự án cần tư vấn riêng", desc: "SmartFurni có thể tư vấn theo số lượng, không gian lắp đặt, phong cách nội thất và yêu cầu vận hành thực tế." },
     ],
     media: DEFAULT_MEDIA.b2b,
   },
@@ -600,13 +600,13 @@ const FALLBACKS: Record<string, EditableSection> = {
     badge: { text: "CÂU HỎI THƯỜNG GẶP", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
     title: { text: "Trước khi", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
     titleAccent: { text: "đặt lịch tư vấn", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
-    subtitle: { text: "Các câu hỏi được viết lại ngắn, trực tiếp và theo đúng băn khoăn thường gặp trước khi khách để lại thông tin tư vấn.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+    subtitle: { text: "Trước khi để lại thông tin tư vấn, bạn có thể xem nhanh những băn khoăn thường gặp về độ bền, nệm phù hợp, giao lắp và hỗ trợ sau mua.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "?", title: "Giường điều chỉnh điện có bền không?", desc: "Độ bền phụ thuộc vào motor, khung, tải trọng sử dụng và chính sách bảo hành của từng mẫu. SmartFurni tư vấn rõ các thông số này trước khi khách chọn sản phẩm." },
-      { icon: "?", title: "Mất điện thì giường có dùng được không?", desc: "Tùy cấu hình từng mẫu, đội ngũ tư vấn sẽ giải thích cơ chế an toàn và cách đưa giường về tư thế phù hợp khi cần." },
-      { icon: "?", title: "Có dùng với nệm hiện tại được không?", desc: "Cần kiểm tra loại nệm, độ dày, độ đàn hồi và kích thước. Nếu nệm không phù hợp, SmartFurni sẽ gợi ý phương án thay thế." },
-      { icon: "?", title: "Có giao lắp tại nhà không?", desc: "Có. Thời gian, chi phí và phạm vi giao lắp sẽ được tư vấn theo khu vực và cấu hình sản phẩm." },
-      { icon: "?", title: "Sau khi mua cần hỗ trợ thì liên hệ ai?", desc: "Khách được hướng dẫn kênh liên hệ bảo hành, bảo trì và hỗ trợ sử dụng sau khi bàn giao." },
+      { icon: "?", title: "Giường điều chỉnh điện có bền không?", desc: "SmartFurni sẽ tư vấn rõ motor, khung, tải trọng phù hợp và chính sách bảo hành của từng mẫu để bạn yên tâm hơn trước khi chọn mua." },
+      { icon: "?", title: "Mất điện thì giường có dùng được không?", desc: "Tùy từng cấu hình, tư vấn viên sẽ giải thích cơ chế an toàn và cách xử lý để bạn biết trước khi sử dụng." },
+      { icon: "?", title: "Có dùng với nệm hiện tại được không?", desc: "SmartFurni sẽ kiểm tra loại nệm, độ dày, độ đàn hồi và kích thước hiện tại. Nếu chưa phù hợp, bạn sẽ được gợi ý phương án thay thế." },
+      { icon: "?", title: "Có giao lắp tại nhà không?", desc: "Có. Thời gian, chi phí và phạm vi giao lắp sẽ được thông báo theo khu vực và cấu hình sản phẩm bạn chọn." },
+      { icon: "?", title: "Sau khi mua cần hỗ trợ thì liên hệ ai?", desc: "Sau khi bàn giao, bạn sẽ được hướng dẫn kênh liên hệ để được hỗ trợ sử dụng, bảo hành hoặc bảo trì khi cần." },
     ],
     media: DEFAULT_MEDIA.faq,
   },
