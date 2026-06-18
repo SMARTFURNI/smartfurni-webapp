@@ -34,6 +34,7 @@ export type {
   HomepageSectionHeader,
   HomepageFeatureItem,
   HomepageContentCard,
+  HomepageSectionMedia,
   HomepageGenericSection,
   HomepageFeaturesSection,
   HomepageTestimonialsSection,
@@ -325,6 +326,11 @@ export const defaultTheme: SiteTheme = {
         { icon: "", title: "Nằm phẳng không thoải mái", desc: "Preset nghỉ ngơi theo nhu cầu." },
         { icon: "", title: "Căn hộ cần đa năng", desc: "Một sản phẩm, nhiều tình huống sử dụng." },
       ],
+      mediaLayout: "split",
+      media: [
+        { label: "Tình huống", title: "Đọc sách, xem TV không cần kê gối", desc: "Một chạm nâng đầu, giữ phòng ngủ gọn và sang.", type: "image", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/products" },
+        { label: "Video demo", title: "Chuyển tư thế êm", desc: "Đặt clip nâng đầu, nâng chân hoặc Zero Gravity.", type: "video", imageUrl: "/gsf150-standalone.jpg", linkUrl: "#demo", videoUrl: "#demo" },
+      ],
     },
     solutions: {
       badge: { text: "CHỌN THEO NHU CẦU", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
@@ -338,6 +344,11 @@ export const defaultTheme: SiteTheme = {
         { icon: "", title: "Cho người mê công nghệ", desc: "App, preset, tiện ích thông minh." },
         { icon: "", title: "Cho đại lý", desc: "Catalogue, demo, training." },
       ],
+      mediaLayout: "rail",
+      media: [
+        { label: "Gợi ý", title: "Chọn nhanh theo nhu cầu", desc: "Gia đình, căn hộ, công nghệ hoặc đại lý đều có lối đi riêng.", type: "image", imageUrl: "/gsf150-wood-frame.jpg", linkUrl: "/products" },
+        { label: "Tư vấn", title: "Đặt lịch trải nghiệm", desc: "Dẫn khách đến showroom hoặc nhận video tư vấn mẫu phù hợp.", type: "video", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/contact", videoUrl: "#demo" },
+      ],
     },
     technology: {
       badge: { text: "CÔNG NGHỆ BÊN TRONG", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
@@ -349,6 +360,11 @@ export const defaultTheme: SiteTheme = {
         { icon: "", title: "Khung chắc", desc: "Kết cấu chịu lực rõ ràng." },
         { icon: "", title: "Preset nhanh", desc: "Một chạm cho tư thế yêu thích." },
         { icon: "", title: "Remote/App", desc: "Dễ dùng cho cả gia đình." },
+      ],
+      mediaLayout: "split",
+      media: [
+        { label: "Bóc tách", title: "Motor, khung, cơ cấu nâng", desc: "Ảnh kỹ thuật lớn giúp khách thấy giá trị bên trong.", type: "image", imageUrl: "/gsf150-exploded.jpg", linkUrl: "/products/gsf150" },
+        { label: "Demo", title: "Vận hành êm và chính xác", desc: "Ô video cho close-up remote, motor và preset một chạm.", type: "video", imageUrl: "/gsf150-standalone.jpg", linkUrl: "#demo", videoUrl: "#demo" },
       ],
     },
     postures: {
@@ -363,6 +379,11 @@ export const defaultTheme: SiteTheme = {
         { icon: "", title: "Nâng chân", desc: "Thư giãn sau ngày dài." },
         { icon: "", title: "Hỗ trợ ngồi dậy", desc: "Thuận tiện cho người lớn tuổi." },
       ],
+      mediaLayout: "mosaic",
+      media: [
+        { label: "Tư thế", title: "Zero Gravity / đọc sách / nâng chân", desc: "Một khung hình lớn giúp hình dung lợi ích nhanh hơn.", type: "image", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/products" },
+        { label: "Video", title: "Chuyển động thực tế", desc: "Gắn clip ngắn 15–30s mô tả các tư thế nổi bật.", type: "video", imageUrl: "/gsf150-standalone.jpg", linkUrl: "#demo", videoUrl: "#demo" },
+      ],
     },
     comparison: {
       badge: { text: "SO SÁNH LỰA CHỌN", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
@@ -375,6 +396,10 @@ export const defaultTheme: SiteTheme = {
         { icon: "Cần kê gối", title: "Đọc sách/xem TV", desc: "SmartFurni: preset sẵn" },
         { icon: "Ít tiện ích", title: "Công nghệ", desc: "SmartFurni: remote/app" },
       ],
+      mediaLayout: "split",
+      media: [
+        { label: "So sánh", title: "Từ giường thường đến trải nghiệm thông minh", desc: "Một hình ảnh sản phẩm làm nền cho bảng so sánh ít chữ.", type: "image", imageUrl: "/gsf150-standalone.jpg", linkUrl: "/products" },
+      ],
     },
     trust: {
       badge: { text: "BẰNG CHỨNG TIN CẬY", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
@@ -385,6 +410,11 @@ export const defaultTheme: SiteTheme = {
         { icon: "", title: "Thông số rõ", desc: "Tải trọng, góc nâng, bảo hành." },
         { icon: "", title: "Showroom thật", desc: "Đặt lịch trải nghiệm trực tiếp." },
         { icon: "", title: "Video tại nhà", desc: "Giao lắp và hướng dẫn thực tế." },
+      ],
+      mediaLayout: "mosaic",
+      media: [
+        { label: "Showroom", title: "Trải nghiệm trực tiếp", desc: "Không gian thật, sản phẩm thật và quy trình rõ ràng.", type: "image", imageUrl: "/gsf150-standalone.jpg", linkUrl: "/contact" },
+        { label: "Review", title: "Video khách hàng tại nhà", desc: "Clip bàn giao và hướng dẫn sử dụng thực tế.", type: "video", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "#demo", videoUrl: "#demo" },
       ],
     },
     process: {
@@ -399,6 +429,11 @@ export const defaultTheme: SiteTheme = {
         { icon: "4", title: "Giao lắp", desc: "Kiểm tra tại nhà." },
         { icon: "5", title: "Bảo hành", desc: "Hỗ trợ sau mua." },
       ],
+      mediaLayout: "rail",
+      media: [
+        { label: "Quy trình", title: "Tư vấn → giao lắp → bảo hành", desc: "Timeline mua hàng rõ ràng giúp giảm băn khoăn.", type: "image", imageUrl: "/gsf150-wood-frame.jpg", linkUrl: "/contact" },
+        { label: "Hướng dẫn", title: "Bàn giao và sử dụng remote", desc: "Ô video cho clip kỹ thuật viên hướng dẫn sau lắp đặt.", type: "video", imageUrl: "/gsf150-standalone.jpg", linkUrl: "#demo", videoUrl: "#demo" },
+      ],
     },
     b2b: {
       badge: { text: "B2B & ĐẠI LÝ", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
@@ -411,6 +446,11 @@ export const defaultTheme: SiteTheme = {
         { icon: "", title: "Kỹ thuật", desc: "Training lắp đặt." },
         { icon: "", title: "Marketing", desc: "Landing page và lead." },
       ],
+      mediaLayout: "split",
+      media: [
+        { label: "Đối tác", title: "Gói trưng bày showroom", desc: "Catalogue, POSM và bộ demo cho đại lý.", type: "image", imageUrl: "/gsf150-exploded.jpg", linkUrl: "/lp/doi-tac-showroom-nem" },
+        { label: "Training", title: "Video đào tạo bán hàng", desc: "Nội dung hướng dẫn tư vấn và lắp đặt.", type: "video", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/lp/doi-tac-showroom-nem#dang-ky", videoUrl: "#demo" },
+      ],
     },
     faq: {
       badge: { text: "FAQ NỔI BẬT", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
@@ -422,6 +462,10 @@ export const defaultTheme: SiteTheme = {
         { icon: "?", title: "Mất điện có sao không?", desc: "Được tư vấn theo cơ chế an toàn của từng mẫu." },
         { icon: "?", title: "Dùng với nệm hiện tại được không?", desc: "Cần kiểm tra loại nệm, độ dày và kích thước." },
         { icon: "?", title: "Có giao lắp toàn quốc không?", desc: "Tư vấn thời gian, phí và quy trình theo khu vực." },
+      ],
+      mediaLayout: "stack",
+      media: [
+        { label: "Hỏi nhanh", title: "Giải đáp trước khi đặt lịch", desc: "FAQ ngắn giúp khách tự tin hơn trước khi liên hệ.", type: "image", imageUrl: "/smartfurni-logo-transparent.png", linkUrl: "/contact#faq" },
       ],
     },
   },

@@ -264,8 +264,20 @@ export interface HomepageFeatureItem {
 
 export type HomepageContentCard = HomepageFeatureItem;
 
+export interface HomepageSectionMedia {
+  label: string;
+  title: string;
+  desc: string;
+  type: "image" | "video";
+  imageUrl: string;
+  linkUrl?: string;
+  videoUrl?: string;
+}
+
 export interface HomepageGenericSection extends HomepageSectionHeader {
   items: HomepageContentCard[];
+  media?: HomepageSectionMedia[];
+  mediaLayout?: "split" | "stack" | "rail" | "mosaic";
 }
 
 export interface HomepageFeaturesSection extends HomepageSectionHeader {

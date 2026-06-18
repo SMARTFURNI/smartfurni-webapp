@@ -14,6 +14,7 @@ import type {
   TextBlock,
   HomepageFeatureItem,
   HomepageContentCard,
+  HomepageSectionMedia,
   HomepageGenericSection,
 } from "@/lib/theme-store";
 
@@ -872,6 +873,105 @@ export default function ThemeEditorClient({
             value={section.subtitle}
             onChange={(v) => updateHomepageGenericSection(key, { ...section, subtitle: v })}
           />
+        </SectionCard>
+
+        <SectionCard title="Media / ảnh / video của section">
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <TextInput
+                label="Kiểu bố cục media (split / stack / rail / mosaic)"
+                value={section.mediaLayout || "split"}
+                onChange={(v) => updateHomepageGenericSection(key, { ...section, mediaLayout: v as HomepageGenericSection["mediaLayout"] })}
+              />
+              <div className="rounded-xl border border-[rgba(255,200,100,0.14)] bg-[#130e00] p-3 text-xs leading-relaxed text-[rgba(245,237,214,0.62)]">
+                Dùng trường này để chỉnh bố cục video/media theo từng section. Nếu để trống media, giao diện sẽ dùng ảnh mặc định phù hợp với SmartFurni.
+              </div>
+            </div>
+            {(section.media || []).map((media: HomepageSectionMedia, idx: number) => (
+              <div key={idx} className="p-3 rounded-xl border border-[rgba(255,200,100,0.14)] bg-[#1a1200] space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-[rgba(245,237,214,0.70)]">Media {idx + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextMedia = (section.media || []).filter((_: HomepageSectionMedia, i: number) => i !== idx);
+                      updateHomepageGenericSection(key, { ...section, media: nextMedia });
+                    }}
+                    className="text-xs text-red-300 hover:text-red-200"
+                  >
+                    Xóa
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <TextInput
+                    label="Nhãn media"
+                    value={media.label}
+                    onChange={(v) => {
+                      const nextMedia = (section.media || []).map((it: HomepageSectionMedia, i: number) => i === idx ? { ...it, label: v } : it);
+                      updateHomepageGenericSection(key, { ...section, media: nextMedia });
+                    }}
+                  />
+                  <TextInput
+                    label="Loại media (image hoặc video)"
+                    value={media.type}
+                    onChange={(v) => {
+                      const nextMedia = (section.media || []).map((it: HomepageSectionMedia, i: number) => i === idx ? { ...it, type: v === "video" ? "video" : "image" } : it);
+                      updateHomepageGenericSection(key, { ...section, media: nextMedia });
+                    }}
+                  />
+                </div>
+                <TextInput
+                  label="Tiêu đề media"
+                  value={media.title}
+                  onChange={(v) => {
+                    const nextMedia = (section.media || []).map((it: HomepageSectionMedia, i: number) => i === idx ? { ...it, title: v } : it);
+                    updateHomepageGenericSection(key, { ...section, media: nextMedia });
+                  }}
+                />
+                <TextInput
+                  label="Mô tả media"
+                  value={media.desc}
+                  onChange={(v) => {
+                    const nextMedia = (section.media || []).map((it: HomepageSectionMedia, i: number) => i === idx ? { ...it, desc: v } : it);
+                    updateHomepageGenericSection(key, { ...section, media: nextMedia });
+                  }}
+                />
+                <TextInput
+                  label="Đường dẫn ảnh thumbnail"
+                  value={media.imageUrl}
+                  onChange={(v) => {
+                    const nextMedia = (section.media || []).map((it: HomepageSectionMedia, i: number) => i === idx ? { ...it, imageUrl: v } : it);
+                    updateHomepageGenericSection(key, { ...section, media: nextMedia });
+                  }}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <TextInput
+                    label="Link khi bấm media"
+                    value={media.linkUrl || ""}
+                    onChange={(v) => {
+                      const nextMedia = (section.media || []).map((it: HomepageSectionMedia, i: number) => i === idx ? { ...it, linkUrl: v } : it);
+                      updateHomepageGenericSection(key, { ...section, media: nextMedia });
+                    }}
+                  />
+                  <TextInput
+                    label="Link video (YouTube/URL/#demo)"
+                    value={media.videoUrl || ""}
+                    onChange={(v) => {
+                      const nextMedia = (section.media || []).map((it: HomepageSectionMedia, i: number) => i === idx ? { ...it, videoUrl: v } : it);
+                      updateHomepageGenericSection(key, { ...section, media: nextMedia });
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => updateHomepageGenericSection(key, { ...section, media: [...(section.media || []), { label: "Media", title: "Tiêu đề media", desc: "Mô tả ngắn.", type: "image", imageUrl: "/gsf150-standalone.jpg", linkUrl: "/products", videoUrl: "" }] })}
+              className="w-full rounded-xl border border-dashed border-[rgba(255,200,100,0.35)] px-3 py-2 text-sm text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors"
+            >
+              + Thêm media / video
+            </button>
+          </div>
         </SectionCard>
 
         <SectionCard title={`Danh sách ${labels.itemLabel.toLowerCase()}`}>
