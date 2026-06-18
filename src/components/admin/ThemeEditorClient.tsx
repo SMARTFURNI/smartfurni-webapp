@@ -1207,6 +1207,14 @@ export default function ThemeEditorClient({
       case "hero":
         return (
           <div className="space-y-5">
+            <SectionCard title="Ảnh sản phẩm Hero">
+              <ImageUploadInput
+                label="Ảnh sản phẩm (hiển thị bên phải, tỉ lệ 4:3 hoặc 16:9)"
+                value={theme.hero.imageUrl ?? ""}
+                onChange={(url) => updateSection("hero", { imageUrl: url })}
+                hint="Khuyến nghị: ảnh nền trắng/xám nhạt, tỉ lệ 4:3, tối đa 2MB"
+              />
+            </SectionCard>
             <SectionCard title="Nội dung Hero">
               <TextInput label="Tiêu đề chính" value={theme.hero.title} onChange={(v) => updateSection("hero", { title: v })} />
               <SliderInput label="Cỡ chữ tiêu đề (px)" value={theme.hero.titleFontSize ?? 60} onChange={(v) => updateSection("hero", { titleFontSize: v })} min={24} max={96} unit="px" />

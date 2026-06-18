@@ -54,6 +54,8 @@ export interface ThemeHero {
   bgGradientFrom: string;
   bgGradientTo: string;
   overlayOpacity: number;
+  /** URL ảnh sản phẩm hiển thị bên phải hero section */
+  imageUrl?: string;
 }
 export interface ThemeNavbar {
   bgColor: string;

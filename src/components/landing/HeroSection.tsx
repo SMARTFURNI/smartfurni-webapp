@@ -164,7 +164,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const ctaSecondaryLink = theme?.hero.ctaSecondaryLink ?? "/contact";
 
   // Hero image from theme or fallback
-  const heroImageUrl = (theme?.hero as unknown as Record<string, unknown>)?.imageUrl as string | undefined;
+  const heroImageUrl = theme?.hero?.imageUrl;
 
   return (
     <>
