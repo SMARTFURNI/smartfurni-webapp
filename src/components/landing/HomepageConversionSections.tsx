@@ -192,9 +192,19 @@ function MediaFrame({ media, priority = false, tall = false, variant = "large" }
 
 function CardImage({ item, index, compact = false }: { item: HomepageContentCard; index: number; compact?: boolean }) {
   return (
-    <div className={`relative mb-3 overflow-hidden rounded-[1.3rem] border border-[#C9A84C]/16 bg-black/35 shadow-[0_18px_55px_rgba(0,0,0,0.28)] ${compact ? "h-36 sm:h-40" : "h-44 sm:h-52"}`}>
-      <img src={cardImageUrl(item, index)} alt={cardImageAlt(item)} className="h-full w-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-[1.045]" loading="lazy" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#080600]/75 via-transparent to-transparent" />
+    <div className={`relative z-0 overflow-hidden rounded-[1.65rem] border border-[#C9A84C]/18 bg-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.32)] ${compact ? "aspect-[4/3] sm:aspect-[16/10]" : "aspect-[4/3]"}`}>
+      <img src={cardImageUrl(item, index)} alt={cardImageAlt(item)} className="h-full w-full object-cover opacity-[0.92] transition-transform duration-700 group-hover:scale-[1.045]" loading="lazy" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#080600]/70 via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-3 rounded-[1.2rem] border border-white/10" />
+    </div>
+  );
+}
+
+function CardThumb({ item, index }: { item: HomepageContentCard; index: number }) {
+  return (
+    <div className="relative h-24 w-28 shrink-0 overflow-hidden rounded-[1.05rem] border border-[#C9A84C]/16 bg-black/35 sm:h-28 sm:w-32">
+      <img src={cardImageUrl(item, index)} alt={cardImageAlt(item)} className="h-full w-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-[1.05]" loading="lazy" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/42 to-transparent" />
     </div>
   );
 }
@@ -202,9 +212,9 @@ function CardImage({ item, index, compact = false }: { item: HomepageContentCard
 function EditorialCard({ item, index, featured = false }: { item: HomepageContentCard; index: number; featured?: boolean }) {
   return (
     <ScrollReveal variant="fadeUp" delay={90 + index * 55}>
-      <div className="group h-full transition-all duration-300 hover:-translate-y-1">
+      <div className="group flex h-full flex-col transition-all duration-300 hover:-translate-y-1">
         <CardImage item={item} index={index} />
-        <div className={`${featured ? "min-h-[210px]" : "min-h-[190px]"} relative rounded-[1.45rem] border border-[#C9A84C]/14 bg-gradient-to-br from-[#1A1500] via-[#100C00] to-[#080600] p-5 transition-all duration-300 hover:border-[#C9A84C]/42 hover:shadow-[0_24px_80px_rgba(0,0,0,0.32)]`}>
+        <div className={`${featured ? "min-h-[210px]" : "min-h-[190px]"} relative z-10 -mt-6 flex-1 rounded-[1.45rem] border border-[#C9A84C]/14 bg-gradient-to-br from-[#1A1500]/96 via-[#100C00]/96 to-[#080600]/96 p-5 shadow-[0_-10px_35px_rgba(0,0,0,0.18)] backdrop-blur-md transition-all duration-300 hover:border-[#C9A84C]/42 hover:shadow-[0_24px_80px_rgba(0,0,0,0.32)]`}>
           <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[#C9A84C]/10 blur-3xl transition-opacity group-hover:opacity-90" />
           <PremiumIcon value={item.icon} index={index} />
           <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-[#F5EDD6] transition-colors group-hover:text-[#E2C97E]">{item.title}</h3>
@@ -218,9 +228,9 @@ function EditorialCard({ item, index, featured = false }: { item: HomepageConten
 function MiniCard({ item, index, active = false }: { item: HomepageContentCard; index: number; active?: boolean }) {
   return (
     <ScrollReveal variant="fadeUp" delay={80 + index * 45}>
-      <div className="group h-full transition-all duration-300 hover:-translate-y-1">
+      <div className="group flex h-full flex-col transition-all duration-300 hover:-translate-y-1">
         <CardImage item={item} index={index} compact />
-        <div className={`min-h-[150px] rounded-[1.35rem] border p-4 transition-all duration-300 ${active ? "border-[#C9A84C]/45 bg-[#C9A84C]/10" : "border-[#C9A84C]/12 bg-white/[0.025] hover:border-[#C9A84C]/34 hover:bg-white/[0.045]"}`}>
+        <div className={`relative z-10 -mt-5 min-h-[150px] flex-1 rounded-[1.35rem] border p-4 shadow-[0_-8px_28px_rgba(0,0,0,0.14)] backdrop-blur-md transition-all duration-300 ${active ? "border-[#C9A84C]/45 bg-[#C9A84C]/12" : "border-[#C9A84C]/12 bg-[#0F0B00]/92 hover:border-[#C9A84C]/34 hover:bg-[#151000]/92"}`}>
           <PremiumIcon value={item.icon} index={index} small />
           <h3 className="mt-4 text-sm font-semibold text-[#F5EDD6]">{item.title}</h3>
           <p className="mt-1.5 text-xs leading-relaxed text-[#F5EDD6]/55">{item.desc}</p>
@@ -303,9 +313,9 @@ function TechnologySection({ section, fallback }: { section?: EditableSection; f
         <div className="space-y-4">
           {items.slice(0, 4).map((item, index) => (
             <ScrollReveal key={`${item.title}-${index}`} variant="fadeLeft" delay={120 + index * 70}>
-              <div className="group transition-all duration-300 hover:-translate-y-1">
-                <CardImage item={item} index={index} compact />
-                <div className="flex gap-4 rounded-[1.4rem] border border-[#C9A84C]/12 bg-white/[0.025] p-4 backdrop-blur-md transition-colors hover:border-[#C9A84C]/35 hover:bg-white/[0.045]">
+              <div className="group flex flex-col gap-3 rounded-[1.45rem] border border-[#C9A84C]/12 bg-[#0F0B00]/86 p-3 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#C9A84C]/35 hover:bg-[#151000]/90 sm:flex-row sm:items-stretch">
+                <CardThumb item={item} index={index} />
+                <div className="flex min-w-0 flex-1 gap-3 py-1">
                   <PremiumIcon value={item.icon} index={index} small />
                   <div>
                     <h3 className="text-base font-semibold text-[#F5EDD6]">{item.title}</h3>
@@ -354,22 +364,21 @@ function ComparisonSection({ section, fallback }: { section?: EditableSection; f
           <div className="relative overflow-hidden rounded-[2rem] border border-[#C9A84C]/20 bg-[#120E00] shadow-[0_32px_100px_rgba(0,0,0,0.36)]">
             <img src={media.imageUrl} alt={media.title} className="absolute inset-0 h-full w-full object-cover opacity-20" loading="lazy" />
             <div className="relative grid gap-3 p-4 sm:p-6">
-              <div className="hidden grid-cols-[0.9fr_1fr_1fr] gap-3 px-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C9A84C]/80 md:grid">
+              <div className="hidden grid-cols-[150px_0.9fr_1fr_1fr] gap-3 px-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C9A84C]/80 md:grid">
+                <span>Hình ảnh</span>
                 <span>Tiêu chí</span>
                 <span>Giường thường</span>
                 <span>SmartFurni</span>
               </div>
               {items.slice(0, 4).map((row, index) => (
-                <div key={`${row.title}-${index}`} className="group">
-                  <CardImage item={row} index={index} compact />
-                  <div className="grid gap-3 rounded-[1.25rem] border border-white/10 bg-black/32 p-4 backdrop-blur-md md:grid-cols-[0.9fr_1fr_1fr] md:items-center">
-                    <div className="flex items-center gap-3">
-                      <PremiumIcon value={row.icon} index={index} small />
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">{row.title}</span>
-                    </div>
-                    <p className="text-sm leading-relaxed text-[#F5EDD6]/48">{row.icon}</p>
-                    <p className="text-base font-semibold leading-relaxed text-[#F5EDD6]">{row.desc}</p>
+                <div key={`${row.title}-${index}`} className="group grid gap-3 rounded-[1.35rem] border border-white/10 bg-black/32 p-3 backdrop-blur-md md:grid-cols-[150px_0.9fr_1fr_1fr] md:items-center">
+                  <CardThumb item={row} index={index} />
+                  <div className="flex items-center gap-3">
+                    <PremiumIcon value={row.icon} index={index} small />
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">{row.title}</span>
                   </div>
+                  <p className="text-sm leading-relaxed text-[#F5EDD6]/48">{row.icon}</p>
+                  <p className="text-base font-semibold leading-relaxed text-[#F5EDD6]">{row.desc}</p>
                 </div>
               ))}
             </div>
@@ -401,9 +410,9 @@ function TrustSection({ section, fallback }: { section?: EditableSection; fallba
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C9A84C]">Proof Board</p>
             <div className="mt-8 grid gap-5">
               {items.slice(0, 3).map((item, index) => (
-                <div key={`${item.title}-proof-${index}`} className="group">
-                  <CardImage item={item} index={index} compact />
-                  <div className="rounded-[1.25rem] border border-[#C9A84C]/14 bg-black/18 p-4 last:border-[#C9A84C]/14">
+                <div key={`${item.title}-proof-${index}`} className="group flex flex-col gap-3 rounded-[1.35rem] border border-[#C9A84C]/14 bg-black/18 p-3 last:border-[#C9A84C]/14 sm:flex-row">
+                  <CardThumb item={item} index={index} />
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3">
                       <PremiumIcon value={item.icon} index={index} small />
                       <h3 className="text-lg font-semibold text-[#F5EDD6]">{item.title}</h3>
@@ -433,9 +442,9 @@ function ProcessSection({ section, fallback }: { section?: EditableSection; fall
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           {items.slice(0, 5).map((item, index) => (
             <ScrollReveal key={`${item.title}-${index}`} variant="fadeUp" delay={80 + index * 65}>
-              <div className="group relative h-full transition-all duration-300 hover:-translate-y-1">
+              <div className="group relative flex h-full flex-col transition-all duration-300 hover:-translate-y-1">
                 <CardImage item={item} index={index} compact />
-                <div className="rounded-[1.4rem] border border-[#C9A84C]/14 bg-[#120E00]/86 p-5 shadow-[0_18px_65px_rgba(0,0,0,0.24)] backdrop-blur-md">
+                <div className="relative z-10 -mt-5 flex-1 rounded-[1.4rem] border border-[#C9A84C]/14 bg-[#120E00]/92 p-5 shadow-[0_-8px_28px_rgba(0,0,0,0.14),0_18px_65px_rgba(0,0,0,0.24)] backdrop-blur-md">
                   <PremiumIcon value={item.icon || String(index + 1)} index={index} />
                   <h3 className="mt-5 text-base font-semibold text-[#F5EDD6]">{item.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-[#F5EDD6]/55">{item.desc}</p>
@@ -505,9 +514,9 @@ function FAQSection({ section, fallback }: { section?: EditableSection; fallback
         <div className="grid gap-3">
           {items.slice(0, 6).map((item, index) => (
             <ScrollReveal key={`${item.title}-${index}`} variant="fadeUp" delay={100 + index * 60}>
-              <div className="group">
-                <CardImage item={item} index={index} compact />
-                <details className="group rounded-[1.25rem] border border-[#C9A84C]/14 bg-[#120E00] transition-colors open:border-[#C9A84C]/42 open:bg-[#171100]">
+              <div className="group flex flex-col gap-3 rounded-[1.35rem] border border-[#C9A84C]/12 bg-[#0F0B00]/86 p-3 backdrop-blur-md sm:flex-row">
+                <CardThumb item={item} index={index} />
+                <details className="group min-w-0 flex-1 rounded-[1.25rem] border border-[#C9A84C]/14 bg-[#120E00] transition-colors open:border-[#C9A84C]/42 open:bg-[#171100]">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-[#F5EDD6]">
                   <span className="text-base font-semibold">{item.title}</span>
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#C9A84C]/22 text-[#C9A84C] transition-transform group-open:rotate-45">+</span>
