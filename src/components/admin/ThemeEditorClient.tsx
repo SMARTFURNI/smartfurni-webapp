@@ -1018,11 +1018,28 @@ export default function ThemeEditorClient({
                     updateHomepageGenericSection(key, { ...section, items: nextItems });
                   }}
                 />
+                <ImageUploadInput
+                  label="Ảnh minh họa phía trên card"
+                  value={item.imageUrl || ""}
+                  hint="Có thể tải ảnh lên hoặc dán URL ảnh. Nếu để trống, website sẽ dùng ảnh mặc định."
+                  onChange={(url) => {
+                    const nextItems = section.items.map((it: HomepageContentCard, i: number) => i === idx ? { ...it, imageUrl: url } : it);
+                    updateHomepageGenericSection(key, { ...section, items: nextItems });
+                  }}
+                />
+                <TextInput
+                  label="Mô tả ảnh (ALT)"
+                  value={item.imageAlt || ""}
+                  onChange={(v) => {
+                    const nextItems = section.items.map((it: HomepageContentCard, i: number) => i === idx ? { ...it, imageAlt: v } : it);
+                    updateHomepageGenericSection(key, { ...section, items: nextItems });
+                  }}
+                />
               </div>
             ))}
             <button
               type="button"
-              onClick={() => updateHomepageGenericSection(key, { ...section, items: [...section.items, { icon: key === "process" ? String(section.items.length + 1) : key === "faq" ? "?" : "✦", title: "Nội dung mới", desc: "Nhập mô tả tại đây." }] })}
+              onClick={() => updateHomepageGenericSection(key, { ...section, items: [...section.items, { icon: key === "process" ? String(section.items.length + 1) : key === "faq" ? "?" : "✦", title: "Nội dung mới", desc: "Nhập mô tả tại đây.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Nội dung mới" }] })}
               className="w-full rounded-xl border border-dashed border-[rgba(255,200,100,0.35)] px-3 py-2 text-sm text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors"
             >
               + {labels.addLabel}

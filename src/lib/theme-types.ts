@@ -260,6 +260,8 @@ export interface HomepageFeatureItem {
   icon: string;
   title: string;
   desc: string;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 export type HomepageContentCard = HomepageFeatureItem;

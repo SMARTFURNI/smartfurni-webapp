@@ -30,6 +30,21 @@ const FW_MAP: Record<string, string> = {
 const GOLD = "#C9A84C";
 const CREAM = "#F5EDD6";
 
+const CARD_IMAGE_FALLBACKS = [
+  "/uploads/products/smartfurni-bed-main.webp",
+  "/gsf150-standalone.jpg",
+  "/gsf150-wood-frame.jpg",
+  "/gsf150-exploded.jpg",
+];
+
+function cardImageUrl(item: HomepageContentCard, index: number) {
+  return item.imageUrl || CARD_IMAGE_FALLBACKS[index % CARD_IMAGE_FALLBACKS.length];
+}
+
+function cardImageAlt(item: HomepageContentCard) {
+  return item.imageAlt || item.title;
+}
+
 const DEFAULT_MEDIA: Record<SectionKey, SectionMediaItem[]> = {
   problems: [
     { label: "Tình huống", title: "Đọc sách, xem TV thoải mái hơn", desc: "Nâng phần đầu giường đúng góc, hạn chế kê nhiều gối và giữ phòng ngủ gọn gàng.", type: "image", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/products" },
@@ -175,14 +190,26 @@ function MediaFrame({ media, priority = false, tall = false, variant = "large" }
   );
 }
 
+function CardImage({ item, index, compact = false }: { item: HomepageContentCard; index: number; compact?: boolean }) {
+  return (
+    <div className={`relative overflow-hidden ${compact ? "h-28" : "h-36"} border-b border-[#C9A84C]/12 bg-black/30`}>
+      <img src={cardImageUrl(item, index)} alt={cardImageAlt(item)} className="h-full w-full object-cover opacity-88 transition-transform duration-700 group-hover:scale-[1.04]" loading="lazy" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#080600] via-transparent to-transparent" />
+    </div>
+  );
+}
+
 function EditorialCard({ item, index, featured = false }: { item: HomepageContentCard; index: number; featured?: boolean }) {
   return (
     <ScrollReveal variant="fadeUp" delay={90 + index * 55}>
-      <div className={`${featured ? "min-h-[210px]" : "min-h-[155px]"} group relative overflow-hidden rounded-[1.45rem] border border-[#C9A84C]/14 bg-gradient-to-br from-[#1A1500] via-[#100C00] to-[#080600] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#C9A84C]/42 hover:shadow-[0_24px_80px_rgba(0,0,0,0.32)]`}>
-        <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[#C9A84C]/10 blur-3xl transition-opacity group-hover:opacity-90" />
-        <PremiumIcon value={item.icon} index={index} />
-        <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-[#F5EDD6] transition-colors group-hover:text-[#E2C97E]">{item.title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-[#F5EDD6]/56">{item.desc}</p>
+      <div className={`${featured ? "min-h-[280px]" : "min-h-[245px]"} group relative overflow-hidden rounded-[1.45rem] border border-[#C9A84C]/14 bg-gradient-to-br from-[#1A1500] via-[#100C00] to-[#080600] transition-all duration-300 hover:-translate-y-1 hover:border-[#C9A84C]/42 hover:shadow-[0_24px_80px_rgba(0,0,0,0.32)]`}>
+        <CardImage item={item} index={index} />
+        <div className="relative p-5">
+          <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[#C9A84C]/10 blur-3xl transition-opacity group-hover:opacity-90" />
+          <PremiumIcon value={item.icon} index={index} />
+          <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-[#F5EDD6] transition-colors group-hover:text-[#E2C97E]">{item.title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-[#F5EDD6]/56">{item.desc}</p>
+        </div>
       </div>
     </ScrollReveal>
   );
@@ -191,10 +218,13 @@ function EditorialCard({ item, index, featured = false }: { item: HomepageConten
 function MiniCard({ item, index, active = false }: { item: HomepageContentCard; index: number; active?: boolean }) {
   return (
     <ScrollReveal variant="fadeUp" delay={80 + index * 45}>
-      <div className={`group h-full rounded-[1.35rem] border p-4 transition-all duration-300 ${active ? "border-[#C9A84C]/45 bg-[#C9A84C]/10" : "border-[#C9A84C]/12 bg-white/[0.025] hover:border-[#C9A84C]/34 hover:bg-white/[0.045]"}`}>
-        <PremiumIcon value={item.icon} index={index} small />
-        <h3 className="mt-4 text-sm font-semibold text-[#F5EDD6]">{item.title}</h3>
-        <p className="mt-1.5 text-xs leading-relaxed text-[#F5EDD6]/55">{item.desc}</p>
+      <div className={`group h-full overflow-hidden rounded-[1.35rem] border transition-all duration-300 ${active ? "border-[#C9A84C]/45 bg-[#C9A84C]/10" : "border-[#C9A84C]/12 bg-white/[0.025] hover:border-[#C9A84C]/34 hover:bg-white/[0.045]"}`}>
+        <CardImage item={item} index={index} compact />
+        <div className="p-4">
+          <PremiumIcon value={item.icon} index={index} small />
+          <h3 className="mt-4 text-sm font-semibold text-[#F5EDD6]">{item.title}</h3>
+          <p className="mt-1.5 text-xs leading-relaxed text-[#F5EDD6]/55">{item.desc}</p>
+        </div>
       </div>
     </ScrollReveal>
   );
@@ -273,11 +303,14 @@ function TechnologySection({ section, fallback }: { section?: EditableSection; f
         <div className="space-y-4">
           {items.slice(0, 4).map((item, index) => (
             <ScrollReveal key={`${item.title}-${index}`} variant="fadeLeft" delay={120 + index * 70}>
-              <div className="flex gap-4 rounded-[1.4rem] border border-[#C9A84C]/12 bg-white/[0.025] p-4 backdrop-blur-md transition-colors hover:border-[#C9A84C]/35 hover:bg-white/[0.045]">
-                <PremiumIcon value={item.icon} index={index} small />
-                <div>
-                  <h3 className="text-base font-semibold text-[#F5EDD6]">{item.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-[#F5EDD6]/56">{item.desc}</p>
+              <div className="group overflow-hidden rounded-[1.4rem] border border-[#C9A84C]/12 bg-white/[0.025] backdrop-blur-md transition-colors hover:border-[#C9A84C]/35 hover:bg-white/[0.045]">
+                <CardImage item={item} index={index} compact />
+                <div className="flex gap-4 p-4">
+                  <PremiumIcon value={item.icon} index={index} small />
+                  <div>
+                    <h3 className="text-base font-semibold text-[#F5EDD6]">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-[#F5EDD6]/56">{item.desc}</p>
+                  </div>
                 </div>
               </div>
             </ScrollReveal>
@@ -327,13 +360,16 @@ function ComparisonSection({ section, fallback }: { section?: EditableSection; f
                 <span>SmartFurni</span>
               </div>
               {items.slice(0, 4).map((row, index) => (
-                <div key={`${row.title}-${index}`} className="grid gap-3 rounded-[1.25rem] border border-white/10 bg-black/32 p-4 backdrop-blur-md md:grid-cols-[0.9fr_1fr_1fr] md:items-center">
-                  <div className="flex items-center gap-3">
-                    <PremiumIcon value={row.icon} index={index} small />
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">{row.title}</span>
+                <div key={`${row.title}-${index}`} className="group overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/32 backdrop-blur-md">
+                  <CardImage item={row} index={index} compact />
+                  <div className="grid gap-3 p-4 md:grid-cols-[0.9fr_1fr_1fr] md:items-center">
+                    <div className="flex items-center gap-3">
+                      <PremiumIcon value={row.icon} index={index} small />
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">{row.title}</span>
+                    </div>
+                    <p className="text-sm leading-relaxed text-[#F5EDD6]/48">{row.icon}</p>
+                    <p className="text-base font-semibold leading-relaxed text-[#F5EDD6]">{row.desc}</p>
                   </div>
-                  <p className="text-sm leading-relaxed text-[#F5EDD6]/48">{row.icon}</p>
-                  <p className="text-base font-semibold leading-relaxed text-[#F5EDD6]">{row.desc}</p>
                 </div>
               ))}
             </div>
@@ -365,12 +401,15 @@ function TrustSection({ section, fallback }: { section?: EditableSection; fallba
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C9A84C]">Proof Board</p>
             <div className="mt-8 grid gap-5">
               {items.slice(0, 3).map((item, index) => (
-                <div key={`${item.title}-proof-${index}`} className="border-b border-[#C9A84C]/14 pb-5 last:border-b-0 last:pb-0">
-                  <div className="flex items-center gap-3">
-                    <PremiumIcon value={item.icon} index={index} small />
-                    <h3 className="text-lg font-semibold text-[#F5EDD6]">{item.title}</h3>
+                <div key={`${item.title}-proof-${index}`} className="group overflow-hidden rounded-[1.25rem] border border-[#C9A84C]/14 bg-black/18 last:border-[#C9A84C]/14">
+                  <CardImage item={item} index={index} compact />
+                  <div className="p-4">
+                    <div className="flex items-center gap-3">
+                      <PremiumIcon value={item.icon} index={index} small />
+                      <h3 className="text-lg font-semibold text-[#F5EDD6]">{item.title}</h3>
+                    </div>
+                    <p className="mt-2 text-sm leading-relaxed text-[#F5EDD6]/58">{item.desc}</p>
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-[#F5EDD6]/58">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -394,10 +433,13 @@ function ProcessSection({ section, fallback }: { section?: EditableSection; fall
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           {items.slice(0, 5).map((item, index) => (
             <ScrollReveal key={`${item.title}-${index}`} variant="fadeUp" delay={80 + index * 65}>
-              <div className="relative h-full rounded-[1.4rem] border border-[#C9A84C]/14 bg-[#120E00]/86 p-5 shadow-[0_18px_65px_rgba(0,0,0,0.24)] backdrop-blur-md">
-                <PremiumIcon value={item.icon || String(index + 1)} index={index} />
-                <h3 className="mt-5 text-base font-semibold text-[#F5EDD6]">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#F5EDD6]/55">{item.desc}</p>
+              <div className="group relative h-full overflow-hidden rounded-[1.4rem] border border-[#C9A84C]/14 bg-[#120E00]/86 shadow-[0_18px_65px_rgba(0,0,0,0.24)] backdrop-blur-md">
+                <CardImage item={item} index={index} compact />
+                <div className="p-5">
+                  <PremiumIcon value={item.icon || String(index + 1)} index={index} />
+                  <h3 className="mt-5 text-base font-semibold text-[#F5EDD6]">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[#F5EDD6]/55">{item.desc}</p>
+                </div>
               </div>
             </ScrollReveal>
           ))}
@@ -463,7 +505,8 @@ function FAQSection({ section, fallback }: { section?: EditableSection; fallback
         <div className="grid gap-3">
           {items.slice(0, 6).map((item, index) => (
             <ScrollReveal key={`${item.title}-${index}`} variant="fadeUp" delay={100 + index * 60}>
-              <details className="group rounded-[1.25rem] border border-[#C9A84C]/14 bg-[#120E00] transition-colors open:border-[#C9A84C]/42 open:bg-[#171100]">
+              <details className="group overflow-hidden rounded-[1.25rem] border border-[#C9A84C]/14 bg-[#120E00] transition-colors open:border-[#C9A84C]/42 open:bg-[#171100]">
+                <CardImage item={item} index={index} compact />
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-[#F5EDD6]">
                   <span className="text-base font-semibold">{item.title}</span>
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#C9A84C]/22 text-[#C9A84C] transition-transform group-open:rotate-45">+</span>
@@ -496,10 +539,10 @@ const FALLBACKS: Record<string, EditableSection> = {
     titleAccent: { text: "trong từng sinh hoạt", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
     subtitle: { text: "Nếu bạn thường đọc sách, xem TV, nghỉ ngơi hoặc chăm sóc người thân ngay trên giường, khả năng nâng hạ linh hoạt sẽ giúp sinh hoạt mỗi ngày nhẹ nhàng và dễ chịu hơn.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Đọc sách, xem phim thoải mái", desc: "Nâng phần đầu đến góc dễ chịu để tựa lưng chắc hơn, hạn chế phải kê chồng nhiều gối." },
-      { icon: "", title: "Ngồi dậy nhẹ nhàng hơn", desc: "Chỉ cần điều chỉnh phần đầu giường, bạn có thể chuyển từ nằm sang ngồi chủ động và đỡ mất sức hơn." },
-      { icon: "", title: "Thả lỏng sau một ngày dài", desc: "Nâng chân thư giãn hoặc chọn tư thế nghỉ yêu thích để cơ thể được nâng đỡ và thư giãn tốt hơn." },
-      { icon: "", title: "Phòng ngủ gọn mà đa năng", desc: "Một chiếc giường dùng được cho nghỉ ngơi, giải trí nhẹ nhàng và chăm sóc người thân trong cùng một không gian." },
+      { icon: "", title: "Đọc sách, xem phim thoải mái", desc: "Nâng phần đầu đến góc dễ chịu để tựa lưng chắc hơn, hạn chế phải kê chồng nhiều gối.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Đọc sách, xem phim thoải mái" },
+      { icon: "", title: "Ngồi dậy nhẹ nhàng hơn", desc: "Chỉ cần điều chỉnh phần đầu giường, bạn có thể chuyển từ nằm sang ngồi chủ động và đỡ mất sức hơn.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Ngồi dậy nhẹ nhàng hơn" },
+      { icon: "", title: "Thả lỏng sau một ngày dài", desc: "Nâng chân thư giãn hoặc chọn tư thế nghỉ yêu thích để cơ thể được nâng đỡ và thư giãn tốt hơn.", imageUrl: "/gsf150-wood-frame.jpg", imageAlt: "Thả lỏng sau một ngày dài" },
+      { icon: "", title: "Phòng ngủ gọn mà đa năng", desc: "Một chiếc giường dùng được cho nghỉ ngơi, giải trí nhẹ nhàng và chăm sóc người thân trong cùng một không gian.", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Phòng ngủ gọn mà đa năng" },
     ],
     media: DEFAULT_MEDIA.problems,
   },
@@ -509,11 +552,11 @@ const FALLBACKS: Record<string, EditableSection> = {
     titleAccent: { text: "cho ai?", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
     subtitle: { text: "Mỗi gia đình có một lý do khác nhau khi chọn giường thông minh. Hãy bắt đầu từ người sẽ sử dụng nhiều nhất để chọn đúng tính năng, kích thước và cách tư vấn phù hợp.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Cho bố mẹ hoặc người lớn tuổi", desc: "Ưu tiên thao tác đơn giản, nâng đầu nhẹ nhàng và hỗ trợ ngồi dậy thuận tiện hơn." },
-      { icon: "", title: "Cho phòng ngủ cá nhân", desc: "Phù hợp nếu bạn thích đọc sách, xem phim, nghỉ ngơi và lưu tư thế yêu thích chỉ bằng một chạm." },
-      { icon: "", title: "Cho căn hộ hiện đại", desc: "Giúp phòng ngủ gọn gàng, sang hơn và linh hoạt cho nhiều thói quen sinh hoạt." },
-      { icon: "", title: "Cho người thích tiện nghi thông minh", desc: "Dễ điều khiển bằng remote hoặc ứng dụng, có thể lưu tư thế thường dùng để sử dụng nhanh mỗi ngày." },
-      { icon: "", title: "Cho khách sạn, homestay hoặc dự án", desc: "Tạo điểm nhấn cao cấp cho không gian lưu trú, phòng mẫu hoặc các dự án nội thất cần trải nghiệm khác biệt." },
+      { icon: "", title: "Cho bố mẹ hoặc người lớn tuổi", desc: "Ưu tiên thao tác đơn giản, nâng đầu nhẹ nhàng và hỗ trợ ngồi dậy thuận tiện hơn.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Cho bố mẹ hoặc người lớn tuổi" },
+      { icon: "", title: "Cho phòng ngủ cá nhân", desc: "Phù hợp nếu bạn thích đọc sách, xem phim, nghỉ ngơi và lưu tư thế yêu thích chỉ bằng một chạm.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Cho phòng ngủ cá nhân" },
+      { icon: "", title: "Cho căn hộ hiện đại", desc: "Giúp phòng ngủ gọn gàng, sang hơn và linh hoạt cho nhiều thói quen sinh hoạt.", imageUrl: "/gsf150-wood-frame.jpg", imageAlt: "Cho căn hộ hiện đại" },
+      { icon: "", title: "Cho người thích tiện nghi thông minh", desc: "Dễ điều khiển bằng remote hoặc ứng dụng, có thể lưu tư thế thường dùng để sử dụng nhanh mỗi ngày.", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Cho người thích tiện nghi thông minh" },
+      { icon: "", title: "Cho khách sạn, homestay hoặc dự án", desc: "Tạo điểm nhấn cao cấp cho không gian lưu trú, phòng mẫu hoặc các dự án nội thất cần trải nghiệm khác biệt.", imageUrl: "/gsf150-wood-frame.jpg", imageAlt: "Cho khách sạn, homestay hoặc dự án" },
     ],
     media: DEFAULT_MEDIA.solutions,
   },
@@ -523,10 +566,10 @@ const FALLBACKS: Record<string, EditableSection> = {
     titleAccent: { text: "bên trong", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
     subtitle: { text: "Bạn không cần hiểu quá nhiều thuật ngữ kỹ thuật. Điều quan trọng là giường nâng hạ êm, giữ form chắc, dễ điều khiển và được tư vấn rõ trước khi chọn mua.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Motor nâng hạ êm", desc: "Giúp chuyển từ nằm sang ngồi hoặc nâng chân mượt hơn, hạn chế làm phiền người nằm cạnh." },
-      { icon: "", title: "Khung giường chắc chắn", desc: "Giữ giường ổn định khi thay đổi tư thế, tạo cảm giác an tâm khi sử dụng lâu dài." },
-      { icon: "", title: "Lưu tư thế yêu thích", desc: "Đặt sẵn góc nằm quen thuộc để mỗi lần sử dụng chỉ cần bấm một lần là trở lại đúng tư thế." },
-      { icon: "", title: "Điều khiển dễ dùng", desc: "Nút bấm rõ ràng, dễ làm quen để cả gia đình có thể sử dụng hằng ngày." },
+      { icon: "", title: "Motor nâng hạ êm", desc: "Giúp chuyển từ nằm sang ngồi hoặc nâng chân mượt hơn, hạn chế làm phiền người nằm cạnh.", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Motor nâng hạ êm" },
+      { icon: "", title: "Khung giường chắc chắn", desc: "Giữ giường ổn định khi thay đổi tư thế, tạo cảm giác an tâm khi sử dụng lâu dài.", imageUrl: "/gsf150-wood-frame.jpg", imageAlt: "Khung giường chắc chắn" },
+      { icon: "", title: "Lưu tư thế yêu thích", desc: "Đặt sẵn góc nằm quen thuộc để mỗi lần sử dụng chỉ cần bấm một lần là trở lại đúng tư thế.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Lưu tư thế yêu thích" },
+      { icon: "", title: "Điều khiển dễ dùng", desc: "Nút bấm rõ ràng, dễ làm quen để cả gia đình có thể sử dụng hằng ngày.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Điều khiển dễ dùng" },
     ],
     media: DEFAULT_MEDIA.technology,
   },
@@ -536,11 +579,11 @@ const FALLBACKS: Record<string, EditableSection> = {
     titleAccent: { text: "cho nhiều cách nghỉ", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
     subtitle: { text: "Từ đọc sách, xem phim đến nghỉ ngơi sau ngày dài, bạn có thể điều chỉnh giường theo tư thế phù hợp thay vì cố nằm theo một mặt phẳng cố định.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Zero Gravity", desc: "Tư thế nâng đỡ toàn thân, tạo cảm giác nhẹ người và thư giãn sâu hơn." },
-      { icon: "", title: "Đọc sách, xem phim", desc: "Nâng phần đầu để tầm nhìn vừa mắt hơn, lưng được tựa ổn định hơn khi giải trí." },
-      { icon: "", title: "Nghỉ ngơi trong ngày", desc: "Chọn góc nâng vừa phải để chợp mắt, nghe nhạc hoặc thư giãn mà chưa cần nằm ngủ hẳn." },
-      { icon: "", title: "Nâng chân thư giãn", desc: "Phù hợp sau khi đi lại nhiều, giúp đôi chân được nâng đỡ và dễ chịu hơn." },
-      { icon: "", title: "Hỗ trợ ngồi dậy", desc: "Nâng phần đầu để bạn chuyển sang tư thế ngồi thuận tiện hơn trước khi bước xuống giường." },
+      { icon: "", title: "Zero Gravity", desc: "Tư thế nâng đỡ toàn thân, tạo cảm giác nhẹ người và thư giãn sâu hơn.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Zero Gravity" },
+      { icon: "", title: "Đọc sách, xem phim", desc: "Nâng phần đầu để tầm nhìn vừa mắt hơn, lưng được tựa ổn định hơn khi giải trí.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Đọc sách, xem phim" },
+      { icon: "", title: "Nghỉ ngơi trong ngày", desc: "Chọn góc nâng vừa phải để chợp mắt, nghe nhạc hoặc thư giãn mà chưa cần nằm ngủ hẳn.", imageUrl: "/gsf150-wood-frame.jpg", imageAlt: "Nghỉ ngơi trong ngày" },
+      { icon: "", title: "Nâng chân thư giãn", desc: "Phù hợp sau khi đi lại nhiều, giúp đôi chân được nâng đỡ và dễ chịu hơn.", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Nâng chân thư giãn" },
+      { icon: "", title: "Hỗ trợ ngồi dậy", desc: "Nâng phần đầu để bạn chuyển sang tư thế ngồi thuận tiện hơn trước khi bước xuống giường.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Hỗ trợ ngồi dậy" },
     ],
     media: DEFAULT_MEDIA.postures,
   },
@@ -550,10 +593,10 @@ const FALLBACKS: Record<string, EditableSection> = {
     titleAccent: { text: "khác gì SmartFurni?", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
     subtitle: { text: "Nếu bạn đang phân vân giữa giường thường và giường thông minh, hãy nhìn vào những khác biệt dễ cảm nhận nhất trong quá trình sử dụng mỗi ngày.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "Cố định, ít thay đổi", title: "Tư thế sử dụng", desc: "Có thể nâng đầu hoặc nâng chân theo từng hoạt động." },
-      { icon: "Phải kê gối thủ công", title: "Đọc sách, xem phim", desc: "Tựa lưng thoải mái hơn bằng remote hoặc tư thế đã lưu." },
-      { icon: "Ít tiện ích", title: "Sự tiện nghi", desc: "Dễ điều chỉnh tư thế, dễ ghi nhớ góc nằm quen thuộc và sử dụng hằng ngày." },
-      { icon: "Khó hình dung trước", title: "Trước và sau khi mua", desc: "Được tư vấn kích thước, trải nghiệm mẫu, giao lắp và hướng dẫn sử dụng rõ ràng." },
+      { icon: "Cố định, ít thay đổi", title: "Tư thế sử dụng", desc: "Có thể nâng đầu hoặc nâng chân theo từng hoạt động.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Tư thế sử dụng" },
+      { icon: "Phải kê gối thủ công", title: "Đọc sách, xem phim", desc: "Tựa lưng thoải mái hơn bằng remote hoặc tư thế đã lưu.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Đọc sách, xem phim" },
+      { icon: "Ít tiện ích", title: "Sự tiện nghi", desc: "Dễ điều chỉnh tư thế, dễ ghi nhớ góc nằm quen thuộc và sử dụng hằng ngày.", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Sự tiện nghi" },
+      { icon: "Khó hình dung trước", title: "Trước và sau khi mua", desc: "Được tư vấn kích thước, trải nghiệm mẫu, giao lắp và hướng dẫn sử dụng rõ ràng.", imageUrl: "/gsf150-wood-frame.jpg", imageAlt: "Trước và sau khi mua" },
     ],
     media: DEFAULT_MEDIA.comparison,
   },
@@ -563,9 +606,9 @@ const FALLBACKS: Record<string, EditableSection> = {
     titleAccent: { text: "cần sự rõ ràng", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
     subtitle: { text: "Với một sản phẩm sử dụng lâu dài trong phòng ngủ, bạn cần được xem rõ thông số, thử trải nghiệm nếu cần và biết chắc ai sẽ hỗ trợ sau khi bàn giao.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Tư vấn thông số rõ ràng", desc: "Bạn được tư vấn kích thước, tải trọng, góc nâng, chất liệu, nệm phù hợp và chính sách bảo hành trước khi đặt mua." },
-      { icon: "", title: "Có thể xem và trải nghiệm", desc: "Bạn có thể đặt lịch xem mẫu, thử tư thế và trao đổi trực tiếp để chọn cấu hình phù hợp." },
-      { icon: "", title: "Giao lắp có hướng dẫn", desc: "Khi lắp đặt tại nhà, kỹ thuật viên kiểm tra vận hành và hướng dẫn bạn cách dùng cơ bản." },
+      { icon: "", title: "Tư vấn thông số rõ ràng", desc: "Bạn được tư vấn kích thước, tải trọng, góc nâng, chất liệu, nệm phù hợp và chính sách bảo hành trước khi đặt mua.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Tư vấn thông số rõ ràng" },
+      { icon: "", title: "Có thể xem và trải nghiệm", desc: "Bạn có thể đặt lịch xem mẫu, thử tư thế và trao đổi trực tiếp để chọn cấu hình phù hợp.", imageUrl: "/gsf150-wood-frame.jpg", imageAlt: "Có thể xem và trải nghiệm" },
+      { icon: "", title: "Giao lắp có hướng dẫn", desc: "Khi lắp đặt tại nhà, kỹ thuật viên kiểm tra vận hành và hướng dẫn bạn cách dùng cơ bản.", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Giao lắp có hướng dẫn" },
     ],
     media: DEFAULT_MEDIA.trust,
   },
@@ -575,11 +618,11 @@ const FALLBACKS: Record<string, EditableSection> = {
     titleAccent: { text: "đến khi sử dụng", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
     subtitle: { text: "SmartFurni giúp bạn đi từng bước rõ ràng: hiểu nhu cầu, chọn mẫu phù hợp, chốt cấu hình, giao lắp tại nhà và tiếp tục hỗ trợ trong quá trình sử dụng.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "1", title: "Chia sẻ nhu cầu", desc: "Cho SmartFurni biết ai sẽ dùng giường, thói quen sinh hoạt, kích thước phòng và loại nệm bạn đang có." },
-      { icon: "2", title: "Xem mẫu hoặc video tư vấn", desc: "Bạn có thể trải nghiệm tại showroom hoặc xem video minh họa để dễ hình dung cách giường vận hành." },
-      { icon: "3", title: "Chọn cấu hình phù hợp", desc: "Cùng tư vấn viên chọn kích thước, chất liệu, tính năng, nệm đi kèm và phương án giao lắp." },
-      { icon: "4", title: "Lắp đặt tại nhà", desc: "Kỹ thuật viên lắp đặt, kiểm tra nâng hạ và hướng dẫn bạn thao tác cơ bản." },
-      { icon: "5", title: "Hỗ trợ khi cần", desc: "Khi cần hỏi thêm về sử dụng, bảo hành hoặc bảo trì, bạn có kênh liên hệ rõ ràng để được hỗ trợ." },
+      { icon: "1", title: "Chia sẻ nhu cầu", desc: "Cho SmartFurni biết ai sẽ dùng giường, thói quen sinh hoạt, kích thước phòng và loại nệm bạn đang có.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Chia sẻ nhu cầu" },
+      { icon: "2", title: "Xem mẫu hoặc video tư vấn", desc: "Bạn có thể trải nghiệm tại showroom hoặc xem video minh họa để dễ hình dung cách giường vận hành.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Xem mẫu hoặc video tư vấn" },
+      { icon: "3", title: "Chọn cấu hình phù hợp", desc: "Cùng tư vấn viên chọn kích thước, chất liệu, tính năng, nệm đi kèm và phương án giao lắp.", imageUrl: "/gsf150-wood-frame.jpg", imageAlt: "Chọn cấu hình phù hợp" },
+      { icon: "4", title: "Lắp đặt tại nhà", desc: "Kỹ thuật viên lắp đặt, kiểm tra nâng hạ và hướng dẫn bạn thao tác cơ bản.", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Lắp đặt tại nhà" },
+      { icon: "5", title: "Hỗ trợ khi cần", desc: "Khi cần hỏi thêm về sử dụng, bảo hành hoặc bảo trì, bạn có kênh liên hệ rõ ràng để được hỗ trợ.", imageUrl: "/smartfurni-logo-transparent.png", imageAlt: "Hỗ trợ khi cần" },
     ],
     media: DEFAULT_MEDIA.process,
   },
@@ -589,10 +632,10 @@ const FALLBACKS: Record<string, EditableSection> = {
     titleAccent: { text: "phòng ngủ và lưu trú", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
     subtitle: { text: "Nếu bạn đang hoàn thiện biệt thự, căn hộ mẫu, khách sạn, homestay hoặc showroom nội thất, giường thông minh giúp tạo trải nghiệm nghỉ ngơi khác biệt và cao cấp hơn.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "", title: "Cho biệt thự và căn hộ cao cấp", desc: "Tạo điểm nhấn tiện nghi trong phòng ngủ master, phòng ngủ phụ hoặc không gian nghỉ dưỡng riêng tư." },
-      { icon: "", title: "Cho khách sạn và homestay", desc: "Mang lại trải nghiệm lưu trú khác biệt cho khách, đặc biệt ở các phòng cao cấp hoặc phòng suite." },
-      { icon: "", title: "Cho showroom nội thất", desc: "Dễ kết hợp với nệm, sofa, tủ đầu giường và các giải pháp phòng ngủ thông minh." },
-      { icon: "", title: "Cho dự án cần tư vấn riêng", desc: "SmartFurni có thể tư vấn theo số lượng, không gian lắp đặt, phong cách nội thất và yêu cầu vận hành thực tế." },
+      { icon: "", title: "Cho biệt thự và căn hộ cao cấp", desc: "Tạo điểm nhấn tiện nghi trong phòng ngủ master, phòng ngủ phụ hoặc không gian nghỉ dưỡng riêng tư.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Cho biệt thự và căn hộ cao cấp" },
+      { icon: "", title: "Cho khách sạn và homestay", desc: "Mang lại trải nghiệm lưu trú khác biệt cho khách, đặc biệt ở các phòng cao cấp hoặc phòng suite.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Cho khách sạn và homestay" },
+      { icon: "", title: "Cho showroom nội thất", desc: "Dễ kết hợp với nệm, sofa, tủ đầu giường và các giải pháp phòng ngủ thông minh.", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Cho showroom nội thất" },
+      { icon: "", title: "Cho dự án cần tư vấn riêng", desc: "SmartFurni có thể tư vấn theo số lượng, không gian lắp đặt, phong cách nội thất và yêu cầu vận hành thực tế.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Cho dự án cần tư vấn riêng" },
     ],
     media: DEFAULT_MEDIA.b2b,
   },
@@ -602,11 +645,11 @@ const FALLBACKS: Record<string, EditableSection> = {
     titleAccent: { text: "đặt lịch tư vấn", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
     subtitle: { text: "Trước khi để lại thông tin tư vấn, bạn có thể xem nhanh những băn khoăn thường gặp về độ bền, nệm phù hợp, giao lắp và hỗ trợ sau mua.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
     items: [
-      { icon: "?", title: "Giường điều chỉnh điện có bền không?", desc: "SmartFurni sẽ tư vấn rõ motor, khung, tải trọng phù hợp và chính sách bảo hành của từng mẫu để bạn yên tâm hơn trước khi chọn mua." },
-      { icon: "?", title: "Mất điện thì giường có dùng được không?", desc: "Tùy từng cấu hình, tư vấn viên sẽ giải thích cơ chế an toàn và cách xử lý để bạn biết trước khi sử dụng." },
-      { icon: "?", title: "Có dùng với nệm hiện tại được không?", desc: "SmartFurni sẽ kiểm tra loại nệm, độ dày, độ đàn hồi và kích thước hiện tại. Nếu chưa phù hợp, bạn sẽ được gợi ý phương án thay thế." },
-      { icon: "?", title: "Có giao lắp tại nhà không?", desc: "Có. Thời gian, chi phí và phạm vi giao lắp sẽ được thông báo theo khu vực và cấu hình sản phẩm bạn chọn." },
-      { icon: "?", title: "Sau khi mua cần hỗ trợ thì liên hệ ai?", desc: "Sau khi bàn giao, bạn sẽ được hướng dẫn kênh liên hệ để được hỗ trợ sử dụng, bảo hành hoặc bảo trì khi cần." },
+      { icon: "?", title: "Giường điều chỉnh điện có bền không?", desc: "SmartFurni sẽ tư vấn rõ motor, khung, tải trọng phù hợp và chính sách bảo hành của từng mẫu để bạn yên tâm hơn trước khi chọn mua.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Giường điều chỉnh điện có bền không?" },
+      { icon: "?", title: "Mất điện thì giường có dùng được không?", desc: "Tùy từng cấu hình, tư vấn viên sẽ giải thích cơ chế an toàn và cách xử lý để bạn biết trước khi sử dụng.", imageUrl: "/gsf150-wood-frame.jpg", imageAlt: "Mất điện thì giường có dùng được không?" },
+      { icon: "?", title: "Có dùng với nệm hiện tại được không?", desc: "SmartFurni sẽ kiểm tra loại nệm, độ dày, độ đàn hồi và kích thước hiện tại. Nếu chưa phù hợp, bạn sẽ được gợi ý phương án thay thế.", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Có dùng với nệm hiện tại được không?" },
+      { icon: "?", title: "Có giao lắp tại nhà không?", desc: "Có. Thời gian, chi phí và phạm vi giao lắp sẽ được thông báo theo khu vực và cấu hình sản phẩm bạn chọn.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Có giao lắp tại nhà không?" },
+      { icon: "?", title: "Sau khi mua cần hỗ trợ thì liên hệ ai?", desc: "Sau khi bàn giao, bạn sẽ được hướng dẫn kênh liên hệ để được hỗ trợ sử dụng, bảo hành hoặc bảo trì khi cần.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Sau khi mua cần hỗ trợ thì liên hệ ai?" },
     ],
     media: DEFAULT_MEDIA.faq,
   },
