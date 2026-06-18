@@ -9,47 +9,37 @@ const FW_MAP: Record<string, string> = {
   light: "300", normal: "400", medium: "500", semibold: "600", bold: "700",
 };
 
-const FEATURES = [
+// 3 lợi ích cốt lõi — ngắn gọn, benefit-focused
+const CORE_BENEFITS = [
   {
     icon: "adjust",
-    title: "Điều chỉnh góc chính xác",
-    desc: "Điều khiển góc đầu (0–70°) và góc chân (0–45°) với độ chính xác từng độ. Motor êm ái, không rung lắc.",
+    title: "Ngủ đúng tư thế, giảm đau lưng",
+    desc: "Điều chỉnh góc đầu & chân chính xác từng độ. Tư thế Zero Gravity giảm áp lực cột sống, cải thiện tuần hoàn máu trong khi ngủ.",
+    highlight: "Giảm đau lưng rõ rệt",
   },
   {
     icon: "star",
-    title: "Preset thông minh",
-    desc: "6 chế độ có sẵn: Nằm phẳng, Đọc sách, Xem TV, Ngồi dậy, Chống ngáy, Không trọng lực. Lưu vị trí yêu thích cá nhân.",
-  },
-  {
-    icon: "light",
-    title: "Đèn LED thông minh",
-    desc: "Điều chỉnh màu sắc, độ sáng và hẹn giờ tắt đèn. Hỗ trợ 16 triệu màu với color wheel trực quan.",
+    title: "Điều khiển đơn giản, cả nhà dùng được",
+    desc: "Remote vật lý + ứng dụng di động. Lưu 6 tư thế yêu thích, bấm 1 nút là về đúng vị trí. Phù hợp từ người cao tuổi đến trẻ em.",
+    highlight: "Dễ dùng cho mọi lứa tuổi",
   },
   {
     icon: "wave",
-    title: "Massage tích hợp",
-    desc: "3 mức độ massage: Nhẹ, Vừa, Mạnh. Hẹn giờ massage tự động tắt sau 15–60 phút.",
+    title: "Bền bỉ, bảo hành 5 năm toàn diện",
+    desc: "Motor nhập khẩu, kiểm định 50.000 lần nâng hạ. Bảo hành 5 năm linh kiện điện, lắp đặt tận nhà trong 2 giờ, hỗ trợ kỹ thuật 24/7.",
+    highlight: "Bảo hành 5 năm",
   },
-  {
-    icon: "moon",
-    title: "Theo dõi giấc ngủ",
-    desc: "Phân tích chu kỳ ngủ, điểm chất lượng giấc ngủ, biểu đồ 7 ngày và lời khuyên cải thiện.",
-  },
-  {
-    icon: "mic",
-    title: "Điều khiển giọng nói",
-    desc: "Ra lệnh bằng tiếng Việt: 'Nâng đầu lên', 'Bật đèn', 'Về vị trí ngủ'. Phản hồi bằng giọng nói tự nhiên.",
-  },
-  {
-    icon: "clock",
-    title: "Hẹn giờ thông minh",
-    desc: "Đặt lịch giường tự động điều chỉnh theo giờ. Báo thức nhẹ nhàng bằng cách nâng đầu từ từ.",
-  },
-  {
-    icon: "phone",
-    title: "Kết nối Bluetooth 5.0",
-    desc: "Kết nối ổn định trong phạm vi 10m. Tự động kết nối lại khi mở app. Hỗ trợ iOS và Android.",
-  },
+];
+
+const FEATURE_GRID = [
+  { icon: "adjust", title: "Điều chỉnh góc chính xác", desc: "Đầu 0–70°, chân 0–45°. Motor êm ái, không rung lắc." },
+  { icon: "star", title: "6 Preset thông minh", desc: "Nằm phẳng, Đọc sách, Xem TV, Zero Gravity và nhiều hơn." },
+  { icon: "light", title: "Đèn LED thông minh", desc: "16 triệu màu, hẹn giờ tắt, điều chỉnh qua app." },
+  { icon: "wave", title: "Massage tích hợp", desc: "3 mức độ, hẹn giờ tự động tắt sau 15–60 phút." },
+  { icon: "moon", title: "Theo dõi giấc ngủ", desc: "Phân tích chu kỳ ngủ, điểm chất lượng, biểu đồ 7 ngày." },
+  { icon: "mic", title: "Điều khiển giọng nói", desc: "Ra lệnh tiếng Việt: 'Nâng đầu lên', 'Bật đèn'." },
+  { icon: "clock", title: "Hẹn giờ thông minh", desc: "Báo thức nhẹ nhàng bằng cách nâng đầu từ từ." },
+  { icon: "phone", title: "Bluetooth 5.0", desc: "Kết nối ổn định 10m, tự động kết nối lại khi mở app." },
 ];
 
 export default function FeaturesSection({ theme }: Props) {
@@ -58,48 +48,107 @@ export default function FeaturesSection({ theme }: Props) {
   const title = feat?.title;
   const titleAccent = feat?.titleAccent;
   const subtitle = feat?.subtitle;
-  const items: HomepageFeatureItem[] = feat?.items?.length ? feat.items : FEATURES;
+  const items: HomepageFeatureItem[] = feat?.items?.length ? feat.items : FEATURE_GRID;
+
+  const primary = theme?.colors.primary ?? "#C9A84C";
+  const textColor = theme?.colors.text ?? "#F5EDD6";
+  const borderColor = theme?.colors.border ?? "#2D2500";
+  const surfaceColor = theme?.colors.surface ?? "#1A1500";
+  const bgFrom = theme?.hero?.bgGradientFrom ?? "#080600";
 
   return (
     <section id="features" className="py-14 sm:py-20 lg:py-24 px-4 sm:px-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <ScrollReveal variant="fadeUp" delay={0}>
-          <div className="text-center mb-10 sm:mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/5 mb-4">
-              <span style={{ fontSize: badge ? `${badge.fontSize}px` : "12px", color: badge?.color ?? "#C9A84C", fontWeight: badge ? FW_MAP[badge.fontWeight] : "500" }} className="tracking-wider">
-                {badge?.text ?? "TÍNH NĂNG NỔI BẬT"}
-              </span>
-            </div>
-            <h2 className="mb-4">
-              <span style={{ fontSize: title ? `clamp(24px, 3vw, ${title.fontSize}px)` : "clamp(24px, 3vw, 36px)", color: title?.color ?? "#F5EDD6", fontWeight: title ? FW_MAP[title.fontWeight] : "300", display: "block" }}>
-                {title?.text ?? "Mọi thứ bạn cần cho"}
-              </span>
-              <span style={{ fontSize: titleAccent ? `clamp(24px, 3vw, ${titleAccent.fontSize}px)` : "clamp(24px, 3vw, 36px)", color: titleAccent?.color ?? "#C9A84C", fontWeight: titleAccent ? FW_MAP[titleAccent.fontWeight] : "300", display: "block" }}>
-                {titleAccent?.text ?? "giấc ngủ hoàn hảo"}
-              </span>
-            </h2>
-            <p style={{ fontSize: subtitle ? `${subtitle.fontSize}px` : "14px", color: subtitle?.color ?? "#F5EDD6", fontWeight: subtitle ? FW_MAP[subtitle.fontWeight] : "400", opacity: 0.5 }} className="max-w-xl mx-auto">
-              {subtitle?.text ?? "SmartFurni tích hợp công nghệ điều khiển thông minh vào từng chi tiết, mang lại trải nghiệm ngủ được cá nhân hóa hoàn toàn."}
-            </p>
-          </div>
-        </ScrollReveal>
+      <div className="max-w-7xl mx-auto space-y-16 sm:space-y-20">
 
-        {/* Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {items.map((f, i) => (
-            <ScrollReveal key={i} variant="fadeUp" delay={100 + i * 70}>
-              <div className="group p-6 rounded-2xl bg-[#1A1600] border border-[#2E2800] hover:border-[#C9A84C]/40 hover:bg-[#221D00] transition-all duration-300 h-full">
-                <div className="mb-4 flex items-center justify-center w-10 h-10 rounded-xl bg-[#C9A84C]/10 border border-[#C9A84C]/20 group-hover:bg-[#C9A84C]/15 transition-colors">
-                  <SvgIcon name={f.icon} size={20} color="#C9A84C" strokeWidth={1.5} />
-                </div>
-                <h3 className="text-sm font-semibold text-[#F5EDD6] mb-2 group-hover:text-[#C9A84C] transition-colors">
-                  {f.title}
-                </h3>
-                <p className="text-xs text-[#F5EDD6]/50 leading-relaxed">{f.desc}</p>
+        {/* ── 3 Core Benefits ── */}
+        <div>
+          <ScrollReveal variant="fadeUp" delay={0}>
+            <div className="text-center mb-10 sm:mb-14">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4"
+                style={{ borderColor: `${primary}30`, backgroundColor: `${primary}08` }}>
+                <span style={{ fontSize: badge ? `${badge.fontSize}px` : "11px", color: badge?.color ?? primary, fontWeight: badge ? FW_MAP[badge.fontWeight] : "500" }} className="tracking-widest uppercase">
+                  {badge?.text ?? "Tại Sao Chọn SmartFurni"}
+                </span>
               </div>
-            </ScrollReveal>
-          ))}
+              <h2 className="mb-3">
+                <span style={{ fontSize: title ? `clamp(24px, 3vw, ${title.fontSize}px)` : "clamp(24px, 3vw, 40px)", color: title?.color ?? textColor, fontWeight: title ? FW_MAP[title.fontWeight] : "300", display: "block" }}>
+                  {title?.text ?? "Lợi ích thực sự"}
+                </span>
+                <span style={{ fontSize: titleAccent ? `clamp(24px, 3vw, ${titleAccent.fontSize}px)` : "clamp(24px, 3vw, 40px)", color: titleAccent?.color ?? primary, fontWeight: titleAccent ? FW_MAP[titleAccent.fontWeight] : "300", display: "block" }}>
+                  {titleAccent?.text ?? "bạn cảm nhận được mỗi ngày"}
+                </span>
+              </h2>
+              <p style={{ fontSize: subtitle ? `${subtitle.fontSize}px` : "15px", color: subtitle?.color ?? textColor, fontWeight: subtitle ? FW_MAP[subtitle.fontWeight] : "400", opacity: 0.5 }} className="max-w-xl mx-auto">
+                {subtitle?.text ?? "Không chỉ là tính năng — SmartFurni thay đổi cách bạn ngủ, nghỉ ngơi và bắt đầu mỗi ngày mới."}
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <div className="grid sm:grid-cols-3 gap-5 sm:gap-6">
+            {CORE_BENEFITS.map((b, i) => (
+              <ScrollReveal key={i} variant="fadeUp" delay={80 + i * 80}>
+                <div
+                  className="relative p-6 sm:p-7 rounded-3xl h-full flex flex-col gap-4 group"
+                  style={{ backgroundColor: surfaceColor, border: `1px solid ${borderColor}` }}
+                >
+                  {/* Icon */}
+                  <div className="flex items-center justify-center w-12 h-12 rounded-2xl"
+                    style={{ backgroundColor: `${primary}12`, border: `1px solid ${primary}25` }}>
+                    <SvgIcon name={b.icon} size={22} color={primary} strokeWidth={1.5} />
+                  </div>
+
+                  {/* Highlight badge */}
+                  <span className="inline-block self-start text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                    style={{ backgroundColor: `${primary}18`, color: primary }}>
+                    {b.highlight}
+                  </span>
+
+                  <div>
+                    <h3 className="text-base font-semibold mb-2" style={{ color: textColor }}>{b.title}</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: `${textColor}60` }}>{b.desc}</p>
+                  </div>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Feature grid (8 items) ── */}
+        <div>
+          <ScrollReveal variant="fadeUp" delay={0}>
+            <div className="text-center mb-10">
+              <h3 className="text-xl sm:text-2xl font-light mb-2" style={{ color: textColor }}>
+                Đầy đủ tính năng <span style={{ color: primary }}>trong một chiếc giường</span>
+              </h3>
+              <p className="text-sm" style={{ color: `${textColor}45` }}>Tất cả tính năng được điều khiển qua remote hoặc ứng dụng SmartFurni</p>
+            </div>
+          </ScrollReveal>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {items.map((f, i) => (
+              <ScrollReveal key={i} variant="fadeUp" delay={60 + i * 50}>
+                <div
+                  className="group p-5 rounded-2xl transition-all duration-300 h-full"
+                  style={{ backgroundColor: `${bgFrom}`, border: `1px solid ${borderColor}` }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = `${primary}40`;
+                    (e.currentTarget as HTMLElement).style.backgroundColor = surfaceColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = borderColor;
+                    (e.currentTarget as HTMLElement).style.backgroundColor = bgFrom;
+                  }}
+                >
+                  <div className="mb-3 flex items-center justify-center w-9 h-9 rounded-xl"
+                    style={{ backgroundColor: `${primary}10`, border: `1px solid ${primary}20` }}>
+                    <SvgIcon name={f.icon} size={18} color={primary} strokeWidth={1.5} />
+                  </div>
+                  <h4 className="text-sm font-semibold mb-1.5" style={{ color: textColor }}>{f.title}</h4>
+                  <p className="text-xs leading-relaxed" style={{ color: `${textColor}50` }}>{f.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
         </div>
       </div>
     </section>

@@ -2,9 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ScrollReveal } from "./ScrollReveal";
 import Link from "next/link";
-import BedSVG from "@/components/ui/BedSVG";
 import type { SiteTheme } from "@/lib/theme-types";
-import { SvgIcon } from "@/components/ui/SvgIcon";
 
 // ─── B2B Partner types ───────────────────────────────────────────────────────
 const B2B_PARTNERS = [
@@ -52,7 +50,6 @@ const B2B_PARTNERS = [
   },
 ];
 
-// ─── B2B Popup ───────────────────────────────────────────────────────────────
 function B2BPopup({
   open,
   onClose,
@@ -73,15 +70,12 @@ function B2BPopup({
   surfaceColor: string;
 }) {
   const overlayRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
-
   if (!open) return null;
-
   return (
     <div
       ref={overlayRef}
@@ -93,79 +87,41 @@ function B2BPopup({
         className="relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
         style={{ backgroundColor: bgFrom, border: `1px solid ${primary}30` }}
       >
-        {/* Header */}
-        <div
-          className="px-6 pt-6 pb-4 flex items-start justify-between"
-          style={{ borderBottom: `1px solid ${borderColor}` }}
-        >
+        <div className="px-6 pt-6 pb-4 flex items-start justify-between" style={{ borderBottom: `1px solid ${borderColor}` }}>
           <div>
-            <h2 className="text-xl font-semibold" style={{ color: textColor }}>Trở thành Đối tác B2B</h2>
-            <p className="text-sm mt-1" style={{ color: `${textColor}60` }}>Chọn lĩnh vực phù hợp để nhận tư vấn chuyên biệt</p>
+            <h3 className="text-lg font-semibold" style={{ color: textColor }}>Hợp tác B2B với SmartFurni</h3>
+            <p className="text-sm mt-1" style={{ color: `${textColor}60` }}>Chọn lĩnh vực phù hợp để nhận thông tin chi tiết</p>
           </div>
-          <button
-            onClick={onClose}
-            className="flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200"
-            style={{ color: `${textColor}60`, backgroundColor: `${textColor}10` }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}20`; (e.currentTarget as HTMLElement).style.color = primary; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${textColor}10`; (e.currentTarget as HTMLElement).style.color = `${textColor}60`; }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+          <button onClick={onClose} className="p-2 rounded-xl hover:opacity-70 transition-opacity" style={{ color: `${textColor}60` }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-
-        {/* Partner grid */}
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="p-4 grid sm:grid-cols-2 gap-2">
           {B2B_PARTNERS.map((p) => (
             <a
               key={p.title}
               href={p.href}
-              onClick={onClose}
-              className="group relative flex items-start gap-4 p-4 rounded-2xl transition-all duration-200 cursor-pointer"
-              style={{ backgroundColor: `${textColor}06`, border: `1px solid ${borderColor}` }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}12`;
-                (e.currentTarget as HTMLElement).style.borderColor = `${primary}50`;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = `${textColor}06`;
-                (e.currentTarget as HTMLElement).style.borderColor = borderColor;
-              }}
+              className="group flex items-start gap-3 p-4 rounded-2xl transition-all duration-200 hover:scale-[1.01]"
+              style={{ backgroundColor: `${surfaceColor}`, border: `1px solid ${borderColor}` }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${primary}50`; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = borderColor; }}
             >
-              <span className="flex-shrink-0 mt-0.5 flex items-center justify-center w-10 h-10 rounded-xl" style={{ backgroundColor: `${primary}12`, border: `1px solid ${primary}25` }}>
-                <SvgIcon name={p.icon} size={18} color={primary} strokeWidth={1.4} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold" style={{ color: textColor }}>{p.title}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-sm font-medium" style={{ color: textColor }}>{p.title}</span>
                   {p.badge && (
-                    <span
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: `linear-gradient(to right, ${primary}, ${secondary})`, color: bgFrom }}
-                    >
-                      {p.badge}
-                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${primary}20`, color: primary }}>{p.badge}</span>
                   )}
                 </div>
                 <p className="text-xs mt-1 leading-relaxed" style={{ color: `${textColor}55` }}>{p.desc}</p>
               </div>
-              <svg
-                className="flex-shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                style={{ color: primary }}
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
             </a>
           ))}
         </div>
-
-        {/* Footer note */}
         <div className="px-6 pb-5 text-center">
           <p className="text-xs" style={{ color: `${textColor}40` }}>
             Chưa tìm thấy lĩnh vực phù hợp?{" "}
-            <a href="/contact" onClick={onClose} className="underline" style={{ color: primary }}>Liên hệ trực tiếp với chúng tôi</a>
+            <a href="/contact" onClick={onClose} className="underline" style={{ color: primary }}>Liên hệ trực tiếp</a>
           </p>
         </div>
       </div>
@@ -173,12 +129,12 @@ function B2BPopup({
   );
 }
 
-const DEMO_PRESETS = [
-  { name: "Nằm phẳng", head: 0, foot: 0 },
-  { name: "Đọc sách", head: 45, foot: 15 },
-  { name: "Xem TV", head: 35, foot: 15 },
-  { name: "Ngồi dậy", head: 45, foot: 0 },
-  { name: "Chống ngáy", head: 12, foot: 0 },
+// ─── Trust badges ─────────────────────────────────────────────────────────────
+const TRUST_STATS = [
+  { value: "10.000+", label: "Khách hàng hài lòng" },
+  { value: "5 năm", label: "Bảo hành toàn diện" },
+  { value: "30 ngày", label: "Dùng thử miễn phí" },
+  { value: "2 giờ", label: "Lắp đặt tại nhà" },
 ];
 
 interface HeroSectionProps {
@@ -187,10 +143,6 @@ interface HeroSectionProps {
 
 export default function HeroSection({ theme }: HeroSectionProps) {
   const [b2bOpen, setB2bOpen] = useState(false);
-  const [presetIdx, setPresetIdx] = useState(0);
-  const [headAngle, setHeadAngle] = useState(0);
-  const [footAngle, setFootAngle] = useState(0);
-  const [ledOn, setLedOn] = useState(false);
 
   const primary = theme?.colors.primary ?? "#C9A84C";
   const secondary = theme?.colors.secondary ?? "#9A7A2E";
@@ -200,201 +152,185 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const borderColor = theme?.colors.border ?? "#2D2500";
   const surfaceColor = theme?.colors.surface ?? "#1A1500";
   const maxWidth = theme?.layout.maxWidth ?? 1280;
-  const heroTitle = theme?.hero.title ?? "Giường Công Thái Học\nĐiều Chỉnh Điện SmartFurni";
-  const heroSubtitle = theme?.hero.subtitle ?? "Trải nghiệm giấc ngủ hoàn hảo với công nghệ điều khiển thông minh.";
-  const titleFontSizeBase = theme?.hero.titleFontSize ?? 60;
-  // Responsive font size: clamp for mobile
-  const titleFontSize = `clamp(30px, 5vw + 1rem, ${titleFontSizeBase}px)`;
+  const heroTitle = theme?.hero.title ?? "Ngủ Ngon Hơn\nMỗi Đêm";
+  const heroSubtitle = theme?.hero.subtitle ?? "Giường điều chỉnh điện SmartFurni — nâng hạ đầu & chân chính xác, motor êm ái, điều khiển bằng remote hoặc ứng dụng di động.";
+  const titleFontSizeBase = theme?.hero.titleFontSize ?? 64;
+  const titleFontSize = `clamp(36px, 5vw + 1rem, ${titleFontSizeBase}px)`;
   const titleColor = theme?.hero.titleColor ?? textColor;
   const titleAccentColor = theme?.hero.titleAccentColor ?? primary;
-  const ctaText = theme?.hero.ctaText ?? "Thử Dashboard ngay";
-  const ctaLink = theme?.hero.ctaLink ?? "/dashboard";
-  const ctaSecondaryText = theme?.hero.ctaSecondaryText ?? "Xem demo";
-  const ctaSecondaryLink = theme?.hero.ctaSecondaryLink ?? "#download";
+  const ctaText = theme?.hero.ctaText ?? "Xem sản phẩm";
+  const ctaLink = theme?.hero.ctaLink ?? "/products";
+  const ctaSecondaryText = theme?.hero.ctaSecondaryText ?? "Nhận tư vấn miễn phí";
+  const ctaSecondaryLink = theme?.hero.ctaSecondaryLink ?? "/contact";
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPresetIdx((i) => (i + 1) % DEMO_PRESETS.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const target = DEMO_PRESETS[presetIdx];
-    const steps = 30;
-    let step = 0;
-    const startHead = headAngle;
-    const startFoot = footAngle;
-    const timer = setInterval(() => {
-      step++;
-      const t = step / steps;
-      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      setHeadAngle(Math.round(startHead + (target.head - startHead) * ease));
-      setFootAngle(Math.round(startFoot + (target.foot - startFoot) * ease));
-      if (step >= steps) clearInterval(timer);
-    }, 20);
-    return () => clearInterval(timer);
-  }, [presetIdx]); // eslint-disable-line
-
-  useEffect(() => {
-    const t = setInterval(() => setLedOn((v) => !v), 4000);
-    return () => clearInterval(t);
-  }, []);
+  // Hero image from theme or fallback
+  const heroImageUrl = (theme?.hero as unknown as Record<string, unknown>)?.imageUrl as string | undefined;
 
   return (
     <>
-    <B2BPopup
-      open={b2bOpen}
-      onClose={() => setB2bOpen(false)}
-      primary={primary}
-      secondary={secondary}
-      bgFrom={bgFrom}
-      textColor={textColor}
-      borderColor={borderColor}
-      surfaceColor={surfaceColor}
-    />
-    <section
-      style={{ background: `linear-gradient(135deg, ${bgFrom} 0%, ${bgTo} 100%)` }}
-      className="relative min-h-screen flex items-center overflow-hidden pt-16"
-    >
-      {/* Background glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div style={{ background: `radial-gradient(circle at 30% 30%, ${primary}08, transparent 60%)` }} className="absolute inset-0" />
-        <div style={{ background: `radial-gradient(circle at 70% 70%, ${primary}05, transparent 60%)` }} className="absolute inset-0" />
-      </div>
+      <B2BPopup
+        open={b2bOpen}
+        onClose={() => setB2bOpen(false)}
+        primary={primary}
+        secondary={secondary}
+        bgFrom={bgFrom}
+        textColor={textColor}
+        borderColor={borderColor}
+        surfaceColor={surfaceColor}
+      />
 
-      <div style={{ maxWidth }} className="relative mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20 grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-        {/* Left — Text */}
-        <ScrollReveal variant="fadeRight" delay={0}>
-        <div className="space-y-8">
-          <div
-            style={{ borderColor: `${primary}40`, backgroundColor: `${primary}0d` }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border"
-          >
-            <div style={{ backgroundColor: primary }} className="w-2 h-2 rounded-full animate-pulse" />
-            <span style={{ color: primary }} className="text-xs font-medium tracking-wider">CÔNG NGHỆ ĐIỀU KHIỂN THÔNG MINH</span>
-          </div>
+      {/* ── HERO ── */}
+      <section
+        style={{ background: `linear-gradient(160deg, ${bgFrom} 0%, ${bgTo} 100%)` }}
+        className="relative overflow-hidden pt-16"
+      >
+        {/* Subtle background glows */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div style={{ background: `radial-gradient(ellipse at 20% 50%, ${primary}0a, transparent 55%)` }} className="absolute inset-0" />
+          <div style={{ background: `radial-gradient(ellipse at 80% 20%, ${primary}06, transparent 50%)` }} className="absolute inset-0" />
+        </div>
 
-          <h1 className="font-light leading-tight" style={{ fontSize: titleFontSize }}>
-            {(() => {
-              const parts = heroTitle.includes("\n")
-                ? heroTitle.split("\n")
-                : (() => {
-                    const words = heroTitle.split(" ");
-                    const half = Math.ceil(words.length / 2);
-                    return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
-                  })();
-              return (
-                <>
-                  <span style={{ color: titleColor }} className="block opacity-90">{parts[0]}</span>
-                  {parts[1] && <span style={{ color: titleAccentColor }} className="block">{parts[1]}</span>}
-                </>
-              );
-            })()}
-          </h1>
+        <div style={{ maxWidth }} className="relative mx-auto px-4 sm:px-6">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center py-12 sm:py-16 lg:py-20">
 
-          <p style={{ color: `${textColor}99` }} className="text-base sm:text-lg leading-relaxed max-w-md">
-            {heroSubtitle}
-          </p>
+            {/* ── LEFT: Copy ── */}
+            <ScrollReveal variant="fadeRight" delay={0}>
+              <div className="space-y-6 lg:space-y-8">
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href={ctaLink}
-              style={{ background: `linear-gradient(to right, ${primary}, ${secondary})`, color: bgFrom }}
-              className="px-6 py-3 rounded-full font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
-              {ctaText}
-            </Link>
-            <a
-              href={ctaSecondaryLink}
-              style={{ borderColor: `${primary}60`, color: primary }}
-              className="px-6 py-3 rounded-full border text-sm font-medium hover:opacity-80 transition-opacity"
-            >
-              {ctaSecondaryText}
-            </a>
-            <button
-              onClick={() => setB2bOpen(true)}
-              style={{ borderColor: `${textColor}25`, color: `${textColor}80` }}
-              className="px-6 py-3 rounded-full border text-sm font-medium transition-all duration-200 flex items-center gap-2"
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = `${primary}60`;
-                (e.currentTarget as HTMLElement).style.color = primary;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = `${textColor}25`;
-                (e.currentTarget as HTMLElement).style.color = `${textColor}80`;
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              Trở thành đối tác B2B
-            </button>
-          </div>
+                {/* Badge */}
+                <div
+                  style={{ borderColor: `${primary}35`, backgroundColor: `${primary}0c` }}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border"
+                >
+                  <div style={{ backgroundColor: primary }} className="w-1.5 h-1.5 rounded-full animate-pulse" />
+                  <span style={{ color: primary }} className="text-xs font-medium tracking-widest uppercase">Giường Điều Chỉnh Điện</span>
+                </div>
 
-          {/* Stats — benefit-oriented */}
-          <div style={{ borderTopColor: borderColor }} className="grid grid-cols-3 gap-3 sm:gap-6 pt-4 border-t">
-            {[
-              { value: "10.000+", label: "Khách hàng hài lòng" },
-              { value: "30 ngày", label: "Dùng thử miễn phí" },
-              { value: "5 năm", label: "Bảo hành toàn diện" },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <div style={{ color: primary }} className="text-xl font-semibold">{stat.value}</div>
-                <div style={{ color: `${textColor}50` }} className="text-xs mt-0.5">{stat.label}</div>
+                {/* Headline */}
+                <h1 className="leading-[1.1] tracking-tight" style={{ fontSize: titleFontSize }}>
+                  {(() => {
+                    const parts = heroTitle.includes("\n")
+                      ? heroTitle.split("\n")
+                      : (() => {
+                          const words = heroTitle.split(" ");
+                          const half = Math.ceil(words.length / 2);
+                          return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
+                        })();
+                    return (
+                      <>
+                        <span style={{ color: titleColor }} className="block font-light">{parts[0]}</span>
+                        {parts[1] && <span style={{ color: titleAccentColor }} className="block font-semibold">{parts[1]}</span>}
+                      </>
+                    );
+                  })()}
+                </h1>
+
+                {/* Subtitle */}
+                <p style={{ color: `${textColor}80` }} className="text-base sm:text-lg leading-relaxed max-w-lg">
+                  {heroSubtitle}
+                </p>
+
+                {/* CTAs */}
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Link
+                    href={ctaLink}
+                    style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})`, color: bgFrom }}
+                    className="px-7 py-3.5 rounded-full font-semibold text-sm hover:opacity-90 transition-all duration-200 shadow-lg"
+                  >
+                    {ctaText}
+                  </Link>
+                  <Link
+                    href={ctaSecondaryLink}
+                    style={{ borderColor: `${primary}50`, color: primary }}
+                    className="px-7 py-3.5 rounded-full border text-sm font-medium hover:opacity-80 transition-opacity"
+                  >
+                    {ctaSecondaryText}
+                  </Link>
+                </div>
+
+                {/* Trust stats */}
+                <div style={{ borderTopColor: `${borderColor}60` }} className="grid grid-cols-4 gap-3 pt-5 border-t">
+                  {TRUST_STATS.map((stat) => (
+                    <div key={stat.label}>
+                      <div style={{ color: primary }} className="text-lg sm:text-xl font-semibold leading-tight">{stat.value}</div>
+                      <div style={{ color: `${textColor}45` }} className="text-[11px] mt-0.5 leading-tight">{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            </ScrollReveal>
+
+            {/* ── RIGHT: Product image ── */}
+            <ScrollReveal variant="fadeLeft" delay={120}>
+              <div className="relative">
+                {/* Glow behind image */}
+                <div
+                  style={{ background: `radial-gradient(circle, ${primary}18, transparent 65%)` }}
+                  className="absolute inset-0 scale-110 pointer-events-none"
+                />
+                <div
+                  style={{ borderColor: `${borderColor}80`, backgroundColor: `${surfaceColor}60` }}
+                  className="relative rounded-3xl overflow-hidden border backdrop-blur-sm aspect-[4/3]"
+                >
+                  {heroImageUrl ? (
+                    <img
+                      src={heroImageUrl}
+                      alt="SmartFurni Giường Điều Chỉnh Điện"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    /* Placeholder khi chưa có ảnh */
+                    <div
+                      className="w-full h-full flex flex-col items-center justify-center gap-4"
+                      style={{ backgroundColor: `${surfaceColor}` }}
+                    >
+                      <svg width="80" height="80" viewBox="0 0 80 80" fill="none" style={{ opacity: 0.2 }}>
+                        <rect x="8" y="32" width="64" height="28" rx="4" stroke={primary} strokeWidth="2" fill="none"/>
+                        <rect x="8" y="20" width="64" height="16" rx="4" stroke={primary} strokeWidth="2" fill="none"/>
+                        <rect x="12" y="60" width="8" height="10" rx="2" fill={primary} fillOpacity="0.5"/>
+                        <rect x="60" y="60" width="8" height="10" rx="2" fill={primary} fillOpacity="0.5"/>
+                      </svg>
+                      <p style={{ color: `${textColor}30` }} className="text-sm text-center px-8">
+                        Thêm ảnh sản phẩm qua<br/>Admin → Cài đặt giao diện → Hero
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Floating badge */}
+                  <div
+                    style={{ backgroundColor: `${bgFrom}e0`, borderColor: `${primary}30`, backdropFilter: "blur(8px)" }}
+                    className="absolute bottom-4 left-4 right-4 rounded-2xl border px-4 py-3 flex items-center justify-between"
+                  >
+                    <div>
+                      <div style={{ color: primary }} className="text-xs font-semibold tracking-wide">SMARTFURNI</div>
+                      <div style={{ color: textColor }} className="text-sm font-medium mt-0.5">Giường Điều Chỉnh Điện</div>
+                    </div>
+                    <div className="text-right">
+                      <div style={{ color: `${textColor}50` }} className="text-[10px]">Từ</div>
+                      <div style={{ color: primary }} className="text-base font-bold">29.900.000₫</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* B2B pill */}
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={() => setB2bOpen(true)}
+                    style={{ borderColor: `${textColor}20`, color: `${textColor}55` }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-medium hover:opacity-80 transition-opacity"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Trở thành đối tác B2B
+                  </button>
+                </div>
+              </div>
+            </ScrollReveal>
           </div>
         </div>
-
-        </ScrollReveal>
-        {/* Right — Bed Demo */}
-        <ScrollReveal variant="fadeLeft" delay={150}>
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative w-full max-w-lg">
-            <div style={{ background: `radial-gradient(circle, ${primary}15, transparent 70%)` }} className="absolute inset-0 rounded-3xl" />
-            <div
-              style={{ backgroundColor: `${surfaceColor}99`, borderColor: borderColor }}
-              className="relative border rounded-3xl p-8 backdrop-blur-sm"
-            >
-              <BedSVG
-                headAngle={headAngle}
-                footAngle={footAngle}
-                ledOn={ledOn}
-                ledColor={primary}
-                size={380}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          {/* Preset pills */}
-          <div className="flex flex-wrap gap-2 justify-center">
-            {DEMO_PRESETS.map((p, i) => (
-              <button
-                key={p.name}
-                onClick={() => setPresetIdx(i)}
-                style={i === presetIdx
-                  ? { backgroundColor: primary, color: bgFrom }
-                  : { borderColor: borderColor, color: `${textColor}60` }
-                }
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${i !== presetIdx ? "border" : ""}`}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-
-          <p style={{ color: `${textColor}40` }} className="text-xs text-center">
-            Demo tương tác — nhấn để thay đổi tư thế giường
-          </p>
-        </div>
-        </ScrollReveal>
-      </div>
-    </section>
+      </section>
     </>
   );
 }

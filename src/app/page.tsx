@@ -8,19 +8,15 @@ import { getThemeAsync } from "@/lib/theme-store";
 import StaticProductsSection from "@/components/landing/StaticProductsSection";
 import VideoSection from "@/components/landing/VideoSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import CatalogueSection from "@/components/landing/CatalogueSection";
-import HomepageConversionSections from "@/components/landing/HomepageConversionSections";
+import ComparisonSection from "@/components/landing/ComparisonSection";
 import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 
 export const dynamic = "force-dynamic";
-// Video config is now managed via theme.videoSection (Admin → Cài đặt giao diện → Video)
 
 export default async function HomePage() {
-  // Init DB để load sản phẩm từ CRM
   await initHomepageProductConfig();
   const theme = await getThemeAsync();
   const homepageConfig = await getHomepageProductConfigAsync();
-  // Lấy sản phẩm từ CRM (đã lọc theo config homepage)
   const products = getHomepageProducts();
   const { banner } = theme;
 
@@ -41,14 +37,16 @@ export default async function HomePage() {
         </div>
       )}
 
+      {/* 1. Nav */}
       <Navbar theme={theme} />
-      <HeroSection theme={theme} />
-      <HomepageConversionSections theme={theme} />
 
-      {/* Video section — quản lý qua Admin → Cài đặt giao diện → Video */}
+      {/* 2. Hero — ảnh sản phẩm + tiêu đề ngắn + 2 CTA */}
+      <HeroSection theme={theme} />
+
+      {/* 3. Video thực tế — ngay sau hero để tăng tin cậy */}
       <VideoSection theme={theme} />
 
-      {/* Sản phẩm — đồng bộ từ CRM, giao diện giống landing page */}
+      {/* 4. Sản phẩm — từ CRM */}
       <StaticProductsSection
         theme={theme}
         products={products}
@@ -56,10 +54,18 @@ export default async function HomePage() {
         sectionSubtitle={homepageConfig.sectionSubtitle}
       />
 
-      <CatalogueSection />
+      {/* 5. Lợi ích — 3 lợi ích cốt lõi + 8 tính năng */}
       <FeaturesSection theme={theme} />
+
+      {/* 6. So sánh — giường thường vs SmartFurni */}
+      <ComparisonSection theme={theme} />
+
+      {/* 7. Đánh giá khách hàng — social proof */}
       <TestimonialsSection theme={theme} />
+
+      {/* 8. CTA cuối — form tư vấn miễn phí */}
       <DownloadSection theme={theme} />
+
       <Footer theme={theme} variant="full" />
     </main>
   );
