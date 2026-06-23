@@ -9,6 +9,7 @@ import StaticProductsSection from "@/components/landing/StaticProductsSection";
 import VideoSection from "@/components/landing/VideoSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import ComparisonSection from "@/components/landing/ComparisonSection";
+import HomeDecisionSections from "@/components/landing/HomeDecisionSections";
 import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 
 export const dynamic = "force-dynamic";
@@ -60,10 +61,13 @@ export default async function HomePage() {
       {/* 6. So sánh — giường thường vs SmartFurni */}
       <ComparisonSection theme={theme} />
 
-      {/* 7. Đánh giá khách hàng — social proof */}
+      {/* 7. Các thông tin giúp khách quyết định mua */}
+      <HomeDecisionSections theme={theme} />
+
+      {/* 8. Đánh giá khách hàng — social proof */}
       <TestimonialsSection theme={theme} />
 
-      {/* 8. CTA cuối — form tư vấn miễn phí */}
+      {/* 9. CTA cuối — form tư vấn miễn phí */}
       <DownloadSection theme={theme} />
 
       <Footer theme={theme} variant="full" />
