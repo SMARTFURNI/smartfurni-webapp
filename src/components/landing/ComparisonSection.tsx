@@ -5,13 +5,13 @@ import type { SiteTheme } from "@/lib/theme-types";
 interface Props { theme: SiteTheme; }
 
 const ROWS = [
-  { label: "Tư thế sử dụng", normal: "Cố định nằm phẳng", smart: "Nâng đầu, nâng chân, Zero Gravity" },
-  { label: "Đọc sách / xem phim", normal: "Phải kê nhiều gối thủ công", smart: "Tựa lưng thoải mái, góc lưu sẵn" },
-  { label: "Giảm đau lưng", normal: "Không hỗ trợ", smart: "Tư thế Zero Gravity giảm áp lực đĩa đệm" },
+  { label: "Tư thế sử dụng", normal: "Nằm phẳng cố định", smart: "Nâng đầu/chân, Zero Gravity" },
+  { label: "Đọc sách / xem phim", normal: "Kê gối thủ công", smart: "Tựa lưng theo góc đã lưu" },
+  { label: "Thư giãn cuối ngày", normal: "Ít lựa chọn tư thế", smart: "Đổi góc nằm chỉ với một chạm" },
   { label: "Điều khiển", normal: "Không có", smart: "Remote vật lý + app iOS/Android" },
-  { label: "Massage", normal: "Không có", smart: "3 mức độ, hẹn giờ tự động" },
-  { label: "Bảo hành", normal: "1–2 năm khung, không bảo hành điện", smart: "5 năm toàn diện — khung, motor, điện" },
-  { label: "Lắp đặt", normal: "Tự lắp hoặc thuê thợ riêng", smart: "Kỹ thuật viên lắp đặt + hướng dẫn tại nhà" },
+  { label: "Massage/đèn gầm", normal: "Không tích hợp", smart: "Tùy chọn massage rung, LED gầm" },
+  { label: "Bảo hành", normal: "Tùy nơi bán", smart: "Bảo hành 5 năm theo chính sách" },
+  { label: "Lắp đặt", normal: "Tự xử lý/thuê riêng", smart: "Kỹ thuật viên giao lắp tận nhà" },
 ];
 
 export default function ComparisonSection({ theme }: Props) {
@@ -75,21 +75,19 @@ export default function ComparisonSection({ theme }: Props) {
                   {row.label}
                 </div>
                 <div className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-center" style={{ color: `${textColor}40` }}>
-                  <span className="flex items-center justify-center gap-1.5">
+                  <span className="inline-flex items-center justify-center gap-1.5 leading-snug">
                     <span className="text-red-400 text-base">✗</span>
-                    <span className="hidden sm:inline">{row.normal}</span>
+                    <span>{row.normal}</span>
                   </span>
-                  <span className="sm:hidden text-xs block mt-0.5" style={{ color: `${textColor}35` }}>{row.normal}</span>
                 </div>
                 <div
                   className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-center"
                   style={{ color: `${textColor}80`, backgroundColor: `${primary}05` }}
                 >
-                  <span className="flex items-center justify-center gap-1.5">
+                  <span className="inline-flex items-center justify-center gap-1.5 leading-snug">
                     <span style={{ color: primary }} className="text-base">✓</span>
-                    <span className="hidden sm:inline">{row.smart}</span>
+                    <span>{row.smart}</span>
                   </span>
-                  <span className="sm:hidden text-xs block mt-0.5" style={{ color: `${textColor}60` }}>{row.smart}</span>
                 </div>
               </div>
             ))}
