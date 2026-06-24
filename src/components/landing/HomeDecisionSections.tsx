@@ -8,10 +8,10 @@ import type { SiteTheme } from "@/lib/theme-store";
 interface Props { theme: SiteTheme; }
 
 const AUDIENCES = [
-  { icon: "heart", title: "Người đau lưng, mỏi vai gáy", desc: "Tư thế Zero Gravity và nâng chân giúp giảm áp lực cột sống sau một ngày dài." },
-  { icon: "user", title: "Người lớn tuổi", desc: "Remote vật lý dễ bấm, lên xuống giường nhẹ hơn và không cần kê nhiều gối." },
+  { icon: "heart", title: "Người thường mỏi lưng, mỏi vai gáy", desc: "Đổi góc nằm để lưng, vai và đầu gối được nâng đỡ dễ chịu hơn sau một ngày dài." },
+  { icon: "user", title: "Người lớn tuổi", desc: "Remote vật lý dễ bấm, đổi tư thế nhẹ nhàng và không cần kê nhiều gối." },
   { icon: "book", title: "Người đọc sách, xem phim tại giường", desc: "Lưu sẵn góc tựa lưng yêu thích, đổi tư thế chỉ với một chạm." },
-  { icon: "hospital", title: "Người cần chăm sóc phục hồi", desc: "Điều chỉnh đầu và chân độc lập, thuận tiện khi nghỉ ngơi hoặc chăm sóc tại nhà." },
+  { icon: "hospital", title: "Gia đình cần chăm sóc tại nhà", desc: "Điều chỉnh đầu và chân độc lập, thuận tiện khi nghỉ ngơi hoặc hỗ trợ sinh hoạt." },
   { icon: "home", title: "Gia đình hiện đại", desc: "Thiết kế gọn, nhiều kích thước, dễ phối với phòng ngủ chung cư và nhà phố." },
   { icon: "hotel", title: "Khách sạn, showroom, căn hộ dịch vụ", desc: "Tạo điểm khác biệt trải nghiệm ngủ cao cấp cho khách hàng và đối tác." },
 ];
@@ -19,7 +19,7 @@ const AUDIENCES = [
 const SPECS = [
   ["Kích thước phổ biến", "1m6 x 2m, 1m8 x 2m, tùy chỉnh theo dự án"],
   ["Góc nâng đầu", "0-70 độ, điều chỉnh mượt từng cấp"],
-  ["Góc nâng chân", "0-45 độ, hỗ trợ thư giãn và tuần hoàn"],
+  ["Góc nâng chân", "0-45 độ, hỗ trợ đổi tư thế nghỉ ngơi"],
   ["Tải trọng khuyến nghị", "Tối đa 300 kg tùy phiên bản khung"],
   ["Motor", "Motor điện vận hành êm, kiểm định nâng hạ cường độ cao"],
   ["Điều khiển", "Remote không dây, ứng dụng di động, preset tư thế"],

@@ -13,33 +13,33 @@ const FW_MAP: Record<string, string> = {
 const CORE_BENEFITS = [
   {
     icon: "adjust",
-    title: "Ngủ đúng tư thế, giảm đau lưng",
-    desc: "Điều chỉnh góc đầu & chân chính xác từng độ. Tư thế Zero Gravity giảm áp lực cột sống, cải thiện tuần hoàn máu trong khi ngủ.",
-    highlight: "Giảm đau lưng rõ rệt",
+    title: "Đổi tư thế nghỉ ngơi dễ hơn",
+    desc: "Nâng đầu và chân theo góc mong muốn. Phù hợp đọc sách, xem TV hoặc thư giãn trước khi ngủ.",
+    highlight: "Tư thế linh hoạt",
   },
   {
     icon: "star",
-    title: "Điều khiển đơn giản, cả nhà dùng được",
-    desc: "Remote vật lý + ứng dụng di động. Lưu 6 tư thế yêu thích, bấm 1 nút là về đúng vị trí. Phù hợp từ người cao tuổi đến trẻ em.",
-    highlight: "Dễ dùng cho mọi lứa tuổi",
+    title: "Điều khiển đơn giản",
+    desc: "Remote vật lý và ứng dụng di động. Lưu tư thế quen thuộc, bấm một nút là quay lại góc đã chọn.",
+    highlight: "Remote + app",
   },
   {
-    icon: "wave",
+    icon: "shield",
     title: "Bền bỉ, bảo hành 5 năm toàn diện",
-    desc: "Motor nhập khẩu, kiểm định 50.000 lần nâng hạ. Bảo hành 5 năm linh kiện điện, lắp đặt tận nhà trong 2 giờ, hỗ trợ kỹ thuật 24/7.",
+    desc: "Khung chắc, motor vận hành êm. Kỹ thuật viên giao lắp, cân chỉnh và hướng dẫn sử dụng tại nhà.",
     highlight: "Bảo hành 5 năm",
   },
 ];
 
 const FEATURE_GRID = [
-  { icon: "adjust", title: "Điều chỉnh góc chính xác", desc: "Đầu 0–70°, chân 0–45°. Motor êm ái, không rung lắc." },
-  { icon: "star", title: "6 Preset thông minh", desc: "Nằm phẳng, Đọc sách, Xem TV, Zero Gravity và nhiều hơn." },
-  { icon: "light", title: "Đèn LED thông minh", desc: "16 triệu màu, hẹn giờ tắt, điều chỉnh qua app." },
-  { icon: "wave", title: "Massage tích hợp", desc: "3 mức độ, hẹn giờ tự động tắt sau 15–60 phút." },
-  { icon: "moon", title: "Theo dõi giấc ngủ", desc: "Phân tích chu kỳ ngủ, điểm chất lượng, biểu đồ 7 ngày." },
-  { icon: "mic", title: "Điều khiển giọng nói", desc: "Ra lệnh tiếng Việt: 'Nâng đầu lên', 'Bật đèn'." },
-  { icon: "clock", title: "Hẹn giờ thông minh", desc: "Báo thức nhẹ nhàng bằng cách nâng đầu từ từ." },
-  { icon: "phone", title: "Bluetooth 5.0", desc: "Kết nối ổn định 10m, tự động kết nối lại khi mở app." },
+  { icon: "adjust", title: "Nâng đầu/chân", desc: "Đầu 0-70°, chân 0-45°." },
+  { icon: "star", title: "Zero Gravity", desc: "Tư thế thư giãn, nâng đỡ cơ thể cân bằng hơn." },
+  { icon: "light", title: "Đèn LED gầm", desc: "Ánh sáng dịu, tiện dùng ban đêm." },
+  { icon: "wave", title: "Massage rung", desc: "Tùy chọn nhiều mức thư giãn." },
+  { icon: "moon", title: "Lưu tư thế", desc: "Một chạm về góc nằm quen thuộc." },
+  { icon: "mic", title: "Remote dễ bấm", desc: "Nút rõ, thao tác nhanh." },
+  { icon: "clock", title: "Hẹn giờ", desc: "Cài thời gian nghỉ và tự tắt." },
+  { icon: "phone", title: "App Bluetooth", desc: "Điều khiển trên điện thoại." },
 ];
 
 export default function FeaturesSection({ theme }: Props) {
@@ -79,7 +79,7 @@ export default function FeaturesSection({ theme }: Props) {
                 </span>
               </h2>
               <p style={{ fontSize: subtitle ? `${subtitle.fontSize}px` : "15px", color: subtitle?.color ?? textColor, fontWeight: subtitle ? FW_MAP[subtitle.fontWeight] : "400", opacity: 0.5 }} className="max-w-xl mx-auto">
-                {subtitle?.text ?? "Không chỉ là tính năng — SmartFurni thay đổi cách bạn ngủ, nghỉ ngơi và bắt đầu mỗi ngày mới."}
+                {subtitle?.text ?? "Tận hưởng cảm giác nghỉ ngơi linh hoạt hơn mỗi ngày, từ đổi tư thế đến điều khiển nhanh và lắp đặt tận nơi."}
               </p>
             </div>
           </ScrollReveal>
@@ -118,9 +118,9 @@ export default function FeaturesSection({ theme }: Props) {
           <ScrollReveal variant="fadeUp" delay={0}>
             <div className="text-center mb-10">
               <h3 className="text-xl sm:text-2xl font-light mb-2" style={{ color: textColor }}>
-                Đầy đủ tính năng <span style={{ color: primary }}>trong một chiếc giường</span>
+                Tính năng chính <span style={{ color: primary }}>nhìn là hiểu</span>
               </h3>
-              <p className="text-sm" style={{ color: `${textColor}45` }}>Tất cả tính năng được điều khiển qua remote hoặc ứng dụng SmartFurni</p>
+              <p className="text-sm" style={{ color: `${textColor}45` }}>Những tiện ích thường dùng nhất khi nghỉ ngơi, đọc sách hoặc xem phim trên giường.</p>
             </div>
           </ScrollReveal>
 

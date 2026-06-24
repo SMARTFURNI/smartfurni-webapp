@@ -7,6 +7,7 @@ import Footer from "@/components/landing/Footer";
 import { getThemeAsync } from "@/lib/theme-store";
 import StaticProductsSection from "@/components/landing/StaticProductsSection";
 import VideoSection from "@/components/landing/VideoSection";
+import HomeVisualProofSections from "@/components/landing/HomeVisualProofSections";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import ComparisonSection from "@/components/landing/ComparisonSection";
 import HomeDecisionSections from "@/components/landing/HomeDecisionSections";
@@ -47,7 +48,10 @@ export default async function HomePage() {
       {/* 3. Video thực tế — ngay sau hero để tăng tin cậy */}
       <VideoSection theme={theme} />
 
-      {/* 4. Sản phẩm — từ CRM */}
+      {/* 4. Chuyển động & cận cảnh — giảm chữ, tăng hình ảnh mô tả */}
+      <HomeVisualProofSections theme={theme} />
+
+      {/* 5. Sản phẩm — từ CRM */}
       <StaticProductsSection
         theme={theme}
         products={products}
@@ -55,19 +59,19 @@ export default async function HomePage() {
         sectionSubtitle={homepageConfig.sectionSubtitle}
       />
 
-      {/* 5. Lợi ích — 3 lợi ích cốt lõi + 8 tính năng */}
+      {/* 6. Lợi ích — 3 lợi ích cốt lõi + 8 tính năng */}
       <FeaturesSection theme={theme} />
 
-      {/* 6. So sánh — giường thường vs SmartFurni */}
+      {/* 7. So sánh — giường thường vs SmartFurni */}
       <ComparisonSection theme={theme} />
 
-      {/* 7. Các thông tin giúp khách quyết định mua */}
+      {/* 8. Các thông tin giúp khách quyết định mua */}
       <HomeDecisionSections theme={theme} />
 
-      {/* 8. Đánh giá khách hàng — social proof */}
+      {/* 9. Đánh giá khách hàng — social proof */}
       <TestimonialsSection theme={theme} />
 
-      {/* 9. CTA cuối — form tư vấn miễn phí */}
+      {/* 10. CTA cuối — form tư vấn miễn phí */}
       <DownloadSection theme={theme} />
 
       <Footer theme={theme} variant="full" />
