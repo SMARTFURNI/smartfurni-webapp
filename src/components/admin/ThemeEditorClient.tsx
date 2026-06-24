@@ -49,6 +49,7 @@ const SECTION_GROUPS = [
       { id: "layout", label: "Bố cục & Hiệu ứng", icon: "⚡" },
       { id: "seo", label: "SEO & Analytics", icon: "📈" },
       { id: "video", label: "Section Video", icon: "🎥" },
+      { id: "homepageVisualProof", label: "Trang chủ: Chuyển động & ảnh", icon: "🖼️" },
       { id: "homepageProblems", label: "Trang chủ: Khi nào cần", icon: "❗" },
       { id: "homepageSolutions", label: "Trang chủ: Chọn nhu cầu", icon: "🧭" },
       { id: "homepagePostures", label: "Trang chủ: Tư thế dùng", icon: "🛌" },
@@ -86,6 +87,7 @@ const SECTION_PREVIEW_URL: Record<string, string> = {
   pageBlog: "/blog", pageCart: "/cart", pageCheckout: "/checkout",
   pageWarranty: "/warranty", pageReturns: "/returns",
   video: "/",
+  homepageVisualProof: "/",
   homepageProblems: "/",
   homepageSolutions: "/",
   homepageTechnology: "/",
@@ -102,6 +104,7 @@ const SECTION_PREVIEW_URL: Record<string, string> = {
 
 type HomepageGenericSectionKey =
   | "problems"
+  | "visualProof"
   | "solutions"
   | "technology"
   | "postures"
@@ -112,6 +115,7 @@ type HomepageGenericSectionKey =
   | "faq";
 
 const HOMEPAGE_GENERIC_SECTION_LABELS: Record<HomepageGenericSectionKey, { title: string; itemLabel: string; addLabel: string }> = {
+  visualProof: { title: "Chuyển động & cận cảnh sản phẩm", itemLabel: "Mục hiển thị", addLabel: "Thêm mục hiển thị" },
   problems: { title: "Khi nào cần giường thông minh", itemLabel: "Tình huống", addLabel: "Thêm tình huống" },
   solutions: { title: "Chọn theo nhu cầu", itemLabel: "Nhóm khách", addLabel: "Thêm nhóm khách" },
   postures: { title: "Tư thế thường dùng", itemLabel: "Tư thế", addLabel: "Thêm tư thế" },
@@ -936,9 +940,10 @@ export default function ThemeEditorClient({
                     updateHomepageGenericSection(key, { ...section, media: nextMedia });
                   }}
                 />
-                <TextInput
+                <ImageUploadInput
                   label="Đường dẫn ảnh thumbnail"
                   value={media.imageUrl}
+                  hint="Tải ảnh lên hoặc dán URL ảnh cho media này."
                   onChange={(v) => {
                     const nextMedia = (section.media || []).map((it: HomepageSectionMedia, i: number) => i === idx ? { ...it, imageUrl: v } : it);
                     updateHomepageGenericSection(key, { ...section, media: nextMedia });
@@ -1672,6 +1677,8 @@ export default function ThemeEditorClient({
 
       case "homepageProblems":
         return renderHomepageGenericSection("problems");
+      case "homepageVisualProof":
+        return renderHomepageGenericSection("visualProof");
       case "homepageSolutions":
         return renderHomepageGenericSection("solutions");
       case "homepageTechnology":

@@ -304,6 +304,7 @@ export interface HomepageDownloadSection {
 
 export interface HomepageSections {
   features: HomepageFeaturesSection;
+  visualProof: HomepageGenericSection;
   testimonials: HomepageTestimonialsSection;
   download: HomepageDownloadSection;
   problems: HomepageGenericSection;

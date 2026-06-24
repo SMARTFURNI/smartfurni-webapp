@@ -299,6 +299,24 @@ export const defaultTheme: SiteTheme = {
         { icon: "📡", title: "Kết nối Bluetooth 5.0", desc: "Kết nối ổn định với smartphone từ khoảng cách xa", imageUrl: "/gsf150-exploded.jpg", imageAlt: "Kết nối Bluetooth 5.0" },
       ],
     },
+    visualProof: {
+      badge: { text: "CHUYỂN ĐỘNG THỰC TẾ", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
+      title: { text: "Nhìn nhanh cách giường", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
+      titleAccent: { text: "thay đổi tư thế", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
+      subtitle: { text: "Dễ dàng chuyển từ nằm nghỉ sang đọc sách, xem phim hoặc thư giãn chỉ với remote hoặc ứng dụng trên điện thoại.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+      items: [
+        { icon: "book", title: "Nâng đầu", desc: "Tựa lưng đọc sách, xem phim hoặc làm việc nhẹ trên giường.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Nâng đầu SmartFurni" },
+        { icon: "adjust", title: "Nâng chân", desc: "Đổi góc chân để thư giãn sau ngày dài, không cần kê nhiều gối.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Nâng chân SmartFurni" },
+        { icon: "star", title: "Zero Gravity", desc: "Tư thế nghỉ ngơi giúp cơ thể được nâng đỡ cân bằng hơn.", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Zero Gravity SmartFurni" },
+        { icon: "phone", title: "Remote / app", desc: "Chọn nhanh tư thế quen thuộc bằng remote hoặc ứng dụng di động.", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Remote và app SmartFurni" },
+      ],
+      mediaLayout: "mosaic",
+      media: [
+        { label: "Motor", title: "Motor nâng hạ êm", desc: "Vận hành mượt, phù hợp không gian phòng ngủ gia đình.", type: "image", imageUrl: "/gsf150-exploded.jpg", linkUrl: "/products" },
+        { label: "Khung", title: "Khung chắc chắn", desc: "Kết cấu khung gọn, bền và dễ phối với nhiều kiểu phòng.", type: "image", imageUrl: "/gsf150-wood-frame.jpg", linkUrl: "/products" },
+        { label: "Remote", title: "Điều khiển dễ dùng", desc: "Nút bấm rõ ràng, thao tác nhanh cho cả gia đình.", type: "image", imageUrl: "/uploads/products/smartfurni-bed-main.webp", linkUrl: "/products" },
+      ],
+    },
     testimonials: {
       badge: { text: "KHÁCH HÀNG NÓI GÌ", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },
       title: { text: "Hơn 10.000 khách hàng", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
@@ -502,6 +520,9 @@ function mergeTheme(saved: SiteTheme): SiteTheme {
       ? {
           features: { ...defaultTheme.homepageSections.features, ...saved.homepageSections.features,
             items: saved.homepageSections.features?.items ?? defaultTheme.homepageSections.features.items },
+          visualProof: { ...defaultTheme.homepageSections.visualProof, ...saved.homepageSections.visualProof,
+            items: saved.homepageSections.visualProof?.items ?? defaultTheme.homepageSections.visualProof.items,
+            media: saved.homepageSections.visualProof?.media ?? defaultTheme.homepageSections.visualProof.media },
           testimonials: { ...defaultTheme.homepageSections.testimonials, ...saved.homepageSections.testimonials },
           download: { ...defaultTheme.homepageSections.download, ...saved.homepageSections.download },
           problems: { ...defaultTheme.homepageSections.problems, ...saved.homepageSections.problems, items: saved.homepageSections.problems?.items ?? defaultTheme.homepageSections.problems.items },
