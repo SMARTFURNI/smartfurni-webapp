@@ -15,6 +15,15 @@ const ROWS = [
 ];
 
 export default function ComparisonSection({ theme }: Props) {
+  const section = theme.homepageSections?.comparison;
+  const rows = section?.items?.length
+    ? section.items.map((item, index) => ({
+        label: item.title || ROWS[index % ROWS.length].label,
+        normal: item.icon || ROWS[index % ROWS.length].normal,
+        smart: item.desc || ROWS[index % ROWS.length].smart,
+      }))
+    : ROWS;
+
   const primary = theme?.colors.primary ?? "#C9A84C";
   const textColor = theme?.colors.text ?? "#F5EDD6";
   const borderColor = theme?.colors.border ?? "#2D2500";
@@ -30,14 +39,14 @@ export default function ComparisonSection({ theme }: Props) {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4"
               style={{ borderColor: `${primary}30`, backgroundColor: `${primary}08` }}
             >
-              <span style={{ color: primary }} className="text-[11px] font-medium tracking-widest uppercase">So Sánh</span>
+              <span style={{ color: primary }} className="text-[11px] font-medium tracking-widest uppercase">{section?.badge?.text ?? "So Sánh"}</span>
             </div>
             <h2 className="leading-tight">
-              <span className="block font-light" style={{ fontSize: "clamp(24px, 3vw, 40px)", color: textColor }}>Giường thường</span>
-              <span className="block font-light" style={{ fontSize: "clamp(24px, 3vw, 40px)", color: primary }}>khác gì SmartFurni?</span>
+              <span className="block font-light" style={{ fontSize: "clamp(24px, 3vw, 40px)", color: textColor }}>{section?.title?.text ?? "Giường thường"}</span>
+              <span className="block font-light" style={{ fontSize: "clamp(24px, 3vw, 40px)", color: primary }}>{section?.titleAccent?.text ?? "khác gì SmartFurni?"}</span>
             </h2>
             <p className="mt-3 text-sm max-w-lg mx-auto" style={{ color: `${textColor}50` }}>
-              Những khác biệt bạn cảm nhận được ngay trong tuần đầu sử dụng.
+              {section?.subtitle?.text ?? "Những khác biệt bạn cảm nhận được ngay trong tuần đầu sử dụng."}
             </p>
           </div>
         </ScrollReveal>
@@ -60,7 +69,7 @@ export default function ComparisonSection({ theme }: Props) {
             </div>
 
             {/* Rows */}
-            {ROWS.map((row, i) => (
+            {rows.map((row, i) => (
               <div
                 key={row.label}
                 className="grid grid-cols-3 transition-colors duration-150"

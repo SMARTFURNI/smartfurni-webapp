@@ -50,16 +50,16 @@ const SECTION_GROUPS = [
       { id: "seo", label: "SEO & Analytics", icon: "📈" },
       { id: "video", label: "Section Video", icon: "🎥" },
       { id: "homepageVisualProof", label: "Trang chủ: Chuyển động & ảnh", icon: "🖼️" },
-      { id: "homepageProblems", label: "Trang chủ: Khi nào cần", icon: "❗" },
-      { id: "homepageSolutions", label: "Trang chủ: Chọn nhu cầu", icon: "🧭" },
-      { id: "homepagePostures", label: "Trang chủ: Tư thế dùng", icon: "🛌" },
-      { id: "homepageTechnology", label: "Trang chủ: Vận hành", icon: "⚙️" },
-      { id: "homepageComparison", label: "Trang chủ: So sánh nhanh", icon: "⇄" },
-      { id: "homepageProcess", label: "Trang chủ: Quy trình", icon: "①" },
-      { id: "homepageTrust", label: "Trang chủ: Yên tâm", icon: "🛡️" },
-      { id: "homepageFAQ", label: "Trang chủ: Hỏi đáp", icon: "?" },
-      { id: "homepageB2B", label: "Trang chủ: Đối tác", icon: "🤝" },
       { id: "homepageFeatures", label: "Section Tính năng", icon: "⚙️" },
+      { id: "homepageComparison", label: "Trang chủ: So sánh", icon: "⇄" },
+      { id: "homepageAudiences", label: "Trang chủ: Chọn đúng nhu cầu", icon: "🧭" },
+      { id: "homepageSpecs", label: "Trang chủ: Thông số kỹ thuật", icon: "📐" },
+      { id: "homepageBuyingProcess", label: "Trang chủ: Quy trình", icon: "①" },
+      { id: "homepageShowrooms", label: "Trang chủ: Showroom", icon: "📍" },
+      { id: "homepageAfterSales", label: "Trang chủ: Hậu mãi", icon: "🛡️" },
+      { id: "homepageProofStats", label: "Trang chủ: Con số tin cậy", icon: "✓" },
+      { id: "homepagePayments", label: "Trang chủ: Thanh toán", icon: "💳" },
+      { id: "homepageFAQ", label: "Trang chủ: Hỏi đáp", icon: "?" },
       { id: "homepageTestimonials", label: "Section Đánh giá", icon: "⭐" },
       { id: "homepageDownload", label: "Section Tải app", icon: "📱" },
     ],
@@ -88,14 +88,14 @@ const SECTION_PREVIEW_URL: Record<string, string> = {
   pageWarranty: "/warranty", pageReturns: "/returns",
   video: "/",
   homepageVisualProof: "/",
-  homepageProblems: "/",
-  homepageSolutions: "/",
-  homepageTechnology: "/",
-  homepagePostures: "/",
   homepageComparison: "/",
-  homepageTrust: "/",
-  homepageProcess: "/",
-  homepageB2B: "/",
+  homepageAudiences: "/",
+  homepageSpecs: "/",
+  homepageBuyingProcess: "/",
+  homepageShowrooms: "/",
+  homepageAfterSales: "/",
+  homepageProofStats: "/",
+  homepagePayments: "/",
   homepageFAQ: "/",
   homepageFeatures: "/",
   homepageTestimonials: "/",
@@ -103,6 +103,13 @@ const SECTION_PREVIEW_URL: Record<string, string> = {
 };
 
 type HomepageGenericSectionKey =
+  | "audiences"
+  | "specs"
+  | "buyingProcess"
+  | "showrooms"
+  | "afterSales"
+  | "proofStats"
+  | "payments"
   | "problems"
   | "visualProof"
   | "solutions"
@@ -116,6 +123,13 @@ type HomepageGenericSectionKey =
 
 const HOMEPAGE_GENERIC_SECTION_LABELS: Record<HomepageGenericSectionKey, { title: string; itemLabel: string; addLabel: string }> = {
   visualProof: { title: "Chuyển động & cận cảnh sản phẩm", itemLabel: "Mục hiển thị", addLabel: "Thêm mục hiển thị" },
+  audiences: { title: "Chọn đúng nhu cầu", itemLabel: "Nhóm khách", addLabel: "Thêm nhóm khách" },
+  specs: { title: "Thông số kỹ thuật", itemLabel: "Thông số", addLabel: "Thêm thông số" },
+  buyingProcess: { title: "Quy trình mua hàng", itemLabel: "Bước", addLabel: "Thêm bước" },
+  showrooms: { title: "Showroom / trải nghiệm trực tiếp", itemLabel: "Địa điểm", addLabel: "Thêm địa điểm" },
+  afterSales: { title: "Bảo hành & hậu mãi", itemLabel: "Chính sách", addLabel: "Thêm chính sách" },
+  proofStats: { title: "Con số tin cậy", itemLabel: "Con số", addLabel: "Thêm con số" },
+  payments: { title: "Thanh toán linh hoạt", itemLabel: "Phương án", addLabel: "Thêm phương án" },
   problems: { title: "Khi nào cần giường thông minh", itemLabel: "Tình huống", addLabel: "Thêm tình huống" },
   solutions: { title: "Chọn theo nhu cầu", itemLabel: "Nhóm khách", addLabel: "Thêm nhóm khách" },
   postures: { title: "Tư thế thường dùng", itemLabel: "Tư thế", addLabel: "Thêm tư thế" },
@@ -1679,6 +1693,20 @@ export default function ThemeEditorClient({
         return renderHomepageGenericSection("problems");
       case "homepageVisualProof":
         return renderHomepageGenericSection("visualProof");
+      case "homepageAudiences":
+        return renderHomepageGenericSection("audiences");
+      case "homepageSpecs":
+        return renderHomepageGenericSection("specs");
+      case "homepageBuyingProcess":
+        return renderHomepageGenericSection("buyingProcess");
+      case "homepageShowrooms":
+        return renderHomepageGenericSection("showrooms");
+      case "homepageAfterSales":
+        return renderHomepageGenericSection("afterSales");
+      case "homepageProofStats":
+        return renderHomepageGenericSection("proofStats");
+      case "homepagePayments":
+        return renderHomepageGenericSection("payments");
       case "homepageSolutions":
         return renderHomepageGenericSection("solutions");
       case "homepageTechnology":

@@ -307,6 +307,13 @@ export interface HomepageSections {
   visualProof: HomepageGenericSection;
   testimonials: HomepageTestimonialsSection;
   download: HomepageDownloadSection;
+  audiences: HomepageGenericSection;
+  specs: HomepageGenericSection;
+  buyingProcess: HomepageGenericSection;
+  showrooms: HomepageGenericSection;
+  afterSales: HomepageGenericSection;
+  proofStats: HomepageGenericSection;
+  payments: HomepageGenericSection;
   problems: HomepageGenericSection;
   solutions: HomepageGenericSection;
   technology: HomepageGenericSection;

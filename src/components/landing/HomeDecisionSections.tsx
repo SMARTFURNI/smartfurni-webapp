@@ -105,6 +105,25 @@ function SectionHeader({
 }
 
 export default function HomeDecisionSections({ theme }: Props) {
+  const homepageSections = theme.homepageSections;
+  const audiencesSection = homepageSections?.audiences;
+  const specsSection = homepageSections?.specs;
+  const processSection = homepageSections?.buyingProcess;
+  const showroomsSection = homepageSections?.showrooms;
+  const afterSalesSection = homepageSections?.afterSales;
+  const proofStatsSection = homepageSections?.proofStats;
+  const paymentsSection = homepageSections?.payments;
+  const faqSection = homepageSections?.faq;
+
+  const audienceItems = audiencesSection?.items?.length ? audiencesSection.items : AUDIENCES;
+  const specItems = specsSection?.items?.length ? specsSection.items : SPECS.map(([title, desc]) => ({ title, desc }));
+  const processItems = processSection?.items?.length ? processSection.items : PROCESS.map((item) => ({ icon: item.step, title: item.title, desc: item.desc }));
+  const showroomItems = showroomsSection?.items?.length ? showroomsSection.items : SHOWROOMS.map((item) => ({ icon: "map-pin", title: item.city, desc: item.address }));
+  const afterSalesItems = afterSalesSection?.items?.length ? afterSalesSection.items : AFTER_SALES;
+  const proofStatItems = proofStatsSection?.items?.length ? proofStatsSection.items : TRUST.map((item) => ({ icon: item.value, title: item.value, desc: item.label }));
+  const paymentItems = paymentsSection?.items?.length ? paymentsSection.items : PAYMENTS;
+  const faqItems = faqSection?.items?.length ? faqSection.items : FAQS.map(([title, desc]) => ({ icon: "?", title, desc }));
+
   const primary = theme?.colors.primary ?? "#C9A84C";
   const secondary = theme?.colors.secondary ?? "#9A7A2E";
   const textColor = theme?.colors.text ?? "#F5EDD6";
@@ -120,20 +139,20 @@ export default function HomeDecisionSections({ theme }: Props) {
       <div className="max-w-7xl mx-auto space-y-16 sm:space-y-20">
         <div>
           <SectionHeader
-            badge="Chọn đúng nhu cầu"
-            title="SmartFurni phù hợp"
-            accent="với ai?"
-            subtitle="Thay vì chỉ xem tính năng, hãy bắt đầu từ tình huống sử dụng hằng ngày của bạn và gia đình."
+            badge={audiencesSection?.badge?.text ?? "Chọn đúng nhu cầu"}
+            title={audiencesSection?.title?.text ?? "SmartFurni phù hợp"}
+            accent={audiencesSection?.titleAccent?.text ?? "với ai?"}
+            subtitle={audiencesSection?.subtitle?.text ?? "Thay vì chỉ xem tính năng, hãy bắt đầu từ tình huống sử dụng hằng ngày của bạn và gia đình."}
             primary={primary}
             textColor={textColor}
           />
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {AUDIENCES.map((item, i) => (
+            {audienceItems.map((item, i) => (
               <ScrollReveal key={item.title} variant="fadeUp" delay={60 + i * 45}>
                 <div className="p-5 rounded-2xl h-full" style={quietCardStyle}>
                   <div className="flex items-start gap-4">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${primary}10`, border: `1px solid ${primary}20` }}>
-                      <SvgIcon name={item.icon} size={20} color={primary} strokeWidth={1.5} />
+                      <SvgIcon name={item.icon || "star"} size={20} color={primary} strokeWidth={1.5} />
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold mb-1.5" style={{ color: textColor }}>{item.title}</h3>
@@ -152,22 +171,22 @@ export default function HomeDecisionSections({ theme }: Props) {
               <div className="p-6 sm:p-8" style={{ borderBottom: `1px solid ${borderColor}` }}>
                 <div className="flex items-center gap-3 mb-3">
                   <SvgIcon name="ruler" size={22} color={primary} />
-                  <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>Thông số kỹ thuật</span>
+                  <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>{specsSection?.badge?.text ?? "Thông số kỹ thuật"}</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-light" style={{ color: textColor }}>Kiểm tra kích thước trước khi đặt mua</h2>
+                <h2 className="text-2xl sm:text-3xl font-light" style={{ color: textColor }}>{specsSection?.title?.text ?? "Kiểm tra kích thước"} <span style={{ color: primary }}>{specsSection?.titleAccent?.text ?? "trước khi đặt mua"}</span></h2>
                 <p className="mt-2 text-sm leading-relaxed" style={{ color: `${textColor}55` }}>
-                  Các thông số giúp bạn đối chiếu với phòng ngủ, nệm đang dùng và nhu cầu vận hành thực tế.
+                  {specsSection?.subtitle?.text ?? "Các thông số giúp bạn đối chiếu với phòng ngủ, nệm đang dùng và nhu cầu vận hành thực tế."}
                 </p>
               </div>
               <div>
-                {SPECS.map(([label, value], i) => (
+                {specItems.map((item, i) => (
                   <div
-                    key={label}
+                    key={item.title}
                     className="grid sm:grid-cols-[180px_1fr] gap-1 sm:gap-4 px-5 sm:px-8 py-4"
                     style={{ borderBottom: i < SPECS.length - 1 ? `1px solid ${borderColor}40` : "none" }}
                   >
-                    <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: `${textColor}40` }}>{label}</div>
-                    <div className="text-sm leading-relaxed" style={{ color: `${textColor}75` }}>{value}</div>
+                    <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: `${textColor}40` }}>{item.title}</div>
+                    <div className="text-sm leading-relaxed" style={{ color: `${textColor}75` }}>{item.desc}</div>
                   </div>
                 ))}
               </div>
@@ -178,14 +197,14 @@ export default function HomeDecisionSections({ theme }: Props) {
             <div className="rounded-3xl p-6 sm:p-8 h-full" style={cardStyle}>
               <div className="flex items-center gap-3 mb-3">
                 <SvgIcon name="truck" size={22} color={primary} />
-                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>Quy trình mua hàng</span>
+                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>{processSection?.badge?.text ?? "Quy trình mua hàng"}</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-light mb-6" style={{ color: textColor }}>Từ tư vấn đến lắp đặt chỉ trong vài bước</h2>
+              <h2 className="text-2xl sm:text-3xl font-light mb-6" style={{ color: textColor }}>{processSection?.title?.text ?? "Từ tư vấn đến lắp đặt"} <span style={{ color: primary }}>{processSection?.titleAccent?.text ?? "chỉ trong vài bước"}</span></h2>
               <div className="space-y-4">
-                {PROCESS.map((item, i) => (
-                  <div key={item.step} className="flex gap-4">
+                {processItems.map((item, i) => (
+                  <div key={item.title} className="flex gap-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold" style={{ backgroundColor: `${primary}12`, color: primary, border: `1px solid ${primary}25` }}>
-                      {item.step}
+                      {item.icon || String(i + 1).padStart(2, "0")}
                     </div>
                     <div className="pb-4" style={{ borderBottom: i < PROCESS.length - 1 ? `1px solid ${borderColor}40` : "none" }}>
                       <h3 className="text-sm font-semibold mb-1" style={{ color: textColor }}>{item.title}</h3>
@@ -210,17 +229,17 @@ export default function HomeDecisionSections({ theme }: Props) {
             <div className="rounded-3xl p-6 sm:p-8 h-full" style={cardStyle}>
               <div className="flex items-center gap-3 mb-3">
                 <SvgIcon name="map-pin" size={22} color={primary} />
-                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>Trải nghiệm trực tiếp</span>
+                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>{showroomsSection?.badge?.text ?? "Trải nghiệm trực tiếp"}</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-light mb-3" style={{ color: textColor }}>Đặt lịch nằm thử tại showroom</h2>
+              <h2 className="text-2xl sm:text-3xl font-light mb-3" style={{ color: textColor }}>{showroomsSection?.title?.text ?? "Đặt lịch nằm thử"} <span style={{ color: primary }}>{showroomsSection?.titleAccent?.text ?? "tại showroom"}</span></h2>
               <p className="text-sm leading-relaxed mb-6" style={{ color: `${textColor}55` }}>
-                Sản phẩm giường điện nên được trải nghiệm thực tế. Đến showroom để thử Zero Gravity, massage, remote và app trước khi quyết định.
+                {showroomsSection?.subtitle?.text ?? "Sản phẩm giường điện nên được trải nghiệm thực tế. Đến showroom để thử Zero Gravity, massage, remote và app trước khi quyết định."}
               </p>
               <div className="space-y-3">
-                {SHOWROOMS.map((item) => (
-                  <div key={item.city} className="rounded-2xl p-4" style={quietCardStyle}>
-                    <div className="text-sm font-semibold" style={{ color: textColor }}>{item.city}</div>
-                    <div className="mt-1 text-xs leading-relaxed" style={{ color: `${textColor}55` }}>{item.address}</div>
+                {showroomItems.map((item) => (
+                  <div key={item.title} className="rounded-2xl p-4" style={quietCardStyle}>
+                    <div className="text-sm font-semibold" style={{ color: textColor }}>{item.title}</div>
+                    <div className="mt-1 text-xs leading-relaxed" style={{ color: `${textColor}55` }}>{item.desc}</div>
                   </div>
                 ))}
               </div>
@@ -239,14 +258,14 @@ export default function HomeDecisionSections({ theme }: Props) {
             <div className="rounded-3xl p-6 sm:p-8 h-full" style={cardStyle}>
               <div className="flex items-center gap-3 mb-3">
                 <SvgIcon name="shield" size={22} color={primary} />
-                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>Bảo hành & hậu mãi</span>
+                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>{afterSalesSection?.badge?.text ?? "Bảo hành & hậu mãi"}</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-light mb-6" style={{ color: textColor }}>Yên tâm sau khi mang giường về nhà</h2>
+              <h2 className="text-2xl sm:text-3xl font-light mb-6" style={{ color: textColor }}>{afterSalesSection?.title?.text ?? "Yên tâm sau khi"} <span style={{ color: primary }}>{afterSalesSection?.titleAccent?.text ?? "mang giường về nhà"}</span></h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                {AFTER_SALES.map((item) => (
+                {afterSalesItems.map((item) => (
                   <div key={item.title} className="rounded-2xl p-4" style={quietCardStyle}>
                     <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${primary}10`, border: `1px solid ${primary}20` }}>
-                      <SvgIcon name={item.icon} size={19} color={primary} />
+                      <SvgIcon name={item.icon || "shield"} size={19} color={primary} />
                     </div>
                     <h3 className="text-sm font-semibold mb-1.5" style={{ color: textColor }}>{item.title}</h3>
                     <p className="text-xs leading-relaxed" style={{ color: `${textColor}55` }}>{item.desc}</p>
@@ -263,18 +282,18 @@ export default function HomeDecisionSections({ theme }: Props) {
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <SvgIcon name="check-circle" size={22} color={primary} />
-                  <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>Bằng chứng tin cậy</span>
+                  <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>{proofStatsSection?.badge?.text ?? "Bằng chứng tin cậy"}</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-light mb-3" style={{ color: textColor }}>Những con số trước khi bạn đặt lịch demo</h2>
+                <h2 className="text-2xl sm:text-3xl font-light mb-3" style={{ color: textColor }}>{proofStatsSection?.title?.text ?? "Những con số trước khi"} <span style={{ color: primary }}>{proofStatsSection?.titleAccent?.text ?? "bạn đặt lịch demo"}</span></h2>
                 <p className="text-sm leading-relaxed" style={{ color: `${textColor}55` }}>
-                  Kết hợp đánh giá khách hàng, quy trình lắp đặt và kiểm định vận hành để bạn có cơ sở ra quyết định rõ ràng hơn.
+                  {proofStatsSection?.subtitle?.text ?? "Kết hợp đánh giá khách hàng, quy trình lắp đặt và kiểm định vận hành để bạn có cơ sở ra quyết định rõ ràng hơn."}
                 </p>
               </div>
               <div className="grid sm:grid-cols-4 gap-3">
-                {TRUST.map((item) => (
-                  <div key={item.label} className="rounded-2xl p-4 text-center" style={quietCardStyle}>
-                    <div className="text-xl sm:text-2xl font-semibold" style={{ color: primary }}>{item.value}</div>
-                    <div className="mt-1 text-xs leading-relaxed" style={{ color: `${textColor}50` }}>{item.label}</div>
+                {proofStatItems.map((item) => (
+                  <div key={item.title} className="rounded-2xl p-4 text-center" style={quietCardStyle}>
+                    <div className="text-xl sm:text-2xl font-semibold" style={{ color: primary }}>{item.title}</div>
+                    <div className="mt-1 text-xs leading-relaxed" style={{ color: `${textColor}50` }}>{item.desc}</div>
                   </div>
                 ))}
               </div>
@@ -287,14 +306,14 @@ export default function HomeDecisionSections({ theme }: Props) {
             <div className="rounded-3xl p-6 sm:p-8 h-full" style={cardStyle}>
               <div className="flex items-center gap-3 mb-3">
                 <SvgIcon name="credit-card" size={22} color={primary} />
-                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>Thanh toán linh hoạt</span>
+                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>{paymentsSection?.badge?.text ?? "Thanh toán linh hoạt"}</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-light mb-6" style={{ color: textColor }}>Dễ bắt đầu hơn với nhiều lựa chọn thanh toán</h2>
+              <h2 className="text-2xl sm:text-3xl font-light mb-6" style={{ color: textColor }}>{paymentsSection?.title?.text ?? "Dễ bắt đầu hơn"} <span style={{ color: primary }}>{paymentsSection?.titleAccent?.text ?? "với nhiều lựa chọn thanh toán"}</span></h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                {PAYMENTS.map((item) => (
+                {paymentItems.map((item) => (
                   <div key={item.title} className="rounded-2xl p-4" style={quietCardStyle}>
                     <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${primary}10`, border: `1px solid ${primary}20` }}>
-                      <SvgIcon name={item.icon} size={19} color={primary} />
+                      <SvgIcon name={item.icon || "credit-card"} size={19} color={primary} />
                     </div>
                     <h3 className="text-sm font-semibold mb-1.5" style={{ color: textColor }}>{item.title}</h3>
                     <p className="text-xs leading-relaxed" style={{ color: `${textColor}55` }}>{item.desc}</p>
@@ -308,19 +327,19 @@ export default function HomeDecisionSections({ theme }: Props) {
             <div className="rounded-3xl p-6 sm:p-8 h-full" style={cardStyle}>
               <div className="flex items-center gap-3 mb-3">
                 <SvgIcon name="info" size={22} color={primary} />
-                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>Câu hỏi thường gặp</span>
+                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: primary }}>{faqSection?.badge?.text ?? "Câu hỏi thường gặp"}</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-light mb-6" style={{ color: textColor }}>Giải đáp nhanh trước khi tư vấn</h2>
+              <h2 className="text-2xl sm:text-3xl font-light mb-6" style={{ color: textColor }}>{faqSection?.title?.text ?? "Giải đáp nhanh"} <span style={{ color: primary }}>{faqSection?.titleAccent?.text ?? "trước khi tư vấn"}</span></h2>
               <div className="space-y-3">
-                {FAQS.map(([question, answer]) => (
-                  <details key={question} className="group rounded-2xl p-4" style={quietCardStyle}>
+                {faqItems.map((item) => (
+                  <details key={item.title} className="group rounded-2xl p-4" style={quietCardStyle}>
                     <summary className="cursor-pointer list-none text-sm font-semibold" style={{ color: textColor }}>
                       <span className="flex items-center justify-between gap-4">
-                        {question}
+                        {item.title}
                         <span className="text-lg transition-transform group-open:rotate-45" style={{ color: primary }}>+</span>
                       </span>
                     </summary>
-                    <p className="mt-3 text-xs leading-relaxed" style={{ color: `${textColor}55` }}>{answer}</p>
+                    <p className="mt-3 text-xs leading-relaxed" style={{ color: `${textColor}55` }}>{item.desc}</p>
                   </details>
                 ))}
               </div>
