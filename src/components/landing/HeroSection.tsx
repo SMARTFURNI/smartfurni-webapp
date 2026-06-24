@@ -276,7 +276,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
                     <img
                       src={heroImageUrl}
                       alt="SmartFurni Giường Điều Chỉnh Điện"
-                      className="w-full aspect-[4/3] object-contain px-3 pt-5 sm:aspect-auto sm:h-full sm:p-0 sm:object-cover"
+                      className="w-full aspect-[4/3] object-cover object-center sm:aspect-auto sm:h-full"
                     />
                   ) : (
                     /* Placeholder khi chưa có ảnh */
