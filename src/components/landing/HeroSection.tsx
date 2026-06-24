@@ -270,18 +270,18 @@ export default function HeroSection({ theme }: HeroSectionProps) {
                 />
                 <div
                   style={{ borderColor: `${borderColor}80`, backgroundColor: `${surfaceColor}60` }}
-                  className="relative rounded-3xl overflow-hidden border backdrop-blur-sm aspect-[4/3]"
+                  className="relative rounded-3xl overflow-hidden border backdrop-blur-sm sm:aspect-[4/3]"
                 >
                   {heroImageUrl ? (
                     <img
                       src={heroImageUrl}
                       alt="SmartFurni Giường Điều Chỉnh Điện"
-                      className="w-full h-full object-cover"
+                      className="w-full aspect-[4/3] object-contain px-3 pt-5 sm:aspect-auto sm:h-full sm:p-0 sm:object-cover"
                     />
                   ) : (
                     /* Placeholder khi chưa có ảnh */
                     <div
-                      className="w-full h-full flex flex-col items-center justify-center gap-4"
+                      className="w-full aspect-[4/3] sm:h-full flex flex-col items-center justify-center gap-4"
                       style={{ backgroundColor: `${surfaceColor}` }}
                     >
                       <svg width="80" height="80" viewBox="0 0 80 80" fill="none" style={{ opacity: 0.2 }}>
@@ -299,7 +299,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
                   {/* Floating badge */}
                   <div
                     style={{ backgroundColor: `${bgFrom}e0`, borderColor: `${primary}30`, backdropFilter: "blur(8px)" }}
-                    className="absolute bottom-4 left-4 right-4 rounded-2xl border px-4 py-3 flex items-center justify-between"
+                    className="relative mx-4 mb-4 -mt-1 rounded-2xl border px-4 py-3 flex items-center justify-between sm:absolute sm:bottom-4 sm:left-4 sm:right-4 sm:m-0"
                   >
                     <div>
                       <div style={{ color: primary }} className="text-xs font-semibold tracking-wide">SMARTFURNI</div>
