@@ -5,6 +5,13 @@ import type { NextRequest } from "next/server";
 const SESSION_COOKIE = "admin_session";
 
 export function middleware(request: NextRequest) {
+  const hostname = request.nextUrl.hostname;
+  if (hostname === "smartfurni.com.vn") {
+    const url = request.nextUrl.clone();
+    url.hostname = "www.smartfurni.com.vn";
+    return NextResponse.redirect(url, 308);
+  }
+
   // Handle /admin/logout
   if (request.nextUrl.pathname.startsWith("/admin/logout")) {
     const response = NextResponse.redirect(new URL("/admin/login", request.url), {
