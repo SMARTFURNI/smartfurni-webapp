@@ -1,6 +1,6 @@
 import { randomUUID, createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
 import { dbLoadAll, dbSaveOne } from "@/lib/db-store";
-import { SMARTFURNI_AD_PRODUCTS } from "./seed";
+import { SMARTFURNI_AD_PRODUCTS, SMARTFURNI_AD_PRODUCTS_SEED_VERSION } from "./seed";
 import type {
   AdCampaignDraft,
   AdPerformanceDaily,
@@ -32,7 +32,7 @@ async function loadOnce() {
     dbLoadAll<AdPerformanceDaily>(TABLE_PERFORMANCE),
     dbLoadAll<ApprovalLog>(TABLE_APPROVAL_LOGS),
   ]);
-  productsCache = products?.length ? products : SMARTFURNI_AD_PRODUCTS;
+  productsCache = products?.length ? migrateSeedProducts(products) : SMARTFURNI_AD_PRODUCTS;
   draftsCache = drafts ?? [];
   accountsCache = accounts ?? [];
   performanceCache = performance?.length ? performance : seedPerformance();
@@ -50,6 +50,21 @@ export async function getAdProducts() {
 export async function getAdProductBySku(sku: string) {
   await loadOnce();
   return productsCache.find((product) => product.sku === sku) ?? null;
+}
+
+export async function saveAdProduct(input: GoogleAdsProduct) {
+  await loadOnce();
+  const now = new Date().toISOString();
+  const product: GoogleAdsProduct = {
+    ...input,
+    createdAt: input.createdAt || now,
+    updatedAt: now,
+  };
+  const idx = productsCache.findIndex((item) => item.id === product.id || item.sku === product.sku);
+  if (idx >= 0) productsCache[idx] = product;
+  else productsCache.push(product);
+  dbSaveOne(TABLE_PRODUCTS, product);
+  return product;
 }
 
 export async function listDrafts() {
@@ -143,13 +158,32 @@ function encryptionKey() {
     .digest();
 }
 
+function migrateSeedProducts(products: GoogleAdsProduct[]) {
+  const seedBySku = new Map(SMARTFURNI_AD_PRODUCTS.map((product) => [product.sku, product]));
+  return products.map((product) => {
+    const seed = seedBySku.get(product.sku);
+    if (!seed) return product;
+    const isLegacySeed =
+      product.updatedAt === "2026-06-23T00:00:00.000Z" ||
+      product.name.includes("giuong") ||
+      product.landingPageUrl.includes("smartfurni.vn/");
+    if (!isLegacySeed) return product;
+    return {
+      ...seed,
+      id: product.id || seed.id,
+      createdAt: product.createdAt || seed.createdAt,
+      updatedAt: SMARTFURNI_AD_PRODUCTS_SEED_VERSION,
+    };
+  });
+}
+
 function seedPerformance(): AdPerformanceDaily[] {
   return [
     {
       id: "perf-smf23-2026-06-21",
       date: "2026-06-21",
-      campaignName: "SF Sofa Giuong HCM",
-      adGroupName: "SMF23 Can Ho Nho",
+      campaignName: "SF Sofa Giường HCM",
+      adGroupName: "SMF23 Căn Hộ Nhỏ",
       productSku: "SMF23",
       cost: 820000,
       clicks: 96,
@@ -163,8 +197,8 @@ function seedPerformance(): AdPerformanceDaily[] {
     {
       id: "perf-gyt300-2026-06-21",
       date: "2026-06-21",
-      campaignName: "SF Giuong Y Te Toan Quoc",
-      adGroupName: "GYT300 Cham Soc Tai Nha",
+      campaignName: "SF Giường Y Tế Toàn Quốc",
+      adGroupName: "GYT300 Chăm Sóc Tại Nhà",
       productSku: "GYT300",
       cost: 640000,
       clicks: 51,

@@ -17,7 +17,7 @@ export class GoogleAdsService {
     const client = this.oauthClient();
     const { tokens } = await client.getToken(code);
     if (!tokens.refresh_token && !process.env.GOOGLE_ADS_REFRESH_TOKEN) {
-      throw new Error("Google khong tra refresh_token. Hay ket noi lai voi prompt consent.");
+      throw new Error("Google không trả refresh_token. Hãy kết nối lại với prompt consent.");
     }
     return saveGoogleAdsAccount({
       customerId,
@@ -36,21 +36,21 @@ export class GoogleAdsService {
 
   async pushApprovedDraftAsPausedCampaign(draft: AdCampaignDraft, actor: string) {
     if (draft.status !== "human_approved") {
-      throw new Error("Chi duoc day len Google Ads sau khi user bam Duyet.");
+      throw new Error("Chỉ được đẩy lên Google Ads sau khi người dùng bấm Duyệt.");
     }
     if (!this.hasGoogleAdsEnv()) {
       return {
         dryRun: true,
         campaignId: `paused-local-${draft.id.slice(0, 8)}`,
         pushedBy: actor,
-        message: "Thieu ENV Google Ads nen chua goi API that. Draft da duoc validate va san sang tao paused campaign.",
+        message: "Thiếu ENV Google Ads nên chưa gọi API thật. Bản nháp đã được kiểm tra và sẵn sàng tạo campaign tạm dừng.",
       };
     }
     return {
       dryRun: true,
       campaignId: `paused-ready-${draft.id.slice(0, 8)}`,
       pushedBy: actor,
-      message: "MVP da chan auto-run. Can bo sung Google Ads mutate endpoint chinh thuc truoc khi chay live.",
+      message: "MVP đã chặn tự chạy. Cần bổ sung Google Ads mutate endpoint chính thức trước khi chạy live.",
     };
   }
 

@@ -8,7 +8,7 @@ export async function POST(_req: Request, context: { params: Promise<{ id: strin
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await context.params;
   const draft = await getDraftById(id);
-  if (!draft) return NextResponse.json({ error: "Khong tim thay draft" }, { status: 404 });
+  if (!draft) return NextResponse.json({ error: "Không tìm thấy bản nháp" }, { status: 404 });
   try {
     const service = new GoogleAdsService();
     const result = await service.pushApprovedDraftAsPausedCampaign(draft, session.actor);

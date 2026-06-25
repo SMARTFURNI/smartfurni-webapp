@@ -9,6 +9,6 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   const body = await req.json().catch(() => ({}));
   const status = body.status === "rejected" ? "rejected" : "human_approved";
   const draft = await setDraftStatus(id, status, session.actor, body.reason);
-  if (!draft) return NextResponse.json({ error: "Khong tim thay draft" }, { status: 404 });
+  if (!draft) return NextResponse.json({ error: "Không tìm thấy bản nháp" }, { status: 404 });
   return NextResponse.json(draft);
 }

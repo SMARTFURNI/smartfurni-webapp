@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const input = await req.json() as CampaignInput;
   const product = await getAdProductBySku(input.productSku);
-  if (!product) return NextResponse.json({ error: "Khong tim thay san pham" }, { status: 400 });
-  if (!product.landingPageUrl) return NextResponse.json({ error: "San pham thieu landing page" }, { status: 400 });
+  if (!product) return NextResponse.json({ error: "Không tìm thấy sản phẩm" }, { status: 400 });
+  if (!product.landingPageUrl) return NextResponse.json({ error: "Sản phẩm thiếu landing page" }, { status: 400 });
   const generator = new AIAdGenerator();
   const draft = await generator.generateDraft(input, product, session.actor);
   await saveDraft(draft);

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const customerId = searchParams.get("customer_id") || process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || "";
   const service = new GoogleAdsService();
   if (code) {
-    if (!customerId) return NextResponse.json({ error: "Thieu customer_id" }, { status: 400 });
+    if (!customerId) return NextResponse.json({ error: "Thiếu customer_id" }, { status: 400 });
     const account = await service.connectWithCode(code, customerId, session.actor);
     return NextResponse.json({ connected: true, account });
   }
