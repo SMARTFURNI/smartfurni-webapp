@@ -182,7 +182,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
       {/* ── HERO ── */}
       <section
         style={{ background: `linear-gradient(160deg, ${bgFrom} 0%, ${bgTo} 100%)` }}
-        className="relative overflow-hidden pt-16"
+        className="relative max-w-full overflow-hidden overflow-x-clip pt-16"
       >
         {/* Subtle background glows */}
         <div className="absolute inset-0 pointer-events-none">
@@ -190,12 +190,12 @@ export default function HeroSection({ theme }: HeroSectionProps) {
           <div style={{ background: `radial-gradient(ellipse at 80% 20%, ${primary}06, transparent 50%)` }} className="absolute inset-0" />
         </div>
 
-        <div style={{ maxWidth }} className="relative mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center py-12 sm:py-16 lg:py-20">
+        <div style={{ maxWidth }} className="relative mx-auto w-full max-w-full overflow-hidden px-4 sm:px-6">
+          <div className="grid min-w-0 grid-cols-1 items-center gap-8 py-12 sm:py-16 lg:grid-cols-2 lg:gap-12 lg:py-20">
 
             {/* ── LEFT: Copy ── */}
-            <ScrollReveal variant="fadeRight" delay={0}>
-              <div className="space-y-6 lg:space-y-8">
+            <ScrollReveal variant="fadeUp" delay={0} className="min-w-0 max-w-full">
+              <div className="min-w-0 max-w-full space-y-6 lg:space-y-8">
 
                 {/* Badge */}
                 <div
@@ -207,7 +207,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
                 </div>
 
                 {/* Headline */}
-                <h1 className="leading-[1.1] tracking-tight" style={{ fontSize: titleFontSize }}>
+                <h1 className="max-w-full break-words leading-[1.1] tracking-tight" style={{ fontSize: titleFontSize }}>
                   {(() => {
                     const parts = heroTitle.includes("\n")
                       ? heroTitle.split("\n")
@@ -261,16 +261,16 @@ export default function HeroSection({ theme }: HeroSectionProps) {
             </ScrollReveal>
 
             {/* ── RIGHT: Product image ── */}
-            <ScrollReveal variant="fadeLeft" delay={120}>
-              <div className="relative">
+            <ScrollReveal variant="fadeUp" delay={120} className="min-w-0 max-w-full">
+              <div className="relative min-w-0 max-w-full">
                 {/* Glow behind image */}
                 <div
                   style={{ background: `radial-gradient(circle, ${primary}18, transparent 65%)` }}
-                  className="absolute inset-0 scale-110 pointer-events-none"
+                  className="pointer-events-none absolute inset-0 scale-105 sm:scale-110"
                 />
                 <div
                   style={{ borderColor: `${borderColor}80`, backgroundColor: `${surfaceColor}60` }}
-                  className="relative rounded-3xl overflow-hidden border backdrop-blur-sm sm:aspect-[4/3]"
+                  className="relative max-w-full overflow-hidden rounded-3xl border backdrop-blur-sm sm:aspect-[4/3]"
                 >
                   {heroImageUrl ? (
                     <img

@@ -20,6 +20,9 @@
 html {
   scroll-behavior: smooth;
   height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   /* Prevent layout shift when scrollbar appears/disappears */
   scrollbar-gutter: stable;
 }
@@ -30,6 +33,22 @@ body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+main {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@supports (overflow: clip) {
+  html,
+  body,
+  main {
+    overflow-x: clip;
+  }
 }
 
 /* Gold gradient text */
