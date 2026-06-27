@@ -30,6 +30,14 @@ import type {
 } from "@/lib/google-ads-agent/types";
 
 type Tab = "products" | "create" | "approval" | "connect" | "report" | "optimize";
+type ConnectInfo = {
+  authUrl?: string | null;
+  envReady?: boolean;
+  oauthReady?: boolean;
+  missing?: string[];
+  redirectUri?: string;
+  accounts?: unknown[];
+};
 
 const tabs: { id: Tab; label: string; icon: ElementType }[] = [
   { id: "products", label: "Sản phẩm", icon: Package },
@@ -56,6 +64,13 @@ const gold = "#f59e0b";
 const goldDeep = "#d97706";
 const text = "#f5edd6";
 const muted = "rgba(245,237,214,0.58)";
+const googleAdsEnvItems = [
+  { key: "GOOGLE_ADS_CLIENT_ID", label: "OAuth Client ID" },
+  { key: "GOOGLE_ADS_CLIENT_SECRET", label: "OAuth Client Secret" },
+  { key: "GOOGLE_ADS_DEVELOPER_TOKEN", label: "Developer Token" },
+  { key: "GOOGLE_ADS_LOGIN_CUSTOMER_ID", label: "Customer ID" },
+  { key: "GOOGLE_ADS_ENCRYPTION_KEY", label: "Khóa mã hóa token" },
+];
 
 export default function GoogleAdsAgentClient() {
   const [tab, setTab] = useState<Tab>("create");
@@ -63,7 +78,7 @@ export default function GoogleAdsAgentClient() {
   const [drafts, setDrafts] = useState<AdCampaignDraft[]>([]);
   const [performance, setPerformance] = useState<AdPerformanceDaily[]>([]);
   const [optimizations, setOptimizations] = useState<{ title: string; action: string; severity: string }[]>([]);
-  const [connectInfo, setConnectInfo] = useState<{ authUrl?: string; envReady?: boolean; accounts?: unknown[] }>({});
+  const [connectInfo, setConnectInfo] = useState<ConnectInfo>({});
   const [input, setInput] = useState<CampaignInput>(defaultInput);
   const [productEdits, setProductEdits] = useState<Record<string, GoogleAdsProduct>>({});
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -460,22 +475,65 @@ export default function GoogleAdsAgentClient() {
       )}
 
       {tab === "connect" && (
-        <SectionShell title="Kết nối Google Ads" subtitle="Lưu customer ID và OAuth để giai đoạn sau có thể đọc báo cáo, tạo campaign ở trạng thái tạm dừng.">
-          <Panel>
-            <div className="grid gap-4 lg:grid-cols-3">
-              <InfoCard title="Trạng thái OAuth" value={connectInfo.envReady ? "Đã sẵn sàng" : "Chưa đủ ENV"} icon={Settings} />
-              <InfoCard title="Tài khoản đã lưu" value={`${connectInfo.accounts?.length ?? 0} tài khoản`} icon={Link2} />
-              <InfoCard title="Quy tắc an toàn" value="Không tự tăng ngân sách" icon={CircleDollarSign} />
-            </div>
-            <div className="mt-5 text-sm leading-6" style={{ color: muted }}>
-              Token Google Ads không được hard-code. Hệ thống chỉ đăng khi bạn bấm duyệt và chiến dịch được tạo ở trạng thái tạm dừng.
-            </div>
-            {connectInfo.authUrl && (
-              <PrimaryButton className="mt-5" onClick={() => window.open(connectInfo.authUrl, "_blank")}>
-                <Link2 size={16} /> Mở màn hình kết nối Google
-              </PrimaryButton>
-            )}
-          </Panel>
+        <SectionShell title="Kết nối Google Ads" subtitle="Cấu hình OAuth, lưu tài khoản Google Ads và chỉ cho phép đăng campaign ở trạng thái tạm dừng.">
+          <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
+            <Panel>
+              <div className="grid gap-4 lg:grid-cols-3">
+                <InfoCard title="Trạng thái OAuth" value={connectInfo.oauthReady ? "Đã sẵn sàng" : "Thiếu Client ID/Secret"} icon={Settings} />
+                <InfoCard title="Tài khoản đã lưu" value={`${connectInfo.accounts?.length ?? 0} tài khoản`} icon={Link2} />
+                <InfoCard title="Quy tắc an toàn" value="Không tự tăng ngân sách" icon={CircleDollarSign} />
+              </div>
+
+              <div className="mt-5 rounded-3xl p-5" style={{ background: "rgba(0,0,0,0.18)", border: `1px solid ${border}` }}>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold">Checklist cấu hình trên Railway</h3>
+                    <p className="mt-1 text-sm" style={{ color: muted }}>
+                      Nếu thiếu `GOOGLE_ADS_CLIENT_ID` hoặc `GOOGLE_ADS_CLIENT_SECRET`, Google sẽ báo lỗi “Missing required parameter: client_id”.
+                    </p>
+                  </div>
+                  <StatusPill tone={connectInfo.envReady ? "green" : "amber"}>{connectInfo.envReady ? "Đủ ENV" : "Cần bổ sung"}</StatusPill>
+                </div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {googleAdsEnvItems.map((item) => (
+                    <ConfigRow key={item.key} label={item.label} envKey={item.key} done={!connectInfo.missing?.includes(item.key)} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5 text-sm leading-6" style={{ color: muted }}>
+                Token Google Ads không được hard-code trong mã nguồn. Sau khi cấu hình ENV trên Railway, bấm “Tải lại dữ liệu”, rồi mới mở màn hình kết nối Google.
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <PrimaryButton
+                  onClick={() => connectInfo.authUrl && window.open(connectInfo.authUrl, "_blank")}
+                  disabled={!connectInfo.authUrl || !connectInfo.oauthReady}
+                >
+                  <Link2 size={16} /> Mở màn hình kết nối Google
+                </PrimaryButton>
+                <GhostButton onClick={refreshAll}>
+                  <RefreshCcw size={16} /> Kiểm tra lại cấu hình
+                </GhostButton>
+              </div>
+            </Panel>
+
+            <Panel>
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: "rgba(245,158,11,0.16)", color: "#facc15" }}>
+                <Link2 size={22} />
+              </div>
+              <h3 className="text-xl font-bold">Redirect URI cần khai báo</h3>
+              <p className="mt-2 text-sm leading-6" style={{ color: muted }}>
+                Trong Google Cloud OAuth Client, thêm đúng đường dẫn này vào mục Authorized redirect URIs.
+              </p>
+              <div className="mt-4 break-all rounded-2xl p-4 text-sm font-semibold" style={{ background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.22)", color: "#fde68a" }}>
+                {connectInfo.redirectUri || "Chưa xác định được redirect URI"}
+              </div>
+              <div className="mt-4 rounded-2xl p-4 text-sm leading-6" style={{ background: surfaceStrong, border: `1px solid ${border}`, color: muted }}>
+                Trên Railway cần đặt `GOOGLE_ADS_REDIRECT_URI` trùng với URL ở trên, thường là `https://www.smartfurni.com.vn/api/google-ads-agent/connect`.
+              </div>
+            </Panel>
+          </div>
         </SectionShell>
       )}
 
@@ -695,6 +753,23 @@ function InfoCard({ title, value, icon: Icon }: { title: string; value: string; 
       <Icon size={20} style={{ color: "#facc15" }} />
       <div className="mt-3 text-sm" style={{ color: muted }}>{title}</div>
       <div className="mt-1 text-lg font-bold">{value}</div>
+    </div>
+  );
+}
+
+function ConfigRow({ label, envKey, done }: { label: string; envKey: string; done: boolean }) {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${border}` }}>
+      <div
+        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+        style={{ background: done ? "rgba(34,197,94,0.18)" : "rgba(245,158,11,0.16)", color: done ? "#86efac" : "#fde68a" }}
+      >
+        {done ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+      </div>
+      <div>
+        <div className="text-sm font-bold">{label}</div>
+        <div className="mt-1 break-all text-xs" style={{ color: muted }}>{envKey}</div>
+      </div>
     </div>
   );
 }

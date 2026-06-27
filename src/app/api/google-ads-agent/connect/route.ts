@@ -10,14 +10,16 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get("code");
   const customerId = searchParams.get("customer_id") || process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || "";
   const service = new GoogleAdsService();
+  const envStatus = service.getEnvStatus();
   if (code) {
+    if (!envStatus.oauthReady) return NextResponse.json({ error: "Thiếu GOOGLE_ADS_CLIENT_ID hoặc GOOGLE_ADS_CLIENT_SECRET" }, { status: 400 });
     if (!customerId) return NextResponse.json({ error: "Thiếu customer_id" }, { status: 400 });
     const account = await service.connectWithCode(code, customerId, session.actor);
     return NextResponse.json({ connected: true, account });
   }
   return NextResponse.json({
     accounts: await getGoogleAdsAccounts(),
-    authUrl: service.getOAuthUrl(),
-    envReady: Boolean(process.env.GOOGLE_ADS_CLIENT_ID && process.env.GOOGLE_ADS_CLIENT_SECRET),
+    authUrl: envStatus.oauthReady ? service.getOAuthUrl() : null,
+    ...envStatus,
   });
 }

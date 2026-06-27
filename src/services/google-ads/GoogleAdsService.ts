@@ -4,6 +4,9 @@ import { encryptSecret, saveGoogleAdsAccount } from "@/lib/google-ads-agent/stor
 
 export class GoogleAdsService {
   getOAuthUrl(state = "smartfurni-google-ads") {
+    if (!this.hasOAuthEnv()) {
+      throw new Error("Thiếu GOOGLE_ADS_CLIENT_ID hoặc GOOGLE_ADS_CLIENT_SECRET.");
+    }
     const client = this.oauthClient();
     return client.generateAuthUrl({
       access_type: "offline",
@@ -58,8 +61,35 @@ export class GoogleAdsService {
     return new google.auth.OAuth2(
       process.env.GOOGLE_ADS_CLIENT_ID,
       process.env.GOOGLE_ADS_CLIENT_SECRET,
-      process.env.GOOGLE_ADS_REDIRECT_URI || `${process.env.NEXT_PUBLIC_SITE_URL || process.env.FRONTEND_URL || "http://localhost:3001"}/api/google-ads-agent/connect`
+      this.getRedirectUri()
     );
+  }
+
+  getRedirectUri() {
+    return process.env.GOOGLE_ADS_REDIRECT_URI || `${process.env.NEXT_PUBLIC_SITE_URL || process.env.FRONTEND_URL || "http://localhost:3001"}/api/google-ads-agent/connect`;
+  }
+
+  getEnvStatus() {
+    const required = [
+      "GOOGLE_ADS_CLIENT_ID",
+      "GOOGLE_ADS_CLIENT_SECRET",
+      "GOOGLE_ADS_DEVELOPER_TOKEN",
+      "GOOGLE_ADS_LOGIN_CUSTOMER_ID",
+      "GOOGLE_ADS_ENCRYPTION_KEY",
+    ] as const;
+
+    const missing = required.filter((name) => !process.env[name]);
+
+    return {
+      envReady: missing.length === 0,
+      oauthReady: this.hasOAuthEnv(),
+      missing,
+      redirectUri: this.getRedirectUri(),
+    };
+  }
+
+  private hasOAuthEnv() {
+    return Boolean(process.env.GOOGLE_ADS_CLIENT_ID && process.env.GOOGLE_ADS_CLIENT_SECRET);
   }
 
   private hasGoogleAdsEnv() {
