@@ -89,6 +89,14 @@ export default function GoogleAdsAgentClient() {
         fetch("/api/google-ads-agent/optimizations"),
         fetch("/api/google-ads-agent/connect"),
       ]);
+      const apiErrors = await collectApiErrors([
+        ["sản phẩm", productsRes],
+        ["bản nháp", draftsRes],
+        ["báo cáo", perfRes],
+        ["đề xuất", optRes],
+        ["kết nối", connectRes],
+      ]);
+      if (apiErrors.length > 0) setMessage(`Một số dữ liệu chưa tải được: ${apiErrors.join(" • ")}`);
       if (productsRes.ok) {
         const nextProducts = (await productsRes.json()) as GoogleAdsProduct[];
         setProducts(nextProducts);
@@ -742,4 +750,15 @@ function severityLabel(severity: string) {
     low: "Cơ hội tăng trưởng",
   };
   return labels[severity] ?? severity;
+}
+
+async function collectApiErrors(items: Array<[string, Response]>) {
+  const errors: string[] = [];
+  for (const [label, response] of items) {
+    if (response.ok) continue;
+    const body = await response.clone().json().catch(() => null) as { error?: string } | null;
+    const errorText = response.status === 401 ? "không có quyền hoặc phiên đăng nhập đã hết hạn" : body?.error || `HTTP ${response.status}`;
+    errors.push(`${label}: ${errorText}`);
+  }
+  return errors;
 }

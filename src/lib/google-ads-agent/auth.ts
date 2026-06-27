@@ -7,7 +7,7 @@ export async function getGoogleAdsAgentSession() {
   if (!session) return null;
   if (session.isAdmin) return { ...session, actor: "admin", staffRole: "super_admin" };
   const staff = session.staffId ? await getStaffById(session.staffId) : null;
-  const staffRole = staff?.role ?? "sales";
+  const staffRole = staff?.role ?? session.staffRole ?? "sales";
   if (!canAccessGoogleAdsAgent({ isAdmin: false, staffRole })) return null;
   return { ...session, staffRole, actor: staff?.fullName ?? session.staffId ?? "staff" };
 }
