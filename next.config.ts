@@ -2,6 +2,17 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Redirect domain gốc sang www (PA Vietnam không hỗ trợ CNAME cho @)
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "smartfurni.com.vn" }],
+        destination: "https://www.smartfurni.com.vn/:path*",
+        permanent: true,
+      },
+    ];
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
