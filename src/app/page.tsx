@@ -45,19 +45,19 @@ export default async function HomePage() {
       {/* 2. Hero — ảnh sản phẩm + tiêu đề ngắn + 2 CTA */}
       <HeroSection theme={theme} />
 
-      {/* 3. Video thực tế — ngay sau hero để tăng tin cậy */}
-      <VideoSection theme={theme} />
-
-      {/* 4. Chuyển động & cận cảnh — giảm chữ, tăng hình ảnh mô tả */}
-      <HomeVisualProofSections theme={theme} />
-
-      {/* 5. Sản phẩm — từ CRM */}
+      {/* 3. Dòng sản phẩm — đưa lên trước video thực tế */}
       <StaticProductsSection
         theme={theme}
         products={products}
         sectionTitle={homepageConfig.sectionTitle}
         sectionSubtitle={homepageConfig.sectionSubtitle}
       />
+
+      {/* 4. Video thực tế — tăng tin cậy sau khi khách đã thấy dòng sản phẩm */}
+      <VideoSection theme={theme} />
+
+      {/* 5. Chuyển động & cận cảnh — giảm chữ, tăng hình ảnh mô tả */}
+      <HomeVisualProofSections theme={theme} />
 
       {/* 6. Lợi ích — 3 lợi ích cốt lõi + 8 tính năng */}
       <FeaturesSection theme={theme} />
