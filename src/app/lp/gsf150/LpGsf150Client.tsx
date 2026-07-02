@@ -1052,10 +1052,16 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
   const popupSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Typewriter effect for hero titles
-  const TITLE_1 = content["hero_title_1"] || "Giường Cũ Giữ Lại";
-  const TITLE_2 = content["hero_title_2"] || "Nâng Hạ Thông Minh";
+  const combinedHeroTitle =
+    content["hero_title_combined"] ||
+    `${content["hero_title_1"] || "Giường Cũ Giữ Lại"}\n${content["hero_title_2"] || "Nâng Hạ Thông Minh"}`;
+  const [TITLE_1 = "Giường Cũ Giữ Lại", ...TITLE_2_LINES] = combinedHeroTitle.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const TITLE_2 = TITLE_2_LINES.join("\n") || "Nâng Hạ Thông Minh";
   const heroTitle1Style: React.CSSProperties = { display: "block", color: "#FFFFFF", fontFamily: FONT_HEADING, fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.02em" };
-  const heroTitle2Style: React.CSSProperties = { display: "block", color: GOLD_PALE, fontFamily: FONT_HEADING, fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.02em" };
+  const heroTitle2Style: React.CSSProperties = { display: "block", color: GOLD_PALE, fontFamily: FONT_HEADING, fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.02em", whiteSpace: "pre-line" };
+  const [isEditingHeroTitle, setIsEditingHeroTitle] = useState(false);
+  const [heroTitleDraft, setHeroTitleDraft] = useState(combinedHeroTitle);
+  const [isSavingHeroTitle, setIsSavingHeroTitle] = useState(false);
   const [twText1, setTwText1] = useState("");
   const [twText2, setTwText2] = useState("");
   const [twDone1, setTwDone1] = useState(false);
@@ -1158,6 +1164,28 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
   const E: EFn = useCallback(({ bk, def, as, style, multiline }) => (
     <EditableText slug={lpSlug} blockKey={bk} defaultValue={def} editMode={editMode} as={as} style={style} multiline={multiline} savedValue={content[bk]} onSaved={handleSaved} onDeleted={handleDeleted} />
   ), [editMode, content, handleSaved, handleDeleted]);
+
+  const saveHeroTitle = useCallback(async () => {
+    if (isSavingHeroTitle) return;
+    setIsSavingHeroTitle(true);
+    try {
+      const res = await fetch("/api/admin/lp-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: lpSlug, blockKey: "hero_title_combined", content: heroTitleDraft }),
+      });
+      if (!res.ok) {
+        alert("Lưu tiêu đề thất bại. Vui lòng thử lại.");
+        return;
+      }
+      handleSaved("hero_title_combined", heroTitleDraft);
+      setIsEditingHeroTitle(false);
+    } catch {
+      alert("Lỗi kết nối khi lưu tiêu đề.");
+    } finally {
+      setIsSavingHeroTitle(false);
+    }
+  }, [handleSaved, heroTitleDraft, isSavingHeroTitle, lpSlug]);
 
   const contactPhoneNumber = normalizePhoneNumber(content["tracking_contact_hotline"] || DEFAULT_CONTACT_PHONE_NUMBER) || DEFAULT_CONTACT_PHONE_NUMBER;
   const contactZaloNumber = normalizePhoneNumber(content["tracking_contact_zalo"] || contactPhoneNumber) || contactPhoneNumber;
@@ -1421,18 +1449,86 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
               </div>
 
               {/* Tiêu đề chính — Typewriter effect */}
-              <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 700, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF", minHeight: "1.1em" }}>
-                {editMode
-                  ? E({ bk: "hero_title_1", def: "Giường Cũ Giữ Lại", as: "span", style: heroTitle1Style })
-                  : <span style={heroTitle1Style}>{twText1}{showCursor1 && <span style={{ borderRight: "3px solid #FFFFFF", marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
-                }
-              </h1>
-              <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 700, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_HEADING, color: GOLD_PALE, letterSpacing: "-0.02em", minHeight: "1.1em" }}>
-                {editMode
-                  ? E({ bk: "hero_title_2", def: "Nâng Hạ Thông Minh", as: "span", style: heroTitle2Style })
-                  : <span style={heroTitle2Style}>{twDone1 ? twText2 : ""}{showCursor2 && <span style={{ borderRight: `3px solid ${GOLD_PALE}`, marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
-                }
-              </h1>
+              {editMode ? (
+                <div
+                  style={{
+                    position: "relative",
+                    cursor: "pointer",
+                    outline: "2px dashed rgba(201,168,76,0.45)",
+                    outlineOffset: 8,
+                    borderRadius: 10,
+                    marginBottom: 24,
+                  }}
+                  onClick={() => {
+                    setHeroTitleDraft(combinedHeroTitle);
+                    setIsEditingHeroTitle(true);
+                  }}
+                >
+                  {isEditingHeroTitle ? (
+                    <div onClick={e => e.stopPropagation()} style={{ maxWidth: 680 }}>
+                      <textarea
+                        value={heroTitleDraft}
+                        onChange={e => setHeroTitleDraft(e.target.value)}
+                        rows={4}
+                        style={{
+                          width: "100%",
+                          boxSizing: "border-box",
+                          background: "rgba(13,11,0,0.95)",
+                          border: `2px solid ${GOLD}`,
+                          borderRadius: 12,
+                          padding: "14px 16px",
+                          color: "#F5EDD6",
+                          fontSize: "clamp(22px, 3.2vw, 42px)",
+                          fontFamily: FONT_HEADING,
+                          fontWeight: 700,
+                          lineHeight: 1.15,
+                          outline: "none",
+                          resize: "vertical",
+                        }}
+                      />
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+                        <button
+                          type="button"
+                          onClick={saveHeroTitle}
+                          disabled={isSavingHeroTitle}
+                          style={{ background: GOLD, color: BLACK, border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", opacity: isSavingHeroTitle ? 0.65 : 1 }}
+                        >
+                          {isSavingHeroTitle ? "Đang lưu..." : "Lưu tiêu đề"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingHeroTitle(false)}
+                          style={{ background: "rgba(255,255,255,0.08)", color: GRAY_LIGHT, border: "1px solid rgba(255,255,255,0.14)", borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}
+                        >
+                          Hủy
+                        </button>
+                        <span style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY }}>Dòng 1 màu trắng, các dòng dưới màu vàng.</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 700, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF", minHeight: "1.1em" }}>
+                        <span style={heroTitle1Style}>{TITLE_1}</span>
+                      </h1>
+                      <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 700, lineHeight: 1.1, fontFamily: FONT_HEADING, color: GOLD_PALE, letterSpacing: "-0.02em", minHeight: "1.1em" }}>
+                        <span style={heroTitle2Style}>{TITLE_2}</span>
+                      </h1>
+                      <span style={{ position: "absolute", top: -34, right: 0, background: GOLD, color: BLACK, borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 800, fontFamily: FONT_BODY }}>
+                        Sửa cụm tiêu đề
+                      </span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 700, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF", minHeight: "1.1em" }}>
+                    <span style={heroTitle1Style}>{twText1}{showCursor1 && <span style={{ borderRight: "3px solid #FFFFFF", marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
+                  </h1>
+                  <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 700, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_HEADING, color: GOLD_PALE, letterSpacing: "-0.02em", minHeight: "1.1em" }}>
+                    <span style={heroTitle2Style}>{twDone1 ? twText2 : ""}{showCursor2 && <span style={{ borderRight: `3px solid ${GOLD_PALE}`, marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
+                  </h1>
+                </>
+              )}
 
               {/* Đường kẻ vàng */}
               <div style={{ width: 48, height: 2, background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD_PALE})`, borderRadius: 2, marginBottom: 24 }} />
