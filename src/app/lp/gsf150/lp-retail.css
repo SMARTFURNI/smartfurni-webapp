@@ -47,7 +47,6 @@
   justify-content: center !important;
 }
 
-.lp-problem-visual-section,
 .lp-benefits-visual-section {
   display: flex !important;
   align-items: center !important;
@@ -56,19 +55,6 @@
   background:
     radial-gradient(ellipse at 50% 0%, rgba(201, 168, 76, 0.12), transparent 58%),
     #0d0b06 !important;
-}
-
-.lp-problem-visual-section .lp-fullscreen-image-frame {
-  position: relative !important;
-  inset: auto !important;
-  width: min(100%, 1280px) !important;
-  height: min(72vh, 760px) !important;
-  min-height: 420px !important;
-  overflow: hidden !important;
-  border: 1px solid rgba(201, 168, 76, 0.24) !important;
-  border-radius: 28px !important;
-  background: #0d0b06 !important;
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.36) !important;
 }
 
 .lp-benefits-visual-section {
@@ -98,24 +84,27 @@
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.38) !important;
 }
 
+.lp-solution-visual-card {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 4 / 3 !important;
+  margin: -4px 0 22px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(201, 168, 76, 0.24) !important;
+  border-radius: 18px !important;
+  background: #11100c !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28) !important;
+}
+
 @media (max-width: 600px) {
   .lp-fullscreen-image-section {
     min-height: 100vh !important;
     min-height: 100svh !important;
   }
 
-  .lp-problem-visual-section,
   .lp-benefits-visual-section {
     min-height: auto !important;
     padding: 56px 16px !important;
-  }
-
-  .lp-problem-visual-section .lp-fullscreen-image-frame {
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    aspect-ratio: 16 / 9 !important;
-    border-radius: 18px !important;
   }
 
   .lp-benefits-visual-section {
@@ -129,6 +118,12 @@
     min-height: 0 !important;
     aspect-ratio: 1 / 1 !important;
     border-radius: 18px !important;
+  }
+
+  .lp-solution-visual-card {
+    aspect-ratio: 1 / 1 !important;
+    margin: -6px 0 18px !important;
+    border-radius: 16px !important;
   }
 }
 

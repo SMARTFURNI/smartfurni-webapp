@@ -1533,6 +1533,18 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                   </div>
                 </div>
               </FadeIn>
+              <FadeIn delay={160}>
+                <div className="lp-solution-visual-card">
+                  <Image
+                    src={optimizeCldUrl(content["problem_full_img"] || defaultImage("problem_full_img"), 1200)}
+                    alt="So sánh giường thường và giường công thái học chỉnh điện SmartFurni GSF150"
+                    fill
+                    style={{ objectFit: "contain", objectPosition: "center", background: "#11100C" }}
+                    sizes="(max-width: 768px) 100vw, 520px"
+                  />
+                  {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="problem_full_img" currentUrl={content["problem_full_img"] || defaultImage("problem_full_img")} onUploaded={handleSaved} />}
+                </div>
+              </FadeIn>
               {[
                 { text: "Đặt vào trong khung giường hiện có, giữ lại phong cách phòng ngủ", highlight: "2-in-1" },
                 { text: "Nâng đầu và chân bằng remote, thao tác nhẹ và dễ dùng", highlight: "30 giây" },
@@ -1561,20 +1573,6 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
               <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(139,105,20,0.3), transparent)" }} />
             </div>
           </FadeIn>
-        </div>
-      </section>
-
-      {/* ── PROBLEM FULL-SCREEN IMAGE ── */}
-      <section className="lp-fullscreen-image-section lp-problem-visual-section" style={{ background: "#0D0B06" }}>
-        <div className="lp-fullscreen-image-frame">
-          <Image
-            src={optimizeCldUrl(content["problem_full_img"] || defaultImage("problem_full_img"), 1800)}
-            alt="Không gian phòng ngủ trước khi nâng cấp GSF150"
-            fill
-            style={{ objectFit: "contain", objectPosition: "center", background: "#0D0B06" }}
-            sizes="100vw"
-          />
-          {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="problem_full_img" currentUrl={content["problem_full_img"] || defaultImage("problem_full_img")} onUploaded={handleSaved} />}
         </div>
       </section>
 
