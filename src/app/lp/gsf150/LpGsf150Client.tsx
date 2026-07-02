@@ -1054,6 +1054,8 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
   // Typewriter effect for hero titles
   const TITLE_1 = content["hero_title_1"] || "Giường Cũ Giữ Lại";
   const TITLE_2 = content["hero_title_2"] || "Nâng Hạ Thông Minh";
+  const heroTitle1Style: React.CSSProperties = { display: "block", color: "#FFFFFF", fontFamily: FONT_HEADING, fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.02em" };
+  const heroTitle2Style: React.CSSProperties = { display: "block", color: GOLD_PALE, fontFamily: FONT_HEADING, fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.02em" };
   const [twText1, setTwText1] = useState("");
   const [twText2, setTwText2] = useState("");
   const [twDone1, setTwDone1] = useState(false);
@@ -1419,16 +1421,16 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
               </div>
 
               {/* Tiêu đề chính — Typewriter effect */}
-              <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 400, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_BRAND, fontStyle: "italic", letterSpacing: "-0.01em", color: "#FFFFFF", minHeight: "1.1em" }}>
+              <h1 style={{ fontSize: "clamp(34px, 5.5vw, 68px)", fontWeight: 700, lineHeight: 1.05, marginBottom: 6, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF", minHeight: "1.1em" }}>
                 {editMode
-                  ? E({ bk: "hero_title_1", def: "Giường Cũ Giữ Lại", as: "span", style: { display: "block" } })
-                  : <span>{twText1}{showCursor1 && <span style={{ borderRight: "3px solid #FFFFFF", marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
+                  ? E({ bk: "hero_title_1", def: "Giường Cũ Giữ Lại", as: "span", style: heroTitle1Style })
+                  : <span style={heroTitle1Style}>{twText1}{showCursor1 && <span style={{ borderRight: "3px solid #FFFFFF", marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
                 }
               </h1>
-              <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_BRAND, fontStyle: "italic", color: GOLD_PALE, letterSpacing: "-0.01em", minHeight: "1.1em" }}>
+              <h1 style={{ fontSize: "clamp(32px, 5vw, 62px)", fontWeight: 700, lineHeight: 1.1, marginBottom: 24, fontFamily: FONT_HEADING, color: GOLD_PALE, letterSpacing: "-0.02em", minHeight: "1.1em" }}>
                 {editMode
-                  ? E({ bk: "hero_title_2", def: "Nâng Hạ Thông Minh", as: "span" })
-                  : <span>{twDone1 ? twText2 : ""}{showCursor2 && <span style={{ borderRight: `3px solid ${GOLD_PALE}`, marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
+                  ? E({ bk: "hero_title_2", def: "Nâng Hạ Thông Minh", as: "span", style: heroTitle2Style })
+                  : <span style={heroTitle2Style}>{twDone1 ? twText2 : ""}{showCursor2 && <span style={{ borderRight: `3px solid ${GOLD_PALE}`, marginLeft: 2, animation: "tw-blink 0.7s step-end infinite" }}>&nbsp;</span>}</span>
                 }
               </h1>
 
