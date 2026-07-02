@@ -1020,7 +1020,7 @@ function LeadForm({ lpSlug, E: EditFn, content, submitLabelKey = "form_submit", 
             <input style={inp} placeholder={getText("form_name_placeholder", "Họ và tên (*)")} value={form.name} onChange={setF("name")} required />
             <input style={inp} placeholder={getText("form_phone_placeholder", "Số điện thoại (*)")} value={form.phone} onChange={setF("phone")} required />
             <input style={inp} placeholder={getText("form_address_placeholder", "Địa chỉ giao hàng")} value={form.address} onChange={setF("address")} />
-            <textarea style={{ ...inp, minHeight: 80, resize: "vertical" }} placeholder={getText("form_note_placeholder", "Ghi chú thêm (màu sắc, yêu cầu đặc biệt...)")} value={form.note} onChange={setF("note")} />
+            <textarea style={{ ...inp, minHeight: 80, resize: "vertical" }} placeholder={getText("form_note_placeholder", "Ghi chú thêm (yêu cầu đặc biệt...)")} value={form.note} onChange={setF("note")} />
           </div>
           {error && <div style={{ color: RED_SOFT, fontSize: 13, marginTop: 12, fontFamily: FONT_BODY }}>{error}</div>}
           <GoldButton style={{ width: "100%", marginTop: 20, justifyContent: "center", fontSize: 14, padding: "16px 24px" }}>
@@ -1047,7 +1047,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
     return next;
   });
   const [editedCount, setEditedCount] = useState(0);
-  const [productPopup, setProductPopup] = useState<{ productIdx: number; sizeId: string; colorId: string; imgIdx: number; step: "detail" | "form" } | null>(null);
+  const [productPopup, setProductPopup] = useState<{ productIdx: number; sizeId: string; imgIdx: number; step: "detail" | "form" } | null>(null);
   const popupSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Typewriter effect for hero titles
@@ -1101,7 +1101,6 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
   const [popupSuccess, setPopupSuccess] = useState(false);
   const [popupError, setPopupError] = useState("");
   const [inlineOrderSizeId, setInlineOrderSizeId] = useState("1m2");
-  const [inlineOrderColorId, setInlineOrderColorId] = useState("black");
   const [inlineOrderForm, setInlineOrderForm] = useState({ name: "", phone: "", address: "", note: "" });
   const [inlineOrderLoading, setInlineOrderLoading] = useState(false);
   const [inlineOrderSuccess, setInlineOrderSuccess] = useState(false);
@@ -1120,7 +1119,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
     setPopupSuccess(false);
     setPopupError("");
     setPopupForm({ name: "", phone: "", address: "", note: "" });
-    setProductPopup({ productIdx: 0, sizeId: "1m2", colorId: "black", imgIdx: 0, step: "detail" });
+    setProductPopup({ productIdx: 0, sizeId: "1m2", imgIdx: 0, step: "detail" });
   }, []);
 
   const goToPopupImage = useCallback((direction: -1 | 1) => {
@@ -1218,17 +1217,11 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
   ];
   const getPopupPriceKey = (productIdx: number, sizeIdx: number) => `popup_price_${productIdx}_${sizeIdx}`;
   const getPopupDefaultPrice = (productIdx: number, sizeIdx: number) => POPUP_DEFAULT_PRICES[productIdx]?.[sizeIdx] || POPUP_DEFAULT_PRICES[0]?.[sizeIdx] || "";
-  const POPUP_COLORS = [
-    { id: "black", label: "Khung đen tiêu chuẩn" },
-    { id: "gray", label: "Khung xám theo yêu cầu" },
-    { id: "custom", label: "Tư vấn màu theo nội thất" },
-  ];
   const inlineOrderProductName = content["product_name_0"] || "Khung Giường Nâng Hạ GSF150";
   const inlineOrderSizeIndex = Math.max(0, POPUP_SIZES.findIndex(s => s.id === inlineOrderSizeId));
   const inlineOrderSizeObj = POPUP_SIZES[inlineOrderSizeIndex];
   const inlineOrderPriceKey = getPopupPriceKey(0, inlineOrderSizeIndex);
   const inlineOrderPrice = content[inlineOrderPriceKey] || getPopupDefaultPrice(0, inlineOrderSizeIndex);
-  const inlineOrderColorObj = POPUP_COLORS.find(c => c.id === inlineOrderColorId) || POPUP_COLORS[0];
   const getEditableDisplayValue = (blockKey: string, defaultValue: string) => (
     Object.prototype.hasOwnProperty.call(content, blockKey) ? (content[blockKey] ?? "") : defaultValue
   );
@@ -1258,7 +1251,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
     if (!/^(0\d{9}|\+84\d{9})$/.test(normalizedPhone)) { setInlineOrderError("Số điện thoại không hợp lệ"); return; }
     setInlineOrderLoading(true); setInlineOrderError("");
     try {
-      const noteStr = `Nguồn: Form đặt hàng tại section chính | Sản phẩm: ${inlineOrderProductName} | Kích thước: ${inlineOrderSizeObj.label} | Màu sắc: ${inlineOrderColorObj.label} | Giá: ${inlineOrderPrice} | Địa chỉ: ${inlineOrderForm.address} | Ghi chú: ${inlineOrderForm.note}`;
+      const noteStr = `Nguồn: Form đặt hàng tại section chính | Sản phẩm: ${inlineOrderProductName} | Kích thước: ${inlineOrderSizeObj.label} | Giá: ${inlineOrderPrice} | Địa chỉ: ${inlineOrderForm.address} | Ghi chú: ${inlineOrderForm.note}`;
       const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: inlineOrderForm.name, phone: normalizedPhone, email: "", note: noteStr }) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
       redirectToLpThankYou(lpSlug);
@@ -1930,7 +1923,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
               return (
                 <FadeIn key={product.id} delay={pi * 80}>
                   <div
-                    onClick={() => !editMode && setProductPopup({ productIdx: pi, sizeId: "1m2", colorId: "black", imgIdx: 0, step: "detail" })}
+                    onClick={() => !editMode && setProductPopup({ productIdx: pi, sizeId: "1m2", imgIdx: 0, step: "detail" })}
                     style={{ background: BLACK_CARD, border: `1.5px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: editMode ? "default" : "pointer", transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s" }}
                     onMouseEnter={e => { if (!editMode) { (e.currentTarget as HTMLDivElement).style.borderColor = GOLD; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; } }}
                     onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
@@ -1985,7 +1978,6 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
         const selectedSizeObj = POPUP_SIZES[selectedSizeIndex];
         const selectedPriceKey = getPopupPriceKey(pp.productIdx, selectedSizeIndex);
         const sizePrice = content[selectedPriceKey] || getPopupDefaultPrice(pp.productIdx, selectedSizeIndex);
-        const selectedColorObj = POPUP_COLORS.find(c => c.id === pp.colorId) || POPUP_COLORS[0];
 
         async function handlePopupSubmit(e: React.FormEvent) {
           e.preventDefault();
@@ -1994,7 +1986,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
           if (!/^(0\d{9}|\+84\d{9})$/.test(normalizedPhone)) { setPopupError("Số điện thoại không hợp lệ"); return; }
           setPopupLoading(true); setPopupError("");
           try {
-            const noteStr = `Sản phẩm: ${displayName} | Kích thước: ${selectedSizeObj.label} | Màu sắc: ${selectedColorObj.label} | Giá: ${sizePrice} | Địa chỉ: ${popupForm.address} | Ghi chú: ${popupForm.note}`;
+            const noteStr = `Sản phẩm: ${displayName} | Kích thước: ${selectedSizeObj.label} | Giá: ${sizePrice} | Địa chỉ: ${popupForm.address} | Ghi chú: ${popupForm.note}`;
             const res = await fetch("/api/lp/submit-lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ landingPageSlug: lpSlug, name: popupForm.name, phone: normalizedPhone, email: "", note: noteStr }) });
             if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Lỗi server"); }
             redirectToLpThankYou(lpSlug);
@@ -2105,30 +2097,10 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                         </div>
                       </div>
 
-                      {/* Color options */}
-                      <div>
-                        <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, marginBottom: 12, fontFamily: FONT_BODY }}>Chọn màu sắc:</div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          {POPUP_COLORS.map(color => {
-                            const isActive = pp.colorId === color.id;
-                            return (
-                              <div key={color.id}
-                                onClick={() => setProductPopup(prev => prev ? { ...prev, colorId: color.id } : null)}
-                                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", border: `1.5px solid ${isActive ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: isActive ? `rgba(139,105,20,0.06)` : BLACK, cursor: "pointer", transition: "all 0.15s" }}
-                              >
-                                <span style={{ color: isActive ? GOLD : WHITE, fontSize: 13, fontWeight: isActive ? 600 : 400, fontFamily: FONT_BODY }}>{color.label}</span>
-                                {isActive && <IconCheck color={GOLD} size={16} />}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
                       {/* Selected price summary */}
                       <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "14px 16px" }}>
                         <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Lựa chọn đã chọn</div>
                         <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{selectedSizeObj.label}</div>
-                        <div style={{ color: GRAY, fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, marginTop: 2 }}>{selectedColorObj.label}</div>
                         <div style={{ color: GOLD, fontSize: 20, fontWeight: 700, fontFamily: FONT_HEADING, marginTop: 4 }}>{sizePrice}</div>
                       </div>
 
@@ -2165,7 +2137,6 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                       <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "12px 16px" }}>
                         <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Sản phẩm đã chọn</div>
                         <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{displayName} — {selectedSizeObj.label}</div>
-                        <div style={{ color: GRAY, fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, marginTop: 2 }}>{selectedColorObj.label}</div>
                         <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, marginTop: 2 }}>{sizePrice}</div>
                       </div>
 
@@ -2187,7 +2158,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                           />
                         ))}
                         <textarea
-                          placeholder="Ghi chú thêm (màu sắc, yêu cầu đặc biệt...)"
+                          placeholder="Ghi chú thêm (yêu cầu đặc biệt...)"
                           value={popupForm.note}
                           onChange={e => setPopupForm(prev => ({ ...prev, note: e.target.value }))}
                           style={{ width: "100%", background: "rgba(139,105,20,0.04)", border: `1px solid rgba(139,105,20,0.2)`, color: WHITE, padding: "13px 16px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD, minHeight: 72, resize: "vertical" }}
@@ -2518,7 +2489,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                   <div style={{ color: GOLD_PALE, fontSize: 11, fontWeight: 800, letterSpacing: "0.16em", marginBottom: 8, fontFamily: FONT_BODY, textTransform: "uppercase" as const }}>{E({ bk: "inline_order_label", def: "Đặt hàng nhanh GSF150", as: "span" })}</div>
                   <div style={{ color: "#FDFAF5", fontSize: "clamp(20px, 2.4vw, 30px)", fontWeight: 800, fontFamily: FONT_HEADING, lineHeight: 1.2 }}>{E({ bk: "inline_order_title", def: "Chọn phiên bản phù hợp với giường của bạn", as: "span" })}</div>
                   <p style={{ color: "rgba(253,250,245,0.64)", fontSize: 14, lineHeight: 1.7, margin: "10px 0 0", fontFamily: FONT_BODY }}>
-                    {E({ bk: "inline_order_desc", def: "Điền thông tin đặt hàng, đội SmartFurni sẽ gọi xác nhận kích thước lòng giường, màu khung và lịch giao lắp.", as: "span", multiline: true })}
+                    {E({ bk: "inline_order_desc", def: "Điền thông tin đặt hàng, đội SmartFurni sẽ gọi xác nhận kích thước lòng giường và lịch giao lắp.", as: "span", multiline: true })}
                   </p>
                 </div>
 
@@ -2542,29 +2513,10 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                   </div>
                 </div>
 
-                <div>
-                  <div style={{ color: "#FDFAF5", fontSize: 13, fontWeight: 700, marginBottom: 10, fontFamily: FONT_BODY }}>Chọn màu sắc:</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }} className="lp-inline-order-options">
-                    {POPUP_COLORS.map(color => {
-                      const isActive = inlineOrderColorId === color.id;
-                      return (
-                        <button key={color.id} type="button"
-                          onClick={() => setInlineOrderColorId(color.id)}
-                          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "13px 14px", border: `1.5px solid ${isActive ? GOLD_PALE : "rgba(201,168,76,0.14)"}`, borderRadius: R_MD, background: isActive ? "rgba(201,168,76,0.14)" : "rgba(255,255,255,0.035)", cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}
-                        >
-                          <span style={{ color: isActive ? GOLD_PALE : "rgba(253,250,245,0.86)", fontSize: 13, fontWeight: isActive ? 800 : 600, fontFamily: FONT_BODY }}>{color.label}</span>
-                          {isActive && <IconCheck color={GOLD_PALE} size={16} />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
                 <div style={{ background: "rgba(201,168,76,0.10)", border: "1px solid rgba(201,168,76,0.24)", borderRadius: R_MD, padding: "16px 18px", display: "grid", gridTemplateColumns: "1fr auto", gap: 14, alignItems: "center" }} className="lp-order-summary">
                   <div>
                     <div style={{ color: "rgba(253,250,245,0.55)", fontSize: 11, fontFamily: FONT_BODY, marginBottom: 5, textTransform: "uppercase" as const, letterSpacing: "0.12em" }}>Lựa chọn của bạn</div>
                     <div style={{ color: "#FDFAF5", fontSize: 14, fontWeight: 800, fontFamily: FONT_BODY }}>{inlineOrderSizeObj.label}</div>
-                    <div style={{ color: "rgba(253,250,245,0.62)", fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, marginTop: 3 }}>{inlineOrderColorObj.label}</div>
                   </div>
                   <div style={{ color: GOLD_PALE, fontSize: "clamp(18px, 2.2vw, 26px)", fontWeight: 900, fontFamily: FONT_HEADING, whiteSpace: "nowrap" as const }}>{inlineOrderPrice}</div>
                 </div>
