@@ -87,13 +87,19 @@
 .lp-solution-visual-card {
   position: relative !important;
   width: 100% !important;
-  aspect-ratio: 4 / 3 !important;
-  margin: -4px 0 22px !important;
+  max-width: 460px !important;
+  aspect-ratio: 9 / 16 !important;
+  margin: 0 auto !important;
   overflow: hidden !important;
   border: 1px solid rgba(201, 168, 76, 0.24) !important;
-  border-radius: 18px !important;
+  border-radius: 28px !important;
   background: #11100c !important;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28) !important;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.38) !important;
+}
+
+.lp-problem-copy-card {
+  height: fit-content !important;
+  align-self: center !important;
 }
 
 @media (max-width: 600px) {
@@ -121,9 +127,13 @@
   }
 
   .lp-solution-visual-card {
-    aspect-ratio: 1 / 1 !important;
-    margin: -6px 0 18px !important;
-    border-radius: 16px !important;
+    max-width: 360px !important;
+    aspect-ratio: 9 / 16 !important;
+    border-radius: 20px !important;
+  }
+
+  .lp-problem-copy-card {
+    padding: 24px 18px !important;
   }
 }
 

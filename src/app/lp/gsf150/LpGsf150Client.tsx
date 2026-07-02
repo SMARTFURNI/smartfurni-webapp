@@ -1491,13 +1491,13 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
             </div>
           </FadeIn>
 
-          {/* 2 cột: Vấn đề vs Giải pháp */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }} className="lp-problem-grid">
+          {/* 2 cột: chữ gộp bên trái, ảnh đứng bên phải */}
+          <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 22, alignItems: "stretch" }} className="lp-problem-grid">
 
-            {/* Cột trái: Vấn đề */}
-            <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: `${R_LG}px 0 0 ${R_LG}px`, border: `1px solid rgba(255,255,255,0.07)`, borderRight: "none", padding: "36px 32px 36px 32px", display: "flex", flexDirection: "column" }}>
+            {/* Card chữ: Vấn đề + Giải pháp */}
+            <div className="lp-problem-copy-card" style={{ background: "rgba(255,255,255,0.035)", borderRadius: R_LG, border: `1px solid rgba(255,255,255,0.08)`, padding: "34px 32px", display: "flex", flexDirection: "column", gap: 22 }}>
               <FadeIn>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(192,57,43,0.15)", border: "1px solid rgba(192,57,43,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>😰</div>
                   <div>
                     <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_BODY, textTransform: "uppercase" as const, marginBottom: 2 }}>Vấn đề hiện tại</div>
@@ -1512,18 +1512,17 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                 { text: "Cần tư thế nâng đầu/chân linh hoạt cho nghỉ ngơi hằng ngày", icon: "✕" },
               ].map((p, i) => (
                 <FadeIn key={i} delay={i * 120}>
-                  <div style={{ display: "flex", gap: 14, marginBottom: 18, alignItems: "flex-start", padding: "14px 16px", borderRadius: R_SM, background: "rgba(192,57,43,0.05)", border: "1px solid rgba(192,57,43,0.12)" }}>
+                  <div style={{ display: "flex", gap: 14, marginBottom: 12, alignItems: "flex-start", padding: "12px 14px", borderRadius: R_SM, background: "rgba(192,57,43,0.05)", border: "1px solid rgba(192,57,43,0.12)" }}>
                     <span style={{ color: RED_SOFT, fontWeight: 700, flexShrink: 0, fontSize: 13, marginTop: 1, opacity: 0.8 }}>{p.icon}</span>
                     <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 14, lineHeight: 1.65, fontFamily: FONT_BODY }}>{p.text}</span>
                   </div>
                 </FadeIn>
               ))}
-            </div>
 
-            {/* Cột phải: Giải pháp */}
-            <div style={{ background: "rgba(139,105,20,0.07)", borderRadius: `0 ${R_LG}px ${R_LG}px 0`, border: `1px solid rgba(139,105,20,0.25)`, borderLeft: `2px solid rgba(139,105,20,0.5)`, padding: "36px 32px 36px 32px", display: "flex", flexDirection: "column" }}>
+              <div style={{ height: 1, background: "linear-gradient(90deg, rgba(139,105,20,0.05), rgba(139,105,20,0.35), rgba(139,105,20,0.05))" }} />
+
               <FadeIn delay={100}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(139,105,20,0.2)", border: `1px solid rgba(139,105,20,0.4)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <IconDiamond color={GOLD_PALE} size={18} />
                   </div>
@@ -1533,18 +1532,6 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                   </div>
                 </div>
               </FadeIn>
-              <FadeIn delay={160}>
-                <div className="lp-solution-visual-card">
-                  <Image
-                    src={optimizeCldUrl(content["problem_full_img"] || defaultImage("problem_full_img"), 1200)}
-                    alt="So sánh giường thường và giường công thái học chỉnh điện SmartFurni GSF150"
-                    fill
-                    style={{ objectFit: "contain", objectPosition: "center", background: "#11100C" }}
-                    sizes="(max-width: 768px) 100vw, 520px"
-                  />
-                  {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="problem_full_img" currentUrl={content["problem_full_img"] || defaultImage("problem_full_img")} onUploaded={handleSaved} />}
-                </div>
-              </FadeIn>
               {[
                 { text: "Đặt vào trong khung giường hiện có, giữ lại phong cách phòng ngủ", highlight: "2-in-1" },
                 { text: "Nâng đầu và chân bằng remote, thao tác nhẹ và dễ dùng", highlight: "30 giây" },
@@ -1552,7 +1539,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                 { text: "Hỗ trợ tư thế Zero Gravity, đọc sách, xem TV và thư giãn", highlight: "10 giây" },
               ].map((s, i) => (
                 <FadeIn key={i} delay={100 + i * 120}>
-                  <div style={{ display: "flex", gap: 14, marginBottom: 18, alignItems: "flex-start", padding: "14px 16px", borderRadius: R_SM, background: "rgba(139,105,20,0.08)", border: `1px solid rgba(139,105,20,0.2)` }}>
+                  <div style={{ display: "flex", gap: 14, marginBottom: 12, alignItems: "flex-start", padding: "12px 14px", borderRadius: R_SM, background: "rgba(139,105,20,0.08)", border: `1px solid rgba(139,105,20,0.2)` }}>
                     <span style={{ flexShrink: 0, marginTop: 2 }}><IconCheck color={GOLD_PALE} size={15} /></span>
                     <span style={{ color: "rgba(253,250,245,0.8)", fontSize: 14, lineHeight: 1.65, fontFamily: FONT_BODY }}>
                       {(() => { const parts = s.text.split(s.highlight); return parts.map((part, j) => j === parts.length - 1 ? <span key={j}>{part}</span> : <span key={j}>{part}<strong style={{ color: GOLD_PALE, fontWeight: 700 }}>{s.highlight}</strong></span>); })()}
@@ -1561,6 +1548,20 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                 </FadeIn>
               ))}
             </div>
+
+            {/* Card ảnh: tỉ lệ đứng 9:16 */}
+            <FadeIn delay={160}>
+              <div className="lp-solution-visual-card">
+                <Image
+                  src={optimizeCldUrl(content["problem_full_img"] || defaultImage("problem_full_img"), 1400)}
+                  alt="So sánh giường thường và giường công thái học chỉnh điện SmartFurni GSF150"
+                  fill
+                  style={{ objectFit: "cover", objectPosition: "center", background: "#11100C" }}
+                  sizes="(max-width: 768px) 100vw, 460px"
+                />
+                {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="problem_full_img" currentUrl={content["problem_full_img"] || defaultImage("problem_full_img")} onUploaded={handleSaved} />}
+              </div>
+            </FadeIn>
           </div>
 
           {/* Tagline */}
