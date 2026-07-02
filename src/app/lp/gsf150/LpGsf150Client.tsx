@@ -1492,7 +1492,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
           </FadeIn>
 
           {/* 2 cột: chữ gộp bên trái, ảnh đứng bên phải */}
-          <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 22, alignItems: "stretch" }} className="lp-problem-grid">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22, alignItems: "stretch" }} className="lp-problem-grid">
 
             {/* Card chữ: Vấn đề + Giải pháp */}
             <div className="lp-problem-copy-card" style={{ background: "rgba(255,255,255,0.035)", borderRadius: R_LG, border: `1px solid rgba(255,255,255,0.08)`, padding: "34px 32px", display: "flex", flexDirection: "column", gap: 22 }}>
@@ -1557,7 +1557,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                   alt="So sánh giường thường và giường công thái học chỉnh điện SmartFurni GSF150"
                   fill
                   style={{ objectFit: "cover", objectPosition: "center", background: "#11100C" }}
-                  sizes="(max-width: 768px) 100vw, 460px"
+                  sizes="(max-width: 768px) 100vw, 50vw"
                 />
                 {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="problem_full_img" currentUrl={content["problem_full_img"] || defaultImage("problem_full_img")} onUploaded={handleSaved} />}
               </div>

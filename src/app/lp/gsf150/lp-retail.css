@@ -87,7 +87,7 @@
 .lp-solution-visual-card {
   position: relative !important;
   width: 100% !important;
-  max-width: 460px !important;
+  max-width: none !important;
   aspect-ratio: 9 / 16 !important;
   margin: 0 auto !important;
   overflow: hidden !important;
@@ -127,7 +127,7 @@
   }
 
   .lp-solution-visual-card {
-    max-width: 360px !important;
+    max-width: none !important;
     aspect-ratio: 9 / 16 !important;
     border-radius: 20px !important;
   }
