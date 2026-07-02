@@ -47,10 +47,88 @@
   justify-content: center !important;
 }
 
+.lp-problem-visual-section,
+.lp-benefits-visual-section {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 96px 24px !important;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(201, 168, 76, 0.12), transparent 58%),
+    #0d0b06 !important;
+}
+
+.lp-problem-visual-section .lp-fullscreen-image-frame {
+  position: relative !important;
+  inset: auto !important;
+  width: min(100%, 1280px) !important;
+  height: min(72vh, 760px) !important;
+  min-height: 420px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(201, 168, 76, 0.24) !important;
+  border-radius: 28px !important;
+  background: #0d0b06 !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.36) !important;
+}
+
+.lp-benefits-visual-section {
+  flex-direction: column !important;
+  gap: 40px !important;
+  padding: 96px 24px 112px !important;
+  background:
+    radial-gradient(ellipse at 50% 16%, rgba(201, 168, 76, 0.14), transparent 56%),
+    #11100c !important;
+}
+
+.lp-benefits-visual-header {
+  width: min(100%, 820px) !important;
+  text-align: center !important;
+}
+
+.lp-benefits-visual-section .lp-fullscreen-image-frame {
+  position: relative !important;
+  inset: auto !important;
+  width: min(100%, 1180px) !important;
+  height: min(78vh, 900px) !important;
+  min-height: 540px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(201, 168, 76, 0.22) !important;
+  border-radius: 28px !important;
+  background: #11100c !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.38) !important;
+}
+
 @media (max-width: 600px) {
   .lp-fullscreen-image-section {
     min-height: 100vh !important;
     min-height: 100svh !important;
+  }
+
+  .lp-problem-visual-section,
+  .lp-benefits-visual-section {
+    min-height: auto !important;
+    padding: 56px 16px !important;
+  }
+
+  .lp-problem-visual-section .lp-fullscreen-image-frame {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    aspect-ratio: 16 / 9 !important;
+    border-radius: 18px !important;
+  }
+
+  .lp-benefits-visual-section {
+    gap: 28px !important;
+    padding-bottom: 72px !important;
+  }
+
+  .lp-benefits-visual-section .lp-fullscreen-image-frame {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 18px !important;
   }
 }
 

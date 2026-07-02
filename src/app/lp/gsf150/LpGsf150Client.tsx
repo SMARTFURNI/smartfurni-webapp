@@ -1565,22 +1565,35 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
       </section>
 
       {/* ── PROBLEM FULL-SCREEN IMAGE ── */}
-      <section className="lp-fullscreen-image-section" style={{ background: "#0D0B06" }}>
+      <section className="lp-fullscreen-image-section lp-problem-visual-section" style={{ background: "#0D0B06" }}>
         <div className="lp-fullscreen-image-frame">
           <Image
             src={optimizeCldUrl(content["problem_full_img"] || defaultImage("problem_full_img"), 1800)}
             alt="Không gian phòng ngủ trước khi nâng cấp GSF150"
             fill
-            style={{ objectFit: "cover", objectPosition: "center" }}
+            style={{ objectFit: "contain", objectPosition: "center", background: "#0D0B06" }}
             sizes="100vw"
           />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(13,11,6,0.24) 0%, rgba(13,11,6,0.04) 45%, rgba(13,11,6,0.28) 100%)", pointerEvents: "none" }} />
           {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="problem_full_img" currentUrl={content["problem_full_img"] || defaultImage("problem_full_img")} onUploaded={handleSaved} />}
         </div>
       </section>
 
-      {/* ── FEATURES FULL-SCREEN INFOGRAPHIC ── */}
-      <section id="features" className="lp-fullscreen-image-section lp-fullscreen-contain-section" style={{ background: "#11100C" }}>
+      {/* ── BENEFITS FULL-SCREEN INFOGRAPHIC ── */}
+      <section id="benefits" className="lp-fullscreen-image-section lp-fullscreen-contain-section lp-benefits-visual-section" style={{ background: "#11100C" }}>
+        <FadeIn>
+          <div className="lp-benefits-visual-header">
+            <SectionLabel>{E({ bk: "benefits_visual_label", def: "Lợi ích mang lại", as: "span" })}</SectionLabel>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 700, lineHeight: 1.08, margin: "0 0 12px", fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF" }}>
+              {E({ bk: "benefits_visual_title_1", def: "Một chiếc giường", as: "span" })}
+              <span style={{ display: "block", color: GOLD_PALE }}>
+                {E({ bk: "benefits_visual_title_2", def: "cho nhiều tư thế nghỉ ngơi", as: "span" })}
+              </span>
+            </h2>
+            <p style={{ color: "rgba(253,250,245,0.68)", fontSize: 15, lineHeight: 1.8, fontFamily: FONT_BODY, margin: "0 auto", maxWidth: 680 }}>
+              {E({ bk: "benefits_visual_desc", def: "Từ chống ngáy, đọc sách, xem phim đến giấc ngủ sâu, GSF150 giúp bạn thay đổi tư thế nhẹ nhàng bằng remote mà vẫn giữ được không gian phòng ngủ quen thuộc.", as: "span", multiline: true })}
+            </p>
+          </div>
+        </FadeIn>
         <div className="lp-fullscreen-image-frame">
           <Image
             src={optimizeCldUrl(content["features_full_img"] || defaultImage("features_full_img"), 1800)}
@@ -2140,7 +2153,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
 
 
       {/* ── HÌNH ẢNH THỰC TẾSẢN PHẨM ── */}
-      <section id="benefits" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
+      <section id="gallery" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
