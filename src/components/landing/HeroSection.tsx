@@ -163,8 +163,9 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const ctaSecondaryText = theme?.hero.ctaSecondaryText ?? "Nhận tư vấn miễn phí";
   const ctaSecondaryLink = theme?.hero.ctaSecondaryLink ?? "/contact";
 
-  // Hero image from theme or fallback
-  const heroImageUrl = theme?.hero?.imageUrl;
+  // Ảnh hero dùng làm nền toàn màn hình. Nếu admin chưa cấu hình, dùng ảnh sản phẩm mặc định.
+  const heroImageUrl = theme?.hero?.imageUrl || "/uploads/products/smartfurni-bed-main.webp";
+  const heroOverlayOpacity = Math.min(90, Math.max(35, theme?.hero?.overlayOpacity ?? 60)) / 100;
 
   return (
     <>
@@ -182,20 +183,44 @@ export default function HeroSection({ theme }: HeroSectionProps) {
       {/* ── HERO ── */}
       <section
         style={{ background: `linear-gradient(160deg, ${bgFrom} 0%, ${bgTo} 100%)` }}
-        className="relative max-w-full overflow-hidden overflow-x-clip pt-16"
+        className="relative isolate max-w-full overflow-hidden overflow-x-clip pt-16"
       >
+        {/* Full-screen hero background, giống cấu trúc landing page SMF12 */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={heroImageUrl}
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover object-center"
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(90deg, rgba(8, 6, 0, ${Math.max(0.78, heroOverlayOpacity)}) 0%, rgba(8, 6, 0, ${Math.max(0.62, heroOverlayOpacity * 0.86)}) 44%, rgba(8, 6, 0, 0.34) 100%)`,
+            }}
+          />
+          <div
+            className="absolute inset-0 lg:hidden"
+            style={{
+              background: "linear-gradient(180deg, rgba(8, 6, 0, 0.80) 0%, rgba(8, 6, 0, 0.58) 42%, rgba(8, 6, 0, 0.90) 100%)",
+            }}
+          />
+        </div>
+
         {/* Subtle background glows */}
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 z-0 pointer-events-none">
           <div style={{ background: `radial-gradient(ellipse at 20% 50%, ${primary}0a, transparent 55%)` }} className="absolute inset-0" />
           <div style={{ background: `radial-gradient(ellipse at 80% 20%, ${primary}06, transparent 50%)` }} className="absolute inset-0" />
         </div>
 
-        <div style={{ maxWidth }} className="relative mx-auto w-full max-w-full overflow-hidden px-4 sm:px-6">
-          <div className="grid min-w-0 grid-cols-1 items-center gap-8 py-12 sm:py-16 lg:grid-cols-2 lg:gap-12 lg:py-20">
+        <div style={{ maxWidth }} className="relative z-10 mx-auto w-full max-w-full overflow-hidden px-4 sm:px-6">
+          <div className="flex min-h-[calc(100svh-4rem)] min-w-0 items-center py-12 sm:py-16 lg:py-20">
 
             {/* ── LEFT: Copy ── */}
-            <ScrollReveal variant="fadeUp" delay={0} className="min-w-0 max-w-full">
-              <div className="min-w-0 max-w-full space-y-6 lg:space-y-8">
+            <ScrollReveal variant="fadeUp" delay={0} className="min-w-0 w-full max-w-3xl">
+              <div className="min-w-0 max-w-full space-y-6 rounded-[28px] border px-4 py-5 backdrop-blur-[2px] sm:px-0 sm:py-0 sm:border-0 sm:bg-transparent lg:space-y-8"
+                style={{ backgroundColor: "rgba(8, 6, 0, 0.12)", borderColor: `${primary}14` }}
+              >
 
                 {/* Badge */}
                 <div
@@ -246,6 +271,18 @@ export default function HeroSection({ theme }: HeroSectionProps) {
                   >
                     {ctaSecondaryText}
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => setB2bOpen(true)}
+                    style={{ borderColor: `${textColor}22`, color: `${textColor}72`, backgroundColor: "rgba(8, 6, 0, 0.24)" }}
+                    className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-xs font-medium backdrop-blur-sm transition-opacity hover:opacity-80"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Trở thành đối tác B2B
+                  </button>
                 </div>
 
                 {/* Trust stats */}
@@ -256,75 +293,6 @@ export default function HeroSection({ theme }: HeroSectionProps) {
                       <div style={{ color: `${textColor}45` }} className="text-[11px] mt-0.5 leading-tight">{stat.label}</div>
                     </div>
                   ))}
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* ── RIGHT: Product image ── */}
-            <ScrollReveal variant="fadeUp" delay={120} className="min-w-0 max-w-full">
-              <div className="relative min-w-0 max-w-full">
-                {/* Glow behind image */}
-                <div
-                  style={{ background: `radial-gradient(circle, ${primary}18, transparent 65%)` }}
-                  className="pointer-events-none absolute inset-0 scale-105 sm:scale-110"
-                />
-                <div
-                  style={{ borderColor: `${borderColor}80`, backgroundColor: `${surfaceColor}60` }}
-                  className="relative max-w-full overflow-hidden rounded-3xl border backdrop-blur-sm sm:aspect-[4/3]"
-                >
-                  {heroImageUrl ? (
-                    <img
-                      src={heroImageUrl}
-                      alt="SmartFurni Giường Điều Chỉnh Điện"
-                      className="w-full aspect-[4/3] object-cover object-center sm:aspect-auto sm:h-full"
-                    />
-                  ) : (
-                    /* Placeholder khi chưa có ảnh */
-                    <div
-                      className="w-full aspect-[4/3] sm:h-full flex flex-col items-center justify-center gap-4"
-                      style={{ backgroundColor: `${surfaceColor}` }}
-                    >
-                      <svg width="80" height="80" viewBox="0 0 80 80" fill="none" style={{ opacity: 0.2 }}>
-                        <rect x="8" y="32" width="64" height="28" rx="4" stroke={primary} strokeWidth="2" fill="none"/>
-                        <rect x="8" y="20" width="64" height="16" rx="4" stroke={primary} strokeWidth="2" fill="none"/>
-                        <rect x="12" y="60" width="8" height="10" rx="2" fill={primary} fillOpacity="0.5"/>
-                        <rect x="60" y="60" width="8" height="10" rx="2" fill={primary} fillOpacity="0.5"/>
-                      </svg>
-                      <p style={{ color: `${textColor}30` }} className="text-sm text-center px-8">
-                        Thêm ảnh sản phẩm qua<br/>Admin → Cài đặt giao diện → Hero
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Floating badge */}
-                  <div
-                    style={{ backgroundColor: `${bgFrom}e0`, borderColor: `${primary}30`, backdropFilter: "blur(8px)" }}
-                    className="relative mx-4 mb-4 -mt-1 rounded-2xl border px-4 py-3 flex items-center justify-between sm:absolute sm:bottom-4 sm:left-4 sm:right-4 sm:m-0"
-                  >
-                    <div>
-                      <div style={{ color: primary }} className="text-xs font-semibold tracking-wide">SMARTFURNI</div>
-                      <div style={{ color: textColor }} className="text-sm font-medium mt-0.5">Giường Điều Chỉnh Điện</div>
-                    </div>
-                    <div className="text-right">
-                      <div style={{ color: `${textColor}50` }} className="text-[10px]">Từ</div>
-                      <div style={{ color: primary }} className="text-base font-bold">29.900.000₫</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* B2B pill */}
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={() => setB2bOpen(true)}
-                    style={{ borderColor: `${textColor}20`, color: `${textColor}55` }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-medium hover:opacity-80 transition-opacity"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    Trở thành đối tác B2B
-                  </button>
                 </div>
               </div>
             </ScrollReveal>
