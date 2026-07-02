@@ -1755,15 +1755,25 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
       </section>
 
       {/* ── THÔNG SỐ KỸ THUẬT ── */}
-      <section id="specs" className="lp-section-pad" style={{ background: BLACK_SOFT, padding: "80px 24px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <section
+        id="specs"
+        className="lp-section-pad"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 10%, rgba(201,168,76,0.14), transparent 56%), linear-gradient(180deg, #17140D 0%, #11100C 58%, #17140D 100%)",
+          padding: "96px 24px",
+          borderTop: "1px solid rgba(201,168,76,0.12)",
+          borderBottom: "1px solid rgba(201,168,76,0.12)",
+        }}
+      >
+        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
               <SectionLabel>{E({ bk: "spec_section_label", def: "Thông số kỹ thuật", as: "span" })}</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
+              <h2 style={{ fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 700, lineHeight: 1.08, margin: "0 0 12px", fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FFFFFF" }}>
                 {E({ bk: "spec_title_1", def: "Thông Số Kỹ Thuật", as: "span" })}
               </h2>
-              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
+              <div style={{ color: GOLD_PALE, fontSize: "clamp(18px, 2.5vw, 30px)", fontWeight: 700, fontFamily: FONT_HEADING }}>
                 {E({ bk: "spec_title_2", def: "SmartFurni GSF150", as: "span" })}
               </div>
               <GoldDivider />
@@ -1772,22 +1782,22 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
           <FadeIn delay={100}>
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 24, alignItems: "stretch" }} className="lp-specs-layout">
               {/* Bảng thông số bên trái */}
-              <div style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", alignSelf: "center" }}>
+              <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.055), rgba(139,105,20,0.08))", border: "1px solid rgba(201,168,76,0.22)", borderRadius: R_LG, overflow: "hidden", alignSelf: "center", boxShadow: "0 24px 80px rgba(0,0,0,0.24)" }}>
                 {SPEC_ROWS.map((row, i) => (
-                  <div key={`${row.bkLabel}-${row.bkValue}`} style={{ display: "flex", alignItems: "center", gap: 18, padding: "11px 20px", minHeight: 44, background: i % 2 === 0 ? BLACK_CARD : BLACK, borderBottom: i < SPEC_ROWS.length - 1 ? `1px solid ${BLACK_BORDER}` : "none" }}>
-                    <div style={{ width: "38%", color: GRAY_LIGHT, fontSize: 13, lineHeight: 1.45, fontFamily: FONT_BODY, flexShrink: 0 }}>{E({ bk: row.bkLabel, def: row.defLabel, as: "span" })}</div>
-                    <div style={{ color: WHITE, fontSize: 13, lineHeight: 1.45, fontFamily: FONT_BODY, fontWeight: 500, flex: 1 }}>{E({ bk: row.bkValue, def: row.defValue, as: "span", multiline: true })}</div>
+                  <div key={`${row.bkLabel}-${row.bkValue}`} style={{ display: "flex", alignItems: "center", gap: 18, padding: "13px 20px", minHeight: 48, background: i % 2 === 0 ? "rgba(255,255,255,0.035)" : "rgba(201,168,76,0.055)", borderBottom: i < SPEC_ROWS.length - 1 ? "1px solid rgba(201,168,76,0.13)" : "none" }}>
+                    <div style={{ width: "38%", color: "rgba(253,250,245,0.58)", fontSize: 13, lineHeight: 1.45, fontFamily: FONT_BODY, flexShrink: 0 }}>{E({ bk: row.bkLabel, def: row.defLabel, as: "span" })}</div>
+                    <div style={{ color: "#FDFAF5", fontSize: 13, lineHeight: 1.45, fontFamily: FONT_BODY, fontWeight: 700, flex: 1 }}>{E({ bk: row.bkValue, def: row.defValue, as: "span", multiline: true })}</div>
                   </div>
                 ))}
               </div>
               {/* Ảnh 1:1 bên phải */}
-              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}`, alignSelf: "center" }}>
-                <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
+              <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: "1px solid rgba(201,168,76,0.22)", alignSelf: "center", background: "#11100C", boxShadow: "0 24px 80px rgba(0,0,0,0.24)" }}>
+                <div style={{ position: "relative", paddingBottom: "100%", background: "#11100C" }}>
                   {content["specs_img"] || defaultImage("specs_img") ? (
-                    <Image src={optimizeCldUrl(content["specs_img"] || defaultImage("specs_img"), 900)} alt="SmartFurni GSF150" fill style={{ objectFit: "contain", background: WHITE }} sizes="(max-width: 768px) 100vw, 50vw" />
+                    <Image src={optimizeCldUrl(content["specs_img"] || defaultImage("specs_img"), 900)} alt="SmartFurni GSF150" fill style={{ objectFit: "contain", background: "#11100C" }} sizes="(max-width: 768px) 100vw, 50vw" />
                   ) : (
-                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke={GRAY_LIGHT} strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke={GRAY_LIGHT} strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke={GRAY_LIGHT} strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: "rgba(253,250,245,0.58)" }}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="rgba(253,250,245,0.58)" strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke="rgba(253,250,245,0.58)" strokeWidth="1.5"/><path d="M21 15l-5-5L5 21" stroke="rgba(253,250,245,0.58)" strokeWidth="1.5" strokeLinecap="round"/></svg>
                       <span style={{ fontSize: 12, fontFamily: FONT_BODY }}>Ảnh sản phẩm</span>
                     </div>
                   )}
