@@ -288,6 +288,8 @@ export const defaultTheme: SiteTheme = {
       title: { text: "Mọi thứ bạn cần cho", fontSize: 36, color: "#F5EDD6", fontWeight: "light" },
       titleAccent: { text: "giấc ngủ hoàn hảo", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
       subtitle: { text: "SmartFurni tích hợp công nghệ điều khiển thông minh vào từng chi tiết, mang lại trải nghiệm ngủ được cá nhân hóa hoàn toàn.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
+      backgroundImageUrl: "/uploads/products/smartfurni-bed-main.webp",
+      backgroundImageAlt: "Điều khiển giường SmartFurni qua ứng dụng di động",
       items: [
         { icon: "📌", title: "Điều chỉnh góc chính xác", desc: "Điều chỉnh đầu và chân giường 0–70° với độ chính xác 1°", imageUrl: "/uploads/products/smartfurni-bed-main.webp", imageAlt: "Điều chỉnh góc chính xác" },
         { icon: "🧠", title: "Preset thông minh", desc: "Lưu lại tư thế yêu thích, một chạm khôi phục", imageUrl: "/gsf150-standalone.jpg", imageAlt: "Preset thông minh" },
@@ -606,6 +608,8 @@ function mergeTheme(saved: SiteTheme): SiteTheme {
     homepageSections: saved.homepageSections
       ? {
           features: { ...defaultTheme.homepageSections.features, ...saved.homepageSections.features,
+            backgroundImageUrl: saved.homepageSections.features?.backgroundImageUrl || defaultTheme.homepageSections.features.backgroundImageUrl,
+            backgroundImageAlt: saved.homepageSections.features?.backgroundImageAlt || defaultTheme.homepageSections.features.backgroundImageAlt,
             items: saved.homepageSections.features?.items ?? defaultTheme.homepageSections.features.items },
           visualProof: { ...defaultTheme.homepageSections.visualProof, ...saved.homepageSections.visualProof,
             items: saved.homepageSections.visualProof?.items ?? defaultTheme.homepageSections.visualProof.items,

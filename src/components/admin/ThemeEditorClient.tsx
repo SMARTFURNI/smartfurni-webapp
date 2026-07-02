@@ -1751,6 +1751,20 @@ export default function ThemeEditorClient({
                 onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, subtitle: v } })}
               />
             </SectionCard>
+            <SectionCard title="Ảnh nền full màn hình">
+              <ImageUploadInput
+                label="Ảnh nền khi lướt qua mục tính năng"
+                value={feat.backgroundImageUrl || ""}
+                hint="Nên dùng ảnh ngang, rõ chủ thể điều khiển qua app. Gợi ý: 1920x1080 hoặc lớn hơn."
+                onChange={(url) => updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, backgroundImageUrl: url } })}
+              />
+              <TextInput
+                label="Mô tả ảnh (SEO/Accessibility)"
+                value={feat.backgroundImageAlt || ""}
+                placeholder="Điều khiển giường SmartFurni qua ứng dụng di động"
+                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, features: { ...feat, backgroundImageAlt: v } })}
+              />
+            </SectionCard>
             <SectionCard title="Các tính năng">
               <div className="space-y-3">
                 {feat.items.map((item: HomepageFeatureItem, idx: number) => (

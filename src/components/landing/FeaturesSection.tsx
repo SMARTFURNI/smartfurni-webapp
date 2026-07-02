@@ -49,6 +49,8 @@ export default function FeaturesSection({ theme }: Props) {
   const titleAccent = feat?.titleAccent;
   const subtitle = feat?.subtitle;
   const items: HomepageFeatureItem[] = feat?.items?.length ? feat.items : FEATURE_GRID;
+  const backgroundImageUrl = feat?.backgroundImageUrl || "/uploads/products/smartfurni-bed-main.webp";
+  const backgroundImageAlt = feat?.backgroundImageAlt || "Điều khiển giường SmartFurni qua ứng dụng di động";
 
   const primary = theme?.colors.primary ?? "#C9A84C";
   const textColor = theme?.colors.text ?? "#F5EDD6";
@@ -57,8 +59,38 @@ export default function FeaturesSection({ theme }: Props) {
   const bgFrom = theme?.hero?.bgGradientFrom ?? "#080600";
 
   return (
-    <section id="features" className="py-14 sm:py-20 lg:py-24 px-4 sm:px-6">
-      <div className="max-w-7xl mx-auto space-y-16 sm:space-y-20">
+    <section id="features" className="relative isolate min-h-screen overflow-hidden px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
+      {backgroundImageUrl && (
+        <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+          <div
+            role="img"
+            aria-label={backgroundImageAlt}
+            className="absolute inset-0 h-full w-full"
+            style={{
+              backgroundImage: `url("${backgroundImageUrl}")`,
+              backgroundAttachment: "fixed",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "cover",
+              transform: "scale(1.04)",
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(180deg, ${bgFrom} 0%, rgba(8,6,0,0.78) 24%, rgba(8,6,0,0.82) 56%, ${bgFrom} 100%)`,
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(circle at 50% 36%, ${primary}22 0%, transparent 42%)`,
+            }}
+          />
+        </div>
+      )}
+
+      <div className="relative z-10 max-w-7xl mx-auto space-y-16 sm:space-y-20">
 
         {/* ── 3 Core Benefits ── */}
         <div>
@@ -89,7 +121,7 @@ export default function FeaturesSection({ theme }: Props) {
               <ScrollReveal key={i} variant="fadeUp" delay={80 + i * 80}>
                 <div
                   className="relative p-6 sm:p-7 rounded-3xl h-full flex flex-col gap-4 group"
-                  style={{ backgroundColor: surfaceColor, border: `1px solid ${borderColor}` }}
+                  style={{ backgroundColor: `${surfaceColor}E6`, border: `1px solid ${borderColor}`, backdropFilter: "blur(14px)" }}
                 >
                   {/* Icon */}
                   <div className="flex items-center justify-center w-12 h-12 rounded-2xl"
@@ -129,7 +161,7 @@ export default function FeaturesSection({ theme }: Props) {
               <ScrollReveal key={i} variant="fadeUp" delay={60 + i * 50}>
                 <div
                   className="group p-5 rounded-2xl transition-all duration-300 h-full"
-                  style={{ backgroundColor: `${bgFrom}`, border: `1px solid ${borderColor}` }}
+                  style={{ backgroundColor: `${bgFrom}D9`, border: `1px solid ${borderColor}`, backdropFilter: "blur(12px)" }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLElement).style.borderColor = `${primary}40`;
                     (e.currentTarget as HTMLElement).style.backgroundColor = surfaceColor;

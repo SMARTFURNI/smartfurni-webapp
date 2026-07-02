@@ -286,6 +286,8 @@ export interface HomepageGenericSection extends HomepageSectionHeader {
 
 export interface HomepageFeaturesSection extends HomepageSectionHeader {
   items: HomepageFeatureItem[];
+  backgroundImageUrl?: string;
+  backgroundImageAlt?: string;
 }
 
 export interface HomepageTestimonialsSection extends HomepageSectionHeader {
