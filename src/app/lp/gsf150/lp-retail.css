@@ -444,16 +444,18 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   FORM SECTION — 2-col → 1-col (form lên trên, benefits xuống dưới)
+   FORM SECTION — đơn đặt hàng gọn trên mobile
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .lp-form-grid {
     grid-template-columns: 1fr !important;
-    gap: 24px !important;
+    gap: 20px !important;
   }
-  /* Đổi thứ tự: form lên trên, benefits xuống dưới */
-  .lp-form-grid > *:first-child { order: 2; }
-  .lp-form-grid > *:last-child  { order: 1; }
+  .lp-inline-order-options,
+  .lp-inline-order-contact,
+  .lp-order-summary {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

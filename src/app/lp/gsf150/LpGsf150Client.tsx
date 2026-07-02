@@ -1047,7 +1047,6 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
     return next;
   });
   const [editedCount, setEditedCount] = useState(0);
-  const [selectedSize, setSelectedSize] = useState("");
   const [productPopup, setProductPopup] = useState<{ productIdx: number; sizeId: string; colorId: string; imgIdx: number; step: "detail" | "form" } | null>(null);
   const popupSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -2487,129 +2486,122 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
       </section>
 
       {/* ── REGISTER FORM ── */}
-      <section id="register-form" className="lp-section-pad" style={{ background: BLACK, padding: "80px 24px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <section id="register-form" className="lp-section-pad" style={{ background: "#11100C", padding: "96px 24px", borderTop: "1px solid rgba(201,168,76,0.12)", borderBottom: "1px solid rgba(201,168,76,0.12)" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
               <SectionLabel>{E({ bk: "form_section_label", def: "Đặt hàng ngay hôm nay", as: "span" })}</SectionLabel>
-              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8, fontFamily: FONT_HEADING, letterSpacing: "-0.01em", color: WHITE }}>
-                {E({ bk: "form_title_1", def: "Nhận Tư Vấn Miễn Phí", as: "span" })}
+              <h2 style={{ fontSize: "clamp(28px, 4vw, 54px)", fontWeight: 700, lineHeight: 1.08, marginBottom: 10, fontFamily: FONT_HEADING, letterSpacing: "-0.02em", color: "#FDFAF5" }}>
+                {E({ bk: "form_title_1", def: "Đặt Hàng GSF150", as: "span" })}
               </h2>
-              <div style={{ color: GOLD, fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 300, fontFamily: FONT_HEADING }}>
-                {E({ bk: "form_title_2", def: "Báo Giá Tức Thì Trong 2 Giờ", as: "span" })}
+              <div style={{ color: GOLD_PALE, fontSize: "clamp(18px, 2.5vw, 30px)", fontWeight: 700, fontFamily: FONT_HEADING }}>
+                {E({ bk: "form_title_2", def: "Chọn kích thước, để lại thông tin, SmartFurni liên hệ xác nhận", as: "span" })}
               </div>
               <GoldDivider />
             </div>
           </FadeIn>
+
           <FadeIn>
-            <div style={{ background: `rgba(139,105,20,0.05)`, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "20px 24px", marginBottom: 28 }}>
-              <div style={{ color: WHITE, fontSize: 16, fontWeight: 600, fontFamily: FONT_HEADING, marginBottom: 16 }}>{E({ bk: "form_benefits_title", def: "Khi đặt hàng hôm nay, bạn nhận được:", as: "span" })}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "10px 24px" }} className="lp-benefits-grid">
-                {[
-                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_0", text: "Tư vấn kích thước phù hợp miễn phí" },
-                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_1", text: "Báo giá chính xác theo nhu cầu" },
-                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_2", text: "Giao hàng + lắp đặt theo khu vực hỗ trợ" },
-                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_3", text: "Kiểm tra nệm và lòng giường trước khi lắp" },
-                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_4", text: "Bảo hành motor 5 năm chính hãng" },
-                  { icon: <IconCheck color={GOLD} size={16} />, key: "form_benefit_5", text: "Hỗ trợ kỹ thuật tận nơi suốt thời gian bảo hành" },
-                ].map((b, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                    <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{b.icon}</span>
-                    <span style={{ color: GRAY, fontSize: 13, lineHeight: 1.55, fontFamily: FONT_BODY }}>{E({ bk: b.key, def: b.text, as: "span" })}</span>
+            <form onSubmit={handleInlineOrderSubmit} style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.055), rgba(139,105,20,0.08))", border: "1px solid rgba(201,168,76,0.22)", borderRadius: R_LG, padding: "clamp(22px, 4vw, 42px)", display: "grid", gridTemplateColumns: "minmax(0, 0.95fr) minmax(0, 1.05fr)", gap: 28, alignItems: "start", boxShadow: "0 24px 80px rgba(0,0,0,0.22)" }} className="lp-form-grid">
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <div>
+                  <div style={{ color: GOLD_PALE, fontSize: 11, fontWeight: 800, letterSpacing: "0.16em", marginBottom: 8, fontFamily: FONT_BODY, textTransform: "uppercase" as const }}>{E({ bk: "inline_order_label", def: "Đặt hàng nhanh GSF150", as: "span" })}</div>
+                  <div style={{ color: "#FDFAF5", fontSize: "clamp(20px, 2.4vw, 30px)", fontWeight: 800, fontFamily: FONT_HEADING, lineHeight: 1.2 }}>{E({ bk: "inline_order_title", def: "Chọn phiên bản phù hợp với giường của bạn", as: "span" })}</div>
+                  <p style={{ color: "rgba(253,250,245,0.64)", fontSize: 14, lineHeight: 1.7, margin: "10px 0 0", fontFamily: FONT_BODY }}>
+                    {E({ bk: "inline_order_desc", def: "Điền thông tin đặt hàng, đội SmartFurni sẽ gọi xác nhận kích thước lòng giường, màu khung và lịch giao lắp.", as: "span", multiline: true })}
+                  </p>
+                </div>
+
+                <div>
+                  <div style={{ color: "#FDFAF5", fontSize: 13, fontWeight: 700, marginBottom: 10, fontFamily: FONT_BODY }}>Chọn kích thước:</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }} className="lp-inline-order-options">
+                    {POPUP_SIZES.map((sz, sizeIdx) => {
+                      const szPriceKey = getPopupPriceKey(0, sizeIdx);
+                      const szPrice = content[szPriceKey] || getPopupDefaultPrice(0, sizeIdx);
+                      const isActive = inlineOrderSizeId === sz.id;
+                      return (
+                        <button key={sz.id} type="button"
+                          onClick={() => setInlineOrderSizeId(sz.id)}
+                          style={{ width: "100%", display: "flex", flexDirection: "column", gap: 7, padding: "14px 15px", border: `1.5px solid ${isActive ? GOLD_PALE : "rgba(201,168,76,0.14)"}`, borderRadius: R_MD, background: isActive ? "rgba(201,168,76,0.14)" : "rgba(255,255,255,0.035)", cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}
+                        >
+                          <span style={{ color: isActive ? GOLD_PALE : "rgba(253,250,245,0.88)", fontSize: 13, fontWeight: 700, fontFamily: FONT_BODY }}>{sz.label}</span>
+                          <span style={{ color: GOLD_PALE, fontSize: 13, fontWeight: 800, fontFamily: FONT_HEADING }}>{szPrice}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                ))}
+                </div>
+
+                <div>
+                  <div style={{ color: "#FDFAF5", fontSize: 13, fontWeight: 700, marginBottom: 10, fontFamily: FONT_BODY }}>Chọn màu sắc:</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }} className="lp-inline-order-options">
+                    {POPUP_COLORS.map(color => {
+                      const isActive = inlineOrderColorId === color.id;
+                      return (
+                        <button key={color.id} type="button"
+                          onClick={() => setInlineOrderColorId(color.id)}
+                          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "13px 14px", border: `1.5px solid ${isActive ? GOLD_PALE : "rgba(201,168,76,0.14)"}`, borderRadius: R_MD, background: isActive ? "rgba(201,168,76,0.14)" : "rgba(255,255,255,0.035)", cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}
+                        >
+                          <span style={{ color: isActive ? GOLD_PALE : "rgba(253,250,245,0.86)", fontSize: 13, fontWeight: isActive ? 800 : 600, fontFamily: FONT_BODY }}>{color.label}</span>
+                          {isActive && <IconCheck color={GOLD_PALE} size={16} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ background: "rgba(201,168,76,0.10)", border: "1px solid rgba(201,168,76,0.24)", borderRadius: R_MD, padding: "16px 18px", display: "grid", gridTemplateColumns: "1fr auto", gap: 14, alignItems: "center" }} className="lp-order-summary">
+                  <div>
+                    <div style={{ color: "rgba(253,250,245,0.55)", fontSize: 11, fontFamily: FONT_BODY, marginBottom: 5, textTransform: "uppercase" as const, letterSpacing: "0.12em" }}>Lựa chọn của bạn</div>
+                    <div style={{ color: "#FDFAF5", fontSize: 14, fontWeight: 800, fontFamily: FONT_BODY }}>{inlineOrderSizeObj.label}</div>
+                    <div style={{ color: "rgba(253,250,245,0.62)", fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, marginTop: 3 }}>{inlineOrderColorObj.label}</div>
+                  </div>
+                  <div style={{ color: GOLD_PALE, fontSize: "clamp(18px, 2.2vw, 26px)", fontWeight: 900, fontFamily: FONT_HEADING, whiteSpace: "nowrap" as const }}>{inlineOrderPrice}</div>
+                </div>
               </div>
-            </div>
-          </FadeIn>
 
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 28, alignItems: "start" }} className="lp-form-grid">
-            {/* Left side — quick order form */}
-            <FadeIn>
-              <form onSubmit={handleInlineOrderSubmit} style={{ background: BLACK_CARD, border: `1px solid ${BLACK_BORDER}`, borderRadius: R_LG, padding: "24px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
-                  <div>
-                    <div style={{ color: GRAY_LIGHT, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT_BODY }}>{E({ bk: "inline_order_label", def: "ĐẶT HÀNG NHANH GSF150", as: "span" })}</div>
-                    <div style={{ color: WHITE, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING }}>{E({ bk: "inline_order_title", def: "Chọn kích thước khung nâng hạ", as: "span" })}</div>
-                  </div>
+              <div style={{ background: "rgba(13,11,0,0.38)", border: "1px solid rgba(201,168,76,0.16)", borderRadius: R_LG, padding: "clamp(18px, 3vw, 28px)", display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <div style={{ color: GOLD_PALE, fontSize: 11, fontWeight: 800, letterSpacing: "0.16em", marginBottom: 8, fontFamily: FONT_BODY, textTransform: "uppercase" as const }}>Thông tin nhận hàng</div>
+                  <div style={{ color: "rgba(253,250,245,0.72)", fontSize: 13, lineHeight: 1.6, fontFamily: FONT_BODY }}>SmartFurni dùng thông tin này để xác nhận đơn và hẹn lịch giao lắp.</div>
+                </div>
 
-                  <div>
-                    <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, marginBottom: 10, fontFamily: FONT_BODY }}>Chọn kích thước:</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {POPUP_SIZES.map((sz, sizeIdx) => {
-                        const szPriceKey = getPopupPriceKey(0, sizeIdx);
-                        const szPrice = content[szPriceKey] || getPopupDefaultPrice(0, sizeIdx);
-                        const isActive = inlineOrderSizeId === sz.id;
-                        return (
-                          <button key={sz.id} type="button"
-                            onClick={() => setInlineOrderSizeId(sz.id)}
-                            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", border: `1.5px solid ${isActive ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: isActive ? `rgba(139,105,20,0.06)` : BLACK, cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}
-                          >
-                            <span style={{ color: isActive ? GOLD : WHITE, fontSize: 13, fontWeight: isActive ? 600 : 400, fontFamily: FONT_BODY }}>{sz.label}</span>
-                            <span style={{ color: GOLD, fontSize: 13, fontWeight: 700, fontFamily: FONT_HEADING }}>{szPrice}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, marginBottom: 10, fontFamily: FONT_BODY }}>Chọn màu sắc:</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {POPUP_COLORS.map(color => {
-                        const isActive = inlineOrderColorId === color.id;
-                        return (
-                          <button key={color.id} type="button"
-                            onClick={() => setInlineOrderColorId(color.id)}
-                            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", border: `1.5px solid ${isActive ? GOLD : BLACK_BORDER}`, borderRadius: R_MD, background: isActive ? `rgba(139,105,20,0.06)` : BLACK, cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}
-                          >
-                            <span style={{ color: isActive ? GOLD : WHITE, fontSize: 13, fontWeight: isActive ? 600 : 400, fontFamily: FONT_BODY }}>{color.label}</span>
-                            {isActive && <IconCheck color={GOLD} size={16} />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div style={{ background: `rgba(139,105,20,0.06)`, border: `1px solid rgba(139,105,20,0.2)`, borderRadius: R_MD, padding: "12px 14px" }}>
-                    <div style={{ color: GRAY_LIGHT, fontSize: 11, fontFamily: FONT_BODY, marginBottom: 4 }}>Lựa chọn đã chọn</div>
-                    <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: FONT_BODY }}>{inlineOrderSizeObj.label}</div>
-                    <div style={{ color: GRAY, fontSize: 12, fontWeight: 500, fontFamily: FONT_BODY, marginTop: 2 }}>{inlineOrderColorObj.label}</div>
-                    <div style={{ color: GOLD, fontSize: 18, fontWeight: 700, fontFamily: FONT_HEADING, marginTop: 4 }}>{inlineOrderPrice}</div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {([
-                      { key: "name", placeholder: "Họ và tên (*)", type: "text" },
-                      { key: "phone", placeholder: "Số điện thoại (*)", type: "tel" },
-                      { key: "address", placeholder: "Địa chỉ giao hàng", type: "text" },
-                    ] as { key: keyof typeof inlineOrderForm; placeholder: string; type: string }[]).map(f => (
-                      <input key={f.key}
-                        type={f.type}
-                        placeholder={f.placeholder}
-                        value={inlineOrderForm[f.key]}
-                        onChange={e => setInlineOrderForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        style={{ width: "100%", background: "rgba(139,105,20,0.04)", border: `1px solid rgba(139,105,20,0.2)`, color: WHITE, padding: "13px 14px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD }}
-                      />
-                    ))}
-                    <textarea
-                      placeholder="Ghi chú thêm"
-                      value={inlineOrderForm.note}
-                      onChange={e => setInlineOrderForm(prev => ({ ...prev, note: e.target.value }))}
-                      style={{ width: "100%", background: "rgba(139,105,20,0.04)", border: `1px solid rgba(139,105,20,0.2)`, color: WHITE, padding: "13px 14px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD, minHeight: 72, resize: "vertical" }}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="lp-inline-order-contact">
+                  {([
+                    { key: "name", placeholder: "Họ và tên (*)", type: "text" },
+                    { key: "phone", placeholder: "Số điện thoại (*)", type: "tel" },
+                  ] as { key: keyof typeof inlineOrderForm; placeholder: string; type: string }[]).map(f => (
+                    <input key={f.key}
+                      type={f.type}
+                      placeholder={f.placeholder}
+                      value={inlineOrderForm[f.key]}
+                      onChange={e => setInlineOrderForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                      style={{ width: "100%", background: "rgba(255,255,255,0.055)", border: "1px solid rgba(201,168,76,0.18)", color: "#FDFAF5", padding: "14px 15px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD }}
                     />
-                  </div>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Địa chỉ giao hàng"
+                  value={inlineOrderForm.address}
+                  onChange={e => setInlineOrderForm(prev => ({ ...prev, address: e.target.value }))}
+                  style={{ width: "100%", background: "rgba(255,255,255,0.055)", border: "1px solid rgba(201,168,76,0.18)", color: "#FDFAF5", padding: "14px 15px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD }}
+                />
+                <textarea
+                  placeholder="Ghi chú thêm: kích thước lòng giường, loại nệm, thời gian giao lắp mong muốn..."
+                  value={inlineOrderForm.note}
+                  onChange={e => setInlineOrderForm(prev => ({ ...prev, note: e.target.value }))}
+                  style={{ width: "100%", background: "rgba(255,255,255,0.055)", border: "1px solid rgba(201,168,76,0.18)", color: "#FDFAF5", padding: "14px 15px", fontSize: 14, outline: "none", fontFamily: FONT_BODY, boxSizing: "border-box", borderRadius: R_MD, minHeight: 104, resize: "vertical" }}
+                />
 
-                  {inlineOrderError && <div style={{ color: RED_SOFT, fontSize: 13, fontFamily: FONT_BODY }}>{inlineOrderError}</div>}
-                  {inlineOrderSuccess && <div style={{ color: GOLD, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.6 }}>Đặt hàng thành công! Đội ngũ tư vấn sẽ liên hệ qua Zalo / điện thoại trong vòng 2 giờ làm việc.</div>}
-                  <GoldButton style={{ width: "100%", justifyContent: "center", fontSize: 14, padding: "16px 24px" }}>
-                    {inlineOrderLoading ? "Đang gửi..." : "Xác nhận Đặt Hàng →"}
-                  </GoldButton>
-              </form>
-            </FadeIn>
-            {/* Right side — form */}
-            <FadeIn delay={150}>
-              <LeadForm lpSlug={lpSlug} E={E} content={content} submitLabelKey="form_submit_register" submitLabelDefault="Đặt Hàng & Nhận Tư Vấn Ngay →" selectedSize={selectedSize} />
-            </FadeIn>
-          </div>
+                {inlineOrderError && <div style={{ color: "#FCA5A5", fontSize: 13, fontFamily: FONT_BODY }}>{inlineOrderError}</div>}
+                {inlineOrderSuccess && <div style={{ color: GOLD_PALE, fontSize: 13, fontFamily: FONT_BODY, lineHeight: 1.6 }}>Đặt hàng thành công! Đội ngũ tư vấn sẽ liên hệ qua Zalo / điện thoại trong vòng 2 giờ làm việc.</div>}
+                <GoldButton style={{ width: "100%", justifyContent: "center", fontSize: 14, padding: "16px 24px" }}>
+                  {inlineOrderLoading ? "Đang gửi..." : "Xác nhận Đặt Hàng →"}
+                </GoldButton>
+              </div>
+            </form>
+          </FadeIn>
         </div>
       </section>
 
