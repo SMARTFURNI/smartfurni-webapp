@@ -8,9 +8,9 @@ import { hasLandingPageEditCookie, hasLandingPageEditPassword } from "@/lib/lp-e
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Khung Giường Công Thái Học SmartFurni GSF150 — Nâng Cấp Giường Cũ Trong 5 Phút",
+  title: "Khung Giường Nâng Hạ SmartFurni GSF150 — Nâng Cấp Giường Cũ Gọn Gàng",
   description:
-    "Biến giường thường thành giường thông minh chỉ trong 5 phút. Chế độ Zero Gravity, chống ngáy, điều khiển không dây. Tương thích 100% mọi loại nệm. Bảo hành motor 5 năm.",
+    "GSF150 đặt gọn trong khung giường hiện có, nâng đầu/chân bằng remote, hỗ trợ tư thế đọc sách, xem phim và nghỉ ngơi thoải mái hơn. Giao lắp tận nơi, bảo hành motor 5 năm.",
   keywords: [
     "giường công thái học",
     "khung giường điều chỉnh điện",
@@ -20,13 +20,14 @@ export const metadata: Metadata = {
     "nâng cấp giường cũ",
   ],
   openGraph: {
-    title: "Khung Giường Công Thái Học SmartFurni GSF150",
+    title: "Khung Giường Nâng Hạ SmartFurni GSF150",
     description:
-      "Biến giường thường thành giường thông minh chỉ trong 5 phút. Zero Gravity, chống ngáy, điều khiển không dây.",
+      "Đặt gọn trong giường cũ, nâng đầu/chân bằng remote, nhận đặt kích thước theo nhu cầu.",
     type: "website",
-    url: "https://smartfurni.com.vn/lp/gsf150",
-    images: [{ url: "https://smartfurni.com.vn/gsf150-wood-frame.jpg", width: 1200, height: 630 }],
+    url: "https://www.smartfurni.com.vn/lp/gsf150",
+    images: [{ url: "https://www.smartfurni.com.vn/gsf150-wood-frame.jpg", width: 1200, height: 630 }],
   },
+  alternates: { canonical: "https://www.smartfurni.com.vn/lp/gsf150" },
   robots: { index: true, follow: true },
 };
 

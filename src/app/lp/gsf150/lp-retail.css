@@ -1,109 +1,327 @@
-/* ─── Landing Page Mobile Responsive ─────────────────────────────────────────
-   Breakpoint: 768px (tablet), 480px (mobile)
-   All className-based overrides for LpShowroomNemClient.tsx
+/* ─── GSF150 Landing Page — Mobile Responsive ──────────────────────────────────
+   Breakpoints:
+     768px  → tablet / large phone landscape
+     600px  → phone portrait (standard)
+     400px  → small phone (iPhone SE, Galaxy A)
    ──────────────────────────────────────────────────────────────────────────── */
 
-/* ── Nav: ẩn menu + CTA desktop trên mobile, hiện hamburger ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAV
+   ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .lp-nav-menu {
-    display: none !important;
-  }
-  .lp-nav-cta {
-    display: none !important;
-  }
-  .lp-nav-hamburger {
-    display: flex !important;
-  }
+  .lp-nav-menu  { display: none !important; }
+  .lp-nav-cta   { display: none !important; }
+  .lp-nav-hamburger { display: flex !important; }
 }
-
 @media (min-width: 769px) {
-  .lp-nav-hamburger {
+  .lp-nav-hamburger { display: none !important; }
+  .lp-mobile-menu   { display: none !important; }
+}
+
+@keyframes tw-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO DESKTOP — Tỷ lệ 4:3 dùng aspect-ratio
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 601px) {
+  .lp-hero-section {
+    position: relative !important;
+    min-height: unset !important;
+    width: 100% !important;
+    aspect-ratio: 4 / 3 !important;
+    overflow: hidden !important;
+  }
+  .lp-hero-section::before {
     display: none !important;
   }
-  .lp-mobile-menu {
-    display: none !important;
+  .lp-hero-bg {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .lp-hero-bg img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    background: #0d0b06 !important;
+    display: block !important;
+  }
+  .lp-hero-content {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
   }
 }
 
-/* ── Showroom Comparison: 3-col → 1-col trên mobile ── */
-@media (max-width: 768px) {
-  .lp-comp-grid {
-    grid-template-columns: 1fr !important;
-    gap: 24px !important;
-    padding: 0 16px !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO MOBILE — Stack dọc: ảnh trên, chữ dưới (tách biệt hoàn toàn)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* Section hero: flex dọc — ảnh nền và content cùng level */
+  .lp-hero-section {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    min-height: unset !important;
+    overflow: visible !important;
+    background: #1C1A14 !important;
   }
-}
+  /* Xoá pseudo-element 4:3 trên mobile */
+  .lp-hero-section::before {
+    display: none !important;
+  }
 
-/* ── Stats row: 2x2 grid trên mobile ── */
-@media (max-width: 480px) {
-  .lp-stats-row {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 0 !important;
-    border-top: 1px solid #2E2800 !important;
-    padding-top: 32px !important;
-    margin-top: 48px !important;
-  }
-  .lp-stat-item {
-    border-left: none !important;
-    border-bottom: 1px solid #2E2800 !important;
-    padding: 16px 12px !important;
-  }
-  .lp-stat-item:nth-child(2),
-  .lp-stat-item:nth-child(4) {
-    border-left: 1px solid #2E2800 !important;
-  }
-  .lp-stat-item:nth-child(3),
-  .lp-stat-item:nth-child(4) {
+  /* Ảnh nền: order 2 (giữa), tỷ lệ 4:3 = padding-bottom 75% */
+  .lp-hero-bg {
+    order: 2 !important;
+    position: relative !important;
+    inset: unset !important;
+    width: 100% !important;
+    height: 0 !important;
+    padding-bottom: 75% !important; /* 4:3 */
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    border-top: none !important;
     border-bottom: none !important;
   }
-}
+  .lp-hero-bg img {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    background: #1C1A14 !important;
+  }
+  /* Gradient fade nhẹ trên/dưới ảnh để ảnh sản phẩm rõ hơn trên mobile */
+  .lp-hero-bg::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important; left: 0 !important; right: 0 !important;
+    height: 28px !important;
+    background: linear-gradient(to bottom, rgba(28,26,20,0.72) 0%, rgba(28,26,20,0) 100%) !important;
+    z-index: 2 !important;
+    pointer-events: none !important;
+  }
+  .lp-hero-bg::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 0 !important; left: 0 !important; right: 0 !important;
+    height: 42px !important;
+    background: linear-gradient(to top, rgba(28,26,20,0.78) 0%, rgba(28,26,20,0) 100%) !important;
+    z-index: 2 !important;
+    pointer-events: none !important;
+  }
+  .lp-hero-bg > div:last-child {
+    display: none !important;
+  }
 
-/* ── Footer: 4-col → 2-col → 1-col ── */
-@media (max-width: 900px) {
-  .lp-footer-grid {
+  /* Hero content wrapper: order 1 (trên cùng), flex dọc */
+  .lp-hero-content {
+    order: 1 !important;
+    position: relative !important;
+    background: transparent !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Phần chữ: padding-top để tránh nav */
+  .lp-hero-content > div:first-child {
+    padding: 80px 22px 20px !important;
+  }
+
+  /* CTA row: sau ảnh (order 3 trong section, nhưng trong content thì sau ảnh nhờ section order) */
+  .lp-hero-cta-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+    padding: 20px 22px 0 !important;
+    margin: 0 !important;
+    max-width: unset !important;
+  }
+  .lp-hero-cta-row > * {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+  .lp-hero-cta-row > a:last-child,
+  .lp-hero-cta-row > button:last-child {
+    display: none !important;
+  }
+
+  /* Trust badges: lưới 2×2 */
+  .lp-hero-badges {
+    display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    gap: 36px 24px !important;
+    gap: 16px 12px !important;
+    padding: 20px 22px 36px !important;
+    margin: 0 !important;
+    max-width: unset !important;
+    border-top: 1px solid rgba(139,105,20,0.2) !important;
+    margin-top: 16px !important;
   }
 }
 
-@media (max-width: 560px) {
-  .lp-footer-grid {
-    grid-template-columns: 1fr !important;
-    gap: 32px !important;
-  }
-}
-
-/* ── Reels grid: 4-col → 2-col → 1-col trên mobile ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROBLEM / SOLUTION — 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .lp-reels-grid {
+  .lp-problem-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHOWCASE — 3-col → 1-col (ảnh 1:1 đã đúng)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-showcase-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VIDEO SECTION — 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-video-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRODUCTS — 2-col giữ nguyên trên tablet, 1-col trên phone nhỏ
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 400px) {
+  .lp-products-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPARISON TABLE — font nhỏ hơn, padding nhỏ hơn
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-compare-table th,
+  .lp-compare-table td {
+    padding: 10px 8px !important;
+    font-size: 11px !important;
+  }
+  /* Cột đầu (tên tiêu chí) rộng hơn một chút */
+  .lp-compare-table th:first-child,
+  .lp-compare-table td:first-child {
+    font-size: 10.5px !important;
+    padding-left: 10px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPECS — 2-col minmax → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-spec-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BENEFITS — 3-col → 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-benefits-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
+    gap: 14px !important;
   }
 }
 @media (max-width: 400px) {
-  .lp-reels-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
+  .lp-benefits-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
   }
 }
 
-/* ── Social proof 4-col → 2x2 trên mobile ── */
-@media (max-width: 600px) {
-  .lp-social-proof-grid {
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOW IT WORKS (STEPS) — 4-col → 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-steps-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+@media (max-width: 400px) {
+  .lp-steps-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 }
 
-/* ── Chứng nhận 4-col → 2x2 trên mobile ── */
-@media (max-width: 600px) {
-  .lp-cert-grid {
+/* ═══════════════════════════════════════════════════════════════════════════
+   REELS — 3-col → 2-col (portrait 9:16 phù hợp 2 cột)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-reels-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
   }
 }
+@media (max-width: 380px) {
+  .lp-reels-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
 
-/* ── Cam kết 3-col → 1-col trên mobile ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATS — 4-col → 2×2
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REVIEWS — 3-col → 1-col (testimonial cards cần đọc đủ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .lp-reviews-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+@media (max-width: 600px) {
+  .lp-reviews-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GUARANTEE — 3-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
   .lp-guarantee-grid {
     grid-template-columns: 1fr !important;
@@ -111,59 +329,272 @@
   }
 }
 
-/* ── Thông số kỹ thuật: minmax(380px) → 1-col trên mobile ── */
-@media (max-width: 600px) {
-  .lp-spec-grid {
+/* ═══════════════════════════════════════════════════════════════════════════
+   FORM SECTION — 2-col → 1-col (form lên trên, benefits xuống dưới)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-form-grid {
     grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  /* Đổi thứ tự: form lên trên, benefits xuống dưới */
+  .lp-form-grid > *:first-child { order: 2; }
+  .lp-form-grid > *:last-child  { order: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOOTER — 4-col → 2-col → 1-col
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 36px 24px !important;
+  }
+}
+@media (max-width: 560px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
   }
 }
 
-/* ── Bảng so sánh: font nhỏ hơn trên mobile ── */
-@media (max-width: 480px) {
-  .lp-compare-table th,
-  .lp-compare-table td {
-    padding: 10px 10px !important;
-    font-size: 11px !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOCIAL PROOF BADGES — 4-col → 2×2
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-social-proof-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .lp-cert-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
   }
 }
 
-/* ── Before/After slider: full width trên mobile ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   BEFORE / AFTER SLIDER
+   ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .lp-ba-slider {
     border-radius: 8px !important;
   }
 }
 
-/* ── Health posture grid: 2-col → 1-col trên mobile nhỏ ── */
-@media (max-width: 480px) {
-  .lp-health-posture-grid {
-    grid-template-columns: 1fr !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION PADDING — giảm padding dọc trên mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-section-pad {
+    padding-top: 52px !important;
+    padding-bottom: 52px !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
   }
 }
 
-/* ── 3 Bước steps: min-width nhỏ hơn trên mobile ── */
-@media (max-width: 480px) {
-  .lp-steps-grid {
-    grid-template-columns: 1fr !important;
-    gap: 32px !important;
-  }
-}
-
-/* ── Fix layout shift: nav dịch sang trái khi scrollbar xuất hiện ── */
-/* scrollbar-gutter: stable được set ở globals.css (html element) */
-/* Đảm bảo nav không bị ảnh hưởng bởi scrollbar width */
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAV FIXED — tránh layout shift khi scrollbar xuất hiện
+   ═══════════════════════════════════════════════════════════════════════════ */
 nav[style*="position: fixed"] {
-  /* Dùng left/right thay vì width để tránh layout shift */
   left: 0 !important;
   right: 0 !important;
   width: auto !important;
 }
 
-/* ── Fix install guide badges: wrap tốt hơn trên mobile ── */
-@media (max-width: 480px) {
-  .lp-install-badges {
-    flex-direction: column !important;
-    align-items: center !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLOATING BUTTONS — Wave Ring Animation
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lp-wave-ring {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  animation: lp-wave-pulse 2s ease-out infinite;
+  z-index: 1;
+}
+.lp-wave-ring-2 { animation-delay: 0.7s; }
+@keyframes lp-wave-pulse {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  70%  { transform: scale(2.2); opacity: 0;   }
+  100% { transform: scale(2.2); opacity: 0;   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TYPEWRITER CURSOR
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOFA GIƯỜNG — Product Gallery (kept for shared CSS file)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .lp-sg-product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+}
+@media (max-width: 540px) {
+  .lp-sg-product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  .lp-sg-price-meta   { display: none !important; }
+  .lp-sg-card-price   { flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
+}
+@media (max-width: 380px) {
+  .lp-sg-product-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
+}
+
+/* ── Sofa Giường Quiz Modal ── */
+@media (max-width: 640px) {
+  .lp-sg-quiz-overlay     { padding: 0 !important; align-items: flex-end !important; }
+  .lp-sg-quiz-modal       { border-radius: 20px 20px 0 0 !important; max-height: 92vh !important; }
+  .lp-sg-quiz-left-panel  { display: none !important; }
+  .lp-sg-quiz-body        { flex-direction: column !important; }
+  .lp-sg-quiz-content     { padding: 16px !important; }
+  .lp-sg-quiz-product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  .lp-sg-quiz-content [style*="repeat(auto-fill, minmax(200px"] { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  .lp-sg-quiz-content div[style*="repeat(auto-fill"] { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+}
+
+/* ── Sofa Giường Pain / How / Features / Solution cards ── */
+@media (max-width: 640px) {
+  .lp-sg-pain-section, .lp-sg-how-section, .lp-sg-features-section { padding-left: 20px !important; padding-right: 20px !important; }
+  .lp-sg-pain-grid, .lp-sg-how-grid, .lp-sg-features-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  .lp-sg-pain-card      { border-radius: 16px !important; overflow: hidden !important; }
+  .lp-sg-pain-card-img  { padding-top: 72% !important; }
+  .lp-sg-pain-card-info { padding: 12px 10px 14px !important; }
+  .lp-sg-pain-card h3, .lp-sg-how-card h3, .lp-sg-feat-card h3 { font-size: 13px !important; font-weight: 600 !important; margin-bottom: 5px !important; line-height: 1.35 !important; }
+  .lp-sg-pain-card p,  .lp-sg-how-card p,  .lp-sg-feat-card p  { font-size: 11.5px !important; line-height: 1.55 !important; }
+  .lp-sg-how-card  { padding: 14px 10px 16px !important; border-radius: 16px !important; }
+  .lp-sg-feat-card { padding: 14px 10px 16px !important; border-radius: 16px !important; }
+  .lp-sg-sol-grid  { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  .lp-sg-sol-card  { padding: 14px 10px 16px !important; border-radius: 16px !important; gap: 6px !important; }
+  .lp-sg-sol-card h4 { font-size: 13px !important; font-weight: 600 !important; line-height: 1.35 !important; }
+  .lp-sg-sol-card p  { font-size: 11.5px !important; line-height: 1.55 !important; }
+}
+
+/* ── Quiz Row Slider (scrollable) ── */
+.lp-sg-quiz-row-slider { scrollbar-width: none; -ms-overflow-style: none; }
+.lp-sg-quiz-row-slider::-webkit-scrollbar { display: none; }
+.lp-sg-quiz-row-slider > button { scroll-snap-align: start; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRODUCT DETAIL SECTION — 2-col → 1-col trên mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-detail-row {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+  /* Đảo thứ tự: ảnh lên trên, text xuống dưới */
+  .lp-detail-text-left {
+    order: 2 !important;
+  }
+  .lp-detail-stats {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+@media (max-width: 400px) {
+  .lp-detail-stats {
+    grid-template-columns: 1fr !important;
     gap: 10px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHORTS VIDEO GRID — 4 cột desktop, carousel swipe mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lp-shorts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.lp-shorts-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .lp-shorts-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Carousel swipe: hiển thị 1 video, scroll ngang */
+  .lp-shorts-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    gap: 12px !important;
+    padding-bottom: 12px !important;
+    /* Ẩn scrollbar nhưng vẫn scroll được */
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .lp-shorts-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .lp-shorts-item {
+    flex: 0 0 80vw !important;
+    scroll-snap-align: center !important;
+    max-width: 320px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GALLERY GRID — 3 cột desktop, 2 cột mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .lp-gallery-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLOATING BUTTONS — Wave Ring Animation (giống sofa-giuong)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lp-wave-ring {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  animation: lp-wave-pulse 2s ease-out infinite;
+  z-index: 1;
+}
+.lp-wave-ring-2 {
+  animation-delay: 0.7s;
+}
+@keyframes lp-wave-pulse {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  70%  { transform: scale(2.2); opacity: 0;   }
+  100% { transform: scale(2.2); opacity: 0;   }
+}
+
+/* ── Specs layout: 2 cột desktop, 1 cột mobile ── */
+@media (max-width: 768px) {
+  .lp-specs-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Products: 3 cột desktop, 1 cột mobile ── */
+@media (max-width: 768px) {
+  .lp-products-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* ── Popup: 2 cột desktop, 1 cột mobile ── */
+@media (max-width: 640px) {
+  .lp-popup-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .lp-popup-left {
+    border-radius: 16px 16px 0 0 !important;
   }
 }
