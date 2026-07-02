@@ -132,6 +132,8 @@ const DEFAULT_GSF150_IMAGES: Record<string, string> = {
   showcase_img_0: "/gsf150-wood-frame.jpg",
   showcase_img_1: "/gsf150-standalone.jpg",
   showcase_img_2: "/gsf150-exploded.jpg",
+  problem_full_img: "/gsf150-wood-frame.jpg",
+  features_full_img: "/gsf150-features-infographic.png",
   specs_img: "/gsf150-exploded.jpg",
   ba_after_img: "/gsf150-wood-frame.jpg",
   detail_img_0: "/gsf150-wood-frame.jpg",
@@ -1559,6 +1561,35 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
               <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(139,105,20,0.3), transparent)" }} />
             </div>
           </FadeIn>
+        </div>
+      </section>
+
+      {/* ── PROBLEM FULL-SCREEN IMAGE ── */}
+      <section className="lp-fullscreen-image-section" style={{ background: "#0D0B06" }}>
+        <div className="lp-fullscreen-image-frame">
+          <Image
+            src={optimizeCldUrl(content["problem_full_img"] || defaultImage("problem_full_img"), 1800)}
+            alt="Không gian phòng ngủ trước khi nâng cấp GSF150"
+            fill
+            style={{ objectFit: "cover", objectPosition: "center" }}
+            sizes="100vw"
+          />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(13,11,6,0.24) 0%, rgba(13,11,6,0.04) 45%, rgba(13,11,6,0.28) 100%)", pointerEvents: "none" }} />
+          {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="problem_full_img" currentUrl={content["problem_full_img"] || defaultImage("problem_full_img")} onUploaded={handleSaved} />}
+        </div>
+      </section>
+
+      {/* ── FEATURES FULL-SCREEN INFOGRAPHIC ── */}
+      <section id="features" className="lp-fullscreen-image-section lp-fullscreen-contain-section" style={{ background: "#11100C" }}>
+        <div className="lp-fullscreen-image-frame">
+          <Image
+            src={optimizeCldUrl(content["features_full_img"] || defaultImage("features_full_img"), 1800)}
+            alt="Các tư thế và tính năng chính của giường nâng hạ SmartFurni GSF150"
+            fill
+            style={{ objectFit: "contain", objectPosition: "center", background: "#11100C" }}
+            sizes="100vw"
+          />
+          {editMode && <ImageUploadOverlay slug={lpSlug} blockKey="features_full_img" currentUrl={content["features_full_img"] || defaultImage("features_full_img")} onUploaded={handleSaved} />}
         </div>
       </section>
 

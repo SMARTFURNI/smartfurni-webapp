@@ -24,6 +24,37 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   FULL-SCREEN VISUAL SECTIONS — ảnh chuyển cảnh sau mục vấn đề
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lp-fullscreen-image-section {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  min-height: 100svh !important;
+  overflow: hidden !important;
+}
+
+.lp-fullscreen-image-frame {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.lp-fullscreen-contain-section {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+@media (max-width: 600px) {
+  .lp-fullscreen-image-section {
+    min-height: 100vh !important;
+    min-height: 100svh !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    HERO DESKTOP — Tỷ lệ 4:3 dùng aspect-ratio
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (min-width: 601px) {
