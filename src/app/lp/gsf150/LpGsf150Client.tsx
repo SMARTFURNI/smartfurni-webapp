@@ -133,7 +133,7 @@ const DEFAULT_GSF150_IMAGES: Record<string, string> = {
   showcase_img_1: "/gsf150-standalone.jpg",
   showcase_img_2: "/gsf150-exploded.jpg",
   problem_full_img: "/gsf150-wood-frame.jpg",
-  features_full_img: "/gsf150-features-infographic.png",
+  features_full_img: "/gsf150-features-infographic.jpg",
   specs_img: "/gsf150-exploded.jpg",
   ba_after_img: "/gsf150-wood-frame.jpg",
   detail_img_0: "/gsf150-wood-frame.jpg",
@@ -237,7 +237,7 @@ function ShortsCard({ videoId, title, tag, autoplayOnVisible = false }: { videoI
       ) : (
         <>
           {thumbMax ? (
-            <img src={thumbMax} alt={title}
+            <img src={thumbMax} alt={title} loading="lazy" decoding="async"
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
               onError={(e) => { (e.target as HTMLImageElement).src = thumbHq!; }}
             />
@@ -472,7 +472,7 @@ function BeforeAfterSlider({ beforeUrl, afterUrl, beforeLabel = "Giường thư�
     <div ref={containerRef} onMouseDown={() => { dragging.current = true; }} onMouseMove={(e) => { if (dragging.current) updatePos(e.clientX); }} onMouseUp={() => { dragging.current = false; }} onMouseLeave={() => { dragging.current = false; }} onTouchMove={(e) => updatePos(e.touches[0].clientX)}
       style={{ position: "relative", width: "100%", paddingBottom: "56.25%", cursor: "ew-resize", userSelect: "none", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
       {afterUrl ? (
-        <img src={optimizeCldUrl(afterUrl, 1200)} alt={afterLabel} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
+        <img src={optimizeCldUrl(afterUrl, 1200)} alt={afterLabel} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
       ) : (
         <div style={{ position: "absolute", inset: 0, background: "#F0EBE0", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ color: GOLD, fontSize: 13, fontFamily: FONT_BODY }}>Ảnh SAU (chưa cập nhật)</span>
@@ -480,7 +480,7 @@ function BeforeAfterSlider({ beforeUrl, afterUrl, beforeLabel = "Giường thư�
       )}
       <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}>
         {beforeUrl ? (
-          <img src={optimizeCldUrl(beforeUrl, 1200)} alt={beforeLabel} style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
+          <img src={optimizeCldUrl(beforeUrl, 1200)} alt={beforeLabel} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
         ) : (
           <div style={{ width: "100%", height: "100%", background: "#E8E0D0", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ color: GRAY_LIGHT, fontSize: 13, fontFamily: FONT_BODY }}>Ảnh TRƯỚC (chưa cập nhật)</span>
@@ -620,7 +620,7 @@ function ProductDetailSection({ lpSlug, editMode, content, handleSaved, E: EditF
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["detail_img_1"] || defaultImage("detail_img_1") ? (
-                    <img src={optimizeCldUrl(content["detail_img_1"] || defaultImage("detail_img_1"), 900)} alt="Remote nâng hạ GSF150" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={optimizeCldUrl(content["detail_img_1"] || defaultImage("detail_img_1"), 900)} alt="Remote nâng hạ GSF150" loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <IconZap color={GOLD_PALE} size={40} />
@@ -684,7 +684,7 @@ function ProductDetailSection({ lpSlug, editMode, content, handleSaved, E: EditF
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["detail_img_3"] || defaultImage("detail_img_3") ? (
-                    <img src={optimizeCldUrl(content["detail_img_3"] || defaultImage("detail_img_3"), 900)} alt="Lắp GSF150 trong giường cũ" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={optimizeCldUrl(content["detail_img_3"] || defaultImage("detail_img_3"), 900)} alt="Lắp GSF150 trong giường cũ" loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <IconBox color={GOLD_PALE} size={40} />
@@ -743,7 +743,7 @@ function ProductDetailSection({ lpSlug, editMode, content, handleSaved, E: EditF
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["detail_img_4"] || defaultImage("detail_img_4") ? (
-                    <img src={optimizeCldUrl(content["detail_img_4"] || defaultImage("detail_img_4"), 900)} alt="Nệm phù hợp với GSF150" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={optimizeCldUrl(content["detail_img_4"] || defaultImage("detail_img_4"), 900)} alt="Nệm phù hợp với GSF150" loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <IconAward color={GOLD_PALE} size={40} />
@@ -764,7 +764,7 @@ function ProductDetailSection({ lpSlug, editMode, content, handleSaved, E: EditF
               <div style={{ position: "relative", borderRadius: R_LG, overflow: "hidden", border: `1px solid ${BLACK_BORDER}` }}>
                 <div style={{ position: "relative", paddingBottom: "100%", background: BLACK_CARD }}>
                   {content["detail_img_5"] || defaultImage("detail_img_5") ? (
-                    <img src={optimizeCldUrl(content["detail_img_5"] || defaultImage("detail_img_5"), 900)} alt="Remote điều khiển GSF150" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={optimizeCldUrl(content["detail_img_5"] || defaultImage("detail_img_5"), 900)} alt="Remote điều khiển GSF150" loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: GRAY_LIGHT }}>
                       <IconBox color={GOLD_PALE} size={40} />
