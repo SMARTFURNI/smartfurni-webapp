@@ -10,6 +10,7 @@ import { Suspense } from "react";
 import NavigationProgress from "@/components/NavigationProgress";
 
 export const dynamic = "force-dynamic";
+const SMARTFURNI_GOOGLE_ADS_ID = "AW-16742362454";
 
 export async function generateMetadata(): Promise<Metadata> {
   await initDbOnce();
@@ -31,15 +32,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   await initDbOnce();
   const theme = getTheme();
   const cssVars = generateCSSVariables(theme);
+  const configuredAnalyticsId = theme.seo.googleAnalyticsId?.trim();
+  const shouldRenderConfiguredAnalytics =
+    configuredAnalyticsId && configuredAnalyticsId !== SMARTFURNI_GOOGLE_ADS_ID;
 
   return (
     <html lang="vi" className="scroll-smooth">
       <head>
         <style dangerouslySetInnerHTML={{ __html: `:root { ${cssVars} }` }} />
-        {theme.seo.googleAnalyticsId && (
+        {/* Google Ads tag SmartFurni 02: gắn toàn site để phủ trang chủ và các landing page. */}
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${SMARTFURNI_GOOGLE_ADS_ID}`} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${SMARTFURNI_GOOGLE_ADS_ID}');`,
+          }}
+        />
+        {shouldRenderConfiguredAnalytics && (
           <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${theme.seo.googleAnalyticsId}`} />
-            <script dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${theme.seo.googleAnalyticsId}');` }} />
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${configuredAnalyticsId}`} />
+            <script dangerouslySetInnerHTML={{ __html: `gtag('config','${configuredAnalyticsId}');` }} />
           </>
         )}
       </head>
