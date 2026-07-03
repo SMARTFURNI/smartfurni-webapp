@@ -122,7 +122,7 @@ const LP_SLUG = "gsf150";
 const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const FONT_BRAND = "'Cormorant Garamond', Georgia, serif";
-const STICKY_PRICE_TEXT = "Từ 29.900.000 ₫";
+const STICKY_PRICE_TEXT = "Từ 9.790.000 ₫";
 const LEGACY_STICKY_PRICE_TEXTS = new Set(["Từ 8.490.000 ₫", "Từ 8.490.000 đ"]);
 const DEFAULT_CONTACT_PHONE_NUMBER = "0918326552";
 const DEFAULT_GSF150_IMAGES: Record<string, string> = {
@@ -1100,7 +1100,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
   const [popupLoading, setPopupLoading] = useState(false);
   const [popupSuccess, setPopupSuccess] = useState(false);
   const [popupError, setPopupError] = useState("");
-  const [inlineOrderSizeId, setInlineOrderSizeId] = useState("1m2");
+  const [inlineOrderSizeId, setInlineOrderSizeId] = useState("0m9");
   const [inlineOrderForm, setInlineOrderForm] = useState({ name: "", phone: "", address: "", note: "" });
   const [inlineOrderLoading, setInlineOrderLoading] = useState(false);
   const [inlineOrderSuccess, setInlineOrderSuccess] = useState(false);
@@ -1119,7 +1119,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
     setPopupSuccess(false);
     setPopupError("");
     setPopupForm({ name: "", phone: "", address: "", note: "" });
-    setProductPopup({ productIdx: 0, sizeId: "1m2", imgIdx: 0, step: "detail" });
+    setProductPopup({ productIdx: 0, sizeId: "0m9", imgIdx: 0, step: "detail" });
   }, []);
 
   const goToPopupImage = useCallback((direction: -1 | 1) => {
@@ -1199,34 +1199,51 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
 
   // Product cards (3 cards)
   const PRODUCTS = [
-    { id: "gsf150-standard", name: "GSF150 Standard", price: "Từ 29.900.000 ₫", badge: "Phổ biến", sub: "Khung nâng hạ 2 motor, phù hợp nệm phổ biến" },
-    { id: "gsf150-plus", name: "GSF150 Plus", price: "Từ 34.900.000 ₫", badge: "Nâng cấp", sub: "Khung chắc hơn, tùy chỉnh theo lòng giường" },
+    { id: "gsf150-standard", name: "GSF150 Standard", price: "Từ 9.790.000 ₫", badge: "Phổ biến", sub: "Khung nâng hạ 2 motor, phù hợp nệm phổ biến" },
+    { id: "gsf150-plus", name: "GSF150 Plus", price: "Từ 19.580.000 ₫", badge: "Nâng cấp", sub: "Khung chắc hơn, tùy chỉnh theo lòng giường" },
     { id: "gsf150-custom", name: "GSF150 Custom", price: "Liên hệ", badge: "Đặt size", sub: "Đo đạc và sản xuất theo kích thước giường hiện có" },
   ];
-  // Size options shared across products; prices are stored separately per product + size.
-  const POPUP_SIZES = [
-    { id: "1m2", label: "Lòng giường 1m2 × 2m" },
-    { id: "1m4", label: "Lòng giường 1m4 × 2m" },
-    { id: "1m6", label: "Lòng giường 1m6 × 2m" },
-    { id: "custom", label: "Đặt size theo lòng giường" },
+  type PopupSizeOption = {
+    id: string;
+    label: string;
+    defaultPrice: string;
+    legacyPriceIndex?: number;
+  };
+  const POPUP_SIZE_OPTIONS: PopupSizeOption[][] = [
+    [
+      { id: "0m9", label: "Lòng giường 0,9m × 2m", defaultPrice: "9.790.000 ₫" },
+      { id: "1m2", label: "Lòng giường 1m2 × 2m", defaultPrice: "10.990.000 ₫", legacyPriceIndex: 0 },
+      { id: "1m4", label: "Lòng giường 1m4 × 2m", defaultPrice: "11.990.000 ₫", legacyPriceIndex: 1 },
+      { id: "1m6", label: "Lòng giường 1m6 × 2m", defaultPrice: "12.490.000 ₫", legacyPriceIndex: 2 },
+      { id: "1m8", label: "Lòng giường 1m8 × 2m", defaultPrice: "13.890.000 ₫" },
+      { id: "custom", label: "Đặt size theo lòng giường", defaultPrice: "Liên hệ", legacyPriceIndex: 3 },
+    ],
+    [
+      { id: "1m6", label: "Lòng giường 1m6 × 2m", defaultPrice: "19.580.000 ₫", legacyPriceIndex: 2 },
+      { id: "1m8", label: "Lòng giường 1m8 × 2m", defaultPrice: "19.580.000 ₫" },
+      { id: "custom", label: "Đặt size theo lòng giường", defaultPrice: "Liên hệ", legacyPriceIndex: 3 },
+    ],
+    [
+      { id: "custom", label: "Đặt size theo lòng giường", defaultPrice: "Theo báo giá", legacyPriceIndex: 3 },
+    ],
   ];
-  const POPUP_DEFAULT_PRICES = [
-    ["29.900.000 ₫", "32.900.000 ₫", "34.900.000 ₫", "Liên hệ"],
-    ["34.900.000 ₫", "37.900.000 ₫", "39.900.000 ₫", "Liên hệ"],
-    ["Liên hệ", "Liên hệ", "Liên hệ", "Theo báo giá"],
-  ];
-  const getPopupPriceKey = (productIdx: number, sizeIdx: number) => `popup_price_${productIdx}_${sizeIdx}`;
-  const getPopupDefaultPrice = (productIdx: number, sizeIdx: number) => POPUP_DEFAULT_PRICES[productIdx]?.[sizeIdx] || POPUP_DEFAULT_PRICES[0]?.[sizeIdx] || "";
+  const getPopupSizes = (productIdx: number) => POPUP_SIZE_OPTIONS[productIdx] || POPUP_SIZE_OPTIONS[0];
+  const getDefaultPopupSizeId = (productIdx: number) => getPopupSizes(productIdx)[0]?.id || "custom";
+  const getPopupPriceKey = (productIdx: number, size: PopupSizeOption) => (
+    size.legacyPriceIndex !== undefined ? `popup_price_${productIdx}_${size.legacyPriceIndex}` : `popup_price_${productIdx}_${size.id}`
+  );
+  const getPopupDefaultPrice = (size: PopupSizeOption) => size.defaultPrice;
   const inlineOrderProductName = content["product_name_0"] || "Khung Giường Nâng Hạ GSF150";
-  const inlineOrderSizeIndex = Math.max(0, POPUP_SIZES.findIndex(s => s.id === inlineOrderSizeId));
-  const inlineOrderSizeObj = POPUP_SIZES[inlineOrderSizeIndex];
-  const inlineOrderPriceKey = getPopupPriceKey(0, inlineOrderSizeIndex);
-  const inlineOrderPrice = content[inlineOrderPriceKey] || getPopupDefaultPrice(0, inlineOrderSizeIndex);
+  const inlineOrderSizes = getPopupSizes(0);
+  const inlineOrderSizeIndex = Math.max(0, inlineOrderSizes.findIndex(s => s.id === inlineOrderSizeId));
+  const inlineOrderSizeObj = inlineOrderSizes[inlineOrderSizeIndex];
+  const inlineOrderPriceKey = getPopupPriceKey(0, inlineOrderSizeObj);
+  const inlineOrderPrice = content[inlineOrderPriceKey] || getPopupDefaultPrice(inlineOrderSizeObj);
   const getEditableDisplayValue = (blockKey: string, defaultValue: string) => (
     Object.prototype.hasOwnProperty.call(content, blockKey) ? (content[blockKey] ?? "") : defaultValue
   );
   const SPEC_ROWS = [
-    { bkLabel: "spec_row_1_label", defLabel: "Kích thước phổ biến", bkValue: "spec_row_1_value", defValue: "1m2 / 1m4 / 1m6 × 2m, nhận đặt theo lòng giường" },
+    { bkLabel: "spec_row_1_label", defLabel: "Kích thước phổ biến", bkValue: "spec_row_1_value", defValue: "0,9m / 1m2 / 1m4 / 1m6 / 1m8 × 2m, nhận đặt theo lòng giường" },
     { bkLabel: "spec_row_2_label", defLabel: "Góc nâng đầu", bkValue: "spec_row_2_value", defValue: "0–70°, điều chỉnh bằng remote" },
     { bkLabel: "spec_row_3_label", defLabel: "Góc nâng chân", bkValue: "spec_row_3_value", defValue: "0–45°" },
     { bkLabel: "spec_row_4_label", defLabel: "Khung chính", bkValue: "spec_row_4_value", defValue: "Thép sơn tĩnh điện, gia cường chịu lực" },
@@ -1260,9 +1277,11 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
   }
   // SIZES kept for legacy compatibility
   const SIZES = [
-    { id: "1m2", label: "1m2 × 2m", price: "29.900.000 ₫", sub: "Giường đơn rộng" },
-    { id: "1m4", label: "1m4 × 2m", price: "32.900.000 ₫", sub: "Phòng nhỏ đến trung bình" },
-    { id: "1m6", label: "1m6 × 2m", price: "34.900.000 ₫", sub: "Phòng ngủ gia đình", badge: "Phổ biến" },
+    { id: "0m9", label: "0,9m × 2m", price: "9.790.000 ₫", sub: "Giường đơn gọn" },
+    { id: "1m2", label: "1m2 × 2m", price: "10.990.000 ₫", sub: "Giường đơn rộng" },
+    { id: "1m4", label: "1m4 × 2m", price: "11.990.000 ₫", sub: "Phòng nhỏ đến trung bình" },
+    { id: "1m6", label: "1m6 × 2m", price: "12.490.000 ₫", sub: "Phòng ngủ gia đình", badge: "Phổ biến" },
+    { id: "1m8", label: "1m8 × 2m", price: "13.890.000 ₫", sub: "Giường đôi rộng" },
     { id: "custom", label: "Theo lòng giường", price: "Liên hệ", sub: "Đặt theo kích thước thực tế" },
   ];
 
@@ -1923,7 +1942,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
               return (
                 <FadeIn key={product.id} delay={pi * 80}>
                   <div
-                    onClick={() => !editMode && setProductPopup({ productIdx: pi, sizeId: "1m2", imgIdx: 0, step: "detail" })}
+                    onClick={() => !editMode && setProductPopup({ productIdx: pi, sizeId: getDefaultPopupSizeId(pi), imgIdx: 0, step: "detail" })}
                     style={{ background: BLACK_CARD, border: `1.5px solid ${BLACK_BORDER}`, borderRadius: R_LG, overflow: "hidden", cursor: editMode ? "default" : "pointer", transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s" }}
                     onMouseEnter={e => { if (!editMode) { (e.currentTarget as HTMLDivElement).style.borderColor = GOLD; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; } }}
                     onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BLACK_BORDER; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
@@ -1974,10 +1993,11 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
         const displayName = content[`product_name_${pp.productIdx}`] || product.name;
         // 6 images per product
         const popupImgs = Array.from({ length: 6 }, (_, i) => content[`popup_img_${pp.productIdx}_${i}`] || defaultImage(`popup_img_${pp.productIdx}_${i}`));
-        const selectedSizeIndex = Math.max(0, POPUP_SIZES.findIndex(s => s.id === pp.sizeId));
-        const selectedSizeObj = POPUP_SIZES[selectedSizeIndex];
-        const selectedPriceKey = getPopupPriceKey(pp.productIdx, selectedSizeIndex);
-        const sizePrice = content[selectedPriceKey] || getPopupDefaultPrice(pp.productIdx, selectedSizeIndex);
+        const popupSizes = getPopupSizes(pp.productIdx);
+        const selectedSizeIndex = Math.max(0, popupSizes.findIndex(s => s.id === pp.sizeId));
+        const selectedSizeObj = popupSizes[selectedSizeIndex];
+        const selectedPriceKey = getPopupPriceKey(pp.productIdx, selectedSizeObj);
+        const sizePrice = content[selectedPriceKey] || getPopupDefaultPrice(selectedSizeObj);
 
         async function handlePopupSubmit(e: React.FormEvent) {
           e.preventDefault();
@@ -2075,9 +2095,9 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                       <div>
                         <div style={{ color: WHITE, fontSize: 13, fontWeight: 600, marginBottom: 12, fontFamily: FONT_BODY }}>Chọn kích thước:</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          {POPUP_SIZES.map((sz, sizeIdx) => {
-                            const szPriceKey = getPopupPriceKey(pp.productIdx, sizeIdx);
-                            const szDefaultPrice = getPopupDefaultPrice(pp.productIdx, sizeIdx);
+                          {popupSizes.map((sz) => {
+                            const szPriceKey = getPopupPriceKey(pp.productIdx, sz);
+                            const szDefaultPrice = getPopupDefaultPrice(sz);
                             const szPrice = content[szPriceKey] || szDefaultPrice;
                             const isActive = pp.sizeId === sz.id;
                             return (
@@ -2205,7 +2225,7 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                 </thead>
                 <tbody>
                   {[
-                    { bkCriteria: "compare_row_1_criteria", defCriteria: "Chi phí", bkGsf150: "compare_row_1_gsf150", defGsf150: "Từ 29.900.000 ₫", bkOther: "compare_row_1_other", defOther: "Mua trọn bộ giường mới" },
+                    { bkCriteria: "compare_row_1_criteria", defCriteria: "Chi phí", bkGsf150: "compare_row_1_gsf150", defGsf150: "Từ 9.790.000 ₫", bkOther: "compare_row_1_other", defOther: "Mua trọn bộ giường mới" },
                     { bkCriteria: "compare_row_2_criteria", defCriteria: "Giữ giường cũ", bkGsf150: "compare_row_2_gsf150", defGsf150: "✓ Tận dụng khung giường hiện có", bkOther: "compare_row_2_other", defOther: "✗ Thường phải thay cả bộ" },
                     { bkCriteria: "compare_row_3_criteria", defCriteria: "Nệm đang dùng", bkGsf150: "compare_row_3_gsf150", defGsf150: "✓ Có thể dùng nếu phù hợp", bkOther: "compare_row_3_other", defOther: "Có thể phải đổi nệm" },
                     { bkCriteria: "compare_row_4_criteria", defCriteria: "Tư thế nghỉ ngơi", bkGsf150: "compare_row_4_gsf150", defGsf150: "✓ Nâng đầu/chân bằng remote", bkOther: "compare_row_4_other", defOther: "Cố định hoặc ít tùy chọn" },
@@ -2496,9 +2516,9 @@ export default function LpGsf150Client({ isEditor = false, initialContent = {}, 
                 <div>
                   <div style={{ color: "#FDFAF5", fontSize: 13, fontWeight: 700, marginBottom: 10, fontFamily: FONT_BODY }}>Chọn kích thước:</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }} className="lp-inline-order-options">
-                    {POPUP_SIZES.map((sz, sizeIdx) => {
-                      const szPriceKey = getPopupPriceKey(0, sizeIdx);
-                      const szPrice = content[szPriceKey] || getPopupDefaultPrice(0, sizeIdx);
+                    {inlineOrderSizes.map((sz) => {
+                      const szPriceKey = getPopupPriceKey(0, sz);
+                      const szPrice = content[szPriceKey] || getPopupDefaultPrice(sz);
                       const isActive = inlineOrderSizeId === sz.id;
                       return (
                         <button key={sz.id} type="button"
