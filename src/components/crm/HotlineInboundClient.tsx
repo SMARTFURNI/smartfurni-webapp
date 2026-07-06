@@ -120,9 +120,20 @@ function AudioPlayer({ url }: { url: string }) {
     const onTime = () => setCurrentTime(a.currentTime);
     const onMeta = () => setDuration(Number.isFinite(a.duration) ? a.duration : 0);
     const onEnd  = () => setPlaying(false);
-    const onError = () => {
+    const onError = async () => {
       setPlaying(false);
-      setAudioError("Không tải được file ghi âm. Bấm biểu tượng mở file để kiểm tra.");
+      setAudioError("Đang kiểm tra file ghi âm...");
+      try {
+        const res = await fetch(`${audioUrl}&debug=1`, { cache: "no-store" });
+        const data = await res.json().catch(() => null) as { message?: string; status?: number; contentType?: string } | null;
+        if (data?.message) {
+          setAudioError(`${data.message} ${data.contentType ? `(${data.contentType})` : ""}`);
+          return;
+        }
+      } catch {
+        // Nếu bước chẩn đoán lỗi, vẫn giữ thông báo thao tác cho người dùng.
+      }
+      setAudioError("Không tải được file ghi âm. Bấm biểu tượng mở link gốc để kiểm tra.");
     };
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onMeta);
@@ -146,7 +157,7 @@ function AudioPlayer({ url }: { url: string }) {
         .then(() => setPlaying(true))
         .catch(() => {
           setPlaying(false);
-          setAudioError("Trình duyệt chưa phát được file ghi âm. Bấm biểu tượng mở file để kiểm tra.");
+          setAudioError("Trình duyệt chưa phát được file ghi âm. Bấm biểu tượng mở link gốc để kiểm tra.");
         });
     }
   };
@@ -183,7 +194,7 @@ function AudioPlayer({ url }: { url: string }) {
           style={{ color: T.textMuted }}>
           {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
         </button>
-        <a href={audioUrl} target="_blank" rel="noopener noreferrer" title="Mở ghi âm"
+        <a href={url} target="_blank" rel="noopener noreferrer" title="Mở link gốc từ tổng đài"
           style={{ color: T.textMuted }}>
           <ExternalLink size={13} />
         </a>

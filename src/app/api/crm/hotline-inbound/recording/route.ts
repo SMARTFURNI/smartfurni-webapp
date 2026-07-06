@@ -32,12 +32,24 @@ function copyHeader(from: Headers, to: Headers, key: string) {
   if (value) to.set(key, value);
 }
 
+function isPlayableContentType(contentType: string) {
+  const lower = contentType.toLowerCase();
+  return (
+    lower.startsWith("audio/") ||
+    lower.includes("mpeg") ||
+    lower.includes("wav") ||
+    lower.includes("ogg") ||
+    lower.includes("octet-stream")
+  );
+}
+
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
   if (!session) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
+  const debug = req.nextUrl.searchParams.get("debug") === "1";
   const targetUrl = parseAllowedRecordingUrl(req.nextUrl.searchParams.get("url"));
   if (!targetUrl) {
     return new NextResponse("Invalid recording URL", { status: 400 });
@@ -53,6 +65,7 @@ export async function GET(req: NextRequest) {
   // Chuyển tiếp header này giúp audio player không bị kẹt thời lượng 0:00.
   const range = req.headers.get("range");
   if (range) headers.set("Range", range);
+  if (debug && !range) headers.set("Range", "bytes=0-0");
 
   let response: Response;
   try {
@@ -66,6 +79,25 @@ export async function GET(req: NextRequest) {
     return new NextResponse("Cannot fetch recording", { status: 502 });
   }
 
+  const contentType = response.headers.get("content-type") || "";
+  const contentLength = response.headers.get("content-length");
+  const playable = isPlayableContentType(contentType);
+
+  if (debug) {
+    return NextResponse.json({
+      ok: response.ok || response.status === 206,
+      status: response.status,
+      contentType: contentType || "không có content-type",
+      contentLength: contentLength || "không có content-length",
+      playable,
+      message: !response.ok && response.status !== 206
+        ? `Tổng đài trả về lỗi ${response.status}.`
+        : playable
+          ? "Server đọc được file ghi âm."
+          : "Tổng đài không trả về file âm thanh, có thể đang trả về trang đăng nhập hoặc HTML.",
+    });
+  }
+
   if (!response.ok && response.status !== 206) {
     console.error(
       `[hotline recording proxy] Remote error ${response.status}: ${targetUrl.toString()}`
@@ -73,13 +105,19 @@ export async function GET(req: NextRequest) {
     return new NextResponse(`Recording fetch failed: ${response.status}`, { status: 502 });
   }
 
+  if (!playable) {
+    console.error(
+      `[hotline recording proxy] Non-audio response ${contentType || "unknown"}: ${targetUrl.toString()}`
+    );
+    return new NextResponse("Recording URL did not return an audio file", { status: 502 });
+  }
+
   if (!response.body) {
     return new NextResponse("Recording body is empty", { status: 502 });
   }
 
   const responseHeaders = new Headers();
-  const contentType = response.headers.get("content-type") || "audio/mpeg";
-  responseHeaders.set("Content-Type", contentType);
+  responseHeaders.set("Content-Type", contentType || "audio/mpeg");
   responseHeaders.set("Cache-Control", "private, max-age=300");
   responseHeaders.set("Accept-Ranges", response.headers.get("accept-ranges") || "bytes");
   copyHeader(response.headers, responseHeaders, "content-length");
