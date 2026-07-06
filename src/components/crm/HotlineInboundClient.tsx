@@ -79,6 +79,9 @@ function daysAgo(n: number) {
   const d = new Date(); d.setDate(d.getDate() - n);
   return d.toISOString().slice(0, 10);
 }
+function recordingProxyUrl(url: string) {
+  return `/api/crm/hotline-inbound/recording?url=${encodeURIComponent(url)}`;
+}
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -100,32 +103,52 @@ function StatusBadge({ status }: { status: string }) {
 // ── Audio Player ──────────────────────────────────────────────────────────────
 function AudioPlayer({ url }: { url: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const audioUrl = recordingProxyUrl(url);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
+    setPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setAudioError(null);
     const onTime = () => setCurrentTime(a.currentTime);
-    const onMeta = () => setDuration(a.duration);
+    const onMeta = () => setDuration(Number.isFinite(a.duration) ? a.duration : 0);
     const onEnd  = () => setPlaying(false);
+    const onError = () => {
+      setPlaying(false);
+      setAudioError("Không tải được file ghi âm. Bấm biểu tượng mở file để kiểm tra.");
+    };
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onMeta);
     a.addEventListener("ended", onEnd);
+    a.addEventListener("error", onError);
     return () => {
       a.removeEventListener("timeupdate", onTime);
       a.removeEventListener("loadedmetadata", onMeta);
       a.removeEventListener("ended", onEnd);
+      a.removeEventListener("error", onError);
     };
-  }, []);
+  }, [audioUrl]);
 
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
     if (playing) { a.pause(); setPlaying(false); }
-    else { a.play().catch(() => {}); setPlaying(true); }
+    else {
+      setAudioError(null);
+      a.play()
+        .then(() => setPlaying(true))
+        .catch(() => {
+          setPlaying(false);
+          setAudioError("Trình duyệt chưa phát được file ghi âm. Bấm biểu tượng mở file để kiểm tra.");
+        });
+    }
   };
 
   const seek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,27 +166,34 @@ function AudioPlayer({ url }: { url: string }) {
   };
 
   return (
-    <div className="flex items-center gap-2 mt-2 p-2 rounded-lg" style={{ background: T.accentBg, border: `1px solid ${T.accent}30` }}>
-      <audio ref={audioRef} src={url} preload="metadata" />
-      <button onClick={toggle}
-        className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-        style={{ background: T.accent, color: "#fff" }}>
-        {playing ? <Pause size={12} /> : <Play size={12} />}
-      </button>
-      <input type="range" min={0} max={duration || 100} value={currentTime}
-        onChange={seek} className="flex-1 h-1 accent-amber-500" />
-      <span className="text-[11px] flex-shrink-0" style={{ color: T.textMuted }}>
-        {fmtTime(currentTime)} / {fmtTime(duration)}
-      </span>
-      <button onClick={() => { const a = audioRef.current; if (a) { a.muted = !muted; setMuted(!muted); } }}
-        style={{ color: T.textMuted }}>
-        {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
-      </button>
-      <a href={url} target="_blank" rel="noopener noreferrer" title="Mở ghi âm"
-        style={{ color: T.textMuted }}>
-        <ExternalLink size={13} />
-      </a>
-    </div>
+    <>
+      <div className="flex items-center gap-2 mt-2 p-2 rounded-lg" style={{ background: T.accentBg, border: `1px solid ${T.accent}30` }}>
+        <audio ref={audioRef} src={audioUrl} preload="metadata" />
+        <button onClick={toggle}
+          className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: T.accent, color: "#fff" }}>
+          {playing ? <Pause size={12} /> : <Play size={12} />}
+        </button>
+        <input type="range" min={0} max={duration || 100} value={Math.min(currentTime, duration || 100)}
+          onChange={seek} className="flex-1 h-1 accent-amber-500" />
+        <span className="text-[11px] flex-shrink-0" style={{ color: T.textMuted }}>
+          {fmtTime(currentTime)} / {fmtTime(duration)}
+        </span>
+        <button onClick={() => { const a = audioRef.current; if (a) { a.muted = !muted; setMuted(!muted); } }}
+          style={{ color: T.textMuted }}>
+          {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+        </button>
+        <a href={audioUrl} target="_blank" rel="noopener noreferrer" title="Mở ghi âm"
+          style={{ color: T.textMuted }}>
+          <ExternalLink size={13} />
+        </a>
+      </div>
+      {audioError && (
+        <div className="mt-1 text-[11px]" style={{ color: T.red }}>
+          {audioError}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -227,7 +257,11 @@ function CallRow({ call }: { call: HotlineCall }) {
 
         {/* Recording indicator */}
         <div className="flex-shrink-0 w-6">
-          {call.recording_url && <Mic size={13} style={{ color: T.accent }} title="Có ghi âm" />}
+          {call.recording_url && (
+            <span title="Có ghi âm">
+              <Mic size={13} style={{ color: T.accent }} />
+            </span>
+          )}
         </div>
 
         {/* Expand */}
