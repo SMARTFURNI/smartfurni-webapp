@@ -865,77 +865,64 @@ export default function FacebookInboxClient() {
               </div>
             )}
 
-            {/* Input area */}
-            {selectedConv.canReply ? (
+            {/* Input area — luôn hiển thị, backend tự xử lý thread control */}
+            <div style={{
+              padding: "12px 16px",
+              borderTop: `1px solid ${T.headerBorder}`,
+              background: T.headerBg,
+            }}>
               <div style={{
-                padding: "12px 16px",
-                borderTop: `1px solid ${T.headerBorder}`,
-                background: T.headerBg,
+                display: "flex", alignItems: "flex-end", gap: 10,
+                background: T.inputBg,
+                border: `1px solid ${T.inputBorder}`,
+                borderRadius: 12, padding: "8px 12px",
+                transition: "border-color 0.15s",
               }}>
-                <div style={{
-                  display: "flex", alignItems: "flex-end", gap: 10,
-                  background: T.inputBg,
-                  border: `1px solid ${T.inputBorder}`,
-                  borderRadius: 12, padding: "8px 12px",
-                  transition: "border-color 0.15s",
-                }}>
-                  <textarea
-                    ref={inputRef}
-                    value={inputText}
-                    onChange={e => setInputText(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                    placeholder="Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)"
-                    rows={1}
-                    style={{
-                      flex: 1, background: "none", border: "none", outline: "none",
-                      color: T.textPrimary, fontSize: 14, resize: "none",
-                      lineHeight: 1.5, maxHeight: 120, overflowY: "auto",
-                      fontFamily: "inherit",
-                    }}
-                    onInput={e => {
-                      const el = e.currentTarget;
-                      el.style.height = "auto";
-                      el.style.height = Math.min(el.scrollHeight, 120) + "px";
-                    }}
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!inputText.trim() || sending}
-                    style={{
-                      width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-                      background: inputText.trim() && !sending ? T.accent : "rgba(99,102,241,0.3)",
-                      border: "none", cursor: inputText.trim() && !sending ? "pointer" : "not-allowed",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    {sending
-                      ? <Loader2 size={16} color="#fff" style={{ animation: "spin 1s linear infinite" }} />
-                      : <Send size={16} color="#fff" />
+                <textarea
+                  ref={inputRef}
+                  value={inputText}
+                  onChange={e => setInputText(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
                     }
-                  </button>
-                </div>
-                <div style={{ color: T.textMuted, fontSize: 11, marginTop: 6, textAlign: "right" }}>
-                  Trả lời qua trang <strong style={{ color: T.textSecondary }}>{selectedPage?.pageName}</strong>
-                </div>
+                  }}
+                  placeholder="Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)"
+                  rows={1}
+                  style={{
+                    flex: 1, background: "none", border: "none", outline: "none",
+                    color: T.textPrimary, fontSize: 14, resize: "none",
+                    lineHeight: 1.5, maxHeight: 120, overflowY: "auto",
+                    fontFamily: "inherit",
+                  }}
+                  onInput={e => {
+                    const el = e.currentTarget;
+                    el.style.height = "auto";
+                    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+                  }}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!inputText.trim() || sending}
+                  style={{
+                    width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                    background: inputText.trim() && !sending ? T.accent : "rgba(99,102,241,0.3)",
+                    border: "none", cursor: inputText.trim() && !sending ? "pointer" : "not-allowed",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {sending
+                    ? <Loader2 size={16} color="#fff" style={{ animation: "spin 1s linear infinite" }} />
+                    : <Send size={16} color="#fff" />
+                  }
+                </button>
               </div>
-            ) : (
-              <div style={{
-                padding: "12px 16px",
-                borderTop: `1px solid ${T.headerBorder}`,
-                background: T.headerBg,
-                textAlign: "center",
-              }}>
-                <p style={{ color: T.textMuted, fontSize: 13, margin: 0 }}>
-                  ⚠️ Hội thoại này không thể trả lời (đã quá 24 giờ hoặc bị giới hạn bởi Facebook)
-                </p>
+              <div style={{ color: T.textMuted, fontSize: 11, marginTop: 6, textAlign: "right" }}>
+                Trả lời qua trang <strong style={{ color: T.textSecondary }}>{selectedPage?.pageName}</strong>
               </div>
-            )}
+            </div>
           </>
         )}
       </div>
