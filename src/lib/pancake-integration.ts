@@ -1,17 +1,24 @@
 /**
- * Pancake Integration Store
- * Lưu trữ và quản lý cấu hình Pancake API để gửi tin nhắn qua Pancake
- * khi Facebook thread bị Pancake kiểm soát (lỗi #10).
+ * Pancake Integration
+ * Gửi tin nhắn qua Pancake API khi Facebook thread bị Pancake kiểm soát (lỗi #10).
  *
- * Pancake API Base: https://pages.fm/api/public_api/v2
- * Auth: page_access_token (query param, không expire)
+ * Pancake API:
+ *   - List pages:   GET  https://pages.fm/api/v1/pages?access_token=USER_TOKEN
+ *   - Send message: POST https://pages.fm/api/public_api/v1/pages/{pancake_page_id}/conversations/{psid}/messages?page_access_token=PAGE_TOKEN
+ *
+ * QUAN TRỌNG:
+ *   - page_id trong Pancake là ID nội bộ của Pancake (lấy từ GET /pages), KHÔNG phải Facebook Page ID
+ *   - conversation_id = PSID của khách hàng (Facebook User ID)
+ *   - page_access_token lấy từ Pancake Settings → Tools (không expire)
  */
 
 import { query } from "@/lib/db";
 
 export interface PancakePageConfig {
-  /** Facebook Page ID (fbPageId) — dùng để map với fanpage trong CRM */
+  /** Facebook Page ID — dùng để map với fanpage trong CRM */
   fbPageId: string;
+  /** Pancake internal page_id — lấy từ GET /pages API */
+  pancakePageId: string;
   /** Pancake page_access_token — lấy từ Pancake Settings → Tools */
   pageAccessToken: string;
   /** Tên hiển thị (optional) */
@@ -21,9 +28,7 @@ export interface PancakePageConfig {
 }
 
 export interface PancakeIntegrationConfig {
-  /** Danh sách cấu hình theo từng fanpage */
   pages: PancakePageConfig[];
-  /** Bật/tắt tính năng fallback qua Pancake khi gặp lỗi #10 */
   enabled: boolean;
 }
 
@@ -59,52 +64,79 @@ export async function savePancakeConfig(config: PancakeIntegrationConfig): Promi
   );
 }
 
-/**
- * Lấy Pancake page_access_token cho một Facebook Page ID cụ thể.
- * Trả về null nếu chưa cấu hình.
- */
-export async function getPancakeTokenForPage(fbPageId: string): Promise<string | null> {
+export async function getPancakeConfigForPage(fbPageId: string): Promise<PancakePageConfig | null> {
   const config = await getPancakeConfig();
   if (!config.enabled) return null;
-  const pageConfig = config.pages.find(p => p.fbPageId === fbPageId);
-  return pageConfig?.pageAccessToken || null;
+  return config.pages.find(p => p.fbPageId === fbPageId) || null;
+}
+
+/**
+ * Lấy danh sách pages từ Pancake API bằng User Access Token.
+ * Dùng để giúp user tìm Pancake Page ID tương ứng với Facebook Page.
+ */
+export async function fetchPancakePages(userAccessToken: string): Promise<Array<{
+  id: string;
+  name: string;
+  platform: string;
+  avatar_url?: string;
+}>> {
+  const url = `https://pages.fm/api/v1/pages?access_token=${encodeURIComponent(userAccessToken)}`;
+  const res = await fetch(url, {
+    headers: { "Accept": "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(`Pancake API error: ${res.status} ${res.statusText}`);
+  }
+  const data = await res.json();
+  return data.pages || [];
 }
 
 /**
  * Gửi tin nhắn qua Pancake API.
- * Pancake là thread owner nên không bị lỗi #10.
  *
- * Pancake conversation ID cho INBOX = customer's PSID (user ID)
- * POST https://pages.fm/api/public_api/v2/pages/{page_id}/conversations/{conversation_id}/messages
+ * POST https://pages.fm/api/public_api/v1/pages/{pancake_page_id}/conversations/{psid}/messages
+ * Body: { action: "reply_inbox", message: "..." }
  */
 export async function sendViaPancake(params: {
-  fbPageId: string;
+  pancakePageId: string;
   pancakePageAccessToken: string;
   recipientPsid: string;
   message: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  const { fbPageId, pancakePageAccessToken, recipientPsid, message } = params;
+  const { pancakePageId, pancakePageAccessToken, recipientPsid, message } = params;
 
-  const url = `https://pages.fm/api/public_api/v2/pages/${fbPageId}/conversations/${recipientPsid}/messages?page_access_token=${pancakePageAccessToken}`;
+  const url = `https://pages.fm/api/public_api/v1/pages/${pancakePageId}/conversations/${recipientPsid}/messages?page_access_token=${encodeURIComponent(pancakePageAccessToken)}`;
 
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        action: "reply_inbox",
+        message: message,
+      }),
     });
 
-    const data = await res.json();
+    let data: Record<string, unknown>;
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      console.error("[pancake] non-JSON response:", text.substring(0, 200));
+      return { success: false, error: `Pancake trả về lỗi không phải JSON (HTTP ${res.status}): ${text.substring(0, 100)}` };
+    }
 
-    // Pancake trả về { success: true, message: {...} } hoặc { success: false, error: "..." }
-    if (data.success === false || data.error) {
-      const errMsg = data.error || data.message || "Pancake API error";
+    if (!res.ok || data.success === false || data.error) {
+      const errMsg = (data.error as string) || (data.message as string) || `HTTP ${res.status}`;
       console.error("[pancake] send error:", errMsg, "| data:", JSON.stringify(data));
       return { success: false, error: errMsg };
     }
 
-    // Thành công
-    const msgId = data.message?.id || data.id || `pancake_${Date.now()}`;
+    const msgId = (data as Record<string, Record<string, string>>).message?.id || (data.id as string) || `pancake_${Date.now()}`;
     return { success: true, messageId: msgId };
   } catch (err) {
     console.error("[pancake] send exception:", err);

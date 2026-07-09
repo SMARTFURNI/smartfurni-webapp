@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getPages, loadFacebookSchedulerFromDb } from "@/lib/crm-facebook-scheduler-store";
-import { getPancakeTokenForPage, sendViaPancake } from "@/lib/pancake-integration";
+import { getPancakeConfigForPage, sendViaPancake } from "@/lib/pancake-integration";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +10,6 @@ async function ensureLoaded() {
   if (!loaded) { await loadFacebookSchedulerFromDb(); loaded = true; }
 }
 
-/**
- * Gửi tin nhắn qua Facebook Send API trực tiếp.
- */
 async function sendViaFacebook(params: {
   accessToken: string;
   recipientId: string;
@@ -60,12 +57,12 @@ async function sendViaFacebook(params: {
  * POST /api/crm/facebook-inbox/send
  * Body: { pageId, recipientId, message, imageUrl? }
  *
- * Luồng xử lý:
+ * Luồng:
  * 1. Thử gửi qua Facebook API trực tiếp
- * 2. Nếu lỗi #10 (Pancake/app khác đang kiểm soát thread):
- *    a. Kiểm tra xem có Pancake API token cho fanpage này không
- *    b. Nếu có → gửi qua Pancake API (Pancake là thread owner, gửi được ngay)
- *    c. Nếu không → trả về lỗi với hướng dẫn cấu hình Pancake
+ * 2. Nếu lỗi #10 (Pancake đang giữ thread):
+ *    a. Lấy Pancake config cho fanpage này
+ *    b. Gửi qua Pancake API (Pancake là thread owner)
+ *    c. Nếu chưa cấu hình → trả về lỗi hướng dẫn cấu hình
  */
 export async function POST(request: NextRequest) {
   const session = await getCrmSession();
@@ -89,7 +86,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Không tìm thấy Fanpage" }, { status: 404 });
   }
 
-  // ── Bước 1: Thử gửi qua Facebook API trực tiếp ──────────────────────────────
+  // ── Bước 1: Thử gửi qua Facebook API ──────────────────────────────────────
   const fbResult = await sendViaFacebook({
     accessToken: page.pageAccessToken,
     recipientId,
@@ -106,7 +103,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // ── Bước 2: Xử lý lỗi #10 — Pancake đang kiểm soát thread ─────────────────
+  // ── Bước 2: Xử lý lỗi #10 — Pancake đang kiểm soát thread ────────────────
   const isThreadControlError =
     fbResult.code === 10 ||
     (fbResult.error && (
@@ -120,14 +117,12 @@ export async function POST(request: NextRequest) {
   if (isThreadControlError) {
     console.log(`[facebook-inbox] Lỗi #10 cho recipient ${recipientId} — thử fallback qua Pancake API`);
 
-    // Lấy Pancake token cho fanpage này
-    const pancakeToken = await getPancakeTokenForPage(page.pageId);
+    const pancakeConfig = await getPancakeConfigForPage(page.pageId);
 
-    if (pancakeToken) {
-      // Gửi qua Pancake API (Pancake là thread owner nên gửi được)
+    if (pancakeConfig && pancakeConfig.pancakePageId && pancakeConfig.pageAccessToken) {
       const pancakeResult = await sendViaPancake({
-        fbPageId: page.pageId,
-        pancakePageAccessToken: pancakeToken,
+        pancakePageId: pancakeConfig.pancakePageId,
+        pancakePageAccessToken: pancakeConfig.pageAccessToken,
         recipientPsid: recipientId,
         message: message || "",
       });
@@ -141,7 +136,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Pancake cũng thất bại
       return NextResponse.json({
         error: `Không thể gửi: Facebook lỗi #10 (Pancake đang kiểm soát thread). Pancake cũng thất bại: ${pancakeResult.error}`,
         code: 10,
@@ -149,15 +143,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Chưa cấu hình Pancake token — hướng dẫn cụ thể
+    // Chưa cấu hình Pancake
     return NextResponse.json({
-      error: "Pancake đang kiểm soát thread này. Vui lòng cấu hình Pancake API Token trong mục Facebook Inbox Settings để tự động gửi tin nhắn qua Pancake.",
+      error: "Pancake đang kiểm soát thread này. Vui lòng cấu hình Pancake API trong ⚙️ Settings để tự động gửi qua Pancake.",
       code: 10,
       needsPancakeConfig: true,
     }, { status: 400 });
   }
 
-  // ── Bước 3: Lỗi khác ────────────────────────────────────────────────────────
+  // ── Bước 3: Lỗi khác ──────────────────────────────────────────────────────
   return NextResponse.json({
     error: fbResult.error || "Lỗi không xác định khi gửi tin nhắn",
     code: fbResult.code,

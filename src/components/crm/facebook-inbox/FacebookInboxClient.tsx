@@ -160,7 +160,7 @@ export default function FacebookInboxClient() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   // Pancake Settings
   const [showPancakeSettings, setShowPancakeSettings] = useState(false);
-  const [pancakeConfig, setPancakeConfig] = useState<{ enabled: boolean; pages: { fbPageId: string; pageAccessToken: string; pageName?: string }[] }>({ enabled: true, pages: [] });
+  const [pancakeConfig, setPancakeConfig] = useState<{ enabled: boolean; pages: { fbPageId: string; pancakePageId: string; pageAccessToken: string; pageName?: string }[] }>({ enabled: true, pages: [] });
   const [pancakeSaving, setPancakeSaving] = useState(false);
   const [pancakeSaveMsg, setPancakeSaveMsg] = useState<string | null>(null);
   const [showTokens, setShowTokens] = useState<Record<string, boolean>>({});
@@ -1012,11 +1012,12 @@ export default function FacebookInboxClient() {
               </button>
             </div>
             <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10, padding: "12px 14px", marginBottom: 20 }}>
-              <div style={{ color: T.accent, fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Cách lấy Pancake Page Access Token:</div>
+              <div style={{ color: T.accent, fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Cách lấy thông tin Pancake:</div>
               <ol style={{ color: T.textMuted, fontSize: 12, margin: 0, paddingLeft: 16, lineHeight: 1.8 }}>
                 <li>Đăng nhập <strong style={{ color: T.textSecondary }}>pages.fm</strong> (Pancake)</li>
                 <li>Vào <strong style={{ color: T.textSecondary }}>Cài đặt → Tích hợp → API</strong></li>
-                <li>Copy <strong style={{ color: T.textSecondary }}>Page Access Token</strong> của từng fanpage</li>
+                <li><strong style={{ color: T.textSecondary }}>Pancake Page ID</strong>: Lấy từ URL trang Pancake hoặc gọi API <code style={{ background: "rgba(255,255,255,0.1)", padding: "1px 4px", borderRadius: 3 }}>GET /api/v1/pages</code></li>
+                <li><strong style={{ color: T.textSecondary }}>Page Access Token</strong>: Copy từ mục API trong Cài đặt</li>
               </ol>
             </div>
             <div style={{ marginBottom: 20 }}>
@@ -1027,37 +1028,61 @@ export default function FacebookInboxClient() {
                 pages.map(page => {
                   const existing = pancakeConfig.pages.find(p => p.fbPageId === page.pageId);
                   const tokenVal = existing?.pageAccessToken || "";
+                  const pancakePageIdVal = existing?.pancakePageId || "";
                   const isVisible = showTokens[page.pageId];
+                  const isConfigured = !!(tokenVal && pancakePageIdVal);
                   return (
-                    <div key={page.id} style={{ marginBottom: 12 }}>
-                      <div style={{ color: T.textSecondary, fontSize: 12, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                    <div key={page.id} style={{ marginBottom: 16, padding: "12px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: `1px solid ${isConfigured ? "rgba(16,185,129,0.3)" : T.inputBorder}` }}>
+                      <div style={{ color: T.textSecondary, fontSize: 12, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
                         <div style={{ width: 20, height: 20, borderRadius: 5, background: T.fbBlue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff" }}>
                           {page.pageName.charAt(0)}
                         </div>
-                        {page.pageName}
-                        {tokenVal && <span style={{ color: T.success, fontSize: 10 }}>✓ Đã cấu hình</span>}
+                        <span style={{ fontWeight: 600 }}>{page.pageName}</span>
+                        {isConfigured && <span style={{ color: T.success, fontSize: 10 }}>✓ Đã cấu hình</span>}
                       </div>
-                      <div style={{ display: "flex", gap: 6 }}>
+                      {/* Pancake Page ID */}
+                      <div style={{ marginBottom: 8 }}>
+                        <div style={{ color: T.textMuted, fontSize: 11, marginBottom: 4 }}>Pancake Page ID <span style={{ color: "#ef4444" }}>*</span></div>
                         <input
-                          type={isVisible ? "text" : "password"}
-                          value={tokenVal}
+                          type="text"
+                          value={pancakePageIdVal}
                           onChange={e => {
                             const val = e.target.value;
                             setPancakeConfig(c => {
                               const newPages = c.pages.filter(p => p.fbPageId !== page.pageId);
-                              if (val) newPages.push({ fbPageId: page.pageId, pageAccessToken: val, pageName: page.pageName });
+                              newPages.push({ fbPageId: page.pageId, pancakePageId: val, pageAccessToken: tokenVal, pageName: page.pageName });
                               return { ...c, pages: newPages };
                             });
                           }}
-                          placeholder="Dán Pancake Page Access Token vào đây..."
-                          style={{ flex: 1, padding: "8px 10px", background: T.inputBg, border: `1px solid ${T.inputBorder}`, borderRadius: 8, color: T.textPrimary, fontSize: 12, outline: "none", fontFamily: "monospace" }}
+                          placeholder="Nhập Pancake Page ID (khác với Facebook Page ID)..."
+                          style={{ width: "100%", padding: "8px 10px", background: T.inputBg, border: `1px solid ${T.inputBorder}`, borderRadius: 8, color: T.textPrimary, fontSize: 12, outline: "none", boxSizing: "border-box" }}
                         />
-                        <button
-                          onClick={() => setShowTokens(t => ({ ...t, [page.pageId]: !t[page.pageId] }))}
-                          style={{ background: T.inputBg, border: `1px solid ${T.inputBorder}`, borderRadius: 8, padding: "0 10px", cursor: "pointer", color: T.textMuted, display: "flex", alignItems: "center" }}
-                        >
-                          {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
+                      </div>
+                      {/* Page Access Token */}
+                      <div>
+                        <div style={{ color: T.textMuted, fontSize: 11, marginBottom: 4 }}>Pancake Page Access Token <span style={{ color: "#ef4444" }}>*</span></div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <input
+                            type={isVisible ? "text" : "password"}
+                            value={tokenVal}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setPancakeConfig(c => {
+                                const newPages = c.pages.filter(p => p.fbPageId !== page.pageId);
+                                newPages.push({ fbPageId: page.pageId, pancakePageId: pancakePageIdVal, pageAccessToken: val, pageName: page.pageName });
+                                return { ...c, pages: newPages };
+                              });
+                            }}
+                            placeholder="Dán Pancake Page Access Token vào đây..."
+                            style={{ flex: 1, padding: "8px 10px", background: T.inputBg, border: `1px solid ${T.inputBorder}`, borderRadius: 8, color: T.textPrimary, fontSize: 12, outline: "none", fontFamily: "monospace" }}
+                          />
+                          <button
+                            onClick={() => setShowTokens(t => ({ ...t, [page.pageId]: !t[page.pageId] }))}
+                            style={{ background: T.inputBg, border: `1px solid ${T.inputBorder}`, borderRadius: 8, padding: "0 10px", cursor: "pointer", color: T.textMuted, display: "flex", alignItems: "center" }}
+                          >
+                            {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
