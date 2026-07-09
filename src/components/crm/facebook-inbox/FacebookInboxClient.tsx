@@ -10,32 +10,32 @@ import {
 
 // ─── Design Tokens (Dark Luxury — đồng bộ CRM) ────────────────────────────────
 const T = {
-  bg: "#0d0b1a",
-  sidebar: "#100e1f",
-  sidebarBorder: "#1e1b35",
-  sidebarHover: "rgba(255,255,255,0.06)",
-  sidebarActive: "rgba(99,102,241,0.18)",
-  sidebarActiveBorder: "#6366f1",
-  chatBg: "#0a0818",
-  headerBg: "rgba(13,11,26,0.96)",
-  headerBorder: "#1e1b35",
-  bubbleSelf: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
-  bubbleOther: "#1a1730",
-  bubbleOtherText: "#e2e0f0",
+  bg: "#f0f2f5",
+  sidebar: "#ffffff",
+  sidebarBorder: "#e4e6eb",
+  sidebarHover: "rgba(0,0,0,0.04)",
+  sidebarActive: "rgba(24,119,242,0.1)",
+  sidebarActiveBorder: "#1877f2",
+  chatBg: "#f0f2f5",
+  headerBg: "rgba(255,255,255,0.97)",
+  headerBorder: "#e4e6eb",
+  bubbleSelf: "linear-gradient(135deg, #1877f2 0%, #0a5dc2 100%)",
+  bubbleOther: "#ffffff",
+  bubbleOtherText: "#050505",
   bubbleSelfText: "#ffffff",
-  inputBg: "#1a1730",
-  inputBorder: "#2d2a4a",
-  inputFocus: "#6366f1",
-  textPrimary: "#f1eeff",
-  textSecondary: "#9b97b8",
-  textMuted: "#5c5880",
-  accent: "#6366f1",
-  accentHover: "#4f46e5",
+  inputBg: "#ffffff",
+  inputBorder: "#ccd0d5",
+  inputFocus: "#1877f2",
+  textPrimary: "#050505",
+  textSecondary: "#444950",
+  textMuted: "#8a8d91",
+  accent: "#1877f2",
+  accentHover: "#0a5dc2",
   fbBlue: "#1877f2",
   badge: "#ef4444",
   gold: "#C9A84C",
   success: "#10b981",
-  divider: "#1e1b35",
+  divider: "#e4e6eb",
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -271,7 +271,7 @@ export default function FacebookInboxClient() {
         setMessages(prev => [...(data.messages || []), ...prev]);
       } else {
         setMessages(data.messages || []);
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "instant" }), 80);
       }
       setMsgPaging(data.paging);
     } catch {
@@ -487,7 +487,7 @@ export default function FacebookInboxClient() {
         width: 300, flexShrink: 0,
         borderRight: `1px solid ${T.sidebarBorder}`,
         display: "flex", flexDirection: "column",
-        background: "#0f0d1e",
+        background: "#f7f8fa",
         ...(mobileView === "chat" ? { display: "none" } : {}),
         ...(mobileView === "pages" ? { display: "none" } : {}),
       }} className="fb-inbox-convs">
@@ -500,8 +500,8 @@ export default function FacebookInboxClient() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <button
               onClick={() => setMobileView("pages")}
-              style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex" }}
-              className="fb-mobile-back"
+              title="Quay lại danh sách fanpage"
+              style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex", flexShrink: 0 }}
             >
               <ChevronLeft size={18} />
             </button>
@@ -709,8 +709,8 @@ export default function FacebookInboxClient() {
             }}>
               <button
                 onClick={() => setMobileView("convs")}
-                style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex" }}
-                className="fb-mobile-back"
+                title="Quay lại danh sách hội thoại"
+                style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex", flexShrink: 0 }}
               >
                 <ChevronLeft size={20} />
               </button>
@@ -798,7 +798,7 @@ export default function FacebookInboxClient() {
                       {showDate && (
                         <div style={{ textAlign: "center", margin: "12px 0" }}>
                           <span style={{
-                            background: "rgba(255,255,255,0.06)", color: T.textMuted,
+                            background: "rgba(0,0,0,0.08)", color: T.textMuted,
                             fontSize: 11, padding: "3px 10px", borderRadius: 10,
                           }}>
                             {new Date(msg.createdTime).toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
@@ -854,6 +854,7 @@ export default function FacebookInboxClient() {
                               lineHeight: 1.5,
                               wordBreak: "break-word",
                               opacity: isTemp ? 0.7 : 1,
+                              boxShadow: msg.isSelf ? "none" : "0 1px 2px rgba(0,0,0,0.12)",
                             }}>
                               {msg.message}
                             </div>
@@ -1110,12 +1111,10 @@ export default function FacebookInboxClient() {
       {/* CSS animations */}
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .fb-mobile-back { display: none !important; }
         @media (max-width: 768px) {
           .fb-inbox-pages { display: flex !important; width: 100% !important; }
           .fb-inbox-convs { display: flex !important; width: 100% !important; }
           .fb-inbox-chat { display: flex !important; width: 100% !important; }
-          .fb-mobile-back { display: flex !important; }
         }
       `}</style>
     </div>
