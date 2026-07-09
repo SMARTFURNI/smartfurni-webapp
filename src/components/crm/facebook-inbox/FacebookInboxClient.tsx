@@ -5,7 +5,7 @@ import {
   ChevronLeft, Image as ImageIcon, Smile,
   CheckCheck, MoreVertical, ExternalLink,
   Facebook, Users, Inbox, AlertCircle, Loader2,
-  Clock, Check,
+  Clock, Check, Settings, Key, Save, Eye, EyeOff,
 } from "lucide-react";
 
 // ─── Design Tokens (Dark Luxury — đồng bộ CRM) ────────────────────────────────
@@ -158,10 +158,40 @@ export default function FacebookInboxClient() {
   const [msgPaging, setMsgPaging] = useState<{ cursors?: { before?: string } } | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  // Pancake Settings
+  const [showPancakeSettings, setShowPancakeSettings] = useState(false);
+  const [pancakeConfig, setPancakeConfig] = useState<{ enabled: boolean; pages: { fbPageId: string; pageAccessToken: string; pageName?: string }[] }>({ enabled: true, pages: [] });
+  const [pancakeSaving, setPancakeSaving] = useState(false);
+  const [pancakeSaveMsg, setPancakeSaveMsg] = useState<string | null>(null);
+  const [showTokens, setShowTokens] = useState<Record<string, boolean>>({});
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Load Pancake config
+  useEffect(() => {
+    fetch("/api/crm/facebook-inbox/pancake-settings")
+      .then(r => r.json())
+      .then(d => { if (!d.error) setPancakeConfig(d); })
+      .catch(() => {});
+  }, []);
+
+  async function savePancakeSettings() {
+    setPancakeSaving(true);
+    setPancakeSaveMsg(null);
+    try {
+      const res = await fetch("/api/crm/facebook-inbox/pancake-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pancakeConfig),
+      });
+      const d = await res.json();
+      if (d.error) setPancakeSaveMsg("Lỗi: " + d.error);
+      else setPancakeSaveMsg("Đã lưu thành công!");
+    } catch { setPancakeSaveMsg("Lỗi kết nối"); }
+    finally { setPancakeSaving(false); setTimeout(() => setPancakeSaveMsg(null), 3000); }
+  }
 
   // ─── Load pages ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -350,9 +380,18 @@ export default function FacebookInboxClient() {
               Facebook Inbox
             </span>
           </div>
-          <p style={{ color: T.textMuted, fontSize: 11, margin: 0 }}>
-            {pages.length} fanpage đang kết nối
-          </p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <p style={{ color: T.textMuted, fontSize: 11, margin: 0 }}>
+              {pages.length} fanpage đang kết nối
+            </p>
+            <button
+              onClick={() => setShowPancakeSettings(true)}
+              title="Cấu hình Pancake API"
+              style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 2, display: "flex", borderRadius: 4 }}
+            >
+              <Settings size={13} />
+            </button>
+          </div>
         </div>
 
         {/* Pages list */}
@@ -858,8 +897,16 @@ export default function FacebookInboxClient() {
                 display: "flex", alignItems: "center", gap: 8,
               }}>
                 <AlertCircle size={14} />
-                {sendError}
-                <button onClick={() => setSendError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", marginLeft: "auto", padding: 0 }}>
+                <span style={{ flex: 1 }}>{sendError}</span>
+                {sendError && sendError.includes("Pancake") && sendError.includes("Token") && (
+                  <button
+                    onClick={() => setShowPancakeSettings(true)}
+                    style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)", borderRadius: 4, padding: "2px 8px", color: T.accent, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+                  >
+                    Cấu hình ngay
+                  </button>
+                )}
+                <button onClick={() => setSendError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", padding: 0, flexShrink: 0 }}>
                   <X size={12} />
                 </button>
               </div>
@@ -927,6 +974,114 @@ export default function FacebookInboxClient() {
         )}
       </div>
 
+      {/* ── PANCAKE SETTINGS MODAL ─────────────────────────────────────── */}
+      {showPancakeSettings && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          background: "rgba(0,0,0,0.7)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 16,
+        }} onClick={() => setShowPancakeSettings(false)}>
+          <div style={{
+            background: "#12101f", border: `1px solid ${T.sidebarBorder}`,
+            borderRadius: 16, padding: 24, width: "100%", maxWidth: 520,
+            maxHeight: "80vh", overflowY: "auto",
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Key size={18} color={T.accent} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: T.textPrimary, fontWeight: 700, fontSize: 15 }}>Cấu hình Pancake API</div>
+                <div style={{ color: T.textMuted, fontSize: 12 }}>Cho phép gửi tin nhắn khi Pancake đang kiểm soát thread</div>
+              </div>
+              <button onClick={() => setShowPancakeSettings(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 4 }}>
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 10 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: T.textPrimary, fontSize: 13, fontWeight: 600 }}>Bật tích hợp Pancake</div>
+                <div style={{ color: T.textMuted, fontSize: 11, marginTop: 2 }}>Tự động gửi qua Pancake khi gặp lỗi thread control</div>
+              </div>
+              <button
+                onClick={() => setPancakeConfig(c => ({ ...c, enabled: !c.enabled }))}
+                style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", background: pancakeConfig.enabled ? T.accent : T.inputBorder, position: "relative", transition: "background 0.2s" }}
+              >
+                <div style={{ position: "absolute", top: 3, left: pancakeConfig.enabled ? 20 : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </button>
+            </div>
+            <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10, padding: "12px 14px", marginBottom: 20 }}>
+              <div style={{ color: T.accent, fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Cách lấy Pancake Page Access Token:</div>
+              <ol style={{ color: T.textMuted, fontSize: 12, margin: 0, paddingLeft: 16, lineHeight: 1.8 }}>
+                <li>Đăng nhập <strong style={{ color: T.textSecondary }}>pages.fm</strong> (Pancake)</li>
+                <li>Vào <strong style={{ color: T.textSecondary }}>Cài đặt → Tích hợp → API</strong></li>
+                <li>Copy <strong style={{ color: T.textSecondary }}>Page Access Token</strong> của từng fanpage</li>
+              </ol>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ color: T.textSecondary, fontSize: 12, fontWeight: 600, marginBottom: 10 }}>Token theo từng Fanpage</div>
+              {pages.length === 0 ? (
+                <p style={{ color: T.textMuted, fontSize: 12 }}>Chưa có fanpage nào được kết nối.</p>
+              ) : (
+                pages.map(page => {
+                  const existing = pancakeConfig.pages.find(p => p.fbPageId === page.pageId);
+                  const tokenVal = existing?.pageAccessToken || "";
+                  const isVisible = showTokens[page.pageId];
+                  return (
+                    <div key={page.id} style={{ marginBottom: 12 }}>
+                      <div style={{ color: T.textSecondary, fontSize: 12, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ width: 20, height: 20, borderRadius: 5, background: T.fbBlue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff" }}>
+                          {page.pageName.charAt(0)}
+                        </div>
+                        {page.pageName}
+                        {tokenVal && <span style={{ color: T.success, fontSize: 10 }}>✓ Đã cấu hình</span>}
+                      </div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input
+                          type={isVisible ? "text" : "password"}
+                          value={tokenVal}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setPancakeConfig(c => {
+                              const newPages = c.pages.filter(p => p.fbPageId !== page.pageId);
+                              if (val) newPages.push({ fbPageId: page.pageId, pageAccessToken: val, pageName: page.pageName });
+                              return { ...c, pages: newPages };
+                            });
+                          }}
+                          placeholder="Dán Pancake Page Access Token vào đây..."
+                          style={{ flex: 1, padding: "8px 10px", background: T.inputBg, border: `1px solid ${T.inputBorder}`, borderRadius: 8, color: T.textPrimary, fontSize: 12, outline: "none", fontFamily: "monospace" }}
+                        />
+                        <button
+                          onClick={() => setShowTokens(t => ({ ...t, [page.pageId]: !t[page.pageId] }))}
+                          style={{ background: T.inputBg, border: `1px solid ${T.inputBorder}`, borderRadius: 8, padding: "0 10px", cursor: "pointer", color: T.textMuted, display: "flex", alignItems: "center" }}
+                        >
+                          {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button
+                onClick={savePancakeSettings}
+                disabled={pancakeSaving}
+                style={{ flex: 1, padding: "10px 16px", borderRadius: 10, border: "none", background: T.accent, color: "#fff", fontSize: 13, fontWeight: 600, cursor: pancakeSaving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: pancakeSaving ? 0.7 : 1 }}
+              >
+                {pancakeSaving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={14} />}
+                {pancakeSaving ? "Đang lưu..." : "Lưu cấu hình"}
+              </button>
+              {pancakeSaveMsg && (
+                <span style={{ fontSize: 12, color: pancakeSaveMsg.startsWith("Lỗi") ? "#ef4444" : T.success }}>
+                  {pancakeSaveMsg}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {/* CSS animations */}
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
