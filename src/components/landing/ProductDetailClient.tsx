@@ -56,6 +56,208 @@ const CATEGORY_MAP = {
   accessory: "Phụ kiện",
 };
 
+const GSF150_PROBLEMS = [
+  "Giường cố định chỉ nằm phẳng, khó đọc sách hoặc xem phim thoải mái",
+  "Muốn đổi sang giường nâng hạ nhưng không muốn bỏ khung giường đang dùng",
+  "Nệm hiện có vẫn còn tốt, chưa muốn mua trọn bộ giường mới",
+  "Cần tư thế nâng đầu/chân linh hoạt cho nghỉ ngơi hằng ngày",
+];
+
+const GSF150_SOLUTIONS = [
+  "Đặt vào trong khung giường hiện có, giữ lại phong cách phòng ngủ",
+  "Nâng đầu và chân bằng remote, thao tác nhẹ và dễ dùng",
+  "Tận dụng nệm sẵn có nếu kích thước và độ đàn hồi phù hợp",
+  "Hỗ trợ tư thế Zero Gravity, đọc sách, xem TV và thư giãn",
+];
+
+const GSF150_BENEFITS = [
+  { title: "Chống ngáy dễ hơn", desc: "Nâng đầu khoảng 15 độ để hỗ trợ tư thế thở thoải mái hơn khi ngủ." },
+  { title: "Đọc sách, xem phim", desc: "Điều chỉnh đầu giường lên cao, không cần kê nhiều gối." },
+  { title: "Nghỉ ngơi linh hoạt", desc: "Nâng đầu và chân theo nhu cầu thư giãn hằng ngày." },
+  { title: "Giữ không gian cũ", desc: "Lắp vào lòng giường hiện có, không phải thay toàn bộ nội thất." },
+];
+
+const GSF150_SPECS = [
+  ["Kích thước phổ biến", "0,9m / 1m2 / 1m4 / 1m6 / 1m8 x 2m, nhận đặt theo lòng giường"],
+  ["Góc nâng đầu", "0-70 độ, điều chỉnh bằng remote"],
+  ["Góc nâng chân", "0-45 độ"],
+  ["Khung chính", "Thép sơn tĩnh điện, gia cường chịu lực"],
+  ["Motor", "2 motor nâng hạ vận hành êm"],
+  ["Nệm phù hợp", "Cao su, foam, lò xo túi linh hoạt; kiểm tra trước khi lắp"],
+  ["Lắp đặt", "Đặt trong lòng giường hiện có, không cần đổi toàn bộ giường"],
+  ["Bảo hành motor", "5 năm"],
+];
+
+function isGsf150Product(product: Product) {
+  const identity = `${product.name} ${product.slug} ${product.description}`.toLowerCase();
+  return identity.includes("gsf150") || identity.includes("khung-giuong-nang-ha") || identity.includes("khung giường nâng hạ");
+}
+
+function Gsf150StoryDescription({ product, colors }: { product: Product; colors: SiteTheme["colors"] }) {
+  const visual = product.coverImage || product.images?.[0];
+
+  return (
+    <div className="space-y-8">
+      {product.detailedDescription && (
+        <div
+          style={{ color: colors.text, lineHeight: 1.8 }}
+          className="prose-custom max-w-none"
+          dangerouslySetInnerHTML={{ __html: product.detailedDescription }}
+        />
+      )}
+
+      <section
+        style={{
+          background: `linear-gradient(135deg, ${colors.surface}, ${colors.background})`,
+          borderColor: colors.border,
+        }}
+        className="rounded-3xl border overflow-hidden"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-0">
+          <div className="p-6 sm:p-8 lg:p-10">
+            <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.28em] uppercase mb-4">
+              Khung giường nâng hạ điện
+            </p>
+            <h2 style={{ color: colors.text }} className="text-3xl sm:text-4xl lg:text-5xl font-light leading-tight">
+              Giường cũ giữ lại
+              <span style={{ color: colors.primary }} className="block font-semibold mt-2">
+                nâng cấp thành giường công thái học
+              </span>
+            </h2>
+            <p style={{ color: `${colors.text}b0` }} className="mt-5 text-base sm:text-lg leading-relaxed max-w-2xl">
+              GSF150 đặt gọn trong khung giường hiện có, nâng đầu/chân bằng remote, hỗ trợ tư thế đọc sách,
+              xem phim và nghỉ ngơi thoải mái hơn. SmartFurni giao lắp tận nơi và kiểm tra kích thước trước khi lắp.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8">
+              {[
+                ["5 năm", "Bảo hành motor"],
+                ["0-70 độ", "Nâng đầu linh hoạt"],
+                ["0-45 độ", "Nâng chân thư giãn"],
+                ["Lắp gọn", "Trong giường cũ"],
+              ].map(([value, label]) => (
+                <div
+                  key={value}
+                  style={{ backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}25` }}
+                  className="rounded-2xl border p-4"
+                >
+                  <p style={{ color: colors.primary }} className="font-bold text-lg">{value}</p>
+                  <p style={{ color: `${colors.text}80` }} className="text-xs mt-1">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {visual && (
+            <div style={{ backgroundColor: colors.background }} className="min-h-[320px] lg:min-h-full">
+              <img
+                src={visual}
+                alt={product.name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-3xl border p-6 sm:p-8">
+          <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.22em] uppercase mb-2">
+            Vấn đề thường gặp
+          </p>
+          <h3 style={{ color: colors.text }} className="text-2xl font-semibold mb-5">Giường cũ đang thiếu trải nghiệm nghỉ ngơi tốt hơn</h3>
+          <div className="space-y-3">
+            {GSF150_PROBLEMS.map((item) => (
+              <div key={item} style={{ backgroundColor: `${colors.error}10`, borderColor: `${colors.error}22` }} className="rounded-2xl border p-4 flex gap-3">
+                <span style={{ color: colors.error }} className="font-bold">x</span>
+                <p style={{ color: `${colors.text}b8` }} className="text-sm leading-relaxed">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}35` }} className="rounded-3xl border p-6 sm:p-8">
+          <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.22em] uppercase mb-2">
+            GSF150 đáp ứng
+          </p>
+          <h3 style={{ color: colors.text }} className="text-2xl font-semibold mb-5">Nâng cấp giường ngủ mà vẫn giữ không gian quen thuộc</h3>
+          <div className="space-y-3">
+            {GSF150_SOLUTIONS.map((item) => (
+              <div key={item} style={{ backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}30` }} className="rounded-2xl border p-4 flex gap-3">
+                <span style={{ color: colors.primary }} className="font-bold">✓</span>
+                <p style={{ color: `${colors.text}c8` }} className="text-sm leading-relaxed">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-3xl border p-6 sm:p-8">
+        <div className="text-center max-w-3xl mx-auto mb-8">
+          <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.25em] uppercase mb-3">
+            Lợi ích mang lại
+          </p>
+          <h3 style={{ color: colors.text }} className="text-3xl sm:text-4xl font-semibold leading-tight">
+            Một chiếc giường cho nhiều tư thế nghỉ ngơi
+          </h3>
+          <p style={{ color: `${colors.text}95` }} className="mt-4 leading-relaxed">
+            Từ chống ngáy, đọc sách, xem phim đến giấc ngủ sâu, GSF150 giúp bạn thay đổi tư thế nhẹ nhàng
+            bằng remote mà vẫn giữ được không gian phòng ngủ quen thuộc.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {GSF150_BENEFITS.map((benefit) => (
+            <div key={benefit.title} style={{ backgroundColor: colors.background, borderColor: colors.border }} className="rounded-2xl border p-5">
+              <p style={{ color: colors.primary }} className="font-semibold mb-2">{benefit.title}</p>
+              <p style={{ color: `${colors.text}88` }} className="text-sm leading-relaxed">{benefit.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-5">
+        <div style={{ backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}28` }} className="rounded-3xl border p-6 sm:p-8">
+          <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.25em] uppercase mb-3">
+            Thông số kỹ thuật
+          </p>
+          <h3 style={{ color: colors.text }} className="text-3xl font-semibold">SmartFurni GSF150</h3>
+          <p style={{ color: `${colors.text}95` }} className="mt-4 leading-relaxed">
+            Khung nâng hạ 2 motor, lắp trong lòng giường hiện có. Đội kỹ thuật sẽ kiểm tra lòng giường,
+            loại nệm và kích thước thực tế trước khi lắp để đảm bảo vận hành ổn định.
+          </p>
+          <Link
+            href="/lp/gsf150"
+            style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: colors.background }}
+            className="inline-flex mt-6 px-6 py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+          >
+            Xem landing page GSF150
+          </Link>
+        </div>
+
+        <div style={{ borderColor: colors.border }} className="rounded-3xl border overflow-hidden">
+          {GSF150_SPECS.map(([label, value], index) => (
+            <div
+              key={label}
+              style={{
+                backgroundColor: index % 2 === 0 ? colors.surface : colors.background,
+                borderBottomColor: colors.border,
+              }}
+              className="grid grid-cols-1 sm:grid-cols-[190px_1fr] border-b last:border-b-0"
+            >
+              <div style={{ color: `${colors.text}75`, borderRightColor: colors.border }} className="px-5 py-4 text-sm font-medium sm:border-r">
+                {label}
+              </div>
+              <div style={{ color: colors.text }} className="px-5 py-4 text-sm font-semibold leading-relaxed">
+                {value}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function ProductDetailClient({ product, related, theme }: Props) {
   const { colors, layout } = theme;
   const router = useRouter();
@@ -92,6 +294,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
   const statusCfg = STATUS_MAP[product.status];
   const isAvailable = product.status === "active" && selectedVariant.stock > 0;
   const isComingSoon = product.status === "coming_soon";
+  const isGsf150 = isGsf150Product(product);
 
   const handleAddToCart = () => {
     addItem({
@@ -126,9 +329,9 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
     router.push("/checkout");
   };
 
-  // Tabs: show description tab only if detailedDescription exists
+  // Tabs: show description tab only if detailedDescription exists or product has a curated landing-style description.
   const tabs = [
-    ...(product.detailedDescription ? [{ key: "description" as const, label: "Mô tả sản phẩm" }] : []),
+    ...(product.detailedDescription || isGsf150 ? [{ key: "description" as const, label: "Mô tả sản phẩm" }] : []),
     { key: "features" as const, label: "Tính năng" },
     { key: "specs" as const, label: "Thông số kỹ thuật" },
     { key: "reviews" as const, label: `Đánh giá (${product.reviewCount})` },
@@ -692,15 +895,19 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
         </div>
 
         {/* Tab: Mô tả sản phẩm */}
-        {activeTab === "description" && product.detailedDescription && (
-          <div
-            style={{
-              color: colors.text,
-              lineHeight: 1.8,
-            }}
-            className="prose-custom max-w-none"
-            dangerouslySetInnerHTML={{ __html: product.detailedDescription }}
-          />
+        {activeTab === "description" && (
+          isGsf150 ? (
+            <Gsf150StoryDescription product={product} colors={colors} />
+          ) : product.detailedDescription ? (
+            <div
+              style={{
+                color: colors.text,
+                lineHeight: 1.8,
+              }}
+              className="prose-custom max-w-none"
+              dangerouslySetInnerHTML={{ __html: product.detailedDescription }}
+            />
+          ) : null
         )}
 
         {/* Tab: Tính năng */}
