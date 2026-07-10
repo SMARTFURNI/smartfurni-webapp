@@ -88,11 +88,6 @@ const GSF150_SPECS = [
   ["Bảo hành motor", "5 năm"],
 ];
 
-function isGsf150Product(product: Product) {
-  const identity = `${product.name} ${product.slug} ${product.description}`.toLowerCase();
-  return identity.includes("gsf150") || identity.includes("khung-giuong-nang-ha") || identity.includes("khung giường nâng hạ");
-}
-
 function Gsf150StoryDescription({ product, colors }: { product: Product; colors: SiteTheme["colors"] }) {
   const visual = product.coverImage || product.images?.[0];
 
@@ -105,6 +100,21 @@ function Gsf150StoryDescription({ product, colors }: { product: Product; colors:
           dangerouslySetInnerHTML={{ __html: product.detailedDescription }}
         />
       )}
+
+      <section
+        style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+        className="rounded-3xl border p-6 sm:p-8"
+      >
+        <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.25em] uppercase mb-3">
+          Mô tả sản phẩm
+        </p>
+        <h2 style={{ color: colors.text }} className="text-2xl sm:text-3xl font-semibold leading-tight">
+          {product.name}
+        </h2>
+        <p style={{ color: `${colors.text}b8` }} className="mt-4 text-base leading-relaxed">
+          {product.description}
+        </p>
+      </section>
 
       <section
         style={{
@@ -294,8 +304,6 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
   const statusCfg = STATUS_MAP[product.status];
   const isAvailable = product.status === "active" && selectedVariant.stock > 0;
   const isComingSoon = product.status === "coming_soon";
-  const isGsf150 = isGsf150Product(product);
-
   const handleAddToCart = () => {
     addItem({
       productId: product.id,
@@ -329,9 +337,9 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
     router.push("/checkout");
   };
 
-  // Tabs: show description tab only if detailedDescription exists or product has a curated landing-style description.
+  // Tabs: show the landing-style description editor surface for every product.
   const tabs = [
-    ...(product.detailedDescription || isGsf150 ? [{ key: "description" as const, label: "Mô tả sản phẩm" }] : []),
+    { key: "description" as const, label: "Mô tả sản phẩm" },
     { key: "features" as const, label: "Tính năng" },
     { key: "specs" as const, label: "Thông số kỹ thuật" },
     { key: "reviews" as const, label: `Đánh giá (${product.reviewCount})` },
@@ -896,18 +904,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
 
         {/* Tab: Mô tả sản phẩm */}
         {activeTab === "description" && (
-          isGsf150 ? (
-            <Gsf150StoryDescription product={product} colors={colors} />
-          ) : product.detailedDescription ? (
-            <div
-              style={{
-                color: colors.text,
-                lineHeight: 1.8,
-              }}
-              className="prose-custom max-w-none"
-              dangerouslySetInnerHTML={{ __html: product.detailedDescription }}
-            />
-          ) : null
+          <Gsf150StoryDescription product={product} colors={colors} />
         )}
 
         {/* Tab: Tính năng */}
