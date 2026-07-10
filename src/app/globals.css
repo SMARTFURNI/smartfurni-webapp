@@ -137,6 +137,330 @@ section {
   color: var(--color-primary, #C9A84C);
 }
 
+/* Landing-style product description template */
+.prose-custom .sf-product-description-template {
+  color: var(--sf-desc-text, #F5EDD6);
+  display: block;
+}
+.prose-custom .sf-product-description-template,
+.prose-custom .sf-product-description-template * {
+  box-sizing: border-box;
+}
+.prose-custom .sf-product-description-template :is(h2, h3, p, figure) {
+  margin: 0;
+}
+.prose-custom .sf-product-description-template a {
+  text-decoration: none;
+}
+.prose-custom .sf-desc-section {
+  margin: 0 0 2rem;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 22%, transparent);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 12%, transparent), transparent 34rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--sf-desc-surface, #1A1600) 92%, transparent), color-mix(in srgb, var(--sf-desc-bg, #0D0B00) 96%, transparent));
+  overflow: hidden;
+}
+.prose-custom .sf-desc-hero-grid,
+.prose-custom .sf-desc-spec-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.95fr);
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  align-items: stretch;
+}
+.prose-custom .sf-desc-hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.prose-custom .sf-desc-hero-media,
+.prose-custom .sf-desc-benefit-image,
+.prose-custom .sf-desc-spec-image {
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 24%, transparent);
+  background: #050500;
+  overflow: hidden;
+}
+.prose-custom .sf-desc-hero-media img {
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  object-fit: cover;
+  display: block;
+}
+.prose-custom .sf-desc-heading {
+  max-width: 760px;
+  margin: 0 auto clamp(1.5rem, 3vw, 2.25rem);
+  text-align: center;
+}
+.prose-custom .sf-desc-kicker {
+  color: var(--sf-desc-primary, #C9A84C);
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  opacity: .95;
+}
+.prose-custom .sf-desc-title {
+  color: var(--sf-desc-text, #F5EDD6);
+  font-size: clamp(2rem, 4vw, 4rem);
+  font-weight: 700;
+  line-height: 1.08;
+}
+.prose-custom .sf-desc-gold {
+  color: var(--sf-desc-primary, #C9A84C);
+  display: block;
+}
+.prose-custom .sf-desc-lead {
+  color: color-mix(in srgb, var(--sf-desc-text, #F5EDD6) 72%, transparent);
+  margin-top: 1rem;
+  font-size: clamp(.95rem, 1.3vw, 1.1rem);
+  line-height: 1.85;
+}
+.prose-custom .sf-desc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: 1.5rem;
+}
+.prose-custom .sf-desc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 999px;
+  padding: .75rem 1.25rem;
+  font-weight: 800;
+  font-size: .9rem;
+  transition: opacity .2s ease, transform .2s ease;
+  cursor: pointer;
+}
+.prose-custom .sf-desc-btn:hover {
+  opacity: .86;
+  transform: translateY(-1px);
+}
+.prose-custom .sf-desc-btn-primary {
+  background: linear-gradient(135deg, var(--sf-desc-primary, #C9A84C), var(--sf-desc-secondary, #9A7A2E));
+  color: var(--sf-desc-bg, #0D0B00);
+}
+.prose-custom .sf-desc-btn-ghost {
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 34%, transparent);
+  color: var(--sf-desc-primary, #C9A84C);
+}
+.prose-custom .sf-desc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .8rem;
+  margin-top: 2rem;
+}
+.prose-custom .sf-desc-stats div,
+.prose-custom .sf-desc-panel,
+.prose-custom .sf-desc-product-card,
+.prose-custom .sf-desc-faq-grid > div,
+.prose-custom .sf-desc-steps > div {
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 18%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--sf-desc-surface, #1A1600) 72%, transparent);
+}
+.prose-custom .sf-desc-stats div {
+  padding: 1rem;
+}
+.prose-custom .sf-desc-stats strong {
+  color: var(--sf-desc-primary, #C9A84C);
+  display: block;
+  font-size: 1.05rem;
+}
+.prose-custom .sf-desc-stats span {
+  color: color-mix(in srgb, var(--sf-desc-text, #F5EDD6) 58%, transparent);
+  display: block;
+  font-size: .78rem;
+  margin-top: .25rem;
+}
+.prose-custom .sf-desc-two-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 22%, transparent);
+  border-radius: 28px;
+  overflow: hidden;
+}
+.prose-custom .sf-desc-panel {
+  border: 0;
+  border-radius: 0;
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+}
+.prose-custom .sf-desc-panel + .sf-desc-panel {
+  border-left: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 24%, transparent);
+}
+.prose-custom .sf-desc-panel-label {
+  color: var(--sf-desc-primary, #C9A84C);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.prose-custom .sf-desc-panel h3,
+.prose-custom .sf-desc-product-card h3,
+.prose-custom .sf-desc-faq-grid h3 {
+  color: var(--sf-desc-text, #F5EDD6);
+  margin-top: .35rem;
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+.prose-custom .sf-desc-list {
+  display: grid;
+  gap: .85rem;
+  margin-top: 1.25rem;
+}
+.prose-custom .sf-desc-list div {
+  display: flex;
+  gap: .75rem;
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 16%, transparent);
+  border-radius: 16px;
+  padding: 1rem;
+  color: color-mix(in srgb, var(--sf-desc-text, #F5EDD6) 75%, transparent);
+  line-height: 1.65;
+}
+.prose-custom .sf-desc-panel-bad .sf-desc-list span {
+  color: #E05B3F;
+}
+.prose-custom .sf-desc-panel-good .sf-desc-list span {
+  color: var(--sf-desc-primary, #C9A84C);
+}
+.prose-custom .sf-desc-products,
+.prose-custom .sf-desc-faq-grid,
+.prose-custom .sf-desc-steps {
+  display: grid;
+  gap: 1rem;
+}
+.prose-custom .sf-desc-products {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.prose-custom .sf-desc-product-card {
+  overflow: hidden;
+}
+.prose-custom .sf-desc-product-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  background: #050500;
+}
+.prose-custom .sf-desc-product-card > div {
+  padding: 1.25rem;
+}
+.prose-custom .sf-desc-product-card p:not(.sf-desc-kicker),
+.prose-custom .sf-desc-faq-grid p {
+  color: color-mix(in srgb, var(--sf-desc-text, #F5EDD6) 64%, transparent);
+  line-height: 1.7;
+}
+.prose-custom .sf-desc-product-card strong {
+  color: var(--sf-desc-primary, #C9A84C);
+  display: block;
+  margin: 1rem 0;
+  font-size: 1.1rem;
+}
+.prose-custom .sf-desc-benefit-image img {
+  width: 100%;
+  display: block;
+  background: #050500;
+}
+.prose-custom .sf-desc-spec-table {
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 18%, transparent);
+}
+.prose-custom .sf-desc-spec-table div {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 12%, transparent);
+  background: color-mix(in srgb, var(--sf-desc-surface, #1A1600) 76%, transparent);
+}
+.prose-custom .sf-desc-spec-table div:nth-child(even) {
+  background: color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 9%, var(--sf-desc-bg, #0D0B00));
+}
+.prose-custom .sf-desc-spec-table div:last-child {
+  border-bottom: 0;
+}
+.prose-custom .sf-desc-spec-table span {
+  color: color-mix(in srgb, var(--sf-desc-text, #F5EDD6) 56%, transparent);
+}
+.prose-custom .sf-desc-spec-table strong {
+  color: var(--sf-desc-text, #F5EDD6);
+}
+.prose-custom .sf-desc-spec-image {
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  object-fit: cover;
+  display: block;
+}
+.prose-custom .sf-desc-steps {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.prose-custom .sf-desc-steps > div,
+.prose-custom .sf-desc-faq-grid > div {
+  padding: 1.25rem;
+}
+.prose-custom .sf-desc-steps strong {
+  color: var(--sf-desc-primary, #C9A84C);
+  font-size: 1.6rem;
+  display: block;
+  margin-bottom: .6rem;
+}
+.prose-custom .sf-desc-steps span {
+  color: color-mix(in srgb, var(--sf-desc-text, #F5EDD6) 72%, transparent);
+  line-height: 1.7;
+}
+.prose-custom .sf-desc-faq-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.prose-custom .sf-desc-cta {
+  text-align: center;
+}
+.prose-custom .sf-desc-cta .sf-desc-btn {
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .prose-custom .sf-desc-hero-grid,
+  .prose-custom .sf-desc-spec-grid,
+  .prose-custom .sf-desc-two-cols,
+  .prose-custom .sf-desc-products,
+  .prose-custom .sf-desc-steps,
+  .prose-custom .sf-desc-faq-grid {
+    grid-template-columns: 1fr;
+  }
+  .prose-custom .sf-desc-panel + .sf-desc-panel {
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--sf-desc-primary, #C9A84C) 24%, transparent);
+  }
+}
+
+@media (max-width: 640px) {
+  .prose-custom .sf-desc-section {
+    border-radius: 20px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .prose-custom .sf-desc-title {
+    font-size: clamp(1.75rem, 9vw, 2.6rem);
+  }
+  .prose-custom .sf-desc-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .prose-custom .sf-desc-spec-table div {
+    grid-template-columns: 1fr;
+    gap: .35rem;
+  }
+  .prose-custom .sf-desc-hero-media img,
+  .prose-custom .sf-desc-spec-image {
+    min-height: 260px;
+  }
+}
+
 /* ─── CRM Override ────────────────────────────────────────────────────────────
    The landing page uses dark theme (body bg #0D0B00, color #F5EDD6).
    CRM uses light theme. Override all body-inherited dark styles inside .crm-root.

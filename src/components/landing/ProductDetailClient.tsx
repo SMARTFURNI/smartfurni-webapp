@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type CSSProperties, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Product, ProductVariant } from "@/lib/product-store";
@@ -8,6 +8,10 @@ import type { SiteTheme } from "@/lib/theme-types";
 import { useCart } from "@/lib/cart-context";
 import Breadcrumb from "@/components/landing/Breadcrumb";
 import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
+import {
+  getDefaultProductLandingDescriptionTemplate,
+  hasProductDescriptionTemplate,
+} from "@/lib/product-description-template";
 
 interface Props {
   product: Product;
@@ -56,214 +60,177 @@ const CATEGORY_MAP = {
   accessory: "Phụ kiện",
 };
 
-const GSF150_PROBLEMS = [
-  "Giường cố định chỉ nằm phẳng, khó đọc sách hoặc xem phim thoải mái",
-  "Muốn đổi sang giường nâng hạ nhưng không muốn bỏ khung giường đang dùng",
-  "Nệm hiện có vẫn còn tốt, chưa muốn mua trọn bộ giường mới",
-  "Cần tư thế nâng đầu/chân linh hoạt cho nghỉ ngơi hằng ngày",
-];
+const PRODUCT_DESCRIPTION_POPUPS = {
+  single: {
+    badge: "GSF150-STANDARD",
+    title: "Khung Giường Công Thái Học Chỉnh Điện GSF150 Single Bed",
+    subtitle: "Khung nâng hạ 2 motor, phù hợp nệm phổ biến",
+    sizes: [
+      { name: "Lòng giường 0,9m x 2m", price: "9.790.000 đ" },
+      { name: "Lòng giường 1m2 x 2m", price: "10.990.000 đ" },
+      { name: "Lòng giường 1m4 x 2m", price: "11.990.000 đ" },
+      { name: "Lòng giường 1m6 x 2m", price: "12.490.000 đ" },
+      { name: "Lòng giường 1m8 x 2m", price: "13.890.000 đ" },
+      { name: "Đặt size theo lòng giường", price: "Liên hệ" },
+    ],
+  },
+  double: {
+    badge: "GSF150-PLUS",
+    title: "Khung Giường Công Thái Học Chỉnh Điện GSF150 Double Bed",
+    subtitle: "Khung chắc hơn, tùy chỉnh theo lòng giường",
+    sizes: [
+      { name: "Lòng giường 1m6 x 2m", price: "19.580.000 đ" },
+      { name: "Lòng giường 1m8 x 2m", price: "19.580.000 đ" },
+      { name: "Đặt size theo lòng giường", price: "Liên hệ" },
+    ],
+  },
+  custom: {
+    badge: "SMARTFURNI-CUSTOM",
+    title: "Đo Và Tư Vấn Theo Lòng Giường",
+    subtitle: "SmartFurni kiểm tra kích thước, loại nệm và phương án lắp",
+    sizes: [
+      { name: "Đo và tư vấn theo nhu cầu", price: "Liên hệ" },
+      { name: "Đặt size theo lòng giường", price: "Liên hệ" },
+    ],
+  },
+} as const;
 
-const GSF150_SOLUTIONS = [
-  "Đặt vào trong khung giường hiện có, giữ lại phong cách phòng ngủ",
-  "Nâng đầu và chân bằng remote, thao tác nhẹ và dễ dùng",
-  "Tận dụng nệm sẵn có nếu kích thước và độ đàn hồi phù hợp",
-  "Hỗ trợ tư thế Zero Gravity, đọc sách, xem TV và thư giãn",
-];
+type PopupSizeOption = { readonly name: string; readonly price: string };
 
-const GSF150_BENEFITS = [
-  { title: "Chống ngáy dễ hơn", desc: "Nâng đầu khoảng 15 độ để hỗ trợ tư thế thở thoải mái hơn khi ngủ." },
-  { title: "Đọc sách, xem phim", desc: "Điều chỉnh đầu giường lên cao, không cần kê nhiều gối." },
-  { title: "Nghỉ ngơi linh hoạt", desc: "Nâng đầu và chân theo nhu cầu thư giãn hằng ngày." },
-  { title: "Giữ không gian cũ", desc: "Lắp vào lòng giường hiện có, không phải thay toàn bộ nội thất." },
-];
-
-const GSF150_SPECS = [
-  ["Kích thước phổ biến", "0,9m / 1m2 / 1m4 / 1m6 / 1m8 x 2m, nhận đặt theo lòng giường"],
-  ["Góc nâng đầu", "0-70 độ, điều chỉnh bằng remote"],
-  ["Góc nâng chân", "0-45 độ"],
-  ["Khung chính", "Thép sơn tĩnh điện, gia cường chịu lực"],
-  ["Motor", "2 motor nâng hạ vận hành êm"],
-  ["Nệm phù hợp", "Cao su, foam, lò xo túi linh hoạt; kiểm tra trước khi lắp"],
-  ["Lắp đặt", "Đặt trong lòng giường hiện có, không cần đổi toàn bộ giường"],
-  ["Bảo hành motor", "5 năm"],
-];
-
-function Gsf150StoryDescription({ product, colors }: { product: Product; colors: SiteTheme["colors"] }) {
-  const visual = product.coverImage || product.images?.[0];
+function ProductLandingDescription({
+  product,
+  colors,
+  onAction,
+}: {
+  product: Product;
+  colors: SiteTheme["colors"];
+  onAction: (event: MouseEvent<HTMLDivElement>) => void;
+}) {
+  const savedHtml = product.detailedDescription?.trim();
+  const html =
+    savedHtml && hasProductDescriptionTemplate(savedHtml)
+      ? savedHtml
+      : getDefaultProductLandingDescriptionTemplate(product);
 
   return (
-    <div className="space-y-8">
-      {product.detailedDescription && (
-        <div
-          style={{ color: colors.text, lineHeight: 1.8 }}
-          className="prose-custom max-w-none"
-          dangerouslySetInnerHTML={{ __html: product.detailedDescription }}
-        />
-      )}
+    <div
+      style={{
+        color: colors.text,
+        "--sf-desc-primary": colors.primary,
+        "--sf-desc-secondary": colors.secondary,
+        "--sf-desc-bg": colors.background,
+        "--sf-desc-surface": colors.surface,
+        "--sf-desc-text": colors.text,
+        "--sf-desc-border": colors.border,
+      } as CSSProperties}
+      className="prose-custom max-w-none"
+      onClick={onAction}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
 
-      <section
-        style={{ backgroundColor: colors.surface, borderColor: colors.border }}
-        className="rounded-3xl border p-6 sm:p-8"
+function ProductDescriptionPopup({
+  popupId,
+  product,
+  colors,
+  onClose,
+}: {
+  popupId: string | null;
+  product: Product;
+  colors: SiteTheme["colors"];
+  onClose: () => void;
+}) {
+  const planKey =
+    popupId && popupId in PRODUCT_DESCRIPTION_POPUPS
+      ? (popupId as keyof typeof PRODUCT_DESCRIPTION_POPUPS)
+      : "single";
+  const plan = PRODUCT_DESCRIPTION_POPUPS[planKey];
+  const [selectedSize, setSelectedSize] = useState<PopupSizeOption>(plan.sizes[0]!);
+
+  useEffect(() => {
+    setSelectedSize(plan.sizes[0]!);
+  }, [plan]);
+
+  if (!popupId) return null;
+
+  const selectedImage = product.coverImage || product.images?.[0] || "/gsf150-wood-frame.jpg";
+  const popupImages = [selectedImage, ...(product.images || []).filter((img) => img && img !== selectedImage)].slice(0, 3);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6" onClick={onClose}>
+      <div
+        style={{ backgroundColor: "#F4EBDD", borderColor: colors.primary }}
+        className="relative w-full max-w-5xl overflow-hidden rounded-3xl border shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
-        <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.25em] uppercase mb-3">
-          Mô tả sản phẩm
-        </p>
-        <h2 style={{ color: colors.text }} className="text-2xl sm:text-3xl font-semibold leading-tight">
-          {product.name}
-        </h2>
-        <p style={{ color: `${colors.text}b8` }} className="mt-4 text-base leading-relaxed">
-          {product.description}
-        </p>
-      </section>
-
-      <section
-        style={{
-          background: `linear-gradient(135deg, ${colors.surface}, ${colors.background})`,
-          borderColor: colors.border,
-        }}
-        className="rounded-3xl border overflow-hidden"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-0">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.28em] uppercase mb-4">
-              Khung giường nâng hạ điện
-            </p>
-            <h2 style={{ color: colors.text }} className="text-3xl sm:text-4xl lg:text-5xl font-light leading-tight">
-              Giường cũ giữ lại
-              <span style={{ color: colors.primary }} className="block font-semibold mt-2">
-                nâng cấp thành giường công thái học
-              </span>
-            </h2>
-            <p style={{ color: `${colors.text}b0` }} className="mt-5 text-base sm:text-lg leading-relaxed max-w-2xl">
-              GSF150 đặt gọn trong khung giường hiện có, nâng đầu/chân bằng remote, hỗ trợ tư thế đọc sách,
-              xem phim và nghỉ ngơi thoải mái hơn. SmartFurni giao lắp tận nơi và kiểm tra kích thước trước khi lắp.
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8">
-              {[
-                ["5 năm", "Bảo hành motor"],
-                ["0-70 độ", "Nâng đầu linh hoạt"],
-                ["0-45 độ", "Nâng chân thư giãn"],
-                ["Lắp gọn", "Trong giường cũ"],
-              ].map(([value, label]) => (
-                <div
-                  key={value}
-                  style={{ backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}25` }}
-                  className="rounded-2xl border p-4"
-                >
-                  <p style={{ color: colors.primary }} className="font-bold text-lg">{value}</p>
-                  <p style={{ color: `${colors.text}80` }} className="text-xs mt-1">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {visual && (
-            <div style={{ backgroundColor: colors.background }} className="min-h-[320px] lg:min-h-full">
-              <img
-                src={visual}
-                alt={product.name}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-3xl border p-6 sm:p-8">
-          <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.22em] uppercase mb-2">
-            Vấn đề thường gặp
-          </p>
-          <h3 style={{ color: colors.text }} className="text-2xl font-semibold mb-5">Giường cũ đang thiếu trải nghiệm nghỉ ngơi tốt hơn</h3>
-          <div className="space-y-3">
-            {GSF150_PROBLEMS.map((item) => (
-              <div key={item} style={{ backgroundColor: `${colors.error}10`, borderColor: `${colors.error}22` }} className="rounded-2xl border p-4 flex gap-3">
-                <span style={{ color: colors.error }} className="font-bold">x</span>
-                <p style={{ color: `${colors.text}b8` }} className="text-sm leading-relaxed">{item}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/10 text-2xl text-[#2D2417] hover:bg-black/15"
+        >
+          ×
+        </button>
+        <div className="grid max-h-[90vh] overflow-y-auto lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="bg-[#FFF8EE]">
+            <img
+              src={selectedImage}
+              alt={plan.title}
+              className="h-[320px] w-full object-cover sm:h-[440px] lg:h-full lg:min-h-[520px]"
+            />
+            {popupImages.length > 0 && (
+              <div className="flex gap-3 p-4">
+                {popupImages.map((img, idx) => (
+                  <div key={`${img}-${idx}`} className="h-14 w-14 overflow-hidden rounded-xl border border-[#C9A84C]/40 bg-white">
+                    <img src={img} alt="" className="h-full w-full object-cover" />
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        </div>
-
-        <div style={{ backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}35` }} className="rounded-3xl border p-6 sm:p-8">
-          <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.22em] uppercase mb-2">
-            GSF150 đáp ứng
-          </p>
-          <h3 style={{ color: colors.text }} className="text-2xl font-semibold mb-5">Nâng cấp giường ngủ mà vẫn giữ không gian quen thuộc</h3>
-          <div className="space-y-3">
-            {GSF150_SOLUTIONS.map((item) => (
-              <div key={item} style={{ backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}30` }} className="rounded-2xl border p-4 flex gap-3">
-                <span style={{ color: colors.primary }} className="font-bold">✓</span>
-                <p style={{ color: `${colors.text}c8` }} className="text-sm leading-relaxed">{item}</p>
+          <div className="bg-[#F3ECDE] p-6 text-[#2A2116] sm:p-8">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#9A7A2E]">{plan.badge}</p>
+            <h3 className="text-2xl font-bold leading-tight sm:text-3xl">{plan.title}</h3>
+            <p className="mt-3 text-sm text-[#6E604C]">{plan.subtitle}</p>
+            <div className="mt-7">
+              <p className="mb-3 text-sm font-semibold">Chọn kích thước:</p>
+              <div className="space-y-3">
+                {plan.sizes.map((size) => {
+                  const active = selectedSize.name === size.name;
+                  return (
+                    <button
+                      key={size.name}
+                      type="button"
+                      onClick={() => setSelectedSize(size)}
+                      className="flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-semibold transition"
+                      style={{
+                        borderColor: active ? colors.primary : "rgba(154,122,46,0.18)",
+                        backgroundColor: active ? "rgba(201,168,76,0.13)" : "rgba(255,255,255,0.62)",
+                        color: active ? "#8A6500" : "#2A2116",
+                      }}
+                    >
+                      <span>{size.name}</span>
+                      <span>{size.price}</span>
+                    </button>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-3xl border p-6 sm:p-8">
-        <div className="text-center max-w-3xl mx-auto mb-8">
-          <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.25em] uppercase mb-3">
-            Lợi ích mang lại
-          </p>
-          <h3 style={{ color: colors.text }} className="text-3xl sm:text-4xl font-semibold leading-tight">
-            Một chiếc giường cho nhiều tư thế nghỉ ngơi
-          </h3>
-          <p style={{ color: `${colors.text}95` }} className="mt-4 leading-relaxed">
-            Từ chống ngáy, đọc sách, xem phim đến giấc ngủ sâu, GSF150 giúp bạn thay đổi tư thế nhẹ nhàng
-            bằng remote mà vẫn giữ được không gian phòng ngủ quen thuộc.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {GSF150_BENEFITS.map((benefit) => (
-            <div key={benefit.title} style={{ backgroundColor: colors.background, borderColor: colors.border }} className="rounded-2xl border p-5">
-              <p style={{ color: colors.primary }} className="font-semibold mb-2">{benefit.title}</p>
-              <p style={{ color: `${colors.text}88` }} className="text-sm leading-relaxed">{benefit.desc}</p>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-5">
-        <div style={{ backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}28` }} className="rounded-3xl border p-6 sm:p-8">
-          <p style={{ color: colors.primary }} className="text-xs font-bold tracking-[0.25em] uppercase mb-3">
-            Thông số kỹ thuật
-          </p>
-          <h3 style={{ color: colors.text }} className="text-3xl font-semibold">SmartFurni GSF150</h3>
-          <p style={{ color: `${colors.text}95` }} className="mt-4 leading-relaxed">
-            Khung nâng hạ 2 motor, lắp trong lòng giường hiện có. Đội kỹ thuật sẽ kiểm tra lòng giường,
-            loại nệm và kích thước thực tế trước khi lắp để đảm bảo vận hành ổn định.
-          </p>
-          <Link
-            href="/lp/gsf150"
-            style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: colors.background }}
-            className="inline-flex mt-6 px-6 py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            Xem landing page GSF150
-          </Link>
-        </div>
-
-        <div style={{ borderColor: colors.border }} className="rounded-3xl border overflow-hidden">
-          {GSF150_SPECS.map(([label, value], index) => (
-            <div
-              key={label}
-              style={{
-                backgroundColor: index % 2 === 0 ? colors.surface : colors.background,
-                borderBottomColor: colors.border,
-              }}
-              className="grid grid-cols-1 sm:grid-cols-[190px_1fr] border-b last:border-b-0"
+            <div className="mt-6 rounded-2xl border border-[#C9A84C]/25 bg-[#E8DDC8] p-4">
+              <p className="text-xs text-[#8A7B62]">Lựa chọn đã chọn</p>
+              <p className="mt-1 font-bold">{selectedSize.name}</p>
+              <p className="mt-2 text-3xl font-bold text-[#9A7A2E]">{selectedSize.price}</p>
+            </div>
+            <Link
+              href="/checkout"
+              className="mt-6 flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#C9A84C] to-[#7E5A00] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white"
             >
-              <div style={{ color: `${colors.text}75`, borderRightColor: colors.border }} className="px-5 py-4 text-sm font-medium sm:border-r">
-                {label}
-              </div>
-              <div style={{ color: colors.text }} className="px-5 py-4 text-sm font-semibold leading-relaxed">
-                {value}
-              </div>
-            </div>
-          ))}
+              Đặt mua ngay →
+            </Link>
+            <p className="mt-5 text-center text-xs text-[#8A7B62]">Giao lắp tận nơi · Bảo hành motor 5 năm</p>
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
@@ -277,6 +244,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
   const [activeTab, setActiveTab] = useState<"description" | "features" | "specs" | "reviews">("description");
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [descriptionPopupId, setDescriptionPopupId] = useState<string | null>(null);
 
   // Image gallery state
   const allImages = product.images && product.images.length > 0
@@ -335,6 +303,14 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
       quantity,
     });
     router.push("/checkout");
+  };
+
+  const handleDescriptionAction = (event: MouseEvent<HTMLDivElement>) => {
+    const target = (event.target as HTMLElement).closest("[data-product-popup]") as HTMLElement | null;
+    if (!target) return;
+
+    event.preventDefault();
+    setDescriptionPopupId(target.dataset.productPopup || "single");
   };
 
   // Tabs: show the landing-style description editor surface for every product.
@@ -904,7 +880,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
 
         {/* Tab: Mô tả sản phẩm */}
         {activeTab === "description" && (
-          <Gsf150StoryDescription product={product} colors={colors} />
+          <ProductLandingDescription product={product} colors={colors} onAction={handleDescriptionAction} />
         )}
 
         {/* Tab: Tính năng */}
@@ -1114,6 +1090,12 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
         </div>
       )}
     </div>
+    <ProductDescriptionPopup
+      popupId={descriptionPopupId}
+      product={product}
+      colors={colors}
+      onClose={() => setDescriptionPopupId(null)}
+    />
     </>
   );
 }

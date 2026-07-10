@@ -2,6 +2,10 @@
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Product, ProductCategory, ProductStatus, ProductVariant } from "@/lib/product-store";
+import {
+  getDefaultProductLandingDescriptionTemplate,
+  hasProductDescriptionTemplate,
+} from "@/lib/product-description-template";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,6 +26,7 @@ interface FormState {
   category: ProductCategory;
   status: ProductStatus;
   description: string;
+  detailedDescription: string;
   price: string;
   originalPrice: string;
   cost: string;
@@ -290,12 +295,17 @@ function ProductImageGallery({
 export default function ProductFormClient({ product }: { product?: Product }) {
   const router = useRouter();
   const isEdit = !!product;
+  const initialDetailedDescription =
+    product?.detailedDescription && hasProductDescriptionTemplate(product.detailedDescription)
+      ? product.detailedDescription
+      : getDefaultProductLandingDescriptionTemplate(product);
 
   const [form, setForm] = useState<FormState>({
     name: product?.name || "",
     category: product?.category || "standard",
     status: product?.status || "active",
     description: product?.description || "",
+    detailedDescription: initialDetailedDescription,
     price: product?.price ? product.price.toLocaleString("vi-VN") : "",
     originalPrice: product?.originalPrice ? product.originalPrice.toLocaleString("vi-VN") : "",
     cost: product?.cost ? product.cost.toLocaleString("vi-VN") : "",
@@ -387,6 +397,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
         category: form.category,
         status: form.status,
         description: form.description.trim(),
+        detailedDescription: form.detailedDescription.trim(),
         price: parseNumber(form.price),
         originalPrice: parseNumber(form.originalPrice) || parseNumber(form.price),
         cost: parseNumber(form.cost),
@@ -509,6 +520,27 @@ export default function ProductFormClient({ product }: { product?: Product }) {
                   className={`${inputClass} resize-none ${errors.description ? "border-red-500/50" : ""}`}
                 />
                 {errors.description && <p className="text-xs text-red-400 mt-1">{errors.description}</p>}
+              </Field>
+
+              <Field
+                label="Mô tả chi tiết trên website (HTML)"
+                hint="Mẫu này sao chép cấu trúc landing page GSF150. Bạn có thể sửa chữ, ảnh, giá, FAQ và các khối nội dung cho từng sản phẩm."
+              >
+                <div className="mb-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => set("detailedDescription", getDefaultProductLandingDescriptionTemplate(product))}
+                    className="rounded-lg border border-[#C9A84C]/30 px-3 py-1.5 text-xs font-semibold text-[#C9A84C] hover:bg-[#C9A84C]/10"
+                  >
+                    Nạp lại mẫu GSF150
+                  </button>
+                </div>
+                <textarea
+                  value={form.detailedDescription}
+                  onChange={(e) => set("detailedDescription", e.target.value)}
+                  rows={18}
+                  className={`${inputClass} min-h-[420px] resize-y font-mono text-xs`}
+                />
               </Field>
             </div>
           </Section>

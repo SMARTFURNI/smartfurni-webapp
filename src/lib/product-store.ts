@@ -487,10 +487,13 @@ export function createProduct(data: {
   category: ProductCategory;
   status: ProductStatus;
   description: string;
+  detailedDescription?: string;
   price: number;
   originalPrice: number;
   cost: number;
   coverImage?: string;
+  images?: string[];
+  imageBadge?: string;
   features: string[];
   specs: Record<string, string>;
   variants: Omit<ProductVariant, "id" | "reserved">[];
@@ -505,11 +508,12 @@ export function createProduct(data: {
     category: data.category,
     status: data.status,
     description: data.description,
+    detailedDescription: data.detailedDescription,
     price: data.price,
     originalPrice: data.originalPrice,
     cost: data.cost,
     coverImage: data.coverImage,
-    images: data.coverImage ? [data.coverImage] : [],
+    images: data.images?.length ? data.images : data.coverImage ? [data.coverImage] : [],
     variants: data.variants.map((v) => ({ ...v, id: generateId(), reserved: 0 })),
     totalStock,
     totalSold: 0,
@@ -523,6 +527,7 @@ export function createProduct(data: {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     isFeatured: data.isFeatured,
+    imageBadge: data.imageBadge,
     viewCount: 0,
   };
   products.unshift(newProduct);
