@@ -1,9 +1,13 @@
 import type { Product } from "@/lib/product-store";
 
 export const PRODUCT_DESCRIPTION_TEMPLATE_MARKER = "data-smartfurni-product-description-template";
+export const PRODUCT_DESCRIPTION_TEMPLATE_VERSION = "gsf150-full-v2";
 
 export function hasProductDescriptionTemplate(html?: string | null) {
-  return Boolean(html?.includes(PRODUCT_DESCRIPTION_TEMPLATE_MARKER));
+  return Boolean(
+    html?.includes(PRODUCT_DESCRIPTION_TEMPLATE_MARKER) &&
+      html.includes(`data-smartfurni-product-description-version="${PRODUCT_DESCRIPTION_TEMPLATE_VERSION}"`)
+  );
 }
 
 function escapeHtml(value: unknown): string {
@@ -34,7 +38,7 @@ export function getDefaultProductLandingDescriptionTemplate(product?: Partial<Pr
   const heroImage = escapeHtml(getProductImage(product));
 
   return `
-<div class="sf-product-description-template" ${PRODUCT_DESCRIPTION_TEMPLATE_MARKER}="true">
+<div class="sf-product-description-template" ${PRODUCT_DESCRIPTION_TEMPLATE_MARKER}="true" data-smartfurni-product-description-version="${PRODUCT_DESCRIPTION_TEMPLATE_VERSION}">
   <section class="sf-desc-section sf-desc-hero">
     <div class="sf-desc-hero-grid">
       <div class="sf-desc-hero-copy">
@@ -91,6 +95,40 @@ export function getDefaultProductLandingDescriptionTemplate(product?: Partial<Pr
     </div>
   </section>
 
+  <section class="sf-desc-section" id="chi-tiet">
+    <div class="sf-desc-heading">
+      <p class="sf-desc-kicker">Chi tiết sản phẩm</p>
+      <h2 class="sf-desc-title">Từng chi tiết <span class="sf-desc-gold">được chăm chút để dễ dùng mỗi ngày</span></h2>
+      <p class="sf-desc-lead">Khối nội dung này mô phỏng landing page GSF150 và có thể chỉnh sửa lại cho từng sản phẩm trong phần mô tả.</p>
+    </div>
+    <div class="sf-desc-detail-grid">
+      <article class="sf-desc-detail-card">
+        <img src="/gsf150-wood-frame.jpg" alt="Khung nâng hạ đặt trong giường cũ" loading="lazy" decoding="async" />
+        <div>
+          <p class="sf-desc-kicker">01 / Thiết kế</p>
+          <h3>Đặt gọn trong lòng giường</h3>
+          <p>Giữ lại phong cách phòng ngủ hiện có, chỉ nâng cấp phần trải nghiệm nghỉ ngơi bằng khung nâng hạ.</p>
+        </div>
+      </article>
+      <article class="sf-desc-detail-card">
+        <img src="/gsf150-standalone.jpg" alt="Nâng hạ bằng remote" loading="lazy" decoding="async" />
+        <div>
+          <p class="sf-desc-kicker">02 / Thao tác</p>
+          <h3>Nâng hạ bằng remote</h3>
+          <p>Điều chỉnh đầu và chân giường nhẹ nhàng, phù hợp đọc sách, xem phim, thư giãn hoặc ngủ sâu.</p>
+        </div>
+      </article>
+      <article class="sf-desc-detail-card">
+        <img src="/gsf150-exploded.jpg" alt="Cấu tạo khung thép GSF150" loading="lazy" decoding="async" />
+        <div>
+          <p class="sf-desc-kicker">03 / Khung thép</p>
+          <h3>Kết cấu chắc chắn</h3>
+          <p>Khung thép sơn tĩnh điện, motor vận hành êm và được kỹ thuật viên kiểm tra trước khi bàn giao.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
   <section class="sf-desc-section" id="chon-phien-ban">
     <div class="sf-desc-heading">
       <p class="sf-desc-kicker">Sản phẩm</p>
@@ -131,6 +169,36 @@ export function getDefaultProductLandingDescriptionTemplate(product?: Partial<Pr
     </div>
   </section>
 
+  <section class="sf-desc-section" id="video-thuc-te">
+    <div class="sf-desc-heading">
+      <p class="sf-desc-kicker">Video thực tế</p>
+      <h2 class="sf-desc-title">Xem sản phẩm <span class="sf-desc-gold">hoạt động trong không gian thật</span></h2>
+      <p class="sf-desc-lead">Có thể thay đường dẫn video, thumbnail hoặc nội dung từng thẻ trong phần mô tả sản phẩm.</p>
+    </div>
+    <div class="sf-desc-video-grid">
+      <a class="sf-desc-video-card" href="#tu-van">
+        <img src="/gsf150-wood-frame.jpg" alt="Review sau 6 tháng sử dụng" loading="lazy" decoding="async" />
+        <span class="sf-desc-play">▶</span>
+        <div><strong>Review sau 6 tháng sử dụng</strong><span>Khách hàng chia sẻ trải nghiệm thực tế</span></div>
+      </a>
+      <a class="sf-desc-video-card" href="#tu-van">
+        <img src="/gsf150-standalone.jpg" alt="Hướng dẫn sử dụng remote GSF150" loading="lazy" decoding="async" />
+        <span class="sf-desc-play">▶</span>
+        <div><strong>Hướng dẫn dùng remote</strong><span>Điều chỉnh đầu, chân và tư thế nghỉ ngơi</span></div>
+      </a>
+      <a class="sf-desc-video-card" href="#tu-van">
+        <img src="/gsf150-exploded.jpg" alt="Trước và sau khi lắp GSF150" loading="lazy" decoding="async" />
+        <span class="sf-desc-play">▶</span>
+        <div><strong>Trước và sau khi lắp</strong><span>Giữ khung giường cũ, nâng cấp trải nghiệm</span></div>
+      </a>
+      <a class="sf-desc-video-card" href="#tu-van">
+        <img src="/gsf150-features-infographic.jpg" alt="Lắp đặt thực tế GSF150" loading="lazy" decoding="async" />
+        <span class="sf-desc-play">▶</span>
+        <div><strong>Lắp đặt thực tế</strong><span>Quy trình giao lắp và bàn giao tận nơi</span></div>
+      </a>
+    </div>
+  </section>
+
   <section class="sf-desc-section" id="loi-ich">
     <div class="sf-desc-heading">
       <p class="sf-desc-kicker">Lợi ích mang lại</p>
@@ -140,6 +208,22 @@ export function getDefaultProductLandingDescriptionTemplate(product?: Partial<Pr
     <figure class="sf-desc-benefit-image">
       <img src="/gsf150-features-infographic.jpg" alt="Các lợi ích và tư thế sử dụng GSF150" loading="lazy" decoding="async" />
     </figure>
+  </section>
+
+  <section class="sf-desc-section" id="hinh-anh-thuc-te">
+    <div class="sf-desc-heading">
+      <p class="sf-desc-kicker">Hình ảnh thực tế</p>
+      <h2 class="sf-desc-title">Sản phẩm tại nhà khách <span class="sf-desc-gold">và các góc sử dụng thường gặp</span></h2>
+      <p class="sf-desc-lead">Thay các ảnh mẫu này bằng hình lắp đặt thực tế, showroom hoặc ảnh khách hàng trong admin.</p>
+    </div>
+    <div class="sf-desc-gallery-grid">
+      <figure><img src="/gsf150-wood-frame.jpg" alt="GSF150 đặt trong khung giường" loading="lazy" decoding="async" /><figcaption>Đặt gọn trong giường cũ</figcaption></figure>
+      <figure><img src="/gsf150-standalone.jpg" alt="GSF150 nâng đầu đọc sách" loading="lazy" decoding="async" /><figcaption>Nâng đầu đọc sách</figcaption></figure>
+      <figure><img src="/gsf150-exploded.jpg" alt="Chi tiết khung thép GSF150" loading="lazy" decoding="async" /><figcaption>Kết cấu khung chắc chắn</figcaption></figure>
+      <figure><img src="/gsf150-features-infographic.jpg" alt="Các tư thế sử dụng GSF150" loading="lazy" decoding="async" /><figcaption>Nhiều tư thế nghỉ ngơi</figcaption></figure>
+      <figure><img src="/gsf150-wood-frame.jpg" alt="Không gian phòng ngủ sau lắp đặt" loading="lazy" decoding="async" /><figcaption>Hài hòa không gian phòng ngủ</figcaption></figure>
+      <figure><img src="/gsf150-standalone.jpg" alt="Giao lắp GSF150 tận nơi" loading="lazy" decoding="async" /><figcaption>Giao lắp tận nơi</figcaption></figure>
+    </div>
   </section>
 
   <section class="sf-desc-section sf-desc-specs" id="thong-so">
@@ -177,13 +261,15 @@ export function getDefaultProductLandingDescriptionTemplate(product?: Partial<Pr
 
   <section class="sf-desc-section sf-desc-faq">
     <div class="sf-desc-heading">
-      <p class="sf-desc-kicker">Hỏi đáp</p>
-      <h2 class="sf-desc-title">Những câu hỏi <span class="sf-desc-gold">khách thường quan tâm</span></h2>
+      <p class="sf-desc-kicker">Câu hỏi thường gặp</p>
+      <h2 class="sf-desc-title">Giải đáp mọi thắc mắc <span class="sf-desc-gold">về khung giường nâng hạ</span></h2>
     </div>
     <div class="sf-desc-faq-grid">
-      <div><h3>Có cần bỏ giường cũ không?</h3><p>Không nhất thiết. GSF150 được tư vấn để đặt gọn trong lòng giường hiện có nếu kích thước phù hợp.</p></div>
-      <div><h3>Có dùng được nệm đang có không?</h3><p>Có thể dùng nếu nệm đủ linh hoạt. SmartFurni sẽ kiểm tra loại nệm trước khi lắp.</p></div>
-      <div><h3>Có bảo hành không?</h3><p>Motor bảo hành 5 năm. Kỹ thuật viên hướng dẫn sử dụng và hỗ trợ trong quá trình dùng.</p></div>
+      <div><h3>GSF150 có cần bỏ giường cũ không?</h3><p>Không nhất thiết. GSF150 được tư vấn để đặt gọn trong lòng giường hiện có nếu kích thước phù hợp.</p></div>
+      <div><h3>Nệm hiện tại có dùng được không?</h3><p>Có thể dùng nếu nệm đủ linh hoạt. SmartFurni sẽ kiểm tra loại nệm trước khi lắp.</p></div>
+      <div><h3>Lắp đặt mất bao lâu?</h3><p>Tùy khu vực và cấu trúc giường, đội kỹ thuật sẽ hẹn lịch và kiểm tra vận hành sau khi lắp.</p></div>
+      <div><h3>Có phù hợp cho người lớn tuổi không?</h3><p>Sản phẩm hỗ trợ nâng đầu/chân bằng remote, giúp thao tác nhẹ hơn khi nghỉ ngơi hoặc ngồi dậy.</p></div>
+      <div><h3>Motor bảo hành thế nào?</h3><p>Motor bảo hành 5 năm. Kỹ thuật viên hướng dẫn sử dụng và hỗ trợ trong quá trình dùng.</p></div>
       <div><h3>Có đặt size riêng được không?</h3><p>Có. Anh/chị có thể gửi kích thước lòng giường để đội SmartFurni tư vấn.</p></div>
     </div>
   </section>

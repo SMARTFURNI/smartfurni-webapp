@@ -65,6 +65,8 @@ const PRODUCT_DESCRIPTION_POPUPS = {
     badge: "GSF150-STANDARD",
     title: "Khung Giường Công Thái Học Chỉnh Điện GSF150 Single Bed",
     subtitle: "Khung nâng hạ 2 motor, phù hợp nệm phổ biến",
+    images: ["/gsf150-wood-frame.jpg", "/gsf150-standalone.jpg", "/gsf150-exploded.jpg", "/gsf150-features-infographic.jpg"],
+    bullets: ["Lắp gọn trong lòng giường hiện có", "Nâng đầu 0-70 độ, nâng chân 0-45 độ", "Remote không dây, thao tác đơn giản"],
     sizes: [
       { name: "Lòng giường 0,9m x 2m", price: "9.790.000 đ" },
       { name: "Lòng giường 1m2 x 2m", price: "10.990.000 đ" },
@@ -78,6 +80,8 @@ const PRODUCT_DESCRIPTION_POPUPS = {
     badge: "GSF150-PLUS",
     title: "Khung Giường Công Thái Học Chỉnh Điện GSF150 Double Bed",
     subtitle: "Khung chắc hơn, tùy chỉnh theo lòng giường",
+    images: ["/gsf150-standalone.jpg", "/gsf150-wood-frame.jpg", "/gsf150-exploded.jpg", "/gsf150-features-infographic.jpg"],
+    bullets: ["Phù hợp lòng giường lớn và nhu cầu dùng đôi", "Khung chắc, vận hành êm", "Tư vấn kiểm tra nệm trước khi lắp"],
     sizes: [
       { name: "Lòng giường 1m6 x 2m", price: "19.580.000 đ" },
       { name: "Lòng giường 1m8 x 2m", price: "19.580.000 đ" },
@@ -88,6 +92,8 @@ const PRODUCT_DESCRIPTION_POPUPS = {
     badge: "SMARTFURNI-CUSTOM",
     title: "Đo Và Tư Vấn Theo Lòng Giường",
     subtitle: "SmartFurni kiểm tra kích thước, loại nệm và phương án lắp",
+    images: ["/gsf150-exploded.jpg", "/gsf150-wood-frame.jpg", "/gsf150-standalone.jpg", "/gsf150-features-infographic.jpg"],
+    bullets: ["Đo theo kích thước thực tế", "Tư vấn size, nệm và phương án lắp", "Báo giá rõ trước khi đặt"],
     sizes: [
       { name: "Đo và tư vấn theo nhu cầu", price: "Liên hệ" },
       { name: "Đặt size theo lòng giường", price: "Liên hệ" },
@@ -147,15 +153,25 @@ function ProductDescriptionPopup({
       : "single";
   const plan = PRODUCT_DESCRIPTION_POPUPS[planKey];
   const [selectedSize, setSelectedSize] = useState<PopupSizeOption>(plan.sizes[0]!);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   useEffect(() => {
     setSelectedSize(plan.sizes[0]!);
+    setSelectedImageIndex(0);
   }, [plan]);
 
   if (!popupId) return null;
 
-  const selectedImage = product.coverImage || product.images?.[0] || "/gsf150-wood-frame.jpg";
-  const popupImages = [selectedImage, ...(product.images || []).filter((img) => img && img !== selectedImage)].slice(0, 3);
+  const popupImages = Array.from(
+    new Set(
+      [
+        product.coverImage,
+        ...(product.images || []),
+        ...plan.images,
+      ].filter(Boolean) as string[]
+    )
+  ).slice(0, 6);
+  const selectedImage = popupImages[selectedImageIndex] || plan.images[0] || "/gsf150-wood-frame.jpg";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6" onClick={onClose}>
@@ -171,19 +187,25 @@ function ProductDescriptionPopup({
         >
           ×
         </button>
-        <div className="grid max-h-[90vh] overflow-y-auto lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid max-h-[90vh] overflow-y-auto lg:grid-cols-[1.02fr_0.98fr]">
           <div className="bg-[#FFF8EE]">
             <img
               src={selectedImage}
               alt={plan.title}
-              className="h-[320px] w-full object-cover sm:h-[440px] lg:h-full lg:min-h-[520px]"
+              className="h-[300px] w-full object-cover sm:h-[420px] lg:h-[560px]"
             />
             {popupImages.length > 0 && (
               <div className="flex gap-3 p-4">
                 {popupImages.map((img, idx) => (
-                  <div key={`${img}-${idx}`} className="h-14 w-14 overflow-hidden rounded-xl border border-[#C9A84C]/40 bg-white">
+                  <button
+                    key={`${img}-${idx}`}
+                    type="button"
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className="h-14 w-14 overflow-hidden rounded-xl border bg-white transition hover:opacity-80"
+                    style={{ borderColor: idx === selectedImageIndex ? colors.primary : "rgba(201,168,76,0.35)" }}
+                  >
                     <img src={img} alt="" className="h-full w-full object-cover" />
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -192,6 +214,14 @@ function ProductDescriptionPopup({
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#9A7A2E]">{plan.badge}</p>
             <h3 className="text-2xl font-bold leading-tight sm:text-3xl">{plan.title}</h3>
             <p className="mt-3 text-sm text-[#6E604C]">{plan.subtitle}</p>
+            <div className="mt-5 grid gap-2">
+              {plan.bullets.map((bullet) => (
+                <div key={bullet} className="flex items-start gap-2 rounded-xl border border-[#C9A84C]/20 bg-white/45 px-3 py-2 text-sm text-[#4D422F]">
+                  <span className="font-bold text-[#9A7A2E]">✓</span>
+                  <span>{bullet}</span>
+                </div>
+              ))}
+            </div>
             <div className="mt-7">
               <p className="mb-3 text-sm font-semibold">Chọn kích thước:</p>
               <div className="space-y-3">
@@ -220,6 +250,11 @@ function ProductDescriptionPopup({
               <p className="text-xs text-[#8A7B62]">Lựa chọn đã chọn</p>
               <p className="mt-1 font-bold">{selectedSize.name}</p>
               <p className="mt-2 text-3xl font-bold text-[#9A7A2E]">{selectedSize.price}</p>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold text-[#7C6A4F]">
+              <div className="rounded-xl bg-white/45 px-2 py-2">Giao lắp tận nơi</div>
+              <div className="rounded-xl bg-white/45 px-2 py-2">Bảo hành 5 năm</div>
+              <div className="rounded-xl bg-white/45 px-2 py-2">Tư vấn size</div>
             </div>
             <Link
               href="/checkout"
