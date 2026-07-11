@@ -1,7 +1,7 @@
 import type { Product } from "@/lib/product-store";
 
 export const PRODUCT_DESCRIPTION_TEMPLATE_MARKER = "data-smartfurni-product-description-template";
-export const PRODUCT_DESCRIPTION_TEMPLATE_VERSION = "gsf150-full-v3";
+export const PRODUCT_DESCRIPTION_TEMPLATE_VERSION = "gsf150-full-v4";
 
 export function hasProductDescriptionTemplate(html?: string | null) {
   return Boolean(
@@ -95,35 +95,107 @@ export function getDefaultProductLandingDescriptionTemplate(product?: Partial<Pr
     </div>
   </section>
 
-  <section class="sf-desc-section" id="chi-tiet">
+  <section class="sf-desc-section sf-desc-detail-section" id="chi-tiet">
     <div class="sf-desc-heading">
       <p class="sf-desc-kicker">Chi tiết sản phẩm</p>
-      <h2 class="sf-desc-title">Từng chi tiết <span class="sf-desc-gold">được chăm chút để dễ dùng mỗi ngày</span></h2>
-      <p class="sf-desc-lead">Khối nội dung này mô phỏng landing page GSF150 và có thể chỉnh sửa lại cho từng sản phẩm trong phần mô tả.</p>
+      <h2 class="sf-desc-title">Thông Tin Chi Tiết</h2>
+      <p class="sf-desc-lead"><span class="sf-desc-gold">GSF150 — Từng Chi Tiết Đều Được Chăm Chút</span></p>
     </div>
-    <div class="sf-desc-detail-grid">
-      <article class="sf-desc-detail-card">
-        <img src="/gsf150-wood-frame.jpg" alt="Khung nâng hạ đặt trong giường cũ" loading="lazy" decoding="async" />
-        <div>
-          <p class="sf-desc-kicker">01 / Thiết kế</p>
-          <h3>Đặt gọn trong lòng giường</h3>
-          <p>Giữ lại phong cách phòng ngủ hiện có, chỉ nâng cấp phần trải nghiệm nghỉ ngơi bằng khung nâng hạ.</p>
+    <div class="sf-desc-detail-showcase">
+      <article class="sf-desc-detail-row sf-desc-detail-row-featured">
+        <figure class="sf-desc-detail-media">
+          <img src="/gsf150-wood-frame.jpg" alt="Hai cách lắp đặt khung giường công thái học GSF150" loading="lazy" decoding="async" />
+        </figure>
+        <div class="sf-desc-detail-content">
+          <p class="sf-desc-detail-badge">01 / Thiết kế</p>
+          <h3>Thiết Kế Sản Phẩm</h3>
+          <p>Kết cấu khung nâng hạ gọn, đặt lọt trong lòng giường cũ để nâng cấp trải nghiệm mà vẫn giữ nội thất quen thuộc. Màu sắc trung tính dễ phối hợp với mọi phong cách nội thất.</p>
+          <ul class="sf-desc-detail-bullets">
+            <li>Khung thép sơn tĩnh điện, gọn và chắc</li>
+            <li>Tùy chỉnh theo kích thước lòng giường</li>
+            <li>Tư vấn kiểm tra nệm trước khi lắp</li>
+          </ul>
         </div>
       </article>
-      <article class="sf-desc-detail-card">
-        <img src="/gsf150-standalone.jpg" alt="Nâng hạ bằng remote" loading="lazy" decoding="async" />
-        <div>
-          <p class="sf-desc-kicker">02 / Thao tác</p>
-          <h3>Nâng hạ bằng remote</h3>
-          <p>Điều chỉnh đầu và chân giường nhẹ nhàng, phù hợp đọc sách, xem phim, thư giãn hoặc ngủ sâu.</p>
+
+      <article class="sf-desc-detail-row sf-desc-detail-row-reverse">
+        <div class="sf-desc-detail-content">
+          <p class="sf-desc-detail-badge">02 / Thao tác</p>
+          <h3>Nâng Hạ Bằng Remote</h3>
+          <p>Điều chỉnh nâng đầu, nâng chân theo nhu cầu đọc sách, xem phim hoặc nghỉ ngơi. Thao tác bằng remote, không cần thay toàn bộ giường.</p>
+          <ul class="sf-desc-detail-bullets">
+            <li>Nâng đầu và nâng chân linh hoạt</li>
+            <li>Remote không dây, thao tác dễ dùng</li>
+            <li>Phù hợp nhu cầu nghỉ ngơi của gia đình</li>
+          </ul>
+        </div>
+        <figure class="sf-desc-detail-media">
+          <img src="/gsf150-standalone.jpg" alt="Khung GSF150 nâng hạ bằng remote" loading="lazy" decoding="async" />
+        </figure>
+      </article>
+
+      <article class="sf-desc-detail-wide">
+        <figure class="sf-desc-detail-media">
+          <img src="/gsf150-exploded.jpg" alt="Cấu tạo khung thép gia cường GSF150" loading="lazy" decoding="async" />
+          <figcaption><strong>300kg</strong><span>Tải trọng khuyến nghị</span></figcaption>
+        </figure>
+        <div class="sf-desc-detail-content">
+          <p class="sf-desc-detail-badge">03 / Khung thép</p>
+          <h3>Khung Thép Gia Cường — Đặt Gọn Trong Giường Cũ</h3>
+          <p>Kết cấu khung thép sơn tĩnh điện được gia cường để vận hành ổn định. Sản phẩm đặt trong lòng giường hiện có, giúp nâng cấp công năng mà vẫn giữ phong cách nội thất cũ.</p>
+          <div class="sf-desc-detail-stats">
+            <div><strong>Thép</strong><span>Khung gia cường</span></div>
+            <div><strong>Sơn tĩnh điện</strong><span>Bề mặt khung</span></div>
+            <div><strong>5 năm</strong><span>Bảo hành motor</span></div>
+          </div>
         </div>
       </article>
-      <article class="sf-desc-detail-card">
-        <img src="/gsf150-exploded.jpg" alt="Cấu tạo khung thép GSF150" loading="lazy" decoding="async" />
-        <div>
-          <p class="sf-desc-kicker">03 / Khung thép</p>
-          <h3>Kết cấu chắc chắn</h3>
-          <p>Khung thép sơn tĩnh điện, motor vận hành êm và được kỹ thuật viên kiểm tra trước khi bàn giao.</p>
+
+      <article class="sf-desc-detail-row">
+        <figure class="sf-desc-detail-media">
+          <img src="/gsf150-wood-frame.jpg" alt="GSF150 đặt gọn trong khung giường" loading="lazy" decoding="async" />
+        </figure>
+        <div class="sf-desc-detail-content">
+          <p class="sf-desc-detail-badge">04 / Lắp đặt</p>
+          <h3>Đặt Gọn Trong Khung Giường</h3>
+          <p>Đội kỹ thuật đo lòng giường, kiểm tra nệm và lắp khung nâng hạ gọn bên trong. Bạn không cần thay đổi toàn bộ bộ giường đang dùng.</p>
+          <ul class="sf-desc-detail-bullets">
+            <li>Đo đạc trước khi sản xuất/lắp đặt</li>
+            <li>Hạn chế thay đổi bố cục phòng ngủ</li>
+            <li>Giao lắp tận nơi, hướng dẫn sử dụng</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="sf-desc-detail-row sf-desc-detail-row-reverse">
+        <div class="sf-desc-detail-content">
+          <p class="sf-desc-detail-badge">05 / Nệm hiện có</p>
+          <h3>Tương Thích Nhiều Loại Nệm</h3>
+          <p>Phù hợp nhiều loại nệm phổ biến; đội kỹ thuật sẽ kiểm tra kích thước và độ đàn hồi trước khi lắp. Giặt sạch, bảo dưỡng tiện lợi.</p>
+          <ul class="sf-desc-detail-bullets">
+            <li>Kiểm tra độ dày và độ linh hoạt của nệm</li>
+            <li>Tư vấn phương án nếu nệm chưa phù hợp</li>
+            <li>Hỗ trợ chọn kích thước theo lòng giường</li>
+          </ul>
+        </div>
+        <figure class="sf-desc-detail-media">
+          <img src="/gsf150-standalone.jpg" alt="GSF150 tương thích nhiều loại nệm" loading="lazy" decoding="async" />
+        </figure>
+      </article>
+
+      <article class="sf-desc-detail-row">
+        <figure class="sf-desc-detail-media">
+          <img src="/gsf150-exploded.jpg" alt="Remote điều khiển không dây GSF150" loading="lazy" decoding="async" />
+        </figure>
+        <div class="sf-desc-detail-content">
+          <p class="sf-desc-detail-badge">06 / Remote</p>
+          <h3>Remote Điều Khiển Không Dây</h3>
+          <p>Điều chỉnh tư thế ngay trên giường, thuận tiện cho đọc sách, xem phim, nghỉ ngơi hoặc chăm sóc người thân.</p>
+          <ul class="sf-desc-detail-bullets">
+            <li>Các nút thao tác rõ ràng, dễ nhớ</li>
+            <li>Điều chỉnh tư thế ngay trên giường</li>
+            <li>Phù hợp đọc sách, xem phim, nghỉ ngơi</li>
+          </ul>
         </div>
       </article>
     </div>
