@@ -1,7 +1,7 @@
 import type { Product } from "@/lib/product-store";
 
 export const PRODUCT_DESCRIPTION_TEMPLATE_MARKER = "data-smartfurni-product-description-template";
-export const PRODUCT_DESCRIPTION_TEMPLATE_VERSION = "gsf150-full-v2";
+export const PRODUCT_DESCRIPTION_TEMPLATE_VERSION = "gsf150-full-v3";
 
 export function hasProductDescriptionTemplate(html?: string | null) {
   return Boolean(
@@ -172,31 +172,32 @@ export function getDefaultProductLandingDescriptionTemplate(product?: Partial<Pr
   <section class="sf-desc-section" id="video-thuc-te">
     <div class="sf-desc-heading">
       <p class="sf-desc-kicker">Video thực tế</p>
-      <h2 class="sf-desc-title">Xem sản phẩm <span class="sf-desc-gold">hoạt động trong không gian thật</span></h2>
-      <p class="sf-desc-lead">Có thể thay đường dẫn video, thumbnail hoặc nội dung từng thẻ trong phần mô tả sản phẩm.</p>
+      <h2 class="sf-desc-title">Xem GSF150 hoạt động <span class="sf-desc-gold">thực tế từ khách hàng</span></h2>
+      <p class="sf-desc-lead">Các video được lấy theo đúng cấu hình video của landing GSF150 để khách xem trực tiếp trong trang sản phẩm.</p>
     </div>
     <div class="sf-desc-video-grid">
-      <a class="sf-desc-video-card" href="#tu-van">
-        <img src="/gsf150-wood-frame.jpg" alt="Review sau 6 tháng sử dụng" loading="lazy" decoding="async" />
-        <span class="sf-desc-play">▶</span>
-        <div><strong>Review sau 6 tháng sử dụng</strong><span>Khách hàng chia sẻ trải nghiệm thực tế</span></div>
-      </a>
-      <a class="sf-desc-video-card" href="#tu-van">
-        <img src="/gsf150-standalone.jpg" alt="Hướng dẫn sử dụng remote GSF150" loading="lazy" decoding="async" />
-        <span class="sf-desc-play">▶</span>
-        <div><strong>Hướng dẫn dùng remote</strong><span>Điều chỉnh đầu, chân và tư thế nghỉ ngơi</span></div>
-      </a>
-      <a class="sf-desc-video-card" href="#tu-van">
-        <img src="/gsf150-exploded.jpg" alt="Trước và sau khi lắp GSF150" loading="lazy" decoding="async" />
-        <span class="sf-desc-play">▶</span>
-        <div><strong>Trước và sau khi lắp</strong><span>Giữ khung giường cũ, nâng cấp trải nghiệm</span></div>
-      </a>
-      <a class="sf-desc-video-card" href="#tu-van">
-        <img src="/gsf150-features-infographic.jpg" alt="Lắp đặt thực tế GSF150" loading="lazy" decoding="async" />
-        <span class="sf-desc-play">▶</span>
-        <div><strong>Lắp đặt thực tế</strong><span>Quy trình giao lắp và bàn giao tận nơi</span></div>
-      </a>
+      <div class="sf-desc-video-card" role="button" tabindex="0" data-lp-video-key="video_sub_1_id" data-video-title="Review sau 6 tháng sử dụng" data-video-tag="REVIEW" aria-label="Xem video Review sau 6 tháng sử dụng">
+        <span class="sf-desc-video-thumb"><span class="sf-desc-video-empty">Chưa có video</span></span>
+        <span class="sf-desc-video-tag">REVIEW</span>
+        <span class="sf-desc-video-play">▶</span>
+      </div>
+      <div class="sf-desc-video-card" role="button" tabindex="0" data-lp-video-key="video_sub_2_id" data-video-title="Hướng dẫn sử dụng remote GSF150" data-video-tag="HƯỚNG DẪN" aria-label="Xem video Hướng dẫn sử dụng remote GSF150">
+        <span class="sf-desc-video-thumb"><span class="sf-desc-video-empty">Chưa có video</span></span>
+        <span class="sf-desc-video-tag">HƯỚNG DẪN</span>
+        <span class="sf-desc-video-play">▶</span>
+      </div>
+      <div class="sf-desc-video-card" role="button" tabindex="0" data-lp-video-key="video_sub_3_id" data-video-title="Trước và sau khi lắp GSF150" data-video-tag="SO SÁNH" aria-label="Xem video Trước và sau khi lắp GSF150">
+        <span class="sf-desc-video-thumb"><span class="sf-desc-video-empty">Chưa có video</span></span>
+        <span class="sf-desc-video-tag">SO SÁNH</span>
+        <span class="sf-desc-video-play">▶</span>
+      </div>
+      <div class="sf-desc-video-card" role="button" tabindex="0" data-lp-video-key="video_sub_4_id" data-video-title="Lắp đặt thực tế GSF150" data-video-tag="LẮP ĐẶT" aria-label="Xem video Lắp đặt thực tế GSF150">
+        <span class="sf-desc-video-thumb"><span class="sf-desc-video-empty">Chưa có video</span></span>
+        <span class="sf-desc-video-tag">LẮP ĐẶT</span>
+        <span class="sf-desc-video-play">▶</span>
+      </div>
     </div>
+    <p class="sf-desc-video-more"><a href="https://www.youtube.com/@SmartFurni" target="_blank" rel="noopener noreferrer">▶ Xem thêm video trên kênh YouTube SmartFurni →</a></p>
   </section>
 
   <section class="sf-desc-section" id="loi-ich">

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, type CSSProperties, type MouseEvent } from "react";
+import { useState, useEffect, useRef, type CSSProperties, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Product, ProductVariant } from "@/lib/product-store";
@@ -103,6 +103,22 @@ const PRODUCT_DESCRIPTION_POPUPS = {
 
 type PopupSizeOption = { readonly name: string; readonly price: string };
 
+function getYoutubeVideoId(raw?: string | null) {
+  const value = (raw || "").trim();
+  if (!value || value === "_placeholder_") return "";
+  if (/^[a-zA-Z0-9_-]{6,32}$/.test(value)) return value;
+
+  try {
+    const url = new URL(value);
+    if (url.hostname.includes("youtu.be")) return url.pathname.split("/").filter(Boolean)[0] || "";
+    if (url.pathname.includes("/embed/")) return url.pathname.split("/embed/")[1]?.split(/[/?#]/)[0] || "";
+    if (url.pathname.includes("/shorts/")) return url.pathname.split("/shorts/")[1]?.split(/[/?#]/)[0] || "";
+    return url.searchParams.get("v") || "";
+  } catch {
+    return "";
+  }
+}
+
 function ProductLandingDescription({
   product,
   colors,
@@ -112,14 +128,95 @@ function ProductLandingDescription({
   colors: SiteTheme["colors"];
   onAction: (event: MouseEvent<HTMLDivElement>) => void;
 }) {
+  const descriptionRef = useRef<HTMLDivElement>(null);
   const savedHtml = product.detailedDescription?.trim();
   const html =
     savedHtml && hasProductDescriptionTemplate(savedHtml)
       ? savedHtml
       : getDefaultProductLandingDescriptionTemplate(product);
 
+  useEffect(() => {
+    const root = descriptionRef.current;
+    if (!root) return;
+
+    const cards = Array.from(root.querySelectorAll<HTMLElement>(".sf-desc-video-card[data-lp-video-key]"));
+    if (cards.length === 0) return;
+
+    let cancelled = false;
+    const removeHandlers: Array<() => void> = [];
+
+    async function hydrateVideos() {
+      try {
+        const res = await fetch("/api/admin/lp-content?slug=gsf150", { cache: "no-store" });
+        const lpContent = res.ok ? await res.json() as Record<string, string> : {};
+        if (cancelled) return;
+
+        for (const card of cards) {
+          const videoKey = card.dataset.lpVideoKey || "";
+          const title = card.dataset.videoTitle || "Video thực tế GSF150";
+          const rawVideo = lpContent[videoKey] || card.dataset.videoId || "";
+          const videoId = getYoutubeVideoId(rawVideo);
+          const thumb = card.querySelector<HTMLElement>(".sf-desc-video-thumb");
+
+          if (!thumb || !videoId) {
+            card.classList.remove("is-ready");
+            continue;
+          }
+
+          card.classList.add("is-ready");
+          card.setAttribute("aria-label", `Xem video ${title}`);
+
+          const image = document.createElement("img");
+          image.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+          image.alt = title;
+          image.loading = "lazy";
+          image.decoding = "async";
+          image.onerror = () => {
+            image.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+          };
+          thumb.replaceChildren(image);
+
+          const handlePlay = () => {
+            if (card.classList.contains("is-playing")) return;
+
+            const iframe = document.createElement("iframe");
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`;
+            iframe.title = title;
+            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+            iframe.allowFullscreen = true;
+            iframe.loading = "lazy";
+
+            card.classList.add("is-playing");
+            card.replaceChildren(iframe);
+          };
+          const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            handlePlay();
+          };
+
+          card.addEventListener("click", handlePlay);
+          card.addEventListener("keydown", handleKeyDown);
+          removeHandlers.push(() => card.removeEventListener("click", handlePlay));
+          removeHandlers.push(() => card.removeEventListener("keydown", handleKeyDown));
+        }
+      } catch {
+        // Nếu API nội dung landing chưa sẵn sàng, giữ nguyên trạng thái "Chưa có video"
+        // để khách không thấy khung lỗi hoặc iframe hỏng.
+      }
+    }
+
+    void hydrateVideos();
+
+    return () => {
+      cancelled = true;
+      removeHandlers.forEach((remove) => remove());
+    };
+  }, [html]);
+
   return (
     <div
+      ref={descriptionRef}
       style={{
         color: colors.text,
         "--sf-desc-primary": colors.primary,
