@@ -658,7 +658,7 @@ export default function CheckoutClient({ theme }: Props) {
         </div>
       </div>
     </div>
-    <Footer theme={theme} variant="minimal" />
+    <Footer theme={theme} variant="full" />
     </>
   );
 }

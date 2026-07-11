@@ -294,7 +294,7 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
           </section>
         )}
       </div>
-      <Footer theme={theme} variant="minimal" />
+      <Footer theme={theme} variant="full" />
     </main>
   );
 }

@@ -35,7 +35,7 @@ export default async function ProductConfiguratorPage({ params }: Props) {
       <div style={{ paddingTop: (theme.navbar.height ?? 64) + 16 }}>
         <ProductConfiguratorClient product={product} theme={theme} />
       </div>
-      <Footer theme={theme} variant="minimal" />
+      <Footer theme={theme} variant="full" />
     </main>
   );
 }

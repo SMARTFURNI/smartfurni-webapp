@@ -137,7 +137,7 @@ export default function PrivacyPage() {
         </div>
       </div>
 
-      <Footer theme={theme} variant="minimal" />
+      <Footer theme={theme} variant="full" />
     </main>
   );
 }

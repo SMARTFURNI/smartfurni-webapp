@@ -24,7 +24,7 @@ export default function ARTryPage() {
     <main className="min-h-screen bg-[#0D0B00]">
       <Navbar theme={theme} />
       <ARTryAtHomeClient products={products} theme={theme} />
-      <Footer theme={theme} variant="minimal" />
+      <Footer theme={theme} variant="full" />
     </main>
   );
 }

@@ -313,7 +313,7 @@ export default function CheckoutSuccessClient({ theme }: Props) {
         </p>
       </div>
     </div>
-    <Footer theme={theme} variant="minimal" />
+    <Footer theme={theme} variant="full" />
     </>
   );
 }

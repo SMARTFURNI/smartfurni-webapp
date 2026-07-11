@@ -118,7 +118,7 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
           </div>
         )}
       </div>
-      <Footer theme={theme} variant="minimal" />
+      <Footer theme={theme} variant="full" />
       </>
     );
   }
@@ -423,7 +423,7 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
         </div>
       </div>
     </div>
-    <Footer theme={theme} variant="minimal" />
+    <Footer theme={theme} variant="full" />
     </>
   );
 }
