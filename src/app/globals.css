@@ -828,36 +828,42 @@ section {
 
 @media (max-width: 768px) {
   .sf-product-popup-overlay {
-    align-items: flex-end;
-    padding: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0.85rem;
   }
 
   .sf-product-popup-modal {
-    width: 100%;
-    max-width: none;
-    max-height: 92vh;
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: 24px 24px 0 0;
+    width: min(100%, 430px);
+    max-width: 430px;
+    max-height: calc(100dvh - 2.5rem);
+    border: 2px solid rgba(255, 248, 238, 0.9);
+    border-radius: 24px;
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.55);
   }
 
   .sf-product-popup-grid {
     display: block;
-    max-height: 92vh;
+    max-height: calc(100dvh - 2.5rem);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
+  .sf-product-popup-media {
+    border-bottom: 1px solid rgba(154, 122, 46, 0.16);
+  }
+
   .sf-product-popup-main-image {
-    height: min(62vw, 270px) !important;
-    min-height: 220px;
+    height: min(82vw, 420px) !important;
+    min-height: 315px;
+    object-fit: cover;
+    object-position: center;
   }
 
   .sf-product-popup-thumbs {
     gap: 0.5rem;
     overflow-x: auto;
-    padding: 0.75rem 1rem;
+    padding: 0.8rem 1rem;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -866,19 +872,20 @@ section {
   }
 
   .sf-product-popup-thumbs button {
-    width: 50px;
-    height: 50px;
-    flex: 0 0 50px;
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
     border-radius: 12px;
   }
 
   .sf-product-popup-content {
-    padding: 1rem !important;
+    padding: 1.35rem 1.45rem 1.55rem !important;
   }
 
   .sf-product-popup-content h3 {
-    font-size: 1.35rem;
-    line-height: 1.25;
+    font-size: 1.65rem;
+    line-height: 1.22;
+    letter-spacing: -0.02em;
   }
 
   .sf-product-popup-size-list {
@@ -887,7 +894,9 @@ section {
   }
 
   .sf-product-popup-size-list button {
-    padding: 0.8rem 0.9rem !important;
+    min-height: 58px;
+    padding: 0.95rem 1rem !important;
+    font-size: 0.98rem;
   }
 
   .sf-product-popup-form {
@@ -897,12 +906,22 @@ section {
 
 @media (max-width: 420px) {
   .sf-product-popup-main-image {
-    height: 58vw !important;
-    min-height: 200px;
+    height: min(92vw, 395px) !important;
+    min-height: 285px;
   }
 
   .sf-product-popup-content {
-    padding: 0.9rem !important;
+    padding: 1.2rem 1.25rem 1.45rem !important;
+  }
+
+  .sf-product-popup-content h3 {
+    font-size: 1.45rem;
+  }
+
+  .sf-product-popup-thumbs button {
+    width: 54px;
+    height: 54px;
+    flex-basis: 54px;
   }
 }
 
