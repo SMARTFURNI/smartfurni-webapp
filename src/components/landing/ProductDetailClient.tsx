@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, type CSSProperties, type FormEvent, type MouseEvent } from "react";
+import { useState, useEffect, useMemo, useRef, type CSSProperties, type FormEvent, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Product, ProductVariant } from "@/lib/product-store";
@@ -130,13 +130,61 @@ function ProductLandingDescription({
   onAction: (event: MouseEvent<HTMLDivElement>) => void;
 }) {
   const descriptionRef = useRef<HTMLDivElement>(null);
-  const savedHtml = product.detailedDescription?.trim();
-  const html =
-    savedHtml && hasProductDescriptionTemplate(savedHtml)
+  const editorRef = useRef<HTMLDivElement>(null);
+  const initialHtml = useMemo(() => {
+    const savedHtml = product.detailedDescription?.trim();
+    return savedHtml && hasProductDescriptionTemplate(savedHtml)
       ? savedHtml
       : getDefaultProductLandingDescriptionTemplate(product);
+  }, [product]);
+  const [descriptionHtml, setDescriptionHtml] = useState(initialHtml);
+  const [canEdit, setCanEdit] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editMessage, setEditMessage] = useState("");
+  const descriptionStyle = {
+    color: colors.text,
+    "--sf-desc-primary": colors.primary,
+    "--sf-desc-secondary": colors.secondary,
+    "--sf-desc-bg": colors.background,
+    "--sf-desc-surface": colors.surface,
+    "--sf-desc-text": colors.text,
+    "--sf-desc-border": colors.border,
+  } as CSSProperties;
 
   useEffect(() => {
+    setDescriptionHtml(initialHtml);
+    setIsEditing(false);
+    setEditMessage("");
+  }, [initialHtml]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function checkAdminAccess() {
+      try {
+        const res = await fetch(`/api/admin/products-mgmt/${product.id}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!controller.signal.aborted) {
+          setCanEdit(res.ok);
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setCanEdit(false);
+        }
+      }
+    }
+
+    void checkAdminAccess();
+
+    return () => controller.abort();
+  }, [product.id]);
+
+  useEffect(() => {
+    if (isEditing) return;
+
     const root = descriptionRef.current;
     if (!root) return;
 
@@ -213,24 +261,98 @@ function ProductLandingDescription({
       cancelled = true;
       removeHandlers.forEach((remove) => remove());
     };
-  }, [html]);
+  }, [descriptionHtml, isEditing]);
+
+  function handleStartEdit() {
+    setIsEditing(true);
+    setEditMessage("Đang chỉnh sửa trực tiếp. Bấm Lưu để cập nhật mô tả.");
+  }
+
+  function handleCancelEdit() {
+    setIsEditing(false);
+    setEditMessage("");
+  }
+
+  async function handleSaveDescription() {
+    const nextHtml = editorRef.current?.innerHTML.trim() || "";
+    if (!nextHtml) {
+      setEditMessage("Mô tả không được để trống.");
+      return;
+    }
+
+    setIsSaving(true);
+    setEditMessage("Đang lưu...");
+
+    try {
+      const res = await fetch(`/api/admin/products-mgmt/${product.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ detailedDescription: nextHtml }),
+      });
+
+      if (!res.ok) {
+        throw new Error("save_failed");
+      }
+
+      setDescriptionHtml(nextHtml);
+      setIsEditing(false);
+      setEditMessage("Đã lưu mô tả sản phẩm.");
+    } catch {
+      setEditMessage("Không lưu được mô tả. Bạn kiểm tra lại quyền admin rồi thử lại.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   return (
-    <div
-      ref={descriptionRef}
-      style={{
-        color: colors.text,
-        "--sf-desc-primary": colors.primary,
-        "--sf-desc-secondary": colors.secondary,
-        "--sf-desc-bg": colors.background,
-        "--sf-desc-surface": colors.surface,
-        "--sf-desc-text": colors.text,
-        "--sf-desc-border": colors.border,
-      } as CSSProperties}
-      className="prose-custom max-w-none"
-      onClick={onAction}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <div className="sf-product-description-editor-shell" style={descriptionStyle}>
+      {canEdit ? (
+        <div className="sf-product-description-adminbar">
+          <div>
+            <div className="sf-product-description-adminbar__label">Chỉnh sửa mô tả sản phẩm</div>
+            <div className="sf-product-description-adminbar__hint">
+              Chỉ hiện khi đang đăng nhập admin. Nội dung lưu vào sản phẩm hiện tại.
+            </div>
+          </div>
+          <div className="sf-product-description-adminbar__actions">
+            {editMessage ? <span className="sf-product-description-adminbar__message">{editMessage}</span> : null}
+            {isEditing ? (
+              <>
+                <button type="button" onClick={handleSaveDescription} disabled={isSaving}>
+                  {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                </button>
+                <button type="button" className="secondary" onClick={handleCancelEdit} disabled={isSaving}>
+                  Hủy
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={handleStartEdit}>
+                Bật chỉnh sửa
+              </button>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {isEditing ? (
+        <div
+          ref={editorRef}
+          style={descriptionStyle}
+          className="prose-custom max-w-none sf-product-description-inline-edit"
+          contentEditable
+          suppressContentEditableWarning
+          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+        />
+      ) : (
+        <div
+          ref={descriptionRef}
+          style={descriptionStyle}
+          className="prose-custom max-w-none"
+          onClick={onAction}
+          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+        />
+      )}
+    </div>
   );
 }
 
