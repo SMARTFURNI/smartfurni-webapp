@@ -807,6 +807,105 @@ section {
   }
 }
 
+/* Popup trong mô tả sản phẩm: đồng bộ trải nghiệm mobile với landing GSF150 */
+.sf-product-popup-overlay {
+  z-index: 1000;
+}
+
+.sf-product-popup-modal,
+.sf-product-popup-grid {
+  max-height: 90vh;
+}
+
+.sf-product-popup-main-image {
+  background: #0d0b00;
+}
+
+.sf-product-popup-content input,
+.sf-product-popup-content textarea {
+  font: inherit;
+}
+
+@media (max-width: 768px) {
+  .sf-product-popup-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .sf-product-popup-modal {
+    width: 100%;
+    max-width: none;
+    max-height: 92vh;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .sf-product-popup-grid {
+    display: block;
+    max-height: 92vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sf-product-popup-main-image {
+    height: min(62vw, 270px) !important;
+    min-height: 220px;
+  }
+
+  .sf-product-popup-thumbs {
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.75rem 1rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sf-product-popup-thumbs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sf-product-popup-thumbs button {
+    width: 50px;
+    height: 50px;
+    flex: 0 0 50px;
+    border-radius: 12px;
+  }
+
+  .sf-product-popup-content {
+    padding: 1rem !important;
+  }
+
+  .sf-product-popup-content h3 {
+    font-size: 1.35rem;
+    line-height: 1.25;
+  }
+
+  .sf-product-popup-size-list {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .sf-product-popup-size-list button {
+    padding: 0.8rem 0.9rem !important;
+  }
+
+  .sf-product-popup-form {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .sf-product-popup-main-image {
+    height: 58vw !important;
+    min-height: 200px;
+  }
+
+  .sf-product-popup-content {
+    padding: 0.9rem !important;
+  }
+}
+
 /* ─── CRM Override ────────────────────────────────────────────────────────────
    The landing page uses dark theme (body bg #0D0B00, color #F5EDD6).
    CRM uses light theme. Override all body-inherited dark styles inside .crm-root.

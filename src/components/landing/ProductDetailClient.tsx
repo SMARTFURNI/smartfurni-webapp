@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, type CSSProperties, type MouseEvent } from "react";
+import { useState, useEffect, useRef, type CSSProperties, type FormEvent, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Product, ProductVariant } from "@/lib/product-store";
@@ -12,6 +12,7 @@ import {
   getDefaultProductLandingDescriptionTemplate,
   hasProductDescriptionTemplate,
 } from "@/lib/product-description-template";
+import { redirectToLpThankYou } from "@/lib/lp-thank-you";
 
 interface Props {
   product: Product;
@@ -251,11 +252,21 @@ function ProductDescriptionPopup({
   const plan = PRODUCT_DESCRIPTION_POPUPS[planKey];
   const [selectedSize, setSelectedSize] = useState<PopupSizeOption>(plan.sizes[0]!);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerNote, setCustomerNote] = useState("");
+  const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setSelectedSize(plan.sizes[0]!);
     setSelectedImageIndex(0);
-  }, [plan]);
+    setCustomerName("");
+    setCustomerPhone("");
+    setCustomerNote("");
+    setFormError("");
+    setIsSubmitting(false);
+  }, [popupId, plan]);
 
   if (!popupId) return null;
 
@@ -269,12 +280,64 @@ function ProductDescriptionPopup({
     )
   ).slice(0, 6);
   const selectedImage = popupImages[selectedImageIndex] || plan.images[0] || "/gsf150-wood-frame.jpg";
+  const normalizePhone = (value: string) => value.replace(/[^\d+]/g, "").replace(/^\+?84/, "0");
+
+  const handlePopupSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+
+    const normalizedPhone = normalizePhone(customerPhone);
+    if (!customerName.trim() || normalizedPhone.replace(/\D/g, "").length < 9) {
+      setFormError("Vui lòng nhập tên và số điện thoại hợp lệ để SmartFurni liên hệ.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFormError("");
+
+    const noteLines = [
+      "Nguồn: popup mô tả sản phẩm website chính",
+      `Sản phẩm website: ${product.name} (${product.slug})`,
+      `Gói quan tâm: ${plan.title}`,
+      `Kích thước: ${selectedSize.name}`,
+      `Giá hiển thị: ${selectedSize.price}`,
+      customerNote.trim() ? `Ghi chú khách: ${customerNote.trim()}` : "",
+    ].filter(Boolean);
+
+    try {
+      const response = await fetch("/api/lp/submit-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          landingPageSlug: "gsf150",
+          name: customerName.trim(),
+          phone: normalizedPhone,
+          email: "",
+          note: noteLines.join("\n"),
+        }),
+      });
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || result?.success === false) {
+        throw new Error(result?.error || "Chưa gửi được thông tin đặt hàng.");
+      }
+
+      redirectToLpThankYou("gsf150", {
+        product: product.slug,
+        popup: planKey,
+        size: selectedSize.name,
+      });
+    } catch (error) {
+      setIsSubmitting(false);
+      setFormError(error instanceof Error ? error.message : "Có lỗi khi gửi thông tin. Vui lòng thử lại.");
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6" onClick={onClose}>
+    <div className="sf-product-popup-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6" onClick={onClose}>
       <div
         style={{ backgroundColor: "#F4EBDD", borderColor: colors.primary }}
-        className="relative w-full max-w-5xl overflow-hidden rounded-3xl border shadow-2xl"
+        className="sf-product-popup-modal relative w-full max-w-5xl overflow-hidden rounded-3xl border shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -284,15 +347,15 @@ function ProductDescriptionPopup({
         >
           ×
         </button>
-        <div className="grid max-h-[90vh] overflow-y-auto lg:grid-cols-[1.02fr_0.98fr]">
-          <div className="bg-[#FFF8EE]">
+        <div className="sf-product-popup-grid grid max-h-[90vh] overflow-y-auto lg:grid-cols-[1.02fr_0.98fr]">
+          <div className="sf-product-popup-media bg-[#FFF8EE]">
             <img
               src={selectedImage}
               alt={plan.title}
-              className="h-[300px] w-full object-cover sm:h-[420px] lg:h-[560px]"
+              className="sf-product-popup-main-image h-[300px] w-full object-cover sm:h-[420px] lg:h-[560px]"
             />
             {popupImages.length > 0 && (
-              <div className="flex gap-3 p-4">
+              <div className="sf-product-popup-thumbs flex gap-3 p-4">
                 {popupImages.map((img, idx) => (
                   <button
                     key={`${img}-${idx}`}
@@ -307,7 +370,7 @@ function ProductDescriptionPopup({
               </div>
             )}
           </div>
-          <div className="bg-[#F3ECDE] p-6 text-[#2A2116] sm:p-8">
+          <div className="sf-product-popup-content bg-[#F3ECDE] p-6 text-[#2A2116] sm:p-8">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#9A7A2E]">{plan.badge}</p>
             <h3 className="text-2xl font-bold leading-tight sm:text-3xl">{plan.title}</h3>
             <p className="mt-3 text-sm text-[#6E604C]">{plan.subtitle}</p>
@@ -321,7 +384,7 @@ function ProductDescriptionPopup({
             </div>
             <div className="mt-7">
               <p className="mb-3 text-sm font-semibold">Chọn kích thước:</p>
-              <div className="space-y-3">
+              <div className="sf-product-popup-size-list space-y-3">
                 {plan.sizes.map((size) => {
                   const active = selectedSize.name === size.name;
                   return (
@@ -353,12 +416,38 @@ function ProductDescriptionPopup({
               <div className="rounded-xl bg-white/45 px-2 py-2">Bảo hành 5 năm</div>
               <div className="rounded-xl bg-white/45 px-2 py-2">Tư vấn size</div>
             </div>
-            <Link
-              href="/checkout"
-              className="mt-6 flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#C9A84C] to-[#7E5A00] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white"
-            >
-              Đặt mua ngay →
-            </Link>
+            <form onSubmit={handlePopupSubmit} className="mt-6 space-y-3">
+              <div className="sf-product-popup-form grid gap-3 sm:grid-cols-2">
+                <input
+                  value={customerName}
+                  onChange={(event) => setCustomerName(event.target.value)}
+                  placeholder="Họ và tên (*)"
+                  className="rounded-xl border border-[#C9A84C]/25 bg-white/65 px-4 py-3 text-sm text-[#2A2116] outline-none placeholder:text-[#8A7B62] focus:border-[#C9A84C]"
+                />
+                <input
+                  value={customerPhone}
+                  onChange={(event) => setCustomerPhone(event.target.value)}
+                  placeholder="Số điện thoại (*)"
+                  inputMode="tel"
+                  className="rounded-xl border border-[#C9A84C]/25 bg-white/65 px-4 py-3 text-sm text-[#2A2116] outline-none placeholder:text-[#8A7B62] focus:border-[#C9A84C]"
+                />
+              </div>
+              <textarea
+                value={customerNote}
+                onChange={(event) => setCustomerNote(event.target.value)}
+                placeholder="Ghi chú thêm: kích thước lòng giường, khu vực giao lắp..."
+                rows={3}
+                className="w-full rounded-xl border border-[#C9A84C]/25 bg-white/65 px-4 py-3 text-sm text-[#2A2116] outline-none placeholder:text-[#8A7B62] focus:border-[#C9A84C]"
+              />
+              {formError && <p className="text-sm font-semibold text-[#B42318]">{formError}</p>}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#C9A84C] to-[#7E5A00] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? "Đang gửi..." : "Đặt mua ngay →"}
+              </button>
+            </form>
             <p className="mt-5 text-center text-xs text-[#8A7B62]">Giao lắp tận nơi · Bảo hành motor 5 năm</p>
           </div>
         </div>
