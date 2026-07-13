@@ -131,6 +131,7 @@ function ProductLandingDescription({
 }) {
   const descriptionRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
   const initialHtml = useMemo(() => {
     const savedHtml = product.detailedDescription?.trim();
     return savedHtml && hasProductDescriptionTemplate(savedHtml)
@@ -138,10 +139,15 @@ function ProductLandingDescription({
       : getDefaultProductLandingDescriptionTemplate(product);
   }, [product]);
   const [descriptionHtml, setDescriptionHtml] = useState(initialHtml);
+  const [editBaselineHtml, setEditBaselineHtml] = useState(initialHtml);
   const [canEdit, setCanEdit] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editMessage, setEditMessage] = useState("");
+  const [selectedImageElement, setSelectedImageElement] = useState<HTMLImageElement | null>(null);
+  const [selectedImageSrc, setSelectedImageSrc] = useState("");
+  const [imageLink, setImageLink] = useState("");
   const descriptionStyle = {
     color: colors.text,
     "--sf-desc-primary": colors.primary,
@@ -154,8 +160,13 @@ function ProductLandingDescription({
 
   useEffect(() => {
     setDescriptionHtml(initialHtml);
+    setEditBaselineHtml(initialHtml);
     setIsEditing(false);
+    setIsUploadingImage(false);
     setEditMessage("");
+    setSelectedImageElement(null);
+    setSelectedImageSrc("");
+    setImageLink("");
   }, [initialHtml]);
 
   useEffect(() => {
@@ -263,18 +274,141 @@ function ProductLandingDescription({
     };
   }, [descriptionHtml, isEditing]);
 
+  function clearSelectedImage() {
+    editorRef.current
+      ?.querySelectorAll(".sf-description-selected-image")
+      .forEach((image) => image.classList.remove("sf-description-selected-image"));
+    setSelectedImageElement(null);
+    setSelectedImageSrc("");
+    setImageLink("");
+  }
+
+  function cleanDescriptionHtml(html: string) {
+    if (typeof document === "undefined") return html;
+
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html;
+    wrapper
+      .querySelectorAll(".sf-description-selected-image")
+      .forEach((image) => image.classList.remove("sf-description-selected-image"));
+    return wrapper.innerHTML;
+  }
+
+  function handleEditorClick(event: MouseEvent<HTMLDivElement>) {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    editorRef.current
+      ?.querySelectorAll(".sf-description-selected-image")
+      .forEach((image) => image.classList.remove("sf-description-selected-image"));
+
+    target.classList.add("sf-description-selected-image");
+    const src = target.getAttribute("src") || target.currentSrc || target.src || "";
+    setSelectedImageElement(target);
+    setSelectedImageSrc(src);
+    setImageLink(src);
+    setEditMessage("Đã chọn ảnh. Bạn có thể tải ảnh mới từ máy tính hoặc dán link để thay.");
+  }
+
+  function replaceSelectedImage(nextUrl: string) {
+    const cleanUrl = nextUrl.trim();
+    if (!cleanUrl) {
+      setEditMessage("Bạn cần nhập link ảnh hoặc chọn file ảnh.");
+      return;
+    }
+
+    const image =
+      selectedImageElement?.isConnected
+        ? selectedImageElement
+        : editorRef.current?.querySelector<HTMLImageElement>("img.sf-description-selected-image");
+
+    if (!image) {
+      setEditMessage("Bạn hãy bấm chọn ảnh trong mô tả trước.");
+      return;
+    }
+
+    image.src = cleanUrl;
+    image.setAttribute("src", cleanUrl);
+    image.removeAttribute("srcset");
+    image.removeAttribute("data-src");
+    image.removeAttribute("data-nimg");
+    image.removeAttribute("sizes");
+    image.loading = "lazy";
+    image.decoding = "async";
+
+    setSelectedImageElement(image);
+    setSelectedImageSrc(cleanUrl);
+    setImageLink(cleanUrl);
+    setDescriptionHtml(editorRef.current?.innerHTML || descriptionHtml);
+    setEditMessage("Đã thay ảnh. Bấm Lưu thay đổi để cập nhật lên website.");
+  }
+
+  async function handleUploadDescriptionImage(file?: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setEditMessage("Bạn hãy chọn đúng file ảnh.");
+      return;
+    }
+    if (!selectedImageElement && !editorRef.current?.querySelector("img.sf-description-selected-image")) {
+      setEditMessage("Bạn hãy bấm chọn ảnh cần thay trong mô tả trước.");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setEditMessage("Đang tải ảnh lên...");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = (await res.json().catch(() => ({}))) as { url?: string };
+
+      if (!res.ok || typeof data.url !== "string") {
+        throw new Error("upload_failed");
+      }
+
+      replaceSelectedImage(data.url);
+    } catch {
+      setEditMessage("Không tải được ảnh. Bạn thử lại hoặc dán link ảnh trực tiếp.");
+    } finally {
+      setIsUploadingImage(false);
+      if (imageFileInputRef.current) {
+        imageFileInputRef.current.value = "";
+      }
+    }
+  }
+
+  function handleApplyImageLink() {
+    replaceSelectedImage(imageLink);
+  }
+
   function handleStartEdit() {
+    setEditBaselineHtml(descriptionHtml);
     setIsEditing(true);
-    setEditMessage("Đang chỉnh sửa trực tiếp. Bấm Lưu để cập nhật mô tả.");
+    setEditMessage("Đang chỉnh sửa trực tiếp. Bấm vào ảnh rồi tải ảnh mới hoặc dán link để thay.");
   }
 
   function handleCancelEdit() {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = editBaselineHtml;
+    }
+    setDescriptionHtml(editBaselineHtml);
+    clearSelectedImage();
+    setIsUploadingImage(false);
     setIsEditing(false);
     setEditMessage("");
   }
 
   async function handleSaveDescription() {
-    const nextHtml = editorRef.current?.innerHTML.trim() || "";
+    const rawHtml = editorRef.current?.innerHTML.trim() || "";
+    const nextHtml = cleanDescriptionHtml(rawHtml);
     if (!nextHtml) {
       setEditMessage("Mô tả không được để trống.");
       return;
@@ -295,6 +429,8 @@ function ProductLandingDescription({
       }
 
       setDescriptionHtml(nextHtml);
+      setEditBaselineHtml(nextHtml);
+      clearSelectedImage();
       setIsEditing(false);
       setEditMessage("Đã lưu mô tả sản phẩm.");
     } catch {
@@ -318,10 +454,10 @@ function ProductLandingDescription({
             {editMessage ? <span className="sf-product-description-adminbar__message">{editMessage}</span> : null}
             {isEditing ? (
               <>
-                <button type="button" onClick={handleSaveDescription} disabled={isSaving}>
+                <button type="button" onClick={handleSaveDescription} disabled={isSaving || isUploadingImage}>
                   {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
-                <button type="button" className="secondary" onClick={handleCancelEdit} disabled={isSaving}>
+                <button type="button" className="secondary" onClick={handleCancelEdit} disabled={isSaving || isUploadingImage}>
                   Hủy
                 </button>
               </>
@@ -335,12 +471,59 @@ function ProductLandingDescription({
       ) : null}
 
       {isEditing ? (
+        <div className="sf-product-description-image-tools">
+          <input
+            ref={imageFileInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(event) => void handleUploadDescriptionImage(event.target.files?.[0])}
+          />
+          <div className="sf-product-description-image-tools__preview">
+            {selectedImageSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={selectedImageSrc} alt="Ảnh mô tả đang chọn" />
+            ) : (
+              <span>Bấm chọn một ảnh trong mô tả</span>
+            )}
+          </div>
+          <div className="sf-product-description-image-tools__body">
+            <div className="sf-product-description-image-tools__title">Thay ảnh mô tả</div>
+            <div className="sf-product-description-image-tools__hint">
+              Bấm vào ảnh trong phần mô tả, rồi tải ảnh từ máy tính hoặc dán link ảnh giống landing GSF150.
+            </div>
+            <div className="sf-product-description-image-tools__controls">
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => imageFileInputRef.current?.click()}
+                disabled={isUploadingImage || !selectedImageSrc}
+              >
+                {isUploadingImage ? "Đang tải..." : "Upload ảnh"}
+              </button>
+              <input
+                type="url"
+                value={imageLink}
+                onChange={(event) => setImageLink(event.target.value)}
+                placeholder="Dán link ảnh..."
+                disabled={!selectedImageSrc || isUploadingImage}
+              />
+              <button type="button" onClick={handleApplyImageLink} disabled={!selectedImageSrc || isUploadingImage}>
+                Thay bằng link
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isEditing ? (
         <div
           ref={editorRef}
           style={descriptionStyle}
           className="prose-custom max-w-none sf-product-description-inline-edit"
           contentEditable
           suppressContentEditableWarning
+          onClick={handleEditorClick}
           dangerouslySetInnerHTML={{ __html: descriptionHtml }}
         />
       ) : (

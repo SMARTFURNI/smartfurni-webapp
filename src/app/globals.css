@@ -229,6 +229,119 @@ section {
   font-weight: 700;
 }
 
+.sf-product-description-image-tools {
+  position: sticky;
+  top: 158px;
+  z-index: 34;
+  display: flex;
+  align-items: stretch;
+  gap: 0.85rem;
+  margin: -0.35rem 0 1rem;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 28%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--sf-desc-bg, #070600) 88%, white 6%);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(14px);
+}
+
+.sf-product-description-image-tools__preview {
+  width: 112px;
+  min-height: 82px;
+  flex: 0 0 112px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 24%, transparent);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sf-product-description-image-tools__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sf-product-description-image-tools__preview span {
+  padding: 0.55rem;
+  color: color-mix(in srgb, var(--sf-desc-text, #f5edd6) 65%, transparent);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.sf-product-description-image-tools__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.sf-product-description-image-tools__title {
+  color: var(--sf-desc-text, #f5edd6);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sf-product-description-image-tools__hint {
+  margin-top: 0.15rem;
+  color: color-mix(in srgb, var(--sf-desc-text, #f5edd6) 62%, transparent);
+  font-size: 0.82rem;
+}
+
+.sf-product-description-image-tools__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.sf-product-description-image-tools__controls input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 30%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-desc-bg, #070600) 74%, white 8%);
+  color: var(--sf-desc-text, #f5edd6);
+  padding: 0.62rem 0.8rem;
+  font-size: 0.86rem;
+  outline: none;
+}
+
+.sf-product-description-image-tools__controls input:focus {
+  border-color: var(--sf-desc-primary, #c9a84c);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 14%, transparent);
+}
+
+.sf-product-description-image-tools__controls button {
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 55%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    var(--sf-desc-primary, #c9a84c),
+    color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 70%, #7a4f00)
+  );
+  color: #111;
+  font-size: 0.86rem;
+  font-weight: 800;
+  padding: 0.62rem 0.95rem;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+  white-space: nowrap;
+}
+
+.sf-product-description-image-tools__controls button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.sf-product-description-image-tools__controls button.secondary {
+  background: transparent;
+  color: var(--sf-desc-text, #f5edd6);
+}
+
+.sf-product-description-image-tools__controls button:disabled,
+.sf-product-description-image-tools__controls input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .sf-product-description-inline-edit {
   min-height: 380px;
   border-radius: 24px;
@@ -242,6 +355,21 @@ section {
 .sf-product-description-inline-edit:focus {
   outline-style: solid;
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 14%, transparent);
+}
+
+.sf-product-description-inline-edit img {
+  cursor: pointer;
+  transition: outline-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.sf-product-description-inline-edit img:hover {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 28%, transparent);
+}
+
+.sf-product-description-inline-edit img.sf-description-selected-image {
+  outline: 3px solid var(--sf-desc-primary, #c9a84c);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 16%, transparent);
 }
 
 .sf-product-description-inline-edit :is(a, button, [role="button"], [data-product-popup]) {
@@ -263,6 +391,29 @@ section {
 
   .sf-product-description-adminbar button {
     flex: 1 1 auto;
+  }
+
+  .sf-product-description-image-tools {
+    position: static;
+    align-items: stretch;
+    flex-direction: column;
+    border-radius: 16px;
+  }
+
+  .sf-product-description-image-tools__preview {
+    width: 100%;
+    min-height: 150px;
+    flex-basis: auto;
+  }
+
+  .sf-product-description-image-tools__controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sf-product-description-image-tools__controls button,
+  .sf-product-description-image-tools__controls input {
+    width: 100%;
   }
 
   .sf-product-description-inline-edit {
