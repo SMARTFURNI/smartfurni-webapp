@@ -165,6 +165,8 @@ const SLEEP_PHASES = [
   },
 ];
 
+const PHASE_MILESTONES = [0, 0.35, 0.7];
+
 interface HeroSectionProps {
   theme?: SiteTheme;
 }
@@ -172,6 +174,7 @@ interface HeroSectionProps {
 export default function HeroSection({ theme }: HeroSectionProps) {
   const [b2bOpen, setB2bOpen] = useState(false);
   const [activePhase, setActivePhase] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
 
   const primary = theme?.colors.primary ?? "#C9A84C";
@@ -185,7 +188,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const heroTitle = theme?.hero.title ?? "Ngủ Ngon Hơn\nMỗi Đêm";
   const heroSubtitle = theme?.hero.subtitle ?? "Giường điều chỉnh điện SmartFurni — nâng hạ đầu & chân chính xác, motor êm ái, điều khiển bằng remote hoặc ứng dụng di động.";
   const titleFontSizeBase = theme?.hero.titleFontSize ?? 64;
-  const titleFontSize = `clamp(36px, 5vw + 1rem, ${titleFontSizeBase}px)`;
+  const titleFontSize = `clamp(30px, 3.4vw, ${Math.min(titleFontSizeBase, 52)}px)`;
   const titleColor = theme?.hero.titleColor ?? textColor;
   const titleAccentColor = theme?.hero.titleAccentColor ?? primary;
   const ctaText = theme?.hero.ctaText ?? "Xem sản phẩm";
@@ -210,7 +213,8 @@ export default function HeroSection({ theme }: HeroSectionProps) {
       const rect = hero.getBoundingClientRect();
       const scrollDistance = Math.max(1, hero.offsetHeight - window.innerHeight);
       const progress = Math.min(0.9999, Math.max(0, -rect.top / scrollDistance));
-      const nextPhase = Math.min(SLEEP_PHASES.length - 1, Math.floor(progress * SLEEP_PHASES.length));
+      const nextPhase = progress >= PHASE_MILESTONES[2] ? 2 : progress >= PHASE_MILESTONES[1] ? 1 : 0;
+      setScrollProgress(progress);
       setActivePhase((current) => current === nextPhase ? current : nextPhase);
     };
 
@@ -229,7 +233,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
     if (!hero) return;
     const sectionTop = window.scrollY + hero.getBoundingClientRect().top;
     const scrollDistance = Math.max(1, hero.offsetHeight - window.innerHeight);
-    const targetProgress = index === 0 ? 0 : (index / SLEEP_PHASES.length) + 0.02;
+    const targetProgress = PHASE_MILESTONES[index] + (index === 0 ? 0 : 0.012);
     window.scrollTo({ top: sectionTop + scrollDistance * targetProgress, behavior: "smooth" });
   };
 
@@ -239,7 +243,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
     "--sf-hero-text": textColor,
     "--sf-hero-border": borderColor,
     "--sf-hero-bg": bgFrom,
-    "--sf-cycle-progress": `${(activePhase + 1) * 33.333}%`,
+    "--sf-cycle-gold": "#d8c69f",
   } as CSSProperties;
 
   return (
@@ -304,9 +308,21 @@ export default function HeroSection({ theme }: HeroSectionProps) {
 
           <div className="sf-cycle-stage" aria-live="polite">
             <div className="sf-cycle-ring" aria-hidden="true">
-              <span className="sf-cycle-ring__track" />
-              <span className="sf-cycle-ring__progress" />
-              <span className="sf-cycle-ring__hand" style={{ transform: `rotate(${activePhase * 106 - 104}deg)` }} />
+              <svg className="sf-cycle-clock" viewBox="0 0 100 100">
+                <circle className="sf-cycle-clock__ticks" cx="50" cy="50" r="46" pathLength="100" />
+                <circle
+                  className="sf-cycle-clock__progress"
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  pathLength="100"
+                  strokeDasharray={`${scrollProgress * 100} 100`}
+                />
+                <circle className="sf-cycle-clock__milestone" cx="50" cy="4" r="0.8" />
+                <circle className="sf-cycle-clock__milestone" cx="91" cy="70" r="0.8" />
+                <circle className="sf-cycle-clock__milestone" cx="9" cy="70" r="0.8" />
+              </svg>
+              <span className="sf-cycle-ring__hand" style={{ transform: `translateX(-50%) rotate(${scrollProgress * 360}deg)` }} />
               <span className="sf-cycle-sensor sf-cycle-sensor--one" />
               <span className="sf-cycle-sensor sf-cycle-sensor--two" />
               <span className="sf-cycle-sensor sf-cycle-sensor--three" />
