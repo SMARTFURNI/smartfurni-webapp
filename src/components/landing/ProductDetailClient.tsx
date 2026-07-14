@@ -1,5 +1,14 @@
 "use client";
-import { useState, useEffect, useMemo, useRef, type CSSProperties, type FormEvent, type MouseEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  type CSSProperties,
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Product, ProductVariant } from "@/lib/product-store";
@@ -171,6 +180,28 @@ function getRenderedProductDescriptionHtml(html: string) {
   });
 }
 
+function playProductDescriptionVideo(card: HTMLElement) {
+  if (card.classList.contains("is-playing")) return true;
+
+  const videoId = getYoutubeVideoId(
+    card.getAttribute("data-video-id") || card.getAttribute("data-resolved-video-id"),
+  );
+  if (!videoId) return false;
+
+  const title = card.dataset.videoTitle || "Video thực tế GSF150";
+  const iframe = document.createElement("iframe");
+  iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`;
+  iframe.title = title;
+  iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+  iframe.allowFullscreen = true;
+  iframe.loading = "lazy";
+
+  card.classList.add("is-ready", "is-playing");
+  card.dataset.resolvedVideoId = videoId;
+  card.replaceChildren(iframe);
+  return true;
+}
+
 function ProductLandingDescription({
   product,
   colors,
@@ -260,10 +291,8 @@ function ProductLandingDescription({
     if (cards.length === 0) return;
 
     let cancelled = false;
-    const removeHandlers: Array<() => void> = [];
-
     function hydrateCard(card: HTMLElement, rawVideo: string) {
-      if (cancelled) return;
+      if (cancelled || card.classList.contains("is-playing")) return;
 
       const title = card.dataset.videoTitle || "Video thực tế GSF150";
       const videoId = getYoutubeVideoId(rawVideo);
@@ -288,30 +317,6 @@ function ProductLandingDescription({
         image.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
       };
       thumb.replaceChildren(image);
-
-      const handlePlay = () => {
-        if (card.classList.contains("is-playing")) return;
-
-        const iframe = document.createElement("iframe");
-        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`;
-        iframe.title = title;
-        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-        iframe.allowFullscreen = true;
-        iframe.loading = "lazy";
-
-        card.classList.add("is-playing");
-        card.replaceChildren(iframe);
-      };
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        handlePlay();
-      };
-
-      card.addEventListener("click", handlePlay);
-      card.addEventListener("keydown", handleKeyDown);
-      removeHandlers.push(() => card.removeEventListener("click", handlePlay));
-      removeHandlers.push(() => card.removeEventListener("keydown", handleKeyDown));
     }
 
     const landingFallbackCards: HTMLElement[] = [];
@@ -345,9 +350,31 @@ function ProductLandingDescription({
 
     return () => {
       cancelled = true;
-      removeHandlers.forEach((remove) => remove());
     };
   }, [canEdit, descriptionHtml, isEditing]);
+
+  function handleDescriptionClick(event: MouseEvent<HTMLDivElement>) {
+    const card = (event.target as HTMLElement).closest<HTMLElement>(".sf-desc-video-card");
+    if (card && event.currentTarget.contains(card)) {
+      event.preventDefault();
+      event.stopPropagation();
+      playProductDescriptionVideo(card);
+      return;
+    }
+
+    onAction(event);
+  }
+
+  function handleDescriptionKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    const card = (event.target as HTMLElement).closest<HTMLElement>(".sf-desc-video-card");
+    if (!card || !event.currentTarget.contains(card)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    playProductDescriptionVideo(card);
+  }
 
   function clearSelectedImage() {
     editorRef.current
@@ -681,7 +708,8 @@ function ProductLandingDescription({
           ref={descriptionRef}
           style={descriptionStyle}
           className="prose-custom max-w-none"
-          onClick={onAction}
+          onClick={handleDescriptionClick}
+          onKeyDown={handleDescriptionKeyDown}
           dangerouslySetInnerHTML={{ __html: renderedDescriptionHtml }}
         />
       )}
