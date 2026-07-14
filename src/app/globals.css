@@ -1417,7 +1417,7 @@ section {
 
 .sf-cycle-ring {
   position: absolute;
-  left: 61%;
+  left: 66%;
   top: 52%;
   width: min(50vw, 660px);
   aspect-ratio: 1;
@@ -1501,7 +1501,7 @@ section {
 
 .sf-cycle-copy {
   position: absolute;
-  left: 61%;
+  left: 66%;
   top: 34%;
   width: min(320px, 25vw);
   transform: translateX(-50%);
