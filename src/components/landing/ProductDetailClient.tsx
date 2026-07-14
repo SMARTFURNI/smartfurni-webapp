@@ -347,20 +347,7 @@ function ProductLandingDescription({
     }
 
     void hydrateLandingFallbackVideos();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [canEdit, descriptionHtml, isEditing]);
-
-  useEffect(() => {
-    if (isEditing) return;
-
-    const firstVideo = descriptionRef.current?.querySelector<HTMLElement>(
-      '.sf-desc-video-card[data-lp-video-key="video_sub_1_id"]',
-    );
-    if (!firstVideo) return;
-
+    const firstVideo = cards.find((card) => card.dataset.lpVideoKey === "video_sub_1_id");
     let hasAutoplayed = false;
     let animationFrame = 0;
     let visibilityTimer = 0;
@@ -374,7 +361,7 @@ function ProductLandingDescription({
 
     const checkVisibility = () => {
       animationFrame = 0;
-      if (hasAutoplayed || document.visibilityState !== "visible") return;
+      if (!firstVideo || hasAutoplayed || document.visibilityState !== "visible") return;
 
       const rect = firstVideo.getBoundingClientRect();
       const visibleHeight = Math.max(
@@ -395,13 +382,18 @@ function ProductLandingDescription({
       animationFrame = window.requestAnimationFrame(checkVisibility);
     }
 
-    window.addEventListener("scroll", scheduleVisibilityCheck, { passive: true });
-    window.addEventListener("resize", scheduleVisibilityCheck);
-    visibilityTimer = window.setInterval(checkVisibility, 250);
-    scheduleVisibilityCheck();
+    if (firstVideo) {
+      window.addEventListener("scroll", scheduleVisibilityCheck, { passive: true });
+      window.addEventListener("resize", scheduleVisibilityCheck);
+      visibilityTimer = window.setInterval(checkVisibility, 250);
+      scheduleVisibilityCheck();
+    }
 
-    return stopWatching;
-  }, [descriptionHtml, isEditing, product.id]);
+    return () => {
+      cancelled = true;
+      stopWatching();
+    };
+  }, [canEdit, descriptionHtml, isEditing]);
 
   function handleDescriptionClick(event: MouseEvent<HTMLDivElement>) {
     const card = (event.target as HTMLElement).closest<HTMLElement>(".sf-desc-video-card");
