@@ -149,7 +149,7 @@ function getYoutubeVideoId(raw?: string | null) {
 }
 
 function getRenderedProductDescriptionHtml(html: string) {
-  return html.replace(/<[^>]+>/g, (tag) => {
+  const renderedHtml = html.replace(/<[^>]+>/g, (tag) => {
     const classMatch = tag.match(/\bclass\s*=\s*(["'])([^"']*)\1/i);
     if (!classMatch || !classMatch[2]?.split(/\s+/).includes("sf-desc-video-card")) {
       return tag;
@@ -178,6 +178,26 @@ function getRenderedProductDescriptionHtml(html: string) {
 
     return renderedTag;
   });
+
+  return renderedHtml.replace(
+    /(<div\b[^>]*\bdata-lp-video-key\s*=\s*(["'])video_sub_1_id\2[^>]*>)([\s\S]*?)(<\/div>)/i,
+    (cardHtml, openingTag: string, _quote: string, _content: string, closingTag: string) => {
+      const videoMatch = openingTag.match(/\bdata-video-id\s*=\s*(["'])([^"']*)\1/i);
+      const videoId = getYoutubeVideoId(videoMatch?.[2]);
+      if (!videoId) return cardHtml;
+
+      const classMatch = openingTag.match(/\bclass\s*=\s*(["'])([^"']*)\1/i);
+      let playingTag = openingTag;
+      if (classMatch && !classMatch[2]?.split(/\s+/).includes("is-playing")) {
+        playingTag = openingTag.replace(
+          classMatch[0],
+          `class=${classMatch[1]}${classMatch[2]} is-playing${classMatch[1]}`,
+        );
+      }
+
+      return `${playingTag}<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&amp;mute=1&amp;controls=1&amp;rel=0&amp;modestbranding=1&amp;playsinline=1" title="Video Review sản phẩm SmartFurni" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>${closingTag}`;
+    },
+  );
 }
 
 function playProductDescriptionVideo(card: HTMLElement) {
@@ -347,51 +367,8 @@ function ProductLandingDescription({
     }
 
     void hydrateLandingFallbackVideos();
-    const firstVideo = cards.find((card) => card.dataset.lpVideoKey === "video_sub_1_id");
-    let hasAutoplayed = false;
-    let animationFrame = 0;
-    let visibilityTimer = 0;
-
-    const stopWatching = () => {
-      window.removeEventListener("scroll", scheduleVisibilityCheck);
-      window.removeEventListener("resize", scheduleVisibilityCheck);
-      if (animationFrame) window.cancelAnimationFrame(animationFrame);
-      if (visibilityTimer) window.clearInterval(visibilityTimer);
-    };
-
-    const checkVisibility = () => {
-      animationFrame = 0;
-      if (!firstVideo || hasAutoplayed || document.visibilityState !== "visible") return;
-
-      const rect = firstVideo.getBoundingClientRect();
-      const visibleHeight = Math.max(
-        0,
-        Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0),
-      );
-      const visibleRatio = rect.height > 0 ? visibleHeight / rect.height : 0;
-      if (visibleRatio < 0.55) return;
-
-      if (playProductDescriptionVideo(firstVideo)) {
-        hasAutoplayed = true;
-        stopWatching();
-      }
-    };
-
-    function scheduleVisibilityCheck() {
-      if (animationFrame || hasAutoplayed) return;
-      animationFrame = window.requestAnimationFrame(checkVisibility);
-    }
-
-    if (firstVideo) {
-      window.addEventListener("scroll", scheduleVisibilityCheck, { passive: true });
-      window.addEventListener("resize", scheduleVisibilityCheck);
-      visibilityTimer = window.setInterval(checkVisibility, 250);
-      scheduleVisibilityCheck();
-    }
-
     return () => {
       cancelled = true;
-      stopWatching();
     };
   }, [canEdit, descriptionHtml, isEditing]);
 
