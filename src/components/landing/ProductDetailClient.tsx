@@ -363,11 +363,13 @@ function ProductLandingDescription({
 
     let hasAutoplayed = false;
     let animationFrame = 0;
+    let visibilityTimer = 0;
 
     const stopWatching = () => {
       window.removeEventListener("scroll", scheduleVisibilityCheck);
       window.removeEventListener("resize", scheduleVisibilityCheck);
       if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      if (visibilityTimer) window.clearInterval(visibilityTimer);
     };
 
     const checkVisibility = () => {
@@ -395,6 +397,7 @@ function ProductLandingDescription({
 
     window.addEventListener("scroll", scheduleVisibilityCheck, { passive: true });
     window.addEventListener("resize", scheduleVisibilityCheck);
+    visibilityTimer = window.setInterval(checkVisibility, 250);
     scheduleVisibilityCheck();
 
     return stopWatching;
