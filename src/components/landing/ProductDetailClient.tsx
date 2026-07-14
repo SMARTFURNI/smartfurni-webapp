@@ -353,6 +353,39 @@ function ProductLandingDescription({
     };
   }, [canEdit, descriptionHtml, isEditing]);
 
+  useEffect(() => {
+    if (isEditing) return;
+
+    const firstVideo = descriptionRef.current?.querySelector<HTMLElement>(
+      '.sf-desc-video-card[data-lp-video-key="video_sub_1_id"]',
+    );
+    if (!firstVideo) return;
+
+    let hasAutoplayed = false;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (
+          !entry?.isIntersecting
+          || entry.intersectionRatio < 0.55
+          || hasAutoplayed
+          || document.visibilityState !== "visible"
+        ) {
+          return;
+        }
+
+        if (playProductDescriptionVideo(firstVideo)) {
+          hasAutoplayed = true;
+          observer.disconnect();
+        }
+      },
+      { threshold: [0.55] },
+    );
+
+    observer.observe(firstVideo);
+    return () => observer.disconnect();
+  }, [descriptionHtml, isEditing, product.id]);
+
   function handleDescriptionClick(event: MouseEvent<HTMLDivElement>) {
     const card = (event.target as HTMLElement).closest<HTMLElement>(".sf-desc-video-card");
     if (card && event.currentTarget.contains(card)) {

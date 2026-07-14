@@ -975,15 +975,26 @@ section {
   box-shadow: 0 2px 12px rgba(0, 0, 0, .35);
   color: #1A1200;
   display: inline-flex;
-  font-size: .76rem;
+  font-size: 0;
   height: 44px;
   justify-content: center;
   left: 50%;
+  pointer-events: none;
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
   width: 44px;
   z-index: 2;
+}
+.prose-custom .sf-desc-video-play::before {
+  border-bottom: 7px solid transparent;
+  border-left: 11px solid #1A1200;
+  border-top: 7px solid transparent;
+  content: "";
+  display: block;
+  height: 0;
+  margin-left: 3px;
+  width: 0;
 }
 .prose-custom .sf-desc-video-card:not(.is-ready) .sf-desc-video-play {
   display: none;
@@ -1152,6 +1163,10 @@ section {
   .prose-custom .sf-desc-video-card {
     flex: 0 0 min(72vw, 260px);
     scroll-snap-align: start;
+  }
+  .prose-custom .sf-desc-video-play {
+    height: 44px;
+    width: 44px;
   }
 }
 
