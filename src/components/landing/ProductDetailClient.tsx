@@ -959,15 +959,9 @@ function ProductDescriptionPopup({
 }
 
 export default function ProductDetailClient({ product, related, theme }: Props) {
-  const { colors: brandColors, layout } = theme;
-  const colors: SiteTheme["colors"] = {
-    ...brandColors,
-    background: "#302923",
-    surface: "#403731",
-    text: "#F1E9DE",
-    border: "#66574C",
-  };
-  const accentText = "#17130D";
+  const { colors, layout } = theme;
+  const brandColors = colors;
+  const accentText = colors.background;
   const router = useRouter();
   const { addItem, totalItems } = useCart();
 

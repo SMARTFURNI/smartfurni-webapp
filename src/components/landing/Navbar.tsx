@@ -9,7 +9,6 @@ import { SvgIcon } from "@/components/ui/SvgIcon";
 
 interface NavbarProps {
   theme?: SiteTheme;
-  solid?: boolean;
 }
 
 interface NavItem {
@@ -186,7 +185,7 @@ function DropdownMenu({
 }
 
 // ─── Main Navbar ──────────────────────────────────────────────────
-export default function Navbar({ theme, solid = false }: NavbarProps) {
+export default function Navbar({ theme }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -237,7 +236,7 @@ export default function Navbar({ theme, solid = false }: NavbarProps) {
   };
 
   // Before mount: always show solid bg to avoid CLS flash (transparent → solid)
-  const navBg = (solid || !mounted || scrolled || mobileOpen)
+  const navBg = (!mounted || scrolled || mobileOpen)
     ? { backgroundColor: `${bgColor}f8`, backdropFilter: "blur(16px)", borderBottomColor: `${primary}30` }
     : { backgroundColor: "transparent" };
 
@@ -248,7 +247,7 @@ export default function Navbar({ theme, solid = false }: NavbarProps) {
         {/* ── Topbar ── */}
         <div
           style={{ height, ...navBg }}
-          className={cn("w-full transition-all duration-300", (solid || scrolled || mobileOpen) ? "border-b" : "")}
+          className={cn("w-full transition-all duration-300", (scrolled || mobileOpen) ? "border-b" : "")}
         >
           <div
             style={{ maxWidth }}

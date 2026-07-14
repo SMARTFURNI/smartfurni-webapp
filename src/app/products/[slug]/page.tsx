@@ -34,11 +34,14 @@ export default async function ProductDetailPage({ params }: Props) {
     <main
       style={{
         minHeight: "100vh",
-        backgroundColor: "#302923",
-        backgroundImage: "linear-gradient(180deg, #3A312C 0%, #302923 52%, #29231F 100%)",
+        backgroundColor: theme.colors.background,
+        backgroundImage: `
+          radial-gradient(circle at top left, color-mix(in srgb, ${theme.colors.primary} 12%, transparent), transparent 34rem),
+          linear-gradient(135deg, color-mix(in srgb, ${theme.colors.surface} 92%, transparent), color-mix(in srgb, ${theme.colors.background} 96%, transparent))
+        `,
       }}
     >
-      <Navbar theme={theme} solid />
+      <Navbar theme={theme} />
       <ProductDetailClient product={product} related={related} theme={theme} />
       <Footer theme={theme} variant="full" />
     </main>
