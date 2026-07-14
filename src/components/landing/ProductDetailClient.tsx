@@ -362,28 +362,42 @@ function ProductLandingDescription({
     if (!firstVideo) return;
 
     let hasAutoplayed = false;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (
-          !entry?.isIntersecting
-          || entry.intersectionRatio < 0.55
-          || hasAutoplayed
-          || document.visibilityState !== "visible"
-        ) {
-          return;
-        }
+    let animationFrame = 0;
 
-        if (playProductDescriptionVideo(firstVideo)) {
-          hasAutoplayed = true;
-          observer.disconnect();
-        }
-      },
-      { threshold: [0.55] },
-    );
+    const stopWatching = () => {
+      window.removeEventListener("scroll", scheduleVisibilityCheck);
+      window.removeEventListener("resize", scheduleVisibilityCheck);
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+    };
 
-    observer.observe(firstVideo);
-    return () => observer.disconnect();
+    const checkVisibility = () => {
+      animationFrame = 0;
+      if (hasAutoplayed || document.visibilityState !== "visible") return;
+
+      const rect = firstVideo.getBoundingClientRect();
+      const visibleHeight = Math.max(
+        0,
+        Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0),
+      );
+      const visibleRatio = rect.height > 0 ? visibleHeight / rect.height : 0;
+      if (visibleRatio < 0.55) return;
+
+      if (playProductDescriptionVideo(firstVideo)) {
+        hasAutoplayed = true;
+        stopWatching();
+      }
+    };
+
+    function scheduleVisibilityCheck() {
+      if (animationFrame || hasAutoplayed) return;
+      animationFrame = window.requestAnimationFrame(checkVisibility);
+    }
+
+    window.addEventListener("scroll", scheduleVisibilityCheck, { passive: true });
+    window.addEventListener("resize", scheduleVisibilityCheck);
+    scheduleVisibilityCheck();
+
+    return stopWatching;
   }, [descriptionHtml, isEditing, product.id]);
 
   function handleDescriptionClick(event: MouseEvent<HTMLDivElement>) {
