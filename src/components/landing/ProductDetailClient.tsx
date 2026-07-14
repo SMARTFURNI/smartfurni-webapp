@@ -61,6 +61,25 @@ const CATEGORY_MAP = {
   accessory: "Phụ kiện",
 };
 
+const PRODUCT_DESCRIPTION_VIDEOS = [
+  { key: "video_sub_1_id", label: "Review" },
+  { key: "video_sub_2_id", label: "Hướng dẫn" },
+  { key: "video_sub_3_id", label: "So sánh" },
+  { key: "video_sub_4_id", label: "Lắp đặt" },
+] as const;
+
+type ProductDescriptionVideoKey = (typeof PRODUCT_DESCRIPTION_VIDEOS)[number]["key"];
+type ProductDescriptionVideoLinks = Record<ProductDescriptionVideoKey, string>;
+
+function emptyProductDescriptionVideoLinks(): ProductDescriptionVideoLinks {
+  return {
+    video_sub_1_id: "",
+    video_sub_2_id: "",
+    video_sub_3_id: "",
+    video_sub_4_id: "",
+  };
+}
+
 const PRODUCT_DESCRIPTION_POPUPS = {
   single: {
     badge: "GSF150-STANDARD",
@@ -148,6 +167,7 @@ function ProductLandingDescription({
   const [selectedImageElement, setSelectedImageElement] = useState<HTMLImageElement | null>(null);
   const [selectedImageSrc, setSelectedImageSrc] = useState("");
   const [imageLink, setImageLink] = useState("");
+  const [videoLinks, setVideoLinks] = useState<ProductDescriptionVideoLinks>(emptyProductDescriptionVideoLinks);
   const descriptionStyle = {
     color: colors.text,
     "--sf-desc-primary": colors.primary,
@@ -167,6 +187,7 @@ function ProductLandingDescription({
     setSelectedImageElement(null);
     setSelectedImageSrc("");
     setImageLink("");
+    setVideoLinks(emptyProductDescriptionVideoLinks());
   }, [initialHtml]);
 
   useEffect(() => {
@@ -214,16 +235,19 @@ function ProductLandingDescription({
         for (const card of cards) {
           const videoKey = card.dataset.lpVideoKey || "";
           const title = card.dataset.videoTitle || "Video thực tế GSF150";
-          const rawVideo = lpContent[videoKey] || card.dataset.videoId || "";
+          const hasProductVideo = card.hasAttribute("data-video-id");
+          const rawVideo = hasProductVideo ? card.dataset.videoId || "" : lpContent[videoKey] || "";
           const videoId = getYoutubeVideoId(rawVideo);
           const thumb = card.querySelector<HTMLElement>(".sf-desc-video-thumb");
 
           if (!thumb || !videoId) {
             card.classList.remove("is-ready");
+            card.removeAttribute("data-resolved-video-id");
             continue;
           }
 
           card.classList.add("is-ready");
+          card.dataset.resolvedVideoId = videoId;
           card.setAttribute("aria-label", `Xem video ${title}`);
 
           const image = document.createElement("img");
@@ -390,9 +414,25 @@ function ProductLandingDescription({
   }
 
   function handleStartEdit() {
+    const nextVideoLinks = emptyProductDescriptionVideoLinks();
+    const renderedCards = descriptionRef.current?.querySelectorAll<HTMLElement>(
+      ".sf-desc-video-card[data-lp-video-key]",
+    );
+
+    renderedCards?.forEach((card) => {
+      const key = card.dataset.lpVideoKey as ProductDescriptionVideoKey | undefined;
+      if (!key || !(key in nextVideoLinks)) return;
+
+      const productValue = card.getAttribute("data-video-id");
+      nextVideoLinks[key] = productValue === "_placeholder_"
+        ? ""
+        : productValue || card.dataset.resolvedVideoId || "";
+    });
+
     setEditBaselineHtml(descriptionHtml);
+    setVideoLinks(nextVideoLinks);
     setIsEditing(true);
-    setEditMessage("Đang chỉnh sửa trực tiếp. Bấm vào ảnh rồi tải ảnh mới hoặc dán link để thay.");
+    setEditMessage("Đang chỉnh sửa trực tiếp. Bạn có thể thay ảnh và các link video YouTube bên dưới.");
   }
 
   function handleCancelEdit() {
@@ -401,6 +441,7 @@ function ProductLandingDescription({
     }
     setDescriptionHtml(editBaselineHtml);
     clearSelectedImage();
+    setVideoLinks(emptyProductDescriptionVideoLinks());
     setIsUploadingImage(false);
     setIsEditing(false);
     setEditMessage("");
@@ -408,7 +449,38 @@ function ProductLandingDescription({
 
   async function handleSaveDescription() {
     const rawHtml = editorRef.current?.innerHTML.trim() || "";
-    const nextHtml = cleanDescriptionHtml(rawHtml);
+    const normalizedVideoIds = emptyProductDescriptionVideoLinks();
+
+    for (const video of PRODUCT_DESCRIPTION_VIDEOS) {
+      const rawValue = videoLinks[video.key].trim();
+      const videoId = rawValue ? getYoutubeVideoId(rawValue) : "";
+      if (rawValue && !videoId) {
+        setEditMessage(`Link video ${video.label} không hợp lệ. Hãy dán link YouTube hoặc Video ID.`);
+        return;
+      }
+      normalizedVideoIds[video.key] = videoId;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = cleanDescriptionHtml(rawHtml);
+    wrapper.querySelectorAll<HTMLElement>(".sf-desc-video-card[data-lp-video-key]").forEach((card) => {
+      const key = card.dataset.lpVideoKey as ProductDescriptionVideoKey | undefined;
+      if (!key || !(key in normalizedVideoIds)) return;
+
+      const videoId = normalizedVideoIds[key];
+      card.dataset.videoId = videoId || "_placeholder_";
+      card.removeAttribute("data-resolved-video-id");
+      card.classList.remove("is-ready", "is-playing");
+
+      const thumb = card.querySelector<HTMLElement>(".sf-desc-video-thumb");
+      if (thumb) {
+        const empty = document.createElement("span");
+        empty.className = "sf-desc-video-empty";
+        empty.textContent = "Chưa có video";
+        thumb.replaceChildren(empty);
+      }
+    });
+    const nextHtml = wrapper.innerHTML;
     if (!nextHtml) {
       setEditMessage("Mô tả không được để trống.");
       return;
@@ -471,46 +543,73 @@ function ProductLandingDescription({
       ) : null}
 
       {isEditing ? (
-        <div className="sf-product-description-image-tools">
-          <input
-            ref={imageFileInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(event) => void handleUploadDescriptionImage(event.target.files?.[0])}
-          />
-          <div className="sf-product-description-image-tools__preview">
-            {selectedImageSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={selectedImageSrc} alt="Ảnh mô tả đang chọn" />
-            ) : (
-              <span>Bấm chọn một ảnh trong mô tả</span>
-            )}
-          </div>
-          <div className="sf-product-description-image-tools__body">
-            <div className="sf-product-description-image-tools__title">Thay ảnh mô tả</div>
-            <div className="sf-product-description-image-tools__hint">
-              Bấm vào ảnh trong phần mô tả, rồi tải ảnh từ máy tính hoặc dán link ảnh giống landing GSF150.
+        <div className="sf-product-description-edit-tools">
+          <div className="sf-product-description-image-tools">
+            <input
+              ref={imageFileInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(event) => void handleUploadDescriptionImage(event.target.files?.[0])}
+            />
+            <div className="sf-product-description-image-tools__preview">
+              {selectedImageSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={selectedImageSrc} alt="Ảnh mô tả đang chọn" />
+              ) : (
+                <span>Bấm chọn một ảnh trong mô tả</span>
+              )}
             </div>
-            <div className="sf-product-description-image-tools__controls">
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => imageFileInputRef.current?.click()}
-                disabled={isUploadingImage || !selectedImageSrc}
-              >
-                {isUploadingImage ? "Đang tải..." : "Upload ảnh"}
-              </button>
-              <input
-                type="url"
-                value={imageLink}
-                onChange={(event) => setImageLink(event.target.value)}
-                placeholder="Dán link ảnh..."
-                disabled={!selectedImageSrc || isUploadingImage}
-              />
-              <button type="button" onClick={handleApplyImageLink} disabled={!selectedImageSrc || isUploadingImage}>
-                Thay bằng link
-              </button>
+            <div className="sf-product-description-image-tools__body">
+              <div className="sf-product-description-image-tools__title">Thay ảnh mô tả</div>
+              <div className="sf-product-description-image-tools__hint">
+                Bấm vào ảnh trong phần mô tả, rồi tải ảnh từ máy tính hoặc dán link ảnh giống landing GSF150.
+              </div>
+              <div className="sf-product-description-image-tools__controls">
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => imageFileInputRef.current?.click()}
+                  disabled={isUploadingImage || !selectedImageSrc}
+                >
+                  {isUploadingImage ? "Đang tải..." : "Upload ảnh"}
+                </button>
+                <input
+                  type="url"
+                  value={imageLink}
+                  onChange={(event) => setImageLink(event.target.value)}
+                  placeholder="Dán link ảnh..."
+                  disabled={!selectedImageSrc || isUploadingImage}
+                />
+                <button type="button" onClick={handleApplyImageLink} disabled={!selectedImageSrc || isUploadingImage}>
+                  Thay bằng link
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="sf-product-description-video-tools">
+            <div className="sf-product-description-image-tools__title">Chỉnh video mô tả</div>
+            <div className="sf-product-description-image-tools__hint">
+              Dán link YouTube hoặc Video ID. Để trống nếu muốn ẩn video tại ô tương ứng.
+            </div>
+            <div className="sf-product-description-video-tools__grid">
+              {PRODUCT_DESCRIPTION_VIDEOS.map((video) => (
+                <label key={video.key}>
+                  <span>{video.label}</span>
+                  <input
+                    type="text"
+                    inputMode="url"
+                    value={videoLinks[video.key]}
+                    onChange={(event) => setVideoLinks((current) => ({
+                      ...current,
+                      [video.key]: event.target.value,
+                    }))}
+                    placeholder="Link YouTube hoặc Video ID"
+                    disabled={isSaving}
+                  />
+                </label>
+              ))}
             </div>
           </div>
         </div>

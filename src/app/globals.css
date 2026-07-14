@@ -245,6 +245,67 @@ section {
   backdrop-filter: blur(14px);
 }
 
+.sf-product-description-edit-tools {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.sf-product-description-edit-tools .sf-product-description-image-tools {
+  margin-bottom: 0;
+}
+
+.sf-product-description-video-tools {
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 28%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--sf-desc-bg, #070600) 88%, white 6%);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+}
+
+.sf-product-description-video-tools__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.sf-product-description-video-tools__grid label {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.sf-product-description-video-tools__grid label > span {
+  color: var(--sf-desc-text, #f5edd6);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sf-product-description-video-tools__grid input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.68rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 30%, transparent);
+  border-radius: 12px;
+  outline: none;
+  color: var(--sf-desc-text, #f5edd6);
+  background: color-mix(in srgb, var(--sf-desc-bg, #070600) 74%, white 8%);
+  font: inherit;
+}
+
+.sf-product-description-video-tools__grid input:focus {
+  border-color: var(--sf-desc-primary, #c9a84c);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--sf-desc-primary, #c9a84c) 14%, transparent);
+}
+
+.sf-product-description-video-tools__grid input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .sf-product-description-image-tools__preview {
   width: 112px;
   min-height: 82px;
@@ -414,6 +475,14 @@ section {
   .sf-product-description-image-tools__controls button,
   .sf-product-description-image-tools__controls input {
     width: 100%;
+  }
+
+  .sf-product-description-video-tools {
+    border-radius: 16px;
+  }
+
+  .sf-product-description-video-tools__grid {
+    grid-template-columns: 1fr;
   }
 
   .sf-product-description-inline-edit {
