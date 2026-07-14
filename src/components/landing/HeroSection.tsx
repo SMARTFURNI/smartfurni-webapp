@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import type { CSSProperties } from "react";
 import { ScrollReveal } from "./ScrollReveal";
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
@@ -137,12 +138,37 @@ const TRUST_STATS = [
   { value: "2 giờ", label: "Lắp đặt tại nhà" },
 ];
 
+const SLEEP_PHASES = [
+  {
+    number: "01",
+    shortLabel: "Thư giãn",
+    eyebrow: "TRƯỚC GIẤC NGỦ",
+    title: "Chạm để cơ thể thả lỏng",
+    description: "Nâng đầu đọc sách · Thả lỏng vai lưng · Lưu tư thế yêu thích",
+  },
+  {
+    number: "02",
+    shortLabel: "Giấc ngủ",
+    eyebrow: "TRONG GIẤC NGỦ",
+    title: "Êm ái theo từng nhịp nghỉ ngơi",
+    description: "Tư thế Zero Gravity · Motor vận hành êm · Điều chỉnh nâng đỡ linh hoạt",
+  },
+  {
+    number: "03",
+    shortLabel: "Thức dậy",
+    eyebrow: "BẮT ĐẦU NGÀY MỚI",
+    title: "Thức dậy nhẹ nhàng hơn",
+    description: "Nâng đầu vừa vặn · Rời giường thuận tiện · Khởi đầu ngày mới thoải mái",
+  },
+];
+
 interface HeroSectionProps {
   theme?: SiteTheme;
 }
 
 export default function HeroSection({ theme }: HeroSectionProps) {
   const [b2bOpen, setB2bOpen] = useState(false);
+  const [activePhase, setActivePhase] = useState(1);
 
   const primary = theme?.colors.primary ?? "#C9A84C";
   const secondary = theme?.colors.secondary ?? "#9A7A2E";
@@ -163,9 +189,34 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const ctaSecondaryText = theme?.hero.ctaSecondaryText ?? "Nhận tư vấn miễn phí";
   const ctaSecondaryLink = theme?.hero.ctaSecondaryLink ?? "/contact";
 
-  // Ảnh hero dùng làm nền toàn màn hình. Nếu admin chưa cấu hình, dùng ảnh sản phẩm mặc định.
-  const heroImageUrl = theme?.hero?.imageUrl || "/uploads/products/smartfurni-bed-main.webp";
+  // Ảnh vẫn lấy từ cấu hình admin; ảnh phòng ngủ mặc định giúp bố cục có chiều sâu ngay từ lần tải đầu.
+  const heroImageUrl = theme?.hero?.imageUrl || "/gsf150-wood-frame.jpg";
   const heroOverlayOpacity = Math.min(90, Math.max(35, theme?.hero?.overlayOpacity ?? 60)) / 100;
+  const phase = SLEEP_PHASES[activePhase];
+  const heroTitleParts = heroTitle.includes("\n")
+    ? heroTitle.split("\n")
+    : (() => {
+        const words = heroTitle.split(" ");
+        const half = Math.ceil(words.length / 2);
+        return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
+      })();
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setTimeout(() => {
+      setActivePhase((current) => (current + 1) % SLEEP_PHASES.length);
+    }, 6500);
+    return () => window.clearTimeout(timer);
+  }, [activePhase]);
+
+  const heroVars = {
+    "--sf-hero-primary": primary,
+    "--sf-hero-secondary": secondary,
+    "--sf-hero-text": textColor,
+    "--sf-hero-border": borderColor,
+    "--sf-hero-bg": bgFrom,
+    "--sf-cycle-progress": `${(activePhase + 1) * 33.333}%`,
+  } as CSSProperties;
 
   return (
     <>
@@ -180,123 +231,116 @@ export default function HeroSection({ theme }: HeroSectionProps) {
         surfaceColor={surfaceColor}
       />
 
-      {/* ── HERO ── */}
+      {/* ── SMARTFURNI SLEEP-CYCLE HERO ── */}
       <section
-        style={{ background: `linear-gradient(160deg, ${bgFrom} 0%, ${bgTo} 100%)` }}
-        className="relative isolate max-w-full overflow-hidden overflow-x-clip pt-16"
+        style={{ ...heroVars, background: `linear-gradient(160deg, ${bgFrom} 0%, ${bgTo} 100%)` }}
+        className="sf-cycle-hero relative isolate max-w-full overflow-hidden"
       >
-        {/* Full-screen hero background, giống cấu trúc landing page SMF12 */}
-        <div className="absolute inset-0 z-0">
+        <div className="sf-cycle-hero__media absolute inset-0 z-0">
           <img
             src={heroImageUrl}
-            alt=""
-            aria-hidden="true"
-            className="h-full w-full object-cover object-center"
+            alt="Giường điều chỉnh điện SmartFurni trong không gian nghỉ ngơi"
+            className="sf-cycle-hero__image h-full w-full object-cover"
           />
           <div
-            className="absolute inset-0"
+            className="sf-cycle-hero__shade absolute inset-0"
             style={{
-              background: `linear-gradient(90deg, rgba(8, 6, 0, ${Math.max(0.78, heroOverlayOpacity)}) 0%, rgba(8, 6, 0, ${Math.max(0.62, heroOverlayOpacity * 0.86)}) 44%, rgba(8, 6, 0, 0.34) 100%)`,
-            }}
-          />
-          <div
-            className="absolute inset-0 lg:hidden"
-            style={{
-              background: "linear-gradient(180deg, rgba(8, 6, 0, 0.80) 0%, rgba(8, 6, 0, 0.58) 42%, rgba(8, 6, 0, 0.90) 100%)",
+              opacity: Math.max(0.78, heroOverlayOpacity),
             }}
           />
         </div>
 
-        {/* Subtle background glows */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <div style={{ background: `radial-gradient(ellipse at 20% 50%, ${primary}0a, transparent 55%)` }} className="absolute inset-0" />
-          <div style={{ background: `radial-gradient(ellipse at 80% 20%, ${primary}06, transparent 50%)` }} className="absolute inset-0" />
+        <div className="sf-cycle-hero__atmosphere absolute inset-0 z-[1] pointer-events-none" aria-hidden="true">
+          <span className="sf-cycle-hero__glow" />
+          <span className="sf-cycle-hero__stars" />
         </div>
 
-        <div style={{ maxWidth }} className="relative z-10 mx-auto w-full max-w-full overflow-hidden px-4 sm:px-6">
-          <div className="flex min-h-[calc(100svh-4rem)] min-w-0 items-center py-12 sm:py-16 lg:py-20">
+        <div style={{ maxWidth }} className="sf-cycle-hero__inner relative z-10 mx-auto w-full px-5 sm:px-8">
+          <ScrollReveal variant="fadeUp" delay={0} className="sf-cycle-hero__intro">
+            <div className="sf-cycle-hero__eyebrow">
+              <span /> Giường điều chỉnh điện SmartFurni
+            </div>
+            <h1 className="sf-cycle-hero__headline" style={{ fontSize: titleFontSize }}>
+              <span style={{ color: titleColor }}>{heroTitleParts[0]}</span>
+              <strong style={{ color: titleAccentColor }}>
+                {heroTitleParts[1] || "Trọn vẹn từng nhịp nghỉ ngơi"}
+              </strong>
+            </h1>
+            <p className="sf-cycle-hero__subtitle">{heroSubtitle}</p>
+          </ScrollReveal>
 
-            {/* ── LEFT: Copy ── */}
-            <ScrollReveal variant="fadeUp" delay={0} className="min-w-0 w-full max-w-3xl">
-              <div className="min-w-0 max-w-full space-y-6 rounded-[28px] border px-4 py-5 backdrop-blur-[2px] sm:px-0 sm:py-0 sm:border-0 sm:bg-transparent lg:space-y-8"
-                style={{ backgroundColor: "rgba(8, 6, 0, 0.12)", borderColor: `${primary}14` }}
-              >
+          <div className="sf-cycle-stage" aria-live="polite">
+            <div className="sf-cycle-ring" aria-hidden="true">
+              <span className="sf-cycle-ring__track" />
+              <span className="sf-cycle-ring__progress" />
+              <span className="sf-cycle-ring__hand" style={{ transform: `rotate(${activePhase * 106 - 104}deg)` }} />
+              <span className="sf-cycle-sensor sf-cycle-sensor--one" />
+              <span className="sf-cycle-sensor sf-cycle-sensor--two" />
+              <span className="sf-cycle-sensor sf-cycle-sensor--three" />
+            </div>
 
-                {/* Badge */}
-                <div
-                  style={{ borderColor: `${primary}35`, backgroundColor: `${primary}0c` }}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border"
+            <div className="sf-cycle-copy" key={phase.number}>
+              <span className="sf-cycle-copy__eyebrow">{phase.eyebrow}</span>
+              <h2>{phase.title}</h2>
+              <p>{phase.description}</p>
+            </div>
+
+            <div className="sf-cycle-index" aria-label={`Giai đoạn ${phase.number} trên 03`}>
+              <strong>{phase.number}</strong><span>/ 03</span>
+            </div>
+          </div>
+
+          <div className="sf-cycle-hero__footer">
+            <div className="sf-cycle-tabs" role="tablist" aria-label="Các giai đoạn nghỉ ngơi">
+              {SLEEP_PHASES.map((item, index) => (
+                <button
+                  key={item.number}
+                  type="button"
+                  role="tab"
+                  aria-selected={activePhase === index}
+                  className={activePhase === index ? "is-active" : ""}
+                  onClick={() => setActivePhase(index)}
                 >
-                  <div style={{ backgroundColor: primary }} className="w-1.5 h-1.5 rounded-full animate-pulse" />
-                  <span style={{ color: primary }} className="text-xs font-medium tracking-widest uppercase">Giường Điều Chỉnh Điện</span>
-                </div>
+                  <span>{item.number}</span>{item.shortLabel}
+                </button>
+              ))}
+            </div>
 
-                {/* Headline */}
-                <h1 className="max-w-full break-words leading-[1.1] tracking-tight" style={{ fontSize: titleFontSize }}>
-                  {(() => {
-                    const parts = heroTitle.includes("\n")
-                      ? heroTitle.split("\n")
-                      : (() => {
-                          const words = heroTitle.split(" ");
-                          const half = Math.ceil(words.length / 2);
-                          return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
-                        })();
-                    return (
-                      <>
-                        <span style={{ color: titleColor }} className="block font-light">{parts[0]}</span>
-                        {parts[1] && <span style={{ color: titleAccentColor }} className="block font-semibold">{parts[1]}</span>}
-                      </>
-                    );
-                  })()}
-                </h1>
-
-                {/* Subtitle */}
-                <p style={{ color: `${textColor}80` }} className="text-base sm:text-lg leading-relaxed max-w-lg">
-                  {heroSubtitle}
-                </p>
-
-                {/* CTAs */}
-                <div className="flex flex-wrap gap-3 items-center">
+            <div className="sf-cycle-actions">
+              <div className="sf-cycle-actions__links">
                   <Link
                     href={ctaLink}
                     style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})`, color: bgFrom }}
-                    className="px-7 py-3.5 rounded-full font-semibold text-sm hover:opacity-90 transition-all duration-200 shadow-lg"
+                    className="sf-cycle-cta sf-cycle-cta--primary"
                   >
                     {ctaText}
                   </Link>
                   <Link
                     href={ctaSecondaryLink}
-                    style={{ borderColor: `${primary}50`, color: primary }}
-                    className="px-7 py-3.5 rounded-full border text-sm font-medium hover:opacity-80 transition-opacity"
+                    className="sf-cycle-cta sf-cycle-cta--secondary"
                   >
                     {ctaSecondaryText}
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => setB2bOpen(true)}
-                    style={{ borderColor: `${textColor}22`, color: `${textColor}72`, backgroundColor: "rgba(8, 6, 0, 0.24)" }}
-                    className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-xs font-medium backdrop-blur-sm transition-opacity hover:opacity-80"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    Trở thành đối tác B2B
-                  </button>
-                </div>
-
-                {/* Trust stats */}
-                <div style={{ borderTopColor: `${borderColor}60` }} className="grid grid-cols-4 gap-3 pt-5 border-t">
-                  {TRUST_STATS.map((stat) => (
-                    <div key={stat.label}>
-                      <div style={{ color: primary }} className="text-lg sm:text-xl font-semibold leading-tight">{stat.value}</div>
-                      <div style={{ color: `${textColor}45` }} className="text-[11px] mt-0.5 leading-tight">{stat.label}</div>
-                    </div>
-                  ))}
-                </div>
               </div>
-            </ScrollReveal>
+              <div className="sf-cycle-trust">
+                {TRUST_STATS.slice(0, 2).map((stat) => (
+                  <span key={stat.label}><strong>{stat.value}</strong>{stat.label}</span>
+                ))}
+              </div>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setB2bOpen(true)}
+            className="sf-cycle-b2b"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Trở thành đối tác B2B
+          </button>
         </div>
       </section>
     </>
