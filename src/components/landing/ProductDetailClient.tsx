@@ -226,71 +226,86 @@ function ProductLandingDescription({
     let cancelled = false;
     const removeHandlers: Array<() => void> = [];
 
-    async function hydrateVideos() {
+    function hydrateCard(card: HTMLElement, rawVideo: string) {
+      if (cancelled) return;
+
+      const title = card.dataset.videoTitle || "Video thực tế GSF150";
+      const videoId = getYoutubeVideoId(rawVideo);
+      const thumb = card.querySelector<HTMLElement>(".sf-desc-video-thumb");
+
+      if (!thumb || !videoId) {
+        card.classList.remove("is-ready");
+        card.removeAttribute("data-resolved-video-id");
+        return;
+      }
+
+      card.classList.add("is-ready");
+      card.dataset.resolvedVideoId = videoId;
+      card.setAttribute("aria-label", `Xem video ${title}`);
+
+      const image = document.createElement("img");
+      image.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      image.alt = title;
+      image.loading = "lazy";
+      image.decoding = "async";
+      image.onerror = () => {
+        image.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      };
+      thumb.replaceChildren(image);
+
+      const handlePlay = () => {
+        if (card.classList.contains("is-playing")) return;
+
+        const iframe = document.createElement("iframe");
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`;
+        iframe.title = title;
+        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+        iframe.allowFullscreen = true;
+        iframe.loading = "lazy";
+
+        card.classList.add("is-playing");
+        card.replaceChildren(iframe);
+      };
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        handlePlay();
+      };
+
+      card.addEventListener("click", handlePlay);
+      card.addEventListener("keydown", handleKeyDown);
+      removeHandlers.push(() => card.removeEventListener("click", handlePlay));
+      removeHandlers.push(() => card.removeEventListener("keydown", handleKeyDown));
+    }
+
+    const landingFallbackCards: HTMLElement[] = [];
+    for (const card of cards) {
+      if (card.hasAttribute("data-video-id")) {
+        hydrateCard(card, card.dataset.videoId || "");
+      } else {
+        landingFallbackCards.push(card);
+      }
+    }
+
+    async function hydrateLandingFallbackVideos() {
+      if (landingFallbackCards.length === 0) return;
+
       try {
         const res = await fetch("/api/admin/lp-content?slug=gsf150", { cache: "no-store" });
         const lpContent = res.ok ? await res.json() as Record<string, string> : {};
         if (cancelled) return;
 
-        for (const card of cards) {
+        for (const card of landingFallbackCards) {
           const videoKey = card.dataset.lpVideoKey || "";
-          const title = card.dataset.videoTitle || "Video thực tế GSF150";
-          const hasProductVideo = card.hasAttribute("data-video-id");
-          const rawVideo = hasProductVideo ? card.dataset.videoId || "" : lpContent[videoKey] || "";
-          const videoId = getYoutubeVideoId(rawVideo);
-          const thumb = card.querySelector<HTMLElement>(".sf-desc-video-thumb");
-
-          if (!thumb || !videoId) {
-            card.classList.remove("is-ready");
-            card.removeAttribute("data-resolved-video-id");
-            continue;
-          }
-
-          card.classList.add("is-ready");
-          card.dataset.resolvedVideoId = videoId;
-          card.setAttribute("aria-label", `Xem video ${title}`);
-
-          const image = document.createElement("img");
-          image.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-          image.alt = title;
-          image.loading = "lazy";
-          image.decoding = "async";
-          image.onerror = () => {
-            image.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-          };
-          thumb.replaceChildren(image);
-
-          const handlePlay = () => {
-            if (card.classList.contains("is-playing")) return;
-
-            const iframe = document.createElement("iframe");
-            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`;
-            iframe.title = title;
-            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-            iframe.allowFullscreen = true;
-            iframe.loading = "lazy";
-
-            card.classList.add("is-playing");
-            card.replaceChildren(iframe);
-          };
-          const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== "Enter" && event.key !== " ") return;
-            event.preventDefault();
-            handlePlay();
-          };
-
-          card.addEventListener("click", handlePlay);
-          card.addEventListener("keydown", handleKeyDown);
-          removeHandlers.push(() => card.removeEventListener("click", handlePlay));
-          removeHandlers.push(() => card.removeEventListener("keydown", handleKeyDown));
+          hydrateCard(card, lpContent[videoKey] || "");
         }
       } catch {
-        // Nếu API nội dung landing chưa sẵn sàng, giữ nguyên trạng thái "Chưa có video"
-        // để khách không thấy khung lỗi hoặc iframe hỏng.
+        // Chỉ các ô đang kế thừa landing giữ trạng thái "Chưa có video" khi API lỗi.
+        // Video đã lưu riêng theo sản phẩm vẫn được dựng ngay phía trên.
       }
     }
 
-    void hydrateVideos();
+    void hydrateLandingFallbackVideos();
 
     return () => {
       cancelled = true;
