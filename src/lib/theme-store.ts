@@ -639,7 +639,6 @@ function mergeTheme(saved: SiteTheme): SiteTheme {
 
 /** Async version — reads from DB, populates cache */
 export async function getThemeAsync(): Promise<SiteTheme> {
-  if (_themeCache) return _themeCache;
   try {
     const saved = await dbGetSetting<SiteTheme>(THEME_SETTING_KEY);
     if (saved) {
@@ -647,7 +646,8 @@ export async function getThemeAsync(): Promise<SiteTheme> {
       return _themeCache;
     }
   } catch {
-    // fallback to default
+    // Keep serving the last known theme if the database is temporarily unavailable.
+    if (_themeCache) return _themeCache;
   }
   return { ...defaultTheme };
 }

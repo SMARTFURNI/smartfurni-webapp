@@ -253,6 +253,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
     "--sf-hero-border": borderColor,
     "--sf-hero-bg": bgFrom,
     "--sf-cycle-gold": "#d8c69f",
+    "--sf-hero-title-size": `${Math.min(titleFontSizeBase, 52)}px`,
   } as CSSProperties;
 
   return (

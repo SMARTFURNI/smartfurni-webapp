@@ -1682,7 +1682,7 @@ section {
   .sf-cycle-hero__intro { top: calc(64px + 0.9rem); left: 1.15rem; right: 1.15rem; width: auto; text-align: center; }
   .sf-cycle-hero__eyebrow { justify-content: center; font-size: 0.53rem; letter-spacing: 0.13em; }
   .sf-cycle-hero__eyebrow span { display: none; }
-  .sf-cycle-hero__headline { margin-top: 0.48rem; font-size: clamp(1.75rem, 8.2vw, 2.15rem) !important; line-height: 1.05; letter-spacing: -0.03em; }
+  .sf-cycle-hero__headline { margin-top: 0.48rem; font-size: clamp(1.5rem, 8.2vw, calc(var(--sf-hero-title-size) * 0.68)) !important; line-height: 1.05; letter-spacing: -0.03em; }
   .sf-cycle-hero__subtitle {
     display: -webkit-box;
     max-width: 320px;
