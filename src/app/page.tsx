@@ -23,7 +23,7 @@ export default async function HomePage() {
   const { banner } = theme;
 
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
+    <main className="sf-site-gradient-bg" style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
       {/* Banner thông báo */}
       {banner.enabled && (
         <div

@@ -217,7 +217,7 @@ export default function SleepAdvisorClient({ theme }: Props) {
   const progress = currentStep === "quiz" ? ((currentQuestion) / QUESTIONS.length) * 100 : 0;
 
   return (
-    <div style={{ background: bg, color: text, minHeight: "100vh" }}>
+    <div className="sf-site-gradient-bg" style={{ backgroundColor: bg, color: text, minHeight: "100vh" }}>
       {/* Header */}
       <div style={{ background: surface, borderBottom: `1px solid ${border}` }} className="px-6 py-4">
         <div style={{ maxWidth: 800, margin: "0 auto" }} className="flex items-center gap-3">

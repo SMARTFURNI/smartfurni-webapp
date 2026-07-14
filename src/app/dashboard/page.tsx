@@ -25,7 +25,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"control" | "light" | "massage" | "timer">("control");
 
   return (
-    <div className="min-h-screen bg-[#0D0B00] flex flex-col">
+    <div className="sf-site-gradient-bg min-h-screen bg-[#0D0B00] flex flex-col">
       {/* Top bar */}
       <header className="border-b border-[#2E2800] px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-4">

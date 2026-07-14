@@ -115,7 +115,7 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
   const categoryColor = CATEGORIES[post.category].color;
 
   return (
-    <main className="min-h-screen bg-[#0D0B00] text-white">
+    <main className="sf-site-gradient-bg min-h-screen bg-[#0D0B00] text-white">
       <ReadingProgressBar />
       <Navbar theme={theme} />
 

@@ -23,7 +23,7 @@ export default function ComparePage() {
     (p) => p.category !== "accessory" && p.status !== "discontinued"
   );
   return (
-    <main className="min-h-screen bg-[#0D0B00]">
+    <main className="sf-site-gradient-bg min-h-screen bg-[#0D0B00]">
       <Navbar theme={theme} />
       <CompareClient products={allProducts} theme={theme} />
       <Footer theme={theme} variant="full" />

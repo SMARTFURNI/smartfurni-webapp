@@ -12,7 +12,7 @@ export const metadata = {
 export default function CheckoutSuccessPage() {
   const theme = getTheme();
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
+    <main className="sf-site-gradient-bg" style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
       <Navbar theme={theme} />
       <CheckoutSuccessClient theme={theme} />
     </main>

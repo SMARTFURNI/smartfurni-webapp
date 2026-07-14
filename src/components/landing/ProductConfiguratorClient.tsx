@@ -280,7 +280,7 @@ export default function ProductConfiguratorClient({ product, theme }: Props) {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
+    <div className="sf-site-gradient-bg min-h-screen" style={{ backgroundColor: colors.background }}>
       <div style={{ maxWidth: 1200 }} className="mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
         <div className="mb-8">

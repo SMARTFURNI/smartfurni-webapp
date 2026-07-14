@@ -30,7 +30,7 @@ export default async function ProductConfiguratorPage({ params }: Props) {
   if (!product) notFound();
 
   return (
-    <main style={{ backgroundColor: theme.colors.background }} className="min-h-screen">
+    <main style={{ backgroundColor: theme.colors.background }} className="sf-site-gradient-bg min-h-screen">
       <Navbar theme={theme} />
       <div style={{ paddingTop: (theme.navbar.height ?? 64) + 16 }}>
         <ProductConfiguratorClient product={product} theme={theme} />

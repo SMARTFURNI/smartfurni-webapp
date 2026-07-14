@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   const theme = getTheme();
   return (
-    <main className="min-h-screen bg-[#0D0B00] text-[#F5EDD6]">
+    <main className="sf-site-gradient-bg min-h-screen bg-[#0D0B00] text-[#F5EDD6]">
       <Navbar theme={theme} />
       <ContactClient theme={theme} />
     </main>

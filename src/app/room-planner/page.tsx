@@ -18,7 +18,7 @@ export const metadata = {
 export default function RoomPlannerPage() {
   const theme = getTheme();
   return (
-    <main className="min-h-screen bg-[#0D0B00]">
+    <main className="sf-site-gradient-bg min-h-screen bg-[#0D0B00]">
       <Navbar theme={theme} />
       <RoomPlannerClient theme={theme} />
       <Footer theme={theme} variant="full" />

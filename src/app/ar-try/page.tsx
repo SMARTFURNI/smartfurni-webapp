@@ -21,7 +21,7 @@ export default function ARTryPage() {
   const theme = getTheme();
   const products = getAllProducts().filter((p) => p.category !== "accessory");
   return (
-    <main className="min-h-screen bg-[#0D0B00]">
+    <main className="sf-site-gradient-bg min-h-screen bg-[#0D0B00]">
       <Navbar theme={theme} />
       <ARTryAtHomeClient products={products} theme={theme} />
       <Footer theme={theme} variant="full" />

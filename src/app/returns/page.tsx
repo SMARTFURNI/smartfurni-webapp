@@ -14,7 +14,7 @@ export default function ReturnsPage() {
   const { colors, pageReturns } = theme;
 
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: colors.background }}>
+    <main className="sf-site-gradient-bg" style={{ minHeight: "100vh", backgroundColor: colors.background }}>
       <Navbar theme={theme} />
 
       {/* Hero */}

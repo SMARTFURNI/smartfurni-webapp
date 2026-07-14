@@ -906,7 +906,7 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
 
   if (visibleSlides.length === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: D.pageBg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 32 }}>
+      <div className="sf-site-gradient-bg" style={{ minHeight: "100vh", backgroundColor: D.pageBg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 32 }}>
         <div style={{ fontSize: 64, marginBottom: 16 }}>📋</div>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: D.textPrimary, marginBottom: 8 }}>Catalogue đang được cập nhật</h1>
         <p style={{ fontSize: 16, color: D.textMuted, marginBottom: 24 }}>Vui lòng quay lại sau hoặc liên hệ trực tiếp để nhận catalogue.</p>
@@ -937,7 +937,7 @@ export default function CataloguePublicViewer({ initialSlides, initialProducts }
   const displayH = Math.round(SLIDE_H * scale);
 
   return (
-    <div style={{ height: "100vh", background: D.pageBg, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div className="sf-site-gradient-bg" style={{ height: "100vh", backgroundColor: D.pageBg, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
       <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(13,11,26,0.98)", backdropFilter: "blur(12px)", flexShrink: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

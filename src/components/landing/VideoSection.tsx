@@ -152,7 +152,7 @@ export default function VideoSection({ theme, videoId, videoTitle }: VideoSectio
   const activeVideo = videos[current];
 
   return (
-    <section style={{ background: BLACK }}>
+    <section className="sf-site-gradient-bg" style={{ backgroundColor: BLACK }}>
 
       {/* ── Header ── */}
       <div style={{ textAlign: "center", padding: "clamp(40px, 6vw, 64px) 24px 28px" }}>

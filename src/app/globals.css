@@ -38,6 +38,15 @@ body {
   overflow-x: hidden;
 }
 
+/* Shared public-site canvas. Keep this formula aligned with product description cards. */
+.sf-site-gradient-bg {
+  background-image:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary, #C9A84C) 12%, transparent), transparent 34rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--color-surface, #1A1600) 92%, transparent), color-mix(in srgb, var(--color-background, #0D0B00) 96%, transparent));
+  background-repeat: no-repeat;
+  background-size: 100% 100%, 100% 100%;
+}
+
 main {
   max-width: 100%;
   overflow-x: hidden;

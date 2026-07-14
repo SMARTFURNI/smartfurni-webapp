@@ -22,7 +22,7 @@ export default function CartPage() {
     .filter((p) => p.status === "active")
     .slice(0, 6);
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
+    <main className="sf-site-gradient-bg" style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
       <Navbar theme={theme} />
       <CartClient theme={theme} upsellProducts={upsellProducts} />
     </main>

@@ -233,7 +233,7 @@ export default function StaticProductsSection({
   if (displayProducts.length === 0) return null;
 
   return (
-    <section style={{ background: bgColor, padding: "clamp(48px, 8vw, 80px) 0", borderTop: "1px solid rgba(201,168,76,0.1)" }}>
+    <section className="sf-site-gradient-bg" style={{ backgroundColor: bgColor, padding: "clamp(48px, 8vw, 80px) 0", borderTop: "1px solid rgba(201,168,76,0.1)" }}>
       <div style={{ maxWidth, margin: "0 auto", padding: "0 clamp(16px, 4vw, 24px)" }}>
 
         {/* ── Header ── */}

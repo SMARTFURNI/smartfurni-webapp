@@ -24,7 +24,7 @@ export default function ProductsPage() {
   const products = getAllProducts().filter((p) => p.status !== "discontinued");
 
   return (
-    <main className="min-h-screen bg-[#0D0B00]">
+    <main className="sf-site-gradient-bg min-h-screen bg-[#0D0B00]">
       <Navbar theme={theme} />
 
       {/* Hero banner — font-light + text-gold-gradient giống trang chủ */}

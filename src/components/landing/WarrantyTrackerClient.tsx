@@ -297,7 +297,7 @@ export default function WarrantyTrackerClient({ theme }: Props) {
   return (
     <>
       <Navbar theme={theme} />
-      <main className="min-h-screen pt-16" style={{ backgroundColor: colors.background }}>
+      <main className="sf-site-gradient-bg min-h-screen pt-16" style={{ backgroundColor: colors.background }}>
         {/* Hero */}
         <section
           className="py-14 px-4"
