@@ -311,7 +311,7 @@ function ProductLandingDescription({
       cancelled = true;
       removeHandlers.forEach((remove) => remove());
     };
-  }, [descriptionHtml, isEditing]);
+  }, [canEdit, descriptionHtml, isEditing]);
 
   function clearSelectedImage() {
     editorRef.current
