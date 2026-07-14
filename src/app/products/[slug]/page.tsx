@@ -31,8 +31,14 @@ export default async function ProductDetailPage({ params }: Props) {
   const theme = getTheme();
   const related = getRelatedProducts(product, 4);
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "#E8E7E2" }}>
-      <Navbar theme={theme} />
+    <main
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#302923",
+        backgroundImage: "linear-gradient(180deg, #3A312C 0%, #302923 52%, #29231F 100%)",
+      }}
+    >
+      <Navbar theme={theme} solid />
       <ProductDetailClient product={product} related={related} theme={theme} />
       <Footer theme={theme} variant="full" />
     </main>

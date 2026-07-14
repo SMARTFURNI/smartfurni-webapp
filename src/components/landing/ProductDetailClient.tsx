@@ -962,11 +962,12 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
   const { colors: brandColors, layout } = theme;
   const colors: SiteTheme["colors"] = {
     ...brandColors,
-    background: "#E8E7E2",
-    surface: "#F7F5EF",
-    text: "#28251F",
-    border: "#CFC9BC",
+    background: "#302923",
+    surface: "#403731",
+    text: "#F1E9DE",
+    border: "#66574C",
   };
+  const accentText = "#17130D";
   const router = useRouter();
   const { addItem, totalItems } = useCart();
 
@@ -1092,7 +1093,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
         disabled={!isAvailable}
         style={{
           background: isAvailable ? `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` : colors.border,
-          color: isAvailable ? colors.background : `${colors.text}40`,
+          color: isAvailable ? accentText : `${colors.text}40`,
         }}
         className="px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0"
       >
@@ -1102,7 +1103,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
     <div style={{ maxWidth: layout.maxWidth, paddingTop: (theme.navbar.height ?? 64) + 32 }} className="mx-auto px-4 sm:px-6 pb-8 sm:pb-10">
       {/* Breadcrumb */}
       <div className="mb-8">
-        <Breadcrumb tone="light" items={[
+        <Breadcrumb items={[
           { label: "Trang chủ", href: "/" },
           { label: "Sản phẩm", href: "/products" },
           { label: product.name },
@@ -1412,7 +1413,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
                         isSelected
                           ? {
                               background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-                              color: colors.background,
+                              color: accentText,
                               borderColor: "transparent",
                             }
                           : outOfStock
@@ -1475,7 +1476,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
                       background: addedToCart
                         ? `linear-gradient(135deg, ${colors.success}, ${colors.success})`
                         : `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-                      color: colors.background,
+                      color: accentText,
                     }
                   : { backgroundColor: colors.border, color: `${colors.text}40`, cursor: "not-allowed" }
               }
@@ -1716,7 +1717,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div
-                          style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: colors.background }}
+                          style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: accentText }}
                           className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
                         >
                           {r.userName.charAt(0)}
