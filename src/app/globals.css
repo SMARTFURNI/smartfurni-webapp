@@ -911,6 +911,12 @@ section {
   inset: 0;
   position: absolute;
 }
+.prose-custom .sf-desc-video-card.is-ready .sf-desc-video-thumb {
+  background-image: var(--sf-video-thumbnail);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
 .prose-custom .sf-desc-video-thumb img,
 .prose-custom .sf-desc-video-card iframe {
   border: 0;
@@ -944,6 +950,9 @@ section {
   font-size: .8rem;
   height: 100%;
   justify-content: center;
+}
+.prose-custom .sf-desc-video-card.is-ready .sf-desc-video-empty {
+  display: none;
 }
 .prose-custom .sf-desc-video-tag {
   background: rgba(139, 105, 20, .88);

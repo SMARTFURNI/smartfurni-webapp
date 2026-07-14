@@ -139,6 +139,38 @@ function getYoutubeVideoId(raw?: string | null) {
   }
 }
 
+function getRenderedProductDescriptionHtml(html: string) {
+  return html.replace(/<[^>]+>/g, (tag) => {
+    const classMatch = tag.match(/\bclass\s*=\s*(["'])([^"']*)\1/i);
+    if (!classMatch || !classMatch[2]?.split(/\s+/).includes("sf-desc-video-card")) {
+      return tag;
+    }
+
+    const videoMatch = tag.match(/\bdata-video-id\s*=\s*(["'])([^"']*)\1/i);
+    const videoId = getYoutubeVideoId(videoMatch?.[2]);
+    if (!videoId) return tag;
+
+    const readyClasses = classMatch[2].split(/\s+/).filter(Boolean);
+    if (!readyClasses.includes("is-ready")) readyClasses.push("is-ready");
+
+    let renderedTag = tag.replace(classMatch[0], `class=${classMatch[1]}${readyClasses.join(" ")}${classMatch[1]}`);
+    const thumbnailStyle = `--sf-video-thumbnail:url(https://img.youtube.com/vi/${videoId}/maxresdefault.jpg)`;
+    const styleMatch = renderedTag.match(/\bstyle\s*=\s*(["'])([^"']*)\1/i);
+
+    if (styleMatch) {
+      const separator = styleMatch[2]?.trim().endsWith(";") ? "" : ";";
+      renderedTag = renderedTag.replace(
+        styleMatch[0],
+        `style=${styleMatch[1]}${styleMatch[2]}${separator}${thumbnailStyle}${styleMatch[1]}`,
+      );
+    } else {
+      renderedTag = renderedTag.replace(/\s*>$/, ` style="${thumbnailStyle}">`);
+    }
+
+    return renderedTag;
+  });
+}
+
 function ProductLandingDescription({
   product,
   colors,
@@ -168,6 +200,10 @@ function ProductLandingDescription({
   const [selectedImageSrc, setSelectedImageSrc] = useState("");
   const [imageLink, setImageLink] = useState("");
   const [videoLinks, setVideoLinks] = useState<ProductDescriptionVideoLinks>(emptyProductDescriptionVideoLinks);
+  const renderedDescriptionHtml = useMemo(
+    () => getRenderedProductDescriptionHtml(descriptionHtml),
+    [descriptionHtml],
+  );
   const descriptionStyle = {
     color: colors.text,
     "--sf-desc-primary": colors.primary,
@@ -646,7 +682,7 @@ function ProductLandingDescription({
           style={descriptionStyle}
           className="prose-custom max-w-none"
           onClick={onAction}
-          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+          dangerouslySetInnerHTML={{ __html: renderedDescriptionHtml }}
         />
       )}
     </div>
