@@ -19,9 +19,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const body = await request.json();
-  const product = updateProduct(id, body);
-  if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
-  return NextResponse.json(product);
+  try {
+    const product = await updateProduct(id, body);
+    if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("Product update persistence error:", error);
+    return NextResponse.json({ error: "Không lưu được sản phẩm vào cơ sở dữ liệu" }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

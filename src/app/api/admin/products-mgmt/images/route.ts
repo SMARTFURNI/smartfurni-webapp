@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const newImages = [...currentImages, url];
     const newCoverImage = product.coverImage || url; // set as cover if no cover yet
 
-    updateProduct(productId, {
+    await updateProduct(productId, {
       images: newImages,
       coverImage: newCoverImage,
     });
@@ -109,7 +109,7 @@ export async function DELETE(request: NextRequest) {
       newCoverImage = newImages[0] || undefined;
     }
 
-    updateProduct(productId, {
+    await updateProduct(productId, {
       images: newImages,
       coverImage: newCoverImage,
     });
@@ -158,7 +158,7 @@ export async function PATCH(request: NextRequest) {
     const product = getProductById(productId);
     if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
-    updateProduct(productId, { coverImage: imageUrl });
+    await updateProduct(productId, { coverImage: imageUrl });
 
     return NextResponse.json({ success: true, coverImage: imageUrl });
   } catch (error) {

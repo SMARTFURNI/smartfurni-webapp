@@ -64,6 +64,23 @@ export async function dbLoadAll<T>(table: string): Promise<T[] | null> {
 }
 
 /**
+ * Load one row by id. Used by public pages that must not rely on a
+ * process-local cache when the app is running on multiple instances.
+ */
+export async function dbLoadOne<T>(table: string, id: string): Promise<T | null> {
+  const pool = getPool();
+  if (!pool) return null;
+  try {
+    await ensureTable(table);
+    const result = await pool.query(`SELECT data FROM ${table} WHERE id = $1 LIMIT 1`, [id]);
+    return (result.rows[0]?.data as T | undefined) || null;
+  } catch (err) {
+    console.error(`[db-store] dbLoadOne(${table}, ${id}) error:`, (err as Error).message);
+    return null;
+  }
+}
+
+/**
  * Save a single item to the database (upsert by id).
  * Fire-and-forget — does not block the caller.
  */
@@ -79,6 +96,21 @@ export function dbSaveOne<T extends { id: string }>(table: string, item: T): voi
     .catch((err) => {
       console.error(`[db-store] dbSaveOne(${table}, ${item.id}) error:`, (err as Error).message);
     });
+}
+
+/**
+ * Save one item and wait until PostgreSQL confirms the write.
+ * Mutation APIs should use this before returning success to the browser.
+ */
+export async function dbSaveOneAndWait<T extends { id: string }>(table: string, item: T): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
+  await ensureTable(table);
+  await pool.query(
+    `INSERT INTO ${table} (id, data, updated_at) VALUES ($1, $2, NOW())
+     ON CONFLICT (id) DO UPDATE SET data = $2, updated_at = NOW()`,
+    [item.id, JSON.stringify(item)]
+  );
 }
 
 /**

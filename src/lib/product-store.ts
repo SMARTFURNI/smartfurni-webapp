@@ -1,6 +1,6 @@
 // ─── Product Data Model ───────────────────────────────────────────────────────
 
-import { dbLoadAll, dbSaveOne, dbDeleteOne, dbSaveAll } from "./db-store";
+import { dbLoadAll, dbLoadOne, dbSaveOne, dbSaveOneAndWait, dbDeleteOne, dbSaveAll } from "./db-store";
 import { registerDbLoader } from "./db-init";
 
 export type ProductStatus = "active" | "discontinued" | "out_of_stock" | "coming_soon";
@@ -547,6 +547,18 @@ export function getProductBySlug(slug: string): Product | undefined {
   return products.find((p) => p.slug === slug);
 }
 
+export async function getProductBySlugFresh(slug: string): Promise<Product | undefined> {
+  const cached = getProductBySlug(slug);
+  if (!cached) return undefined;
+
+  const stored = await dbLoadOne<Product>("products", cached.id);
+  if (!stored) return cached;
+
+  const idx = products.findIndex((product) => product.id === stored.id);
+  if (idx >= 0) products[idx] = stored;
+  return stored;
+}
+
 export function getRelatedProducts(product: Product, limit = 4): Product[] {
   const sameCategory = products.filter(
     (p) => p.id !== product.id && p.status !== "discontinued" && p.category === product.category
@@ -557,7 +569,7 @@ export function getRelatedProducts(product: Product, limit = 4): Product[] {
   return [...sameCategory, ...otherCategory].slice(0, limit);
 }
 
-export function updateProduct(id: string, updates: Partial<Product>): Product | null {
+export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product | null> {
   const idx = products.findIndex((p) => p.id === id);
   if (idx === -1) return null;
   const merged = { ...products[idx], ...updates, updatedAt: new Date().toISOString() };
@@ -578,7 +590,7 @@ export function updateProduct(id: string, updates: Partial<Product>): Product | 
       .replace(/-+/g, "-");
   }
   products[idx] = merged;
-  saveProduct(merged);
+  await dbSaveOneAndWait("products", merged);
   return products[idx];
 }
 
