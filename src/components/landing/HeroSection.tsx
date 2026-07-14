@@ -165,7 +165,9 @@ const SLEEP_PHASES = [
   },
 ];
 
-const PHASE_MILESTONES = [0, 0.35, 0.7];
+const MIDNIGHT_MILESTONE = 0.46;
+const WAKE_MILESTONE = 0.82;
+const PHASE_MILESTONES = [0, MIDNIGHT_MILESTONE, WAKE_MILESTONE];
 
 interface HeroSectionProps {
   theme?: SiteTheme;
@@ -198,6 +200,13 @@ export default function HeroSection({ theme }: HeroSectionProps) {
 
   const heroOverlayOpacity = Math.min(90, Math.max(35, theme?.hero?.overlayOpacity ?? 60)) / 100;
   const phase = SLEEP_PHASES[activePhase];
+  const elapsedClockHours = scrollProgress <= MIDNIGHT_MILESTONE
+    ? 5 * (scrollProgress / MIDNIGHT_MILESTONE)
+    : scrollProgress <= WAKE_MILESTONE
+      ? 5 + 6 * ((scrollProgress - MIDNIGHT_MILESTONE) / (WAKE_MILESTONE - MIDNIGHT_MILESTONE))
+      : 11;
+  const clockHandAngle = 210 + elapsedClockHours * 30;
+  const clockArcPercent = (elapsedClockHours / 12) * 100;
   const heroTitleParts = heroTitle.includes("\n")
     ? heroTitle.split("\n")
     : (() => {
@@ -213,7 +222,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
       const rect = hero.getBoundingClientRect();
       const scrollDistance = Math.max(1, hero.offsetHeight - window.innerHeight);
       const progress = Math.min(0.9999, Math.max(0, -rect.top / scrollDistance));
-      const nextPhase = progress >= PHASE_MILESTONES[2] ? 2 : progress >= PHASE_MILESTONES[1] ? 1 : 0;
+      const nextPhase = progress >= WAKE_MILESTONE ? 2 : progress >= MIDNIGHT_MILESTONE ? 1 : 0;
       setScrollProgress(progress);
       setActivePhase((current) => current === nextPhase ? current : nextPhase);
     };
@@ -316,13 +325,16 @@ export default function HeroSection({ theme }: HeroSectionProps) {
                   cy="50"
                   r="46"
                   pathLength="100"
-                  strokeDasharray={`${scrollProgress * 100} 100`}
+                  strokeDasharray={`${clockArcPercent} 100`}
                 />
-                <circle className="sf-cycle-clock__milestone" cx="50" cy="4" r="0.8" />
-                <circle className="sf-cycle-clock__milestone" cx="91" cy="70" r="0.8" />
-                <circle className="sf-cycle-clock__milestone" cx="9" cy="70" r="0.8" />
+                <circle className="sf-cycle-clock__milestone" cx="27" cy="90" r="0.9" />
+                <circle className="sf-cycle-clock__milestone" cx="50" cy="4" r="0.9" />
+                <circle className="sf-cycle-clock__milestone" cx="50" cy="96" r="0.9" />
+                <text className="sf-cycle-clock__label" x="22" y="84">19:00</text>
+                <text className="sf-cycle-clock__label" x="50" y="10" textAnchor="middle">00:00</text>
+                <text className="sf-cycle-clock__label" x="50" y="91" textAnchor="middle">06:00</text>
               </svg>
-              <span className="sf-cycle-ring__hand" style={{ transform: `translateX(-50%) rotate(${scrollProgress * 360}deg)` }} />
+              <span className="sf-cycle-ring__hand" style={{ transform: `translateX(-50%) rotate(${clockHandAngle}deg)` }} />
               <span className="sf-cycle-sensor sf-cycle-sensor--one" />
               <span className="sf-cycle-sensor sf-cycle-sensor--two" />
               <span className="sf-cycle-sensor sf-cycle-sensor--three" />

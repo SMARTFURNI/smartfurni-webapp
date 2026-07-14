@@ -124,7 +124,7 @@ section {
 .prose-custom ul li::before {
   content: "→";
   position: absolute;
-  left: 0;
+  left: 1rem;
   color: var(--color-primary, #C9A84C);
   font-weight: 600;
 }
@@ -1359,7 +1359,7 @@ section {
 .sf-cycle-hero__intro {
   position: absolute;
   top: clamp(34px, 5.5vh, 62px);
-  left: 2rem;
+  left: 0;
   z-index: 5;
   width: min(510px, 39vw);
 }
@@ -1434,7 +1434,7 @@ section {
 .sf-cycle-clock__ticks,
 .sf-cycle-clock__progress {
   fill: none;
-  transform: rotate(-90deg);
+  transform: rotate(120deg);
   transform-origin: 50% 50%;
 }
 
@@ -1456,6 +1456,14 @@ section {
 .sf-cycle-clock__milestone {
   fill: var(--sf-cycle-gold);
   opacity: 0.58;
+}
+
+.sf-cycle-clock__label {
+  fill: rgba(238, 228, 207, 0.56);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 2.15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .sf-cycle-ring__hand {
@@ -1491,9 +1499,9 @@ section {
 
 .sf-cycle-copy {
   position: absolute;
-  left: 58%;
-  top: 56%;
-  width: min(360px, 28vw);
+  left: 48%;
+  top: 57%;
+  width: min(350px, 27vw);
   animation: sf-cycle-copy-in 650ms ease both;
   text-shadow: 0 6px 24px rgba(0,0,0,0.72);
 }
