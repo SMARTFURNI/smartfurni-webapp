@@ -141,6 +141,7 @@ const TRUST_STATS = [
 const SLEEP_PHASES = [
   {
     number: "01",
+    image: "/hero/sleep-cycle/01-relax.jpg",
     shortLabel: "Thư giãn",
     eyebrow: "TRƯỚC GIẤC NGỦ",
     title: "Chạm để cơ thể thả lỏng",
@@ -148,6 +149,7 @@ const SLEEP_PHASES = [
   },
   {
     number: "02",
+    image: "/hero/sleep-cycle/02-sleep.jpg",
     shortLabel: "Giấc ngủ",
     eyebrow: "TRONG GIẤC NGỦ",
     title: "Êm ái theo từng nhịp nghỉ ngơi",
@@ -155,6 +157,7 @@ const SLEEP_PHASES = [
   },
   {
     number: "03",
+    image: "/hero/sleep-cycle/03-wake.jpg",
     shortLabel: "Thức dậy",
     eyebrow: "BẮT ĐẦU NGÀY MỚI",
     title: "Thức dậy nhẹ nhàng hơn",
@@ -168,7 +171,8 @@ interface HeroSectionProps {
 
 export default function HeroSection({ theme }: HeroSectionProps) {
   const [b2bOpen, setB2bOpen] = useState(false);
-  const [activePhase, setActivePhase] = useState(1);
+  const [activePhase, setActivePhase] = useState(0);
+  const heroRef = useRef<HTMLElement>(null);
 
   const primary = theme?.colors.primary ?? "#C9A84C";
   const secondary = theme?.colors.secondary ?? "#9A7A2E";
@@ -189,8 +193,6 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const ctaSecondaryText = theme?.hero.ctaSecondaryText ?? "Nhận tư vấn miễn phí";
   const ctaSecondaryLink = theme?.hero.ctaSecondaryLink ?? "/contact";
 
-  // Ảnh vẫn lấy từ cấu hình admin; ảnh phòng ngủ mặc định giúp bố cục có chiều sâu ngay từ lần tải đầu.
-  const heroImageUrl = theme?.hero?.imageUrl || "/gsf150-wood-frame.jpg";
   const heroOverlayOpacity = Math.min(90, Math.max(35, theme?.hero?.overlayOpacity ?? 60)) / 100;
   const phase = SLEEP_PHASES[activePhase];
   const heroTitleParts = heroTitle.includes("\n")
@@ -202,12 +204,34 @@ export default function HeroSection({ theme }: HeroSectionProps) {
       })();
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setTimeout(() => {
-      setActivePhase((current) => (current + 1) % SLEEP_PHASES.length);
-    }, 6500);
-    return () => window.clearTimeout(timer);
-  }, [activePhase]);
+    const updatePhaseFromScroll = () => {
+      const hero = heroRef.current;
+      if (!hero) return;
+      const rect = hero.getBoundingClientRect();
+      const scrollDistance = Math.max(1, hero.offsetHeight - window.innerHeight);
+      const progress = Math.min(0.9999, Math.max(0, -rect.top / scrollDistance));
+      const nextPhase = Math.min(SLEEP_PHASES.length - 1, Math.floor(progress * SLEEP_PHASES.length));
+      setActivePhase((current) => current === nextPhase ? current : nextPhase);
+    };
+
+    updatePhaseFromScroll();
+    window.addEventListener("scroll", updatePhaseFromScroll, { passive: true });
+    window.addEventListener("resize", updatePhaseFromScroll);
+    return () => {
+      window.removeEventListener("scroll", updatePhaseFromScroll);
+      window.removeEventListener("resize", updatePhaseFromScroll);
+    };
+  }, []);
+
+  const selectPhase = (index: number) => {
+    setActivePhase(index);
+    const hero = heroRef.current;
+    if (!hero) return;
+    const sectionTop = window.scrollY + hero.getBoundingClientRect().top;
+    const scrollDistance = Math.max(1, hero.offsetHeight - window.innerHeight);
+    const targetProgress = index === 0 ? 0 : (index / SLEEP_PHASES.length) + 0.02;
+    window.scrollTo({ top: sectionTop + scrollDistance * targetProgress, behavior: "smooth" });
+  };
 
   const heroVars = {
     "--sf-hero-primary": primary,
@@ -233,19 +257,28 @@ export default function HeroSection({ theme }: HeroSectionProps) {
 
       {/* ── SMARTFURNI SLEEP-CYCLE HERO ── */}
       <section
-        style={{ ...heroVars, background: `linear-gradient(160deg, ${bgFrom} 0%, ${bgTo} 100%)` }}
-        className="sf-cycle-hero relative isolate max-w-full overflow-hidden"
+        ref={heroRef}
+        style={heroVars}
+        className="sf-cycle-hero relative isolate max-w-full"
       >
+        <div className="sf-cycle-hero__sticky" style={{ background: `linear-gradient(160deg, ${bgFrom} 0%, ${bgTo} 100%)` }}>
         <div className="sf-cycle-hero__media absolute inset-0 z-0">
-          <img
-            src={heroImageUrl}
-            alt="Giường điều chỉnh điện SmartFurni trong không gian nghỉ ngơi"
-            className="sf-cycle-hero__image h-full w-full object-cover"
-          />
+          {SLEEP_PHASES.map((item, index) => (
+            <img
+              key={item.number}
+              src={item.image}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="async"
+              fetchPriority={index === 0 ? "high" : "auto"}
+              className={`sf-cycle-hero__image h-full w-full object-cover ${activePhase === index ? "is-active" : ""}`}
+            />
+          ))}
           <div
             className="sf-cycle-hero__shade absolute inset-0"
             style={{
-              opacity: Math.max(0.78, heroOverlayOpacity),
+              opacity: Math.max(0.48, heroOverlayOpacity * 0.82),
             }}
           />
         </div>
@@ -299,7 +332,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
                   role="tab"
                   aria-selected={activePhase === index}
                   className={activePhase === index ? "is-active" : ""}
-                  onClick={() => setActivePhase(index)}
+                  onClick={() => selectPhase(index)}
                 >
                   <span>{item.number}</span>{item.shortLabel}
                 </button>
@@ -341,6 +374,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
             </svg>
             Trở thành đối tác B2B
           </button>
+        </div>
         </div>
       </section>
     </>
