@@ -959,7 +959,14 @@ function ProductDescriptionPopup({
 }
 
 export default function ProductDetailClient({ product, related, theme }: Props) {
-  const { colors, layout } = theme;
+  const { colors: brandColors, layout } = theme;
+  const colors: SiteTheme["colors"] = {
+    ...brandColors,
+    background: "#E8E7E2",
+    surface: "#F7F5EF",
+    text: "#28251F",
+    border: "#CFC9BC",
+  };
   const router = useRouter();
   const { addItem, totalItems } = useCart();
 
@@ -1095,7 +1102,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
     <div style={{ maxWidth: layout.maxWidth, paddingTop: (theme.navbar.height ?? 64) + 32 }} className="mx-auto px-4 sm:px-6 pb-8 sm:pb-10">
       {/* Breadcrumb */}
       <div className="mb-8">
-        <Breadcrumb items={[
+        <Breadcrumb tone="light" items={[
           { label: "Trang chủ", href: "/" },
           { label: "Sản phẩm", href: "/products" },
           { label: product.name },
@@ -1312,7 +1319,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
         <div className="flex flex-col gap-5">
           {/* Name */}
           <div>
-            <h1 className="text-3xl font-light text-[#F5EDD6] leading-tight mb-2">
+            <h1 style={{ color: colors.text }} className="text-3xl font-light leading-tight mb-2">
               {product.name}
             </h1>
             {product.reviewCount > 0 && (
@@ -1382,7 +1389,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
           )}
 
           {/* Short Description */}
-          <p className="text-sm text-[#F5EDD6]/50 leading-relaxed">
+          <p style={{ color: `${colors.text}A6` }} className="text-sm leading-relaxed">
             {product.description}
           </p>
 
@@ -1603,7 +1610,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
 
         {/* Tab: Mô tả sản phẩm */}
         {activeTab === "description" && (
-          <ProductLandingDescription product={product} colors={colors} onAction={handleDescriptionAction} />
+          <ProductLandingDescription product={product} colors={brandColors} onAction={handleDescriptionAction} />
         )}
 
         {/* Tab: Tính năng */}
@@ -1754,7 +1761,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
           <ScrollReveal variant="fadeUp" delay={0}>
           <div className="flex items-center gap-3 mb-6">
             <span className="w-6 h-px bg-[#C9A84C]" />
-            <h2 className="text-xl sm:text-2xl font-light text-[#F5EDD6]">
+            <h2 style={{ color: colors.text }} className="text-xl sm:text-2xl font-light">
               Sản phẩm <span className="text-gold-gradient">liên quan</span>
             </h2>
           </div>
@@ -1816,7 +1823,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
     <ProductDescriptionPopup
       popupId={descriptionPopupId}
       product={product}
-      colors={colors}
+      colors={brandColors}
       onClose={() => setDescriptionPopupId(null)}
     />
     </>
