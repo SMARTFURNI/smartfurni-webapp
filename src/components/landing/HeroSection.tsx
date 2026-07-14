@@ -190,7 +190,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const heroTitle = theme?.hero.title ?? "Ngủ Ngon Hơn\nMỗi Đêm";
   const heroSubtitle = theme?.hero.subtitle ?? "Giường điều chỉnh điện SmartFurni — nâng hạ đầu & chân chính xác, motor êm ái, điều khiển bằng remote hoặc ứng dụng di động.";
   const titleFontSizeBase = theme?.hero.titleFontSize ?? 64;
-  const titleFontSize = `clamp(30px, 3.4vw, ${Math.min(titleFontSizeBase, 52)}px)`;
+  const titleFontSize = `${titleFontSizeBase}px`;
   const titleColor = theme?.hero.titleColor ?? textColor;
   const titleAccentColor = theme?.hero.titleAccentColor ?? primary;
   const ctaText = theme?.hero.ctaText ?? "Xem sản phẩm";
@@ -253,7 +253,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
     "--sf-hero-border": borderColor,
     "--sf-hero-bg": bgFrom,
     "--sf-cycle-gold": "#d8c69f",
-    "--sf-hero-title-size": `${Math.min(titleFontSizeBase, 52)}px`,
+    "--sf-hero-title-size": `${titleFontSizeBase}px`,
   } as CSSProperties;
 
   return (
