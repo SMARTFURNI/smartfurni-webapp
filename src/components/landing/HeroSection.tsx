@@ -278,6 +278,17 @@ export default function HeroSection({ theme }: HeroSectionProps) {
         <div className="sf-cycle-hero__media absolute inset-0 z-0">
           {SLEEP_PHASES.map((item, index) => (
             <img
+              key={`backdrop-${item.number}`}
+              src={item.image}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="async"
+              className={`sf-cycle-hero__backdrop ${activePhase === index ? "is-active" : ""}`}
+            />
+          ))}
+          {SLEEP_PHASES.map((item, index) => (
+            <img
               key={item.number}
               src={item.image}
               alt=""
@@ -291,7 +302,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
           <div
             className="sf-cycle-hero__shade absolute inset-0"
             style={{
-              opacity: Math.max(0.48, heroOverlayOpacity * 0.82),
+              opacity: Math.max(0.12, heroOverlayOpacity * 0.2),
             }}
           />
         </div>
