@@ -27,7 +27,7 @@ function formatPrice(price: number) {
 }
 
 // ─── Product Card — giống hệt landing page ───────────────────────────────────
-function ProductCard({ product, index }: { product: Product; index: number }) {
+function ProductCard({ product, index, hrefOverride }: { product: Product; index: number; hrefOverride?: string }) {
   const [hovered, setHovered] = useState(false);
   const [imgErr, setImgErr] = useState(false);
 
@@ -42,11 +42,12 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
   const badgeLabel = product.imageBadge || null;
   const badgeHighlight = badgeLabel ? (badgeLabel.includes("★") || badgeLabel.toLowerCase().includes("bán chạy")) : false;
 
-  const href = isAvailable || isComingSoon ? `/products/${product.slug}` : "#";
+  const href = hrefOverride ?? (isAvailable || isComingSoon ? `/products/${product.slug}` : "#");
 
   return (
     <Link href={href} style={{ textDecoration: "none", display: "block" }}>
       <div
+        className="sf-home-product-card"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
@@ -64,7 +65,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         }}
       >
         {/* ── Image 1:1 ratio (giống landing page) ── */}
-        <div style={{
+        <div className="sf-home-product-card__media" style={{
           position: "relative",
           width: "100%",
           paddingBottom: "100%", // tỷ lệ 1:1
@@ -143,9 +144,9 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         </div>
 
         {/* ── Content ── */}
-        <div style={{ padding: "22px 22px 26px", display: "flex", flexDirection: "column", flex: 1 }}>
+        <div className="sf-home-product-card__content" style={{ padding: "22px 22px 26px", display: "flex", flexDirection: "column", flex: 1 }}>
           {/* Category label */}
-          <div style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT, textTransform: "uppercase" }}>
+          <div className="sf-home-product-card__category" style={{ color: GOLD, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", marginBottom: 6, fontFamily: FONT, textTransform: "uppercase" }}>
             {product.category === "standard" ? "Standard"
               : product.category === "premium" ? "Premium"
               : product.category === "elite" ? "Elite"
@@ -153,20 +154,20 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           </div>
 
           {/* Name */}
-          <h3 style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 8, lineHeight: 1.4, fontFamily: FONT, minHeight: 44 }}>
+          <h3 className="sf-home-product-card__title" style={{ color: WHITE, fontSize: 16, fontWeight: 600, marginBottom: 8, lineHeight: 1.4, fontFamily: FONT, minHeight: 44 }}>
             {product.name}
           </h3>
 
           {/* Description */}
           {product.description && (
-            <p style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, marginBottom: 14, fontFamily: FONT, flex: 1 }}>
+            <p className="sf-home-product-card__description" style={{ color: GRAY, fontSize: 13, lineHeight: 1.7, marginBottom: 14, fontFamily: FONT, flex: 1 }}>
               {product.description.slice(0, 90)}{product.description.length > 90 ? "…" : ""}
             </p>
           )}
 
           {/* Features (top 4) */}
           {product.features.length > 0 && (
-            <ul style={{ margin: "0 0 14px 0", padding: 0, listStyle: "none" }}>
+            <ul className="sf-home-product-card__features" style={{ margin: "0 0 14px 0", padding: 0, listStyle: "none" }}>
               {product.features.slice(0, 4).map((f) => (
                 <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 5 }}>
                   <span style={{ color: GOLD, fontSize: 12, lineHeight: 1.6, flexShrink: 0 }}>•</span>
@@ -177,7 +178,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           )}
 
           {/* Price box — giống landing page */}
-          <div style={{
+          <div className="sf-home-product-card__price" style={{
             background: "rgba(201,168,76,0.06)",
             border: `1px solid rgba(201,168,76,0.2)`,
             padding: "12px 14px",
@@ -215,6 +216,7 @@ interface StaticProductsSectionProps {
   products: Product[];
   sectionTitle?: string;
   sectionSubtitle?: string;
+  productHref?: string;
 }
 
 export default function StaticProductsSection({
@@ -222,6 +224,7 @@ export default function StaticProductsSection({
   products,
   sectionTitle = "Dòng Giường Công Thái Học",
   sectionSubtitle = "Được chế tác từ thép cường lực, tích hợp motor Đức — bảo hành 5 năm chính hãng",
+  productHref,
 }: StaticProductsSectionProps) {
   const { colors, layout } = theme;
   const primary = colors.primary ?? GOLD;
@@ -291,7 +294,7 @@ export default function StaticProductsSection({
         </ScrollReveal>
 
         {/* ── Product grid ── */}
-        <div style={{
+        <div className="sf-home-product-grid" style={{
           display: "grid",
           gridTemplateColumns: displayProducts.length === 1
             ? "minmax(min(100%, 480px), 480px)"
@@ -302,7 +305,7 @@ export default function StaticProductsSection({
         }}>
           {displayProducts.map((p, i) => (
             <ScrollReveal key={p.id} variant="fadeUp" delay={100 + i * 100}>
-            <ProductCard product={p} index={i} />
+            <ProductCard product={p} index={i} hrefOverride={productHref} />
             </ScrollReveal>
           ))}
         </div>

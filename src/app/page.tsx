@@ -12,6 +12,7 @@ import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import ComparisonSection from "@/components/landing/ComparisonSection";
 import HomeDecisionSections from "@/components/landing/HomeDecisionSections";
 import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
+import { HOMEPAGE_MATTRESS_PRODUCTS } from "@/lib/homepage-mattress-products";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,10 @@ export default async function HomePage() {
   const theme = await getThemeAsync();
   const homepageConfig = await getHomepageProductConfigAsync();
   const products = getHomepageProducts();
+  const bedProducts = products.filter((product) => {
+    const normalizedName = product.name.toLocaleLowerCase("vi");
+    return !normalizedName.includes("nệm") && !normalizedName.includes("nem ");
+  });
   const { banner } = theme;
 
   return (
@@ -45,15 +50,24 @@ export default async function HomePage() {
       {/* 2. Hero — ảnh sản phẩm + tiêu đề ngắn + 2 CTA */}
       <HeroSection theme={theme} />
 
-      {/* 3. Dòng sản phẩm — đưa lên trước video thực tế */}
+      {/* 3. Dòng nệm điện thông minh */}
       <StaticProductsSection
         theme={theme}
-        products={products}
+        products={HOMEPAGE_MATTRESS_PRODUCTS}
+        sectionTitle={"Nệm Điện Thông Minh\nSmartFurni"}
+        sectionSubtitle="Nâng đỡ linh hoạt theo từng tư thế, cá nhân hóa trải nghiệm nghỉ ngơi cho mỗi thành viên trong gia đình."
+        productHref="/products"
+      />
+
+      {/* 4. Dòng giường công thái học */}
+      <StaticProductsSection
+        theme={theme}
+        products={bedProducts}
         sectionTitle={homepageConfig.sectionTitle}
         sectionSubtitle={homepageConfig.sectionSubtitle}
       />
 
-      {/* 4. Video thực tế — tăng tin cậy sau khi khách đã thấy dòng sản phẩm */}
+      {/* 5. Video thực tế — tăng tin cậy sau khi khách đã thấy dòng sản phẩm */}
       <VideoSection theme={theme} />
 
       {/* 5. Chuyển động & cận cảnh — giảm chữ, tăng hình ảnh mô tả */}
