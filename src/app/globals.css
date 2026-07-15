@@ -1445,15 +1445,23 @@ section {
 .sf-cycle-clock__ticks,
 .sf-cycle-clock__progress {
   fill: none;
-  transform: rotate(120deg);
-  transform-origin: 50% 50%;
 }
 
 .sf-cycle-clock__ticks {
-  stroke: rgba(231, 235, 239, 0.34);
-  stroke-width: 1.05;
-  stroke-dasharray: 0.55 1.25;
+  stroke: rgba(231, 235, 239, 0.66);
+  stroke-width: 0.52;
   stroke-linecap: round;
+  opacity: 0.2;
+}
+
+.sf-cycle-clock__tick--major {
+  stroke: rgba(238, 228, 207, 0.82);
+  stroke-width: 0.72;
+}
+
+.sf-cycle-clock__progress {
+  transform: rotate(120deg);
+  transform-origin: 50% 50%;
 }
 
 .sf-cycle-clock__progress {
@@ -1706,7 +1714,8 @@ section {
   .sf-cycle-b2b { top: calc(64px + 0.65rem); right: 0.85rem; padding: 0.5rem; font-size: 0; }
   .sf-cycle-b2b svg { width: 15px; height: 15px; }
   .sf-cycle-ring { left: 50%; top: 56%; width: min(92vw, 390px); opacity: 0.78; }
-  .sf-cycle-clock__ticks { stroke-width: 0.85; stroke-dasharray: 0.48 1.3; }
+  .sf-cycle-clock__ticks { stroke-width: 0.44; opacity: 0.17; }
+  .sf-cycle-clock__tick--major { stroke-width: 0.62; }
   .sf-cycle-clock__progress { stroke-width: 1; opacity: 0.56; }
   .sf-cycle-ring__hand { width: 0.8px; opacity: 0.4; }
   .sf-cycle-sensor { width: 8px; height: 8px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--sf-hero-primary) 30%, transparent), 0 0 22px var(--sf-hero-primary); }

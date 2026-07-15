@@ -330,7 +330,22 @@ export default function HeroSection({ theme }: HeroSectionProps) {
           <div className="sf-cycle-stage" aria-live="polite">
             <div className="sf-cycle-ring" aria-hidden="true">
               <svg className="sf-cycle-clock" viewBox="0 0 100 100">
-                <circle className="sf-cycle-clock__ticks" cx="50" cy="50" r="46" pathLength="100" />
+                <g className="sf-cycle-clock__ticks">
+                  {Array.from({ length: 60 }, (_, index) => {
+                    const isMajorTick = index % 5 === 0;
+                    return (
+                      <line
+                        key={index}
+                        className={isMajorTick ? "sf-cycle-clock__tick sf-cycle-clock__tick--major" : "sf-cycle-clock__tick"}
+                        x1="50"
+                        y1="4"
+                        x2="50"
+                        y2={isMajorTick ? "7.1" : "6.1"}
+                        transform={`rotate(${index * 6} 50 50)`}
+                      />
+                    );
+                  })}
+                </g>
                 <circle
                   className="sf-cycle-clock__progress"
                   cx="50"
