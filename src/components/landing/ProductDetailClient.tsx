@@ -30,6 +30,7 @@ interface Props {
 }
 
 function formatPrice(price: number) {
+  if (price <= 0) return "Liên hệ";
   if (price >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(1)} tỷ đ`;
   if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu đ`;
   return price.toLocaleString("vi-VN") + " đ";

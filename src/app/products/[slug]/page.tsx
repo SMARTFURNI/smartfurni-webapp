@@ -5,6 +5,10 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import ProductDetailClient from "@/components/landing/ProductDetailClient";
 import { initDbOnce } from "@/lib/db-init";
+import {
+  getHomepageMattressProductBySlug,
+  getHomepageMattressRelatedProducts,
+} from "@/lib/homepage-mattress-products";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +19,8 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   await initDbOnce();
   const { slug } = await params;
-  const product = await getProductBySlugFresh(slug);
+  const product =
+    (await getProductBySlugFresh(slug)) ?? getHomepageMattressProductBySlug(slug);
   if (!product) return { title: "Không tìm thấy sản phẩm" };
   return {
     title: `${product.name} | SmartFurni`,
@@ -26,10 +31,13 @@ export async function generateMetadata({ params }: Props) {
 export default async function ProductDetailPage({ params }: Props) {
   await initDbOnce();
   const { slug } = await params;
-  const product = await getProductBySlugFresh(slug);
+  const product =
+    (await getProductBySlugFresh(slug)) ?? getHomepageMattressProductBySlug(slug);
   if (!product) notFound();
   const theme = getTheme();
-  const related = getRelatedProducts(product, 4);
+  const related = getHomepageMattressProductBySlug(slug)
+    ? getHomepageMattressRelatedProducts(product.id, 4)
+    : getRelatedProducts(product, 4);
   return (
     <main
       style={{

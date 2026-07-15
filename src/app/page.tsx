@@ -56,7 +56,6 @@ export default async function HomePage() {
         products={HOMEPAGE_MATTRESS_PRODUCTS}
         sectionTitle={"Nệm Điện Thông Minh\nSmartFurni"}
         sectionSubtitle="Nâng đỡ linh hoạt theo từng tư thế, cá nhân hóa trải nghiệm nghỉ ngơi cho mỗi thành viên trong gia đình."
-        productHref="/products"
       />
 
       {/* 4. Dòng giường công thái học */}

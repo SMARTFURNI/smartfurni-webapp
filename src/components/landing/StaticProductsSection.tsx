@@ -27,7 +27,7 @@ function formatPrice(price: number) {
 }
 
 // ─── Product Card — giống hệt landing page ───────────────────────────────────
-function ProductCard({ product, index, hrefOverride }: { product: Product; index: number; hrefOverride?: string }) {
+function ProductCard({ product, index }: { product: Product; index: number }) {
   const [hovered, setHovered] = useState(false);
   const [imgErr, setImgErr] = useState(false);
 
@@ -42,7 +42,7 @@ function ProductCard({ product, index, hrefOverride }: { product: Product; index
   const badgeLabel = product.imageBadge || null;
   const badgeHighlight = badgeLabel ? (badgeLabel.includes("★") || badgeLabel.toLowerCase().includes("bán chạy")) : false;
 
-  const href = hrefOverride ?? (isAvailable || isComingSoon ? `/products/${product.slug}` : "#");
+  const href = isAvailable || isComingSoon ? `/products/${product.slug}` : "#";
 
   return (
     <Link href={href} style={{ textDecoration: "none", display: "block" }}>
@@ -216,7 +216,6 @@ interface StaticProductsSectionProps {
   products: Product[];
   sectionTitle?: string;
   sectionSubtitle?: string;
-  productHref?: string;
 }
 
 export default function StaticProductsSection({
@@ -224,7 +223,6 @@ export default function StaticProductsSection({
   products,
   sectionTitle = "Dòng Giường Công Thái Học",
   sectionSubtitle = "Được chế tác từ thép cường lực, tích hợp motor Đức — bảo hành 5 năm chính hãng",
-  productHref,
 }: StaticProductsSectionProps) {
   const { colors, layout } = theme;
   const primary = colors.primary ?? GOLD;
@@ -305,7 +303,7 @@ export default function StaticProductsSection({
         }}>
           {displayProducts.map((p, i) => (
             <ScrollReveal key={p.id} variant="fadeUp" delay={100 + i * 100}>
-            <ProductCard product={p} index={i} hrefOverride={productHref} />
+            <ProductCard product={p} index={i} />
             </ScrollReveal>
           ))}
         </div>
