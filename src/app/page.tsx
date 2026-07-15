@@ -13,6 +13,7 @@ import ComparisonSection from "@/components/landing/ComparisonSection";
 import HomeDecisionSections from "@/components/landing/HomeDecisionSections";
 import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 import { HOMEPAGE_MATTRESS_PRODUCTS } from "@/lib/homepage-mattress-products";
+import { getAllProducts } from "@/lib/product-store";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,13 @@ export default async function HomePage() {
   const theme = await getThemeAsync();
   const homepageConfig = await getHomepageProductConfigAsync();
   const products = getHomepageProducts();
+  const allProducts = getAllProducts();
+  const mattressProducts = HOMEPAGE_MATTRESS_PRODUCTS.map(
+    (seed) =>
+      allProducts.find(
+        (product) => product.id === seed.id || product.slug === seed.slug,
+      ) ?? seed,
+  );
   const bedProducts = products.filter((product) => {
     const normalizedName = product.name.toLocaleLowerCase("vi");
     return !normalizedName.includes("nệm") && !normalizedName.includes("nem ");
@@ -53,7 +61,7 @@ export default async function HomePage() {
       {/* 3. Dòng nệm điện thông minh */}
       <StaticProductsSection
         theme={theme}
-        products={HOMEPAGE_MATTRESS_PRODUCTS}
+        products={mattressProducts}
         sectionTitle={"Nệm Điện Thông Minh\nSmartFurni"}
         sectionSubtitle="Nâng đỡ linh hoạt theo từng tư thế, cá nhân hóa trải nghiệm nghỉ ngơi cho mỗi thành viên trong gia đình."
       />

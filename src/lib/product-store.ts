@@ -1,7 +1,17 @@
 // ─── Product Data Model ───────────────────────────────────────────────────────
 
-import { dbLoadAll, dbLoadOne, dbSaveOne, dbSaveOneAndWait, dbDeleteOne, dbSaveAll } from "./db-store";
+import {
+  dbLoadAll,
+  dbLoadOne,
+  dbSaveOne,
+  dbSaveOneAndWait,
+  dbDeleteOne,
+  dbSaveAll,
+  dbGetSetting,
+  dbSaveSetting,
+} from "./db-store";
 import { registerDbLoader } from "./db-init";
+import { HOMEPAGE_MATTRESS_PRODUCTS } from "./homepage-mattress-products";
 
 export type ProductStatus = "active" | "discontinued" | "out_of_stock" | "coming_soon";
 export type ProductCategory = "standard" | "premium" | "elite" | "accessory";
@@ -463,18 +473,47 @@ function generateSlug(name: string): string {
 }
 
 // In-memory store — populated from PostgreSQL on first request
-let products: Product[] = [...DEFAULT_PRODUCTS];
+const INITIAL_PRODUCTS: Product[] = [...DEFAULT_PRODUCTS, ...HOMEPAGE_MATTRESS_PRODUCTS];
+const ELECTRIC_MATTRESS_SEED_KEY = "electric_mattress_products_seeded_v1";
+
+let products: Product[] = [...INITIAL_PRODUCTS];
 
 // Register DB loader: runs once at server startup to hydrate memory from PostgreSQL
 registerDbLoader(async () => {
   const rows = await dbLoadAll<Product>("products");
   if (rows && rows.length > 0) {
-    products = rows;
+    const mattressSeedCompleted = await dbGetSetting<boolean>(
+      ELECTRIC_MATTRESS_SEED_KEY,
+    );
+    const missingMattressProducts = mattressSeedCompleted
+      ? []
+      : HOMEPAGE_MATTRESS_PRODUCTS.filter(
+          (mattress) =>
+            !rows.some(
+              (product) =>
+                product.id === mattress.id || product.slug === mattress.slug,
+            ),
+        );
+    products = [...rows, ...missingMattressProducts];
+    if (missingMattressProducts.length > 0) {
+      await Promise.all(
+        missingMattressProducts.map((product) =>
+          dbSaveOneAndWait("products", product),
+        ),
+      );
+      console.log(
+        `[product-store] Added ${missingMattressProducts.length} electric mattress products`,
+      );
+    }
+    if (!mattressSeedCompleted) {
+      await dbSaveSetting(ELECTRIC_MATTRESS_SEED_KEY, true);
+    }
     console.log(`[product-store] Loaded ${products.length} products from database`);
   } else if (rows !== null) {
     // DB is empty — seed with default data
     console.log("[product-store] Seeding database with default products...");
-    dbSaveAll("products", DEFAULT_PRODUCTS);
+    dbSaveAll("products", INITIAL_PRODUCTS);
+    await dbSaveSetting(ELECTRIC_MATTRESS_SEED_KEY, true);
   }
 });
 

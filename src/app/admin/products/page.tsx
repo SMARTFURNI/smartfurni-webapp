@@ -4,11 +4,13 @@ import { getSidebarStats } from "@/lib/sidebar-stats";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import ProductDashboardClient from "@/components/admin/ProductDashboardClient";
+import { initDbOnce } from "@/lib/db-init";
 
 export const metadata = { title: "Sản phẩm" };
 
 export default async function AdminProductsPage() {
   await requireAdmin();
+  await initDbOnce();
   const dashboardData = getProductDashboardStats();
   const sidebarStats = getSidebarStats();
 
