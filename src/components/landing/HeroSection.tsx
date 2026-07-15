@@ -4,139 +4,7 @@ import type { CSSProperties } from "react";
 import { ScrollReveal } from "./ScrollReveal";
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
-
-// ─── B2B Partner types ───────────────────────────────────────────────────────
-const B2B_PARTNERS = [
-  {
-    icon: "bed",
-    title: "Showroom Nệm & Nội thất",
-    desc: "Phân phối sỉ, chiết khấu cao, hỗ trợ trưng bày",
-    href: "/lp/doi-tac-showroom-nem",
-    badge: "Phổ biến nhất",
-  },
-  {
-    icon: "hotel",
-    title: "Khách sạn & Resort",
-    desc: "Giải pháp giường thông minh cho phòng VIP, spa",
-    href: "/catalogue",
-    badge: null,
-  },
-  {
-    icon: "hospital",
-    title: "Bệnh viện & Phòng khám",
-    desc: "Giường điều chỉnh y tế, hỗ trợ phục hồi chức năng",
-    href: "/catalogue",
-    badge: null,
-  },
-  {
-    icon: "building",
-    title: "Nhà phân phối nội thất",
-    desc: "Đại lý chính thức, hỗ trợ marketing & bảo hành",
-    href: "/catalogue",
-    badge: null,
-  },
-  {
-    icon: "construction",
-    title: "Chủ đầu tư & Developer",
-    desc: "Tích hợp giường thông minh vào dự án bất động sản",
-    href: "/catalogue",
-    badge: null,
-  },
-  {
-    icon: "plane",
-    title: "Xuất khẩu & Đối tác quốc tế",
-    desc: "Hợp tác OEM/ODM, xuất khẩu sang thị trường nước ngoài",
-    href: "/contact",
-    badge: null,
-  },
-];
-
-function B2BPopup({
-  open,
-  onClose,
-  primary,
-  secondary,
-  bgFrom,
-  textColor,
-  borderColor,
-  surfaceColor,
-}: {
-  open: boolean;
-  onClose: () => void;
-  primary: string;
-  secondary: string;
-  bgFrom: string;
-  textColor: string;
-  borderColor: string;
-  surfaceColor: string;
-}) {
-  const overlayRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (open) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
-  if (!open) return null;
-  return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(3, 3, 2, 0.62)", backdropFilter: "blur(8px)" }}
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-    >
-      <div
-        className="relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
-        style={{
-          background: `radial-gradient(circle at 12% 0%, ${primary}2e 0%, transparent 44%), linear-gradient(145deg, color-mix(in srgb, ${surfaceColor} 82%, white 18%), color-mix(in srgb, ${bgFrom} 78%, ${primary} 22%))`,
-          border: `1px solid ${primary}55`,
-          boxShadow: "0 28px 90px rgba(0, 0, 0, 0.48)",
-        }}
-      >
-        <div className="px-6 pt-6 pb-4 flex items-start justify-between" style={{ borderBottom: `1px solid color-mix(in srgb, ${borderColor} 45%, ${primary} 55%)` }}>
-          <div>
-            <h3 className="text-lg font-semibold" style={{ color: textColor }}>Hợp tác B2B với SmartFurni</h3>
-            <p className="text-sm mt-1" style={{ color: `${textColor}b5` }}>Chọn lĩnh vực phù hợp để nhận thông tin chi tiết</p>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:opacity-70 transition-opacity" style={{ color: `${textColor}a8` }} aria-label="Đóng popup">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <div className="p-4 grid sm:grid-cols-2 gap-2">
-          {B2B_PARTNERS.map((p) => (
-            <a
-              key={p.title}
-              href={p.href}
-              className="group flex items-start gap-3 p-4 rounded-2xl transition-all duration-200 hover:scale-[1.01]"
-              style={{
-                background: `linear-gradient(135deg, color-mix(in srgb, ${surfaceColor} 80%, white 20%), color-mix(in srgb, ${bgFrom} 72%, ${primary} 28%))`,
-                border: `1px solid ${primary}38`,
-                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${primary}80`; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${primary}38`; }}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-sm font-medium" style={{ color: textColor }}>{p.title}</span>
-                  {p.badge && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${primary}20`, color: primary }}>{p.badge}</span>
-                  )}
-                </div>
-                <p className="text-xs mt-1 leading-relaxed" style={{ color: `${textColor}a8` }}>{p.desc}</p>
-              </div>
-            </a>
-          ))}
-        </div>
-        <div className="px-6 pb-5 text-center">
-          <p className="text-xs" style={{ color: `${textColor}90` }}>
-            Chưa tìm thấy lĩnh vực phù hợp?{" "}
-            <a href="/contact" onClick={onClose} className="underline" style={{ color: primary }}>Liên hệ trực tiếp</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { openB2BPopup } from "@/lib/b2b-popup";
 
 // ─── Trust badges ─────────────────────────────────────────────────────────────
 const TRUST_STATS = [
@@ -182,7 +50,6 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ theme }: HeroSectionProps) {
-  const [b2bOpen, setB2bOpen] = useState(false);
   const [activePhase, setActivePhase] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
@@ -193,7 +60,6 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const bgTo = theme?.hero.bgGradientTo ?? "#1A1500";
   const textColor = theme?.colors.text ?? "#F5EDD6";
   const borderColor = theme?.colors.border ?? "#2D2500";
-  const surfaceColor = theme?.colors.surface ?? "#1A1500";
   const maxWidth = theme?.layout.maxWidth ?? 1280;
   const heroTitle = theme?.hero.title ?? "Ngủ Ngon Hơn\nMỗi Đêm";
   const heroSubtitle = theme?.hero.subtitle ?? "Giường điều chỉnh điện SmartFurni — nâng hạ đầu & chân chính xác, motor êm ái, điều khiển bằng remote hoặc ứng dụng di động.";
@@ -267,17 +133,6 @@ export default function HeroSection({ theme }: HeroSectionProps) {
 
   return (
     <>
-      <B2BPopup
-        open={b2bOpen}
-        onClose={() => setB2bOpen(false)}
-        primary={primary}
-        secondary={secondary}
-        bgFrom={bgFrom}
-        textColor={textColor}
-        borderColor={borderColor}
-        surfaceColor={surfaceColor}
-      />
-
       {/* ── SMARTFURNI SLEEP-CYCLE HERO ── */}
       <section
         ref={heroRef}
@@ -407,7 +262,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
               <div className="sf-cycle-actions__links">
                   <button
                     type="button"
-                    onClick={() => setB2bOpen(true)}
+                    onClick={openB2BPopup}
                     className="sf-cycle-cta sf-cycle-cta--b2b"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

@@ -1,11 +1,14 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { SiteTheme } from "@/lib/theme-types";
 import { useCart } from "@/lib/cart-context";
 import { SvgIcon } from "@/components/ui/SvgIcon";
+import { VIETNAM_PROVINCES } from "@/lib/crm-locations";
+import { B2B_POPUP_EVENT } from "@/lib/b2b-popup";
 
 interface NavbarProps {
   theme?: SiteTheme;
@@ -62,6 +65,18 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+const B2B_PARTNERS = [
+  { icon: "bed", title: "Showroom Nệm & Nội thất", desc: "Phân phối sỉ, chiết khấu cao, hỗ trợ trưng bày", badge: "Phổ biến nhất" },
+  { icon: "hotel", title: "Khách sạn & Resort", desc: "Giải pháp giường thông minh cho phòng VIP, spa", badge: null },
+  { icon: "hospital", title: "Bệnh viện & Phòng khám", desc: "Giường điều chỉnh y tế, hỗ trợ phục hồi chức năng", badge: null },
+  { icon: "building", title: "Nhà phân phối nội thất", desc: "Đại lý chính thức, hỗ trợ marketing & bảo hành", badge: null },
+  { icon: "construction", title: "Chủ đầu tư & Developer", desc: "Tích hợp giường thông minh vào dự án bất động sản", badge: null },
+  { icon: "plane", title: "Xuất khẩu & Đối tác quốc tế", desc: "Hợp tác OEM/ODM, xuất khẩu sang thị trường nước ngoài", badge: null },
+] as const;
+
+type B2BPartner = (typeof B2B_PARTNERS)[number];
+type B2BStep = "partner" | "form" | "success";
 
 // ─── Dropdown component ───────────────────────────────────────────
 function DropdownMenu({
@@ -191,16 +206,24 @@ export default function Navbar({ theme }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [b2bOpen, setB2bOpen] = useState(false);
+  const [b2bStep, setB2bStep] = useState<B2BStep>("partner");
+  const [selectedPartner, setSelectedPartner] = useState<B2BPartner | null>(null);
+  const [b2bForm, setB2bForm] = useState({ fullName: "", phone: "", province: "" });
+  const [b2bError, setB2bError] = useState("");
+  const [b2bSubmitting, setB2bSubmitting] = useState(false);
 
-  const B2B_PARTNERS = [
-    { icon: "bed", title: "Showroom Nệm & Nội thất", desc: "Phân phối sỉ, chiết khấu cao, hỗ trợ trưng bày", href: "/lp/doi-tac-showroom-nem", badge: "Phổ biến nhất" },
-    { icon: "hotel", title: "Khách sạn & Resort", desc: "Giải pháp giường thông minh cho phòng VIP, spa", href: "/catalogue", badge: null },
-    { icon: "hospital", title: "Bệnh viện & Phòng khám", desc: "Giường điều chỉnh y tế, hỗ trợ phục hồi chức năng", href: "/catalogue", badge: null },
-    { icon: "building", title: "Nhà phân phối nội thất", desc: "Đại lý chính thức, hỗ trợ marketing & bảo hành", href: "/catalogue", badge: null },
-    { icon: "construction", title: "Chủ đầu tư & Developer", desc: "Tích hợp giường thông minh vào dự án bất động sản", href: "/catalogue", badge: null },
-    { icon: "plane", title: "Xuất khẩu & Đối tác quốc tế", desc: "Hợp tác OEM/ODM, xuất khẩu sang thị trường nước ngoài", href: "/contact", badge: null },
-  ];
-
+  const resetB2bFlow = useCallback(() => {
+    setB2bStep("partner");
+    setSelectedPartner(null);
+    setB2bForm({ fullName: "", phone: "", province: "" });
+    setB2bError("");
+    setB2bSubmitting(false);
+  }, []);
+  const openB2b = useCallback(() => {
+    resetB2bFlow();
+    setMobileOpen(false);
+    setB2bOpen(true);
+  }, [resetB2bFlow]);
   const closeB2b = useCallback(() => setB2bOpen(false), []);
   const { totalItems } = useCart();
   const pathname = usePathname();
@@ -209,6 +232,7 @@ export default function Navbar({ theme }: NavbarProps) {
   const secondary = theme?.colors.secondary ?? "#9A7A2E";
   const bgColor = theme?.navbar.bgColor ?? "#080600";
   const textColor = theme?.navbar.textColor ?? "#F5EDD6";
+  const surfaceColor = theme?.colors.surface ?? "#1A1500";
   const height = theme?.navbar.height ?? 64;
   const companyName = theme?.footer.companyName ?? "SmartFurni";
   const logoTextColor = theme?.logo.textColor ?? primary;
@@ -226,9 +250,93 @@ export default function Navbar({ theme }: NavbarProps) {
   useEffect(() => { setMobileOpen(false); setMobileExpanded(null); }, [pathname]);
 
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    document.body.style.overflow = mobileOpen || b2bOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [mobileOpen]);
+  }, [mobileOpen, b2bOpen]);
+
+  useEffect(() => {
+    window.addEventListener(B2B_POPUP_EVENT, openB2b);
+    return () => window.removeEventListener(B2B_POPUP_EVENT, openB2b);
+  }, [openB2b]);
+
+  useEffect(() => {
+    if (!b2bOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && b2bStep !== "success") closeB2b();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [b2bOpen, b2bStep, closeB2b]);
+
+  useEffect(() => {
+    if (b2bStep !== "success") return;
+    const redirectTimer = window.setTimeout(() => window.location.assign("/"), 2200);
+    return () => window.clearTimeout(redirectTimer);
+  }, [b2bStep]);
+
+  const selectB2bPartner = (partner: B2BPartner) => {
+    setSelectedPartner(partner);
+    setB2bError("");
+    setB2bStep("form");
+  };
+
+  const submitB2bLead = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedPartner || b2bSubmitting) return;
+
+    const fullName = b2bForm.fullName.trim();
+    const compactPhone = b2bForm.phone.replace(/[\s.()-]/g, "");
+    const normalizedPhone = compactPhone.startsWith("+84")
+      ? `0${compactPhone.slice(3)}`
+      : compactPhone.startsWith("84")
+        ? `0${compactPhone.slice(2)}`
+        : compactPhone;
+
+    if (fullName.length < 2) {
+      setB2bError("Vui lòng nhập đầy đủ họ tên.");
+      return;
+    }
+    if (!/^0\d{9}$/.test(normalizedPhone)) {
+      setB2bError("Số điện thoại chưa đúng. Vui lòng nhập số gồm 10 chữ số.");
+      return;
+    }
+    if (!b2bForm.province) {
+      setB2bError("Vui lòng chọn tỉnh hoặc thành phố.");
+      return;
+    }
+
+    setB2bSubmitting(true);
+    setB2bError("");
+
+    const searchParams = new URLSearchParams(window.location.search);
+    try {
+      const response = await fetch("/api/lp/submit-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          landingPageSlug: "homepage-b2b",
+          fullName,
+          phone: normalizedPhone,
+          email: "",
+          businessType: selectedPartner.title,
+          province: b2bForm.province,
+          note: `Đăng ký đối tác B2B từ website chính | Đối tượng: ${selectedPartner.title}`,
+          utmSource: searchParams.get("utm_source") || "website",
+          utmMedium: searchParams.get("utm_medium") || "b2b-popup",
+          utmCampaign: searchParams.get("utm_campaign") || "homepage-b2b",
+          utmContent: searchParams.get("utm_content") || selectedPartner.title,
+        }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || result?.success === false) {
+        throw new Error(result?.error || "Chưa gửi được thông tin đăng ký.");
+      }
+      setB2bStep("success");
+    } catch (error) {
+      setB2bSubmitting(false);
+      setB2bError(error instanceof Error ? error.message : "Có lỗi xảy ra, vui lòng thử lại.");
+    }
+  };
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -338,7 +446,7 @@ export default function Navbar({ theme }: NavbarProps) {
 
               {/* B2B Button — Desktop */}
               <button
-                onClick={() => setB2bOpen(true)}
+                onClick={openB2b}
                 style={{
                   background: `linear-gradient(135deg, ${primary}, ${secondary})`,
                   color: bgColor,
@@ -530,70 +638,196 @@ export default function Navbar({ theme }: NavbarProps) {
       {/* B2B Popup */}
       {b2bOpen && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          style={{ backgroundColor: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) closeB2b(); }}
+          className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto p-3 sm:p-4"
+          style={{ backgroundColor: "rgba(3, 3, 2, 0.62)", backdropFilter: "blur(8px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget && b2bStep !== "success") closeB2b(); }}
         >
           <div
-            className="relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
-            style={{ backgroundColor: bgColor === "transparent" ? "#0a0800" : bgColor, border: `1px solid ${primary}30` }}
+            className="relative my-auto max-h-[calc(100vh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-3xl shadow-2xl"
+            style={{
+              background: `radial-gradient(circle at 12% 0%, ${primary}2e 0%, transparent 44%), linear-gradient(145deg, color-mix(in srgb, ${surfaceColor} 82%, white 18%), color-mix(in srgb, ${bgColor === "transparent" ? "#0a0800" : bgColor} 78%, ${primary} 22%))`,
+              border: `1px solid ${primary}55`,
+              boxShadow: "0 28px 90px rgba(0, 0, 0, 0.48)",
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="b2b-popup-title"
           >
             {/* Header */}
-            <div className="px-6 pt-6 pb-4 flex items-start justify-between" style={{ borderBottom: `1px solid ${primary}20` }}>
+            <div className="flex items-start justify-between px-5 pb-4 pt-5 sm:px-6 sm:pt-6" style={{ borderBottom: `1px solid ${primary}35` }}>
               <div>
-                <h2 className="text-xl font-semibold" style={{ color: textColor }}>Trở thành Đối tác B2B</h2>
-                <p className="text-sm mt-1" style={{ color: `${textColor}60` }}>Chọn lĩnh vực phù hợp để nhận tư vấn chuyên biệt</p>
-              </div>
-              <button
-                onClick={closeB2b}
-                className="flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200"
-                style={{ color: `${textColor}60`, backgroundColor: `${textColor}10` }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}20`; (e.currentTarget as HTMLElement).style.color = primary; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${textColor}10`; (e.currentTarget as HTMLElement).style.color = `${textColor}60`; }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-            {/* Partner grid */}
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {B2B_PARTNERS.map((p) => (
-                <a
-                  key={p.title}
-                  href={p.href}
-                  onClick={closeB2b}
-                  className="group relative flex items-start gap-4 p-4 rounded-2xl transition-all duration-200 cursor-pointer"
-                  style={{ backgroundColor: `${textColor}06`, border: `1px solid ${primary}20` }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}12`; (e.currentTarget as HTMLElement).style.borderColor = `${primary}50`; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${textColor}06`; (e.currentTarget as HTMLElement).style.borderColor = `${primary}20`; }}
-                >
-                  <span className="flex-shrink-0 mt-0.5 flex items-center justify-center w-10 h-10 rounded-xl" style={{ backgroundColor: `${primary}12`, border: `1px solid ${primary}25` }}>
-                    <SvgIcon name={p.icon} size={18} color={primary} strokeWidth={1.4} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold" style={{ color: textColor }}>{p.title}</span>
-                      {p.badge && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `linear-gradient(to right, ${primary}, ${secondary})`, color: bgColor === "transparent" ? "#0a0800" : bgColor }}>
-                          {p.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs mt-1 leading-relaxed" style={{ color: `${textColor}55` }}>{p.desc}</p>
+                {b2bStep !== "success" && (
+                  <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: `${textColor}8f` }}>
+                    <span style={{ color: b2bStep === "partner" ? primary : `${textColor}8f` }}>01 Chọn đối tượng</span>
+                    <span aria-hidden="true">→</span>
+                    <span style={{ color: b2bStep === "form" ? primary : `${textColor}8f` }}>02 Thông tin</span>
                   </div>
-                  <svg className="flex-shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: primary }}>
-                    <polyline points="9 18 15 12 9 6" />
+                )}
+                <h2 id="b2b-popup-title" className="text-xl font-semibold" style={{ color: textColor }}>
+                  {b2bStep === "partner" && "Trở thành Đối tác B2B"}
+                  {b2bStep === "form" && "Thông tin đăng ký hợp tác"}
+                  {b2bStep === "success" && "Đăng ký thành công"}
+                </h2>
+                <p className="mt-1 text-sm" style={{ color: `${textColor}b5` }}>
+                  {b2bStep === "partner" && "Chọn lĩnh vực phù hợp để nhận tư vấn chuyên biệt"}
+                  {b2bStep === "form" && `SmartFurni sẽ tư vấn riêng cho nhóm ${selectedPartner?.title || "đối tác"}`}
+                  {b2bStep === "success" && "Thông tin của bạn đã được chuyển đến đội ngũ SmartFurni"}
+                </p>
+              </div>
+              {b2bStep !== "success" && (
+                <button
+                  onClick={closeB2b}
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200"
+                  style={{ color: `${textColor}a8`, backgroundColor: `${textColor}12` }}
+                  aria-label="Đóng popup"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
-                </a>
-              ))}
+                </button>
+              )}
             </div>
-            <div className="px-6 pb-5 text-center">
-              <p className="text-xs" style={{ color: `${textColor}40` }}>
-                Chưa tìm thấy lĩnh vực phù hợp?{" "}
-                <a href="/contact" onClick={closeB2b} className="underline" style={{ color: primary }}>Liên hệ trực tiếp với chúng tôi</a>
-              </p>
-            </div>
+
+            {b2bStep === "partner" && (
+              <>
+                <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:p-6">
+                  {B2B_PARTNERS.map((partner) => (
+                    <button
+                      key={partner.title}
+                      type="button"
+                      onClick={() => selectB2bPartner(partner)}
+                      className="group relative flex cursor-pointer items-start gap-4 rounded-2xl p-4 text-left transition-all duration-200 hover:scale-[1.01]"
+                      style={{
+                        background: `linear-gradient(135deg, color-mix(in srgb, ${surfaceColor} 80%, white 20%), color-mix(in srgb, ${bgColor === "transparent" ? "#0a0800" : bgColor} 72%, ${primary} 28%))`,
+                        border: `1px solid ${primary}38`,
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                      }}
+                    >
+                      <span className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${primary}1f`, border: `1px solid ${primary}38` }}>
+                        <SvgIcon name={partner.icon} size={18} color={primary} strokeWidth={1.4} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold" style={{ color: textColor }}>{partner.title}</span>
+                          {partner.badge && (
+                            <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: `linear-gradient(to right, ${primary}, ${secondary})`, color: bgColor === "transparent" ? "#0a0800" : bgColor }}>
+                              {partner.badge}
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-1 block text-xs leading-relaxed" style={{ color: `${textColor}a8` }}>{partner.desc}</span>
+                      </span>
+                      <svg className="mt-1 flex-shrink-0 opacity-60 transition-opacity duration-200 group-hover:opacity-100" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: primary }}>
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+                <div className="px-6 pb-5 text-center">
+                  <p className="text-xs" style={{ color: `${textColor}90` }}>
+                    Chưa tìm thấy lĩnh vực phù hợp?{" "}
+                    <a href="/contact" onClick={closeB2b} className="underline" style={{ color: primary }}>Liên hệ trực tiếp với chúng tôi</a>
+                  </p>
+                </div>
+              </>
+            )}
+
+            {b2bStep === "form" && selectedPartner && (
+              <form onSubmit={submitB2bLead} className="space-y-4 p-5 sm:p-6">
+                <div className="flex items-center gap-3 rounded-2xl p-3" style={{ backgroundColor: `${primary}17`, border: `1px solid ${primary}38` }}>
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${primary}20` }}>
+                    <SvgIcon name={selectedPartner.icon} size={18} color={primary} strokeWidth={1.5} />
+                  </span>
+                  <div>
+                    <p className="text-xs" style={{ color: `${textColor}a0` }}>Đối tượng đã chọn</p>
+                    <p className="text-sm font-semibold" style={{ color: textColor }}>{selectedPartner.title}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1.5 block text-xs font-semibold" style={{ color: `${textColor}c0` }}>Họ và tên *</span>
+                    <input
+                      type="text"
+                      value={b2bForm.fullName}
+                      onChange={(event) => setB2bForm((current) => ({ ...current, fullName: event.target.value }))}
+                      autoComplete="name"
+                      placeholder="Nguyễn Văn A"
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-shadow focus:ring-2"
+                      style={{ color: textColor, backgroundColor: "rgba(255,255,255,0.09)", border: `1px solid ${primary}45`, boxShadow: `0 0 0 0 ${primary}00` }}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-xs font-semibold" style={{ color: `${textColor}c0` }}>Số điện thoại *</span>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      value={b2bForm.phone}
+                      onChange={(event) => setB2bForm((current) => ({ ...current, phone: event.target.value }))}
+                      autoComplete="tel"
+                      placeholder="0901 234 567"
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-shadow focus:ring-2"
+                      style={{ color: textColor, backgroundColor: "rgba(255,255,255,0.09)", border: `1px solid ${primary}45` }}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-xs font-semibold" style={{ color: `${textColor}c0` }}>Tỉnh / Thành phố *</span>
+                    <select
+                      value={b2bForm.province}
+                      onChange={(event) => setB2bForm((current) => ({ ...current, province: event.target.value }))}
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-shadow focus:ring-2"
+                      style={{ color: b2bForm.province ? textColor : `${textColor}a0`, backgroundColor: "color-mix(in srgb, #302d20 88%, white 12%)", border: `1px solid ${primary}45` }}
+                    >
+                      <option value="">Chọn tỉnh/thành phố</option>
+                      {VIETNAM_PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
+                    </select>
+                  </label>
+                </div>
+
+                {b2bError && (
+                  <p className="rounded-xl px-3 py-2 text-sm" role="alert" style={{ color: "#ffd4cc", backgroundColor: "rgba(153, 27, 27, 0.28)", border: "1px solid rgba(248, 113, 113, 0.34)" }}>
+                    {b2bError}
+                  </p>
+                )}
+
+                <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => { setB2bStep("partner"); setB2bError(""); }}
+                    className="rounded-full border px-5 py-3 text-sm font-semibold sm:w-1/3"
+                    style={{ color: primary, borderColor: `${primary}70` }}
+                  >
+                    Quay lại
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={b2bSubmitting}
+                    className="rounded-full px-5 py-3 text-sm font-bold transition-opacity disabled:cursor-wait disabled:opacity-65 sm:flex-1"
+                    style={{ color: bgColor === "transparent" ? "#0a0800" : bgColor, background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
+                  >
+                    {b2bSubmitting ? "Đang gửi thông tin..." : "Đăng ký tư vấn"}
+                  </button>
+                </div>
+                <p className="text-center text-[11px] leading-relaxed" style={{ color: `${textColor}8f` }}>
+                  Thông tin được chuyển trực tiếp đến CRM SmartFurni và chỉ dùng để tư vấn hợp tác.
+                </p>
+              </form>
+            )}
+
+            {b2bStep === "success" && (
+              <div className="px-6 py-12 text-center" aria-live="polite">
+                <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full" style={{ color: primary, backgroundColor: `${primary}20`, border: `1px solid ${primary}65`, boxShadow: `0 0 38px ${primary}2f` }}>
+                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-semibold" style={{ color: textColor }}>Cảm ơn bạn đã đăng ký!</h3>
+                <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed" style={{ color: `${textColor}b8` }}>
+                  Đội ngũ SmartFurni sẽ liên hệ qua điện thoại trong thời gian sớm nhất để tư vấn chương trình phù hợp.
+                </p>
+                <p className="mt-5 text-xs" style={{ color: primary }}>Đang chuyển bạn về trang chủ...</p>
+              </div>
+            )}
           </div>
         </div>
       )}
