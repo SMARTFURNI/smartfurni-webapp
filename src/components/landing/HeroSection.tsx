@@ -193,8 +193,6 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const titleFontSize = `${titleFontSizeBase}px`;
   const titleColor = theme?.hero.titleColor ?? textColor;
   const titleAccentColor = theme?.hero.titleAccentColor ?? primary;
-  const ctaText = theme?.hero.ctaText ?? "Xem sản phẩm";
-  const ctaLink = theme?.hero.ctaLink ?? "/products";
   const ctaSecondaryText = theme?.hero.ctaSecondaryText ?? "Nhận tư vấn miễn phí";
   const ctaSecondaryLink = theme?.hero.ctaSecondaryLink ?? "/contact";
 
@@ -396,13 +394,17 @@ export default function HeroSection({ theme }: HeroSectionProps) {
 
             <div className="sf-cycle-actions">
               <div className="sf-cycle-actions__links">
-                  <Link
-                    href={ctaLink}
-                    style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})`, color: bgFrom }}
-                    className="sf-cycle-cta sf-cycle-cta--primary"
+                  <button
+                    type="button"
+                    onClick={() => setB2bOpen(true)}
+                    className="sf-cycle-cta sf-cycle-cta--b2b"
                   >
-                    {ctaText}
-                  </Link>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Trở thành đối tác B2B
+                  </button>
                   <Link
                     href={ctaSecondaryLink}
                     className="sf-cycle-cta sf-cycle-cta--secondary"
@@ -418,17 +420,6 @@ export default function HeroSection({ theme }: HeroSectionProps) {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setB2bOpen(true)}
-            className="sf-cycle-b2b"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Trở thành đối tác B2B
-          </button>
         </div>
         </div>
       </section>
