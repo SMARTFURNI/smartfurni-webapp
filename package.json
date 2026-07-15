@@ -7,7 +7,9 @@
     "build": "next build --experimental-build-mode=compile",
     "start": "next start -p $PORT",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "media:migrate:download": "node --env-file=.env.production scripts/migrate-cloudinary-media.mjs --download",
+    "media:migrate:apply": "node --env-file=.env.production scripts/migrate-cloudinary-media.mjs --apply-db"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

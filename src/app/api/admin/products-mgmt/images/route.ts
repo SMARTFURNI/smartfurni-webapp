@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getProductById, updateProduct } from "@/lib/product-store";
-import { v2 as cloudinary } from "cloudinary";
 import { initDbOnce } from "@/lib/db-init";
+import { deleteImageFromGitHub, storeImageOnGitHub } from "@/lib/github-media";
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-// POST /api/admin/products-mgmt/images — upload ảnh sản phẩm lên Cloudinary
+// POST /api/admin/products-mgmt/images — optimize to WebP and commit to GitHub media storage
 export async function POST(request: NextRequest) {
   await initDbOnce();
   const ok = await getAdminSession();
@@ -38,29 +31,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File size exceeds 10MB" }, { status: 400 });
     }
 
-    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // Upload to Cloudinary
-    const uploadResult = await new Promise<{ secure_url: string; public_id: string }>(
-      (resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: `smartfurni/products/${productId}`,
-            resource_type: "image",
-            transformation: [{ quality: "auto", fetch_format: "auto" }],
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result as { secure_url: string; public_id: string });
-          }
-        );
-        uploadStream.end(buffer);
-      }
-    );
-
-    const url = uploadResult.secure_url;
+    const uploadResult = await storeImageOnGitHub({
+      buffer,
+      originalName: file.name,
+      folder: "products",
+      subfolder: product.slug || product.id,
+      maxWidth: 1600,
+      quality: 84,
+    });
+    const url = uploadResult.url;
 
     // Update product images array
     const currentImages = product.images || [];
@@ -74,17 +55,23 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       url,
-      publicId: uploadResult.public_id,
+      publicId: uploadResult.repositoryPath,
       images: newImages,
       coverImage: newCoverImage,
+      size: uploadResult.size,
+      format: "webp",
+      deploymentPending: true,
     });
   } catch (error) {
     console.error("Product image upload error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Upload failed" },
+      { status: 500 },
+    );
   }
 }
 
-// DELETE /api/admin/products-mgmt/images — xóa ảnh sản phẩm khỏi Cloudinary
+// DELETE /api/admin/products-mgmt/images — remove image reference and GitHub file
 export async function DELETE(request: NextRequest) {
   await initDbOnce();
   const ok = await getAdminSession();
@@ -114,24 +101,11 @@ export async function DELETE(request: NextRequest) {
       coverImage: newCoverImage,
     });
 
-    // Delete from Cloudinary if it's a Cloudinary URL
-    if (imageUrl.includes("cloudinary.com")) {
+    if (imageUrl.startsWith("/uploads/")) {
       try {
-        // Extract public_id from Cloudinary URL
-        // URL format: https://res.cloudinary.com/{cloud}/image/upload/{transformations}/{public_id}.{ext}
-        const urlParts = imageUrl.split("/");
-        const uploadIndex = urlParts.indexOf("upload");
-        if (uploadIndex !== -1) {
-          // Get everything after "upload/" and before the extension
-          const publicIdWithExt = urlParts.slice(uploadIndex + 1).join("/");
-          const publicId = publicIdWithExt.replace(/\.[^/.]+$/, ""); // remove extension
-          // Remove version prefix (v1234567890/) if present
-          const cleanPublicId = publicId.replace(/^v\d+\//, "");
-          await cloudinary.uploader.destroy(cleanPublicId);
-        }
-      } catch (cloudinaryError) {
-        console.error("Cloudinary delete error:", cloudinaryError);
-        // Don't fail the request if Cloudinary delete fails
+        await deleteImageFromGitHub(imageUrl);
+      } catch (githubError) {
+        console.error("GitHub media delete error:", githubError);
       }
     }
 
