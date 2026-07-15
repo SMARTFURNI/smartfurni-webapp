@@ -194,7 +194,10 @@ export default function HeroSection({ theme }: HeroSectionProps) {
   const titleColor = theme?.hero.titleColor ?? textColor;
   const titleAccentColor = theme?.hero.titleAccentColor ?? primary;
   const ctaSecondaryText = theme?.hero.ctaSecondaryText ?? "Nhận tư vấn miễn phí";
-  const ctaSecondaryLink = theme?.hero.ctaSecondaryLink ?? "/contact";
+  const configuredSecondaryLink = theme?.hero.ctaSecondaryLink?.trim();
+  const ctaSecondaryLink = !configuredSecondaryLink || configuredSecondaryLink === "#demo"
+    ? "/dashboard"
+    : configuredSecondaryLink;
 
   const heroOverlayOpacity = Math.min(90, Math.max(35, theme?.hero?.overlayOpacity ?? 60)) / 100;
   const phase = SLEEP_PHASES[activePhase];
