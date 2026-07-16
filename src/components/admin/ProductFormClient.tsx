@@ -738,7 +738,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
               <Field label="Dòng sản phẩm" hint="Dùng để tạo danh mục SEO và điều hướng trên website.">
                 <select value={form.productFamily} onChange={(e) => set("productFamily", e.target.value as ProductFamily)} className={selectClass}>
                   <option value="ergonomic_bed">Giường công thái học điều chỉnh điện</option>
-                  <option value="electric_mattress">Nệm điện thông minh</option>
+                  <option value="electric_mattress">Nệm thông minh điều chỉnh điện</option>
                   <option value="sofa_bed">Sofa giường thông minh</option>
                   <option value="accessory">Phụ kiện giường thông minh</option>
                 </select>

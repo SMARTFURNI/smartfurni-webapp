@@ -20,7 +20,7 @@ import { absoluteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   title: "SmartFurni — Giường Công Thái Học Điều Chỉnh Điện",
-  description: "Giường công thái học điều chỉnh điện, nệm điện thông minh và giải pháp nội thất nâng hạ SmartFurni cho gia đình Việt.",
+  description: "Giường công thái học và nệm thông minh điều chỉnh điện tích hợp động cơ nâng hạ SmartFurni cho gia đình Việt.",
   alternates: { canonical: absoluteUrl("/") },
   openGraph: { url: absoluteUrl("/"), type: "website" },
 };
@@ -82,13 +82,13 @@ export default async function HomePage() {
       {/* 2. Hero — ảnh sản phẩm + tiêu đề ngắn + 2 CTA */}
       <HeroSection theme={theme} />
 
-      {/* 3. Dòng nệm điện thông minh */}
+      {/* 3. Dòng nệm thông minh điều chỉnh điện */}
       <StaticProductsSection
         theme={theme}
         products={mattressProducts}
-        sectionTitle={"Nệm Điện Thông Minh\nSmartFurni"}
+        sectionTitle={"Nệm Thông Minh\nĐiều Chỉnh Điện SmartFurni"}
         sectionSubtitle="Động cơ nâng hạ được tích hợp sẵn trong nệm, điều chỉnh tư thế trực tiếp mà không cần lắp thêm khung nâng bên ngoài."
-        sectionHref="/products/nem-dien-thong-minh"
+        sectionHref="/products/nem-thong-minh-dieu-chinh-dien"
       />
 
       {/* 4. Dòng giường công thái học */}

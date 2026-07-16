@@ -15,13 +15,13 @@ describe("SEO structured data", () => {
   it("does not publish a zero-price offer", () => {
     const schema = productSchema(HOMEPAGE_MATTRESS_PRODUCTS[0]);
     expect(schema.offers).toBeUndefined();
-    expect(schema.name).toBe("Nệm Điện SmartFurni Comfort");
+    expect(schema.name).toBe("Nệm Thông Minh Điều Chỉnh Điện SmartFurni Comfort");
     expect(schema.description).toContain("động cơ nâng hạ");
     expect(schema.description).toContain("không cần");
   });
 
   it("builds matching collection and FAQ entities", () => {
-    const family = getProductFamilyBySlug("nem-dien-thong-minh")!;
+    const family = getProductFamilyBySlug("nem-thong-minh-dieu-chinh-dien")!;
     const collection = collectionSchema(family, HOMEPAGE_MATTRESS_PRODUCTS);
     const faq = faqSchema(family.faqs);
     expect(collection.mainEntity.numberOfItems).toBe(4);

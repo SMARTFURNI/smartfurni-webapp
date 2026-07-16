@@ -49,7 +49,7 @@ const DEFAULT_CONTACTS = [
 
 const PRODUCT_LINKS = [
   { label: "Giường công thái học", href: "/products/giuong-cong-thai-hoc-dieu-chinh-dien" },
-  { label: "Nệm điện thông minh", href: "/products/nem-dien-thong-minh" },
+  { label: "Nệm thông minh điều chỉnh điện", href: "/products/nem-thong-minh-dieu-chinh-dien" },
   { label: "Sofa giường", href: "/products/sofa-giuong-thong-minh" },
   { label: "Phụ kiện", href: "/products/phu-kien-giuong-thong-minh" },
 ];

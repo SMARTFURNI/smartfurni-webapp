@@ -15,7 +15,7 @@ interface MattressSeed {
 const MATTRESS_SEEDS: MattressSeed[] = [
   {
     id: "electric-mattress-comfort",
-    name: "Nệm Điện SmartFurni Comfort",
+    name: "Nệm Thông Minh Điều Chỉnh Điện SmartFurni Comfort",
     image: "/uploads/products/electric-mattress/smartfurni-electric-mattress-comfort.webp",
     category: "standard",
     description: "Nệm điện tích hợp sẵn động cơ nâng hạ, điều chỉnh tư thế trực tiếp mà không cần lắp thêm khung nâng bên ngoài.",
@@ -25,7 +25,7 @@ const MATTRESS_SEEDS: MattressSeed[] = [
   },
   {
     id: "electric-mattress-plus",
-    name: "Nệm Điện SmartFurni Plus",
+    name: "Nệm Thông Minh Điều Chỉnh Điện SmartFurni Plus",
     image: "/uploads/products/electric-mattress/smartfurni-electric-mattress-plus.webp",
     category: "premium",
     badge: "Phổ biến nhất",
@@ -36,7 +36,7 @@ const MATTRESS_SEEDS: MattressSeed[] = [
   },
   {
     id: "electric-mattress-premium",
-    name: "Nệm Điện SmartFurni Premium",
+    name: "Nệm Thông Minh Điều Chỉnh Điện SmartFurni Premium",
     image: "/uploads/products/electric-mattress/smartfurni-electric-mattress-premium.webp",
     category: "premium",
     description: "Dòng nệm điện cao cấp có động cơ tích hợp, cho phép nâng đầu từng bên để đọc sách và thư giãn thuận tiện.",
@@ -46,7 +46,7 @@ const MATTRESS_SEEDS: MattressSeed[] = [
   },
   {
     id: "electric-mattress-dual",
-    name: "Nệm Điện SmartFurni Dual",
+    name: "Nệm Thông Minh Điều Chỉnh Điện SmartFurni Dual",
     image: "/uploads/products/electric-mattress/smartfurni-electric-mattress-dual.webp",
     category: "elite",
     badge: "Trải nghiệm đôi",
@@ -65,9 +65,10 @@ export const HOMEPAGE_MATTRESS_PRODUCTS: Product[] = MATTRESS_SEEDS.map((seed, i
   productFamily: "electric_mattress",
   status: "active",
   description: seed.description,
-  detailedDescription: `<h2>${seed.name} — nệm điện tích hợp động cơ nâng hạ</h2>
+  detailedDescription: `<h2>${seed.name} — tích hợp động cơ nâng hạ</h2>
 <p>${seed.description}</p>
 <p>Toàn bộ cơ cấu điều chỉnh đã được tích hợp trong chính chiếc nệm. Sản phẩm hoạt động độc lập, không yêu cầu lắp thêm khung nâng hạ rời bên dưới.</p>
+<p>Sản phẩm cũng thường được gọi là nệm điện thông minh hoặc nệm nâng hạ chỉnh điện.</p>
 <h3>Điểm nổi bật</h3>
 <ul>${seed.features.map((feature) => `<li>${feature}</li>`).join("")}</ul>
 <h3>Lựa chọn và lắp đặt</h3>

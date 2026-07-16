@@ -13,11 +13,11 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Sản phẩm | SmartFurni",
-  description: "Khám phá các dòng giường công thái học điều chỉnh điện, nệm điện thông minh, sofa giường và phụ kiện SmartFurni.",
+  description: "Khám phá giường công thái học, nệm thông minh điều chỉnh điện tích hợp động cơ, sofa giường và phụ kiện SmartFurni.",
   alternates: { canonical: absoluteUrl("/products") },
   openGraph: {
     title: "Các dòng sản phẩm SmartFurni",
-    description: "Giường công thái học, nệm điện thông minh, sofa giường và phụ kiện chính hãng SmartFurni.",
+    description: "Giường công thái học, nệm thông minh điều chỉnh điện, sofa giường và phụ kiện chính hãng SmartFurni.",
     type: "website",
     url: absoluteUrl("/products"),
   },

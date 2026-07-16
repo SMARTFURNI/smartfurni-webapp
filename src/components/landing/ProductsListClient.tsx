@@ -21,7 +21,7 @@ function formatPrice(price: number) {
 const CATEGORIES: { key: ProductFamily | "all"; label: string }[] = [
   { key: "all", label: "Tất cả" },
   { key: "ergonomic_bed", label: "Giường công thái học" },
-  { key: "electric_mattress", label: "Nệm điện thông minh" },
+  { key: "electric_mattress", label: "Nệm thông minh điều chỉnh điện" },
   { key: "sofa_bed", label: "Sofa giường" },
   { key: "accessory", label: "Phụ kiện" },
 ];
