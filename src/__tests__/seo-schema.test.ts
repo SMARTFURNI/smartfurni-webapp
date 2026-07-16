@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HOMEPAGE_MATTRESS_PRODUCTS } from "@/lib/homepage-mattress-products";
+import { getCanonicalElectricMattressSlug, HOMEPAGE_MATTRESS_PRODUCTS } from "@/lib/homepage-mattress-products";
 import { getProductFamilyBySlug } from "@/lib/product-families";
 import { breadcrumbSchema, collectionSchema, faqSchema, productSchema } from "@/lib/seo-schema";
 
@@ -26,5 +26,12 @@ describe("SEO structured data", () => {
     const faq = faqSchema(family.faqs);
     expect(collection.mainEntity.numberOfItems).toBe(4);
     expect(faq.mainEntity).toHaveLength(3);
+  });
+
+  it("maps every legacy English mattress slug to its Vietnamese canonical slug", () => {
+    expect(getCanonicalElectricMattressSlug("electric-mattress-premium")).toBe(
+      "nem-thong-minh-dieu-chinh-dien-smartfurni-premium",
+    );
+    expect(HOMEPAGE_MATTRESS_PRODUCTS.every((product) => product.slug.startsWith("nem-thong-minh-dieu-chinh-dien-smartfurni-"))).toBe(true);
   });
 });

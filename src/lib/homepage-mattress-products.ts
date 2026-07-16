@@ -2,6 +2,7 @@ import type { Product, ProductCategory } from "./product-store";
 
 interface MattressSeed {
   id: string;
+  slug: string;
   name: string;
   image: string;
   category: ProductCategory;
@@ -15,6 +16,7 @@ interface MattressSeed {
 const MATTRESS_SEEDS: MattressSeed[] = [
   {
     id: "electric-mattress-comfort",
+    slug: "nem-thong-minh-dieu-chinh-dien-smartfurni-comfort",
     name: "Nệm Thông Minh Điều Chỉnh Điện SmartFurni Comfort",
     image: "/uploads/products/electric-mattress/smartfurni-electric-mattress-comfort.webp",
     category: "standard",
@@ -25,6 +27,7 @@ const MATTRESS_SEEDS: MattressSeed[] = [
   },
   {
     id: "electric-mattress-plus",
+    slug: "nem-thong-minh-dieu-chinh-dien-smartfurni-plus",
     name: "Nệm Thông Minh Điều Chỉnh Điện SmartFurni Plus",
     image: "/uploads/products/electric-mattress/smartfurni-electric-mattress-plus.webp",
     category: "premium",
@@ -36,6 +39,7 @@ const MATTRESS_SEEDS: MattressSeed[] = [
   },
   {
     id: "electric-mattress-premium",
+    slug: "nem-thong-minh-dieu-chinh-dien-smartfurni-premium",
     name: "Nệm Thông Minh Điều Chỉnh Điện SmartFurni Premium",
     image: "/uploads/products/electric-mattress/smartfurni-electric-mattress-premium.webp",
     category: "premium",
@@ -46,6 +50,7 @@ const MATTRESS_SEEDS: MattressSeed[] = [
   },
   {
     id: "electric-mattress-dual",
+    slug: "nem-thong-minh-dieu-chinh-dien-smartfurni-dual",
     name: "Nệm Thông Minh Điều Chỉnh Điện SmartFurni Dual",
     image: "/uploads/products/electric-mattress/smartfurni-electric-mattress-dual.webp",
     category: "elite",
@@ -60,7 +65,7 @@ const MATTRESS_SEEDS: MattressSeed[] = [
 export const HOMEPAGE_MATTRESS_PRODUCTS: Product[] = MATTRESS_SEEDS.map((seed, index) => ({
   id: seed.id,
   name: seed.name,
-  slug: seed.id,
+  slug: seed.slug,
   category: seed.category,
   productFamily: "electric_mattress",
   status: "active",
@@ -114,15 +119,32 @@ export function getHomepageMattressProductBySlug(slug: string): Product | undefi
   return HOMEPAGE_MATTRESS_PRODUCTS.find((product) => product.slug === slug);
 }
 
+export const LEGACY_ELECTRIC_MATTRESS_SLUGS: Record<string, string> = {
+  "electric-mattress-comfort": "nem-thong-minh-dieu-chinh-dien-smartfurni-comfort",
+  "electric-mattress-plus": "nem-thong-minh-dieu-chinh-dien-smartfurni-plus",
+  "electric-mattress-premium": "nem-thong-minh-dieu-chinh-dien-smartfurni-premium",
+  "electric-mattress-dual": "nem-thong-minh-dieu-chinh-dien-smartfurni-dual",
+};
+
+export function getCanonicalElectricMattressSlug(slug: string): string | undefined {
+  return LEGACY_ELECTRIC_MATTRESS_SLUGS[slug];
+}
+
 /** Giữ giá/tồn kho do admin quản lý nhưng luôn áp dụng đúng định vị và thông số cốt lõi của dòng nệm điện. */
 export function applyElectricMattressPositioning(product: Product): Product {
-  const canonical = getHomepageMattressProductBySlug(product.slug);
+  const canonical = HOMEPAGE_MATTRESS_PRODUCTS.find(
+    (seed) =>
+      seed.id === product.id ||
+      seed.slug === product.slug ||
+      LEGACY_ELECTRIC_MATTRESS_SLUGS[product.slug] === seed.slug,
+  );
   if (!canonical) return product;
   const retainedSpecs = { ...product.specs };
   delete retainedSpecs["Khả năng tương thích"];
   return {
     ...product,
     name: canonical.name,
+    slug: canonical.slug,
     productFamily: "electric_mattress",
     description: canonical.description,
     detailedDescription: canonical.detailedDescription,
