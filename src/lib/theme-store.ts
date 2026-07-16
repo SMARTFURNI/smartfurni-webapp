@@ -5,6 +5,7 @@
 import { dbGetSetting, dbSaveSetting } from "./db-store";
 
 const THEME_SETTING_KEY = "site_theme";
+const PRODUCTS_PAGE_COPY_KEY = "products_page_copy_v2";
 
 // In-memory cache
 let _themeCache: SiteTheme | null = null;
@@ -169,9 +170,9 @@ export const defaultTheme: SiteTheme = {
     facebookPixelId: "",
   },
   pageProducts: {
-    heroTitle: "Bộ sưu tập Giường Thông Minh",
-    heroSubtitle: "Khám phá dòng sản phẩm giường điều khiển thông minh SmartFurni — từ phân khúc phổ thông đến cao cấp.",
-    heroBadge: "Sản Phẩm",
+    heroTitle: "Giải Pháp Giấc Ngủ Thông Minh SmartFurni",
+    heroSubtitle: "Khám phá giường công thái học điều chỉnh điện, nệm thông minh điều chỉnh điện, sofa giường và phụ kiện SmartFurni.",
+    heroBadge: "Tất Cả Sản Phẩm",
     filterLabel: "Lọc theo danh mục",
     emptyTitle: "Không tìm thấy sản phẩm",
     emptySubtitle: "Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác.",
@@ -831,5 +832,20 @@ import { registerDbLoader } from "./db-init";
 
 registerDbLoader(async () => {
   await initTheme();
+  const productsPageCopyMigrated = await dbGetSetting<boolean>(PRODUCTS_PAGE_COPY_KEY);
+  if (!productsPageCopyMigrated) {
+    const current = getTheme();
+    await saveTheme({
+      ...current,
+      pageProducts: {
+        ...current.pageProducts,
+        heroTitle: "Giải Pháp Giấc Ngủ Thông Minh SmartFurni",
+        heroSubtitle: "Khám phá giường công thái học điều chỉnh điện, nệm thông minh điều chỉnh điện, sofa giường và phụ kiện SmartFurni.",
+        heroBadge: "Tất Cả Sản Phẩm",
+      },
+      updatedAt: new Date().toISOString(),
+    });
+    await dbSaveSetting(PRODUCTS_PAGE_COPY_KEY, true);
+  }
   console.log("[theme-store] Theme loaded from database");
 });

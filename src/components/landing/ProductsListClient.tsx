@@ -36,9 +36,9 @@ const SORT_OPTIONS = [
 
 function ProductCardSkeleton({ colors }: { colors: { surface: string; border: string } }) {
   return (
-    <div style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-2xl border overflow-hidden flex flex-col animate-pulse">
+    <div style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-xl border overflow-hidden flex flex-col animate-pulse sm:rounded-2xl">
       <div style={{ backgroundColor: `${colors.border}`, aspectRatio: '1/1' }} className="w-full" />
-      <div className="p-4 flex flex-col gap-3">
+      <div className="p-2.5 flex flex-col gap-2 sm:p-4 sm:gap-3">
         <div style={{ backgroundColor: colors.border }} className="h-3 w-16 rounded-full" />
         <div style={{ backgroundColor: colors.border }} className="h-4 w-3/4 rounded-full" />
         <div style={{ backgroundColor: colors.border }} className="h-3 w-1/2 rounded-full" />
@@ -94,7 +94,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
     <Link
       href={`/products/${p.slug}`}
       style={{ backgroundColor: "#221D00", borderColor: "#2E2800" }}
-      className="rounded-2xl border overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg group"
+      className="rounded-xl border overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg group sm:rounded-2xl"
       onMouseEnter={startSlideshow}
       onMouseLeave={stopSlideshow}
     >
@@ -137,11 +137,11 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
         )}
 
         {/* Badges overlay */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+        <div className="absolute left-2 top-2 flex flex-col gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
           {p.isFeatured && (
             <span
               style={{ backgroundColor: `${colors.primary}ee`, color: colors.background }}
-              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              className="rounded-full px-1.5 py-0.5 text-[9px] font-medium sm:px-2 sm:text-xs"
             >
               ⭐ Nổi bật
             </span>
@@ -149,7 +149,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
           {disc > 0 && (
             <span
               style={{ backgroundColor: `${colors.error}ee`, color: "#fff" }}
-              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              className="rounded-full px-1.5 py-0.5 text-[9px] font-medium sm:px-2 sm:text-xs"
             >
               -{disc}%
             </span>
@@ -157,7 +157,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
           {isComingSoon && (
             <span
               style={{ backgroundColor: `${colors.warning}ee`, color: "#000" }}
-              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              className="rounded-full px-1.5 py-0.5 text-[9px] font-medium sm:px-2 sm:text-xs"
             >
               Sắp ra mắt
             </span>
@@ -165,7 +165,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
           {isOutOfStock && (
             <span
               style={{ backgroundColor: `${colors.error}ee`, color: "#fff" }}
-              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              className="rounded-full px-1.5 py-0.5 text-[9px] font-medium sm:px-2 sm:text-xs"
             >
               Hết hàng
             </span>
@@ -191,17 +191,17 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
       </div>
 
       {/* Info */}
-      <div className="p-4 flex flex-col gap-2 flex-1">
-        <p className="text-xs font-medium uppercase tracking-wider text-[#C9A84C]/70">
+      <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:gap-2 sm:p-4">
+        <p className="text-[9px] font-medium uppercase tracking-wider text-[#C9A84C]/70 sm:text-xs">
           {p.category === "standard" ? "Standard" : p.category === "premium" ? "Premium" : p.category === "elite" ? "Elite" : "Phụ kiện"}
         </p>
-        <h3 className="text-sm font-semibold text-[#F5EDD6] leading-snug" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.6em" }}>
+        <h3 className="text-xs font-semibold leading-snug text-[#F5EDD6] sm:text-sm" style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "3.9em" }}>
           {p.name}
         </h3>
 
         {/* Rating */}
         {p.reviewCount > 0 && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <div className="flex gap-0.5">
               {[1, 2, 3, 4, 5].map((s) => (
                 <svg key={s} width="11" height="11" viewBox="0 0 11 11" fill="none">
@@ -214,24 +214,24 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
                 </svg>
               ))}
             </div>
-            <span style={{ color: `${colors.text}60` }} className="text-xs">{p.rating.toFixed(1)} ({p.reviewCount})</span>
+            <span style={{ color: `${colors.text}60` }} className="text-[9px] sm:text-xs">{p.rating.toFixed(1)} ({p.reviewCount})</span>
           </div>
         )}
 
         {/* Top feature */}
         {p.features[0] && (
-          <p className="text-xs text-[#F5EDD6]/40 line-clamp-1">
+          <p className="hidden text-xs text-[#F5EDD6]/40 line-clamp-1 sm:block">
             ✓ {p.features[0]}
           </p>
         )}
 
         {/* Price */}
         <div className="mt-auto pt-2 flex items-baseline gap-2">
-          <span style={{ color: colors.primary }} className="text-base font-bold">
+          <span style={{ color: colors.primary }} className="text-sm font-bold sm:text-base">
             {formatPrice(p.price)}
           </span>
           {p.originalPrice > p.price && (
-            <span style={{ color: `${colors.text}35` }} className="text-xs line-through">
+            <span style={{ color: `${colors.text}35` }} className="hidden text-xs line-through sm:inline">
               {formatPrice(p.originalPrice)}
             </span>
           )}
@@ -244,7 +244,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
               background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
               color: colors.background,
             }}
-            className="flex-1 py-2 rounded-lg text-xs font-semibold text-center group-hover:opacity-90 transition-opacity"
+            className="flex-1 rounded-lg py-2 text-center text-[10px] font-semibold transition-opacity group-hover:opacity-90 sm:text-xs"
           >
             {isComingSoon ? "Đặt trước" : isOutOfStock ? "Hết hàng" : "Xem chi tiết"}
           </div>
@@ -255,7 +255,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
                 ? { backgroundColor: `${colors.success}20`, color: colors.success, borderColor: `${colors.success}40` }
                 : { backgroundColor: `${colors.primary}15`, color: colors.primary, borderColor: `${colors.primary}30` }
               }
-              className="w-9 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 transition-all duration-200"
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border transition-all duration-200 sm:w-9"
               title="Thêm vào giỏ hàng"
             >
               {addedToCartId === p.id ? (
@@ -273,7 +273,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
               ? { backgroundColor: `${colors.primary}20`, color: colors.primary, borderColor: colors.primary }
               : { backgroundColor: "transparent", color: `${colors.text}40`, borderColor: colors.border }
             }
-            className="w-full py-1.5 rounded-lg text-xs border transition-all duration-200 mt-1"
+            className="mt-1 w-full rounded-lg border py-1.5 text-[10px] transition-all duration-200 sm:text-xs"
           >
             {compareList.includes(p.id) ? "✓ Đã chọn so sánh" : "+ So sánh"}
           </button>
@@ -307,15 +307,16 @@ export default function ProductsListClient({ products, theme }: Props) {
     e.stopPropagation();
     const defaultVariant = product.variants[0];
     if (!defaultVariant) return;
+    const defaultPurchaseOption = product.purchaseOptions?.[0];
     addItem({
       productId: product.id,
       productName: product.name,
       slug: product.slug,
-      variantId: defaultVariant.id,
-      variantName: defaultVariant.name,
-      sku: defaultVariant.sku,
-      price: defaultVariant.price ?? product.price,
-      originalPrice: product.originalPrice,
+      variantId: defaultPurchaseOption ? `${defaultPurchaseOption.id}:${defaultVariant.id}` : defaultVariant.id,
+      variantName: defaultPurchaseOption ? `${defaultPurchaseOption.name} · ${defaultVariant.name}` : defaultVariant.name,
+      sku: defaultPurchaseOption ? `${defaultVariant.sku}-${defaultPurchaseOption.skuSuffix}` : defaultVariant.sku,
+      price: defaultPurchaseOption?.price ?? product.price,
+      originalPrice: defaultPurchaseOption?.originalPrice ?? product.originalPrice,
       quantity: 1,
       coverImage: product.coverImage,
     });
@@ -407,7 +408,7 @@ export default function ProductsListClient({ products, theme }: Props) {
 
       {/* Grid */}
       {!isLoaded ? (
-        <StaggerReveal baseDelay={0} step={50} variant="fadeUp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <StaggerReveal baseDelay={0} step={50} variant="fadeUp" className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <ProductCardSkeleton key={i} colors={colors} />
           ))}
@@ -429,7 +430,7 @@ export default function ProductsListClient({ products, theme }: Props) {
           </button>
         </div>
       ) : (
-        <StaggerReveal baseDelay={0} step={60} variant="fadeUp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <StaggerReveal baseDelay={0} step={60} variant="fadeUp" className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((p) => {
             const disc = p.originalPrice > p.price
               ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)

@@ -12,11 +12,11 @@ import { absoluteUrl } from "@/lib/site-url";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Sản phẩm | SmartFurni",
+  title: "Giải Pháp Giấc Ngủ Thông Minh | SmartFurni",
   description: "Khám phá giường công thái học, nệm thông minh điều chỉnh điện tích hợp động cơ, sofa giường và phụ kiện SmartFurni.",
   alternates: { canonical: absoluteUrl("/products") },
   openGraph: {
-    title: "Các dòng sản phẩm SmartFurni",
+    title: "Giải Pháp Giấc Ngủ Thông Minh SmartFurni",
     description: "Giường công thái học, nệm thông minh điều chỉnh điện, sofa giường và phụ kiện chính hãng SmartFurni.",
     type: "website",
     url: absoluteUrl("/products"),
@@ -53,16 +53,16 @@ export default async function ProductsPage() {
       <section aria-labelledby="product-families-heading" className="border-b border-[#2E2800] px-4 py-10 sm:px-6 sm:py-12">
         <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>
           <h2 id="product-families-heading" className="mb-6 text-2xl font-light text-[#F5EDD6] sm:text-3xl">Chọn theo dòng sản phẩm</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {PRODUCT_FAMILIES.map((family) => (
               <Link
                 key={family.key}
                 href={`/products/${family.slug}`}
-                className="rounded-2xl border border-[#C9A84C]/20 bg-[#1A1500] p-5 transition-colors hover:border-[#C9A84C]/55"
+                className="rounded-xl border border-[#C9A84C]/20 bg-[#1A1500] p-3.5 transition-colors hover:border-[#C9A84C]/55 sm:rounded-2xl sm:p-5"
               >
-                <h3 className="font-semibold text-[#F5EDD6]">{family.shortLabel}</h3>
-                <p className="mt-2 line-clamp-3 text-xs leading-6 text-[#F5EDD6]/50">{family.description}</p>
-                <span className="mt-4 inline-block text-xs font-semibold text-[#C9A84C]">Xem dòng sản phẩm →</span>
+                <h3 className="text-sm font-semibold leading-snug text-[#F5EDD6] sm:text-base">{family.shortLabel}</h3>
+                <p className="mt-2 line-clamp-4 text-[11px] leading-5 text-[#F5EDD6]/50 sm:line-clamp-3 sm:text-xs sm:leading-6">{family.description}</p>
+                <span className="mt-3 inline-block text-[11px] font-semibold text-[#C9A84C] sm:mt-4 sm:text-xs">Xem chi tiết →</span>
               </Link>
             ))}
           </div>
