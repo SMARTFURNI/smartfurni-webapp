@@ -23,12 +23,17 @@ export default async function HomePage() {
   const homepageConfig = await getHomepageProductConfigAsync();
   const products = getHomepageProducts();
   const allProducts = getAllProducts();
-  const mattressProducts = HOMEPAGE_MATTRESS_PRODUCTS.map(
-    (seed) =>
-      allProducts.find(
-        (product) => product.id === seed.id || product.slug === seed.slug,
-      ) ?? seed,
-  );
+  const mattressProducts = HOMEPAGE_MATTRESS_PRODUCTS.map((seed) => {
+    const savedProduct = allProducts.find(
+      (product) => product.id === seed.id || product.slug === seed.slug,
+    );
+
+    // Luôn dùng media tĩnh đã được đóng gói cùng bản deploy. Dữ liệu sản phẩm
+    // trong DB có thể vẫn giữ URL ảnh cũ và khiến cả dòng nệm trống sau deploy.
+    return savedProduct
+      ? { ...savedProduct, coverImage: seed.coverImage, images: seed.images }
+      : seed;
+  });
   const bedProducts = products.filter((product) => {
     const normalizedName = product.name.toLocaleLowerCase("vi");
     return !normalizedName.includes("nệm") && !normalizedName.includes("nem ");
