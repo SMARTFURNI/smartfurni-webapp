@@ -11,7 +11,7 @@ import {
   dbSaveSetting,
 } from "./db-store";
 import { registerDbLoader } from "./db-init";
-import { HOMEPAGE_MATTRESS_PRODUCTS } from "./homepage-mattress-products";
+import { applyElectricMattressPositioning, HOMEPAGE_MATTRESS_PRODUCTS } from "./homepage-mattress-products";
 
 export type ProductStatus = "active" | "discontinued" | "out_of_stock" | "coming_soon";
 export type ProductCategory = "standard" | "premium" | "elite" | "accessory";
@@ -478,6 +478,7 @@ function generateSlug(name: string): string {
 // In-memory store — populated from PostgreSQL on first request
 const INITIAL_PRODUCTS: Product[] = [...DEFAULT_PRODUCTS, ...HOMEPAGE_MATTRESS_PRODUCTS];
 const ELECTRIC_MATTRESS_SEED_KEY = "electric_mattress_products_seeded_v1";
+const ELECTRIC_MATTRESS_POSITIONING_KEY = "electric_mattress_positioning_v2";
 
 let products: Product[] = [...INITIAL_PRODUCTS];
 
@@ -485,6 +486,12 @@ let products: Product[] = [...INITIAL_PRODUCTS];
 registerDbLoader(async () => {
   const rows = await dbLoadAll<Product>("products");
   if (rows && rows.length > 0) {
+    const positioningCompleted = await dbGetSetting<boolean>(
+      ELECTRIC_MATTRESS_POSITIONING_KEY,
+    );
+    const normalizedRows = positioningCompleted
+      ? rows
+      : rows.map(applyElectricMattressPositioning);
     const mattressSeedCompleted = await dbGetSetting<boolean>(
       ELECTRIC_MATTRESS_SEED_KEY,
     );
@@ -492,12 +499,26 @@ registerDbLoader(async () => {
       ? []
       : HOMEPAGE_MATTRESS_PRODUCTS.filter(
           (mattress) =>
-            !rows.some(
+            !normalizedRows.some(
               (product) =>
                 product.id === mattress.id || product.slug === mattress.slug,
             ),
         );
-    products = [...rows, ...missingMattressProducts];
+    products = [...normalizedRows, ...missingMattressProducts];
+    if (!positioningCompleted) {
+      const normalizedMattressProducts = normalizedRows.filter((product) =>
+        HOMEPAGE_MATTRESS_PRODUCTS.some((seed) => seed.slug === product.slug),
+      );
+      await Promise.all(
+        normalizedMattressProducts.map((product) =>
+          dbSaveOneAndWait("products", product),
+        ),
+      );
+      await dbSaveSetting(ELECTRIC_MATTRESS_POSITIONING_KEY, true);
+      console.log(
+        `[product-store] Updated positioning for ${normalizedMattressProducts.length} electric mattress products`,
+      );
+    }
     if (missingMattressProducts.length > 0) {
       await Promise.all(
         missingMattressProducts.map((product) =>
@@ -517,6 +538,7 @@ registerDbLoader(async () => {
     console.log("[product-store] Seeding database with default products...");
     dbSaveAll("products", INITIAL_PRODUCTS);
     await dbSaveSetting(ELECTRIC_MATTRESS_SEED_KEY, true);
+    await dbSaveSetting(ELECTRIC_MATTRESS_POSITIONING_KEY, true);
   }
 });
 

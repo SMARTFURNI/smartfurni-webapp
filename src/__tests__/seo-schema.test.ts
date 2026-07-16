@@ -16,6 +16,8 @@ describe("SEO structured data", () => {
     const schema = productSchema(HOMEPAGE_MATTRESS_PRODUCTS[0]);
     expect(schema.offers).toBeUndefined();
     expect(schema.name).toBe("Nệm Điện SmartFurni Comfort");
+    expect(schema.description).toContain("động cơ nâng hạ");
+    expect(schema.description).toContain("không cần");
   });
 
   it("builds matching collection and FAQ entities", () => {

@@ -87,7 +87,7 @@ export default async function HomePage() {
         theme={theme}
         products={mattressProducts}
         sectionTitle={"Nệm Điện Thông Minh\nSmartFurni"}
-        sectionSubtitle="Nâng đỡ linh hoạt theo từng tư thế, cá nhân hóa trải nghiệm nghỉ ngơi cho mỗi thành viên trong gia đình."
+        sectionSubtitle="Động cơ nâng hạ được tích hợp sẵn trong nệm, điều chỉnh tư thế trực tiếp mà không cần lắp thêm khung nâng bên ngoài."
         sectionHref="/products/nem-dien-thong-minh"
       />
 

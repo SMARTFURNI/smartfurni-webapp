@@ -40,16 +40,16 @@ export const PRODUCT_FAMILIES: ProductFamilyDefinition[] = [
     shortLabel: "Nệm điện thông minh",
     title: "Nệm Điện Thông Minh SmartFurni",
     description:
-      "Nệm điện thông minh SmartFurni nâng đỡ linh hoạt theo từng tư thế, phù hợp với giường điều chỉnh điện và nhu cầu nghỉ ngơi cá nhân.",
+      "Nệm điện thông minh SmartFurni tích hợp sẵn động cơ nâng hạ trong nệm, điều chỉnh tư thế trực tiếp mà không cần khung nâng hạ bên ngoài.",
     intro:
-      "Nệm điện thông minh SmartFurni kết hợp bề mặt êm ái với khả năng điều chỉnh linh hoạt, hỗ trợ cá nhân hóa tư thế cho từng người dùng và từng không gian phòng ngủ.",
+      "Nệm điện thông minh SmartFurni là giải pháp nệm hoàn chỉnh đã tích hợp cơ cấu và động cơ nâng hạ bên trong. Người dùng có thể điều chỉnh tư thế ngay trên nệm, tiết kiệm không gian và không cần mua thêm khung nâng rời.",
     selectionGuide:
-      "Nệm dùng với hệ điều chỉnh điện cần đủ linh hoạt để thay đổi theo góc nâng nhưng vẫn duy trì khả năng nâng đỡ. Hãy ưu tiên đúng kích thước khung, cấu trúc nệm tương thích và nhu cầu điều chỉnh độc lập của từng bên.",
-    benefits: ["Tương thích khung giường điều chỉnh điện", "Nâng đỡ linh hoạt theo góc nâng", "Có phiên bản dành cho một hoặc hai người", "Bề mặt chần êm, thoáng khí"],
+      "Khi lựa chọn, hãy xác định kích thước giường hiện có, số người sử dụng và nhu cầu điều chỉnh chung hay độc lập từng bên. Vì động cơ đã được tích hợp trong nệm, bạn không cần tính thêm không gian cho một bộ khung nâng hạ bên ngoài.",
+    benefits: ["Động cơ nâng hạ tích hợp sẵn trong nệm", "Không cần mua thêm khung nâng rời", "Có phiên bản dành cho một hoặc hai người", "Điều chỉnh tư thế trực tiếp bằng bộ điều khiển"],
     faqs: [
-      { question: "Nệm điện thông minh khác nệm thông thường ở điểm nào?", answer: "Dòng nệm này được thiết kế để thích ứng với chuyển động của khung nâng hạ, giúp bề mặt nệm thay đổi theo tư thế mà không làm mất sự ổn định khi nằm." },
-      { question: "Nệm điện có dùng được với mọi loại khung giường không?", answer: "Nệm cần đúng kích thước và tương thích với kết cấu nâng hạ. Nên kiểm tra thông số khung hoặc trao đổi với SmartFurni trước khi lựa chọn." },
-      { question: "Hai người có thể điều chỉnh tư thế riêng không?", answer: "Các phiên bản đôi độc lập cho phép mỗi bên lựa chọn tư thế riêng. Khả năng này tùy thuộc cấu hình nệm và khung giường đi kèm." },
+      { question: "Nệm điện thông minh khác nệm thông thường ở điểm nào?", answer: "Nệm điện SmartFurni đã tích hợp sẵn động cơ và cơ cấu nâng hạ bên trong, cho phép thay đổi tư thế trực tiếp. Nệm thông thường không có hệ thống điều chỉnh chủ động này." },
+      { question: "Có cần mua thêm khung nâng hạ bên ngoài không?", answer: "Không. Cơ cấu nâng hạ đã nằm trong chính chiếc nệm. Bạn chỉ cần lựa chọn đúng kích thước và kiểm tra bề mặt giường đặt nệm theo hướng dẫn của SmartFurni." },
+      { question: "Hai người có thể điều chỉnh tư thế riêng không?", answer: "Các phiên bản đôi độc lập cho phép mỗi người điều chỉnh bên nệm của mình. Khả năng này phụ thuộc cấu hình cụ thể của từng phiên bản." },
     ],
   },
   {
