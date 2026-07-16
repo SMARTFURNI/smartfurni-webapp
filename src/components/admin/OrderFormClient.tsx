@@ -38,10 +38,10 @@ const CITIES = [
 const SHIPPING_PARTNERS = ["GHN", "GHTK", "J&T Express", "Viettel Post", "VNPost", "DHL", "FedEx"];
 
 const SAMPLE_PRODUCTS = [
-  { productId: "p1", productName: "SmartFurni Basic", variant: "Trắng", sku: "SFB-WHT", unitPrice: 23000000 },
+  { productId: "p1", productName: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni Basic", variant: "Hệ khung · Trắng", sku: "SFB-WHT-FRM", unitPrice: 23000000 },
   { productId: "p2", productName: "SmartFurni Pro", variant: "Trắng Ngà", sku: "SFP-IVR", unitPrice: 45000000 },
-  { productId: "p3", productName: "SmartFurni Elite", variant: "Đen Cao Cấp", sku: "SFE-BLK", unitPrice: 75000000 },
-  { productId: "p4", productName: "SmartFurni Pro 2026", variant: "Bạc", sku: "SFP26-SLV", unitPrice: 52000000 },
+  { productId: "p3", productName: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni Elite", variant: "Hệ khung · Đen Carbon", sku: "SFE-CBN-FRM", unitPrice: 65000000 },
+  { productId: "p4", productName: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni Pro 2026", variant: "Hệ khung · Bạc", sku: "SFP26-SLV-FRM", unitPrice: 52000000 },
   { productId: "p5", productName: "Remote Controller", variant: "Chuẩn", sku: "RC-STD", unitPrice: 1500000 },
   { productId: "p6", productName: "Nệm Memory Foam", variant: "1.6m", sku: "MF-160", unitPrice: 8500000 },
   { productId: "p8", productName: "Bộ Phụ Kiện", variant: "Full Set", sku: "ACC-FULL", unitPrice: 3200000 },

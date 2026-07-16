@@ -24,8 +24,8 @@ const QUICK_REPLIES = [
 
 const BOT_RESPONSES: Record<string, { text: string; options?: string[]; link?: { label: string; href: string } }> = {
   "xem sản phẩm": {
-    text: "SmartFurni hiện có 3 dòng sản phẩm chính:\n• **SmartFurni Basic** — 18.900.000đ\n• **SmartFurni Pro** — 28.900.000đ\n• **SmartFurni Elite** — 45.900.000đ\n\nBạn muốn xem chi tiết dòng nào?",
-    options: ["SmartFurni Basic", "SmartFurni Pro", "SmartFurni Elite"],
+    text: "SmartFurni hiện có 3 model giường công thái học điều chỉnh điện:\n• **SmartFurni Basic**\n• **SmartFurni Pro 2026**\n• **SmartFurni Elite**\n\nMỗi model có lựa chọn hệ khung nâng hạ hoặc bộ giường trọn bộ. Bạn muốn xem chi tiết model nào?",
+    options: ["SmartFurni Basic", "SmartFurni Pro 2026", "SmartFurni Elite"],
     link: { label: "Xem tất cả sản phẩm →", href: "/products" },
   },
   "tra cứu đơn hàng": {
@@ -52,7 +52,7 @@ const BOT_RESPONSES: Record<string, { text: string; options?: string[]; link?: {
   },
   "smartfurni basic": {
     text: "**SmartFurni Basic** — 18.900.000đ\n\nTính năng nổi bật:\n• Điều chỉnh đầu giường 0–70°\n• Điều chỉnh chân giường 0–45°\n• Điều khiển qua app Bluetooth\n• Bảo hành 5 năm\n• Kích thước: Đơn, Đôi, Queen",
-    link: { label: "Xem SmartFurni Basic →", href: "/products/smartfurni-basic" },
+    link: { label: "Xem SmartFurni Basic →", href: "/products/giuong-cong-thai-hoc-dieu-chinh-dien-smartfurni-basic" },
   },
   "smartfurni pro": {
     text: "**SmartFurni Pro** — 28.900.000đ\n\nTính năng nổi bật:\n• Tất cả tính năng Basic\n• Massage 8 điểm\n• Theo dõi giấc ngủ AI\n• Tích hợp Google Home / Alexa\n• Bảo hành 5 năm toàn diện",
@@ -60,7 +60,7 @@ const BOT_RESPONSES: Record<string, { text: string; options?: string[]; link?: {
   },
   "smartfurni elite": {
     text: "**SmartFurni Elite** — 45.900.000đ\n\nTính năng nổi bật:\n• Tất cả tính năng Pro\n• Apple HomeKit + Siri\n• Massage 16 điểm\n• Sạc không dây tích hợp\n• Bảo hành 7 năm cao cấp",
-    link: { label: "Xem SmartFurni Elite →", href: "/products/smartfurni-elite" },
+    link: { label: "Xem SmartFurni Elite →", href: "/products/giuong-cong-thai-hoc-dieu-chinh-dien-smartfurni-elite" },
   },
   "bắt đầu tư vấn": {
     text: "Tuyệt vời! Hãy trả lời 5 câu hỏi ngắn để tôi gợi ý giường phù hợp nhất với bạn.",

@@ -35,7 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Sản phẩm",
     children: [
       { label: "Tất cả sản phẩm", href: "/products", icon: "bed", desc: "Xem toàn bộ dòng sản phẩm" },
-      { label: "Giường công thái học", href: "/products/giuong-cong-thai-hoc-dieu-chinh-dien", icon: "bed", desc: "Giường nâng hạ và điều chỉnh điện" },
+      { label: "Giường công thái học", href: "/products/giuong-cong-thai-hoc-dieu-chinh-dien", icon: "bed", desc: "Hệ khung nâng hạ hoặc bộ giường trọn bộ" },
       { label: "Nệm thông minh điều chỉnh điện", href: "/products/nem-thong-minh-dieu-chinh-dien", icon: "bed", desc: "Tích hợp động cơ nâng hạ trong nệm" },
       { label: "Sofa giường", href: "/products/sofa-giuong-thong-minh", icon: "sofa", desc: "Tối ưu không gian đa năng" },
       { label: "Phụ kiện", href: "/products/phu-kien-giuong-thong-minh", icon: "settings", desc: "Remote, nệm và phụ kiện chính hãng" },

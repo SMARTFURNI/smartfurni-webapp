@@ -23,14 +23,15 @@ export const PRODUCT_FAMILIES: ProductFamilyDefinition[] = [
     description:
       "Khám phá giường công thái học điều chỉnh điện SmartFurni với khả năng nâng đầu, nâng chân và cá nhân hóa tư thế nghỉ ngơi.",
     intro:
-      "Dòng giường nâng hạ điện SmartFurni giúp chuyển đổi linh hoạt giữa tư thế ngủ, đọc sách, xem phim và thư giãn. Sản phẩm được thiết kế cho gia đình hiện đại, người lớn tuổi và những ai cần nâng đỡ cơ thể tốt hơn.",
+      "Dòng giường công thái học điều chỉnh điện SmartFurni giúp chuyển đổi linh hoạt giữa tư thế ngủ, đọc sách, xem phim và thư giãn. Mỗi model có hai cấu hình: hệ khung nâng hạ để kết hợp với nệm và vỏ giường phù hợp, hoặc bộ giường trọn bộ được hoàn thiện theo không gian thực tế.",
     selectionGuide:
-      "Khi chọn giường công thái học, hãy đối chiếu kích thước lòng giường, loại nệm đang sử dụng, số người nằm và nhu cầu nâng đầu hoặc nâng chân. SmartFurni có thể tư vấn cấu hình theo không gian thực tế trước khi lắp đặt.",
-    benefits: ["Điều chỉnh tư thế bằng remote", "Linh hoạt khi đọc sách và nghỉ ngơi", "Có nhiều kích thước và phân khúc", "Hỗ trợ tư vấn lắp đặt tận nơi"],
+      "Khi chọn giường công thái học, hãy xác định nhu cầu mua riêng hệ khung hay bộ giường trọn bộ, sau đó đối chiếu kích thước lòng giường, loại nệm, số người nằm và nhu cầu nâng đầu hoặc nâng chân. SmartFurni sẽ kiểm tra không gian trước khi xác nhận cấu hình lắp đặt.",
+    benefits: ["Điều chỉnh tư thế bằng remote", "Chọn hệ khung hoặc bộ giường trọn bộ", "Có nhiều kích thước và phân khúc", "Hỗ trợ tư vấn lắp đặt tận nơi"],
     faqs: [
       { question: "Giường công thái học điều chỉnh điện hoạt động như thế nào?", answer: "Hệ thống motor điện nâng hoặc hạ từng phần của khung giường theo thao tác trên remote, giúp người dùng lựa chọn tư thế phù hợp cho nghỉ ngơi, đọc sách hoặc xem phim." },
       { question: "Có thể dùng lại nệm và khung giường hiện tại không?", answer: "Khả năng sử dụng lại phụ thuộc vào độ linh hoạt của nệm và kích thước lòng giường. SmartFurni sẽ kiểm tra thông tin trước khi đề xuất phương án lắp đặt." },
       { question: "Nên chọn kích thước giường nào?", answer: "Kích thước nên dựa trên số người sử dụng, diện tích phòng và lòng giường thực tế. Bạn có thể gửi kích thước để được tư vấn cấu hình phù hợp." },
+      { question: "Hệ khung nâng hạ và bộ giường trọn bộ khác nhau thế nào?", answer: "Hệ khung gồm khung nâng hạ, động cơ, remote, bộ nguồn và phụ kiện lắp đặt; không gồm nệm và vỏ giường trang trí. Bộ giường trọn bộ bổ sung nệm tương thích và phần vỏ giường hoàn thiện theo kích thước, vật liệu được xác nhận." },
     ],
   },
   {

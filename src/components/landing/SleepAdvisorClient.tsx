@@ -104,7 +104,7 @@ function getRecommendations(answers: Answer[]): Recommendation[] {
   if (sleepPos === "back") { eliteScore += 10; eliteReasons.push("Tư thế nằm ngửa được tối ưu với góc đầu giường 15-30°"); }
   if (eliteScore > 0) {
     recs.push({
-      productSlug: "smartfurni-elite",
+      productSlug: "giuong-cong-thai-hoc-dieu-chinh-dien-smartfurni-elite",
       productName: "SmartFurni Elite",
       price: 65000000,
       matchScore: Math.min(eliteScore, 98),
@@ -146,7 +146,7 @@ function getRecommendations(answers: Answer[]): Recommendation[] {
   if (sleepPos === "back" || sleepPos === "mixed") { basicScore += 15; basicReasons.push("Điều chỉnh đầu/chân giường đủ cho nhu cầu cơ bản"); }
   if (basicScore > 0) {
     recs.push({
-      productSlug: "smartfurni-basic",
+      productSlug: "giuong-cong-thai-hoc-dieu-chinh-dien-smartfurni-basic",
       productName: "SmartFurni Basic",
       price: 23000000,
       matchScore: Math.min(basicScore, 90),

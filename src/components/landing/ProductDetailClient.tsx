@@ -11,7 +11,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Product, ProductVariant } from "@/lib/product-store";
+import type { Product, ProductPurchaseOption, ProductVariant } from "@/lib/product-store";
 import BNPLBadge from "@/components/landing/BNPLBadge";
 import type { SiteTheme } from "@/lib/theme-types";
 import { useCart } from "@/lib/cart-context";
@@ -967,6 +967,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
   const { addItem, totalItems } = useCart();
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(product.variants[0]);
+  const [selectedPurchaseOption, setSelectedPurchaseOption] = useState<ProductPurchaseOption | undefined>(product.purchaseOptions?.[0]);
   const [activeTab, setActiveTab] = useState<"description" | "features" | "specs" | "reviews">("description");
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -990,24 +991,37 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
   function lightboxPrev() { setLightboxIdx((i) => (i - 1 + allImages.length) % allImages.length); }
   function lightboxNext() { setLightboxIdx((i) => (i + 1) % allImages.length); }
 
+  const hasConfiguredPrice = !selectedPurchaseOption || typeof selectedPurchaseOption.price === "number";
+  const currentPrice = selectedPurchaseOption?.price ?? product.price;
+  const currentOriginalPrice = selectedPurchaseOption?.originalPrice ?? product.originalPrice;
+  const selectedSku = selectedPurchaseOption
+    ? `${selectedVariant.sku}-${selectedPurchaseOption.skuSuffix}`
+    : selectedVariant.sku;
+  const selectedVariantName = selectedPurchaseOption
+    ? `${selectedPurchaseOption.name} · ${selectedVariant.name}`
+    : selectedVariant.name;
   const discount =
-    product.originalPrice > product.price
-      ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    hasConfiguredPrice && currentOriginalPrice > currentPrice
+      ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
       : 0;
 
   const statusCfg = STATUS_MAP[product.status];
   const isAvailable = product.status === "active" && selectedVariant.stock > 0;
   const isComingSoon = product.status === "coming_soon";
   const handleAddToCart = () => {
+    if (!hasConfiguredPrice) {
+      router.push(`/contact?product=${encodeURIComponent(product.name)}&configuration=${encodeURIComponent(selectedPurchaseOption?.name || "")}`);
+      return;
+    }
     addItem({
       productId: product.id,
       productName: product.name,
       slug: product.slug,
       variantId: selectedVariant.id,
-      variantName: selectedVariant.name,
-      sku: selectedVariant.sku,
-      price: product.price,
-      originalPrice: product.originalPrice,
+      variantName: selectedVariantName,
+      sku: selectedSku,
+      price: currentPrice,
+      originalPrice: currentOriginalPrice,
       coverImage: product.coverImage,
       quantity,
     });
@@ -1016,15 +1030,19 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
   };
 
   const handleBuyNow = () => {
+    if (!hasConfiguredPrice) {
+      router.push(`/contact?product=${encodeURIComponent(product.name)}&configuration=${encodeURIComponent(selectedPurchaseOption?.name || "")}`);
+      return;
+    }
     addItem({
       productId: product.id,
       productName: product.name,
       slug: product.slug,
       variantId: selectedVariant.id,
-      variantName: selectedVariant.name,
-      sku: selectedVariant.sku,
-      price: product.price,
-      originalPrice: product.originalPrice,
+      variantName: selectedVariantName,
+      sku: selectedSku,
+      price: currentPrice,
+      originalPrice: currentOriginalPrice,
       coverImage: product.coverImage,
       quantity,
     });
@@ -1069,30 +1087,30 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
     >
       <div className="flex-1 min-w-0">
         <p style={{ color: colors.text }} className="text-sm font-semibold truncate">{product.name}</p>
-        <p style={{ color: colors.primary }} className="text-sm font-bold">{formatPrice(product.price)}</p>
+        <p style={{ color: colors.primary }} className="text-sm font-bold">{hasConfiguredPrice ? formatPrice(currentPrice) : "Liên hệ báo giá"}</p>
       </div>
       <button
         onClick={handleAddToCart}
-        disabled={!isAvailable}
+        disabled={!isAvailable && hasConfiguredPrice}
         style={{
           borderColor: colors.primary,
           color: colors.primary,
-          opacity: isAvailable ? 1 : 0.4,
+          opacity: isAvailable || !hasConfiguredPrice ? 1 : 0.4,
         }}
         className="px-4 py-2.5 rounded-xl border text-xs font-semibold whitespace-nowrap flex-shrink-0"
       >
-        + Giỏ hàng
+        {hasConfiguredPrice ? "+ Giỏ hàng" : "Tư vấn"}
       </button>
       <button
         onClick={handleBuyNow}
-        disabled={!isAvailable}
+        disabled={!isAvailable && hasConfiguredPrice}
         style={{
-          background: isAvailable ? `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` : colors.border,
-          color: isAvailable ? accentText : `${colors.text}40`,
+          background: isAvailable || !hasConfiguredPrice ? `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` : colors.border,
+          color: isAvailable || !hasConfiguredPrice ? accentText : `${colors.text}40`,
         }}
         className="px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0"
       >
-        Mua ngay
+        {hasConfiguredPrice ? "Mua ngay" : "Nhận báo giá"}
       </button>
     </div>
     <div style={{ maxWidth: layout.maxWidth, paddingTop: (theme.navbar.height ?? 64) + 32 }} className="mx-auto px-4 sm:px-6 pb-8 sm:pb-10">
@@ -1330,17 +1348,17 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
           >
             <div className="flex items-baseline gap-3">
               <span style={{ color: colors.primary }} className="text-3xl font-bold">
-                {formatPrice(product.price)}
+                {hasConfiguredPrice ? formatPrice(currentPrice) : "Liên hệ"}
               </span>
-              {product.originalPrice > product.price && (
+              {hasConfiguredPrice && currentOriginalPrice > currentPrice && (
                 <span style={{ color: `${colors.text}40` }} className="text-lg line-through">
-                  {formatPrice(product.originalPrice)}
+                  {formatPrice(currentOriginalPrice)}
                 </span>
               )}
             </div>
             {discount > 0 && (
               <p style={{ color: colors.success }} className="text-sm mt-1">
-                Tiết kiệm {formatPrice(product.originalPrice - product.price)}
+                Tiết kiệm {formatPrice(currentOriginalPrice - currentPrice)}
               </p>
             )}
             {/* Urgency: delivery estimate */}
@@ -1350,7 +1368,9 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
                 <path d="M11 3h1.5a.5.5 0 01.5.5v7a.5.5 0 01-.5.5H11" stroke={colors.success} strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
               <span style={{ color: colors.success }} className="text-xs font-medium">
-                Đặt hôm nay — giao trong 3–5 ngày làm việc
+                {hasConfiguredPrice
+                  ? "Đặt hôm nay — giao trong 3–5 ngày làm việc"
+                  : "Khảo sát kích thước và xác nhận vật liệu trước khi báo giá"}
               </span>
             </div>
           </div>
@@ -1389,11 +1409,47 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
             {product.description}
           </p>
 
+          {/* Purchase configuration */}
+          {product.purchaseOptions && product.purchaseOptions.length > 0 && (
+            <div>
+              <p style={{ color: `${colors.text}70` }} className="text-sm font-medium mb-2">
+                Cấu hình sản phẩm: <span style={{ color: colors.text }}>{selectedPurchaseOption?.name}</span>
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {product.purchaseOptions.map((option) => {
+                  const isSelected = option.id === selectedPurchaseOption?.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setSelectedPurchaseOption(option)}
+                      style={isSelected
+                        ? { background: `linear-gradient(135deg, ${colors.primary}28, ${colors.secondary}18)`, color: colors.text, borderColor: colors.primary }
+                        : { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }}
+                      className="rounded-xl border p-3 text-left transition-all"
+                    >
+                      <span className="block text-sm font-semibold">{option.name}</span>
+                      <span style={{ color: `${colors.text}75` }} className="block text-xs leading-relaxed mt-1">{option.description}</span>
+                      <span style={{ color: colors.primary }} className="block text-xs font-semibold mt-2">
+                        {typeof option.price === "number" ? formatPrice(option.price) : "Liên hệ để nhận báo giá"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedPurchaseOption && (
+                <ul style={{ color: `${colors.text}75` }} className="mt-2 text-xs grid sm:grid-cols-2 gap-x-3 gap-y-1">
+                  {selectedPurchaseOption.includes.map((item) => <li key={item}>✓ {item}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+
           {/* Variants */}
           {product.variants.length > 0 && (
             <div>
               <p style={{ color: `${colors.text}70` }} className="text-sm font-medium mb-2">
-                Màu sắc / Loại: <span style={{ color: colors.text }}>{selectedVariant.name}</span>
+                Màu sắc / Kích thước: <span style={{ color: colors.text }}>{selectedVariant.name}</span>
               </p>
               <div className="flex flex-wrap gap-2">
                 {product.variants.map((v) => {
@@ -1429,7 +1485,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
               </div>
               {selectedVariant && (
                 <p style={{ color: `${colors.text}50` }} className="text-xs mt-2">
-                  SKU: {selectedVariant.sku} · Còn {selectedVariant.stock} sản phẩm
+                  SKU: {selectedSku} · Còn {selectedVariant.stock} sản phẩm
                 </p>
               )}
             </div>
@@ -1464,9 +1520,9 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
             {/* Add to cart */}
             <button
               onClick={handleAddToCart}
-              disabled={!isAvailable && !isComingSoon}
+              disabled={hasConfiguredPrice && !isAvailable && !isComingSoon}
               style={
-                isAvailable || isComingSoon
+                isAvailable || isComingSoon || !hasConfiguredPrice
                   ? {
                       background: addedToCart
                         ? `linear-gradient(135deg, ${colors.success}, ${colors.success})`
@@ -1477,7 +1533,9 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
               }
               className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all duration-300"
             >
-              {addedToCart
+              {!hasConfiguredPrice
+                ? "Liên hệ nhận báo giá"
+                : addedToCart
                 ? "✓ Đã thêm vào giỏ"
                 : isAvailable
                 ? "Thêm vào giỏ hàng"
@@ -1488,13 +1546,13 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
           </div>
 
           {/* Buy Now button */}
-          {(isAvailable || isComingSoon) && (
+          {(isAvailable || isComingSoon || !hasConfiguredPrice) && (
             <button
               onClick={handleBuyNow}
               style={{ borderColor: colors.primary, color: colors.primary }}
               className="w-full py-3 rounded-xl text-sm font-semibold border text-center hover:opacity-80 transition-opacity"
             >
-              Mua ngay →
+              {hasConfiguredPrice ? "Mua ngay →" : "Liên hệ nhận báo giá →"}
             </button>
           )}
 
@@ -1519,9 +1577,9 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
           )}
 
           {/* BNPL Badge */}
-          {product.category !== "accessory" && (
+          {product.category !== "accessory" && hasConfiguredPrice && (
             <BNPLBadge
-              price={product.price}
+              price={currentPrice}
               primary={colors.primary}
               bg={colors.background}
               text={colors.text}

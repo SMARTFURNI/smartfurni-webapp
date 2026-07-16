@@ -72,18 +72,36 @@ export function productSchema(product: Product) {
     sku: product.variants[0]?.sku || product.slug,
     brand: { "@type": "Brand", name: "SmartFurni" },
     category: product.productFamily || product.category,
+    additionalProperty: product.purchaseOptions?.map((option) => ({
+      "@type": "PropertyValue",
+      name: "Cấu hình mua hàng",
+      value: `${option.name}: ${option.description}`,
+    })),
   };
 
   if (product.price > 0) {
-    schema.offers = {
-      "@type": "Offer",
-      url,
-      priceCurrency: "VND",
-      price: product.price,
-      availability: availabilityFor(product),
-      itemCondition: "https://schema.org/NewCondition",
-      seller: { "@id": ORGANIZATION_ID },
-    };
+    const pricedOptions = product.purchaseOptions?.filter((option) => typeof option.price === "number") || [];
+    schema.offers = pricedOptions.length
+      ? pricedOptions.map((option) => ({
+          "@type": "Offer",
+          name: option.name,
+          url,
+          sku: `${product.variants[0]?.sku || product.slug}-${option.skuSuffix}`,
+          priceCurrency: "VND",
+          price: option.price,
+          availability: availabilityFor(product),
+          itemCondition: "https://schema.org/NewCondition",
+          seller: { "@id": ORGANIZATION_ID },
+        }))
+      : {
+          "@type": "Offer",
+          url,
+          priceCurrency: "VND",
+          price: product.price,
+          availability: availabilityFor(product),
+          itemCondition: "https://schema.org/NewCondition",
+          seller: { "@id": ORGANIZATION_ID },
+        };
   }
 
   if (product.rating > 0 && product.reviewCount > 0) {

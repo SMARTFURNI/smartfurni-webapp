@@ -17,6 +17,17 @@ interface VariantDraft {
   stock: number;
 }
 
+interface PurchaseOptionDraft {
+  id: string;
+  name: string;
+  shortName: string;
+  description: string;
+  skuSuffix: string;
+  price: string;
+  originalPrice: string;
+  includes: string;
+}
+
 interface SpecEntry {
   key: string;
   value: string;
@@ -38,6 +49,7 @@ interface FormState {
   features: string[];
   specs: SpecEntry[];
   variants: VariantDraft[];
+  purchaseOptions: PurchaseOptionDraft[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -322,6 +334,16 @@ export default function ProductFormClient({ product }: { product?: Product }) {
     variants: product?.variants.length
       ? product.variants.map((v) => ({ id: v.id, name: v.name, sku: v.sku, stock: v.stock }))
       : [{ id: uid(), name: "", sku: "", stock: 0 }],
+    purchaseOptions: product?.purchaseOptions?.map((option) => ({
+      id: option.id,
+      name: option.name,
+      shortName: option.shortName,
+      description: option.description,
+      skuSuffix: option.skuSuffix,
+      price: typeof option.price === "number" ? option.price.toLocaleString("vi-VN") : "",
+      originalPrice: typeof option.originalPrice === "number" ? option.originalPrice.toLocaleString("vi-VN") : "",
+      includes: option.includes.join("\n"),
+    })) || [],
   });
 
   const [productImages, setProductImages] = useState<string[]>(product?.images || []);
@@ -370,6 +392,20 @@ export default function ProductFormClient({ product }: { product?: Product }) {
     set("variants", arr.length ? arr : [{ id: uid(), name: "", sku: "", stock: 0 }]);
   }
 
+  function setPurchaseOption(i: number, field: keyof PurchaseOptionDraft, val: string) {
+    const arr = [...form.purchaseOptions];
+    arr[i] = { ...arr[i], [field]: val };
+    set("purchaseOptions", arr);
+  }
+  function addPurchaseOption() {
+    set("purchaseOptions", [...form.purchaseOptions, {
+      id: uid(), name: "", shortName: "", description: "", skuSuffix: "", price: "", originalPrice: "", includes: "",
+    }]);
+  }
+  function removePurchaseOption(i: number) {
+    set("purchaseOptions", form.purchaseOptions.filter((_, idx) => idx !== i));
+  }
+
   // ── Image gallery callback ───────────────────────────────────────────────────
   function handleImagesChange(images: string[], cover: string) {
     setProductImages(images);
@@ -385,6 +421,9 @@ export default function ProductFormClient({ product }: { product?: Product }) {
     if (!form.cost || parseNumber(form.cost) <= 0) errs.cost = "Giá vốn phải lớn hơn 0";
     if (form.variants.some((v) => !v.name.trim())) errs.variants = "Tên biến thể không được để trống";
     if (form.variants.some((v) => !v.sku.trim())) errs.variants = "SKU biến thể không được để trống";
+    if (form.purchaseOptions.some((option) => !option.name.trim() || !option.skuSuffix.trim())) {
+      errs.purchaseOptions = "Tên cấu hình và hậu tố SKU không được để trống";
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -412,6 +451,16 @@ export default function ProductFormClient({ product }: { product?: Product }) {
         features: form.features.filter((f) => f.trim()),
         specs: Object.fromEntries(form.specs.filter((s) => s.key.trim() && s.value.trim()).map((s) => [s.key.trim(), s.value.trim()])),
         variants: form.variants.map((v) => ({ name: v.name.trim(), sku: v.sku.trim(), stock: Number(v.stock) })),
+        purchaseOptions: form.purchaseOptions.length ? form.purchaseOptions.map((option) => ({
+          id: option.id,
+          name: option.name.trim(),
+          shortName: option.shortName.trim() || option.name.trim(),
+          description: option.description.trim(),
+          skuSuffix: option.skuSuffix.trim().toUpperCase(),
+          price: option.price ? parseNumber(option.price) : undefined,
+          originalPrice: option.originalPrice ? parseNumber(option.originalPrice) : undefined,
+          includes: option.includes.split("\n").map((item) => item.trim()).filter(Boolean),
+        })) : undefined,
       };
 
       let res: Response;
@@ -509,7 +558,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
                   type="text"
                   value={form.name}
                   onChange={(e) => set("name", e.target.value)}
-                  placeholder="VD: SmartFurni Pro 2026"
+                  placeholder="VD: Giường Công Thái Học Điều Chỉnh Điện SmartFurni Pro 2026"
                   className={`${inputClass} ${errors.name ? "border-red-500/50" : ""}`}
                 />
                 {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name}</p>}
@@ -653,6 +702,33 @@ export default function ProductFormClient({ product }: { product?: Product }) {
                 </button>
                 <span className="text-xs text-[rgba(245,237,214,0.45)]">Tổng tồn kho: <span className="text-white font-semibold">{totalStock}</span></span>
               </div>
+            </div>
+          </Section>
+
+          {/* Purchase options */}
+          <Section title="Cấu hình mua hàng">
+            <p className="text-xs text-[rgba(245,237,214,0.45)] mb-4">
+              Tách cấu hình mua hàng khỏi màu sắc/kích thước. Để trống giá nếu cấu hình cần khảo sát và báo giá riêng.
+            </p>
+            <div className="space-y-4">
+              {form.purchaseOptions.map((option, i) => (
+                <div key={option.id} className="p-4 bg-[#1a1200]/60 rounded-xl space-y-3">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <input className={inputClass} value={option.name} onChange={(e) => setPurchaseOption(i, "name", e.target.value)} placeholder="Hệ khung nâng hạ" />
+                    <input className={inputClass} value={option.shortName} onChange={(e) => setPurchaseOption(i, "shortName", e.target.value)} placeholder="Tên ngắn: Hệ khung" />
+                    <input className={inputClass} value={option.skuSuffix} onChange={(e) => setPurchaseOption(i, "skuSuffix", e.target.value.toUpperCase())} placeholder="Hậu tố SKU: FRM" />
+                    <input className={inputClass} inputMode="numeric" value={option.price} onChange={(e) => setPurchaseOption(i, "price", formatNumberInput(e.target.value))} placeholder="Giá bán (để trống nếu liên hệ)" />
+                    <input className={`${inputClass} sm:col-span-2`} inputMode="numeric" value={option.originalPrice} onChange={(e) => setPurchaseOption(i, "originalPrice", formatNumberInput(e.target.value))} placeholder="Giá gốc trước khuyến mãi" />
+                  </div>
+                  <textarea className={`${inputClass} min-h-20`} value={option.description} onChange={(e) => setPurchaseOption(i, "description", e.target.value)} placeholder="Mô tả thành phần của cấu hình" />
+                  <textarea className={`${inputClass} min-h-24`} value={option.includes} onChange={(e) => setPurchaseOption(i, "includes", e.target.value)} placeholder="Mỗi thành phần trên một dòng" />
+                  <button type="button" onClick={() => removePurchaseOption(i)} className="text-xs text-red-400/70 hover:text-red-400">Xóa cấu hình</button>
+                </div>
+              ))}
+              {errors.purchaseOptions && <p className="text-xs text-red-400">{errors.purchaseOptions}</p>}
+              <button type="button" onClick={addPurchaseOption} className="text-xs text-[#C9A84C]/70 hover:text-[#C9A84C]">
+                + Thêm cấu hình mua hàng
+              </button>
             </div>
           </Section>
 

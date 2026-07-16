@@ -1,5 +1,5 @@
 import { notFound, permanentRedirect } from "next/navigation";
-import { getProductBySlugFresh, getRelatedProducts } from "@/lib/product-store";
+import { getCanonicalErgonomicBedSlug, getProductBySlugFresh, getRelatedProducts } from "@/lib/product-store";
 import { getTheme } from "@/lib/theme-store";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
@@ -25,7 +25,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   await initDbOnce();
   const { slug } = await params;
-  const resolvedSlug = getCanonicalElectricMattressSlug(slug) || slug;
+  const resolvedSlug = getCanonicalElectricMattressSlug(slug) || getCanonicalErgonomicBedSlug(slug) || slug;
   const product =
     (await getProductBySlugFresh(resolvedSlug)) ?? getHomepageMattressProductBySlug(resolvedSlug);
   if (!product) return { title: "Không tìm thấy sản phẩm", robots: { index: false, follow: false } };
@@ -57,6 +57,10 @@ export default async function ProductDetailPage({ params }: Props) {
   const canonicalMattressSlug = getCanonicalElectricMattressSlug(slug);
   if (canonicalMattressSlug) {
     permanentRedirect(`/products/${canonicalMattressSlug}`);
+  }
+  const canonicalBedSlug = getCanonicalErgonomicBedSlug(slug);
+  if (canonicalBedSlug) {
+    permanentRedirect(`/products/${canonicalBedSlug}`);
   }
   const product =
     (await getProductBySlugFresh(slug)) ?? getHomepageMattressProductBySlug(slug);

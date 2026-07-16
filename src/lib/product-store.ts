@@ -25,6 +25,18 @@ export interface ProductVariant {
   reserved: number; // đã đặt nhưng chưa giao
 }
 
+export interface ProductPurchaseOption {
+  id: string;
+  name: string;
+  shortName: string;
+  description: string;
+  skuSuffix: string;
+  /** Giá bán của cấu hình. Để trống khi cần khảo sát và báo giá riêng. */
+  price?: number;
+  originalPrice?: number;
+  includes: string[];
+}
+
 export interface ProductReview {
   id: string;
   userName: string;
@@ -57,6 +69,8 @@ export interface Product {
   coverImage?: string;
   images: string[];
   variants: ProductVariant[];
+  /** Cấu hình mua hàng độc lập với màu sắc/kích thước. */
+  purchaseOptions?: ProductPurchaseOption[];
   totalStock: number; // tổng tồn kho
   totalSold: number; // tổng đã bán
   totalRevenue: number;
@@ -459,6 +473,89 @@ const DEFAULT_PRODUCTS: Product[] = [
   },
 ];
 
+const ERGONOMIC_BED_POSITIONING: Record<string, { name: string; slug: string; model: string }> = {
+  p1: {
+    name: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni Basic",
+    slug: "giuong-cong-thai-hoc-dieu-chinh-dien-smartfurni-basic",
+    model: "Basic",
+  },
+  p3: {
+    name: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni Elite",
+    slug: "giuong-cong-thai-hoc-dieu-chinh-dien-smartfurni-elite",
+    model: "Elite",
+  },
+  p4: {
+    name: "Giường Công Thái Học Điều Chỉnh Điện SmartFurni Pro 2026",
+    slug: "giuong-cong-thai-hoc-dieu-chinh-dien-smartfurni-pro-2026",
+    model: "Pro 2026",
+  },
+};
+
+const LEGACY_ERGONOMIC_BED_SLUGS: Record<string, string> = {
+  "smartfurni-basic": ERGONOMIC_BED_POSITIONING.p1.slug,
+  "smartfurni-elite": ERGONOMIC_BED_POSITIONING.p3.slug,
+  "smartfurni-pro-2026": ERGONOMIC_BED_POSITIONING.p4.slug,
+};
+
+export function getCanonicalErgonomicBedSlug(slug: string): string | null {
+  return LEGACY_ERGONOMIC_BED_SLUGS[slug] || null;
+}
+
+function applyErgonomicBedPositioning(product: Product): Product {
+  const positioning = ERGONOMIC_BED_POSITIONING[product.id];
+  if (!positioning) return product;
+
+  const purchaseOptions: ProductPurchaseOption[] = [
+    {
+      id: `${product.id}-frame`,
+      name: "Hệ khung nâng hạ",
+      shortName: "Hệ khung",
+      description: "Gồm hệ khung thép và động cơ điều chỉnh điện; không bao gồm nệm và vỏ giường trang trí.",
+      skuSuffix: "FRM",
+      price: product.price,
+      originalPrice: product.originalPrice,
+      includes: ["Khung nâng hạ tích hợp động cơ", "Remote điều khiển", "Bộ nguồn và phụ kiện lắp đặt"],
+    },
+    {
+      id: `${product.id}-complete`,
+      name: "Bộ giường trọn bộ",
+      shortName: "Trọn bộ",
+      description: "Gồm hệ khung nâng hạ, nệm tương thích và vỏ giường hoàn thiện theo kích thước, vật liệu lựa chọn.",
+      skuSuffix: "SET",
+      includes: ["Khung nâng hạ tích hợp động cơ", "Nệm tương thích", "Vỏ giường hoàn thiện", "Giao hàng và lắp đặt theo xác nhận"],
+    },
+  ];
+
+  const detailIntro = `<h2>${positioning.name}</h2>
+<p>Dòng ${positioning.model} có thể lựa chọn theo hai cấu hình: <strong>Hệ khung nâng hạ</strong> dành cho khách hàng muốn tận dụng nệm và vỏ giường phù hợp, hoặc <strong>Bộ giường trọn bộ</strong> gồm khung nâng hạ, nệm tương thích và phần hoàn thiện theo cấu hình được xác nhận.</p>
+<h3>Chọn đúng cấu hình sản phẩm</h3>
+<ul>
+  <li><strong>Hệ khung nâng hạ:</strong> gồm khung, động cơ, remote, bộ nguồn và phụ kiện lắp đặt; không gồm nệm và vỏ giường trang trí.</li>
+  <li><strong>Bộ giường trọn bộ:</strong> gồm hệ khung nâng hạ, nệm tương thích và vỏ giường hoàn thiện. Giá được báo theo kích thước và vật liệu lựa chọn.</li>
+</ul>`;
+  const existingDetail = product.detailedDescription || "";
+  const normalizedDetail = existingDetail.includes("Chọn đúng cấu hình sản phẩm")
+    ? existingDetail
+    : `${detailIntro}\n${existingDetail.replace(/^<h2>[\s\S]*?<\/h2>/, "")}`;
+
+  return {
+    ...product,
+    name: positioning.name,
+    slug: positioning.slug,
+    productFamily: "ergonomic_bed",
+    description: `Giường công thái học điều chỉnh điện SmartFurni ${positioning.model} nâng đầu, nâng chân bằng động cơ. Lựa chọn hệ khung nâng hạ hoặc bộ giường trọn bộ theo không gian thực tế.`,
+    detailedDescription: normalizedDetail,
+    purchaseOptions,
+    specs: {
+      ...product.specs,
+      "Cấu hình mua hàng": "Hệ khung nâng hạ / Bộ giường trọn bộ",
+      "Hệ khung gồm": "Khung, động cơ, remote, bộ nguồn và phụ kiện lắp đặt",
+      "Trọn bộ gồm": "Hệ khung, nệm tương thích và vỏ giường hoàn thiện",
+    },
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -476,11 +573,12 @@ function generateSlug(name: string): string {
 }
 
 // In-memory store — populated from PostgreSQL on first request
-const INITIAL_PRODUCTS: Product[] = [...DEFAULT_PRODUCTS, ...HOMEPAGE_MATTRESS_PRODUCTS];
+const INITIAL_PRODUCTS: Product[] = [...DEFAULT_PRODUCTS.map(applyErgonomicBedPositioning), ...HOMEPAGE_MATTRESS_PRODUCTS];
 const ELECTRIC_MATTRESS_SEED_KEY = "electric_mattress_products_seeded_v1";
 const ELECTRIC_MATTRESS_POSITIONING_KEY = "electric_mattress_positioning_v2";
 const ELECTRIC_MATTRESS_NAMING_KEY = "electric_mattress_naming_v3";
 const ELECTRIC_MATTRESS_SLUG_KEY = "electric_mattress_slug_v4";
+const ERGONOMIC_BED_NAMING_KEY = "ergonomic_bed_naming_v5";
 
 let products: Product[] = [...INITIAL_PRODUCTS];
 
@@ -488,12 +586,16 @@ let products: Product[] = [...INITIAL_PRODUCTS];
 registerDbLoader(async () => {
   const rows = await dbLoadAll<Product>("products");
   if (rows && rows.length > 0) {
+    const ergonomicBedNamingCompleted = await dbGetSetting<boolean>(ERGONOMIC_BED_NAMING_KEY);
     const slugMigrationCompleted = await dbGetSetting<boolean>(
       ELECTRIC_MATTRESS_SLUG_KEY,
     );
-    const normalizedRows = slugMigrationCompleted
+    const mattressNormalizedRows = slugMigrationCompleted
       ? rows
       : rows.map(applyElectricMattressPositioning);
+    const normalizedRows = ergonomicBedNamingCompleted
+      ? mattressNormalizedRows
+      : mattressNormalizedRows.map(applyErgonomicBedPositioning);
     const mattressSeedCompleted = await dbGetSetting<boolean>(
       ELECTRIC_MATTRESS_SEED_KEY,
     );
@@ -523,6 +625,14 @@ registerDbLoader(async () => {
         `[product-store] Updated positioning for ${normalizedMattressProducts.length} electric mattress products`,
       );
     }
+    if (!ergonomicBedNamingCompleted) {
+      const normalizedBedProducts = normalizedRows.filter((product) => Boolean(ERGONOMIC_BED_POSITIONING[product.id]));
+      await Promise.all(
+        normalizedBedProducts.map((product) => dbSaveOneAndWait("products", product)),
+      );
+      await dbSaveSetting(ERGONOMIC_BED_NAMING_KEY, true);
+      console.log(`[product-store] Updated naming and purchase options for ${normalizedBedProducts.length} ergonomic bed products`);
+    }
     if (missingMattressProducts.length > 0) {
       await Promise.all(
         missingMattressProducts.map((product) =>
@@ -545,6 +655,7 @@ registerDbLoader(async () => {
     await dbSaveSetting(ELECTRIC_MATTRESS_POSITIONING_KEY, true);
     await dbSaveSetting(ELECTRIC_MATTRESS_NAMING_KEY, true);
     await dbSaveSetting(ELECTRIC_MATTRESS_SLUG_KEY, true);
+    await dbSaveSetting(ERGONOMIC_BED_NAMING_KEY, true);
   }
 });
 
@@ -568,6 +679,7 @@ export function createProduct(data: {
   features: string[];
   specs: Record<string, string>;
   variants: Omit<ProductVariant, "id" | "reserved">[];
+  purchaseOptions?: ProductPurchaseOption[];
   isFeatured: boolean;
 }): Product {
   const slug = generateSlug(data.name);
@@ -587,6 +699,7 @@ export function createProduct(data: {
     coverImage: data.coverImage,
     images: data.images?.length ? data.images : data.coverImage ? [data.coverImage] : [],
     variants: data.variants.map((v) => ({ ...v, id: generateId(), reserved: 0 })),
+    purchaseOptions: data.purchaseOptions,
     totalStock,
     totalSold: 0,
     totalRevenue: 0,
