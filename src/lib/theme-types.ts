@@ -125,6 +125,7 @@ export interface ThemeSEO {
   ogImage: string;
   favicon: string;
   googleAnalyticsId: string;
+  googleSiteVerification: string;
   facebookPixelId: string;
 }
 export interface PageProducts {

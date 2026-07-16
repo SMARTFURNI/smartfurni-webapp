@@ -165,6 +165,7 @@ export const defaultTheme: SiteTheme = {
     ogImage: "",
     favicon: "",
     googleAnalyticsId: "",
+    googleSiteVerification: "",
     facebookPixelId: "",
   },
   pageProducts: {

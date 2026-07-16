@@ -1394,6 +1394,7 @@ export default function ThemeEditorClient({
             </SectionCard>
             <SectionCard title="Analytics">
               <TextInput label="Google Analytics ID" value={theme.seo.googleAnalyticsId} onChange={(v) => updateSection("seo", { googleAnalyticsId: v })} placeholder="G-XXXXXXXXXX" />
+              <TextInput label="Mã xác minh Google Search Console" value={theme.seo.googleSiteVerification} onChange={(v) => updateSection("seo", { googleSiteVerification: v })} placeholder="Chỉ dán chuỗi content của thẻ google-site-verification" />
               <TextInput label="Facebook Pixel ID" value={theme.seo.facebookPixelId} onChange={(v) => updateSection("seo", { facebookPixelId: v })} placeholder="1234567890" />
             </SectionCard>
           </div>

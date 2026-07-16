@@ -9,6 +9,9 @@ import { initDbOnce } from "@/lib/db-init";
 import { Suspense } from "react";
 import NavigationProgress from "@/components/NavigationProgress";
 import { SITE_URL } from "@/lib/site-url";
+import JsonLd from "@/components/seo/JsonLd";
+import { organizationSchema, websiteSchema } from "@/lib/seo-schema";
+import WebVitalsReporter from "@/components/WebVitalsReporter";
 
 export const dynamic = "force-dynamic";
 const SMARTFURNI_GOOGLE_ADS_ID = "AW-16742362454";
@@ -34,6 +37,9 @@ export async function generateMetadata(): Promise<Metadata> {
       description: theme.seo.defaultDescription || "Trải nghiệm giấc ngủ hoàn hảo với công nghệ điều khiển thông minh",
       images: theme.seo.ogImage ? [theme.seo.ogImage] : [],
     },
+    verification: {
+      google: theme.seo.googleSiteVerification?.trim() || process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    },
   };
 }
 
@@ -48,6 +54,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="vi" className="scroll-smooth">
       <head>
+        <JsonLd data={organizationSchema()} />
+        <JsonLd data={websiteSchema()} />
         <style dangerouslySetInnerHTML={{ __html: `:root { ${cssVars} }` }} />
         {/* Google Ads tag SmartFurni 02: gắn toàn site để phủ trang chủ và các landing page. */}
         <script async src={`https://www.googletagmanager.com/gtag/js?id=${SMARTFURNI_GOOGLE_ADS_ID}`} />
@@ -77,6 +85,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <FloatingSupport />
           <ScrollToTop />
           <AnalyticsTracker />
+          {configuredAnalyticsId?.startsWith("G-") && <WebVitalsReporter analyticsId={configuredAnalyticsId} />}
         </CartProvider>
       </body>
     </html>

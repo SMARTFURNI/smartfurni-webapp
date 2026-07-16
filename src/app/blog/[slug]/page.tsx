@@ -4,6 +4,8 @@ import { getTheme } from "@/lib/theme-store";
 import BlogPostClient from "@/components/landing/BlogPostClient";
 import type { Metadata } from "next";
 import { absoluteUrl } from "@/lib/site-url";
+import JsonLd from "@/components/seo/JsonLd";
+import { articleSchema, breadcrumbSchema } from "@/lib/seo-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -49,5 +51,15 @@ export default async function BlogPostPage({ params }: Props) {
 
   const theme = getTheme();
 
-  return <BlogPostClient post={post} relatedPosts={relatedPosts} theme={theme} />;
+  return (
+    <>
+      <JsonLd data={articleSchema(post)} />
+      <JsonLd data={breadcrumbSchema([
+        { name: "Trang chủ", path: "/" },
+        { name: "Blog", path: "/blog" },
+        { name: post.title, path: `/blog/${post.slug}` },
+      ])} />
+      <BlogPostClient post={post} relatedPosts={relatedPosts} theme={theme} />
+    </>
+  );
 }
