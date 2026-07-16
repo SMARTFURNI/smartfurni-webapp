@@ -9,6 +9,8 @@ import {
   getHomepageMattressProductBySlug,
   getHomepageMattressRelatedProducts,
 } from "@/lib/homepage-mattress-products";
+import type { Metadata } from "next";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -16,15 +18,31 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   await initDbOnce();
   const { slug } = await params;
   const product =
     (await getProductBySlugFresh(slug)) ?? getHomepageMattressProductBySlug(slug);
-  if (!product) return { title: "Không tìm thấy sản phẩm" };
+  if (!product) return { title: "Không tìm thấy sản phẩm", robots: { index: false, follow: false } };
+  const url = absoluteUrl(`/products/${product.slug}`);
+  const image = product.coverImage ? absoluteUrl(product.coverImage) : undefined;
   return {
     title: `${product.name} | SmartFurni`,
     description: product.description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: `${product.name} | SmartFurni`,
+      description: product.description,
+      url,
+      type: "website",
+      images: image ? [{ url: image, alt: product.name }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} | SmartFurni`,
+      description: product.description,
+      images: image ? [image] : [],
+    },
   };
 }
 

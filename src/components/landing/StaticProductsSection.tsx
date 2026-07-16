@@ -216,6 +216,7 @@ interface StaticProductsSectionProps {
   products: Product[];
   sectionTitle?: string;
   sectionSubtitle?: string;
+  sectionHref?: string;
 }
 
 export default function StaticProductsSection({
@@ -223,6 +224,7 @@ export default function StaticProductsSection({
   products,
   sectionTitle = "Dòng Giường Công Thái Học",
   sectionSubtitle = "Được chế tác từ thép cường lực, tích hợp motor Đức — bảo hành 5 năm chính hãng",
+  sectionHref = "/products",
 }: StaticProductsSectionProps) {
   const { colors, layout } = theme;
   const primary = colors.primary ?? GOLD;
@@ -254,6 +256,7 @@ export default function StaticProductsSection({
           </div>
 
           {/* Title — 2 dòng: dòng 1 trắng kem, dòng 2 vàng gold */}
+          <Link href={sectionHref} style={{ textDecoration: "none", display: "block" }}>
           <h2 style={{
             fontSize: "clamp(28px, 4vw, 48px)",
             fontWeight: 300, lineHeight: 1.2,
@@ -277,6 +280,7 @@ export default function StaticProductsSection({
               );
             })()}
           </h2>
+          </Link>
 
           {/* Gold divider */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
@@ -312,7 +316,7 @@ export default function StaticProductsSection({
         <ScrollReveal variant="fadeUp" delay={200}>
         <div style={{ textAlign: "center" }}>
           <Link
-            href="/products"
+            href={sectionHref}
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "15px 36px",

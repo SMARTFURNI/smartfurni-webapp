@@ -1,11 +1,13 @@
 import { getTheme } from "@/lib/theme-store";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Điều khoản sử dụng — SmartFurni",
   description: "Điều khoản và điều kiện sử dụng dịch vụ, mua hàng tại SmartFurni.",
+  alternates: { canonical: absoluteUrl("/terms") },
 };
 
 const SECTIONS = [

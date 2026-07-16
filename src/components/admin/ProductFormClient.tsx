@@ -1,7 +1,8 @@
 "use client";
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import type { Product, ProductCategory, ProductStatus, ProductVariant } from "@/lib/product-store";
+import type { Product, ProductCategory, ProductFamily, ProductStatus, ProductVariant } from "@/lib/product-store";
+import { inferProductFamily } from "@/lib/product-families";
 import {
   getDefaultProductLandingDescriptionTemplate,
   hasProductDescriptionTemplate,
@@ -24,6 +25,7 @@ interface SpecEntry {
 interface FormState {
   name: string;
   category: ProductCategory;
+  productFamily: ProductFamily;
   status: ProductStatus;
   description: string;
   detailedDescription: string;
@@ -303,6 +305,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
   const [form, setForm] = useState<FormState>({
     name: product?.name || "",
     category: product?.category || "standard",
+    productFamily: product ? inferProductFamily(product) : "ergonomic_bed",
     status: product?.status || "active",
     description: product?.description || "",
     detailedDescription: initialDetailedDescription,
@@ -395,6 +398,7 @@ export default function ProductFormClient({ product }: { product?: Product }) {
       const payload = {
         name: form.name.trim(),
         category: form.category,
+        productFamily: form.productFamily,
         status: form.status,
         description: form.description.trim(),
         detailedDescription: form.detailedDescription.trim(),
@@ -731,7 +735,15 @@ export default function ProductFormClient({ product }: { product?: Product }) {
           {/* Status & Category */}
           <Section title="Phân loại">
             <div className="space-y-4">
-              <Field label="Danh mục">
+              <Field label="Dòng sản phẩm" hint="Dùng để tạo danh mục SEO và điều hướng trên website.">
+                <select value={form.productFamily} onChange={(e) => set("productFamily", e.target.value as ProductFamily)} className={selectClass}>
+                  <option value="ergonomic_bed">Giường công thái học điều chỉnh điện</option>
+                  <option value="electric_mattress">Nệm điện thông minh</option>
+                  <option value="sofa_bed">Sofa giường thông minh</option>
+                  <option value="accessory">Phụ kiện giường thông minh</option>
+                </select>
+              </Field>
+              <Field label="Phân khúc">
                 <select value={form.category} onChange={(e) => set("category", e.target.value as ProductCategory)} className={selectClass}>
                   <option value="standard">Standard</option>
                   <option value="premium">Premium</option>

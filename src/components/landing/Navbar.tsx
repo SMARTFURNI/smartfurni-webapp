@@ -35,6 +35,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Sản phẩm",
     children: [
       { label: "Tất cả sản phẩm", href: "/products", icon: "bed", desc: "Xem toàn bộ dòng sản phẩm" },
+      { label: "Giường công thái học", href: "/products/giuong-cong-thai-hoc-dieu-chinh-dien", icon: "bed", desc: "Giường nâng hạ và điều chỉnh điện" },
+      { label: "Nệm điện thông minh", href: "/products/nem-dien-thong-minh", icon: "bed", desc: "Nệm nâng đỡ linh hoạt theo tư thế" },
+      { label: "Sofa giường", href: "/products/sofa-giuong-thong-minh", icon: "sofa", desc: "Tối ưu không gian đa năng" },
+      { label: "Phụ kiện", href: "/products/phu-kien-giuong-thong-minh", icon: "settings", desc: "Remote, nệm và phụ kiện chính hãng" },
       { label: "So sánh sản phẩm", href: "/products/compare", icon: "scale", desc: "So sánh chi tiết các model" },
       { label: "Cấu hình 3D", href: "/products/configure/smartfurni-pro", icon: "palette", desc: "Tùy chỉnh màu sắc & vật liệu" },
     ],

@@ -1,12 +1,14 @@
 import { getTheme } from "@/lib/theme-store";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Chính sách đổi trả — SmartFurni",
   description: "Chính sách đổi trả 30 ngày dùng thử không rủi ro của SmartFurni.",
+  alternates: { canonical: absoluteUrl("/returns") },
 };
 
 export default function ReturnsPage() {

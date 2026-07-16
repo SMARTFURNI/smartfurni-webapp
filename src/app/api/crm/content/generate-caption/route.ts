@@ -41,7 +41,7 @@ const SMARTFURNI_FOOTER = `
 🏭 XƯỞNG SẢN XUẤT: 202 Nguyễn Thị Sáng, X. Đông Thạnh, H. Hóc Môn, HCM
 📞 Hotline: 028.7122.0818
 💬 Zalo: https://zalo.me/0918326552
-🌐 Website: https://smartfurni.vn`;
+🌐 Website: https://www.smartfurni.com.vn`;
 
 export async function POST(req: NextRequest) {
   await ensureLoaded();

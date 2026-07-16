@@ -4,16 +4,19 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import ARTryAtHomeClient from "@/components/landing/ARTryAtHomeClient";
 import { initDbOnce } from "@/lib/db-init";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "AR Thử tại nhà | SmartFurni",
   description: "Thử giường SmartFurni trong phòng ngủ của bạn bằng camera điện thoại. Xem kích thước và màu sắc thực tế trước khi đặt hàng.",
+  alternates: { canonical: absoluteUrl("/ar-try") },
   openGraph: {
     title: "AR Thử giường tại nhà — SmartFurni",
     description: "Công nghệ AR giúp bạn xem trước giường SmartFurni trong không gian thực tế.",
     type: "website",
+    url: absoluteUrl("/ar-try"),
   },
 };
 

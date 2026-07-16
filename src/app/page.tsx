@@ -14,6 +14,16 @@ import HomeDecisionSections from "@/components/landing/HomeDecisionSections";
 import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 import { HOMEPAGE_MATTRESS_PRODUCTS } from "@/lib/homepage-mattress-products";
 import { getAllProducts } from "@/lib/product-store";
+import { inferProductFamily } from "@/lib/product-families";
+import type { Metadata } from "next";
+import { absoluteUrl } from "@/lib/site-url";
+
+export const metadata: Metadata = {
+  title: "SmartFurni — Giường Công Thái Học Điều Chỉnh Điện",
+  description: "Giường công thái học điều chỉnh điện, nệm điện thông minh và giải pháp nội thất nâng hạ SmartFurni cho gia đình Việt.",
+  alternates: { canonical: absoluteUrl("/") },
+  openGraph: { url: absoluteUrl("/"), type: "website" },
+};
 
 export const dynamic = "force-dynamic";
 
@@ -35,11 +45,9 @@ export default async function HomePage() {
       : seed;
   });
   const isBedProduct = (product: (typeof allProducts)[number]) => {
-    const normalizedName = product.name.toLocaleLowerCase("vi");
     return (
       product.status !== "discontinued" &&
-      !normalizedName.includes("nệm") &&
-      !normalizedName.includes("nem ")
+      inferProductFamily(product) === "ergonomic_bed"
     );
   };
   const configuredBedProducts = products.filter(isBedProduct);
@@ -80,6 +88,7 @@ export default async function HomePage() {
         products={mattressProducts}
         sectionTitle={"Nệm Điện Thông Minh\nSmartFurni"}
         sectionSubtitle="Nâng đỡ linh hoạt theo từng tư thế, cá nhân hóa trải nghiệm nghỉ ngơi cho mỗi thành viên trong gia đình."
+        sectionHref="/products/nem-dien-thong-minh"
       />
 
       {/* 4. Dòng giường công thái học */}
@@ -88,6 +97,7 @@ export default async function HomePage() {
         products={bedProducts}
         sectionTitle={homepageConfig.sectionTitle}
         sectionSubtitle={homepageConfig.sectionSubtitle}
+        sectionHref="/products/giuong-cong-thai-hoc-dieu-chinh-dien"
       />
 
       {/* 5. Video thực tế — tăng tin cậy sau khi khách đã thấy dòng sản phẩm */}

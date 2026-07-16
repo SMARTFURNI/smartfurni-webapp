@@ -5,7 +5,12 @@ import type { RolePermissions } from "@/lib/crm-roles-store";
 import CrmSidebar from "@/components/crm/CrmSidebar";
 import DataPoolNotification from "@/components/crm/DataPoolNotification";
 import ItySoftphone from "@/components/crm/ItySoftphone";
+import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
   const session = await requireCrmAccess();

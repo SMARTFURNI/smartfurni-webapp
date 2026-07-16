@@ -4,22 +4,27 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import ProductsListClient from "@/components/landing/ProductsListClient";
 import { initDbOnce } from "@/lib/db-init";
+import Link from "next/link";
+import type { Metadata } from "next";
+import { PRODUCT_FAMILIES } from "@/lib/product-families";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Sản phẩm | SmartFurni",
-  description: "Khám phá dòng giường thông minh SmartFurni — từ Standard đến Elite, tích hợp công nghệ AI tiên tiến.",
-  keywords: ["giường thông minh", "smart bed", "SmartFurni", "giường điều khiển"],
+  description: "Khám phá các dòng giường công thái học điều chỉnh điện, nệm điện thông minh, sofa giường và phụ kiện SmartFurni.",
+  alternates: { canonical: absoluteUrl("/products") },
   openGraph: {
-    title: "Sản phẩm SmartFurni — Giường Điều Khiển Thông Minh",
-    description: "Khám phá dòng giường thông minh SmartFurni — từ Standard đến Elite.",
+    title: "Các dòng sản phẩm SmartFurni",
+    description: "Giường công thái học, nệm điện thông minh, sofa giường và phụ kiện chính hãng SmartFurni.",
     type: "website",
-    url: "https://smartfurni.vn/products",
+    url: absoluteUrl("/products"),
   },
 };
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  await initDbOnce();
   const theme = getTheme();
   const products = getAllProducts().filter((p) => p.status !== "discontinued");
 
@@ -42,6 +47,25 @@ export default function ProductsPage() {
           <p className="text-[#F5EDD6]/50 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
             {theme.pageProducts.heroSubtitle}
           </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="product-families-heading" className="border-b border-[#2E2800] px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto" style={{ maxWidth: theme.layout.maxWidth }}>
+          <h2 id="product-families-heading" className="mb-6 text-2xl font-light text-[#F5EDD6] sm:text-3xl">Chọn theo dòng sản phẩm</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {PRODUCT_FAMILIES.map((family) => (
+              <Link
+                key={family.key}
+                href={`/products/${family.slug}`}
+                className="rounded-2xl border border-[#C9A84C]/20 bg-[#1A1500] p-5 transition-colors hover:border-[#C9A84C]/55"
+              >
+                <h3 className="font-semibold text-[#F5EDD6]">{family.shortLabel}</h3>
+                <p className="mt-2 line-clamp-3 text-xs leading-6 text-[#F5EDD6]/50">{family.description}</p>
+                <span className="mt-4 inline-block text-xs font-semibold text-[#C9A84C]">Xem dòng sản phẩm →</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

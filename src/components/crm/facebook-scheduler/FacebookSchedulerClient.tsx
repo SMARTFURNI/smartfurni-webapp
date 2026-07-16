@@ -625,7 +625,7 @@ function PostFormModal({
             <input
               value={linkUrl}
               onChange={e => setLinkUrl(e.target.value)}
-              placeholder="https://smartfurni.vn/san-pham/..."
+              placeholder="https://www.smartfurni.com.vn/san-pham/..."
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
               style={{ border: "1px solid #d1d5db", color: "#374151" }}
             />

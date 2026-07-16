@@ -335,7 +335,7 @@ export default function PriceListClient({ products }: Props) {
             {[
               { icon: Phone, label: "Hotline", value: "1800 6868" },
               { icon: Mail, label: "Email", value: "sales@smartfurni.vn" },
-              { icon: Globe, label: "Website", value: "smartfurni.vn" },
+              { icon: Globe, label: "Website", value: "smartfurni.com.vn" },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-center gap-3 rounded-xl p-3"
                 style={{ background: D.cardBg, border: `1px solid ${D.border}` }}>

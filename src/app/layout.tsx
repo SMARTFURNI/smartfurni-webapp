@@ -8,6 +8,7 @@ import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { initDbOnce } from "@/lib/db-init";
 import { Suspense } from "react";
 import NavigationProgress from "@/components/NavigationProgress";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 const SMARTFURNI_GOOGLE_ADS_ID = "AW-16742362454";
@@ -16,13 +17,21 @@ export async function generateMetadata(): Promise<Metadata> {
   await initDbOnce();
   const theme = getTheme();
   return {
+    metadataBase: new URL(SITE_URL),
     title: theme.seo.siteTitle || "SmartFurni — Giường Điều Khiển Thông Minh",
     description: theme.seo.defaultDescription || "Điều khiển giường thông minh SmartFurni với công nghệ Bluetooth, preset tư thế, đèn LED và theo dõi giấc ngủ.",
-    keywords: ["giường thông minh", "smart bed", "SmartFurni", "điều khiển giường", "nội thất thông minh"],
     openGraph: {
       title: theme.seo.siteTitle || "SmartFurni — Giường Điều Khiển Thông Minh",
       description: theme.seo.defaultDescription || "Trải nghiệm giấc ngủ hoàn hảo với công nghệ điều khiển thông minh",
       type: "website",
+      url: SITE_URL,
+      siteName: "SmartFurni",
+      images: theme.seo.ogImage ? [theme.seo.ogImage] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: theme.seo.siteTitle || "SmartFurni — Giường Điều Khiển Thông Minh",
+      description: theme.seo.defaultDescription || "Trải nghiệm giấc ngủ hoàn hảo với công nghệ điều khiển thông minh",
       images: theme.seo.ogImage ? [theme.seo.ogImage] : [],
     },
   };

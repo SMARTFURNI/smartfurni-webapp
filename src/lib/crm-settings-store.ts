@@ -311,7 +311,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     address: "123 Nguyễn Văn Linh, Q7, TP.HCM",
     phone: "0901 234 567",
     email: "b2b@smartfurni.vn",
-    website: "https://smartfurni.vn",
+    website: "https://www.smartfurni.com.vn",
     taxCode: "0123456789",
     bankName: "Vietcombank",
     bankAccount: "1234567890",

@@ -62,6 +62,7 @@ export const HOMEPAGE_MATTRESS_PRODUCTS: Product[] = MATTRESS_SEEDS.map((seed, i
   name: seed.name,
   slug: seed.id,
   category: seed.category,
+  productFamily: "electric_mattress",
   status: "active",
   description: seed.description,
   price: 0,

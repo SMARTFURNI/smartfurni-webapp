@@ -4,16 +4,19 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import CompareClient from "@/components/landing/CompareClient";
 import { initDbOnce } from "@/lib/db-init";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "So sánh sản phẩm | SmartFurni",
   description: "So sánh chi tiết các dòng giường thông minh SmartFurni — Basic, Pro, Elite. Tìm sản phẩm phù hợp nhất với nhu cầu và ngân sách của bạn.",
+  alternates: { canonical: absoluteUrl("/products/compare") },
   openGraph: {
     title: "So sánh sản phẩm SmartFurni",
     description: "So sánh chi tiết Basic vs Pro vs Elite — tính năng, thông số, giá cả.",
     type: "website",
+    url: absoluteUrl("/products/compare"),
   },
 };
 

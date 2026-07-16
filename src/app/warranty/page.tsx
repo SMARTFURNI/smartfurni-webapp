@@ -1,12 +1,14 @@
 import { getTheme } from "@/lib/theme-store";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Chính sách bảo hành — SmartFurni",
   description: "Chính sách bảo hành 5 năm toàn diện cho tất cả sản phẩm giường điều khiển SmartFurni.",
+  alternates: { canonical: absoluteUrl("/warranty") },
 };
 
 const WARRANTY_ITEMS = [

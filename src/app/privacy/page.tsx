@@ -1,11 +1,13 @@
 import { getTheme } from "@/lib/theme-store";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Chính sách bảo mật — SmartFurni",
   description: "Chính sách bảo mật thông tin khách hàng của SmartFurni. Chúng tôi cam kết bảo vệ dữ liệu cá nhân của bạn.",
+  alternates: { canonical: absoluteUrl("/privacy") },
 };
 
 const SECTIONS = [

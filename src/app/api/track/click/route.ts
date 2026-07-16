@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const url = searchParams.get("url");
 
   // Validate URL đích
-  const redirectUrl = url ? decodeURIComponent(url) : "https://smartfurni.vn";
+  const redirectUrl = url ? decodeURIComponent(url) : "https://www.smartfurni.com.vn";
 
   if (campaignId && logId) {
     try {

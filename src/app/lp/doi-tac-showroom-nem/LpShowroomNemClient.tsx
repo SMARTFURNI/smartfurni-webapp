@@ -1537,7 +1537,7 @@ export default function LpShowroomNemClient({ products, isEditor = false, initia
                 { icon: "📞", label: "Hotline", val: contactPhoneDisplay, href: contactPhoneHref },
                 { icon: "💬", label: "Zalo tư vấn", val: "0918.326.552", href: contactZaloHref },
                 { icon: "✉️", label: "Email", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
-                { icon: "🌐", label: "Website", val: "smartfurni.vn", href: "https://smartfurni.vn" },
+                { icon: "🌐", label: "Website", val: "smartfurni.com.vn", href: "https://www.smartfurni.com.vn" },
               ].map((c, i) => (
                 <a
                   key={i}

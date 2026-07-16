@@ -163,7 +163,7 @@ function CompanyTab({ data, onChange }: { data: CrmSettings["company"]; onChange
           <InputField label="Mã số thuế" value={data.taxCode} onChange={set("taxCode")} placeholder="0123456789" />
           <InputField label="Số điện thoại" value={data.phone} onChange={set("phone")} placeholder="0901 234 567" />
           <InputField label="Email công ty" value={data.email} onChange={set("email")} type="email" placeholder="b2b@smartfurni.vn" />
-          <InputField label="Website" value={data.website} onChange={set("website")} placeholder="https://smartfurni.vn" />
+          <InputField label="Website" value={data.website} onChange={set("website")} placeholder="https://www.smartfurni.com.vn" />
           <InputField label="Logo URL" value={data.logoUrl} onChange={set("logoUrl")} placeholder="https://..." />
         </div>
         <InputField label="Địa chỉ" value={data.address} onChange={set("address")} placeholder="123 Nguyễn Văn Linh, Q7, TP.HCM" />

@@ -163,7 +163,7 @@ function SlideIntro({ overrides }: { overrides?: SlideOverrides }) {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 13 }}>🌐</span>
-                <span style={{ fontSize: 12, color: "rgba(245,237,214,0.7)" }}>{(overrides as any)?.website ?? "smartfurni.vn"}</span>
+                <span style={{ fontSize: 12, color: "rgba(245,237,214,0.7)" }}>{(overrides as any)?.website ?? "smartfurni.com.vn"}</span>
               </div>
             </div>
           </div>
@@ -761,7 +761,7 @@ function SlideContact({ today, overrides }: { today: string; overrides?: SlideOv
   const contactItems = [
     { icon: "📞", labelKey: "c1_label", valueKey: "c1_value", subKey: "c1_sub", defaultLabel: "Hotline", defaultValue: "1800 6868", defaultSub: "Miễn phí · Thứ 2–7, 8:00–18:00" },
     { icon: "✉️", labelKey: "c2_label", valueKey: "c2_value", subKey: "c2_sub", defaultLabel: "Email", defaultValue: "sales@smartfurni.vn", defaultSub: "Phản hồi trong 2 giờ làm việc" },
-    { icon: "🌐", labelKey: "c3_label", valueKey: "c3_value", subKey: "c3_sub", defaultLabel: "Website", defaultValue: "smartfurni.vn", defaultSub: "Xem thêm sản phẩm & khuyến mãi" },
+    { icon: "🌐", labelKey: "c3_label", valueKey: "c3_value", subKey: "c3_sub", defaultLabel: "Website", defaultValue: "smartfurni.com.vn", defaultSub: "Xem thêm sản phẩm & khuyến mãi" },
     { icon: "📍", labelKey: "c4_label", valueKey: "c4_value", subKey: "c4_sub", defaultLabel: "Showroom", defaultValue: "TP. Hồ Chí Minh", defaultSub: "Đặt lịch tham quan miễn phí" },
   ];
   return (

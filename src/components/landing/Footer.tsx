@@ -44,7 +44,14 @@ const DEFAULT_CONTACTS = [
   { icon: "phone-call", label: "Hotline", value: "028.7122.0818", href: "tel:02871220818" },
   { icon: "chat", label: "Zalo tư vấn", value: "0918.326.552", href: "https://zalo.me/0918326552" },
   { icon: "mail", label: "Email", value: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
-  { icon: "globe", label: "Website", value: "smartfurni.vn", href: "https://smartfurni.vn" },
+  { icon: "globe", label: "Website", value: "smartfurni.com.vn", href: "https://www.smartfurni.com.vn" },
+];
+
+const PRODUCT_LINKS = [
+  { label: "Giường công thái học", href: "/products/giuong-cong-thai-hoc-dieu-chinh-dien" },
+  { label: "Nệm điện thông minh", href: "/products/nem-dien-thong-minh" },
+  { label: "Sofa giường", href: "/products/sofa-giuong-thong-minh" },
+  { label: "Phụ kiện", href: "/products/phu-kien-giuong-thong-minh" },
 ];
 
 const DEFAULT_POLICY_LINKS = [
@@ -228,6 +235,11 @@ export default function Footer({ theme, variant = "full" }: FooterProps) {
             {footer.copyrightText}
           </p>
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+            {PRODUCT_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} style={{ color: "#6A5737", fontSize: 11, fontFamily: FONT, textDecoration: "none" }}>
+                {link.label}
+              </Link>
+            ))}
             {policyLinks.map((link, i) => (
               <Link key={i} href={link.href} style={{ color: "#3A3020", fontSize: 11, fontFamily: FONT, textDecoration: "none" }}>
                 {link.label}

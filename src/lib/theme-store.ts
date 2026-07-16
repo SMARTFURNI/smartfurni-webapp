@@ -134,7 +134,7 @@ export const defaultTheme: SiteTheme = {
       { icon: "📞", label: "Hotline", value: "028.7122.0818", href: "tel:02871220818" },
       { icon: "💬", label: "Zalo tư vấn", value: "0918.326.552", href: "https://zalo.me/0918326552" },
       { icon: "✉️", label: "Email", value: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
-      { icon: "🌐", label: "Website", value: "smartfurni.vn", href: "https://smartfurni.vn" },
+      { icon: "🌐", label: "Website", value: "smartfurni.com.vn", href: "https://www.smartfurni.com.vn" },
     ],
     policyLinks: [
       { label: "Chính sách bảo hành", href: "/warranty" },

@@ -399,7 +399,7 @@ export default function AdminSettingsClient() {
               <div className="bg-[#1a1200] rounded-xl p-4 border border-[rgba(255,200,100,0.14)]">
                 <p className="text-xs text-[rgba(245,237,214,0.45)] mb-2">Xem trước kết quả tìm kiếm Google:</p>
                 <p className="text-blue-400 text-sm">{metaTitle || "Tiêu đề trang"}</p>
-                <p className="text-green-600 text-xs">https://smartfurni.vn</p>
+                <p className="text-green-600 text-xs">https://www.smartfurni.com.vn</p>
                 <p className="text-[rgba(245,237,214,0.70)] text-xs mt-1 line-clamp-2">{metaDesc || "Mô tả trang..."}</p>
               </div>
 

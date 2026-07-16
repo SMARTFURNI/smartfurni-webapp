@@ -357,7 +357,7 @@ export const DEFAULT_TEMPLATES = [
       <div style="font-size:13px;color:#4ade80;font-weight:700">🎁 ƯU ĐÃI B2B ĐẶC BIỆT</div>
       <div style="color:#aaa;font-size:13px;margin-top:8px">Chiết khấu <strong style="color:#fff">15–25%</strong> cho đơn hàng từ 10 bộ trở lên</div>
     </div>
-    <a href="https://smartfurni.vn/catalogue" style="display:block;background:linear-gradient(135deg,#C9A84C,#E2C97E);color:#000;text-align:center;padding:14px 24px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px">Xem Catalogue B2B 2025 →</a>
+    <a href="https://www.smartfurni.com.vn/catalogue" style="display:block;background:linear-gradient(135deg,#C9A84C,#E2C97E);color:#000;text-align:center;padding:14px 24px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px">Xem Catalogue B2B 2025 →</a>
   </div>
   <div style="padding:24px 40px;background:#050505;text-align:center;border-top:1px solid #111">
     <div style="color:#555;font-size:12px">SmartFurni · 123 Nguyễn Văn Linh, Q7, TP.HCM</div>
@@ -423,7 +423,7 @@ export const DEFAULT_TEMPLATES = [
     <div style="background:#1a0a0a;border:1px solid #3a1a1a;border-radius:8px;padding:16px;margin:0 0 24px;text-align:center">
       <div style="color:#f87171;font-weight:700;font-size:13px">⏰ HẠN CUỐI: 31/12/2025</div>
     </div>
-    <a href="https://smartfurni.vn/catalogue" style="display:block;background:linear-gradient(135deg,#C9A84C,#E2C97E);color:#000;text-align:center;padding:16px 24px;border-radius:8px;font-weight:900;text-decoration:none;font-size:15px">Đặt hàng ngay →</a>
+    <a href="https://www.smartfurni.com.vn/catalogue" style="display:block;background:linear-gradient(135deg,#C9A84C,#E2C97E);color:#000;text-align:center;padding:16px 24px;border-radius:8px;font-weight:900;text-decoration:none;font-size:15px">Đặt hàng ngay →</a>
   </div>
 </div>`,
   },

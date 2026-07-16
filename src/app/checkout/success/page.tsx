@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Đặt hàng thành công | SmartFurni",
   description: "Cảm ơn bạn đã đặt hàng tại SmartFurni.",
+  robots: { index: false, follow: false },
 };
 
 export default function CheckoutSuccessPage() {

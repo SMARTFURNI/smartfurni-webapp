@@ -19,6 +19,7 @@ export async function generateMetadata({ params }: Props) {
   return {
     title: `Cấu hình ${product.name} | SmartFurni`,
     description: `Tùy chỉnh màu sắc, vật liệu và kích thước cho ${product.name}. Xem preview trực tiếp trước khi đặt hàng.`,
+    robots: { index: false, follow: false },
   };
 }
 

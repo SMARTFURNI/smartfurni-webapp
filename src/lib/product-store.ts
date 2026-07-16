@@ -15,6 +15,7 @@ import { HOMEPAGE_MATTRESS_PRODUCTS } from "./homepage-mattress-products";
 
 export type ProductStatus = "active" | "discontinued" | "out_of_stock" | "coming_soon";
 export type ProductCategory = "standard" | "premium" | "elite" | "accessory";
+export type ProductFamily = "ergonomic_bed" | "electric_mattress" | "sofa_bed" | "accessory";
 
 export interface ProductVariant {
   id: string;
@@ -45,6 +46,8 @@ export interface Product {
   name: string;
   slug: string;
   category: ProductCategory;
+  /** Dòng sản phẩm phục vụ điều hướng và SEO; tách biệt với phân khúc giá. */
+  productFamily?: ProductFamily;
   status: ProductStatus;
   description: string;
   detailedDescription?: string; // Mô tả chi tiết dạng HTML/Markdown
@@ -524,6 +527,7 @@ function generateId(): string {
 export function createProduct(data: {
   name: string;
   category: ProductCategory;
+  productFamily?: ProductFamily;
   status: ProductStatus;
   description: string;
   detailedDescription?: string;
@@ -545,6 +549,7 @@ export function createProduct(data: {
     name: data.name,
     slug,
     category: data.category,
+    productFamily: data.productFamily,
     status: data.status,
     description: data.description,
     detailedDescription: data.detailedDescription,

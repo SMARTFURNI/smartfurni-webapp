@@ -2530,7 +2530,7 @@ export default function LpSmf12Client({ isEditor = false, initialContent = {}, l
                 { icon: "phone", labelKey: "footer_contact_1_label", label: "Hotline", valKey: "footer_contact_1_value", val: contactPhoneDisplay, href: contactPhoneHref },
                 { icon: "message_circle", labelKey: "footer_contact_2_label", label: "Zalo tư vấn", valKey: "footer_contact_2_value", val: contactZaloDisplay, href: contactZaloHref },
                 { icon: "mail", labelKey: "footer_contact_3_label", label: "Email", valKey: "footer_contact_3_value", val: "info@smartfurni.vn", href: "mailto:info@smartfurni.vn" },
-                { icon: "globe", labelKey: "footer_contact_4_label", label: "Website", valKey: "footer_contact_4_value", val: "smartfurni.vn", href: "https://smartfurni.vn" },
+                { icon: "globe", labelKey: "footer_contact_4_label", label: "Website", valKey: "footer_contact_4_value", val: "smartfurni.com.vn", href: "https://www.smartfurni.com.vn" },
               ].map((c, i) => (
                 <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
                   style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start", textDecoration: "none" }}>

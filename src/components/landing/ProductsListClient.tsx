@@ -1,7 +1,8 @@
 "use client";
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
-import type { Product, ProductCategory } from "@/lib/product-store";
+import type { Product, ProductFamily } from "@/lib/product-store";
+import { inferProductFamily } from "@/lib/product-families";
 import type { SiteTheme } from "@/lib/theme-types";
 import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 import { useCart } from "@/lib/cart-context";
@@ -17,11 +18,11 @@ function formatPrice(price: number) {
   return price.toLocaleString("vi-VN") + " đ";
 }
 
-const CATEGORIES: { key: ProductCategory | "all"; label: string }[] = [
+const CATEGORIES: { key: ProductFamily | "all"; label: string }[] = [
   { key: "all", label: "Tất cả" },
-  { key: "standard", label: "Standard" },
-  { key: "premium", label: "Premium" },
-  { key: "elite", label: "Elite" },
+  { key: "ergonomic_bed", label: "Giường công thái học" },
+  { key: "electric_mattress", label: "Nệm điện thông minh" },
+  { key: "sofa_bed", label: "Sofa giường" },
   { key: "accessory", label: "Phụ kiện" },
 ];
 
@@ -286,7 +287,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
 export default function ProductsListClient({ products, theme }: Props) {
   const { colors, layout } = theme;
   const { addItem } = useCart();
-  const [activeCategory, setActiveCategory] = useState<ProductCategory | "all">("all");
+  const [activeCategory, setActiveCategory] = useState<ProductFamily | "all">("all");
   const [sortKey, setSortKey] = useState("default");
   const [search, setSearch] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
@@ -329,7 +330,7 @@ export default function ProductsListClient({ products, theme }: Props) {
 
   const filtered = useMemo(() => {
     let list = [...products];
-    if (activeCategory !== "all") list = list.filter((p) => p.category === activeCategory);
+    if (activeCategory !== "all") list = list.filter((p) => inferProductFamily(p) === activeCategory);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
