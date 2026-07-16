@@ -178,6 +178,21 @@ async function publishGitHubMedia(staged) {
   }
 }
 
+async function listPublishedMigratedPaths() {
+  const config = githubConfig();
+  const repoPath = `/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}`;
+  const response = await githubRequest(`${repoPath}/git/trees/${encodeURIComponent(config.branch)}?recursive=1`);
+  if (!response.ok) {
+    throw new Error(`Cannot inspect published media tree: ${response.status} ${await response.text()}`);
+  }
+  const tree = await response.json();
+  return new Set(
+    (tree.tree || [])
+      .filter((entry) => entry.type === "blob" && entry.path?.startsWith("public/uploads/migrated/"))
+      .map((entry) => `/${entry.path.replace(/^public\//, "")}`),
+  );
+}
+
 async function loadWebsiteRecords(search = "%res.cloudinary.com%") {
   const records = [];
   const products = await pool.query("SELECT id, data FROM products WHERE data::text LIKE $1", [search]);
@@ -303,12 +318,17 @@ async function recoverMigratedMedia() {
   }
 
   const missing = [...requiredPaths].filter((requiredPath) => !sourceByPath.has(requiredPath));
+  const publishedPaths = await listPublishedMigratedPaths();
+  const unavailable = missing.filter((requiredPath) => !publishedPaths.has(requiredPath));
+  if (unavailable.length > 0) {
+    throw new Error(`Cannot recover ${unavailable.length} migrated file(s): ${unavailable.slice(0, 10).join(", ")}`);
+  }
   if (missing.length > 0) {
-    throw new Error(`Cannot match ${missing.length} migrated file(s) in Cloudinary: ${missing.slice(0, 10).join(", ")}`);
+    console.log(`Skipping ${missing.length} file(s) already published in GitHub.`);
   }
 
   const files = [];
-  for (const requiredPath of requiredPaths) {
+  for (const requiredPath of [...requiredPaths].filter((item) => sourceByPath.has(item))) {
     const sourceUrl = sourceByPath.get(requiredPath);
     const response = await fetch(sourceUrl);
     if (!response.ok) throw new Error(`Cannot download ${sourceUrl}: ${response.status}`);
