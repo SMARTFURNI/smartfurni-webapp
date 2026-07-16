@@ -10,7 +10,8 @@
     "test": "vitest run",
     "media:migrate:download": "node --env-file=.env.production scripts/migrate-cloudinary-media.mjs --download",
     "media:migrate:apply": "node --env-file=.env.production scripts/migrate-cloudinary-media.mjs --apply-db",
-    "media:migrate:direct": "node scripts/migrate-cloudinary-media.mjs --direct"
+    "media:migrate:direct": "node scripts/migrate-cloudinary-media.mjs --direct",
+    "media:migrate:recover": "node scripts/migrate-cloudinary-media.mjs --recover-local"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

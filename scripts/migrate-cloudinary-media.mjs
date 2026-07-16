@@ -10,13 +10,16 @@ import path from "node:path";
 import crypto from "node:crypto";
 import pg from "pg";
 import sharp from "sharp";
+import { v2 as cloudinary } from "cloudinary";
 
 const { Pool } = pg;
 const root = process.cwd();
 const outputRoot = path.join(root, "public", "uploads", "migrated");
 const manifestPath = path.join(root, "data", "cloudinary-migration-map.json");
-const mode = process.argv.includes("--direct")
-  ? "direct"
+const mode = process.argv.includes("--recover-local")
+  ? "recover"
+  : process.argv.includes("--direct")
+    ? "direct"
   : process.argv.includes("--apply-db")
     ? "apply"
     : "download";
@@ -38,6 +41,17 @@ function collectUrls(value, urls = new Set()) {
     Object.values(value).forEach((item) => collectUrls(item, urls));
   }
   return urls;
+}
+
+function collectMigratedPaths(value, paths = new Set()) {
+  if (typeof value === "string" && value.includes("/uploads/migrated/")) {
+    for (const match of value.matchAll(/\/uploads\/migrated\/[a-zA-Z0-9_.-]+\.webp/g)) paths.add(match[0]);
+  } else if (Array.isArray(value)) {
+    value.forEach((item) => collectMigratedPaths(item, paths));
+  } else if (value && typeof value === "object") {
+    Object.values(value).forEach((item) => collectMigratedPaths(item, paths));
+  }
+  return paths;
 }
 
 function replaceUrls(value, map) {
@@ -95,6 +109,7 @@ async function stageGitHubMedia(files) {
   const config = githubConfig();
   const repoPath = `/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}`;
   const refPath = `${repoPath}/git/ref/heads/${encodeURIComponent(config.branch)}`;
+  const updateRefPath = `${repoPath}/git/refs/heads/${encodeURIComponent(config.branch)}`;
   const refResponse = await githubRequest(refPath);
   if (!refResponse.ok) {
     throw new Error(`Cannot inspect branch ${config.branch}: ${refResponse.status} ${await refResponse.text()}`);
@@ -150,11 +165,11 @@ async function stageGitHubMedia(files) {
     throw new Error(`Cannot create migration commit: ${newCommitResponse.status} ${await newCommitResponse.text()}`);
   }
   const newCommit = await newCommitResponse.json();
-  return { refPath, parentSha, commitSha: newCommit.sha };
+  return { updateRefPath, parentSha, commitSha: newCommit.sha };
 }
 
 async function publishGitHubMedia(staged) {
-  const response = await githubRequest(staged.refPath, {
+  const response = await githubRequest(staged.updateRefPath, {
     method: "PATCH",
     body: JSON.stringify({ sha: staged.commitSha, force: false }),
   });
@@ -163,19 +178,19 @@ async function publishGitHubMedia(staged) {
   }
 }
 
-async function loadWebsiteRecords() {
+async function loadWebsiteRecords(search = "%res.cloudinary.com%") {
   const records = [];
-  const products = await pool.query("SELECT id, data FROM products WHERE data::text LIKE $1", ["%res.cloudinary.com%"]);
+  const products = await pool.query("SELECT id, data FROM products WHERE data::text LIKE $1", [search]);
   products.rows.forEach((row) => records.push({ table: "products", key: row.id, value: row.data }));
 
-  const settings = await pool.query("SELECT key, value FROM app_settings WHERE value::text LIKE $1", ["%res.cloudinary.com%"]);
+  const settings = await pool.query("SELECT key, value FROM app_settings WHERE value::text LIKE $1", [search]);
   settings.rows.forEach((row) => records.push({ table: "app_settings", key: row.key, value: row.value }));
 
   const lpTable = await pool.query("SELECT to_regclass('public.lp_content') AS name");
   if (lpTable.rows[0]?.name) {
     const landingContent = await pool.query(
       "SELECT slug, block_key, content FROM lp_content WHERE content LIKE $1",
-      ["%res.cloudinary.com%"],
+      [search],
     );
     landingContent.rows.forEach((row) => records.push({
       table: "lp_content",
@@ -251,6 +266,71 @@ async function migrateDirectly() {
   console.log(`Direct migration completed for ${urls.size} unique images.`);
 }
 
+async function listCloudinaryImages() {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    throw new Error("Cloudinary credentials are required for --recover-local");
+  }
+
+  const resources = [];
+  let nextCursor;
+  do {
+    const page = await cloudinary.api.resources({
+      resource_type: "image",
+      type: "upload",
+      max_results: 500,
+      ...(nextCursor ? { next_cursor: nextCursor } : {}),
+    });
+    resources.push(...(page.resources || []));
+    nextCursor = page.next_cursor;
+  } while (nextCursor);
+  return resources;
+}
+
+async function recoverMigratedMedia() {
+  const records = await loadWebsiteRecords("%/uploads/migrated/%");
+  const requiredPaths = new Set();
+  records.forEach((record) => collectMigratedPaths(record.value, requiredPaths));
+  const resources = await listCloudinaryImages();
+  const sourceByPath = new Map();
+  for (const resource of resources) {
+    if (!resource.secure_url) continue;
+    sourceByPath.set(`/uploads/migrated/${localName(resource.secure_url)}`, resource.secure_url);
+  }
+
+  const missing = [...requiredPaths].filter((requiredPath) => !sourceByPath.has(requiredPath));
+  if (missing.length > 0) {
+    throw new Error(`Cannot match ${missing.length} migrated file(s) in Cloudinary: ${missing.slice(0, 10).join(", ")}`);
+  }
+
+  const files = [];
+  for (const requiredPath of requiredPaths) {
+    const sourceUrl = sourceByPath.get(requiredPath);
+    const response = await fetch(sourceUrl);
+    if (!response.ok) throw new Error(`Cannot download ${sourceUrl}: ${response.status}`);
+    const source = Buffer.from(await response.arrayBuffer());
+    const optimized = await sharp(source, { animated: true })
+      .rotate()
+      .resize({ width: 1920, withoutEnlargement: true, fit: "inside" })
+      .webp({ quality: 82, effort: 5 })
+      .toBuffer();
+    files.push({ filename: requiredPath.split("/").pop(), optimized });
+    console.log(`${sourceUrl} -> ${requiredPath} (${Math.round(optimized.length / 1024)} KB)`);
+  }
+
+  if (files.length === 0) {
+    console.log("No migrated media paths need recovery.");
+    return;
+  }
+  const staged = await stageGitHubMedia(files);
+  await publishGitHubMedia(staged);
+  console.log(`Recovered and published ${files.length} migrated images.`);
+}
+
 async function applyMapToDatabase(records, map) {
   await pool.query("BEGIN");
   try {
@@ -285,7 +365,8 @@ async function applyDatabase() {
 }
 
 try {
-  if (mode === "direct") await migrateDirectly();
+  if (mode === "recover") await recoverMigratedMedia();
+  else if (mode === "direct") await migrateDirectly();
   else if (mode === "apply") await applyDatabase();
   else await download();
 } finally {
