@@ -91,33 +91,76 @@ async function githubRequest(pathname, init = {}) {
   });
 }
 
-async function uploadToGitHub(filename, optimized) {
+async function stageGitHubMedia(files) {
   const config = githubConfig();
-  const repositoryPath = `public/uploads/migrated/${filename}`;
-  const encodedPath = repositoryPath.split("/").map(encodeURIComponent).join("/");
-  const apiPath = `/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}/contents/${encodedPath}`;
-  const existing = await githubRequest(`${apiPath}?ref=${encodeURIComponent(config.branch)}`);
-  let sha;
-  if (existing.ok) {
-    const metadata = await existing.json();
-    sha = metadata.sha;
-  } else if (existing.status !== 404) {
-    throw new Error(`Cannot inspect ${repositoryPath}: ${existing.status} ${await existing.text()}`);
+  const repoPath = `/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}`;
+  const refPath = `${repoPath}/git/ref/heads/${encodeURIComponent(config.branch)}`;
+  const refResponse = await githubRequest(refPath);
+  if (!refResponse.ok) {
+    throw new Error(`Cannot inspect branch ${config.branch}: ${refResponse.status} ${await refResponse.text()}`);
+  }
+  const ref = await refResponse.json();
+  const parentSha = ref.object.sha;
+
+  const commitResponse = await githubRequest(`${repoPath}/git/commits/${parentSha}`);
+  if (!commitResponse.ok) {
+    throw new Error(`Cannot inspect commit ${parentSha}: ${commitResponse.status} ${await commitResponse.text()}`);
+  }
+  const parentCommit = await commitResponse.json();
+
+  const treeEntries = [];
+  for (const file of files) {
+    const blobResponse = await githubRequest(`${repoPath}/git/blobs`, {
+      method: "POST",
+      body: JSON.stringify({ content: file.optimized.toString("base64"), encoding: "base64" }),
+    });
+    if (!blobResponse.ok) {
+      throw new Error(`Cannot create blob for ${file.filename}: ${blobResponse.status} ${await blobResponse.text()}`);
+    }
+    const blob = await blobResponse.json();
+    treeEntries.push({
+      path: `public/uploads/migrated/${file.filename}`,
+      mode: "100644",
+      type: "blob",
+      sha: blob.sha,
+    });
   }
 
-  const response = await githubRequest(apiPath, {
-    method: "PUT",
+  const treeResponse = await githubRequest(`${repoPath}/git/trees`, {
+    method: "POST",
     body: JSON.stringify({
-      message: `media: migrate ${filename}`,
-      content: optimized.toString("base64"),
-      branch: config.branch,
-      ...(sha ? { sha } : {}),
+      base_tree: parentCommit.tree.sha,
+      tree: treeEntries,
     }),
   });
-  if (!response.ok) {
-    throw new Error(`Cannot upload ${repositoryPath}: ${response.status} ${await response.text()}`);
+  if (!treeResponse.ok) {
+    throw new Error(`Cannot create migration tree: ${treeResponse.status} ${await treeResponse.text()}`);
   }
-  return `/uploads/migrated/${filename}`;
+  const tree = await treeResponse.json();
+
+  const newCommitResponse = await githubRequest(`${repoPath}/git/commits`, {
+    method: "POST",
+    body: JSON.stringify({
+      message: `media: migrate ${files.length} Cloudinary image${files.length === 1 ? "" : "s"}`,
+      tree: tree.sha,
+      parents: [parentSha],
+    }),
+  });
+  if (!newCommitResponse.ok) {
+    throw new Error(`Cannot create migration commit: ${newCommitResponse.status} ${await newCommitResponse.text()}`);
+  }
+  const newCommit = await newCommitResponse.json();
+  return { refPath, parentSha, commitSha: newCommit.sha };
+}
+
+async function publishGitHubMedia(staged) {
+  const response = await githubRequest(staged.refPath, {
+    method: "PATCH",
+    body: JSON.stringify({ sha: staged.commitSha, force: false }),
+  });
+  if (!response.ok) {
+    throw new Error(`Cannot publish migration commit: ${response.status} ${await response.text()}`);
+  }
 }
 
 async function loadWebsiteRecords() {
@@ -177,6 +220,7 @@ async function migrateDirectly() {
   const urls = new Set();
   records.forEach((record) => collectUrls(record.value, urls));
   const map = {};
+  const files = [];
 
   for (const url of urls) {
     const filename = localName(url);
@@ -188,11 +232,22 @@ async function migrateDirectly() {
       .resize({ width: 1920, withoutEnlargement: true, fit: "inside" })
       .webp({ quality: 82, effort: 5 })
       .toBuffer();
-    map[url] = await uploadToGitHub(filename, optimized);
+    map[url] = `/uploads/migrated/${filename}`;
+    files.push({ filename, optimized });
     console.log(`${url} -> ${map[url]} (${Math.round(optimized.length / 1024)} KB)`);
   }
 
+  if (files.length === 0) {
+    console.log("Direct migration completed for 0 unique images.");
+    return;
+  }
+
+  // Blob/tree/commit objects do not move the branch, so Railway is not redeployed
+  // while the database transaction is still running. Publish the ref only after
+  // every record has been updated successfully.
+  const staged = await stageGitHubMedia(files);
   await applyMapToDatabase(records, map);
+  await publishGitHubMedia(staged);
   console.log(`Direct migration completed for ${urls.size} unique images.`);
 }
 
