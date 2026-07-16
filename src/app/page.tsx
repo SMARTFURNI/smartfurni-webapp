@@ -34,10 +34,21 @@ export default async function HomePage() {
       ? { ...savedProduct, coverImage: seed.coverImage, images: seed.images }
       : seed;
   });
-  const bedProducts = products.filter((product) => {
+  const isBedProduct = (product: (typeof allProducts)[number]) => {
     const normalizedName = product.name.toLocaleLowerCase("vi");
-    return !normalizedName.includes("nệm") && !normalizedName.includes("nem ");
-  });
+    return (
+      product.status !== "discontinued" &&
+      !normalizedName.includes("nệm") &&
+      !normalizedName.includes("nem ")
+    );
+  };
+  const configuredBedProducts = products.filter(isBedProduct);
+  // Cấu hình trang chủ cũ có thể chỉ còn ID của dòng nệm. Khi đó không được
+  // ẩn toàn bộ dòng giường mà phải quay về danh sách sản phẩm đang bán.
+  const bedProducts =
+    configuredBedProducts.length > 0
+      ? configuredBedProducts
+      : allProducts.filter(isBedProduct);
   const { banner } = theme;
 
   return (
