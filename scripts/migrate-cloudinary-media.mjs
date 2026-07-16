@@ -15,7 +15,11 @@ const { Pool } = pg;
 const root = process.cwd();
 const outputRoot = path.join(root, "public", "uploads", "migrated");
 const manifestPath = path.join(root, "data", "cloudinary-migration-map.json");
-const mode = process.argv.includes("--apply-db") ? "apply" : "download";
+const mode = process.argv.includes("--direct")
+  ? "direct"
+  : process.argv.includes("--apply-db")
+    ? "apply"
+    : "download";
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
 
@@ -60,6 +64,60 @@ function localName(url) {
     .slice(0, 70) || "image";
   const hash = crypto.createHash("sha1").update(url).digest("hex").slice(0, 10);
   return `${safeName}-${hash}.webp`;
+}
+
+function githubConfig() {
+  const token = process.env.GITHUB_MEDIA_TOKEN?.trim();
+  if (!token) throw new Error("GITHUB_MEDIA_TOKEN is required for --direct");
+  return {
+    token,
+    owner: process.env.GITHUB_MEDIA_OWNER?.trim() || "SMARTFURNI",
+    repo: process.env.GITHUB_MEDIA_REPO?.trim() || "smartfurni-webapp",
+    branch: process.env.GITHUB_MEDIA_BRANCH?.trim() || "main",
+  };
+}
+
+async function githubRequest(pathname, init = {}) {
+  const config = githubConfig();
+  return fetch(`https://api.github.com${pathname}`, {
+    ...init,
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${config.token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json",
+      ...init.headers,
+    },
+  });
+}
+
+async function uploadToGitHub(filename, optimized) {
+  const config = githubConfig();
+  const repositoryPath = `public/uploads/migrated/${filename}`;
+  const encodedPath = repositoryPath.split("/").map(encodeURIComponent).join("/");
+  const apiPath = `/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}/contents/${encodedPath}`;
+  const existing = await githubRequest(`${apiPath}?ref=${encodeURIComponent(config.branch)}`);
+  let sha;
+  if (existing.ok) {
+    const metadata = await existing.json();
+    sha = metadata.sha;
+  } else if (existing.status !== 404) {
+    throw new Error(`Cannot inspect ${repositoryPath}: ${existing.status} ${await existing.text()}`);
+  }
+
+  const response = await githubRequest(apiPath, {
+    method: "PUT",
+    body: JSON.stringify({
+      message: `media: migrate ${filename}`,
+      content: optimized.toString("base64"),
+      branch: config.branch,
+      ...(sha ? { sha } : {}),
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Cannot upload ${repositoryPath}: ${response.status} ${await response.text()}`);
+  }
+  return `/uploads/migrated/${filename}`;
 }
 
 async function loadWebsiteRecords() {
@@ -114,10 +172,31 @@ async function download() {
   console.log(`Downloaded ${urls.size} unique images. Manifest: ${manifestPath}`);
 }
 
-async function applyDatabase() {
-  const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
-  const map = manifest.map || {};
+async function migrateDirectly() {
   const records = await loadWebsiteRecords();
+  const urls = new Set();
+  records.forEach((record) => collectUrls(record.value, urls));
+  const map = {};
+
+  for (const url of urls) {
+    const filename = localName(url);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Cannot download ${url}: ${response.status}`);
+    const source = Buffer.from(await response.arrayBuffer());
+    const optimized = await sharp(source, { animated: true })
+      .rotate()
+      .resize({ width: 1920, withoutEnlargement: true, fit: "inside" })
+      .webp({ quality: 82, effort: 5 })
+      .toBuffer();
+    map[url] = await uploadToGitHub(filename, optimized);
+    console.log(`${url} -> ${map[url]} (${Math.round(optimized.length / 1024)} KB)`);
+  }
+
+  await applyMapToDatabase(records, map);
+  console.log(`Direct migration completed for ${urls.size} unique images.`);
+}
+
+async function applyMapToDatabase(records, map) {
   await pool.query("BEGIN");
   try {
     for (const record of records) {
@@ -140,11 +219,19 @@ async function applyDatabase() {
     await pool.query("ROLLBACK");
     throw error;
   }
+}
+
+async function applyDatabase() {
+  const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+  const map = manifest.map || {};
+  const records = await loadWebsiteRecords();
+  await applyMapToDatabase(records, map);
   console.log("Database migration completed.");
 }
 
 try {
-  if (mode === "apply") await applyDatabase();
+  if (mode === "direct") await migrateDirectly();
+  else if (mode === "apply") await applyDatabase();
   else await download();
 } finally {
   await pool.end();
