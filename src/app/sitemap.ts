@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { BLOG_POSTS } from "@/lib/blog-data";
+import { getAllPosts } from "@/lib/admin-store";
 import { initDbOnce } from "@/lib/db-init";
 import { getAllProducts } from "@/lib/product-store";
 import { PRODUCT_FAMILIES } from "@/lib/product-families";
@@ -44,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: product.isFeatured ? 0.9 : 0.8,
   }));
 
-  const blogPages: MetadataRoute.Sitemap = BLOG_POSTS.map((post) => ({
+  const blogPages: MetadataRoute.Sitemap = getAllPosts().filter((post) => !post.status || post.status === "published").map((post) => ({
     url: absoluteUrl(`/blog/${post.slug}`),
     lastModified: new Date(post.publishedAt),
     changeFrequency: "monthly",

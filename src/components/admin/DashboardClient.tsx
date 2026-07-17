@@ -415,7 +415,7 @@ function usePollingNotifications(enabled: boolean) {
         }
         if (data.contacts > lastCounts.contacts) {
           const diff = data.contacts - lastCounts.contacts;
-          setToasts((t) => [...t, { id: `cnt_${Date.now()}`, message: `${diff} tin nhắn liên hệ mới!`, type: "contact", time: Date.now() }]);
+          setToasts((t) => [...t, { id: `cnt_${Date.now()}`, message: `${diff} khách hàng tiềm năng mới trong CRM!`, type: "contact", time: Date.now() }]);
         }
       }
       setLastCounts(data);
@@ -541,10 +541,23 @@ export default function DashboardClient({
 
   const o = orderData.stats;
   const p = productData.stats;
-  const b = blogData.stats;
   const revTrend = orderData.revenueByDay.map((d) => d.revenue);
   const orderTrend = orderData.revenueByDay.map((d) => d.orders);
-  const profitMargin = p.totalRevenue > 0 ? Math.round((p.totalProfit / p.totalRevenue) * 100) : 0;
+  const liveRevenueByMonth = Array.from({ length: 6 }, (_, offset) => {
+    const date = new Date();
+    date.setDate(1);
+    date.setMonth(date.getMonth() - (5 - offset));
+    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const monthOrders = orderData.orders.filter((order) => order.createdAt.slice(0, 7) === month && order.paymentStatus === "paid");
+    return {
+      month,
+      label: `Th ${date.getMonth() + 1}`,
+      revenue: monthOrders.reduce((sum, order) => sum + order.total, 0),
+      units: monthOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
+    };
+  });
+  const liveUnitsSold = liveRevenueByMonth.reduce((sum, month) => sum + month.units, 0);
+  const liveSixMonthRevenue = liveRevenueByMonth.reduce((sum, month) => sum + month.revenue, 0);
   const today = new Date();
   const dateStr = today.toLocaleDateString("vi-VN", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
@@ -589,7 +602,7 @@ export default function DashboardClient({
       {/* Row 1: Top KPI */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard label="Doanh thu" value={fmtVND(filteredRevenue)} sub={`Tuần này: ${fmtVND(o.weekRevenue)}`} color="#C9A84C" icon="💰" href="/admin/orders" trend={revTrend} trendLabel="Doanh thu 7 ngày" growth={o.revenueGrowthWeek} growthLabel="so với tuần trước" />
-        <KpiCard label="Lợi nhuận" value={fmtVND(p.totalProfit)} sub={`Biên lợi nhuận: ${profitMargin}%`} color="#22C55E" icon="📈" growth={o.revenueGrowthMonth} growthLabel="so với tháng trước" />
+        <KpiCard label="Đã thanh toán" value={fmt(filteredPaid.length)} sub={`${fmtVND(filteredRevenue)} đã ghi nhận`} color="#22C55E" icon="✓" growth={o.revenueGrowthMonth} growthLabel="doanh thu so với tháng trước" />
         <KpiCard label="Đơn hàng" value={fmt(filteredOrders.length)} sub={`Chờ: ${o.pendingOrders} · Đang giao: ${o.shippingOrders}`} color="#3B82F6" icon="📦" href="/admin/orders" trend={orderTrend} trendLabel="Đơn hàng 7 ngày" growth={o.ordersGrowthWeek} growthLabel="so với tuần trước" />
         <KpiCard label="Giá trị TB/đơn" value={fmtVND(filteredAvgOrder)} sub={`${fmt(filteredDelivered)} đã giao · ${filteredConversion}% tỷ lệ`} color="#F472B6" icon="🎯" />
       </div>
@@ -599,7 +612,7 @@ export default function DashboardClient({
         <KpiCard label="Sản phẩm" value={fmt(p.totalProducts)} sub={`Đang bán: ${p.activeProducts} · Hết hàng: ${p.outOfStock}`} color="#8B5CF6" icon="🛏️" href="/admin/products" />
         <KpiCard label="Tồn kho" value={fmt(p.totalStock)} sub={`${p.lowStockCount} sản phẩm sắp hết hàng`} color={p.lowStockCount > 0 ? "#F59E0B" : "#22C55E"} icon="🏭" href="/admin/products" />
         <KpiCard label="Khách quay lại" value={`${o.repeatCustomerRate}%`} sub={`${o.repeatCustomerCount} khách đặt ≥2 lần`} color="#06B6D4" icon="🔄" />
-        <KpiCard label="Liên hệ" value={fmt(b.totalContacts)} sub={`${b.unreadContacts} chưa đọc`} color={b.unreadContacts > 0 ? "#EF4444" : "#6B7280"} icon="💬" href="/admin/contacts" />
+        <KpiCard label="Đã giao" value={fmt(o.deliveredOrders)} sub={`${filteredConversion}% đơn trong kỳ đã hoàn tất`} color="#22C55E" icon="✓" href="/admin/orders" />
       </div>
 
       {/* Row 3: Revenue Chart + Order Status */}
@@ -616,19 +629,19 @@ export default function DashboardClient({
               <div className="mt-0.5"><GrowthBadge pct={o.revenueGrowthMonth} /></div>
             </div>
           </div>
-          <RevenueBarChart data={productData.revenueByMonth} />
+          <RevenueBarChart data={liveRevenueByMonth} />
           <div className="mt-4 grid grid-cols-3 gap-3 pt-4 border-t border-white/5">
             <div className="text-center">
               <div className="text-xs text-[rgba(245,237,214,0.45)] mb-1">Tháng tốt nhất</div>
-              <div className="text-sm font-bold text-white">{productData.revenueByMonth.length > 0 ? fmtVND(Math.max(...productData.revenueByMonth.map((m) => m.revenue))) : "—"}</div>
+              <div className="text-sm font-bold text-white">{fmtVND(Math.max(...liveRevenueByMonth.map((m) => m.revenue)))}</div>
             </div>
             <div className="text-center">
               <div className="text-xs text-[rgba(245,237,214,0.45)] mb-1">Tổng đơn vị bán</div>
-              <div className="text-sm font-bold text-white">{fmt(productData.revenueByMonth.reduce((s, m) => s + m.units, 0))}</div>
+              <div className="text-sm font-bold text-white">{fmt(liveUnitsSold)}</div>
             </div>
             <div className="text-center">
               <div className="text-xs text-[rgba(245,237,214,0.45)] mb-1">Doanh thu TB/tháng</div>
-              <div className="text-sm font-bold text-white">{productData.revenueByMonth.length > 0 ? fmtVND(Math.round(p.totalRevenue / productData.revenueByMonth.length)) : "—"}</div>
+              <div className="text-sm font-bold text-white">{fmtVND(Math.round(liveSixMonthRevenue / 6))}</div>
             </div>
           </div>
         </div>
@@ -662,21 +675,21 @@ export default function DashboardClient({
             <Link href="/admin/products" className="text-xs text-[#C9A84C]/70 hover:text-[#C9A84C] transition-colors">Xem tất cả →</Link>
           </div>
           <div className="space-y-3">
-            {productData.topSellingProducts.slice(0, 5).map((prod, i) => (
-              <div key={prod.id} className="flex items-center gap-3">
+            {orderData.topProducts.slice(0, 5).map((prod, i) => (
+              <div key={prod.productName} className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-lg bg-[#C9A84C]/10 flex items-center justify-center flex-shrink-0">
                   <span className="text-xs font-bold text-[#C9A84C]">{i + 1}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-white truncate">{prod.name}</div>
-                  <div className="text-[10px] text-[rgba(245,237,214,0.45)]">{fmt(prod.totalSold)} đã bán · {prod.rating}⭐</div>
+                  <div className="text-xs font-medium text-white truncate">{prod.productName}</div>
+                  <div className="text-[10px] text-[rgba(245,237,214,0.45)]">{fmt(prod.quantity)} sản phẩm trong đơn hàng</div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <div className="text-xs font-bold text-[#C9A84C]">{fmtVND(prod.totalRevenue)}</div>
+                  <div className="text-xs font-bold text-[#C9A84C]">{fmtVND(prod.revenue)}</div>
                 </div>
               </div>
             ))}
-            {productData.topSellingProducts.length === 0 && <p className="text-[rgba(245,237,214,0.45)] text-xs text-center py-4">Chưa có dữ liệu bán hàng</p>}
+            {orderData.topProducts.length === 0 && <p className="text-[rgba(245,237,214,0.45)] text-xs text-center py-4">Chưa có dữ liệu bán hàng</p>}
           </div>
           {productData.lowStockProducts.length > 0 && (
             <div className="mt-4 pt-4 border-t border-white/5">
@@ -813,7 +826,7 @@ export default function DashboardClient({
           </div>
         </div>
         <div className="bg-[#1a1200] border border-white/5 rounded-2xl p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Nội dung & Liên hệ</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">Nội dung & CRM</h3>
           <div className="space-y-3">
             <div className="p-3 bg-white/3 rounded-xl">
               <div className="flex items-center justify-between mb-2">
@@ -826,28 +839,13 @@ export default function DashboardClient({
                 <div><div className="text-sm font-bold text-blue-400">{b.scheduledPosts}</div><div className="text-[10px] text-[rgba(245,237,214,0.45)]">Lịch</div></div>
               </div>
             </div>
-            <div className="p-3 bg-white/3 rounded-xl">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><span>💬</span><span className="text-xs text-gray-300">Liên hệ</span></div>
-                <Link href="/admin/contacts" className="text-xs text-[#C9A84C]/70 hover:text-[#C9A84C]">Xem →</Link>
+            <Link href="/crm/data-pool" className="block rounded-xl bg-white/3 p-3 transition-colors hover:bg-white/5">
+              <div className="mb-1 flex items-center justify-between">
+                <div className="flex items-center gap-2"><span>◉</span><span className="text-xs text-gray-300">Khách hàng tiềm năng</span></div>
+                <span className="text-xs text-[#C9A84C]/70">Mở CRM →</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div><div className="text-sm font-bold text-white">{b.totalContacts}</div><div className="text-[10px] text-[rgba(245,237,214,0.45)]">Tổng</div></div>
-                <div><div className={`text-sm font-bold ${b.unreadContacts > 0 ? "text-red-400" : "text-[rgba(245,237,214,0.55)]"}`}>{b.unreadContacts}</div><div className="text-[10px] text-[rgba(245,237,214,0.45)]">Chưa đọc</div></div>
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-[rgba(245,237,214,0.35)] uppercase tracking-wider mb-2">Chủ đề phổ biến</div>
-              {blogData.contactsBySubject.slice(0, 3).map((s, i) => {
-                const colors = ["#C9A84C", "#3B82F6", "#22C55E"];
-                return (
-                  <div key={s.subject} className="flex items-center justify-between py-1">
-                    <span className="text-xs text-[rgba(245,237,214,0.55)] truncate flex-1">{s.subject}</span>
-                    <span className="text-xs font-medium ml-2" style={{ color: colors[i] }}>{s.count}</span>
-                  </div>
-                );
-              })}
-            </div>
+              <p className="text-[10px] leading-relaxed text-[rgba(245,237,214,0.45)]">Tất cả form website và landing page được quản lý tập trung tại kho dữ liệu CRM.</p>
+            </Link>
           </div>
         </div>
       </div>
@@ -860,7 +858,7 @@ export default function DashboardClient({
             { href: "/admin/orders/new", icon: "➕", label: "Tạo đơn hàng" },
             { href: "/admin/products/new", icon: "🛏️", label: "Thêm sản phẩm" },
             { href: "/admin/posts/new", icon: "✏️", label: "Viết bài mới" },
-            { href: "/admin/contacts", icon: "💬", label: "Xem liên hệ" },
+            { href: "/crm/data-pool", icon: "◉", label: "Khách tiềm năng" },
             { href: "/admin/homepage-products", icon: "🏠", label: "Trang chủ" },
             { href: "/admin/settings", icon: "⚙️", label: "Cài đặt" },
             { href: "/admin/analytics", icon: "📊", label: "Analytics" },

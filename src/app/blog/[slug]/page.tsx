@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
-import { getPostBySlug, BLOG_POSTS } from "@/lib/blog-data";
+import { BLOG_POSTS } from "@/lib/blog-data";
+import { getAllPosts, getPostById } from "@/lib/admin-store";
+import { initDbOnce } from "@/lib/db-init";
 import { getTheme } from "@/lib/theme-store";
 import BlogPostClient from "@/components/landing/BlogPostClient";
 import type { Metadata } from "next";
@@ -19,7 +21,8 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  await initDbOnce();
+  const post = getPostById(slug);
   if (!post) return { title: "Không tìm thấy bài viết", robots: { index: false, follow: false } };
   const url = absoluteUrl(`/blog/${post.slug}`);
   const image = post.coverImage ? absoluteUrl(post.coverImage) : undefined;
@@ -42,11 +45,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
-  if (!post) notFound();
+  await initDbOnce();
+  const post = getPostById(slug);
+  if (!post || (post.status && post.status !== "published")) notFound();
 
-  const relatedPosts = BLOG_POSTS
-    .filter((p) => p.slug !== post.slug && p.category === post.category)
+  const relatedPosts = getAllPosts()
+    .filter((p) => (!p.status || p.status === "published") && p.slug !== post.slug && p.category === post.category)
     .slice(0, 3);
 
   const theme = getTheme();

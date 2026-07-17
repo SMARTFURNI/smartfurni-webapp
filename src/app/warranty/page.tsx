@@ -11,29 +11,6 @@ export const metadata = {
   alternates: { canonical: absoluteUrl("/warranty") },
 };
 
-const WARRANTY_ITEMS = [
-  {
-    icon: "🛡️",
-    title: "Bảo hành 5 năm khung giường",
-    desc: "Khung giường bằng thép không gỉ được bảo hành 5 năm toàn diện, bao gồm lỗi sản xuất, biến dạng và gãy vỡ do chất lượng vật liệu.",
-  },
-  {
-    icon: "⚙️",
-    title: "Bảo hành 3 năm động cơ",
-    desc: "Hệ thống động cơ điện tử điều chỉnh tư thế được bảo hành 3 năm. Bao gồm thay thế miễn phí nếu lỗi phần cứng.",
-  },
-  {
-    icon: "📱",
-    title: "Bảo hành 2 năm bo mạch điều khiển",
-    desc: "Mạch điều khiển Bluetooth, cảm biến theo dõi giấc ngủ và hệ thống đèn LED được bảo hành 2 năm.",
-  },
-  {
-    icon: "🛏️",
-    title: "Bảo hành 1 năm đệm & phụ kiện",
-    desc: "Đệm memory foam, gối và các phụ kiện đi kèm được bảo hành 1 năm về lỗi sản xuất.",
-  },
-];
-
 const COVERED = [
   "Lỗi sản xuất và khuyết tật vật liệu",
   "Hỏng hóc do sử dụng bình thường",
@@ -55,6 +32,12 @@ const NOT_COVERED = [
 export default function WarrantyPage() {
   const theme = getTheme();
   const { colors, pageWarranty } = theme;
+  const warrantyItems = [
+    { icon: "🛡️", title: `Dòng Basic: ${pageWarranty.basicWarrantyYears}`, desc: "Thời hạn bảo hành chính hãng áp dụng cho dòng sản phẩm Basic theo điều kiện bảo hành công bố." },
+    { icon: "⚙️", title: `Dòng Pro: ${pageWarranty.proWarrantyYears}`, desc: "Thời hạn bảo hành chính hãng áp dụng cho dòng sản phẩm Pro và các bộ phận đi kèm." },
+    { icon: "💎", title: `Dòng Elite: ${pageWarranty.eliteWarrantyYears}`, desc: "Thời hạn bảo hành chính hãng áp dụng cho dòng sản phẩm Elite cao cấp." },
+    { icon: "📋", title: "Phạm vi bảo hành", desc: pageWarranty.warrantyScope },
+  ];
 
   return (
     <main className="sf-site-gradient-bg" style={{ minHeight: "100vh", backgroundColor: colors.background }}>
@@ -78,7 +61,7 @@ export default function WarrantyPage() {
       <div style={{ maxWidth: "900px" }} className="mx-auto px-4 sm:px-6 pb-20 space-y-10">
         {/* Warranty cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {WARRANTY_ITEMS.map((item) => (
+          {warrantyItems.map((item) => (
             <div
               key={item.title}
               style={{ backgroundColor: colors.surface, borderColor: colors.border }}
@@ -123,7 +106,7 @@ export default function WarrantyPage() {
 
         {/* Process */}
         <div style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-2xl border p-6 sm:p-8">
-          <h2 className="text-xl font-light text-[#F5EDD6] mb-6">Quy trình yêu cầu bảo hành</h2>
+          <h2 className="text-xl font-light text-[#F5EDD6] mb-6">{pageWarranty.processTitle}</h2>
           <div className="space-y-4">
             {[
               { step: "01", title: "Liên hệ SmartFurni", desc: `Gọi hotline ${pageWarranty?.hotline ?? "1900 1234"} hoặc email ${pageWarranty?.email ?? "warranty@smartfurni.vn"} với mã đơn hàng và mô tả sự cố.` },

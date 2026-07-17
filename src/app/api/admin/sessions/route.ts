@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessions, getSessionDetail, getActiveSessionCount, ensureSessionTables } from "@/lib/session-store";
+import { getAdminSession } from "@/lib/admin-auth";
 
 let tablesReady = false;
 async function ensureTables() {
@@ -10,6 +11,7 @@ async function ensureTables() {
 }
 
 export async function GET(req: NextRequest) {
+  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     await ensureTables();
     const { searchParams } = new URL(req.url);

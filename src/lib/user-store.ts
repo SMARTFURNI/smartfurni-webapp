@@ -1,3 +1,6 @@
+import { dbDeleteOne, dbLoadAll, dbSaveAll, dbSaveOne } from "./db-store";
+import { registerDbLoader } from "./db-init";
+
 // ─── User Data Model ──────────────────────────────────────────────────────────
 
 export type UserRole = "customer" | "dealer" | "vip" | "blocked";
@@ -66,7 +69,7 @@ export interface UserDashboardStats {
 
 // ─── Sample Data ──────────────────────────────────────────────────────────────
 
-let users: AppUser[] = [
+const DEFAULT_USERS: AppUser[] = [
   {
     id: "u1",
     name: "Nguyễn Văn An",
@@ -311,6 +314,13 @@ let users: AppUser[] = [
     tags: ["mới", "TikTok"],
   },
 ];
+let users: AppUser[] = [...DEFAULT_USERS];
+
+registerDbLoader(async () => {
+  const rows = await dbLoadAll<AppUser>("users");
+  if (rows && rows.length > 0) users = rows;
+  else if (rows !== null) dbSaveAll("users", DEFAULT_USERS);
+});
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
@@ -326,12 +336,14 @@ export function updateUser(id: string, updates: Partial<AppUser>): AppUser | nul
   const idx = users.findIndex((u) => u.id === id);
   if (idx === -1) return null;
   users[idx] = { ...users[idx], ...updates };
+  dbSaveOne("users", users[idx]);
   return users[idx];
 }
 
 export function deleteUser(id: string): boolean {
   const before = users.length;
   users = users.filter((u) => u.id !== id);
+  if (users.length < before) dbDeleteOne("users", id);
   return users.length < before;
 }
 
@@ -367,6 +379,7 @@ export function createUser(data: {
     tags: data.tags || [],
   };
   users.unshift(newUser);
+  dbSaveOne("users", newUser);
   return newUser;
 }
 

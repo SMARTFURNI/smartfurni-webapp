@@ -212,6 +212,8 @@ export async function initAllTables(): Promise<void> {
     ensureTable("products"),
     ensureTable("orders"),
     ensureTable("contacts"),
+    ensureTable("posts"),
+    ensureTable("users"),
     ensureSettingsTable(),
   ]);
   console.log("[db-store] All tables initialized");

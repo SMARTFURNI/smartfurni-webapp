@@ -285,7 +285,7 @@ function ProductCard({ product: p, disc, isComingSoon, isOutOfStock, colors, com
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ProductsListClient({ products, theme }: Props) {
-  const { colors, layout } = theme;
+  const { colors, layout, pageProducts } = theme;
   const { addItem } = useCart();
   const [activeCategory, setActiveCategory] = useState<ProductFamily | "all">("all");
   const [sortKey, setSortKey] = useState("default");
@@ -345,6 +345,7 @@ export default function ProductsListClient({ products, theme }: Props) {
 
   return (
     <div style={{ maxWidth: layout.maxWidth }} className="mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <h2 className="mb-4 text-xl font-light text-[#F5EDD6]">{pageProducts.filterLabel}</h2>
       {/* Filters bar */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         {/* Search */}
@@ -419,8 +420,9 @@ export default function ProductsListClient({ products, theme }: Props) {
           className="rounded-2xl border p-16 text-center"
         >
           <p style={{ color: `${colors.text}40` }} className="text-base">
-            Không tìm thấy sản phẩm phù hợp.
+            {pageProducts.emptyTitle}
           </p>
+          <p style={{ color: `${colors.text}35` }} className="mx-auto mt-2 max-w-lg text-sm">{pageProducts.emptySubtitle}</p>
           <button
             onClick={() => { setSearch(""); setActiveCategory("all"); }}
             style={{ color: colors.primary }}
@@ -468,7 +470,7 @@ export default function ProductsListClient({ products, theme }: Props) {
             style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: colors.background }}
             className="px-4 py-1.5 rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity"
           >
-            So sánh ngay →
+            {pageProducts.compareLabel} →
           </Link>
           <button
             onClick={() => setCompareList([])}

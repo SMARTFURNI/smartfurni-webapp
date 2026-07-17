@@ -184,9 +184,9 @@ export default function CheckoutClient({ theme }: Props) {
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-0 mb-6">
           {[
-            { step: 1, label: "Giỏ hàng", href: "/cart", done: true },
-            { step: 2, label: "Đặt hàng", href: null, done: false, active: true },
-            { step: 3, label: "Xác nhận", href: null, done: false },
+            { step: 1, label: pageCheckout.step1Title, href: "/cart", done: true },
+            { step: 2, label: pageCheckout.step2Title, href: null, done: false, active: true },
+            { step: 3, label: pageCheckout.step3Title, href: null, done: false },
           ].map((s, i) => (
             <div key={s.step} className="flex items-center">
               {/* Step node */}
@@ -235,7 +235,7 @@ export default function CheckoutClient({ theme }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <span className="w-6 h-px bg-[#C9A84C]" />
-          <h1 className="text-2xl font-light text-[#F5EDD6]">Thông tin <span className="text-gold-gradient">đặt hàng</span></h1>
+          <h1 className="text-2xl font-light text-[#F5EDD6]">{pageCheckout.title}</h1>
         </div>
       </div>
 
@@ -486,7 +486,7 @@ export default function CheckoutClient({ theme }: Props) {
               >
                 <p style={{ color: colors.text }} className="text-sm font-semibold mb-1">Số MoMo:</p>
                 <p style={{ color: colors.primary }} className="text-base font-bold">{pageCheckout?.momoPhone ?? "0901234567"}</p>
-                <p style={{ color: `${colors.text}50` }} className="text-xs mt-1">{pageCheckout?.bankHolder ?? "SmartFurni Vietnam"}</p>
+                <p style={{ color: `${colors.text}50` }} className="text-xs mt-1">{pageCheckout.momoName}</p>
               </div>
             )}
           </div>
@@ -514,7 +514,7 @@ export default function CheckoutClient({ theme }: Props) {
             }}
             className="lg:hidden w-full py-4 rounded-xl text-sm font-semibold transition-all duration-200"
           >
-            {loading ? "Đang xử lý..." : `Đặt hàng — ${formatPrice(total)}`}
+            {loading ? "Đang xử lý..." : `${pageCheckout.submitButton} — ${formatPrice(total)}`}
           </button>
         </div>
 
@@ -527,7 +527,7 @@ export default function CheckoutClient({ theme }: Props) {
             <div className="flex items-center gap-2 mb-5">
               <span className="w-5 h-px bg-[#C9A84C]" />
               <h2 className="font-semibold text-[#F5EDD6] text-base">
-                Đơn hàng của bạn
+                {pageCheckout.summaryTitle}
               </h2>
             </div>
 
@@ -618,7 +618,7 @@ export default function CheckoutClient({ theme }: Props) {
               }}
               className="hidden lg:block w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200"
             >
-              {loading ? "Đang xử lý..." : "Đặt hàng ngay →"}
+              {loading ? "Đang xử lý..." : `${pageCheckout.submitButton} →`}
             </button>
 
             {/* Trust badges */}

@@ -58,12 +58,24 @@ export default function ContactClient({ theme }: Props) {
     setSubmitError("");
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1500));
-      setLoading(false);
+      const response = await fetch("/api/lp/submit-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: form.name,
+          phone: form.phone,
+          email: form.email,
+          message: `${form.subject}: ${form.message}`,
+          landingPageSlug: "contact",
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "Không thể gửi liên hệ");
       setSubmitted(true);
     } catch {
-      setLoading(false);
       setSubmitError("Có lỗi xảy ra. Vui lòng thử lại hoặc gọi hotline 028.7122.0818.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,10 +137,10 @@ export default function ContactClient({ theme }: Props) {
           <div>
             {/* Section heading — giống FeaturesSection trang chủ */}
             <h2 className="text-3xl sm:text-4xl font-light text-[#F5EDD6] mb-2">
-              Gửi <span className="text-gold-gradient">tin nhắn</span>
+              {theme.pageContact.formTitle}
             </h2>
             <p className="text-sm text-[#F5EDD6]/50 mb-6 sm:mb-8 leading-relaxed">
-              Điền thông tin bên dưới và chúng tôi sẽ liên hệ lại trong vòng 2 giờ làm việc.
+              {theme.pageContact.formSubtitle}
             </p>
 
             {submitted ? (
@@ -290,20 +302,21 @@ export default function ContactClient({ theme }: Props) {
               ))}
             </div>
 
-            {/* Map placeholder */}
-            <div className="mt-6 bg-[#1A1600] border border-[#2E2800] rounded-2xl overflow-hidden h-48 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-4xl mb-2">🗺️</div>
-                <p className="text-sm text-[#F5EDD6]/50">Bản đồ showroom SmartFurni</p>
-                <a
-                  href="https://maps.google.com/?q=SmartFurni+Vietnam"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[#C9A84C] font-medium hover:text-[#E2C97E] transition-colors mt-1 block"
-                >
-                  Mở Google Maps →
-                </a>
-              </div>
+            <div className="mt-6 h-48 overflow-hidden rounded-2xl border border-[#2E2800] bg-[#1A1600]">
+              {theme.pageContact.mapEmbedUrl ? (
+                <iframe
+                  src={theme.pageContact.mapEmbedUrl}
+                  title="Bản đồ showroom SmartFurni"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="h-full w-full border-0"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-center">
+                  <div><div className="mb-2 text-4xl">🗺️</div><p className="text-sm text-[#F5EDD6]/50">Chưa cấu hình bản đồ showroom</p></div>
+                </div>
+              )}
             </div>
           </div>
           </ScrollReveal>

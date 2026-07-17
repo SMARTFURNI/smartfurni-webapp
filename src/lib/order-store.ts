@@ -719,7 +719,8 @@ export function getOrderDashboardStats(): OrderDashboardStats {
   const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
   const paidOrders = orders.filter((o) => o.paymentStatus === "paid");
-  const totalRevenue = paidOrders.reduce((s, o) => s + o.total, 0);
+  const revenueOrders = paidOrders.filter((o) => o.status !== "cancelled" && o.status !== "refunded");
+  const totalRevenue = revenueOrders.reduce((s, o) => s + o.total, 0);
   const deliveredOrders = orders.filter((o) => o.status === "delivered");
   const conversionRate = orders.length > 0 ? Math.round((deliveredOrders.length / orders.length) * 100) : 0;
 
@@ -731,17 +732,17 @@ export function getOrderDashboardStats(): OrderDashboardStats {
   });
 
   // Period-over-period
-  const weekRevenue = weekOrders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0);
-  const prevWeekRevenue = prevWeekOrders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0);
-  const thisMonthRevenue = orders.filter((o) => new Date(o.createdAt) >= thisMonthStart && o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0);
-  const prevMonthRevenue = orders.filter((o) => { const d = new Date(o.createdAt); return d >= prevMonthStart && d <= prevMonthEnd && o.paymentStatus === "paid"; }).reduce((s, o) => s + o.total, 0);
+  const weekRevenue = revenueOrders.filter((o) => new Date(o.createdAt) >= weekAgo).reduce((s, o) => s + o.total, 0);
+  const prevWeekRevenue = revenueOrders.filter((o) => { const d = new Date(o.createdAt); return d >= twoWeeksAgo && d < weekAgo; }).reduce((s, o) => s + o.total, 0);
+  const thisMonthRevenue = revenueOrders.filter((o) => new Date(o.createdAt) >= thisMonthStart).reduce((s, o) => s + o.total, 0);
+  const prevMonthRevenue = revenueOrders.filter((o) => { const d = new Date(o.createdAt); return d >= prevMonthStart && d <= prevMonthEnd; }).reduce((s, o) => s + o.total, 0);
   const revenueGrowthWeek = prevWeekRevenue > 0 ? Math.round(((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100) : 0;
   const revenueGrowthMonth = prevMonthRevenue > 0 ? Math.round(((thisMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) : 0;
   const ordersGrowthWeek = prevWeekOrders.length > 0 ? Math.round(((weekOrders.length - prevWeekOrders.length) / prevWeekOrders.length) * 100) : 0;
 
   // Repeat customers
   const emailCount: Record<string, number> = {};
-  orders.forEach((o) => { emailCount[o.customerEmail] = (emailCount[o.customerEmail] || 0) + 1; });
+  orders.filter((o) => o.status !== "cancelled" && o.status !== "refunded").forEach((o) => { emailCount[o.customerEmail] = (emailCount[o.customerEmail] || 0) + 1; });
   const repeatCustomerCount = Object.values(emailCount).filter((c) => c > 1).length;
   const uniqueCustomers = Object.keys(emailCount).length;
   const repeatCustomerRate = uniqueCustomers > 0 ? Math.round((repeatCustomerCount / uniqueCustomers) * 100) : 0;
@@ -767,7 +768,7 @@ export function getOrderDashboardStats(): OrderDashboardStats {
   // Revenue by hour (0-23)
   const hourMap: Record<number, { count: number; revenue: number }> = {};
   for (let h = 0; h < 24; h++) hourMap[h] = { count: 0, revenue: 0 };
-  orders.forEach((o) => {
+  revenueOrders.forEach((o) => {
     const h = new Date(o.createdAt).getHours();
     hourMap[h].count++;
     if (o.paymentStatus === "paid") hourMap[h].revenue += o.total;
@@ -783,10 +784,10 @@ export function getOrderDashboardStats(): OrderDashboardStats {
   const dowLabels = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
   const dowMap: Record<number, { count: number; revenue: number }> = {};
   for (let d = 0; d < 7; d++) dowMap[d] = { count: 0, revenue: 0 };
-  orders.forEach((o) => {
+  revenueOrders.forEach((o) => {
     const d = new Date(o.createdAt).getDay();
     dowMap[d].count++;
-    if (o.paymentStatus === "paid") dowMap[d].revenue += o.total;
+    dowMap[d].revenue += o.total;
   });
   const revenueByDayOfWeek = Array.from({ length: 7 }, (_, d) => ({
     day: d,
@@ -883,16 +884,16 @@ export function getOrderDashboardStats(): OrderDashboardStats {
       date: dateStr,
       label: d.toLocaleDateString("vi-VN", { weekday: "short" }),
       orders: dayOrders.length,
-      revenue: dayOrders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0),
+      revenue: dayOrders.filter((o) => revenueOrders.includes(o)).reduce((s, o) => s + o.total, 0),
     });
   }
 
   // By city
   const cityMap: Record<string, { count: number; revenue: number }> = {};
-  orders.forEach((o) => {
+  revenueOrders.forEach((o) => {
     if (!cityMap[o.city]) cityMap[o.city] = { count: 0, revenue: 0 };
     cityMap[o.city].count++;
-    if (o.paymentStatus === "paid") cityMap[o.city].revenue += o.total;
+    cityMap[o.city].revenue += o.total;
   });
   const revenueByCity = Object.entries(cityMap)
     .sort((a, b) => b[1].revenue - a[1].revenue)
@@ -901,12 +902,12 @@ export function getOrderDashboardStats(): OrderDashboardStats {
       city,
       count: v.count,
       revenue: v.revenue,
-      percentage: Math.round((v.count / orders.length) * 100),
+      percentage: revenueOrders.length > 0 ? Math.round((v.count / revenueOrders.length) * 100) : 0,
     }));
 
   // Top products
   const productMap: Record<string, { quantity: number; revenue: number }> = {};
-  orders.forEach((o) => {
+  revenueOrders.forEach((o) => {
     o.items.forEach((item) => {
       if (!productMap[item.productName]) productMap[item.productName] = { quantity: 0, revenue: 0 };
       productMap[item.productName].quantity += item.quantity;
@@ -933,12 +934,12 @@ export function getOrderDashboardStats(): OrderDashboardStats {
       cancelledOrders: statusMap["cancelled"] || 0,
       refundedOrders: statusMap["refunded"] || 0,
       totalRevenue,
-      totalShippingFee: orders.reduce((s, o) => s + o.shippingFee, 0),
-      totalDiscount: orders.reduce((s, o) => s + o.discount, 0),
-      avgOrderValue: orders.length > 0 ? Math.round(totalRevenue / orders.filter((o) => o.paymentStatus === "paid").length) : 0,
+      totalShippingFee: revenueOrders.reduce((s, o) => s + o.shippingFee, 0),
+      totalDiscount: revenueOrders.reduce((s, o) => s + o.discount, 0),
+      avgOrderValue: revenueOrders.length > 0 ? Math.round(totalRevenue / revenueOrders.length) : 0,
       conversionRate,
       todayOrders: todayOrders.length,
-      todayRevenue: todayOrders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.total, 0),
+      todayRevenue: todayOrders.filter((o) => revenueOrders.includes(o)).reduce((s, o) => s + o.total, 0),
       weekOrders: weekOrders.length,
       weekRevenue,
       prevWeekRevenue,

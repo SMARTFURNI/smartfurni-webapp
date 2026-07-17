@@ -5,11 +5,13 @@ import { getProductDashboardStats } from "@/lib/product-store";
 import { getSidebarStats } from "@/lib/sidebar-stats";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import DashboardClient from "@/components/admin/DashboardClient";
+import { initDbOnce } from "@/lib/db-init";
 
-export const metadata = { title: "Dashboard — SmartFurni Admin" };
+export const metadata = { title: "Dashboard" };
 
 export default async function AdminDashboardPage() {
   await requireAdmin();
+  await initDbOnce();
   const blogData = getDashboardStats();
   const orderData = getOrderDashboardStats();
   const productData = getProductDashboardStats();

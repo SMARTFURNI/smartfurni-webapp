@@ -8,7 +8,7 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import ThemeEditorClient from "@/components/admin/ThemeEditorClient";
 import { initDbOnce } from "@/lib/db-init";
 
-export const metadata = { title: "Chỉnh sửa giao diện | SmartFurni Admin" };
+export const metadata = { title: "Chỉnh sửa giao diện" };
 
 export default async function AppearancePage() {
   const cookieStore = await cookies();

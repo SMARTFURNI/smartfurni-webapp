@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTheme } from "@/lib/theme-store";
-import { BLOG_POSTS, getFeaturedPosts } from "@/lib/blog-data";
+import { getAllPosts } from "@/lib/admin-store";
+import { initDbOnce } from "@/lib/db-init";
 import BlogClient from "@/components/landing/BlogClient";
 import { absoluteUrl } from "@/lib/site-url";
 
@@ -18,10 +19,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  await initDbOnce();
   const theme = getTheme();
-  const featured = getFeaturedPosts();
-  const allPosts = BLOG_POSTS;
+  const allPosts = getAllPosts().filter((post) => post.status === "published" || !post.status);
+  const featured = allPosts.filter((post) => post.featured).slice(0, 3);
 
   return <BlogClient theme={theme} featured={featured} allPosts={allPosts} />;
 }

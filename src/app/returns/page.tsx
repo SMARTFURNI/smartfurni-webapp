@@ -38,9 +38,9 @@ export default function ReturnsPage() {
         {/* Key promises */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {[
-            { icon: "📅", title: "30 ngày dùng thử", desc: "Dùng thử tại nhà trong 30 ngày. Không hài lòng, đổi trả không câu hỏi." },
+            { icon: "📅", title: `${pageReturns.trialDays} ngày dùng thử`, desc: `Dùng thử tại nhà trong ${pageReturns.trialDays} ngày theo điều kiện chương trình.` },
             { icon: "🚚", title: "Miễn phí vận chuyển", desc: "SmartFurni chịu toàn bộ chi phí vận chuyển đổi trả, không trừ vào tiền hoàn." },
-            { icon: "💰", title: "Hoàn tiền 100%", desc: "Hoàn tiền đầy đủ trong 3–5 ngày làm việc qua phương thức thanh toán ban đầu." },
+            { icon: "💰", title: `${pageReturns.returnDays} ngày đổi trả`, desc: `Gửi yêu cầu đổi trả trong ${pageReturns.returnDays} ngày kể từ ngày nhận hàng.` },
           ].map((item) => (
             <div
               key={item.title}
@@ -58,13 +58,7 @@ export default function ReturnsPage() {
         <div style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-2xl border p-6 sm:p-8">
           <h2 className="text-xl font-light text-[#F5EDD6] mb-6">Điều kiện đổi trả</h2>
           <div className="space-y-3">
-            {[
-              "Yêu cầu đổi trả trong vòng 30 ngày kể từ ngày nhận hàng",
-              "Sản phẩm phải còn đầy đủ phụ kiện, hộp đựng và tài liệu đi kèm",
-              "Sản phẩm không bị hư hỏng do người dùng gây ra",
-              "Áp dụng cho tất cả sản phẩm giường SmartFurni (Basic, Pro, Elite)",
-              "Phụ kiện riêng lẻ (remote, đệm bổ sung) được đổi trả trong 14 ngày",
-            ].map((item, i) => (
+            {[pageReturns.condition1, pageReturns.condition2, pageReturns.condition3].map((item, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span style={{ color: "#C9A84C" }} className="mt-0.5 flex-shrink-0 text-sm">✓</span>
                 <p className="text-sm text-[#F5EDD6]/60 leading-relaxed">{item}</p>
@@ -75,10 +69,10 @@ export default function ReturnsPage() {
 
         {/* Process */}
         <div style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-2xl border p-6 sm:p-8">
-          <h2 className="text-xl font-light text-[#F5EDD6] mb-6">Quy trình đổi trả</h2>
+          <h2 className="text-xl font-light text-[#F5EDD6] mb-6">{pageReturns.processTitle}</h2>
           <div className="space-y-4">
             {[
-              { step: "01", title: "Liên hệ trong 30 ngày", desc: `Gọi ${pageReturns?.hotline ?? "1900 1234"} hoặc email ${pageReturns?.email ?? "returns@smartfurni.vn"} với mã đơn hàng và lý do đổi trả.` },
+              { step: "01", title: `Liên hệ trong ${pageReturns.returnDays} ngày`, desc: `Gọi ${pageReturns.hotline} hoặc email ${pageReturns.email} với mã đơn hàng và lý do đổi trả.` },
               { step: "02", title: "Xác nhận & lên lịch thu hàng", desc: "Đội hỗ trợ xác nhận yêu cầu và lên lịch thu hàng tại nhà bạn trong 1–2 ngày làm việc." },
               { step: "03", title: "Thu hàng miễn phí", desc: "Đội vận chuyển đến thu hàng, đóng gói và vận chuyển về kho — bạn không cần làm gì thêm." },
               { step: "04", title: "Hoàn tiền 3–5 ngày", desc: "Sau khi kiểm tra hàng, SmartFurni hoàn tiền đầy đủ trong 3–5 ngày làm việc." },

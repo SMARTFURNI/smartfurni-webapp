@@ -18,6 +18,12 @@ const CAT_CONFIG: Record<ProductCategory, { label: string; color: string; bg: st
   elite: { label: "Elite", color: "text-pink-400", bg: "bg-pink-500/10", border: "border-pink-500/20" },
   accessory: { label: "Phụ kiện", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
 };
+const FAMILY_LABELS: Record<string, string> = {
+  ergonomic_bed: "Giường công thái học",
+  electric_mattress: "Nệm thông minh điều chỉnh điện",
+  sofa_bed: "Sofa giường",
+  accessory: "Phụ kiện",
+};
 
 const STATUS_CONFIG: Record<ProductStatus, { label: string; color: string; bg: string; dot: string }> = {
   active: { label: "Đang bán", color: "text-green-400", bg: "bg-green-500/10", dot: "bg-green-400" },
@@ -139,7 +145,8 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
           </div>
         </td>
         <td className="px-4 py-3">
-          <span className={`text-xs px-2 py-0.5 rounded-full border ${cc.color} ${cc.bg} ${cc.border}`}>{cc.label}</span>
+          <div className="text-xs text-white">{FAMILY_LABELS[product.productFamily || ""] || "Chưa phân loại"}</div>
+          <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full border ${cc.color} ${cc.bg} ${cc.border}`}>{cc.label}</span>
         </td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-1.5">
@@ -208,7 +215,7 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
                 </div>
               </div>
               <div>
-                <p className="text-[rgba(245,237,214,0.45)] mb-2 font-medium">Tồn kho theo màu</p>
+                <p className="text-[rgba(245,237,214,0.45)] mb-2 font-medium">Tồn kho theo biến thể</p>
                 <div className="space-y-1">
                   {product.variants.map((v) => (
                     <div key={v.id} className="flex items-center justify-between">
@@ -220,6 +227,17 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
                     </div>
                   ))}
                 </div>
+                {product.purchaseOptions && product.purchaseOptions.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-white/5">
+                    <p className="text-[rgba(245,237,214,0.45)] mb-1 font-medium">Cấu hình mua</p>
+                    {product.purchaseOptions.map((option) => (
+                      <div key={option.id} className="flex justify-between gap-2 py-0.5">
+                        <span className="text-[rgba(245,237,214,0.70)]">{option.shortName || option.name}</span>
+                        <span className="text-[#C9A84C]">{option.price ? `${formatVND(option.price)}đ` : "Liên hệ"}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <p className="text-[rgba(245,237,214,0.45)] mb-2 font-medium">Thông số kỹ thuật</p>
@@ -590,7 +608,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
                   <thead>
                     <tr className="border-b border-[rgba(255,200,100,0.14)]">
                       <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Sản phẩm</th>
-                      <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Danh mục</th>
+                      <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Dòng / phân khúc</th>
                       <th className="px-4 py-3 text-left text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Trạng thái</th>
                       <th className="px-4 py-3 text-right text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Giá bán</th>
                       <th className="px-4 py-3 text-center text-xs text-[rgba(245,237,214,0.45)] font-medium uppercase tracking-wider">Tồn kho</th>

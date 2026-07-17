@@ -1,16 +1,43 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createHmac } from "crypto";
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 
 // ─── Admin Auth ───────────────────────────────────────────────────────────────
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD_DEFAULT = process.env.ADMIN_PASSWORD || "smartfurni2026";
-const SESSION_SECRET = process.env.SESSION_SECRET || "smartfurni-secret-key-2026";
+const ADMIN_PASSWORD_DEFAULT = process.env.ADMIN_PASSWORD || "";
+const SESSION_SECRET = process.env.SESSION_SECRET || "";
 const SESSION_COOKIE = "sf_admin_session";
 
 // ─── Staff Auth (JWT stateless — no DB session needed) ───────────────────────
 export const STAFF_SESSION_COOKIE = "sf_crm_staff_session";
-const STAFF_JWT_SECRET = process.env.SESSION_SECRET || "smartfurni-secret-key-2026";
+const STAFF_JWT_SECRET = process.env.SESSION_SECRET || "";
+
+function requireSecret(): string {
+  if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
+    throw new Error("SESSION_SECRET must be configured with at least 32 characters");
+  }
+  return SESSION_SECRET;
+}
+
+export function hashAdminPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `scrypt$${salt}$${hash}`;
+}
+
+export function verifyAdminPassword(password: string, stored: string): boolean {
+  if (!stored) return false;
+  if (!stored.startsWith("scrypt$")) {
+    const left = Buffer.from(password);
+    const right = Buffer.from(stored);
+    return left.length === right.length && timingSafeEqual(left, right);
+  }
+  const [, salt, expectedHex] = stored.split("$");
+  if (!salt || !expectedHex) return false;
+  const actual = scryptSync(password, salt, 64);
+  const expected = Buffer.from(expectedHex, "hex");
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
 
 export interface StaffJwtPayload {
   staffId: string;
@@ -26,6 +53,7 @@ export function createStaffJwt(staffId: string, role: string): string {
     exp: Date.now() + 8 * 60 * 60 * 1000, // 8 giờ
   };
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  if (!STAFF_JWT_SECRET || STAFF_JWT_SECRET.length < 32) requireSecret();
   const sig = createHmac("sha256", STAFF_JWT_SECRET).update(data).digest("hex");
   return `${data}.${sig}`;
 }
@@ -33,12 +61,15 @@ export function createStaffJwt(staffId: string, role: string): string {
 /** Verify JWT token cho staff — trả về payload hoặc null */
 export function verifyStaffJwt(token: string): StaffJwtPayload | null {
   try {
+    const secret = requireSecret();
     const dotIdx = token.lastIndexOf(".");
     if (dotIdx < 0) return null;
     const data = token.slice(0, dotIdx);
     const sig = token.slice(dotIdx + 1);
-    const expectedSig = createHmac("sha256", STAFF_JWT_SECRET).update(data).digest("hex");
-    if (sig !== expectedSig) return null;
+    const expectedSig = createHmac("sha256", secret).update(data).digest("hex");
+    const suppliedBuffer = Buffer.from(sig);
+    const expectedBuffer = Buffer.from(expectedSig);
+    if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) return null;
     const payload: StaffJwtPayload = JSON.parse(
       Buffer.from(data, "base64url").toString("utf-8")
     );
@@ -81,22 +112,31 @@ export async function getAdminDisplayName(): Promise<string> {
 
 export async function verifyCredentials(username: string, password: string): Promise<boolean> {
   const storedPassword = await getAdminPassword();
-  return username === ADMIN_USERNAME && password === storedPassword;
+  return username === ADMIN_USERNAME && verifyAdminPassword(password, storedPassword);
 }
 
 export function createSessionToken(): string {
+  const secret = requireSecret();
   const payload = {
     user: ADMIN_USERNAME,
     exp: Date.now() + 24 * 60 * 60 * 1000,
-    secret: SESSION_SECRET,
   };
-  return Buffer.from(JSON.stringify(payload)).toString("base64");
+  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = createHmac("sha256", secret).update(data).digest("base64url");
+  return `${data}.${signature}`;
 }
 
 export function verifySessionToken(token: string): boolean {
   try {
-    const payload = JSON.parse(Buffer.from(token, "base64").toString("utf-8"));
-    return payload.secret === SESSION_SECRET && payload.exp > Date.now();
+    const secret = requireSecret();
+    const separator = token.lastIndexOf(".");
+    if (separator < 1) return false;
+    const data = token.slice(0, separator);
+    const supplied = Buffer.from(token.slice(separator + 1), "base64url");
+    const expected = Buffer.from(createHmac("sha256", secret).update(data).digest("base64url"), "base64url");
+    if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return false;
+    const payload = JSON.parse(Buffer.from(data, "base64url").toString("utf-8"));
+    return payload.user === ADMIN_USERNAME && Number(payload.exp) > Date.now();
   } catch {
     return false;
   }

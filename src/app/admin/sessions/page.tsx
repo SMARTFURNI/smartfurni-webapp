@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { SessionsClient } from "@/components/admin/SessionsClient";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export const metadata: Metadata = {
   title: "Hành trình khách hàng | SmartFurni Admin",
@@ -7,6 +8,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function SessionsPage() {
+export default async function SessionsPage() {
+  await requireAdmin();
   return <SessionsClient />;
 }

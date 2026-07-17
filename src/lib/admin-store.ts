@@ -100,6 +100,13 @@ let contacts: ContactMessage[] = [...DEFAULT_CONTACTS];
 
 // Register DB loader for contacts
 registerDbLoader(async () => {
+  const persistedPosts = await dbLoadAll<BlogPost & { id?: string }>("posts");
+  if (persistedPosts && persistedPosts.length > 0) {
+    posts = persistedPosts.map(({ id: _id, ...post }) => post as BlogPost);
+  } else if (persistedPosts !== null) {
+    dbSaveAll("posts", BLOG_POSTS.map((post) => ({ ...post, id: post.slug })));
+  }
+
   const rows = await dbLoadAll<ContactMessage>("contacts");
   if (rows && rows.length > 0) {
     contacts = rows;
@@ -214,6 +221,7 @@ export function createPost(post: Omit<BlogPost, "slug"> & { slug?: string }): Bl
     .slice(0, 60);
   const newPost: BlogPost = { ...post, slug } as BlogPost;
   posts = [newPost, ...posts];
+  dbSaveOne("posts", { ...newPost, id: newPost.slug });
   addActivityLog({ type: "post_created", description: "Bài viết mới được tạo", meta: post.title.slice(0, 40) });
   return newPost;
 }
@@ -222,6 +230,7 @@ export function updatePost(slug: string, updates: Partial<BlogPost>): BlogPost |
   const idx = posts.findIndex((p) => p.slug === slug);
   if (idx === -1) return null;
   posts[idx] = { ...posts[idx], ...updates };
+  dbSaveOne("posts", { ...posts[idx], id: posts[idx].slug });
   if (updates.status === "scheduled") {
     addActivityLog({ type: "post_scheduled", description: "Bài viết được lên lịch đăng", meta: posts[idx].title.slice(0, 40) });
   } else {
@@ -235,6 +244,7 @@ export function deletePost(slug: string): boolean {
   const before = posts.length;
   posts = posts.filter((p) => p.slug !== slug);
   if (posts.length < before && post) {
+    dbDeleteOne("posts", slug);
     addActivityLog({ type: "post_deleted", description: "Bài viết đã bị xóa", meta: post.title.slice(0, 40) });
   }
   return posts.length < before;

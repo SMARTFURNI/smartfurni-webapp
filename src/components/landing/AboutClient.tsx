@@ -125,7 +125,7 @@ export default function AboutClient({ theme }: Props) {
               {/* Section label — giống trang chủ */}
               <div className="inline-flex items-center gap-2 mb-5">
                 <span className="w-6 h-px bg-[#C9A84C]" />
-                <span className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase">{theme.pageAbout.missionTitle}</span>
+                <span className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase">{theme.pageAbout.visionTitle}</span>
               </div>
               {/* H2 — font-light giống FeaturesSection trang chủ */}
               <h2 className="text-3xl sm:text-4xl font-light text-[#F5EDD6] mb-6"
@@ -134,6 +134,10 @@ export default function AboutClient({ theme }: Props) {
               <p className="text-[#F5EDD6]/50 leading-relaxed">
                 {theme.pageAbout.missionText}
               </p>
+              <div className="mt-6 border-l border-[#C9A84C]/40 pl-4">
+                <h3 className="mb-2 text-sm font-semibold text-[#C9A84C]">{theme.pageAbout.visionTitle}</h3>
+                <p className="text-sm leading-relaxed text-[#F5EDD6]/50">{theme.pageAbout.visionText}</p>
+              </div>
             </div>
           </ScrollReveal>
           <StaggerReveal baseDelay={100} step={100} variant="fadeUp" className="grid grid-cols-2 gap-3 sm:gap-4">

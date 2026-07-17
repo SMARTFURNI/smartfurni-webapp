@@ -5,11 +5,13 @@ import { getSidebarStats } from "@/lib/sidebar-stats";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import UserFormClient from "@/components/admin/UserFormClient";
+import { initDbOnce } from "@/lib/db-init";
 
 export const metadata = { title: "Chỉnh sửa khách hàng" };
 
 export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
+  await initDbOnce();
   const { id } = await params;
   const user = getUserById(id);
   if (!user) notFound();

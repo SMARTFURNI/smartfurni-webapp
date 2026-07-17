@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Order, OrderStatus, PaymentMethod, PaymentStatus } from "@/lib/order-store";
 
@@ -118,13 +118,6 @@ export default function OrderFormClient({ order }: { order?: Order }) {
   const discount = parseVND(discountStr);
   const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
   const total = subtotal + shippingFee - discount;
-
-  // Auto-set paymentStatus to paid when status is delivered
-  useEffect(() => {
-    if (status === "delivered" && paymentStatus === "unpaid") {
-      setPaymentStatus("paid");
-    }
-  }, [status, paymentStatus]);
 
   function addItem() {
     setItems((prev) => [...prev, { productId: "", productName: "", variant: "", sku: "", quantity: 1, unitPrice: 0 }]);

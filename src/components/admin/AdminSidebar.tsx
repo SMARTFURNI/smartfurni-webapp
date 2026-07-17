@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
 interface SidebarStats {
@@ -42,9 +42,6 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Catalogue B2B",
         icon: "📋",
         exact: false,
-        subItems: [
-          { href: "/admin/catalogue", label: "Danh sách catalogue" },
-        ],
       },
       {
         href: "/admin/posts",
@@ -64,7 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
         icon: "◧",
         exact: false,
         subItems: [
-          { href: "/lp/doi-tac-showroom-nem", label: "Đối tác Showroom Nệm" },
+          { href: "/admin/landing-pages", label: "Quản lý landing page" },
           { href: "/admin/landing-pages/leads", label: "Leads đăng ký" },
         ],
       },
@@ -78,13 +75,6 @@ const NAV_GROUPS: NavGroup[] = [
         label: "CRM B2B",
         icon: "◈",
         exact: false,
-        subItems: [
-          { href: "/crm", label: "Dashboard" },
-          { href: "/crm/kanban", label: "Kanban Board" },
-          { href: "/crm/leads", label: "Danh sách KH" },
-          { href: "/crm/quotes", label: "Báo giá" },
-          { href: "/crm/products", label: "Sản phẩm CRM" },
-        ],
       },
       {
         href: "/admin/products",
@@ -116,29 +106,17 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Khách hàng",
     items: [
       {
-        href: "/admin/contacts",
-        label: "Liên hệ",
+        href: "/crm/data-pool",
+        label: "Khách hàng tiềm năng",
         icon: "◉",
         exact: false,
-        badgeKey: "unreadContacts",
-        badgeColor: "bg-red-500",
-      },
-      {
-        href: "/admin/users",
-        label: "Người dùng",
-        icon: "◎",
-        exact: false,
-        subItems: [
-          { href: "/admin/users/new", label: "Thêm khách hàng" },
-          { href: "/admin/users", label: "Danh sách" },
-        ],
       },
     ],
   },
   {
     label: "Hệ thống",
     items: [
-      { href: "/admin/homepage-products", label: "Sản phẩm trang chủ", icon: "⌂", exact: false },
+      { href: "/admin/homepage-products", label: "Sắp xếp SP trang chủ", icon: "⌂", exact: false },
       { href: "/admin/appearance", label: "Giao diện", icon: "◐", exact: false },
       { href: "/admin/settings", label: "Cài đặt", icon: "◌", exact: false },
     ],
@@ -147,7 +125,6 @@ const NAV_GROUPS: NavGroup[] = [
 
 export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -185,7 +162,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
     );
   }
 
-  const totalAlerts = (stats.unreadContacts || 0) + (stats.pendingOrders || 0) + (stats.lowStockProducts || 0);
+  const totalAlerts = (stats.pendingOrders || 0) + (stats.lowStockProducts || 0);
 
   return (
     <aside

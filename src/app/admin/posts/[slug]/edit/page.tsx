@@ -5,11 +5,13 @@ import { getSidebarStats } from "@/lib/sidebar-stats";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import PostEditor from "@/components/admin/PostEditor";
+import { initDbOnce } from "@/lib/db-init";
 
 export const metadata = { title: "Chỉnh sửa bài viết" };
 
 export default async function EditPostPage({ params }: { params: Promise<{ slug: string }> }) {
   await requireAdmin();
+  await initDbOnce();
   const { slug } = await params;
   const post = getPostById(slug);
   if (!post) notFound();

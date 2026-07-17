@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAllPosts } from "@/lib/admin-store";
 import { getSidebarStats } from "@/lib/sidebar-stats";
+import { initDbOnce } from "@/lib/db-init";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import AdminPostsClient from "@/components/admin/AdminPostsClient";
@@ -9,6 +10,7 @@ export const metadata = { title: "Bài viết" };
 
 export default async function AdminPostsPage() {
   await requireAdmin();
+  await initDbOnce();
   const posts = getAllPosts();
   const sidebarStats = getSidebarStats();
 

@@ -12,6 +12,7 @@ import {
 } from "./db-store";
 import { registerDbLoader } from "./db-init";
 import { applyElectricMattressPositioning, HOMEPAGE_MATTRESS_PRODUCTS } from "./homepage-mattress-products";
+import { getAllOrders } from "./order-store";
 
 export type ProductStatus = "active" | "discontinued" | "out_of_stock" | "coming_soon";
 export type ProductCategory = "standard" | "premium" | "elite" | "accessory";
@@ -790,9 +791,21 @@ export function deleteProduct(id: string): boolean {
 
 export function getProductDashboardStats(): ProductDashboardStats {
   const activeProducts = products.filter((p) => p.status === "active");
-  const totalRevenue = products.reduce((s, p) => s + p.totalRevenue, 0);
-  const totalProfit = products.reduce((s, p) => s + (p.price - p.cost) * p.totalSold, 0);
-  const totalSold = products.reduce((s, p) => s + p.totalSold, 0);
+  const paidOrders = getAllOrders().filter((order) => order.paymentStatus === "paid" && order.status !== "cancelled" && order.status !== "refunded");
+  const salesByProduct = new Map<string, { units: number; revenue: number; profit: number }>();
+  for (const order of paidOrders) {
+    for (const item of order.items) {
+      const product = products.find((candidate) => candidate.id === item.productId);
+      const current = salesByProduct.get(item.productId) || { units: 0, revenue: 0, profit: 0 };
+      current.units += item.quantity;
+      current.revenue += item.totalPrice;
+      current.profit += product ? (item.unitPrice - product.cost) * item.quantity : 0;
+      salesByProduct.set(item.productId, current);
+    }
+  }
+  const totalRevenue = [...salesByProduct.values()].reduce((sum, item) => sum + item.revenue, 0);
+  const totalProfit = [...salesByProduct.values()].reduce((sum, item) => sum + item.profit, 0);
+  const totalSold = [...salesByProduct.values()].reduce((sum, item) => sum + item.units, 0);
   const totalStock = products.reduce((s, p) => s + p.totalStock, 0);
   const ratedProducts = products.filter((p) => p.reviewCount > 0);
   const avgRating = ratedProducts.length > 0
@@ -810,7 +823,7 @@ export function getProductDashboardStats(): ProductDashboardStats {
   products.forEach((p) => {
     if (!catMap[p.category]) catMap[p.category] = { count: 0, revenue: 0 };
     catMap[p.category].count++;
-    catMap[p.category].revenue += p.totalRevenue;
+    catMap[p.category].revenue += salesByProduct.get(p.id)?.revenue || 0;
   });
   const productsByCategory = Object.entries(catMap).map(([cat, v]) => ({
     category: cat,
@@ -822,12 +835,12 @@ export function getProductDashboardStats(): ProductDashboardStats {
 
   // Revenue by month (aggregate all products, last 6 months)
   const monthMap: Record<string, { revenue: number; units: number; label: string }> = {};
-  products.forEach((p) => {
-    p.monthlySales.forEach((ms) => {
-      if (!monthMap[ms.month]) monthMap[ms.month] = { revenue: 0, units: 0, label: ms.label };
-      monthMap[ms.month].revenue += ms.revenue;
-      monthMap[ms.month].units += ms.units;
-    });
+  paidOrders.forEach((order) => {
+    const date = new Date(order.createdAt);
+    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    if (!monthMap[month]) monthMap[month] = { revenue: 0, units: 0, label: `Th ${date.getMonth() + 1}` };
+    monthMap[month].revenue += order.total;
+    monthMap[month].units += order.items.reduce((sum, item) => sum + item.quantity, 0);
   });
   const revenueByMonth = Object.entries(monthMap)
     .sort((a, b) => a[0].localeCompare(b[0]))
@@ -836,11 +849,11 @@ export function getProductDashboardStats(): ProductDashboardStats {
 
   // Top selling
   const topSellingProducts = [...products]
-    .filter((p) => p.totalSold > 0)
-    .sort((a, b) => b.totalRevenue - a.totalRevenue)
+    .filter((p) => (salesByProduct.get(p.id)?.units || 0) > 0)
+    .sort((a, b) => (salesByProduct.get(b.id)?.revenue || 0) - (salesByProduct.get(a.id)?.revenue || 0))
     .slice(0, 5)
     .map((p) => ({
-      id: p.id, name: p.name, totalSold: p.totalSold, totalRevenue: p.totalRevenue,
+      id: p.id, name: p.name, totalSold: salesByProduct.get(p.id)?.units || 0, totalRevenue: salesByProduct.get(p.id)?.revenue || 0,
       rating: p.rating, category: p.category, status: p.status,
     }));
 
@@ -864,14 +877,8 @@ export function getProductDashboardStats(): ProductDashboardStats {
 
   // Recent activity
   const recentActivity = [
-    { type: "stock", message: "Nhập kho SmartFurni Pro — +20 units", time: "1 giờ trước", icon: "📦" },
-    { type: "review", message: "Đánh giá mới 5⭐ cho SmartFurni Elite", time: "3 giờ trước", icon: "⭐" },
-    { type: "order", message: "SmartFurni Pro 2026 nhận 15 đơn đặt trước", time: "5 giờ trước", icon: "🛒" },
-    { type: "stock", message: "Bộ Phụ Kiện hết hàng — cần nhập thêm", time: "1 ngày trước", icon: "⚠️" },
-    { type: "price", message: "Cập nhật giá SmartFurni Basic — giảm 8%", time: "2 ngày trước", icon: "💰" },
-    { type: "product", message: "SmartFurni Pro 2026 được thêm vào danh sách", time: "3 ngày trước", icon: "✨" },
-    { type: "review", message: "Đánh giá mới 4⭐ cho Nệm Memory Foam", time: "4 ngày trước", icon: "⭐" },
-    { type: "stock", message: "Nhập kho Nệm Memory Foam — +15 units", time: "5 ngày trước", icon: "📦" },
+    ...paidOrders.slice(0, 5).map((order) => ({ type: "order", message: `${order.orderNumber} đã thanh toán — ${order.items.length} dòng sản phẩm`, time: new Date(order.updatedAt).toLocaleDateString("vi-VN"), icon: "🛒" })),
+    ...lowStockProducts.slice(0, 3).map((product) => ({ type: "stock", message: `${product.name} còn ${product.totalStock} sản phẩm`, time: "Cần kiểm tra tồn kho", icon: "⚠️" })),
   ];
 
   return {

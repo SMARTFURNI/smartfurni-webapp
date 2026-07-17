@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { getUserDashboardStats } from "@/lib/user-store";
 import { getSidebarStats } from "@/lib/sidebar-stats";
+import { initDbOnce } from "@/lib/db-init";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import UserDashboardClient from "@/components/admin/UserDashboardClient";
@@ -9,6 +10,7 @@ export const metadata = { title: "Người dùng" };
 
 export default async function AdminUsersPage() {
   await requireAdmin();
+  await initDbOnce();
   const dashboardData = getUserDashboardStats();
   const sidebarStats = getSidebarStats();
 

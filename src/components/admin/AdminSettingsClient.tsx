@@ -9,11 +9,12 @@ interface SettingSection {
 
 const SECTIONS: SettingSection[] = [
   { id: "account", title: "Tài khoản", icon: "👤" },
-  { id: "website", title: "Website", icon: "🌐" },
-  { id: "seo", title: "SEO", icon: "🔍" },
   { id: "email", title: "Email thông báo", icon: "📧" },
+  { id: "integrations", title: "Tích hợp hệ thống", icon: "🔌" },
   { id: "security", title: "Bảo mật", icon: "🔐" },
 ];
+
+type SystemStatus = Record<"database" | "githubMedia" | "resend" | "smtp" | "zalo" | "sessionSecret", boolean>;
 
 export default function AdminSettingsClient() {
   const [activeSection, setActiveSection] = useState("account");
@@ -29,19 +30,7 @@ export default function AdminSettingsClient() {
       .catch(() => {});
   }, []);
 
-  // Website settings state
-  const [siteName, setSiteName] = useState("SmartFurni");
-  const [siteTagline, setSiteTagline] = useState("Giường thông minh cho cuộc sống hiện đại");
-  const [contactEmail, setContactEmail] = useState("info@smartfurni.vn");
-  const [contactPhone, setContactPhone] = useState("1800 6789");
-  const [facebookUrl, setFacebookUrl] = useState("https://facebook.com/smartfurni");
-  const [instagramUrl, setInstagramUrl] = useState("https://instagram.com/smartfurni");
-
-  // SEO settings
-  const [metaTitle, setMetaTitle] = useState("SmartFurni - Giường Thông Minh Cao Cấp");
-  const [metaDesc, setMetaDesc] = useState("SmartFurni cung cấp giường thông minh công thái học với điều khiển qua app, hỗ trợ giấc ngủ khoa học cho mọi gia đình Việt Nam.");
-  const [googleAnalytics, setGoogleAnalytics] = useState("");
-
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   // Email SMTP settings
   const [smtpHost, setSmtpHost] = useState("");
   const [smtpPort, setSmtpPort] = useState("587");
@@ -51,6 +40,25 @@ export default function AdminSettingsClient() {
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/email-settings")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.error) return;
+        setSmtpHost(d.smtpHost || "");
+        setSmtpPort(d.smtpPort || "587");
+        setSmtpUser(d.smtpUser || "");
+        setSmtpPass(d.smtpPass || "");
+        setAdminEmail(d.adminEmail || "");
+        setEmailEnabled(Boolean(d.enabled));
+      })
+      .catch(() => {});
+    fetch("/api/admin/system-status")
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setSystemStatus(d); })
+      .catch(() => {});
+  }, []);
 
   async function handleTestEmail() {
     setTestingEmail(true);
@@ -72,13 +80,20 @@ export default function AdminSettingsClient() {
   }
 
   async function handleSaveEmail() {
-    await fetch("/api/admin/email-settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ smtpHost, smtpPort, smtpUser, smtpPass, adminEmail, enabled: emailEnabled }),
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setTestResult(null);
+    try {
+      const response = await fetch("/api/admin/email-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ smtpHost, smtpPort, smtpUser, smtpPass, adminEmail, enabled: emailEnabled }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Không thể lưu cấu hình");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (error) {
+      setTestResult({ ok: false, msg: error instanceof Error ? error.message : "Không thể lưu cấu hình" });
+    }
   }
 
   // Account settings
@@ -87,11 +102,6 @@ export default function AdminSettingsClient() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
-
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  }
 
   async function handleUpdateProfile() {
     if (!displayName.trim()) {
@@ -281,137 +291,6 @@ export default function AdminSettingsClient() {
             </div>
           )}
 
-          {/* Website Section */}
-          {activeSection === "website" && (
-            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-white">Thông Tin Website</h2>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Tên thương hiệu</label>
-                  <input
-                    type="text"
-                    value={siteName}
-                    onChange={(e) => setSiteName(e.target.value)}
-                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Email liên hệ</label>
-                  <input
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Tagline</label>
-                <input
-                  type="text"
-                  value={siteTagline}
-                  onChange={(e) => setSiteTagline(e.target.value)}
-                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
-                />
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Số điện thoại</label>
-                  <input
-                    type="text"
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Facebook URL</label>
-                  <input
-                    type="url"
-                    value={facebookUrl}
-                    onChange={(e) => setFacebookUrl(e.target.value)}
-                    className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Instagram URL</label>
-                <input
-                  type="url"
-                  value={instagramUrl}
-                  onChange={(e) => setInstagramUrl(e.target.value)}
-                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
-                />
-              </div>
-
-              <button
-                onClick={handleSave}
-                className="bg-[#C9A84C] text-[#0D0B00] px-5 py-2 rounded-xl font-semibold text-sm hover:bg-[#E2C97E] transition-colors"
-              >
-                Lưu thay đổi
-              </button>
-            </div>
-          )}
-
-          {/* SEO Section */}
-          {activeSection === "seo" && (
-            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-white">Cài Đặt SEO</h2>
-
-              <div>
-                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Meta Title (trang chủ)</label>
-                <input
-                  type="text"
-                  value={metaTitle}
-                  onChange={(e) => setMetaTitle(e.target.value)}
-                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40"
-                />
-                <p className="text-xs text-[rgba(245,237,214,0.35)] mt-1">{metaTitle.length}/60 ký tự</p>
-              </div>
-
-              <div>
-                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Meta Description</label>
-                <textarea
-                  value={metaDesc}
-                  onChange={(e) => setMetaDesc(e.target.value)}
-                  rows={3}
-                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40 resize-none"
-                />
-                <p className="text-xs text-[rgba(245,237,214,0.35)] mt-1">{metaDesc.length}/160 ký tự</p>
-              </div>
-
-              <div>
-                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Google Analytics ID (tùy chọn)</label>
-                <input
-                  type="text"
-                  value={googleAnalytics}
-                  onChange={(e) => setGoogleAnalytics(e.target.value)}
-                  placeholder="G-XXXXXXXXXX"
-                  className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-[#C9A84C]/40"
-                />
-              </div>
-
-              {/* SEO Preview */}
-              <div className="bg-[#1a1200] rounded-xl p-4 border border-[rgba(255,200,100,0.14)]">
-                <p className="text-xs text-[rgba(245,237,214,0.45)] mb-2">Xem trước kết quả tìm kiếm Google:</p>
-                <p className="text-blue-400 text-sm">{metaTitle || "Tiêu đề trang"}</p>
-                <p className="text-green-600 text-xs">https://www.smartfurni.com.vn</p>
-                <p className="text-[rgba(245,237,214,0.70)] text-xs mt-1 line-clamp-2">{metaDesc || "Mô tả trang..."}</p>
-              </div>
-
-              <button
-                onClick={handleSave}
-                className="bg-[#C9A84C] text-[#0D0B00] px-5 py-2 rounded-xl font-semibold text-sm hover:bg-[#E2C97E] transition-colors"
-              >
-                Lưu cài đặt SEO
-              </button>
-            </div>
-          )}
-
           {/* Email Section */}
           {activeSection === "email" && (
             <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-5">
@@ -431,8 +310,7 @@ export default function AdminSettingsClient() {
               <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
                 <p className="text-blue-400 text-sm font-medium mb-1">📧 Cách hoạt động</p>
                 <p className="text-[rgba(245,237,214,0.55)] text-xs leading-relaxed">
-                  Khi khách hàng gửi form liên hệ, hệ thống sẽ tự động gửi email thông báo đến địa chỉ admin.
-                  Cần cấu hình SMTP server để tính năng này hoạt động.
+                  Form website được lưu vào CRM và ưu tiên gửi thông báo qua Resend. SMTP là kênh kiểm tra/gửi bổ sung khi bạn cần dùng máy chủ email riêng.
                 </p>
               </div>
 
@@ -530,6 +408,39 @@ export default function AdminSettingsClient() {
             </div>
           )}
 
+          {activeSection === "integrations" && (
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-5">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Trạng thái tích hợp</h2>
+                <p className="text-xs text-[rgba(245,237,214,0.55)] mt-1">Chỉ hiển thị trạng thái cấu hình, không công khai khóa bí mật.</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {[
+                  ["database", "PostgreSQL", "Dữ liệu sản phẩm, đơn hàng và cấu hình"],
+                  ["githubMedia", "GitHub Media", "Lưu ảnh đã tối ưu của website"],
+                  ["resend", "Resend", "Email thông báo khách hàng tiềm năng"],
+                  ["smtp", "SMTP", "Kênh email dự phòng"],
+                  ["zalo", "Zalo OA", "Thông báo và đồng bộ Zalo"],
+                  ["sessionSecret", "Bảo mật phiên", "Khóa ký phiên tối thiểu 32 ký tự"],
+                ].map(([key, label, description]) => {
+                  const ok = systemStatus?.[key as keyof SystemStatus];
+                  return (
+                    <div key={key} className="p-4 rounded-xl border border-[rgba(255,200,100,0.14)] bg-black/15 flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-white">{label}</p>
+                        <p className="text-xs text-[rgba(245,237,214,0.50)] mt-1">{description}</p>
+                      </div>
+                      <span className={`text-[11px] px-2 py-1 rounded-full border ${ok ? "text-green-400 border-green-400/25 bg-green-400/10" : "text-yellow-300 border-yellow-300/25 bg-yellow-300/10"}`}>
+                        {ok ? "Đã kết nối" : "Chưa cấu hình"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-[rgba(245,237,214,0.45)]">Các khóa bí mật được quản lý bằng biến môi trường Railway. Cấu hình nghiệp vụ CRM và Google Sheets tiếp tục được quản lý trong module CRM.</p>
+            </div>
+          )}
+
           {/* Security Section */}
           {activeSection === "security" && (
             <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-4">
@@ -546,25 +457,23 @@ export default function AdminSettingsClient() {
 
                 <div className="flex items-center justify-between p-4 bg-[#1a1200] rounded-xl">
                   <div>
-                    <p className="text-sm text-white">Bảo vệ CSRF</p>
-                    <p className="text-xs text-[rgba(245,237,214,0.55)]">Chống tấn công Cross-Site Request Forgery</p>
+                    <p className="text-sm text-white">Cookie phiên an toàn</p>
+                    <p className="text-xs text-[rgba(245,237,214,0.55)]">HttpOnly, SameSite=Lax và chỉ truyền qua HTTPS trong production</p>
                   </div>
                   <span className="text-green-400 text-xs bg-green-400/10 border border-green-400/20 px-2 py-1 rounded-full">Đang hoạt động</span>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-[#1a1200] rounded-xl">
                   <div>
-                    <p className="text-sm text-white">Mã hóa mật khẩu</p>
-                    <p className="text-xs text-[rgba(245,237,214,0.55)]">Session token được mã hóa Base64</p>
+                    <p className="text-sm text-white">Mật khẩu và chữ ký phiên</p>
+                    <p className="text-xs text-[rgba(245,237,214,0.55)]">Mật khẩu mới dùng scrypt; token phiên được ký HMAC-SHA256</p>
                   </div>
                   <span className="text-green-400 text-xs bg-green-400/10 border border-green-400/20 px-2 py-1 rounded-full">Đang hoạt động</span>
                 </div>
 
-                <div className="p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
-                  <p className="text-yellow-400 text-sm font-medium mb-1">⚠️ Lưu ý bảo mật</p>
-                  <p className="text-[rgba(245,237,214,0.55)] text-xs">
-                    Đây là môi trường demo. Trong production, hãy sử dụng biến môi trường cho thông tin đăng nhập và triển khai HTTPS.
-                  </p>
+                <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                  <p className="text-blue-300 text-sm font-medium mb-1">Bảo mật môi trường production</p>
+                  <p className="text-[rgba(245,237,214,0.55)] text-xs">Khóa phiên và mật khẩu gốc phải được quản lý trong Railway. Không lưu khóa bí mật trong mã nguồn hoặc phần giao diện.</p>
                 </div>
               </div>
             </div>

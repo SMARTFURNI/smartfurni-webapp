@@ -69,7 +69,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm bài viết, chủ đề, tác giả..."
+              placeholder={theme.pageBlog.searchPlaceholder}
               className="w-full bg-[#1A1600] border border-[#2E2800] rounded-2xl pl-11 pr-10 py-3.5 text-[#F5EDD6] placeholder-[#F5EDD6]/25 focus:outline-none focus:border-[#C9A84C]/60 text-sm transition-colors"
             />
             {searchQuery && (
@@ -94,7 +94,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
             <div className="flex items-center gap-3 mb-6 sm:mb-8">
               <span className="w-6 h-px bg-[#C9A84C]" />
               <h2 className="text-xl sm:text-2xl font-light text-[#F5EDD6]">
-                Bài viết <span className="text-gold-gradient">nổi bật</span>
+                {theme.pageBlog.featuredTitle}
               </h2>
             </div>
             </ScrollReveal>
@@ -169,7 +169,7 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
                   ? <><span className="text-gold-gradient">Kết quả</span> tìm kiếm</>
                   : activeCategory
                   ? <span className="text-gold-gradient">{CATEGORIES[activeCategory]?.label}</span>
-                  : <>Tất cả <span className="text-gold-gradient">bài viết</span></>
+                  : <>{theme.pageBlog.allPostsTitle}</>
                 }
               </h2>
             </div>
@@ -289,14 +289,14 @@ export default function BlogClient({ theme, featured, allPosts }: Props) {
         <section className="mt-12 sm:mt-16 bg-[#1A1600] border border-[#2E2800] rounded-2xl p-6 sm:p-8 text-center">
           <div className="inline-flex items-center gap-2 mb-4">
             <span className="w-6 h-px bg-[#C9A84C]" />
-            <span className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase">Newsletter</span>
+            <span className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase">Bản tin</span>
             <span className="w-6 h-px bg-[#C9A84C]" />
           </div>
           <h3 className="text-xl sm:text-2xl font-light text-[#F5EDD6] mb-2">
-            Nhận bài viết <span className="text-gold-gradient">mới nhất</span>
+            {theme.pageBlog.newsletterTitle}
           </h3>
           <p className="text-[#F5EDD6]/40 mb-5 sm:mb-6 text-sm sm:text-base leading-relaxed">
-            Đăng ký để nhận tips giấc ngủ và cập nhật sản phẩm mỗi tuần.
+            {theme.pageBlog.newsletterSubtitle}
           </p>
           <div className="flex flex-col sm:flex-row max-w-md mx-auto gap-3">
             <input

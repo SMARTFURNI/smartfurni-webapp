@@ -1,21 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { dbGetSetting, dbSaveSetting } from "@/lib/db-store";
 
-// In-memory email settings (resets on restart; use env vars for persistence)
-let emailSettings = {
+type EmailSettings = {
+  smtpHost: string;
+  smtpPort: string;
+  smtpUser: string;
+  adminEmail: string;
+  enabled: boolean;
+};
+
+const defaultEmailSettings: EmailSettings = {
   smtpHost: process.env.SMTP_HOST || "",
   smtpPort: process.env.SMTP_PORT || "587",
   smtpUser: process.env.SMTP_USER || "",
-  smtpPass: process.env.SMTP_PASS ? "••••••••" : "",
   adminEmail: process.env.ADMIN_EMAIL || process.env.SMTP_USER || "",
-  enabled: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
+  enabled: Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD)),
 };
+
+async function getSettings(): Promise<EmailSettings> {
+  return { ...defaultEmailSettings, ...(await dbGetSetting<Partial<EmailSettings>>("admin_email_settings")) };
+}
 
 export async function GET() {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  // Don't expose password
-  return NextResponse.json({ ...emailSettings, smtpPass: emailSettings.smtpPass ? "••••••••" : "" });
+  const settings = await getSettings();
+  return NextResponse.json({ ...settings, smtpPass: (process.env.SMTP_PASS || process.env.SMTP_PASSWORD) ? "••••••••" : "" });
 }
 
 export async function POST(req: NextRequest) {
@@ -23,6 +34,7 @@ export async function POST(req: NextRequest) {
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
+  const emailSettings = await getSettings();
 
   // Test connection if requested
   if (body.action === "test") {
@@ -37,7 +49,7 @@ export async function POST(req: NextRequest) {
         secure: parseInt(body.smtpPort || emailSettings.smtpPort) === 465,
         auth: {
           user: body.smtpUser || emailSettings.smtpUser,
-          pass: body.smtpPass && body.smtpPass !== "••••••••" ? body.smtpPass : process.env.SMTP_PASS || "",
+          pass: body.smtpPass && body.smtpPass !== "••••••••" ? body.smtpPass : process.env.SMTP_PASS || process.env.SMTP_PASSWORD || "",
         },
       });
       await transporter.verify();
@@ -48,15 +60,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Save settings
-  emailSettings = {
+  const next: EmailSettings = {
     smtpHost: body.smtpHost ?? emailSettings.smtpHost,
     smtpPort: body.smtpPort ?? emailSettings.smtpPort,
     smtpUser: body.smtpUser ?? emailSettings.smtpUser,
-    smtpPass: body.smtpPass && body.smtpPass !== "••••••••" ? body.smtpPass : emailSettings.smtpPass,
     adminEmail: body.adminEmail ?? emailSettings.adminEmail,
     enabled: body.enabled ?? emailSettings.enabled,
   };
+  await dbSaveSetting("admin_email_settings", next);
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, passwordManagedByEnvironment: true });
 }

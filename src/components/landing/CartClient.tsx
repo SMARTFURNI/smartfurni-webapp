@@ -21,7 +21,7 @@ function formatPrice(price: number) {
 const SHIPPING_FEE = 0; // Free shipping
 
 export default function CartClient({ theme, upsellProducts = [] }: Props) {
-  const { colors, layout } = theme;
+  const { colors, layout, pageCart } = theme;
   const router = useRouter();
   const { items, totalItems, subtotal, removeItem, updateQuantity, clearCart } = useCart();
 
@@ -50,10 +50,10 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
           </svg>
         </div>
         <h1 className="text-2xl font-light text-[#F5EDD6] mb-3">
-          Giỏ hàng <span className="text-gold-gradient">trống</span>
+          {pageCart.emptyTitle}
         </h1>
         <p className="text-sm text-[#F5EDD6]/50 mb-8 leading-relaxed">
-          Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá các sản phẩm của chúng tôi!
+          {pageCart.emptySubtitle}
         </p>
         <Link
           href="/products"
@@ -72,7 +72,7 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
             <div className="flex items-center gap-3 mb-6">
               <span className="w-6 h-px bg-[#C9A84C]" />
               <h2 className="text-lg font-light text-[#F5EDD6]">
-                Sản phẩm <span style={{ color: colors.primary }}>gợi ý</span>
+                {pageCart.upsellTitle}
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -132,7 +132,7 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
           <div className="flex items-center gap-3">
             <span className="w-6 h-px bg-[#C9A84C]" />
             <h1 className="text-2xl font-light text-[#F5EDD6]">
-              Giỏ <span className="text-gold-gradient">hàng</span>
+              {pageCart.title}
             </h1>
           </div>
           <p className="text-sm text-[#F5EDD6]/40 mt-1">
@@ -345,7 +345,7 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
             <div className="flex items-center gap-2 mb-5">
               <span className="w-5 h-px bg-[#C9A84C]" />
               <h2 className="font-semibold text-[#F5EDD6] text-base">
-                Tóm tắt đơn hàng
+                {pageCart.summaryTitle}
               </h2>
             </div>
 
@@ -403,15 +403,15 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
               }}
               className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90"
             >
-              Tiến hành đặt hàng →
+              {pageCart.checkoutButton} →
             </button>
 
             {/* Trust badges */}
             <div className="mt-5 flex flex-col gap-2">
               {[
-                { icon: "lock", text: "Thanh toán bảo mật 100%" },
-                { icon: "truck", text: "Giao hàng miễn phí toàn quốc" },
-                { icon: "refresh", text: "Đổi trả trong 30 ngày" },
+                { icon: "lock", text: pageCart.trustBadge1 },
+                { icon: "truck", text: pageCart.trustBadge2 },
+                { icon: "refresh", text: pageCart.trustBadge3 },
               ].map((badge, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <SvgIcon name={badge.icon} size={14} color="#C9A84C" strokeWidth={1.5} />

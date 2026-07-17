@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getAllUsers, getUserDashboardStats, createUser } from "@/lib/user-store";
 import type { UserRole, UserStatus, UserSource } from "@/lib/user-store";
+import { initDbOnce } from "@/lib/db-init";
 
 export async function GET(request: NextRequest) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await initDbOnce();
 
   const { searchParams } = new URL(request.url);
   const mode = searchParams.get("mode");
@@ -40,6 +42,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await initDbOnce();
 
   try {
     const body = await request.json();

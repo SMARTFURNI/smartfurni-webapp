@@ -46,20 +46,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify current password
-    const { verifyCredentials } = await import("@/lib/admin-auth");
+    const { verifyCredentials, hashAdminPassword } = await import("@/lib/admin-auth");
     // Get stored username
     const usernameRow = await query<{ value: string }>(
       "SELECT value FROM admin_profile WHERE key = 'username'"
     );
     const username = usernameRow[0]?.value || process.env.ADMIN_USERNAME || "admin";
 
-    // Get stored password (from DB or env)
-    const passwordRow = await query<{ value: string }>(
-      "SELECT value FROM admin_profile WHERE key = 'password'"
-    );
-    const storedPassword = passwordRow[0]?.value || process.env.ADMIN_PASSWORD || "smartfurni2026";
-
-    if (currentPassword !== storedPassword) {
+    if (!(await verifyCredentials(username, currentPassword))) {
       return NextResponse.json({ error: "Mật khẩu hiện tại không đúng" }, { status: 401 });
     }
 
@@ -67,7 +61,7 @@ export async function POST(req: NextRequest) {
     await query(
       `INSERT INTO admin_profile (key, value, updated_at) VALUES ('password', $1, NOW())
        ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()`,
-      [newPassword]
+      [hashAdminPassword(newPassword)]
     );
 
     return NextResponse.json({ success: true, message: "Đã cập nhật mật khẩu thành công" });
