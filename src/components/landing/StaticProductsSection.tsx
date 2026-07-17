@@ -27,7 +27,7 @@ function formatPrice(price: number) {
 }
 
 // ─── Product Card — giống hệt landing page ───────────────────────────────────
-function ProductCard({ product, index }: { product: Product; index: number }) {
+export function StaticProductCard({ product, index }: { product: Product; index: number }) {
   const [hovered, setHovered] = useState(false);
   const [imgErr, setImgErr] = useState(false);
 
@@ -309,7 +309,7 @@ export default function StaticProductsSection({
         }}>
           {displayProducts.map((p, i) => (
             <ScrollReveal key={p.id} variant="fadeUp" delay={100 + i * 100}>
-            <ProductCard product={p} index={i} />
+            <StaticProductCard product={p} index={i} />
             </ScrollReveal>
           ))}
         </div>
