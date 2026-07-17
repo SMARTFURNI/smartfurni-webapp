@@ -247,8 +247,8 @@ export function SessionsClient() {
   const maxDuration = selected ? Math.max(...selected.events.map(e => e.duration || 1), 1) : 1;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F7F4EC] text-slate-900">
-      <aside className="flex w-[390px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">
+    <div className={`sessions-shell flex h-screen overflow-hidden bg-[#F7F4EC] text-slate-900 ${selected ? "has-selection" : "no-selection"}`}>
+      <aside className="sessions-list-pane flex w-[390px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">
         <div className="border-b border-slate-200 px-4 pb-4 pt-4">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
@@ -340,7 +340,7 @@ export function SessionsClient() {
         </div>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#F7F4EC]">
+      <main className="sessions-detail-pane flex min-w-0 flex-1 flex-col overflow-hidden bg-[#F7F4EC]">
         {!selected ? (
           <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
             {detailLoading ? (
@@ -359,6 +359,13 @@ export function SessionsClient() {
         ) : (
           <>
             <div className="border-b border-slate-200 bg-white px-6 py-4 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="sessions-mobile-back mb-3 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600"
+              >
+                ← Danh sách khách truy cập
+              </button>
               <div className="flex items-start justify-between gap-5">
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex flex-wrap items-center gap-2">

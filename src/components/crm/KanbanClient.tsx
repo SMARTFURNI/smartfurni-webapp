@@ -135,7 +135,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   const activeFilters = [filterDistrict, filterType, filterSource].filter(Boolean).length;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "#ffffff" }}>
+    <div className="crm-kanban flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
       <div className="flex-shrink-0 px-6 py-4"
         style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
@@ -234,8 +234,8 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="flex gap-3 p-4 h-full" style={{ minWidth: "max-content" }}>
+      <div className="crm-kanban-scroll flex-1 overflow-x-auto overflow-y-hidden">
+        <div className="crm-kanban-track flex gap-3 p-4 h-full" style={{ minWidth: "max-content" }}>
           {STAGES.map(stage => {
             const stageLeads = getStageLeads(stage);
             const isWon = stage === "won";
@@ -245,7 +245,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
             return (
               <div
                 key={stage}
-                className="flex flex-col rounded-2xl transition-all duration-200"
+                className="crm-kanban-column flex flex-col rounded-2xl transition-all duration-200"
                 style={{
                   width: "250px",
                   minWidth: "250px",

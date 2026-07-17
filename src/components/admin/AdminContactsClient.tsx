@@ -95,9 +95,9 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-5 gap-4 h-[calc(100vh-12rem)]">
+      <div className={`admin-contacts-grid grid lg:grid-cols-5 gap-4 h-[calc(100vh-12rem)] ${selected ? "has-selection" : "no-selection"}`}>
         {/* Contact List */}
-        <div className="lg:col-span-2 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden flex flex-col">
+        <div className="admin-contacts-list lg:col-span-2 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden flex flex-col">
           <div className="flex-1 overflow-y-auto divide-y divide-[#C9A84C]/5">
             {filtered.length === 0 ? (
               <div className="p-8 text-center text-[rgba(245,237,214,0.45)] text-sm">Không có tin nhắn</div>
@@ -134,10 +134,13 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
         </div>
 
         {/* Contact Detail */}
-        <div className="lg:col-span-3 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden flex flex-col">
+        <div className="admin-contacts-detail lg:col-span-3 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden flex flex-col">
           {selected ? (
             <>
               <div className="p-6 border-b border-[rgba(255,200,100,0.14)]">
+                <button type="button" onClick={() => setSelected(null)} className="admin-contacts-back mb-3 rounded-xl border border-[rgba(255,200,100,0.18)] px-3 py-2 text-xs text-[#C9A84C]">
+                  ← Danh sách tin nhắn
+                </button>
                 <div className="flex items-start justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-white">{selected.subject}</h2>

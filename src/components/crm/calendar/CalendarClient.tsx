@@ -126,11 +126,11 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
   const isSelected = (d: Date) => selectedDate?.toDateString() === d.toDateString();
 
   return (
-    <div className="flex h-full" style={{ background: "#ffffff" }}>
+    <div className="crm-calendar flex h-full" style={{ background: "#ffffff" }}>
       {/* Left: Calendar */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between"
+        <div className="crm-calendar-header flex-shrink-0 px-6 py-4 flex items-center justify-between"
           style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -160,7 +160,7 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
         </div>
 
         {/* Calendar Grid */}
-        <div className="flex-1 overflow-auto p-4">
+        <div className="crm-calendar-grid flex-1 overflow-auto p-4">
           {/* Day headers */}
           <div className="grid grid-cols-7 mb-2">
             {DAYS_OF_WEEK.map(d => (
@@ -217,7 +217,7 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
       </div>
 
       {/* Right: Sidebar */}
-      <div className="w-72 flex-shrink-0 flex flex-col overflow-hidden"
+      <div className="crm-calendar-agenda w-72 flex-shrink-0 flex flex-col overflow-hidden"
         style={{ borderLeft: "1px solid #e5e7eb", background: "#f9fafb" }}>
         {/* Selected day */}
         <div className="p-4 flex-shrink-0" style={{ borderBottom: "1px solid #e5e7eb" }}>

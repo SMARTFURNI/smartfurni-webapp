@@ -91,9 +91,9 @@ export default function ContractsClient() {
   }
 
   return (
-    <div className="flex h-full gap-0">
+    <div className={`crm-contracts flex h-full gap-0 ${selected ? "has-selection" : "no-selection"}`}>
       {/* Left panel */}
-      <div className={`flex flex-col ${selected ? "w-[420px]" : "flex-1"} border-r border-gray-200 transition-all duration-300`}>
+      <div className={`crm-contracts-list flex flex-col ${selected ? "w-[420px]" : "flex-1"} border-r border-gray-200 transition-all duration-300`}>
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
@@ -204,9 +204,12 @@ export default function ContractsClient() {
 
       {/* Right panel - Contract Detail */}
       {selected && (
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="crm-contracts-detail flex-1 flex flex-col overflow-hidden">
           <div className="p-6 border-b border-gray-200 flex items-center justify-between">
             <div>
+              <button type="button" onClick={() => setSelected(null)} className="crm-contracts-back mb-3 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600">
+                ← Danh sách hợp đồng
+              </button>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-semibold text-gray-900">{selected.contractNumber}</span>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${STATUS_MAP[selected.status].color}`}>

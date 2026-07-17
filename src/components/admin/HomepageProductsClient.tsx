@@ -167,7 +167,7 @@ export default function HomepageProductsClient({
       : previewProducts;
 
   return (
-    <div className="flex gap-6 h-full">
+    <div className="homepage-products-editor flex gap-6 h-full">
       {/* ── LEFT PANEL ── */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
         {/* Tabs */}
@@ -703,7 +703,7 @@ export default function HomepageProductsClient({
       </div>
 
       {/* ── RIGHT PANEL: PREVIEW ── */}
-      <div className="w-80 flex-shrink-0 flex flex-col gap-4">
+      <div className="homepage-products-preview w-80 flex-shrink-0 flex flex-col gap-4">
         {/* Summary card */}
         <div
           style={{ backgroundColor: "#1e2022", borderColor: "#334155" }}

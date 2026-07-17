@@ -183,9 +183,9 @@ export default function AdminSettingsClient() {
         )}
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-6">
+      <div className="admin-settings-workspace grid lg:grid-cols-4 gap-6">
         {/* Sidebar */}
-        <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-3 h-fit">
+        <div className="admin-settings-nav bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-3 h-fit">
           {SECTIONS.map((section) => (
             <button
               key={section.id}

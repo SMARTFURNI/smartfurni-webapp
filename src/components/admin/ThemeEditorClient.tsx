@@ -546,6 +546,7 @@ export default function ThemeEditorClient({
   const [compareMode, setCompareMode] = useState(false);
   const [compareSnapshot, setCompareSnapshot] = useState<SiteTheme | null>(null);
   const [compareSlider, setCompareSlider] = useState(50);
+  const [mobileWorkspaceTab, setMobileWorkspaceTab] = useState<"sections" | "edit" | "preview">("edit");
 
   // ── Sprint 4: Section analytics ─────────────────────────────────────────
   const [sectionLastEdited, setSectionLastEdited] = useState<Record<string, string>>({});
@@ -2058,9 +2059,27 @@ export default function ThemeEditorClient({
       <input type="file" accept=".json" id="theme-import-input" className="hidden" onChange={handleImport} />
 
       {/* ── Main Layout ── */}
-      <div className="flex gap-6 h-[calc(100vh-180px)]">
+      <div className="theme-editor-mobile-tabs" role="tablist" aria-label="Khu vực chỉnh sửa giao diện">
+        {([
+          ["sections", "☰ Sections"],
+          ["edit", "✎ Chỉnh sửa"],
+          ["preview", "▣ Xem trước"],
+        ] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={mobileWorkspaceTab === id}
+            onClick={() => setMobileWorkspaceTab(id)}
+            className={mobileWorkspaceTab === id ? "is-active" : ""}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="theme-editor-workspace flex gap-6 h-[calc(100vh-180px)]">
         {/* ── Left: Section Nav ── */}
-        <div className="w-56 flex-shrink-0 flex flex-col overflow-y-auto pr-1">
+        <div className={`theme-editor-sections flex w-56 flex-shrink-0 flex-col overflow-y-auto pr-1 ${mobileWorkspaceTab === "sections" ? "mobile-active" : ""}`}>
           {/* Search */}
           <div className="mb-3 relative">
             <input
@@ -2083,7 +2102,7 @@ export default function ThemeEditorClient({
               {group.items.map((sec) => (
                 <button
                   key={sec.id}
-                  onClick={() => { setActiveSection(sec.id); setSearchQuery(""); }}
+                  onClick={() => { setActiveSection(sec.id); setSearchQuery(""); setMobileWorkspaceTab("edit"); }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-left transition-all ${
                     activeSection === sec.id ? "bg-[#C9A84C]/10 text-[#C9A84C] border border-[rgba(255,200,100,0.22)]" : "text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200]"
                   }`}
@@ -2111,7 +2130,7 @@ export default function ThemeEditorClient({
         </div>
 
         {/* ── Center: Edit Panel ── */}
-        <div className="w-72 flex-shrink-0 flex flex-col">
+        <div className={`theme-editor-edit flex w-72 flex-shrink-0 flex-col ${mobileWorkspaceTab === "edit" ? "mobile-active" : ""}`}>
           {/* Undo/Redo toolbar */}
           <div className="flex items-center gap-2 mb-3 flex-shrink-0">
             <button
@@ -2159,7 +2178,7 @@ export default function ThemeEditorClient({
         </div>
 
         {/* ── Right: Live Preview ── */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className={`theme-editor-preview flex-1 flex-col min-w-0 ${mobileWorkspaceTab === "preview" ? "mobile-active" : ""}`}>
           {/* Preview toolbar */}
           <div className="flex items-center justify-between mb-3 flex-shrink-0">
             <div className="flex items-center gap-2">

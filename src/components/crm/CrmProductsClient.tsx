@@ -100,12 +100,12 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
   }), [products]);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)" }}>
+    <div className="crm-products flex flex-col h-full" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)" }}>
 
       {/* ── Header ── */}
       <div className="flex-shrink-0" style={{ background: D.headerBg, borderBottom: `1px solid ${D.border}` }}>
         {/* Title + CTA */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-4">
+        <div className="crm-products-header flex items-center justify-between px-6 pt-5 pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Sparkles size={14} style={{ color: D.gold }} />
@@ -134,7 +134,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-4 gap-0 px-6 pb-0">
+        <div className="crm-products-stats grid grid-cols-4 gap-0 px-6 pb-0">
           {[
             { icon: Package, label: "Tổng sản phẩm", value: stats.total, color: D.indigo, dim: D.indigoDim },
             { icon: ShieldCheck, label: "Đang bán", value: stats.active, color: D.green, dim: D.greenDim },
@@ -164,7 +164,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
       </div>
 
       {/* ── Filter bar ── */}
-      <div className="flex-shrink-0 flex items-center gap-3 px-6 py-3"
+      <div className="crm-products-filter flex-shrink-0 flex items-center gap-3 px-6 py-3"
         style={{ background: "rgba(15,23,42,0.6)", borderBottom: `1px solid ${D.border}`, backdropFilter: "blur(8px)" }}>
         {/* Search */}
         <div className="relative flex-1 max-w-xs">
@@ -270,7 +270,7 @@ export default function CrmProductsClient({ initialProducts, defaultTiers = [] }
             </button>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+          <div className="crm-products-grid grid grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {filtered.map(p => (
               <ProductCard key={p.id} product={p}
                 isSelected={selected?.id === p.id}
@@ -419,7 +419,7 @@ function ProductCard({ product: p, isSelected, onSelect, onEdit, onToggleActive,
         )}
 
         {/* Hover actions */}
-        <div className="absolute top-2.5 right-2.5 flex gap-1"
+        <div className="crm-product-card-actions absolute top-2.5 right-2.5 flex gap-1"
           style={{
             opacity: hovered ? 1 : 0,
             transition: "opacity 0.15s, transform 0.15s",
@@ -604,9 +604,9 @@ function ProductDetail({ product: p, onEdit, onClose }: { product: CrmProduct; o
       </div>
 
       {/* Body */}
-      <div className="flex">
+      <div className="crm-product-detail-body flex">
         {/* Left: image */}
-        <div className="flex-shrink-0 relative overflow-hidden" style={{ width: 340, height: 340, background: D.surfaceBg }}>
+        <div className="crm-product-detail-image flex-shrink-0 relative overflow-hidden" style={{ width: 340, height: 340, background: D.surfaceBg }}>
           {p.imageUrl ? (
             <img src={p.imageUrl} alt={p.name}
               style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center", display: "block" }} />

@@ -138,9 +138,14 @@
 
 .sf-admin-mobile-bar,
 .sf-admin-mobile-tabs,
-.sf-admin-mobile-overlay {
+.sf-admin-mobile-overlay,
+.theme-editor-mobile-tabs,
+.sessions-mobile-back {
   display: none;
 }
+
+.theme-editor-preview { display: flex; }
+.admin-contacts-back { display: none; }
 
 @media (max-width: 640px) {
   .sf-admin-header { padding: 13px 14px; border-radius: 16px; }
@@ -251,6 +256,16 @@
     overflow-x: hidden !important;
   }
 
+  .sf-admin-shell main,
+  .sf-admin-shell main > *,
+  .sf-admin-shell main .grid,
+  .sf-admin-shell main .flex {
+    max-width: 100%;
+  }
+
+  .sf-admin-shell main .grid > *,
+  .sf-admin-shell main .flex > * { min-width: 0; }
+
   .sf-admin-shell table {
     display: block;
     max-width: calc(100vw - 24px);
@@ -265,6 +280,10 @@
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
+  .sf-admin-shell main .grid-cols-4:not(form *),
+  .sf-admin-shell main .grid-cols-5:not(form *) { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
+  .sf-admin-shell main .grid-cols-6:not(form *) { grid-template-columns: repeat(3, minmax(0,1fr)) !important; }
+
   .sf-admin-shell [class~="p-8"],
   .sf-admin-shell [class~="p-6"] { padding: 14px !important; }
 
@@ -278,4 +297,85 @@
     gap: 12px;
   }
   .sf-admin-header > :last-child { flex-wrap: wrap; }
+
+  /* Trình chỉnh giao diện: chuyển ba cột desktop thành ba màn app độc lập. */
+  .theme-editor-mobile-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    position: sticky;
+    top: calc(62px + env(safe-area-inset-top));
+    z-index: 20;
+    margin: 0 0 10px;
+    padding: 5px;
+    border: 1px solid rgba(224,197,111,.18);
+    border-radius: 16px;
+    background: rgba(11,17,29,.93);
+    backdrop-filter: blur(18px);
+  }
+  .theme-editor-mobile-tabs button {
+    min-height: 40px;
+    border-radius: 12px;
+    color: rgba(245,237,214,.58);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .theme-editor-mobile-tabs button.is-active {
+    color: #1b1407;
+    background: linear-gradient(135deg, #e2c76a, #b89332);
+  }
+  .theme-editor-workspace {
+    display: block !important;
+    height: calc(100dvh - 230px) !important;
+    min-height: 460px;
+  }
+  .theme-editor-sections,
+  .theme-editor-edit,
+  .theme-editor-preview { display: none !important; width: 100% !important; height: 100%; }
+  .theme-editor-sections.mobile-active,
+  .theme-editor-edit.mobile-active,
+  .theme-editor-preview.mobile-active { display: flex !important; }
+  .theme-editor-preview > :first-child { overflow-x: auto; }
+  .theme-editor-preview iframe { min-height: 560px; }
+
+  /* Phiên truy cập: master/detail như ứng dụng thay vì hai cột 390px. */
+  .sessions-shell { height: calc(100dvh - 144px) !important; min-height: 560px; }
+  .sessions-list-pane,
+  .sessions-detail-pane { width: 100% !important; min-width: 0 !important; border-right: 0 !important; }
+  .sessions-shell.no-selection .sessions-detail-pane,
+  .sessions-shell.has-selection .sessions-list-pane { display: none !important; }
+  .sessions-mobile-back { display: inline-flex; }
+  .sessions-detail-pane > div,
+  .sessions-detail-pane section { max-width: 100%; }
+  .sessions-detail-pane .grid-cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)) !important; width: 100%; }
+  .sessions-detail-pane .grid-cols-3 > div { padding-inline: 6px !important; }
+
+  /* Hộp thư liên hệ: danh sách/chi tiết tách thành hai màn. */
+  .admin-contacts-grid { display: block !important; height: calc(100dvh - 230px) !important; }
+  .admin-contacts-list,
+  .admin-contacts-detail { height: 100%; }
+  .admin-contacts-grid.no-selection .admin-contacts-detail,
+  .admin-contacts-grid.has-selection .admin-contacts-list { display: none !important; }
+  .admin-contacts-back { display: inline-flex; }
+  .admin-contacts-detail .grid-cols-2 { grid-template-columns: minmax(0,1fr) !important; }
+
+  /* Sắp xếp sản phẩm trang chủ: cấu hình trước, bản xem trước ở dưới. */
+  .homepage-products-editor { flex-direction: column !important; height: auto !important; }
+  .homepage-products-preview { width: 100% !important; }
+  .homepage-products-editor > :first-child > :first-child { overflow-x: auto; }
+  .homepage-products-editor > :first-child > :first-child button { min-width: 136px; }
+
+  /* Cài đặt: nhóm mục là thanh tab vuốt ngang. */
+  .admin-settings-workspace { display: block !important; }
+  .admin-settings-nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    position: sticky;
+    top: calc(70px + env(safe-area-inset-top));
+    z-index: 16;
+    margin-bottom: 12px;
+    padding: 6px !important;
+  }
+  .admin-settings-nav button { width: auto !important; min-width: max-content; padding: 9px 12px !important; }
 }
