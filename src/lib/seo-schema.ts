@@ -39,6 +39,23 @@ export function websiteSchema() {
   };
 }
 
+export function productCategoryNavigationSchema(families: ProductFamilyDefinition[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${SITE_URL}/products#categories`,
+    name: "Danh mục sản phẩm SmartFurni",
+    numberOfItems: families.length,
+    itemListElement: families.map((family, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: family.label,
+      url: absoluteUrl(`/products/${family.slug}`),
+      image: absoluteUrl(family.seoImage),
+    })),
+  };
+}
+
 export function breadcrumbSchema(items: Array<{ name: string; path: string }>) {
   return {
     "@context": "https://schema.org",

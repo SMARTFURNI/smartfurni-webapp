@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: `${family.title} | SmartFurni`,
   description: family.description,
   alternates: { canonical: absoluteUrl(`/products/${family.slug}`) },
-  openGraph: { title: family.title, description: family.description, url: absoluteUrl(`/products/${family.slug}`), type: "website" },
+  openGraph: { title: family.title, description: family.description, url: absoluteUrl(`/products/${family.slug}`), type: "website", images: [{ url: absoluteUrl(family.seoImage), alt: family.title }] },
+  twitter: { card: "summary_large_image", title: family.title, description: family.description, images: [absoluteUrl(family.seoImage)] },
 };
 
 export default async function SmartAdjustableMattressCategoryPage() {

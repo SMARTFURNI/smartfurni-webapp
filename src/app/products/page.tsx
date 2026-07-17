@@ -8,6 +8,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { PRODUCT_FAMILIES } from "@/lib/product-families";
 import { absoluteUrl } from "@/lib/site-url";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbSchema, productCategoryNavigationSchema } from "@/lib/seo-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,13 @@ export const metadata: Metadata = {
     description: "Giường công thái học, nệm thông minh điều chỉnh điện, sofa giường và phụ kiện chính hãng SmartFurni.",
     type: "website",
     url: absoluteUrl("/products"),
+    images: [{ url: absoluteUrl("/uploads/products/smartfurni-bed-main.webp"), width: 1252, height: 835, alt: "Các dòng sản phẩm SmartFurni" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Giải Pháp Giấc Ngủ Thông Minh SmartFurni",
+    description: "Giường công thái học, nệm thông minh điều chỉnh điện, sofa giường và phụ kiện chính hãng SmartFurni.",
+    images: [absoluteUrl("/uploads/products/smartfurni-bed-main.webp")],
   },
 };
 
@@ -30,6 +39,8 @@ export default async function ProductsPage() {
 
   return (
     <main className="sf-site-gradient-bg min-h-screen bg-[#0D0B00]">
+      <JsonLd data={breadcrumbSchema([{ name: "Trang chủ", path: "/" }, { name: "Sản phẩm", path: "/products" }])} />
+      <JsonLd data={productCategoryNavigationSchema(PRODUCT_FAMILIES)} />
       <Navbar theme={theme} />
 
       {/* Hero banner — font-light + text-gold-gradient giống trang chủ */}

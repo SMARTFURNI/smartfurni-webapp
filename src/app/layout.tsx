@@ -8,10 +8,11 @@ import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { initDbOnce } from "@/lib/db-init";
 import { Suspense } from "react";
 import NavigationProgress from "@/components/NavigationProgress";
-import { SITE_URL } from "@/lib/site-url";
+import { absoluteUrl, SITE_URL } from "@/lib/site-url";
 import JsonLd from "@/components/seo/JsonLd";
-import { organizationSchema, websiteSchema } from "@/lib/seo-schema";
+import { organizationSchema, productCategoryNavigationSchema, websiteSchema } from "@/lib/seo-schema";
 import WebVitalsReporter from "@/components/WebVitalsReporter";
+import { PRODUCT_FAMILIES } from "@/lib/product-families";
 
 export const dynamic = "force-dynamic";
 const SMARTFURNI_GOOGLE_ADS_ID = "AW-16742362454";
@@ -19,6 +20,8 @@ const SMARTFURNI_GOOGLE_ADS_ID = "AW-16742362454";
 export async function generateMetadata(): Promise<Metadata> {
   await initDbOnce();
   const theme = getTheme();
+  const defaultSeoImage = absoluteUrl("/uploads/products/smartfurni-bed-main.webp");
+  const seoImage = theme.seo.ogImage || defaultSeoImage;
   return {
     metadataBase: new URL(SITE_URL),
     title: theme.seo.siteTitle || "SmartFurni — Giường Điều Khiển Thông Minh",
@@ -29,13 +32,20 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       url: SITE_URL,
       siteName: "SmartFurni",
-      images: theme.seo.ogImage ? [theme.seo.ogImage] : [],
+      images: [{ url: seoImage, width: 1252, height: 835, alt: "Giải pháp giấc ngủ thông minh SmartFurni" }],
     },
     twitter: {
       card: "summary_large_image",
       title: theme.seo.siteTitle || "SmartFurni — Giường Điều Khiển Thông Minh",
       description: theme.seo.defaultDescription || "Trải nghiệm giấc ngủ hoàn hảo với công nghệ điều khiển thông minh",
-      images: theme.seo.ogImage ? [theme.seo.ogImage] : [],
+      images: [seoImage],
+    },
+    alternates: { canonical: SITE_URL },
+    manifest: "/manifest.webmanifest",
+    icons: {
+      icon: [{ url: "/smartfurni-icon.png", type: "image/png", sizes: "128x128" }],
+      shortcut: "/smartfurni-icon.png",
+      apple: [{ url: "/smartfurni-icon.png", type: "image/png", sizes: "128x128" }],
     },
     verification: {
       google: theme.seo.googleSiteVerification?.trim() || process.env.GOOGLE_SITE_VERIFICATION || undefined,
@@ -56,6 +66,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <JsonLd data={organizationSchema()} />
         <JsonLd data={websiteSchema()} />
+        <JsonLd data={productCategoryNavigationSchema(PRODUCT_FAMILIES)} />
         <style dangerouslySetInnerHTML={{ __html: `:root { ${cssVars} }` }} />
         {/* Google Ads tag SmartFurni 02: gắn toàn site để phủ trang chủ và các landing page. */}
         <script async src={`https://www.googletagmanager.com/gtag/js?id=${SMARTFURNI_GOOGLE_ADS_ID}`} />
