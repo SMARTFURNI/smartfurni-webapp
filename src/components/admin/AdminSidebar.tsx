@@ -187,7 +187,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
       {/* Logo */}
       <div className="h-[68px] border-b border-[rgba(255,200,100,0.12)] flex items-center" style={{ paddingLeft: 12, paddingRight: 8 }}>
         {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
-        <img src="/smartfurni-icon.png" alt="" style={{ display: "none" }} />
+        <img src="/smartfurni-icon-v2.png" alt="" style={{ display: "none" }} />
         <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
         {!collapsed && (
           <Link href="/admin" className="flex items-center flex-1 min-w-0" style={{ paddingRight: 4 }}>
@@ -201,7 +201,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
         {collapsed && (
           <Link href="/admin" className="relative flex-1 flex items-center justify-center">
             <img
-              src="/smartfurni-icon.png"
+              src="/smartfurni-icon-v2.png"
               alt="SF"
               style={{ width: 40, height: 40, objectFit: "contain" }}
             />
