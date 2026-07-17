@@ -331,6 +331,7 @@ export default function OrderDashboardClient({ data: initialData }: { data: Orde
     if (res.ok) {
       const updated = await res.json();
       setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+      await handleRefresh();
     }
   }
 
@@ -417,21 +418,21 @@ export default function OrderDashboardClient({ data: initialData }: { data: Orde
 
             <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Doanh thu</span>
-                <span className="text-xs text-[#C9A84C]">đã thanh toán</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Doanh số xác nhận</span>
+                <span className="text-xs text-[#C9A84C]">đã xác nhận đơn</span>
               </div>
-              <div className="text-3xl font-bold text-[#C9A84C] mb-1">{formatVND(d.stats.totalRevenue)}</div>
-              <div className="text-xs text-[rgba(245,237,214,0.55)]">Giá trị TB: {formatVND(d.stats.avgOrderValue)}/đơn</div>
+              <div className="text-3xl font-bold text-[#C9A84C] mb-1">{formatVND(d.stats.totalConfirmedSales)}</div>
+              <div className="text-xs text-[rgba(245,237,214,0.55)]">Đã thanh toán: {formatVND(d.stats.totalRevenue)}</div>
             </div>
 
             <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Tuần này</span>
+                <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Doanh số tuần này</span>
                 <span className="text-xs text-blue-400">{d.stats.weekOrders} đơn</span>
               </div>
-              <div className="text-3xl font-bold text-blue-400 mb-1">{formatVND(d.stats.weekRevenue)}</div>
+              <div className="text-3xl font-bold text-blue-400 mb-1">{formatVND(d.stats.weekConfirmedSales)}</div>
               <div className="text-xs text-[rgba(245,237,214,0.55)]">
-                Hôm nay: {d.stats.todayOrders} đơn · {formatVND(d.stats.todayRevenue)}
+                Hôm nay: {d.stats.todayOrders} đơn · {formatVND(d.stats.todayConfirmedSales)}
               </div>
             </div>
 

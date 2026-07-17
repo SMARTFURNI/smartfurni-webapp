@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { getOrderById, updateOrderStatus, updateOrder, deleteOrder } from "@/lib/order-store";
+import { getOrderById, refreshOrdersFromDatabase, updateOrderStatus, updateOrder, deleteOrder } from "@/lib/order-store";
 import type { OrderStatus } from "@/lib/order-store";
 import { initDbOnce } from "@/lib/db-init";
 
@@ -8,6 +8,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await refreshOrdersFromDatabase();
   const { id } = await params;
   const order = getOrderById(id);
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -18,16 +19,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await refreshOrdersFromDatabase();
   const { id } = await params;
   const body = await request.json();
 
-  if (body.status) {
-    const order = updateOrderStatus(id, body.status as OrderStatus, body.note);
+  const keys = Object.keys(body);
+  const isStatusOnly = body.status && keys.every((key) => key === "status" || key === "note");
+  if (isStatusOnly) {
+    const order = await updateOrderStatus(id, body.status as OrderStatus, body.note);
     if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
     return NextResponse.json(order);
   }
 
-  const order = updateOrder(id, body);
+  const order = await updateOrder(id, body);
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
   return NextResponse.json(order);
 }
@@ -36,6 +40,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await refreshOrdersFromDatabase();
   const { id } = await params;
   const deleted = deleteOrder(id);
   if (!deleted) return NextResponse.json({ error: "Order not found" }, { status: 404 });

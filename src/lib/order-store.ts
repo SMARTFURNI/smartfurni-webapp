@@ -1,6 +1,7 @@
 // ─── Order Data Model ──────────────────────────────────────────────────────
-import { dbLoadAll, dbSaveOne, dbDeleteOne, dbSaveAll } from "./db-store";
+import { dbLoadAll, dbSaveOneAndWait, dbDeleteOne, dbSaveAll } from "./db-store";
 import { registerDbLoader } from "./db-init";
+import { normalizeVietnamProvince } from "./crm-locations";
 
 export type OrderStatus = "pending" | "confirmed" | "processing" | "shipping" | "delivered" | "cancelled" | "refunded";
 export type PaymentMethod = "cod" | "bank_transfer" | "momo" | "vnpay" | "credit_card";
@@ -58,14 +59,17 @@ export interface OrderDashboardStats {
     cancelledOrders: number;
     refundedOrders: number;
     totalRevenue: number;
+    totalConfirmedSales: number;
     totalShippingFee: number;
     totalDiscount: number;
     avgOrderValue: number;
     conversionRate: number;
     todayOrders: number;
     todayRevenue: number;
+    todayConfirmedSales: number;
     weekOrders: number;
     weekRevenue: number;
+    weekConfirmedSales: number;
     // Period-over-period
     prevWeekRevenue: number;
     prevWeekOrders: number;
@@ -99,8 +103,8 @@ export interface OrderDashboardStats {
 }
 
 // ─── Persistence Layer (PostgreSQL) ─────────────────────────────────────────
-function saveOrder(order: Order): void {
-  dbSaveOne("orders", order);
+async function saveOrder(order: Order): Promise<void> {
+  await dbSaveOneAndWait("orders", order);
 }
 function deleteOrderFromDb(id: string): void {
   dbDeleteOne("orders", id);
@@ -610,37 +614,62 @@ export function getAllOrders(): Order[] {
   return [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+/** Đồng bộ lại cache từ PostgreSQL để các tiến trình Railway thấy cùng dữ liệu. */
+export async function refreshOrdersFromDatabase(): Promise<void> {
+  const rows = await dbLoadAll<Order>("orders");
+  if (rows && rows.length > 0) orders = rows;
+}
+
 export function getOrderById(id: string): Order | undefined {
   return orders.find((o) => o.id === id);
 }
 
-export function updateOrderStatus(id: string, status: OrderStatus, note?: string): Order | null {
+export async function updateOrderStatus(id: string, status: OrderStatus, note?: string): Promise<Order | null> {
   const idx = orders.findIndex((o) => o.id === id);
   if (idx === -1) return null;
   orders[idx].status = status;
   orders[idx].updatedAt = new Date().toISOString();
-  orders[idx].timeline.push({ status, time: new Date().toISOString(), note });
-  saveOrder(orders[idx]);
+  orders[idx].timeline = [...(orders[idx].timeline || []), { status, time: new Date().toISOString(), note }];
+  await saveOrder(orders[idx]);
   return orders[idx];
 }
 
-export function updateOrder(id: string, updates: Partial<Order>): Order | null {
+export async function updateOrder(id: string, updates: Partial<Order>): Promise<Order | null> {
   const idx = orders.findIndex((o) => o.id === id);
   if (idx === -1) return null;
+  const current = orders[idx];
+  const now = new Date().toISOString();
+
+  if (updates.city !== undefined) updates.city = normalizeVietnamProvince(updates.city);
+
   // Recalculate total if items changed
   if (updates.items) {
+    updates.items = updates.items.map((item) => ({
+      ...item,
+      quantity: Number(item.quantity) || 1,
+      unitPrice: Number(item.unitPrice) || 0,
+      totalPrice: (Number(item.unitPrice) || 0) * (Number(item.quantity) || 1),
+    }));
     const subtotal = updates.items.reduce((s, i) => s + i.totalPrice, 0);
-    const shippingFee = updates.shippingFee ?? orders[idx].shippingFee;
-    const discount = updates.discount ?? orders[idx].discount;
+    const shippingFee = Number(updates.shippingFee ?? current.shippingFee) || 0;
+    const discount = Number(updates.discount ?? current.discount) || 0;
     updates.subtotal = subtotal;
     updates.total = subtotal + shippingFee - discount;
   }
-  orders[idx] = { ...orders[idx], ...updates, updatedAt: new Date().toISOString() };
-  saveOrder(orders[idx]);
+
+  if (updates.status && updates.status !== current.status) {
+    updates.timeline = [
+      ...(current.timeline || []),
+      { status: updates.status, time: now, note: "Cập nhật từ trang quản trị" },
+    ];
+  }
+
+  orders[idx] = { ...current, ...updates, updatedAt: now };
+  await saveOrder(orders[idx]);
   return orders[idx];
 }
 
-export function createOrder(data: {
+export async function createOrder(data: {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -655,7 +684,7 @@ export function createOrder(data: {
   notes?: string;
   trackingCode?: string;
   shippingPartner?: string;
-}): Order {
+}): Promise<Order> {
   const id = `ord_${Date.now().toString(36)}`;
   const year = new Date().getFullYear();
   const seq = String(orders.length + 1).padStart(4, "0");
@@ -676,7 +705,7 @@ export function createOrder(data: {
     customerEmail: data.customerEmail,
     customerPhone: data.customerPhone,
     shippingAddress: data.shippingAddress,
-    city: data.city,
+    city: normalizeVietnamProvince(data.city),
     items,
     subtotal,
     shippingFee: data.shippingFee,
@@ -694,7 +723,7 @@ export function createOrder(data: {
   };
 
   orders.unshift(newOrder);
-  saveOrder(newOrder);
+  await saveOrder(newOrder);
   return newOrder;
 }
 
@@ -720,7 +749,10 @@ export function getOrderDashboardStats(): OrderDashboardStats {
 
   const paidOrders = orders.filter((o) => o.paymentStatus === "paid");
   const revenueOrders = paidOrders.filter((o) => o.status !== "cancelled" && o.status !== "refunded");
+  const salesStatuses: OrderStatus[] = ["confirmed", "processing", "shipping", "delivered"];
+  const confirmedSalesOrders = orders.filter((o) => salesStatuses.includes(o.status));
   const totalRevenue = revenueOrders.reduce((s, o) => s + o.total, 0);
+  const totalConfirmedSales = confirmedSalesOrders.reduce((s, o) => s + o.total, 0);
   const deliveredOrders = orders.filter((o) => o.status === "delivered");
   const conversionRate = orders.length > 0 ? Math.round((deliveredOrders.length / orders.length) * 100) : 0;
 
@@ -733,6 +765,7 @@ export function getOrderDashboardStats(): OrderDashboardStats {
 
   // Period-over-period
   const weekRevenue = revenueOrders.filter((o) => new Date(o.createdAt) >= weekAgo).reduce((s, o) => s + o.total, 0);
+  const weekConfirmedSales = confirmedSalesOrders.filter((o) => new Date(o.createdAt) >= weekAgo).reduce((s, o) => s + o.total, 0);
   const prevWeekRevenue = revenueOrders.filter((o) => { const d = new Date(o.createdAt); return d >= twoWeeksAgo && d < weekAgo; }).reduce((s, o) => s + o.total, 0);
   const thisMonthRevenue = revenueOrders.filter((o) => new Date(o.createdAt) >= thisMonthStart).reduce((s, o) => s + o.total, 0);
   const prevMonthRevenue = revenueOrders.filter((o) => { const d = new Date(o.createdAt); return d >= prevMonthStart && d <= prevMonthEnd; }).reduce((s, o) => s + o.total, 0);
@@ -888,12 +921,13 @@ export function getOrderDashboardStats(): OrderDashboardStats {
     });
   }
 
-  // By city
+  // By city: báo cáo địa lý theo đơn đã xác nhận, không phụ thuộc đã thu tiền hay chưa.
   const cityMap: Record<string, { count: number; revenue: number }> = {};
-  revenueOrders.forEach((o) => {
-    if (!cityMap[o.city]) cityMap[o.city] = { count: 0, revenue: 0 };
-    cityMap[o.city].count++;
-    cityMap[o.city].revenue += o.total;
+  confirmedSalesOrders.forEach((o) => {
+    const city = normalizeVietnamProvince(o.city);
+    if (!cityMap[city]) cityMap[city] = { count: 0, revenue: 0 };
+    cityMap[city].count++;
+    cityMap[city].revenue += o.total;
   });
   const revenueByCity = Object.entries(cityMap)
     .sort((a, b) => b[1].revenue - a[1].revenue)
@@ -902,12 +936,12 @@ export function getOrderDashboardStats(): OrderDashboardStats {
       city,
       count: v.count,
       revenue: v.revenue,
-      percentage: revenueOrders.length > 0 ? Math.round((v.count / revenueOrders.length) * 100) : 0,
+      percentage: confirmedSalesOrders.length > 0 ? Math.round((v.count / confirmedSalesOrders.length) * 100) : 0,
     }));
 
   // Top products
   const productMap: Record<string, { quantity: number; revenue: number }> = {};
-  revenueOrders.forEach((o) => {
+  confirmedSalesOrders.forEach((o) => {
     o.items.forEach((item) => {
       if (!productMap[item.productName]) productMap[item.productName] = { quantity: 0, revenue: 0 };
       productMap[item.productName].quantity += item.quantity;
@@ -934,14 +968,17 @@ export function getOrderDashboardStats(): OrderDashboardStats {
       cancelledOrders: statusMap["cancelled"] || 0,
       refundedOrders: statusMap["refunded"] || 0,
       totalRevenue,
+      totalConfirmedSales,
       totalShippingFee: revenueOrders.reduce((s, o) => s + o.shippingFee, 0),
       totalDiscount: revenueOrders.reduce((s, o) => s + o.discount, 0),
       avgOrderValue: revenueOrders.length > 0 ? Math.round(totalRevenue / revenueOrders.length) : 0,
       conversionRate,
       todayOrders: todayOrders.length,
       todayRevenue: todayOrders.filter((o) => revenueOrders.includes(o)).reduce((s, o) => s + o.total, 0),
+      todayConfirmedSales: todayOrders.filter((o) => confirmedSalesOrders.includes(o)).reduce((s, o) => s + o.total, 0),
       weekOrders: weekOrders.length,
       weekRevenue,
+      weekConfirmedSales,
       prevWeekRevenue,
       prevWeekOrders: prevWeekOrders.length,
       thisMonthRevenue,

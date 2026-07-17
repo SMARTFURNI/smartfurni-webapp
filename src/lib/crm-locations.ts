@@ -72,6 +72,30 @@ export const VIETNAM_PROVINCES = [
   "Lạng Sơn",
 ];
 
+/** Chuẩn hoá tên địa phương cũ/viết tắt để các báo cáo không bị tách nhóm. */
+const PROVINCE_ALIASES: Record<string, string> = {
+  "Hồ Chí Minh": "TP. Hồ Chí Minh",
+  "TP Hồ Chí Minh": "TP. Hồ Chí Minh",
+  "TP.HCM": "TP. Hồ Chí Minh",
+  "HCM": "TP. Hồ Chí Minh",
+  "Biên Hòa": "Đồng Nai",
+  "Nha Trang": "Khánh Hòa",
+  "Vũng Tàu": "Bà Rịa - Vũng Tàu",
+  "Huế": "Thừa Thiên Huế",
+  "Đà Lạt": "Lâm Đồng",
+  "Buôn Ma Thuột": "Đắk Lắk",
+  "Quy Nhơn": "Bình Định",
+  "Long Xuyên": "An Giang",
+  "Mỹ Tho": "Tiền Giang",
+  "Rạch Giá": "Kiên Giang",
+};
+
+export function normalizeVietnamProvince(value: string): string {
+  const province = value?.trim();
+  if (!province) return "Chưa xác định";
+  return PROVINCE_ALIASES[province] || province;
+}
+
 // Quận/Huyện TP.HCM
 export const HCMC_DISTRICTS = [
   "Quận 1", "Quận 2", "Quận 3", "Quận 4", "Quận 5",

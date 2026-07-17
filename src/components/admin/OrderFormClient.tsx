@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Order, OrderStatus, PaymentMethod, PaymentStatus } from "@/lib/order-store";
+import { VIETNAM_PROVINCES } from "@/lib/crm-locations";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -27,12 +28,6 @@ const PAYMENT_STATUS_OPTIONS: { value: PaymentStatus; label: string }[] = [
   { value: "unpaid", label: "Chưa thanh toán" },
   { value: "paid", label: "Đã thanh toán" },
   { value: "refunded", label: "Đã hoàn tiền" },
-];
-
-const CITIES = [
-  "TP. Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
-  "Biên Hòa", "Nha Trang", "Vũng Tàu", "Huế", "Đà Lạt",
-  "Buôn Ma Thuột", "Quy Nhơn", "Long Xuyên", "Mỹ Tho", "Rạch Giá",
 ];
 
 const SHIPPING_PARTNERS = ["GHN", "GHTK", "J&T Express", "Viettel Post", "VNPost", "DHL", "FedEx"];
@@ -199,7 +194,10 @@ export default function OrderFormClient({ order }: { order?: Order }) {
       }
 
       setSuccessMsg(isEdit ? "Đã lưu thay đổi!" : "Đã tạo đơn hàng mới!");
+      router.refresh();
       setTimeout(() => router.push("/admin/orders"), 1200);
+    } catch {
+      setErrors({ submit: "Không thể lưu dữ liệu. Vui lòng thử lại." });
     } finally {
       setSaving(false);
     }
@@ -314,7 +312,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40"
                 >
-                  {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {VIETNAM_PROVINCES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div className="sm:col-span-2">

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { getAllOrders, getOrderDashboardStats, createOrder } from "@/lib/order-store";
+import { getAllOrders, getOrderDashboardStats, createOrder, refreshOrdersFromDatabase } from "@/lib/order-store";
 import { initDbOnce } from "@/lib/db-init";
 
 export async function GET(request: NextRequest) {
   await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await refreshOrdersFromDatabase();
 
   const { searchParams } = new URL(request.url);
   const mode = searchParams.get("mode");
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
   await initDbOnce();
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await refreshOrdersFromDatabase();
 
   try {
     const body = await request.json();
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Thiếu thông tin bắt buộc" }, { status: 400 });
     }
 
-    const order = createOrder({
+    const order = await createOrder({
       customerName, customerEmail: customerEmail || "",
       customerPhone, shippingAddress, city,
       items, shippingFee: shippingFee || 0, discount: discount || 0,

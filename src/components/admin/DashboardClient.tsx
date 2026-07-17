@@ -541,7 +541,9 @@ export default function DashboardClient({
   // Filter orders by date range for dynamic KPIs
   const filteredOrders = filterByRange(orderData.orders, dateRange);
   const filteredPaid = filteredOrders.filter((o) => o.paymentStatus === "paid");
+  const filteredConfirmed = filteredOrders.filter((o) => ["confirmed", "processing", "shipping", "delivered"].includes(o.status));
   const filteredRevenue = filteredPaid.reduce((s, o) => s + o.total, 0);
+  const filteredSales = filteredConfirmed.reduce((s, o) => s + o.total, 0);
   const filteredDelivered = filteredOrders.filter((o) => o.status === "delivered").length;
   const filteredConversion = filteredOrders.length > 0 ? Math.round((filteredDelivered / filteredOrders.length) * 100) : 0;
   const filteredAvgOrder = filteredPaid.length > 0 ? Math.round(filteredRevenue / filteredPaid.length) : 0;
@@ -609,7 +611,7 @@ export default function DashboardClient({
 
       {/* Row 1: Top KPI */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard label="Doanh thu" value={fmtVND(filteredRevenue)} sub={`Tuần này: ${fmtVND(o.weekRevenue)}`} color="#C9A84C" icon={WalletCards} href="/admin/orders" trend={revTrend} trendLabel="Doanh thu 7 ngày" growth={o.revenueGrowthWeek} growthLabel="so với tuần trước" />
+        <KpiCard label="Doanh số xác nhận" value={fmtVND(filteredSales)} sub={`Tuần này: ${fmtVND(o.weekConfirmedSales)}`} color="#C9A84C" icon={WalletCards} href="/admin/orders" trend={revTrend} trendLabel="Doanh thu đã thanh toán 7 ngày" growth={o.revenueGrowthWeek} growthLabel="doanh thu so với tuần trước" />
         <KpiCard label="Đã thanh toán" value={fmt(filteredPaid.length)} sub={`${fmtVND(filteredRevenue)} đã ghi nhận`} color="#22C55E" icon={CheckCheck} growth={o.revenueGrowthMonth} growthLabel="doanh thu so với tháng trước" />
         <KpiCard label="Đơn hàng" value={fmt(filteredOrders.length)} sub={`Chờ: ${o.pendingOrders} · Đang giao: ${o.shippingOrders}`} color="#3B82F6" icon={ShoppingCart} href="/admin/orders" trend={orderTrend} trendLabel="Đơn hàng 7 ngày" growth={o.ordersGrowthWeek} growthLabel="so với tuần trước" />
         <KpiCard label="Giá trị TB/đơn" value={fmtVND(filteredAvgOrder)} sub={`${fmt(filteredDelivered)} đã giao · ${filteredConversion}% tỷ lệ`} color="#F472B6" icon={Target} />

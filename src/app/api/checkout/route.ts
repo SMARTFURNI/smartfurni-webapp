@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Thiếu thông tin bắt buộc" }, { status: 400 });
     }
 
-    const order = createOrder({
+    const order = await createOrder({
       customerName,
       customerEmail: customerEmail || "",
       customerPhone,
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       discount: discount ?? 0,
       status: "pending",
       paymentMethod: (paymentMethod as PaymentMethod) ?? "cod",
-      paymentStatus: paymentMethod === "cod" ? "unpaid" : "unpaid",
+      paymentStatus: "unpaid",
       notes,
     });
 
