@@ -51,13 +51,14 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
             background: linear-gradient(105deg, rgba(10,16,30,.97), rgba(33,22,9,.95));
             box-shadow: 0 12px 34px rgba(0,0,0,.36); backdrop-filter: blur(22px);
           }
-          .crm-mobile-icon-button, .crm-mobile-avatar {
+          .crm-mobile-icon-button, .crm-mobile-avatar, .crm-mobile-brand {
             width: 42px; height: 42px; border-radius: 14px; flex: 0 0 auto;
             display: inline-flex; align-items: center; justify-content: center;
             color: #fde68a; border: 1px solid rgba(255,200,100,.18);
             background: linear-gradient(145deg, rgba(245,158,11,.17), rgba(59,76,111,.14));
           }
           .crm-mobile-avatar { font-size: 14px; font-weight: 800; color: #1a1200; background: linear-gradient(135deg,#f6cf62,#d99a1b); }
+          .crm-mobile-brand img { width: 34px; height: 34px; object-fit: contain; }
           .crm-sidebar {
             position: fixed !important; inset: 0 auto 0 0; z-index: 100;
             width: min(88vw, 320px) !important; height: 100dvh !important;
@@ -110,6 +111,25 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           .crm-root main .grid-cols-6:not(form *) { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
           .crm-root main [class~="p-8"], .crm-root main [class~="p-6"] { padding: 14px !important; }
           .crm-root main button, .crm-root main select, .crm-root main input { min-height: 42px; }
+
+          /* Focus hôm nay: một hàng thẻ vuốt ngang như carousel trong ứng dụng. */
+          .crm-focus-track {
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 1px 1px 5px;
+            scroll-snap-type: x mandatory;
+            overscroll-behavior-x: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+          }
+          .crm-focus-track::-webkit-scrollbar { display: none; }
+          .crm-focus-card {
+            flex: 0 0 min(76vw, 280px);
+            min-width: 0;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+          }
 
           /* Kanban dạng app: mỗi trạng thái là một màn vuốt ngang có điểm dừng. */
           .crm-kanban { height: auto !important; min-height: 100%; }

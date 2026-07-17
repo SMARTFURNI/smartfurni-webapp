@@ -1702,7 +1702,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         style={{ background: dm.headerBg, borderBottom: `1px solid ${dm.headerBorder}` }}>
         <div className="flex items-center gap-2 md:gap-4 min-w-0">
           {/* Brand mark */}
-          <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-sm"
+          <div className="hidden md:flex w-8 h-8 md:w-9 md:h-9 rounded-xl items-center justify-center flex-shrink-0 font-black text-sm"
             style={{ background: `linear-gradient(135deg, ${T.gold} 0%, ${T.goldDark} 100%)`, color: "#fff", letterSpacing: "-0.5px" }}>
             SF
           </div>
@@ -1730,7 +1730,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                   color: period === p ? "#fff" : dm.textMuted,
                   borderRight: i < 3 ? `1px solid ${dm.cardBorder}` : "none",
                 }}>
-                <span className="md:hidden">{p === "month" ? "Th" : p === "quarter" ? "Quý" : "Năm"}</span>
+                <span className="md:hidden">{p === "week" ? "Tuần" : p === "month" ? "Th" : p === "quarter" ? "Quý" : "Năm"}</span>
                 <span className="hidden md:inline">{PERIOD_LABELS[p]}</span>
               </button>
             ))}
@@ -1835,10 +1835,10 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 {focusItems.length} việc ưu tiên
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="crm-focus-track flex flex-wrap gap-2">
               {focusItems.map((item, i) => (
                 <Link key={i} href={item.href}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:opacity-80 transition-opacity"
+                  className="crm-focus-card flex items-center gap-2 px-3 py-2 rounded-xl hover:opacity-80 transition-opacity"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: `${item.color}18` }}>

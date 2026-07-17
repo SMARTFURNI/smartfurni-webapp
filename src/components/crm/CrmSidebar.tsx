@@ -293,9 +293,9 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: C.accentLight }}>SmartFurni CRM</div>
         <div className="truncate text-sm font-semibold" style={{ color: C.textHover }}>{currentItem?.label || "Trung tâm khách hàng"}</div>
       </div>
-      <button className="crm-mobile-avatar" onClick={() => setMobileOpen(true)} aria-label="Tài khoản và menu">
-        {(staffName?.[0] || "S").toUpperCase()}
-      </button>
+      <Link href="/admin/choose-module" className="crm-mobile-brand" aria-label="Chọn không gian làm việc">
+        <img src="/smartfurni-icon-v2.png" alt="SmartFurni" />
+      </Link>
     </header>
     <aside
       className={`crm-sidebar no-print flex flex-col h-full transition-all duration-300 flex-shrink-0 relative select-none ${mobileOpen ? "is-mobile-open" : ""}`}
