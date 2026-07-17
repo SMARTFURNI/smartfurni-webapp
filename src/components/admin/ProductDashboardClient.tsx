@@ -44,6 +44,14 @@ function StarRating({ rating }: { rating: number }) {
 
 // ─── Revenue Bar Chart ────────────────────────────────────────────────────────
 function RevenueLineChart({ data }: { data: { label: string; revenue: number; units: number }[] }) {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[102px] items-center justify-center text-xs text-[rgba(245,237,214,0.35)]">
+        Chưa có dữ liệu doanh thu
+      </div>
+    );
+  }
+
   const maxRev = Math.max(...data.map((d) => d.revenue), 1);
   const w = 400; const h = 80;
   const pts = data.map((d, i) => ({
