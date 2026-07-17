@@ -1,0 +1,149 @@
+.sf-admin-shell {
+  --admin-gold: #d7b957;
+  --admin-gold-soft: rgba(215, 185, 87, 0.16);
+  --admin-panel: rgba(18, 22, 35, 0.72);
+  --admin-panel-strong: rgba(23, 21, 24, 0.86);
+  --admin-border: rgba(224, 197, 111, 0.16);
+  position: relative;
+  isolation: isolate;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 12% 4%, rgba(50, 76, 124, 0.22), transparent 28rem),
+    radial-gradient(circle at 86% 12%, rgba(164, 112, 24, 0.18), transparent 32rem),
+    radial-gradient(circle at 58% 96%, rgba(94, 56, 12, 0.17), transparent 34rem),
+    linear-gradient(135deg, #0c1321 0%, #17160f 47%, #1a1105 100%);
+}
+
+.sf-admin-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.62;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
+}
+
+.sf-admin-shell .bg-\[\#130e00\] { background: transparent !important; }
+
+.sf-admin-shell .bg-\[\#1a1200\],
+.sf-admin-shell .bg-\[\#0E0C00\],
+.sf-admin-shell .bg-\[\#050400\] {
+  background:
+    linear-gradient(145deg, rgba(31, 37, 52, 0.82), rgba(29, 24, 15, 0.76)) !important;
+  border-color: var(--admin-border) !important;
+  box-shadow: 0 18px 45px rgba(2, 5, 12, 0.24), inset 0 1px 0 rgba(255,255,255,0.025);
+  backdrop-filter: blur(18px);
+}
+
+.sf-admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.sf-admin-shell select,
+.sf-admin-shell textarea {
+  background-color: rgba(7, 12, 23, 0.56) !important;
+  border-color: rgba(224, 197, 111, 0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+.sf-admin-shell input:focus,
+.sf-admin-shell select:focus,
+.sf-admin-shell textarea:focus {
+  border-color: rgba(215, 185, 87, 0.54) !important;
+  box-shadow: 0 0 0 3px rgba(215, 185, 87, 0.10) !important;
+  outline: none;
+}
+
+.sf-admin-shell table thead {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.sf-admin-shell table tbody tr {
+  transition: background-color .18s ease;
+}
+
+.sf-admin-shell table tbody tr:hover {
+  background-color: rgba(215, 185, 87, 0.035);
+}
+
+/* Các màn quản trị cũ từng dùng bảng màu sáng được đưa về cùng hệ CRM. */
+.sf-admin-shell .bg-white:not(.rounded-full) {
+  background:
+    linear-gradient(145deg, rgba(31, 37, 52, 0.84), rgba(29, 24, 15, 0.80)) !important;
+  border-color: var(--admin-border) !important;
+  box-shadow: 0 14px 38px rgba(2, 5, 12, 0.20);
+}
+
+.sf-admin-shell .bg-slate-50,
+.sf-admin-shell .bg-gray-50,
+.sf-admin-shell .bg-green-50,
+.sf-admin-shell .bg-\[\#FFF8E3\] {
+  background-color: rgba(12, 18, 29, 0.54) !important;
+}
+
+.sf-admin-shell .text-slate-900,
+.sf-admin-shell .text-gray-900 { color: #f5edd6 !important; }
+.sf-admin-shell .text-slate-600,
+.sf-admin-shell .text-slate-500 { color: rgba(245, 237, 214, 0.64) !important; }
+.sf-admin-shell .text-slate-400 { color: rgba(245, 237, 214, 0.42) !important; }
+.sf-admin-shell .border-slate-200,
+.sf-admin-shell .border-gray-200,
+.sf-admin-shell .border-gray-100 { border-color: var(--admin-border) !important; }
+
+.sf-admin-shell button,
+.sf-admin-shell a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sf-admin-shell ::-webkit-scrollbar { width: 7px; height: 7px; }
+.sf-admin-shell ::-webkit-scrollbar-track { background: rgba(255,255,255,0.015); }
+.sf-admin-shell ::-webkit-scrollbar-thumb {
+  background: linear-gradient(#4c4431, #8c7330);
+  border-radius: 999px;
+}
+
+.sf-admin-sidebar {
+  background:
+    radial-gradient(circle at 0 0, rgba(64, 88, 137, 0.2), transparent 17rem),
+    linear-gradient(165deg, rgba(12, 18, 31, 0.97), rgba(24, 20, 14, 0.95) 58%, rgba(31, 19, 6, 0.96));
+  border-right: 1px solid rgba(224, 197, 111, 0.15);
+  box-shadow: 16px 0 45px rgba(0, 0, 0, 0.22);
+}
+
+.sf-admin-nav-active {
+  background: linear-gradient(90deg, rgba(215,185,87,.18), rgba(215,185,87,.055));
+  box-shadow: inset 2px 0 0 var(--admin-gold), 0 8px 22px rgba(0,0,0,.12);
+}
+
+.sf-admin-header {
+  padding: 16px 18px;
+  border: 1px solid rgba(224, 197, 111, 0.13);
+  border-radius: 20px;
+  background: linear-gradient(115deg, rgba(22,29,44,.68), rgba(31,24,14,.62));
+  box-shadow: 0 14px 36px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.03);
+  backdrop-filter: blur(16px);
+}
+
+.sf-admin-icon-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(224, 197, 111, 0.14);
+  background: linear-gradient(145deg, rgba(215,185,87,.15), rgba(59,76,111,.10));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+@media (max-width: 640px) {
+  .sf-admin-header { padding: 13px 14px; border-radius: 16px; }
+}
+
+@media (max-width: 900px) {
+  .sf-admin-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .sf-admin-header > :last-child { flex-wrap: wrap; }
+}

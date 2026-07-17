@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#1a1200" }}>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-transparent">
 
       <div className="relative w-full max-w-md">
         {/* Logo & Brand */}
@@ -55,9 +55,9 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+        <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-2xl p-8 shadow-2xl backdrop-blur-xl">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Đăng nhập</h2>
+            <h2 className="text-xl font-semibold text-white">Đăng nhập</h2>
             <p className="text-sm text-[rgba(245,237,214,0.55)] mt-1">
               Dành riêng cho quản trị viên hệ thống SmartFurni
             </p>
@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username */}
             <div>
-              <label className="block text-sm font-medium text-[rgba(245,237,214,0.35)] mb-1.5">
+              <label className="block text-sm font-medium text-[rgba(245,237,214,0.70)] mb-1.5">
                 Tên đăng nhập
               </label>
               <input
@@ -77,13 +77,13 @@ export default function AdminLoginPage() {
                 required
                 autoComplete="username"
                 autoFocus
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#C9A84C] focus:bg-white transition-colors"
+                className="w-full rounded-xl px-4 py-3 text-white placeholder-[rgba(245,237,214,0.35)] text-sm focus:outline-none transition-colors"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-[rgba(245,237,214,0.35)] mb-1.5">
+              <label className="block text-sm font-medium text-[rgba(245,237,214,0.70)] mb-1.5">
                 Mật khẩu
               </label>
               <div className="relative">
@@ -94,7 +94,7 @@ export default function AdminLoginPage() {
                   placeholder="Nhập mật khẩu..."
                   required
                   autoComplete="current-password"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 pr-11 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#C9A84C] focus:bg-white transition-colors"
+                  className="w-full rounded-xl px-4 py-3 pr-11 text-white placeholder-[rgba(245,237,214,0.35)] text-sm focus:outline-none transition-colors"
                 />
                 <button
                   type="button"
@@ -133,7 +133,7 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Divider */}
-          <div className="mt-6 pt-6 border-t border-gray-100">
+          <div className="mt-6 pt-6 border-t border-white/10">
             <p className="text-xs text-[rgba(245,237,214,0.70)] text-center">
               Quên mật khẩu? Liên hệ kỹ thuật viên để được cấp lại
             </p>

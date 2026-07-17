@@ -2,6 +2,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  BarChart3, BookOpenText, Boxes, ChevronLeft, ChevronRight, ExternalLink,
+  FileChartColumn, FileText, GalleryHorizontalEnd, LayoutDashboard, LogOut,
+  Palette, Route, Settings2, ShoppingCart, Store, UsersRound,
+} from "lucide-react";
 
 interface SidebarStats {
   unreadContacts?: number;
@@ -13,7 +19,7 @@ interface SidebarStats {
 interface NavItem {
   href: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   exact: boolean;
   subItems?: { href: string; label: string }[];
   badgeKey?: keyof SidebarStats;
@@ -29,9 +35,9 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tổng quan",
     items: [
-      { href: "/admin", label: "Dashboard", icon: "▦", exact: true },
-      { href: "/admin/analytics", label: "Analytics", icon: "◈", exact: false },
-      { href: "/admin/sessions", label: "Hành trình", icon: "↻", exact: false },
+      { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+      { href: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
+      { href: "/admin/sessions", label: "Hành trình", icon: Route, exact: false },
     ],
   },
   {
@@ -40,13 +46,13 @@ const NAV_GROUPS: NavGroup[] = [
       {
         href: "/admin/catalogue",
         label: "Catalogue B2B",
-        icon: "📋",
+        icon: FileChartColumn,
         exact: false,
       },
       {
         href: "/admin/posts",
         label: "Bài viết",
-        icon: "✦",
+        icon: BookOpenText,
         exact: false,
         subItems: [
           { href: "/admin/posts/new", label: "Viết bài mới" },
@@ -58,7 +64,7 @@ const NAV_GROUPS: NavGroup[] = [
       {
         href: "/admin/landing-pages",
         label: "Landing Pages",
-        icon: "◧",
+        icon: FileText,
         exact: false,
         subItems: [
           { href: "/admin/landing-pages", label: "Quản lý landing page" },
@@ -73,13 +79,13 @@ const NAV_GROUPS: NavGroup[] = [
       {
         href: "/crm",
         label: "CRM B2B",
-        icon: "◈",
+        icon: Store,
         exact: false,
       },
       {
         href: "/admin/products",
         label: "Sản phẩm",
-        icon: "⬡",
+        icon: Boxes,
         exact: false,
         subItems: [
           { href: "/admin/products/new", label: "Thêm sản phẩm" },
@@ -91,7 +97,7 @@ const NAV_GROUPS: NavGroup[] = [
       {
         href: "/admin/orders",
         label: "Đơn hàng",
-        icon: "◈",
+        icon: ShoppingCart,
         exact: false,
         subItems: [
           { href: "/admin/orders/new", label: "Tạo đơn hàng" },
@@ -108,7 +114,7 @@ const NAV_GROUPS: NavGroup[] = [
       {
         href: "/crm/data-pool",
         label: "Khách hàng tiềm năng",
-        icon: "◉",
+        icon: UsersRound,
         exact: false,
       },
     ],
@@ -116,9 +122,9 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Hệ thống",
     items: [
-      { href: "/admin/homepage-products", label: "Sắp xếp SP trang chủ", icon: "⌂", exact: false },
-      { href: "/admin/appearance", label: "Giao diện", icon: "◐", exact: false },
-      { href: "/admin/settings", label: "Cài đặt", icon: "◌", exact: false },
+      { href: "/admin/homepage-products", label: "Sắp xếp SP trang chủ", icon: GalleryHorizontalEnd, exact: false },
+      { href: "/admin/appearance", label: "Giao diện", icon: Palette, exact: false },
+      { href: "/admin/settings", label: "Cài đặt", icon: Settings2, exact: false },
     ],
   },
 ];
@@ -140,6 +146,16 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
     );
     setExpandedItems(active);
   }, [pathname]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 900px)");
+    const syncSidebar = () => {
+      if (media.matches) setCollapsed(true);
+    };
+    syncSidebar();
+    media.addEventListener("change", syncSidebar);
+    return () => media.removeEventListener("change", syncSidebar);
+  }, []);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -166,8 +182,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
 
   return (
     <aside
-      className={`${collapsed ? "w-[60px]" : "w-[220px]"} min-h-screen flex flex-col transition-all duration-200 flex-shrink-0`}
-      style={{ background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)", borderRight: "1px solid rgba(255,200,100,0.12)" }}
+      className={`sf-admin-sidebar ${collapsed ? "w-[68px]" : "w-[236px]"} min-h-screen flex flex-col transition-all duration-200 flex-shrink-0`}
     >
       {/* Logo */}
       <div className="h-[68px] border-b border-[rgba(255,200,100,0.12)] flex items-center" style={{ paddingLeft: 12, paddingRight: 8 }}>
@@ -202,12 +217,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
           className="text-[rgba(245,237,214,0.35)] hover:text-[rgba(245,237,214,0.70)] transition-colors p-1 rounded flex-shrink-0"
           title={collapsed ? "Mở rộng" : "Thu gọn"}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-            {collapsed
-              ? <path d="M5 2l5 5-5 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-              : <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-            }
-          </svg>
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
 
@@ -223,6 +233,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
             {collapsed && <div className="h-px bg-[#C9A84C]/5 mx-3 my-2" />}
             <div className="px-2 space-y-0.5">
               {group.items.map((item) => {
+                const Icon = item.icon;
                 const active = isActive(item);
                 const badgeCount = item.badgeKey ? (stats[item.badgeKey] || 0) : 0;
                 const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -235,13 +246,13 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
                         href={item.href}
                         className={`flex-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all ${
                           active
-                            ? "bg-[#C9A84C]/12 text-[#C9A84C]"
+                            ? "sf-admin-nav-active text-[#E2C97E]"
                             : "text-[rgba(245,237,214,0.55)] hover:text-gray-200 hover:bg-white/4"
                         }`}
                         title={collapsed ? item.label : undefined}
                       >
-                        <span className={`text-sm flex-shrink-0 ${active ? "text-[#C9A84C]" : "text-[rgba(245,237,214,0.45)]"}`}>
-                          {item.icon}
+                        <span className={`sf-admin-icon-tile h-7 w-7 rounded-lg ${active ? "text-[#E2C97E]" : "text-[rgba(245,237,214,0.50)]"}`}>
+                          <Icon size={15} strokeWidth={active ? 2.2 : 1.8} />
                         </span>
                         {!collapsed && (
                           <>
@@ -308,7 +319,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
           className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-[rgba(245,237,214,0.45)] hover:text-gray-300 hover:bg-white/4 transition-colors"
           title={collapsed ? "Xem website" : undefined}
         >
-          <span className="text-sm flex-shrink-0">↗</span>
+          <span className="sf-admin-icon-tile h-7 w-7 rounded-lg"><ExternalLink size={15} /></span>
           {!collapsed && <span className="font-medium">Xem website</span>}
         </Link>
         <button
@@ -317,7 +328,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
           className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-[rgba(245,237,214,0.45)] hover:text-red-400 hover:bg-red-500/5 transition-colors"
           title={collapsed ? "Đăng xuất" : undefined}
         >
-          <span className="text-sm flex-shrink-0">⏻</span>
+          <span className="sf-admin-icon-tile h-7 w-7 rounded-lg"><LogOut size={15} /></span>
           {!collapsed && <span className="font-medium">{loggingOut ? "Đang thoát..." : "Đăng xuất"}</span>}
         </button>
       </div>

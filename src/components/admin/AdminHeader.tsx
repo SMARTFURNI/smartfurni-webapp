@@ -2,6 +2,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  BedDouble, BookOpenText, Box, Command, FilePenLine, Mail, MessageSquare,
+  PackagePlus, Plus, Search, Settings2, ShoppingCart, UserPlus, UsersRound,
+} from "lucide-react";
 
 // ─── Breadcrumb config ────────────────────────────────────────────────────────
 
@@ -54,27 +59,27 @@ function getBreadcrumbs(pathname: string) {
 
 // ─── Quick actions ─────────────────────────────────────────────────────────────
 
-const QUICK_ACTIONS = [
-  { label: "Viết bài mới", href: "/admin/posts/new", icon: "✏️", shortcut: "N" },
-  { label: "Thêm sản phẩm", href: "/admin/products/new", icon: "🛏️", shortcut: "P" },
-  { label: "Tạo đơn hàng", href: "/admin/orders/new", icon: "📋", shortcut: "O" },
-  { label: "Thêm khách hàng", href: "/admin/users/new", icon: "👤", shortcut: "U" },
+const QUICK_ACTIONS: { label: string; href: string; icon: LucideIcon; shortcut: string }[] = [
+  { label: "Viết bài mới", href: "/admin/posts/new", icon: FilePenLine, shortcut: "N" },
+  { label: "Thêm sản phẩm", href: "/admin/products/new", icon: PackagePlus, shortcut: "P" },
+  { label: "Tạo đơn hàng", href: "/admin/orders/new", icon: ShoppingCart, shortcut: "O" },
+  { label: "Thêm khách hàng", href: "/admin/users/new", icon: UserPlus, shortcut: "U" },
 ];
 
 // ─── Search suggestions ────────────────────────────────────────────────────────
 
-const SEARCH_SUGGESTIONS = [
-  { label: "Bài viết", href: "/admin/posts", icon: "📝", category: "Trang" },
-  { label: "Sản phẩm", href: "/admin/products", icon: "🛏️", category: "Trang" },
-  { label: "Đơn hàng", href: "/admin/orders", icon: "📋", category: "Trang" },
-  { label: "Liên hệ", href: "/admin/contacts", icon: "💬", category: "Trang" },
-  { label: "Người dùng", href: "/admin/users", icon: "👥", category: "Trang" },
-  { label: "Cài đặt", href: "/admin/settings", icon: "⚙️", category: "Trang" },
-  { label: "Viết bài mới", href: "/admin/posts/new", icon: "✏️", category: "Thao tác" },
-  { label: "Thêm sản phẩm", href: "/admin/products/new", icon: "➕", category: "Thao tác" },
-  { label: "Tạo đơn hàng", href: "/admin/orders/new", icon: "📦", category: "Thao tác" },
-  { label: "Thêm khách hàng", href: "/admin/users/new", icon: "👤", category: "Thao tác" },
-  { label: "Cài đặt email", href: "/admin/settings", icon: "📧", category: "Thao tác" },
+const SEARCH_SUGGESTIONS: { label: string; href: string; icon: LucideIcon; category: string }[] = [
+  { label: "Bài viết", href: "/admin/posts", icon: BookOpenText, category: "Trang" },
+  { label: "Sản phẩm", href: "/admin/products", icon: BedDouble, category: "Trang" },
+  { label: "Đơn hàng", href: "/admin/orders", icon: ShoppingCart, category: "Trang" },
+  { label: "Liên hệ", href: "/admin/contacts", icon: MessageSquare, category: "Trang" },
+  { label: "Người dùng", href: "/admin/users", icon: UsersRound, category: "Trang" },
+  { label: "Cài đặt", href: "/admin/settings", icon: Settings2, category: "Trang" },
+  { label: "Viết bài mới", href: "/admin/posts/new", icon: FilePenLine, category: "Thao tác" },
+  { label: "Thêm sản phẩm", href: "/admin/products/new", icon: PackagePlus, category: "Thao tác" },
+  { label: "Tạo đơn hàng", href: "/admin/orders/new", icon: Box, category: "Thao tác" },
+  { label: "Thêm khách hàng", href: "/admin/users/new", icon: UserPlus, category: "Thao tác" },
+  { label: "Cài đặt email", href: "/admin/settings", icon: Mail, category: "Thao tác" },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -122,7 +127,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6 gap-4">
+      <div className="sf-admin-header flex items-center justify-between mb-6 gap-4">
         {/* Left: Breadcrumb + Title */}
         <div className="min-w-0">
           {/* Breadcrumb */}
@@ -157,7 +162,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
             onClick={() => { setSearchOpen(true); setTimeout(() => searchRef.current?.focus(), 50); }}
             className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.55)] hover:text-gray-300 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] hover:border-[rgba(255,200,100,0.22)] px-4 py-2 rounded-xl transition-all"
           >
-            <span>🔍</span>
+            <Search size={16} />
             <span className="hidden sm:inline">Tìm kiếm...</span>
             <kbd className="hidden sm:inline text-xs bg-[#C9A84C]/10 text-[#C9A84C]/60 px-1.5 py-0.5 rounded border border-[rgba(255,200,100,0.14)]">⌘K</kbd>
           </button>
@@ -168,7 +173,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
               onClick={() => setQuickActionsOpen(!quickActionsOpen)}
               className="flex items-center gap-2 text-sm font-semibold bg-[#C9A84C] text-black px-4 py-2 rounded-xl hover:bg-[#E2C97E] transition-colors"
             >
-              <span>+</span>
+              <Plus size={17} strokeWidth={2.4} />
               <span className="hidden sm:inline">Tạo mới</span>
             </button>
             {quickActionsOpen && (
@@ -176,7 +181,9 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
                 <div className="fixed inset-0 z-40" onClick={() => setQuickActionsOpen(false)} />
                 <div className="absolute right-0 top-full mt-2 w-52 bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-2xl shadow-2xl z-50 overflow-hidden">
                   <div className="p-2">
-                    {QUICK_ACTIONS.map((action) => (
+                    {QUICK_ACTIONS.map((action) => {
+                      const ActionIcon = action.icon;
+                      return (
                       <Link
                         key={action.href}
                         href={action.href}
@@ -184,12 +191,13 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
                         className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
-                          <span>{action.icon}</span>
+                          <span className="sf-admin-icon-tile h-8 w-8 rounded-lg"><ActionIcon size={16} /></span>
                           <span>{action.label}</span>
                         </span>
                         <kbd className="text-xs text-[rgba(245,237,214,0.45)] bg-white/5 px-1.5 py-0.5 rounded border border-white/10">{action.shortcut}</kbd>
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </>
@@ -205,7 +213,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
           <div className="relative w-full max-w-lg bg-[#1a1200] border border-[rgba(255,200,100,0.22)] rounded-2xl shadow-2xl overflow-hidden">
             {/* Search input */}
             <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(255,200,100,0.14)]">
-              <span className="text-[rgba(245,237,214,0.55)]">🔍</span>
+              <Search size={18} className="text-[rgba(245,237,214,0.55)]" />
               <input
                 ref={searchRef}
                 type="text"
@@ -237,17 +245,20 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
                   return Object.entries(grouped).map(([category, items]) => (
                     <div key={category} className="mb-2">
                       <p className="text-xs text-[rgba(245,237,214,0.35)] uppercase tracking-wider px-3 py-1.5 font-semibold">{category}</p>
-                      {items.map((item) => (
+                      {items.map((item) => {
+                        const ResultIcon = item.icon;
+                        return (
                         <button
                           key={item.href}
                           onClick={() => handleSearchSelect(item.href)}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-left"
                         >
-                          <span className="text-base">{item.icon}</span>
+                          <span className="sf-admin-icon-tile h-8 w-8 rounded-lg"><ResultIcon size={16} /></span>
                           <span>{item.label}</span>
                           <span className="ml-auto text-xs text-[rgba(245,237,214,0.45)]">{item.href}</span>
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   ));
                 })()
@@ -256,7 +267,7 @@ export default function AdminHeader({ title, subtitle }: { title?: string; subti
 
             {/* Footer hint */}
             <div className="px-4 py-2.5 border-t border-[rgba(255,200,100,0.14)] flex items-center gap-4 text-xs text-[rgba(245,237,214,0.35)]">
-              <span><kbd className="bg-white/5 px-1 py-0.5 rounded border border-white/10">↵</kbd> Chọn</span>
+              <span className="inline-flex items-center gap-1"><Command size={12} /> <kbd className="bg-white/5 px-1 py-0.5 rounded border border-white/10">↵</kbd> Chọn</span>
               <span><kbd className="bg-white/5 px-1 py-0.5 rounded border border-white/10">ESC</kbd> Đóng</span>
             </div>
           </div>

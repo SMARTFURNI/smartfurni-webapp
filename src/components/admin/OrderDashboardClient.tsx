@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { OrderDashboardStats, Order, OrderStatus, PaymentMethod } from "@/lib/order-store";
+import { LayoutDashboard, List, Plus, RefreshCw } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -355,7 +356,7 @@ export default function OrderDashboardClient({ data: initialData }: { data: Orde
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="sf-admin-header flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white">Quản Lý Đơn Hàng</h1>
           <p className="text-[rgba(245,237,214,0.55)] text-sm mt-1">
@@ -366,15 +367,15 @@ export default function OrderDashboardClient({ data: initialData }: { data: Orde
           <div className="flex bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-xl overflow-hidden">
             <button
               onClick={() => setView("dashboard")}
-              className={`px-4 py-2 text-sm transition-colors ${view === "dashboard" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
+              className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${view === "dashboard" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
             >
-              📊 Tổng quan
+              <LayoutDashboard size={15} /> Tổng quan
             </button>
             <button
               onClick={() => setView("list")}
-              className={`px-4 py-2 text-sm transition-colors ${view === "list" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
+              className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${view === "list" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
             >
-              📋 Danh sách
+              <List size={15} /> Danh sách
             </button>
           </div>
           <button
@@ -382,14 +383,15 @@ export default function OrderDashboardClient({ data: initialData }: { data: Orde
             disabled={refreshing}
             className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
           >
-            <span className={refreshing ? "animate-spin" : ""}>↻</span>
+            <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
             {refreshing ? "Đang tải..." : "Làm mới"}
           </button>
           <button
             onClick={() => router.push("/admin/orders/new")}
             className="flex items-center gap-2 text-sm font-semibold bg-[#C9A84C] text-black px-5 py-2 rounded-xl hover:bg-[#E2C97E] transition-colors"
           >
-            + Tạo đơn hàng
+            <Plus size={16} />
+            Tạo đơn hàng
           </button>
         </div>
       </div>

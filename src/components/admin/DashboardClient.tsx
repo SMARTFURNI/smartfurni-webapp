@@ -4,6 +4,12 @@ import Link from "next/link";
 import type { DashboardStats } from "@/lib/admin-store";
 import type { OrderDashboardStats } from "@/lib/order-store";
 import type { ProductDashboardStats } from "@/lib/product-store";
+import type { LucideIcon } from "lucide-react";
+import {
+  BarChart3, BedDouble, CheckCheck, Factory, FilePenLine, Home,
+  PackageCheck, PackagePlus, RefreshCw, Repeat2, Settings2, ShoppingCart,
+  Target, UsersRound, WalletCards,
+} from "lucide-react";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function fmt(n: number): string {
@@ -87,14 +93,15 @@ function Sparkline({ data, color = "#C9A84C", height = 36 }: { data: number[]; c
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, sub, color, icon, href, trend, trendLabel, growth, growthLabel }: {
-  label: string; value: string; sub?: string; color: string; icon: string;
+  label: string; value: string; sub?: string; color: string; icon: LucideIcon;
   href?: string; trend?: number[]; trendLabel?: string; growth?: number; growthLabel?: string;
 }) {
+  const Icon = icon;
   const inner = (
     <div className="bg-[#1a1200] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all h-full group">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-xl">{icon}</span>
+          <span className="sf-admin-icon-tile h-9 w-9 rounded-xl" style={{ color }}><Icon size={18} strokeWidth={2} /></span>
           <span className="text-xs text-[rgba(245,237,214,0.55)] uppercase tracking-wider font-medium">{label}</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -582,7 +589,7 @@ export default function DashboardClient({
           </button>
           <ExportButton orderData={orderData} productData={productData} dateRange={dateRange} />
           <button onClick={handleRefresh} disabled={refreshing} className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-white/10 px-4 py-2 rounded-xl transition-colors disabled:opacity-50 hover:border-white/20">
-            <span className={refreshing ? "animate-spin inline-block" : "inline-block"}>↻</span>
+            <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
             {refreshing ? "Đang tải..." : "Làm mới"}
           </button>
         </div>
@@ -602,18 +609,18 @@ export default function DashboardClient({
 
       {/* Row 1: Top KPI */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard label="Doanh thu" value={fmtVND(filteredRevenue)} sub={`Tuần này: ${fmtVND(o.weekRevenue)}`} color="#C9A84C" icon="💰" href="/admin/orders" trend={revTrend} trendLabel="Doanh thu 7 ngày" growth={o.revenueGrowthWeek} growthLabel="so với tuần trước" />
-        <KpiCard label="Đã thanh toán" value={fmt(filteredPaid.length)} sub={`${fmtVND(filteredRevenue)} đã ghi nhận`} color="#22C55E" icon="✓" growth={o.revenueGrowthMonth} growthLabel="doanh thu so với tháng trước" />
-        <KpiCard label="Đơn hàng" value={fmt(filteredOrders.length)} sub={`Chờ: ${o.pendingOrders} · Đang giao: ${o.shippingOrders}`} color="#3B82F6" icon="📦" href="/admin/orders" trend={orderTrend} trendLabel="Đơn hàng 7 ngày" growth={o.ordersGrowthWeek} growthLabel="so với tuần trước" />
-        <KpiCard label="Giá trị TB/đơn" value={fmtVND(filteredAvgOrder)} sub={`${fmt(filteredDelivered)} đã giao · ${filteredConversion}% tỷ lệ`} color="#F472B6" icon="🎯" />
+        <KpiCard label="Doanh thu" value={fmtVND(filteredRevenue)} sub={`Tuần này: ${fmtVND(o.weekRevenue)}`} color="#C9A84C" icon={WalletCards} href="/admin/orders" trend={revTrend} trendLabel="Doanh thu 7 ngày" growth={o.revenueGrowthWeek} growthLabel="so với tuần trước" />
+        <KpiCard label="Đã thanh toán" value={fmt(filteredPaid.length)} sub={`${fmtVND(filteredRevenue)} đã ghi nhận`} color="#22C55E" icon={CheckCheck} growth={o.revenueGrowthMonth} growthLabel="doanh thu so với tháng trước" />
+        <KpiCard label="Đơn hàng" value={fmt(filteredOrders.length)} sub={`Chờ: ${o.pendingOrders} · Đang giao: ${o.shippingOrders}`} color="#3B82F6" icon={ShoppingCart} href="/admin/orders" trend={orderTrend} trendLabel="Đơn hàng 7 ngày" growth={o.ordersGrowthWeek} growthLabel="so với tuần trước" />
+        <KpiCard label="Giá trị TB/đơn" value={fmtVND(filteredAvgOrder)} sub={`${fmt(filteredDelivered)} đã giao · ${filteredConversion}% tỷ lệ`} color="#F472B6" icon={Target} />
       </div>
 
       {/* Row 2: Secondary KPI */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard label="Sản phẩm" value={fmt(p.totalProducts)} sub={`Đang bán: ${p.activeProducts} · Hết hàng: ${p.outOfStock}`} color="#8B5CF6" icon="🛏️" href="/admin/products" />
-        <KpiCard label="Tồn kho" value={fmt(p.totalStock)} sub={`${p.lowStockCount} sản phẩm sắp hết hàng`} color={p.lowStockCount > 0 ? "#F59E0B" : "#22C55E"} icon="🏭" href="/admin/products" />
-        <KpiCard label="Khách quay lại" value={`${o.repeatCustomerRate}%`} sub={`${o.repeatCustomerCount} khách đặt ≥2 lần`} color="#06B6D4" icon="🔄" />
-        <KpiCard label="Đã giao" value={fmt(o.deliveredOrders)} sub={`${filteredConversion}% đơn trong kỳ đã hoàn tất`} color="#22C55E" icon="✓" href="/admin/orders" />
+        <KpiCard label="Sản phẩm" value={fmt(p.totalProducts)} sub={`Đang bán: ${p.activeProducts} · Hết hàng: ${p.outOfStock}`} color="#8B5CF6" icon={BedDouble} href="/admin/products" />
+        <KpiCard label="Tồn kho" value={fmt(p.totalStock)} sub={`${p.lowStockCount} sản phẩm sắp hết hàng`} color={p.lowStockCount > 0 ? "#F59E0B" : "#22C55E"} icon={Factory} href="/admin/products" />
+        <KpiCard label="Khách quay lại" value={`${o.repeatCustomerRate}%`} sub={`${o.repeatCustomerCount} khách đặt ≥2 lần`} color="#06B6D4" icon={Repeat2} />
+        <KpiCard label="Đã giao" value={fmt(o.deliveredOrders)} sub={`${filteredConversion}% đơn trong kỳ đã hoàn tất`} color="#22C55E" icon={PackageCheck} href="/admin/orders" />
       </div>
 
       {/* Row 3: Revenue Chart + Order Status */}
@@ -856,19 +863,22 @@ export default function DashboardClient({
         <h3 className="text-sm font-semibold text-white mb-4">Thao tác nhanh</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {[
-            { href: "/admin/orders/new", icon: "➕", label: "Tạo đơn hàng" },
-            { href: "/admin/products/new", icon: "🛏️", label: "Thêm sản phẩm" },
-            { href: "/admin/posts/new", icon: "✏️", label: "Viết bài mới" },
-            { href: "/crm/data-pool", icon: "◉", label: "Khách tiềm năng" },
-            { href: "/admin/homepage-products", icon: "🏠", label: "Trang chủ" },
-            { href: "/admin/settings", icon: "⚙️", label: "Cài đặt" },
-            { href: "/admin/analytics", icon: "📊", label: "Analytics" },
-          ].map((action) => (
+            { href: "/admin/orders/new", icon: ShoppingCart, label: "Tạo đơn hàng" },
+            { href: "/admin/products/new", icon: PackagePlus, label: "Thêm sản phẩm" },
+            { href: "/admin/posts/new", icon: FilePenLine, label: "Viết bài mới" },
+            { href: "/crm/data-pool", icon: UsersRound, label: "Khách tiềm năng" },
+            { href: "/admin/homepage-products", icon: Home, label: "Trang chủ" },
+            { href: "/admin/settings", icon: Settings2, label: "Cài đặt" },
+            { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
+          ].map((action) => {
+            const ActionIcon = action.icon;
+            return (
             <Link key={action.href} href={action.href} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/3 hover:bg-white/6 border border-transparent hover:border-white/10 transition-all group">
-              <span className="text-xl">{action.icon}</span>
+              <span className="sf-admin-icon-tile h-10 w-10 rounded-xl text-[#D7B957]"><ActionIcon size={19} /></span>
               <span className="text-[11px] text-[rgba(245,237,214,0.55)] group-hover:text-gray-300 text-center transition-colors">{action.label}</span>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
