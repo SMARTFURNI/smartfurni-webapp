@@ -539,6 +539,7 @@ export default function DashboardClient({
   const filteredConversion = filteredOrders.length > 0 ? Math.round((filteredDelivered / filteredOrders.length) * 100) : 0;
   const filteredAvgOrder = filteredPaid.length > 0 ? Math.round(filteredRevenue / filteredPaid.length) : 0;
 
+  const b = blogData;
   const o = orderData.stats;
   const p = productData.stats;
   const revTrend = orderData.revenueByDay.map((d) => d.revenue);
