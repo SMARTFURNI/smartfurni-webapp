@@ -44,15 +44,15 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           .crm-root { height: 100dvh !important; min-height: 100dvh; overflow: hidden; }
           .crm-mobile-bar {
             position: fixed; inset: 0 0 auto 0; z-index: 80;
-            height: calc(54px + env(safe-area-inset-top));
-            padding: env(safe-area-inset-top) 11px 0;
-            display: flex; align-items: center; gap: 9px;
+            height: calc(62px + env(safe-area-inset-top));
+            padding: env(safe-area-inset-top) 14px 0;
+            display: flex; align-items: center; gap: 12px;
             border-bottom: 1px solid rgba(255,200,100,.16);
             background: linear-gradient(105deg, rgba(10,16,30,.97), rgba(33,22,9,.95));
             box-shadow: 0 12px 34px rgba(0,0,0,.36); backdrop-filter: blur(22px);
           }
           .crm-mobile-icon-button, .crm-mobile-avatar {
-            width: 36px; height: 36px; border-radius: 12px; flex: 0 0 auto;
+            width: 42px; height: 42px; border-radius: 14px; flex: 0 0 auto;
             display: inline-flex; align-items: center; justify-content: center;
             color: #fde68a; border: 1px solid rgba(255,200,100,.18);
             background: linear-gradient(145deg, rgba(245,158,11,.17), rgba(59,76,111,.14));
@@ -72,32 +72,30 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           }
           .crm-mobile-overlay.is-visible { opacity: 1; pointer-events: auto; }
           .crm-mobile-tabs {
-            position: fixed; inset: auto 8px calc(6px + env(safe-area-inset-bottom)) 8px; z-index: 78;
-            min-height: 54px; padding: 5px; display: grid;
-            grid-template-columns: repeat(4,minmax(0,1fr)); border-radius: 18px;
+            position: fixed; inset: auto 10px calc(8px + env(safe-area-inset-bottom)) 10px; z-index: 78;
+            min-height: 62px; padding: 7px 6px; display: grid;
+            grid-template-columns: repeat(4,minmax(0,1fr)); border-radius: 22px;
             border: 1px solid rgba(255,200,100,.18);
             background: linear-gradient(115deg,rgba(15,21,35,.97),rgba(37,24,9,.96));
             box-shadow: 0 18px 45px rgba(0,0,0,.44), inset 0 1px 0 rgba(255,255,255,.035);
             backdrop-filter: blur(22px);
           }
           .crm-mobile-tabs a {
-            min-width: 0; min-height: 42px; border-radius: 12px; display: flex;
-            flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-            color: rgba(245,237,214,.48); font-size: 8px; font-weight: 600;
+            min-width: 0; min-height: 48px; border-radius: 15px; display: flex;
+            flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            color: rgba(245,237,214,.48); font-size: 9px; font-weight: 600;
           }
           .crm-mobile-tabs a.is-active { color: #fde68a; background: linear-gradient(145deg,rgba(245,158,11,.22),rgba(245,158,11,.07)); }
           .crm-mobile-tabs + main {
             width: 100% !important; min-width: 0 !important;
-            padding-top: calc(54px + env(safe-area-inset-top));
-            padding-bottom: calc(68px + env(safe-area-inset-bottom));
+            padding-top: calc(62px + env(safe-area-inset-top));
+            padding-bottom: calc(82px + env(safe-area-inset-bottom));
             overflow-x: hidden !important; -webkit-overflow-scrolling: touch;
           }
           .crm-root main > *, .crm-root main .grid, .crm-root main .flex { max-width: 100%; }
           .crm-root main .grid > *, .crm-root main .flex > * { min-width: 0; }
-          .crm-root main [class~="px-6"], .crm-root main [class~="px-5"] { padding-left: 11px !important; padding-right: 11px !important; }
-          .crm-root main [class~="py-5"], .crm-root main [class~="py-4"] { padding-top: 9px !important; padding-bottom: 9px !important; }
-          .crm-root main [class~="gap-6"] { gap: 10px !important; }
-          .crm-root main [class~="gap-4"] { gap: 8px !important; }
+          .crm-root main [class~="px-6"] { padding-left: 14px !important; padding-right: 14px !important; }
+          .crm-root main [class~="gap-6"] { gap: 12px !important; }
           .crm-root main table {
             display: block; max-width: calc(100vw - 24px); overflow-x: auto;
             white-space: nowrap; -webkit-overflow-scrolling: touch;
@@ -110,20 +108,8 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           .crm-root main form .grid-cols-4 { grid-template-columns: minmax(0,1fr) !important; }
           .crm-root main .grid-cols-4:not(form *), .crm-root main .grid-cols-5:not(form *) { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
           .crm-root main .grid-cols-6:not(form *) { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
-          .crm-root main [class~="p-8"], .crm-root main [class~="p-6"], .crm-root main [class~="p-5"] { padding: 11px !important; }
-          .crm-root main h1 { font-size: 20px !important; line-height: 1.22 !important; }
-          .crm-root main h2 { font-size: 17px !important; line-height: 1.3 !important; }
-          .crm-root main h3 { font-size: 15px !important; line-height: 1.35 !important; }
-          .crm-root main [class~="text-5xl"], .crm-root main [class~="text-4xl"] { font-size: 24px !important; line-height: 1.15 !important; }
-          .crm-root main [class~="text-3xl"] { font-size: 21px !important; line-height: 1.2 !important; }
-          .crm-root main [class~="text-2xl"] { font-size: 18px !important; line-height: 1.25 !important; }
-          .crm-root main [class~="text-xl"] { font-size: 16px !important; line-height: 1.3 !important; }
-          .crm-root main button, .crm-root main select, .crm-root main input {
-            min-height: 36px; font-size: 12px !important;
-          }
-          .crm-root main textarea { font-size: 13px !important; }
-          .crm-root main button[class*="px-6"], .crm-root main button[class*="px-5"] { padding-left: 12px !important; padding-right: 12px !important; }
-          .crm-root main button[class*="py-3"], .crm-root main button[class*="py-4"] { padding-top: 7px !important; padding-bottom: 7px !important; }
+          .crm-root main [class~="p-8"], .crm-root main [class~="p-6"] { padding: 14px !important; }
+          .crm-root main button, .crm-root main select, .crm-root main input { min-height: 42px; }
 
           /* Kanban dạng app: mỗi trạng thái là một màn vuốt ngang có điểm dừng. */
           .crm-kanban { height: auto !important; min-height: 100%; }
@@ -136,7 +122,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           .crm-kanban-column {
             width: calc(100vw - 42px) !important;
             min-width: calc(100vw - 42px) !important;
-            max-height: calc(100dvh - 220px);
+            max-height: calc(100dvh - 250px);
             scroll-snap-align: center;
             scroll-snap-stop: always;
           }
