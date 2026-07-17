@@ -123,6 +123,26 @@ export default async function CrmDashboardPage() {
     wonSparkline,
   };
 
+  // Cố định nội dung thời gian ngay từ phía máy chủ để HTML đầu tiên và lần
+  // hydrate trên điện thoại luôn giống nhau, tránh React bỏ DOM rồi dựng lại.
+  const vietnamHour = Number(new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(now));
+  const initialGreeting = vietnamHour < 12
+    ? "Chào buổi sáng"
+    : vietnamHour < 18
+      ? "Chào buổi chiều"
+      : "Chào buổi tối";
+  const initialDateLabel = new Intl.DateTimeFormat("vi-VN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(now);
+
   return (
     <CrmDashboardClient
       leads={leads}
@@ -144,6 +164,9 @@ export default async function CrmDashboardPage() {
       }}
       initialDarkMode={initialDarkMode}
       initialGradientPreset={initialGradientPreset}
+      initialRenderTimestamp={now.getTime()}
+      initialGreeting={initialGreeting}
+      initialDateLabel={initialDateLabel}
     />
   );
 }

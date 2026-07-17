@@ -44,6 +44,9 @@ interface Props {
   initialPeriodStats?: PeriodStats | null;
   initialDarkMode?: boolean;
   initialGradientPreset?: string;
+  initialRenderTimestamp: number;
+  initialGreeting: string;
+  initialDateLabel: string;
 }
 
 const PRIORITY_CONFIG = {
@@ -301,9 +304,10 @@ function RevenueChart({ forecast, stats, periodStats, theme, fmtVal }: RevenueCh
 }
 
 // ──// ── 12 Week Plan Widget (Dashboard) ─────────────────────────────────────
-function TwelveWeekWidget({ plan, loadingPlan }: {
+function TwelveWeekWidget({ plan, loadingPlan, referenceNowMs }: {
   plan: { id: string; title: string; startDate: string; endDate: string; goals: Array<{ id: string; title: string; color: string }>; tasks: Array<{ id: string; goalId: string; weekNumber: number; status: string }> } | null;
   loadingPlan: boolean;
+  referenceNowMs: number;
 }) {
 
   const GOAL_COLORS_MAP: Record<string, string> = {
@@ -312,7 +316,7 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
   };
 
   function getCurrentWeek(startDate: string) {
-    const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    const diff = Math.floor((referenceNowMs - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
     return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
   }
 
@@ -453,7 +457,7 @@ function TwelveWeekWidget({ plan, loadingPlan }: {
 
 // ── Shared 12-Week Plan Widget (Kế hoạch chung của team) ─────────────────────
 function SharedPlanWidget({
-  plan, loading, taskUpdating, onToggleTask, isAdmin,
+  plan, loading, taskUpdating, onToggleTask, isAdmin, referenceNowMs,
 }: {
   plan: { id: string; title: string; startDate: string; endDate: string; isActive: boolean;
     goals: Array<{ id: string; title: string; color: string; description?: string }>;
@@ -463,6 +467,7 @@ function SharedPlanWidget({
   taskUpdating: string | null;
   onToggleTask: (taskId: string, currentStatus: string) => void;
   isAdmin: boolean;
+  referenceNowMs: number;
 }) {
   const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
 
@@ -472,7 +477,7 @@ function SharedPlanWidget({
   };
 
   function getCurrentWeek(startDate: string) {
-    const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    const diff = Math.floor((referenceNowMs - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
     return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
   }
 
@@ -616,17 +621,18 @@ function SharedPlanWidget({
 }
 
 // ── 12-Week KPI Row ──────────────────────────────────────────────────────────
-function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalValue, wonValue, stats, theme, fmtVal, darkMode, dm, plan, loadingPlan }: {
+function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalValue, wonValue, stats, theme, fmtVal, darkMode, dm, plan, loadingPlan, referenceNowMs }: {
   leads: Lead[]; activeLeads: Lead[]; overdueLeads: Lead[]; wonLeads: Lead[];
   totalValue: number; wonValue: number; stats: CrmStats;
   theme: DashboardTheme; fmtVal: (v: number) => string; darkMode: boolean;
   dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
   plan: { id: string; startDate: string; endDate: string; tasks: Array<{ weekNumber: number; status: string; goalId: string }>; goals: Array<{ id: string; title: string; color: string }> } | null;
   loadingPlan: boolean;
+  referenceNowMs: number;
 }) {
 
   function getCurrentWeek(startDate: string) {
-    const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    const diff = Math.floor((referenceNowMs - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
     return Math.min(12, Math.max(1, Math.ceil((diff + 1) / 7)));
   }
 
@@ -1386,7 +1392,7 @@ const GRADIENT_PRESETS = [
   { id: "aurora", name: "Bắc cực quang", colors: ["#0F2027", "#203A43"], accent: "#34D399", preview: "linear-gradient(135deg, #0F2027 0%, #2C5364 100%)" },
 ];
 
-export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes, initialTwelveWeekPlan, initialSharedPlan, initialPoolStats, initialPeriodStats, initialDarkMode, initialGradientPreset }: Props) {
+export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes, initialTwelveWeekPlan, initialSharedPlan, initialPoolStats, initialPeriodStats, initialDarkMode, initialGradientPreset, initialRenderTimestamp, initialGreeting, initialDateLabel }: Props) {
   // Merge with defaults so all keys are always defined
   const theme: DashboardTheme = { ...DEFAULT_SETTINGS.dashboardTheme, ...(themeProp ?? {}) };
   // Section ordering & visibility helpers
@@ -1637,10 +1643,9 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     });
   }
 
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
-  const dateStr = now.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const renderNowMs = initialRenderTimestamp;
+  const greeting = initialGreeting;
+  const dateStr = initialDateLabel;
 
   const monthlyRevArr = stats.monthlyRevenue;
   const currentMonthRev = monthlyRevArr[monthlyRevArr.length - 1]?.value ?? 0;
@@ -1651,7 +1656,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   const focusItems = [
     ...overdueLeads.slice(0, 2).map(l => ({
       type: "overdue" as const, label: `Liên hệ ${l.name}`,
-      sub: `Quá ${Math.floor((Date.now() - new Date(l.lastContactAt).getTime()) / 86400000)}n`,
+      sub: `Quá ${Math.floor((renderNowMs - new Date(l.lastContactAt).getTime()) / 86400000)}n`,
       href: `/crm/leads/${l.id}`, color: "#f87171", icon: Zap,
     })),
     ...pendingTasks.slice(0, 2).map(t => ({
@@ -1870,6 +1875,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           dm={dm}
           plan={twelveWeekPlan}
           loadingPlan={loadingTwelveWeek}
+          referenceNowMs={renderNowMs}
         />}
 
         {/* ── Personal Rank (staff only) ───────────────────────────────── */}
@@ -2525,7 +2531,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                     };
                     const c = actColors[act.type] || { bg: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)" };
                     const timeAgo = (() => {
-                      const diff = Date.now() - new Date(act.createdAt).getTime();
+                      const diff = renderNowMs - new Date(act.createdAt).getTime();
                       const mins = Math.floor(diff / 60000);
                       if (mins < 60) return `${mins}p`;
                       const hrs = Math.floor(mins / 60);
@@ -2597,7 +2603,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
           <div className="space-y-4 md:space-y-5">
 
             {/* 12 Week Plan Widget (của nhân viên) */}
-            <TwelveWeekWidget plan={twelveWeekPlan} loadingPlan={loadingTwelveWeek} />
+            <TwelveWeekWidget plan={twelveWeekPlan} loadingPlan={loadingTwelveWeek} referenceNowMs={renderNowMs} />
 
             {/* Kế hoạch 12 tuần chung của team (admin tạo, nhân viên cùng thực hiện) */}
             <SharedPlanWidget
@@ -2606,6 +2612,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
               taskUpdating={sharedPlanTaskUpdating}
               onToggleTask={toggleSharedPlanTask}
               isAdmin={currentUser?.isAdmin ?? false}
+              referenceNowMs={renderNowMs}
             />
 
             {/* Team Online (admin only) */}
@@ -2715,7 +2722,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 badge={`${overdueLeads.length}`}>
                 <div className="p-3 space-y-2">
                   {overdueLeads.slice(0, 5).map(lead => {
-                    const daysAgo = Math.floor((Date.now() - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
+                    const daysAgo = Math.floor((renderNowMs - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
                     return (
                       <Link key={lead.id} href={`/crm/leads/${lead.id}`}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:opacity-90 transition-opacity"

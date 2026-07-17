@@ -105,23 +105,6 @@ export default function ChooseModulePage() {
         </footer>
       </section>
 
-      <style jsx>{`
-        .module-hub { position:relative; min-height:100dvh; overflow:hidden; background:radial-gradient(circle at 12% 8%,rgba(53,82,137,.25),transparent 32rem),radial-gradient(circle at 88% 16%,rgba(180,119,22,.20),transparent 30rem),linear-gradient(135deg,#0a111e 0%,#16160f 48%,#211304 100%); }
-        .module-hub-grid { position:absolute;inset:0;opacity:.55;background-image:linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,#000,transparent 92%); }
-        .module-hub-glow { position:absolute;border-radius:999px;filter:blur(80px);pointer-events:none; }
-        .module-hub-glow-one { width:260px;height:260px;left:-100px;bottom:8%;background:rgba(37,78,145,.18); }
-        .module-hub-glow-two { width:280px;height:280px;right:-110px;top:20%;background:rgba(201,168,76,.13); }
-        .module-brand { width:min(270px,72vw);height:78px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(224,197,111,.15);border-radius:24px;background:linear-gradient(145deg,rgba(31,39,56,.64),rgba(40,28,13,.54));box-shadow:0 18px 50px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.035);backdrop-filter:blur(18px); }
-        .module-brand img { max-width:220px;height:58px;object-fit:contain; }
-        .module-card { position:relative;overflow:hidden;padding:24px;border:1px solid rgba(224,197,111,.16);border-radius:26px;background:linear-gradient(145deg,rgba(29,38,56,.80),rgba(34,27,17,.76));box-shadow:0 24px 65px rgba(0,0,0,.27),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(20px);transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease; }
-        .module-card:before { content:'';position:absolute;inset:0;background:radial-gradient(circle at 84% 0,rgba(215,185,87,.13),transparent 38%);pointer-events:none; }
-        .module-card:hover { transform:translateY(-4px);border-color:rgba(224,197,111,.32);box-shadow:0 30px 80px rgba(0,0,0,.35),0 0 0 1px rgba(215,185,87,.05); }
-        .module-icon { width:52px;height:52px;border-radius:17px;display:flex;align-items:center;justify-content:center;color:#f2da83;border:1px solid rgba(224,197,111,.22);background:linear-gradient(145deg,rgba(215,185,87,.22),rgba(49,70,110,.15));box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }
-        .module-feature { min-height:44px;padding:8px 9px;border:1px solid rgba(255,255,255,.055);border-radius:13px;display:flex;align-items:center;gap:7px;color:rgba(245,237,214,.52);background:rgba(255,255,255,.025);font-size:10px;font-weight:600; }
-        .module-feature svg { color:#d7b957;flex:0 0 auto; }
-        .module-action { position:relative;margin-top:20px;min-height:50px;padding:0 16px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;color:#1a1200;background:linear-gradient(110deg,#e3c65f,#b88822);box-shadow:0 12px 30px rgba(187,135,31,.18);font-size:13px;font-weight:800; }
-        @media(max-width:640px){ .module-card{padding:18px;border-radius:22px}.module-brand{height:66px;border-radius:20px}.module-brand img{height:49px}.module-card h2{font-size:22px}.module-card p{min-height:0}.module-action{margin-top:16px}.module-card:hover{transform:none} }
-      `}</style>
     </main>
   );
 }
