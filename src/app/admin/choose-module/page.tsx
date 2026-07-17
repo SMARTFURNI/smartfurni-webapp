@@ -120,7 +120,18 @@ export default function ChooseModulePage() {
         .module-feature { min-height:44px;padding:8px 9px;border:1px solid rgba(255,255,255,.055);border-radius:13px;display:flex;align-items:center;gap:7px;color:rgba(245,237,214,.52);background:rgba(255,255,255,.025);font-size:10px;font-weight:600; }
         .module-feature svg { color:#d7b957;flex:0 0 auto; }
         .module-action { position:relative;margin-top:20px;min-height:50px;padding:0 16px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;color:#1a1200;background:linear-gradient(110deg,#e3c65f,#b88822);box-shadow:0 12px 30px rgba(187,135,31,.18);font-size:13px;font-weight:800; }
-        @media(max-width:640px){ .module-card{padding:18px;border-radius:22px}.module-brand{height:66px;border-radius:20px}.module-brand img{height:49px}.module-card h2{font-size:22px}.module-card p{min-height:0}.module-action{margin-top:16px}.module-card:hover{transform:none} }
+        @media(max-width:640px){
+          .module-hub section{padding-top:18px;padding-bottom:18px}
+          .module-hub h1{font-size:20px;line-height:1.25}
+          .module-card{padding:14px;border-radius:18px}
+          .module-brand{height:54px;border-radius:16px}
+          .module-brand img{height:40px}
+          .module-card h2{font-size:18px;line-height:1.25}
+          .module-card p{min-height:0;font-size:12px;line-height:1.5}
+          .module-feature{min-height:36px;padding:6px 7px;border-radius:10px;font-size:9px}
+          .module-action{min-height:40px;margin-top:12px;padding:0 12px;border-radius:12px;font-size:12px}
+          .module-card:hover{transform:none}
+        }
       `}</style>
     </main>
   );

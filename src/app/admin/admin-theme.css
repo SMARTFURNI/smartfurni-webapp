@@ -161,11 +161,11 @@
     position: fixed;
     inset: 0 0 auto 0;
     z-index: 80;
-    height: calc(62px + env(safe-area-inset-top));
-    padding: env(safe-area-inset-top) 14px 0;
+    height: calc(54px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 11px 0;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 9px;
     border-bottom: 1px solid rgba(224, 197, 111, 0.18);
     background: linear-gradient(105deg, rgba(10, 17, 30, .96), rgba(31, 22, 10, .94));
     box-shadow: 0 12px 34px rgba(0,0,0,.34);
@@ -174,9 +174,9 @@
 
   .sf-mobile-icon-button,
   .sf-mobile-brand {
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -185,7 +185,7 @@
     background: linear-gradient(145deg, rgba(215,185,87,.14), rgba(59,76,111,.12));
   }
 
-  .sf-mobile-brand img { width: 32px; height: 32px; object-fit: contain; }
+  .sf-mobile-brand img { width: 28px; height: 28px; object-fit: contain; }
 
   .sf-admin-sidebar {
     position: fixed;
@@ -217,29 +217,29 @@
 
   .sf-admin-mobile-tabs {
     position: fixed;
-    inset: auto 10px calc(8px + env(safe-area-inset-bottom)) 10px;
+    inset: auto 8px calc(6px + env(safe-area-inset-bottom)) 8px;
     z-index: 78;
-    min-height: 62px;
-    padding: 7px 6px;
+    min-height: 54px;
+    padding: 5px;
     display: grid;
     grid-template-columns: repeat(4, minmax(0,1fr));
     border: 1px solid rgba(224,197,111,.18);
-    border-radius: 22px;
+    border-radius: 18px;
     background: linear-gradient(115deg, rgba(15,22,35,.96), rgba(35,25,11,.95));
     box-shadow: 0 18px 45px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.035);
     backdrop-filter: blur(22px);
   }
   .sf-admin-mobile-tabs a {
     min-width: 0;
-    min-height: 48px;
-    border-radius: 15px;
+    min-height: 42px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 2px;
     color: rgba(245,237,214,.48);
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 600;
   }
   .sf-admin-mobile-tabs a.is-active {
@@ -251,8 +251,8 @@
   .sf-admin-mobile-tabs + * {
     width: 100% !important;
     min-width: 0 !important;
-    padding-top: calc(62px + env(safe-area-inset-top)) !important;
-    padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important;
+    padding-top: calc(54px + env(safe-area-inset-top)) !important;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom)) !important;
     overflow-x: hidden !important;
   }
 
@@ -285,11 +285,35 @@
   .sf-admin-shell main .grid-cols-6:not(form *) { grid-template-columns: repeat(3, minmax(0,1fr)) !important; }
 
   .sf-admin-shell [class~="p-8"],
-  .sf-admin-shell [class~="p-6"] { padding: 14px !important; }
+  .sf-admin-shell [class~="p-6"],
+  .sf-admin-shell [class~="p-5"] { padding: 11px !important; }
+
+  .sf-admin-shell [class~="px-6"],
+  .sf-admin-shell [class~="px-5"] { padding-left: 11px !important; padding-right: 11px !important; }
+
+  .sf-admin-shell [class~="py-5"],
+  .sf-admin-shell [class~="py-4"] { padding-top: 9px !important; padding-bottom: 9px !important; }
+
+  .sf-admin-shell [class~="gap-6"] { gap: 10px !important; }
+  .sf-admin-shell [class~="gap-4"] { gap: 8px !important; }
+
+  .sf-admin-shell main h1 { font-size: 20px !important; line-height: 1.22 !important; }
+  .sf-admin-shell main h2 { font-size: 17px !important; line-height: 1.3 !important; }
+  .sf-admin-shell main h3 { font-size: 15px !important; line-height: 1.35 !important; }
+  .sf-admin-shell main [class~="text-5xl"],
+  .sf-admin-shell main [class~="text-4xl"] { font-size: 24px !important; line-height: 1.15 !important; }
+  .sf-admin-shell main [class~="text-3xl"] { font-size: 21px !important; line-height: 1.2 !important; }
+  .sf-admin-shell main [class~="text-2xl"] { font-size: 18px !important; line-height: 1.25 !important; }
+  .sf-admin-shell main [class~="text-xl"] { font-size: 16px !important; line-height: 1.3 !important; }
 
   .sf-admin-shell button,
   .sf-admin-shell select,
-  .sf-admin-shell input { min-height: 42px; }
+  .sf-admin-shell input { min-height: 36px; font-size: 12px !important; }
+  .sf-admin-shell textarea { font-size: 13px !important; }
+  .sf-admin-shell button[class*="px-6"],
+  .sf-admin-shell button[class*="px-5"] { padding-left: 12px !important; padding-right: 12px !important; }
+  .sf-admin-shell button[class*="py-3"],
+  .sf-admin-shell button[class*="py-4"] { padding-top: 7px !important; padding-bottom: 7px !important; }
 
   .sf-admin-header {
     align-items: flex-start;
@@ -304,7 +328,7 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 5px;
     position: sticky;
-    top: calc(62px + env(safe-area-inset-top));
+    top: calc(54px + env(safe-area-inset-top));
     z-index: 20;
     margin: 0 0 10px;
     padding: 5px;
@@ -314,7 +338,7 @@
     backdrop-filter: blur(18px);
   }
   .theme-editor-mobile-tabs button {
-    min-height: 40px;
+    min-height: 34px;
     border-radius: 12px;
     color: rgba(245,237,214,.58);
     font-size: 11px;
@@ -326,7 +350,7 @@
   }
   .theme-editor-workspace {
     display: block !important;
-    height: calc(100dvh - 230px) !important;
+    height: calc(100dvh - 210px) !important;
     min-height: 460px;
   }
   .theme-editor-sections,
