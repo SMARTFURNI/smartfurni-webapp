@@ -1,382 +1,368 @@
 "use client";
-import { useState } from "react";
+
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
+import {
+  Armchair,
+  BatteryMedium,
+  BedDouble,
+  Bluetooth,
+  BookOpen,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Clock3,
+  Gamepad2,
+  Home,
+  LampDesk,
+  Lightbulb,
+  LockKeyhole,
+  MoonStar,
+  Palette,
+  Pause,
+  Play,
+  Radio,
+  RotateCcw,
+  Save,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  SunMedium,
+  TimerReset,
+  Trash2,
+  Tv,
+  Unplug,
+  Vibrate,
+  Wifi,
+  X,
+  Zap,
+} from "lucide-react";
 import BedSVG from "@/components/ui/BedSVG";
-import { useBedStore, DEFAULT_PRESETS } from "@/lib/bed-store";
+import { DEFAULT_PRESETS, type MassageLevel, type MassageMode, type Preset, useBedStore } from "@/lib/bed-store";
 import { cn } from "@/lib/utils";
+import "./smart-bed.css";
 
-const LED_COLORS = [
-  "#FFFFFF", "#FFD700", "#C9A84C", "#FF6B6B", "#FF8C42",
-  "#4ECDC4", "#45B7D1", "#96CEB4", "#DDA0DD", "#F7DC6F",
-];
+type ViewId = "control" | "presets" | "comfort" | "routine";
 
-const MASSAGE_LEVELS = [
-  { level: 0 as const, label: "Tắt" },
-  { level: 1 as const, label: "Nhẹ" },
-  { level: 2 as const, label: "Vừa" },
-  { level: 3 as const, label: "Mạnh" },
-];
-
+const LED_COLORS = ["#F5EDD6", "#D7B957", "#F0A35E", "#EC6F6F", "#8D7AF4", "#5DA8F5", "#55D6C2", "#7FD179"];
 const TIMER_OPTIONS = [15, 30, 45, 60, 90];
+const MASSAGE_LEVELS: Array<{ level: MassageLevel; label: string }> = [
+  { level: 0, label: "Tắt" },
+  { level: 1, label: "Nhẹ" },
+  { level: 2, label: "Vừa" },
+  { level: 3, label: "Mạnh" },
+];
+const MASSAGE_MODES: Array<{ id: MassageMode; label: string }> = [
+  { id: "wave", label: "Làn sóng" },
+  { id: "pulse", label: "Nhịp" },
+  { id: "steady", label: "Liên tục" },
+];
+
+const NAV_ITEMS: Array<{ id: ViewId; label: string; icon: typeof Gamepad2 }> = [
+  { id: "control", label: "Điều khiển", icon: Gamepad2 },
+  { id: "presets", label: "Tư thế", icon: BedDouble },
+  { id: "comfort", label: "Tiện nghi", icon: Sparkles },
+  { id: "routine", label: "Lịch ngủ", icon: Clock3 },
+];
+
+function formatCountdown(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours > 0
+    ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+    : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function PresetIcon({ preset }: { preset: Preset }) {
+  const Icon = preset.icon === "read" ? BookOpen
+    : preset.icon === "tv" ? Tv
+      : preset.icon === "sit" ? Armchair
+        : preset.icon === "snore" ? MoonStar
+          : preset.icon === "zero" ? Zap
+            : preset.icon === "custom" ? Save
+              : BedDouble;
+  return <Icon size={20} strokeWidth={1.8} />;
+}
+
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+  return (
+    <button type="button" className={cn("bed-toggle", checked && "is-on")} onClick={onChange} aria-label={label} aria-pressed={checked}>
+      <span />
+    </button>
+  );
+}
+
+function AngleControl({
+  label,
+  value,
+  max,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  disabled: boolean;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <section className={cn("bed-angle-card", disabled && "is-disabled")}>
+      <div className="bed-angle-card__top">
+        <div>
+          <span className="bed-eyebrow">{label}</span>
+          <strong>{value}<small>°</small></strong>
+        </div>
+        <div className="bed-angle-steps">
+          <button type="button" onClick={() => onChange(value - 5)} disabled={disabled || value <= 0} aria-label={`Hạ ${label.toLowerCase()}`}><ChevronDown size={18} /></button>
+          <button type="button" onClick={() => onChange(value + 5)} disabled={disabled || value >= max} aria-label={`Nâng ${label.toLowerCase()}`}><ChevronUp size={18} /></button>
+        </div>
+      </div>
+      <input
+        className="bed-range"
+        type="range"
+        min={0}
+        max={max}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(Number(event.target.value))}
+        style={{ "--range-progress": `${(value / max) * 100}%` } as CSSProperties}
+        aria-label={label}
+      />
+      <div className="bed-range-labels"><span>0°</span><span>{max}°</span></div>
+    </section>
+  );
+}
+
+function SettingRow({ icon, title, description, action }: { icon: ReactNode; title: string; description: string; action: ReactNode }) {
+  return (
+    <div className="bed-setting-row">
+      <div className="bed-setting-row__icon">{icon}</div>
+      <div className="bed-setting-row__copy"><strong>{title}</strong><span>{description}</span></div>
+      <div className="bed-setting-row__action">{action}</div>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const store = useBedStore();
   const { state } = store;
-  const [activeTab, setActiveTab] = useState<"control" | "light" | "massage" | "timer">("control");
+  const [activeView, setActiveView] = useState<ViewId>("control");
+  const [showConnection, setShowConnection] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timeout = window.setTimeout(() => setToast(null), 2600);
+    return () => window.clearTimeout(timeout);
+  }, [toast]);
+
+  const activePreset = store.presets.find((preset) => preset.id === state.activePreset);
+  const controlsLocked = state.childLock;
+
+  const connect = () => {
+    setConnecting(true);
+    window.setTimeout(() => {
+      store.connectDevice();
+      setConnecting(false);
+      setShowConnection(false);
+      setToast("Đã kết nối bộ điều khiển SmartFurni");
+    }, 900);
+  };
+
+  const savePreset = () => {
+    if (!store.saveCurrentPreset(presetName)) {
+      setToast("Hãy nhập tên tư thế trước khi lưu");
+      return;
+    }
+    setPresetName("");
+    setToast("Đã lưu tư thế mới");
+  };
 
   return (
-    <div className="sf-site-gradient-bg min-h-screen bg-[#0D0B00] flex flex-col">
-      {/* Top bar */}
-      <header className="border-b border-[#2E2800] px-6 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 text-[#F5EDD6]/50 hover:text-[#C9A84C] transition-colors text-sm">
-            ← Trang chủ
+    <main className="smart-bed-app">
+      <div className="smart-bed-grid" aria-hidden="true" />
+
+      <header className="smart-bed-header">
+        <div className="smart-bed-header__inner">
+          <Link href="/" className="smart-bed-brand" aria-label="Về trang chủ SmartFurni">
+            <span className="smart-bed-brand__icon"><Home size={22} strokeWidth={1.6} /></span>
+            <span><b>SMARTFURNI</b><small>SMART BED CONTROL</small></span>
           </Link>
-          <div className="w-px h-4 bg-[#2E2800]" />
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-gradient-to-br from-[#E2C97E] to-[#9A7A2E] flex items-center justify-center">
-              <span className="text-[#0D0B00] font-bold text-[9px]">SF</span>
-            </div>
-            <span className="font-brand text-sm tracking-wider text-[#E2C97E]">SMARTFURNI</span>
+          <div className="smart-bed-header__status">
+            <button type="button" className={cn("device-pill", state.connected && "is-connected")} onClick={() => setShowConnection(true)} aria-label={state.connected ? `Thiết bị ${state.deviceName} đã kết nối` : "Kết nối giường"}>
+              {state.connected ? <Wifi size={15} /> : <Bluetooth size={15} />}
+              <span>{state.connected ? state.deviceName : "Kết nối giường"}</span>
+              <i />
+            </button>
+            <Link href="/admin/choose-module" className="smart-bed-home-link" aria-label="Trung tâm điều hành"><Settings2 size={19} /></Link>
           </div>
         </div>
-
-        {/* Connection toggle */}
-        <button
-          onClick={store.toggleConnect}
-          className={cn(
-            "flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
-            state.connected
-              ? "bg-green-500/10 border border-green-500/30 text-green-400"
-              : "bg-[#1A1600] border border-[#2E2800] text-[#F5EDD6]/50 hover:border-[#C9A84C]/40"
-          )}
-        >
-          <div className={cn("w-2 h-2 rounded-full", state.connected ? "bg-green-400 animate-pulse" : "bg-[#F5EDD6]/30")} />
-          {state.connected ? "Đã kết nối" : "Chưa kết nối"}
-        </button>
       </header>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Left — Bed Visualizer */}
-        <div className="lg:w-1/2 xl:w-3/5 flex flex-col items-center justify-center p-8 border-b lg:border-b-0 lg:border-r border-[#2E2800]">
-          {/* Bed card */}
-          <div className="w-full max-w-xl">
-            <div className="bg-[#1A1600] border border-[#2E2800] rounded-3xl p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-sm font-medium text-[#F5EDD6]/70">Vị trí giường</h2>
-                  <p className="text-xs text-[#F5EDD6]/30 mt-0.5">
-                    {state.activePreset
-                      ? DEFAULT_PRESETS.find((p) => p.id === state.activePreset)?.name ?? "Tùy chỉnh"
-                      : "Tùy chỉnh"}
-                  </p>
-                </div>
-                <div className="flex gap-4 text-right">
-                  <div>
-                    <div className="text-xl font-light text-[#C9A84C]">{state.headAngle}°</div>
-                    <div className="text-xs text-[#F5EDD6]/40">Đầu</div>
-                  </div>
-                  <div className="w-px bg-[#2E2800]" />
-                  <div>
-                    <div className="text-xl font-light text-[#C9A84C]">{state.footAngle}°</div>
-                    <div className="text-xs text-[#F5EDD6]/40">Chân</div>
-                  </div>
-                </div>
-              </div>
-
-              <BedSVG
-                headAngle={state.headAngle}
-                footAngle={state.footAngle}
-                ledOn={state.ledOn}
-                ledColor={state.ledColor}
-                size={460}
-                className="w-full"
-              />
-            </div>
+      <div className="smart-bed-shell">
+        <section className="smart-bed-overview">
+          <div className="smart-bed-overview__copy">
+            <div className="bed-kicker"><Radio size={14} /> PHÒNG NGỦ CHÍNH</div>
+            <h1>Chào buổi tối</h1>
+            <p>Điều chỉnh tư thế và tiện nghi để cơ thể thư giãn đúng cách.</p>
           </div>
-
-          {/* Angle sliders */}
-          <div className="w-full max-w-xl mt-6 grid grid-cols-2 gap-4">
-            {[
-              { label: "Góc đầu", value: state.headAngle, max: 70, onChange: store.setHeadAngle },
-              { label: "Góc chân", value: state.footAngle, max: 45, onChange: store.setFootAngle },
-            ].map((slider) => (
-              <div key={slider.label} className="bg-[#1A1600] border border-[#2E2800] rounded-2xl p-4">
-                <div className="flex justify-between mb-3">
-                  <span className="text-xs text-[#F5EDD6]/60">{slider.label}</span>
-                  <span className="text-sm font-medium text-[#C9A84C]">{slider.value}°</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={slider.max}
-                  value={slider.value}
-                  onChange={(e) => slider.onChange(Number(e.target.value))}
-                  className="w-full accent-[#C9A84C] cursor-pointer"
-                />
-                <div className="flex justify-between mt-1">
-                  <span className="text-xs text-[#F5EDD6]/30">0°</span>
-                  <span className="text-xs text-[#F5EDD6]/30">{slider.max}°</span>
-                </div>
-              </div>
-            ))}
+          <div className="smart-bed-metrics">
+            <span><BatteryMedium size={17} /> {state.batteryLevel}%</span>
+            <span><ShieldCheck size={17} /> {state.childLock ? "Đang khóa" : "An toàn"}</span>
           </div>
+        </section>
 
-          {/* Reset flat button */}
-          <button
-            onClick={store.resetFlat}
-            className="mt-4 w-full max-w-xl flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#2E2800] text-[#F5EDD6]/50 text-sm hover:border-[#C9A84C]/40 hover:text-[#C9A84C] transition-all duration-200"
-          >
-            ⬛ Về vị trí phẳng
-          </button>
-        </div>
-
-        {/* Right — Controls */}
-        <div className="lg:w-1/2 xl:w-2/5 flex flex-col overflow-y-auto">
-          {/* Tab navigation */}
-          <div className="flex border-b border-[#2E2800] px-4 pt-4">
-            {[
-              { id: "control" as const, label: "Preset", icon: "🛏️" },
-              { id: "light" as const, label: "Đèn LED", icon: "💡" },
-              { id: "massage" as const, label: "Massage", icon: "🎵" },
-              { id: "timer" as const, label: "Hẹn giờ", icon: "⏰" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 transition-all duration-200 -mb-px",
-                  activeTab === tab.id
-                    ? "border-[#C9A84C] text-[#C9A84C]"
-                    : "border-transparent text-[#F5EDD6]/40 hover:text-[#F5EDD6]/70"
-                )}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
+        <nav className="smart-bed-tabs" aria-label="Chức năng điều khiển">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button type="button" key={item.id} className={cn(activeView === item.id && "is-active")} onClick={() => setActiveView(item.id)}>
+                <Icon size={17} /><span>{item.label}</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </nav>
 
-          <div className="flex-1 p-6 space-y-4">
-            {/* Preset tab */}
-            {activeTab === "control" && (
-              <div className="space-y-4">
-                <h3 className="text-xs font-medium text-[#F5EDD6]/50 uppercase tracking-wider">Chế độ nhanh</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {DEFAULT_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      onClick={() => store.applyPreset(preset)}
-                      className={cn(
-                        "p-4 rounded-2xl border text-left transition-all duration-200",
-                        state.activePreset === preset.id
-                          ? "border-[#C9A84C] bg-[#C9A84C]/10"
-                          : "border-[#2E2800] bg-[#1A1600] hover:border-[#C9A84C]/40"
-                      )}
-                    >
-                      <div className="text-2xl mb-2">{preset.icon}</div>
-                      <div className={cn("text-xs font-medium", state.activePreset === preset.id ? "text-[#C9A84C]" : "text-[#F5EDD6]/80")}>
-                        {preset.name}
-                      </div>
-                      <div className="text-xs text-[#F5EDD6]/30 mt-0.5">
-                        {preset.headAngle}° · {preset.footAngle}°
-                      </div>
+        <div className="smart-bed-layout">
+          <section className="bed-visual-panel">
+            <div className="bed-visual-panel__header">
+              <div>
+                <span className="bed-eyebrow">TRẠNG THÁI HIỆN TẠI</span>
+                <h2>{activePreset?.name ?? "Tư thế tùy chỉnh"}</h2>
+              </div>
+              <span className={cn("bed-live-badge", state.connected && "is-live")}><i />{state.connected ? "Đồng bộ" : "Cục bộ"}</span>
+            </div>
+
+            <div className="bed-visual-stage">
+              <div className="bed-visual-glow" style={{ opacity: state.ledOn ? state.ledBrightness / 100 : 0, background: state.ledColor }} />
+              <BedSVG headAngle={state.headAngle} footAngle={state.footAngle} ledOn={state.ledOn} ledColor={state.ledColor} size={520} className="bed-visual-svg" />
+            </div>
+
+            <div className="bed-position-summary">
+              <div><span>Đầu giường</span><strong>{state.headAngle}°</strong></div>
+              <div className="bed-position-summary__line" />
+              <div><span>Chân giường</span><strong>{state.footAngle}°</strong></div>
+            </div>
+
+            <div className="bed-command-status"><Check size={14} /><span>{state.lastCommand}</span></div>
+          </section>
+
+          <section className="bed-control-panel">
+            {activeView === "control" && (
+              <div className="bed-view">
+                <div className="bed-view__heading"><div><span className="bed-eyebrow">ĐIỀU KHIỂN CHÍNH</span><h2>Điều chỉnh tư thế</h2></div>{state.childLock && <span className="bed-warning"><LockKeyhole size={13} /> Đã khóa</span>}</div>
+                <div className="bed-angle-grid">
+                  <AngleControl label="Đầu giường" value={state.headAngle} max={70} disabled={controlsLocked} onChange={store.setHeadAngle} />
+                  <AngleControl label="Chân giường" value={state.footAngle} max={45} disabled={controlsLocked} onChange={store.setFootAngle} />
+                </div>
+                <button type="button" className="bed-flat-action" onClick={() => { store.resetFlat(); setToast("Đang đưa giường về vị trí phẳng"); }}>
+                  <RotateCcw size={19} /><span><b>Dừng & về phẳng</b><small>Luôn hoạt động kể cả khi đang khóa</small></span>
+                </button>
+                <SettingRow
+                  icon={<LockKeyhole size={20} />}
+                  title="Khóa trẻ em"
+                  description="Ngăn thao tác góc giường ngoài ý muốn"
+                  action={<Toggle checked={state.childLock} onChange={store.toggleChildLock} label="Khóa trẻ em" />}
+                />
+                <div className="bed-mini-presets">
+                  {DEFAULT_PRESETS.slice(0, 3).map((preset) => (
+                    <button type="button" key={preset.id} onClick={() => store.applyPreset(preset)} disabled={controlsLocked} className={cn(state.activePreset === preset.id && "is-active")}>
+                      <PresetIcon preset={preset} /><span>{preset.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Light tab */}
-            {activeTab === "light" && (
-              <div className="space-y-6">
-                {/* Toggle */}
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-[#1A1600] border border-[#2E2800]">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">💡</span>
-                    <div>
-                      <div className="text-sm font-medium text-[#F5EDD6]/80">Đèn LED</div>
-                      <div className="text-xs text-[#F5EDD6]/40">{state.ledOn ? "Đang bật" : "Đã tắt"}</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={store.toggleLed}
-                    className={cn(
-                      "w-12 h-6 rounded-full transition-all duration-300 relative",
-                      state.ledOn ? "bg-[#C9A84C]" : "bg-[#2E2800]"
-                    )}
-                  >
-                    <div className={cn(
-                      "absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300",
-                      state.ledOn ? "left-7" : "left-1"
-                    )} />
-                  </button>
+            {activeView === "presets" && (
+              <div className="bed-view">
+                <div className="bed-view__heading"><div><span className="bed-eyebrow">MỘT CHẠM</span><h2>Tư thế yêu thích</h2></div><span className="bed-count">{store.presets.length} chế độ</span></div>
+                <div className="bed-preset-grid">
+                  {store.presets.map((preset) => (
+                    <button type="button" key={preset.id} disabled={controlsLocked} onClick={() => store.applyPreset(preset)} className={cn("bed-preset-card", state.activePreset === preset.id && "is-active")}>
+                      <span className="bed-preset-card__icon"><PresetIcon preset={preset} /></span>
+                      <span className="bed-preset-card__copy"><b>{preset.name}</b><small>Đầu {preset.headAngle}° · Chân {preset.footAngle}°</small></span>
+                      {preset.custom && <span role="button" tabIndex={0} className="bed-preset-delete" aria-label={`Xóa ${preset.name}`} onClick={(event) => { event.stopPropagation(); store.deleteCustomPreset(preset.id); }} onKeyDown={(event) => { if (event.key === "Enter") { event.stopPropagation(); store.deleteCustomPreset(preset.id); } }}><Trash2 size={14} /></span>}
+                    </button>
+                  ))}
                 </div>
-
-                {/* Color picker */}
-                <div className="space-y-3">
-                  <h3 className="text-xs font-medium text-[#F5EDD6]/50 uppercase tracking-wider">Màu sắc</h3>
-                  <div className="grid grid-cols-5 gap-2">
-                    {LED_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => store.setLedColor(color)}
-                        className={cn(
-                          "w-full aspect-square rounded-xl transition-all duration-200",
-                          state.ledColor === color && state.ledOn ? "ring-2 ring-white ring-offset-2 ring-offset-[#0D0B00] scale-110" : "hover:scale-105"
-                        )}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Brightness */}
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <h3 className="text-xs font-medium text-[#F5EDD6]/50 uppercase tracking-wider">Độ sáng</h3>
-                    <span className="text-xs text-[#C9A84C]">{state.ledBrightness}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={10}
-                    max={100}
-                    value={state.ledBrightness}
-                    onChange={(e) => store.setLedBrightness(Number(e.target.value))}
-                    className="w-full accent-[#C9A84C] cursor-pointer"
-                  />
+                <div className="bed-save-preset">
+                  <div><Save size={19} /><span><b>Lưu tư thế hiện tại</b><small>Đầu {state.headAngle}° · Chân {state.footAngle}°</small></span></div>
+                  <div className="bed-save-preset__form"><input value={presetName} onChange={(event) => setPresetName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && savePreset()} placeholder="Ví dụ: Thư giãn" maxLength={28} /><button type="button" onClick={savePreset}>Lưu</button></div>
                 </div>
               </div>
             )}
 
-            {/* Massage tab */}
-            {activeTab === "massage" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-[#1A1600] border border-[#2E2800]">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🎵</span>
-                    <div>
-                      <div className="text-sm font-medium text-[#F5EDD6]/80">Massage</div>
-                      <div className="text-xs text-[#F5EDD6]/40">{state.massageOn ? "Đang chạy" : "Đã tắt"}</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={store.toggleMassage}
-                    className={cn(
-                      "w-12 h-6 rounded-full transition-all duration-300 relative",
-                      state.massageOn ? "bg-[#C9A84C]" : "bg-[#2E2800]"
-                    )}
-                  >
-                    <div className={cn(
-                      "absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300",
-                      state.massageOn ? "left-7" : "left-1"
-                    )} />
-                  </button>
+            {activeView === "comfort" && (
+              <div className="bed-view">
+                <div className="bed-view__heading"><div><span className="bed-eyebrow">KHÔNG GIAN THƯ GIÃN</span><h2>Đèn & massage</h2></div></div>
+                <SettingRow icon={<Lightbulb size={20} />} title="Đèn ngủ dưới gầm" description={state.ledOn ? `Đang bật · ${state.ledBrightness}%` : "Đang tắt"} action={<Toggle checked={state.ledOn} onChange={store.toggleLed} label="Đèn ngủ" />} />
+                <div className="bed-comfort-card">
+                  <div className="bed-card-label"><Palette size={16} /><span>Màu ánh sáng</span></div>
+                  <div className="bed-color-grid">{LED_COLORS.map((color) => <button type="button" key={color} onClick={() => store.setLedColor(color)} className={cn(state.ledColor === color && state.ledOn && "is-active")} style={{ backgroundColor: color }} aria-label={`Màu ${color}`} />)}</div>
+                  <div className="bed-slider-row"><LampDesk size={17} /><input className="bed-range" type="range" min={10} max={100} value={state.ledBrightness} onChange={(event) => store.setLedBrightness(Number(event.target.value))} style={{ "--range-progress": `${state.ledBrightness}%` } as CSSProperties} /><b>{state.ledBrightness}%</b></div>
                 </div>
-
-                <div className="space-y-3">
-                  <h3 className="text-xs font-medium text-[#F5EDD6]/50 uppercase tracking-wider">Cường độ</h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    {MASSAGE_LEVELS.map((m) => (
-                      <button
-                        key={m.level}
-                        onClick={() => store.setMassageLevel(m.level)}
-                        className={cn(
-                          "py-3 rounded-xl text-xs font-medium transition-all duration-200",
-                          state.massageLevel === m.level
-                            ? "bg-[#C9A84C] text-[#0D0B00]"
-                            : "bg-[#1A1600] border border-[#2E2800] text-[#F5EDD6]/50 hover:border-[#C9A84C]/40"
-                        )}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
+                <SettingRow icon={<Vibrate size={20} />} title="Massage thư giãn" description={state.massageOn ? `Đang chạy · mức ${state.massageLevel}` : "Đang tắt"} action={<Toggle checked={state.massageOn} onChange={() => store.setMassageLevel(state.massageOn ? 0 : 1)} label="Massage" />} />
+                <div className="bed-comfort-card">
+                  <div className="bed-segmented">{MASSAGE_LEVELS.map((item) => <button type="button" key={item.level} onClick={() => store.setMassageLevel(item.level)} className={cn(state.massageLevel === item.level && "is-active")}>{item.label}</button>)}</div>
+                  <div className="bed-mode-grid">{MASSAGE_MODES.map((mode) => <button type="button" key={mode.id} onClick={() => store.setMassageMode(mode.id)} className={cn(state.massageMode === mode.id && state.massageOn && "is-active")}><Vibrate size={16} /><span>{mode.label}</span></button>)}</div>
                 </div>
-
-                {state.massageOn && (
-                  <div className="p-4 rounded-2xl bg-[#C9A84C]/5 border border-[#C9A84C]/20">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        {[1, 2, 3].map((i) => (
-                          <div
-                            key={i}
-                            className="w-1.5 h-4 rounded-full bg-[#C9A84C] animate-bounce"
-                            style={{ animationDelay: `${i * 0.15}s` }}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs text-[#C9A84C]">
-                        Đang massage — {MASSAGE_LEVELS[state.massageLevel].label}
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
-            {/* Timer tab */}
-            {activeTab === "timer" && (
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <h3 className="text-xs font-medium text-[#F5EDD6]/50 uppercase tracking-wider">Hẹn giờ tắt</h3>
-                  <div className="grid grid-cols-5 gap-2">
-                    {TIMER_OPTIONS.map((min) => (
-                      <button
-                        key={min}
-                        onClick={() => store.setTimerMinutes(min)}
-                        className={cn(
-                          "py-3 rounded-xl text-xs font-medium transition-all duration-200",
-                          state.timerMinutes === min
-                            ? "bg-[#C9A84C] text-[#0D0B00]"
-                            : "bg-[#1A1600] border border-[#2E2800] text-[#F5EDD6]/50 hover:border-[#C9A84C]/40"
-                        )}
-                      >
-                        {min}p
-                      </button>
-                    ))}
-                  </div>
+            {activeView === "routine" && (
+              <div className="bed-view">
+                <div className="bed-view__heading"><div><span className="bed-eyebrow">TỰ ĐỘNG HÓA</span><h2>Lịch ngủ thông minh</h2></div><Toggle checked={state.routine.enabled} onChange={() => store.updateRoutine({ enabled: !state.routine.enabled })} label="Lịch ngủ" /></div>
+                <div className="bed-routine-grid">
+                  <label className="bed-time-card"><span className="bed-time-card__icon"><MoonStar size={20} /></span><span><small>GIỜ ĐI NGỦ</small><input type="time" value={state.routine.bedtime} onChange={(event) => store.updateRoutine({ bedtime: event.target.value })} /></span></label>
+                  <label className="bed-time-card"><span className="bed-time-card__icon is-wake"><SunMedium size={20} /></span><span><small>GIỜ THỨC DẬY</small><input type="time" value={state.routine.wakeTime} onChange={(event) => store.updateRoutine({ wakeTime: event.target.value })} /></span></label>
                 </div>
-
-                <button
-                  onClick={store.toggleTimer}
-                  className={cn(
-                    "w-full py-4 rounded-2xl font-medium text-sm transition-all duration-200",
-                    state.timerActive
-                      ? "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20"
-                      : "bg-gradient-to-r from-[#C9A84C] to-[#9A7A2E] text-[#0D0B00] hover:opacity-90"
-                  )}
-                >
-                  {state.timerActive ? `⏹ Hủy hẹn giờ (${state.timerMinutes} phút)` : `▶ Bắt đầu hẹn giờ ${state.timerMinutes} phút`}
-                </button>
-
-                {state.timerActive && (
-                  <div className="p-4 rounded-2xl bg-[#C9A84C]/5 border border-[#C9A84C]/20">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-[#C9A84C] animate-pulse" />
-                      <span className="text-xs text-[#C9A84C]">
-                        Giường sẽ về vị trí phẳng sau {state.timerMinutes} phút
-                      </span>
-                    </div>
-                  </div>
-                )}
+                <div className="bed-routine-selects">
+                  <label><span>Tư thế khi đi ngủ</span><select value={state.routine.sleepPresetId} onChange={(event) => store.updateRoutine({ sleepPresetId: event.target.value })}>{store.presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}</select></label>
+                  <label><span>Tư thế khi thức dậy</span><select value={state.routine.wakePresetId} onChange={(event) => store.updateRoutine({ wakePresetId: event.target.value })}>{store.presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}</select></label>
+                </div>
+                <SettingRow icon={<LampDesk size={20} />} title="Bật đèn dịu khi đi ngủ" description="Giữ ánh sáng hiện tại khi lịch bắt đầu" action={<Toggle checked={state.routine.ledAtBedtime} onChange={() => store.updateRoutine({ ledAtBedtime: !state.routine.ledAtBedtime })} label="Đèn theo lịch" />} />
+                <div className="bed-timer-card">
+                  <div className="bed-timer-card__head"><div><TimerReset size={21} /><span><b>Hẹn giờ về phẳng</b><small>Tự tắt massage khi hoàn tất</small></span></div>{state.timerEndsAt && <strong>{formatCountdown(store.timerRemainingSeconds)}</strong>}</div>
+                  <div className="bed-timer-options">{TIMER_OPTIONS.map((minutes) => <button type="button" key={minutes} onClick={() => store.setTimerMinutes(minutes)} className={cn(state.timerMinutes === minutes && "is-active")}>{minutes}p</button>)}</div>
+                  <button type="button" className={cn("bed-timer-action", state.timerEndsAt && "is-running")} onClick={state.timerEndsAt ? store.cancelTimer : store.startTimer}>{state.timerEndsAt ? <><Pause size={18} /> Hủy hẹn giờ</> : <><Play size={18} /> Bắt đầu {state.timerMinutes} phút</>}</button>
+                </div>
+                <p className="bed-routine-note"><ShieldCheck size={15} /> Lịch tự động được lưu trên thiết bị này và chạy khi ứng dụng đang mở.</p>
               </div>
             )}
-          </div>
-
-          {/* Status bar */}
-          <div className="border-t border-[#2E2800] px-6 py-4 flex items-center gap-4 text-xs text-[#F5EDD6]/30">
-            <span>Đầu: {state.headAngle}°</span>
-            <span>·</span>
-            <span>Chân: {state.footAngle}°</span>
-            <span>·</span>
-            <span>Đèn: {state.ledOn ? "Bật" : "Tắt"}</span>
-            <span>·</span>
-            <span>Massage: {state.massageOn ? MASSAGE_LEVELS[state.massageLevel].label : "Tắt"}</span>
-          </div>
+          </section>
         </div>
       </div>
-    </div>
+
+      <nav className="smart-bed-mobile-nav" aria-label="Điều hướng ứng dụng">
+        {NAV_ITEMS.map((item) => { const Icon = item.icon; return <button type="button" key={item.id} className={cn(activeView === item.id && "is-active")} onClick={() => setActiveView(item.id)}><Icon size={20} /><span>{item.label}</span></button>; })}
+      </nav>
+
+      {showConnection && (
+        <div className="bed-modal-backdrop" role="presentation" onMouseDown={() => !connecting && setShowConnection(false)}>
+          <section className="bed-connection-modal" role="dialog" aria-modal="true" aria-labelledby="connection-title" onMouseDown={(event) => event.stopPropagation()}>
+            <button type="button" className="bed-modal-close" onClick={() => setShowConnection(false)} aria-label="Đóng"><X size={19} /></button>
+            <span className="bed-connection-modal__icon">{state.connected ? <Wifi size={28} /> : <Bluetooth size={28} />}</span>
+            <span className="bed-eyebrow">KẾT NỐI THIẾT BỊ</span>
+            <h2 id="connection-title">{state.connected ? state.deviceName : "SmartFurni Bed"}</h2>
+            <p>{state.connected ? "Bộ điều khiển đang đồng bộ với ứng dụng." : "Kết nối bộ điều khiển để đồng bộ lệnh. Khi chưa kết nối, ứng dụng vẫn hoạt động ở chế độ trải nghiệm cục bộ."}</p>
+            {state.connected ? (
+              <>
+                <div className="bed-device-details"><span><BatteryMedium size={17} /> Pin điều khiển</span><b>{state.batteryLevel}%</b></div>
+                <button type="button" className="bed-connect-secondary" onClick={() => { store.disconnectDevice(); setShowConnection(false); }}> <Unplug size={18} /> Ngắt kết nối</button>
+              </>
+            ) : (
+              <button type="button" className="bed-connect-primary" disabled={connecting} onClick={connect}>{connecting ? <><span className="bed-spinner" /> Đang kết nối...</> : <><Bluetooth size={18} /> Kết nối bộ điều khiển</>}</button>
+            )}
+            <small className="bed-connection-note">Bản web hiện dùng bộ điều khiển cục bộ. Kết nối phần cứng thật sẽ nhận lệnh qua cổng gateway khi cấu hình giao thức thiết bị.</small>
+          </section>
+        </div>
+      )}
+
+      {toast && <div className="bed-toast"><Check size={16} />{toast}</div>}
+    </main>
   );
 }

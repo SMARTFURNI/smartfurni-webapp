@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Dashboard — SmartFurni",
+  title: "Điều khiển giường — SmartFurni",
+  description: "Ứng dụng điều khiển giường thông minh SmartFurni.",
   robots: { index: false, follow: false },
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="sf-site-gradient-bg min-h-screen bg-[#0D0B00]">
-      {children}
-    </div>
-  );
+  return children;
 }
