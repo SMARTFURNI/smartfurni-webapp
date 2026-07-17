@@ -43,9 +43,12 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: SITE_URL },
     manifest: "/manifest.webmanifest",
     icons: {
-      icon: [{ url: "/smartfurni-icon-v2.png", type: "image/png", sizes: "128x128" }],
-      shortcut: "/smartfurni-icon-v2.png",
-      apple: [{ url: "/smartfurni-icon-v2.png", type: "image/png", sizes: "128x128" }],
+      icon: [
+        { url: "/smartfurni-favicon-v3-32.png", type: "image/png", sizes: "32x32" },
+        { url: "/smartfurni-favicon-v3.png", type: "image/png", sizes: "512x512" },
+      ],
+      shortcut: "/smartfurni-favicon-v3-32.png",
+      apple: [{ url: "/smartfurni-favicon-v3.png", type: "image/png", sizes: "512x512" }],
     },
     verification: {
       google: theme.seo.googleSiteVerification?.trim() || process.env.GOOGLE_SITE_VERIFICATION || undefined,

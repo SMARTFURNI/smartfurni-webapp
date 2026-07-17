@@ -12,8 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "vi-VN",
     icons: [
       {
-        src: "/smartfurni-icon-v2.png",
-        sizes: "128x128",
+        src: "/smartfurni-favicon-v3.png",
+        sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
