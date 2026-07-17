@@ -136,14 +136,146 @@
   box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
 }
 
+.sf-admin-mobile-bar,
+.sf-admin-mobile-tabs,
+.sf-admin-mobile-overlay {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .sf-admin-header { padding: 13px 14px; border-radius: 16px; }
 }
 
 @media (max-width: 900px) {
+  .sf-admin-shell {
+    min-height: 100dvh;
+    overflow-x: clip;
+  }
+
+  .sf-admin-mobile-bar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 80;
+    height: calc(62px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 14px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(224, 197, 111, 0.18);
+    background: linear-gradient(105deg, rgba(10, 17, 30, .96), rgba(31, 22, 10, .94));
+    box-shadow: 0 12px 34px rgba(0,0,0,.34);
+    backdrop-filter: blur(22px);
+  }
+
+  .sf-mobile-icon-button,
+  .sf-mobile-brand {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ead899;
+    border: 1px solid rgba(224, 197, 111, .18);
+    background: linear-gradient(145deg, rgba(215,185,87,.14), rgba(59,76,111,.12));
+  }
+
+  .sf-mobile-brand img { width: 32px; height: 32px; object-fit: contain; }
+
+  .sf-admin-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 100;
+    width: min(86vw, 320px) !important;
+    height: 100dvh;
+    min-height: 100dvh !important;
+    transform: translateX(-105%);
+    transition: transform .28s cubic-bezier(.22,.8,.22,1) !important;
+    box-shadow: 24px 0 70px rgba(0,0,0,.52);
+  }
+
+  .sf-admin-sidebar.is-mobile-open { transform: translateX(0); }
+
+  .sf-admin-mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    border: 0;
+    background: rgba(2, 6, 14, .72);
+    backdrop-filter: blur(5px);
+    transition: opacity .22s ease;
+  }
+  .sf-admin-mobile-overlay.is-visible { opacity: 1; pointer-events: auto; }
+
+  .sf-admin-mobile-tabs {
+    position: fixed;
+    inset: auto 10px calc(8px + env(safe-area-inset-bottom)) 10px;
+    z-index: 78;
+    min-height: 62px;
+    padding: 7px 6px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    border: 1px solid rgba(224,197,111,.18);
+    border-radius: 22px;
+    background: linear-gradient(115deg, rgba(15,22,35,.96), rgba(35,25,11,.95));
+    box-shadow: 0 18px 45px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.035);
+    backdrop-filter: blur(22px);
+  }
+  .sf-admin-mobile-tabs a {
+    min-width: 0;
+    min-height: 48px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: rgba(245,237,214,.48);
+    font-size: 9px;
+    font-weight: 600;
+  }
+  .sf-admin-mobile-tabs a.is-active {
+    color: #f3df97;
+    background: linear-gradient(145deg, rgba(215,185,87,.22), rgba(215,185,87,.07));
+  }
+
+  /* Component sidebar được render ngay trước nội dung chính ở mọi trang admin. */
+  .sf-admin-mobile-tabs + * {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-top: calc(62px + env(safe-area-inset-top)) !important;
+    padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden !important;
+  }
+
+  .sf-admin-shell table {
+    display: block;
+    max-width: calc(100vw - 24px);
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sf-admin-shell form .grid-cols-2,
+  .sf-admin-shell form .grid-cols-3,
+  .sf-admin-shell form .grid-cols-4 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .sf-admin-shell [class~="p-8"],
+  .sf-admin-shell [class~="p-6"] { padding: 14px !important; }
+
+  .sf-admin-shell button,
+  .sf-admin-shell select,
+  .sf-admin-shell input { min-height: 42px; }
+
   .sf-admin-header {
     align-items: flex-start;
     flex-wrap: wrap;
+    gap: 12px;
   }
   .sf-admin-header > :last-child { flex-wrap: wrap; }
 }

@@ -2,89 +2,126 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ArrowRight, BarChart3, Boxes, CheckCircle2, LayoutDashboard, Loader2, ShieldCheck, Sparkles, UsersRound } from 'lucide-react';
+
+const modules = [
+  {
+    path: '/crm',
+    eyebrow: 'Kinh doanh & khách hàng',
+    title: 'SmartFurni CRM',
+    description: 'Quản lý khách hàng, cơ hội bán hàng, công việc, kế hoạch và chăm sóc sau bán.',
+    icon: UsersRound,
+    features: [
+      { icon: BarChart3, label: 'Dashboard doanh số' },
+      { icon: CheckCircle2, label: 'Kanban & công việc' },
+    ],
+    action: 'Mở CRM',
+  },
+  {
+    path: '/admin',
+    eyebrow: 'Website & vận hành',
+    title: 'Quản trị Website',
+    description: 'Quản lý sản phẩm, đơn hàng, nội dung, giao diện và toàn bộ cấu hình website.',
+    icon: LayoutDashboard,
+    features: [
+      { icon: Boxes, label: 'Sản phẩm & đơn hàng' },
+      { icon: ShieldCheck, label: 'Cài đặt hệ thống' },
+    ],
+    action: 'Mở trang quản trị',
+  },
+];
 
 export default function ChooseModulePage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingPath, setLoadingPath] = useState<string | null>(null);
 
   const handleNavigate = (path: string) => {
-    setIsLoading(true);
+    setLoadingPath(path);
     router.push(path);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#1a1200" }}>
-      <div className="w-full max-w-2xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/smartfurni-logo.png"
-              alt="SmartFurni"
-              style={{ height: 72, objectFit: "contain" }}
-            />
+    <main className="module-hub">
+      <div className="module-hub-grid" aria-hidden="true" />
+      <div className="module-hub-glow module-hub-glow-one" aria-hidden="true" />
+      <div className="module-hub-glow module-hub-glow-two" aria-hidden="true" />
+
+      <section className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col justify-center px-4 py-8 sm:px-6 sm:py-12">
+        <header className="mb-7 text-center sm:mb-10">
+          <div className="mb-5 flex justify-center">
+            <div className="module-brand">
+              <img src="/smartfurni-logo.png" alt="SmartFurni" />
+            </div>
           </div>
-          <p className="text-slate-400 text-lg">Chọn module quản lý</p>
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#d7b957]/20 bg-[#d7b957]/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#e9d58d]">
+            <Sparkles size={13} /> Trung tâm điều hành
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-[#f5edd6] sm:text-4xl">Chọn không gian làm việc</h1>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[#f5edd6]/52 sm:text-base">
+            Một tài khoản, hai hệ thống đồng bộ dữ liệu và chung ngôn ngữ thiết kế SmartFurni.
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+          {modules.map((module) => {
+            const Icon = module.icon;
+            const loading = loadingPath === module.path;
+            return (
+              <button
+                key={module.path}
+                onClick={() => handleNavigate(module.path)}
+                disabled={loadingPath !== null}
+                className="module-card group text-left disabled:cursor-wait disabled:opacity-65"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="module-icon"><Icon size={24} /></div>
+                  <span className="rounded-full border border-white/8 bg-white/[0.035] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-[#f5edd6]/42">Hệ thống nội bộ</span>
+                </div>
+                <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d7b957]">{module.eyebrow}</p>
+                <h2 className="mt-2 text-2xl font-semibold text-[#f5edd6] sm:text-[28px]">{module.title}</h2>
+                <p className="mt-2 min-h-[52px] text-sm leading-6 text-[#f5edd6]/55">{module.description}</p>
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  {module.features.map(feature => {
+                    const FeatureIcon = feature.icon;
+                    return (
+                      <div key={feature.label} className="module-feature">
+                        <FeatureIcon size={14} /><span>{feature.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="module-action">
+                  <span>{loading ? 'Đang mở...' : module.action}</span>
+                  {loading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Module Selection Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* CRM Module */}
-          <button
-            onClick={() => handleNavigate('/crm')}
-            disabled={isLoading}
-            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-left transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600 opacity-0 group-hover:opacity-20 transition-opacity" />
-            <div className="relative">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500 rounded-lg mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">CRM</h2>
-              <p className="text-blue-100 mb-4">Quản lý khách hàng, deal, kế hoạch 12 tuần và email marketing</p>
-              <div className="flex items-center text-blue-200 group-hover:text-white transition-colors">
-                <span className="text-sm font-semibold">Truy cập CRM</span>
-                <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
-          </button>
+        <footer className="mt-7 flex flex-col items-center justify-between gap-2 text-center text-[11px] text-[#f5edd6]/32 sm:mt-9 sm:flex-row sm:text-left">
+          <span>© 2026 SmartFurni · Trung tâm vận hành</span>
+          <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} /> Khu vực quản trị được bảo vệ</span>
+        </footer>
+      </section>
 
-          {/* Website Admin Module */}
-          <button
-            onClick={() => handleNavigate('/admin')}
-            disabled={isLoading}
-            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 p-8 text-left transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-purple-600 opacity-0 group-hover:opacity-20 transition-opacity" />
-            <div className="relative">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-500 rounded-lg mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Quản Trị Website</h2>
-              <p className="text-purple-100 mb-4">Quản lý nội dung, cài đặt hệ thống và quản trị trang web</p>
-              <div className="flex items-center text-purple-200 group-hover:text-white transition-colors">
-                <span className="text-sm font-semibold">Truy cập Quản Trị</span>
-                <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center text-slate-400 text-sm">
-          <p>© 2026 SmartFurni — Giường Điều Khiển Thông Minh</p>
-        </div>
-      </div>
-    </div>
+      <style jsx>{`
+        .module-hub { position:relative; min-height:100dvh; overflow:hidden; background:radial-gradient(circle at 12% 8%,rgba(53,82,137,.25),transparent 32rem),radial-gradient(circle at 88% 16%,rgba(180,119,22,.20),transparent 30rem),linear-gradient(135deg,#0a111e 0%,#16160f 48%,#211304 100%); }
+        .module-hub-grid { position:absolute;inset:0;opacity:.55;background-image:linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,#000,transparent 92%); }
+        .module-hub-glow { position:absolute;border-radius:999px;filter:blur(80px);pointer-events:none; }
+        .module-hub-glow-one { width:260px;height:260px;left:-100px;bottom:8%;background:rgba(37,78,145,.18); }
+        .module-hub-glow-two { width:280px;height:280px;right:-110px;top:20%;background:rgba(201,168,76,.13); }
+        .module-brand { width:min(270px,72vw);height:78px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(224,197,111,.15);border-radius:24px;background:linear-gradient(145deg,rgba(31,39,56,.64),rgba(40,28,13,.54));box-shadow:0 18px 50px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.035);backdrop-filter:blur(18px); }
+        .module-brand img { max-width:220px;height:58px;object-fit:contain; }
+        .module-card { position:relative;overflow:hidden;padding:24px;border:1px solid rgba(224,197,111,.16);border-radius:26px;background:linear-gradient(145deg,rgba(29,38,56,.80),rgba(34,27,17,.76));box-shadow:0 24px 65px rgba(0,0,0,.27),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(20px);transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease; }
+        .module-card:before { content:'';position:absolute;inset:0;background:radial-gradient(circle at 84% 0,rgba(215,185,87,.13),transparent 38%);pointer-events:none; }
+        .module-card:hover { transform:translateY(-4px);border-color:rgba(224,197,111,.32);box-shadow:0 30px 80px rgba(0,0,0,.35),0 0 0 1px rgba(215,185,87,.05); }
+        .module-icon { width:52px;height:52px;border-radius:17px;display:flex;align-items:center;justify-content:center;color:#f2da83;border:1px solid rgba(224,197,111,.22);background:linear-gradient(145deg,rgba(215,185,87,.22),rgba(49,70,110,.15));box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }
+        .module-feature { min-height:44px;padding:8px 9px;border:1px solid rgba(255,255,255,.055);border-radius:13px;display:flex;align-items:center;gap:7px;color:rgba(245,237,214,.52);background:rgba(255,255,255,.025);font-size:10px;font-weight:600; }
+        .module-feature svg { color:#d7b957;flex:0 0 auto; }
+        .module-action { position:relative;margin-top:20px;min-height:50px;padding:0 16px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;color:#1a1200;background:linear-gradient(110deg,#e3c65f,#b88822);box-shadow:0 12px 30px rgba(187,135,31,.18);font-size:13px;font-weight:800; }
+        @media(max-width:640px){ .module-card{padding:18px;border-radius:22px}.module-brand{height:66px;border-radius:20px}.module-brand img{height:49px}.module-card h2{font-size:22px}.module-card p{min-height:0}.module-action{margin-top:16px}.module-card:hover{transform:none} }
+      `}</style>
+    </main>
   );
 }

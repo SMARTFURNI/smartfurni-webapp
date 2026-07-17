@@ -6,7 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3, BookOpenText, Boxes, ChevronLeft, ChevronRight, ExternalLink,
   FileChartColumn, FileText, GalleryHorizontalEnd, LayoutDashboard, LogOut,
-  Palette, Route, Settings2, ShoppingCart, Store, UsersRound,
+  Menu, Palette, Route, Settings2, ShoppingCart, Store, UsersRound, X,
 } from "lucide-react";
 
 interface SidebarStats {
@@ -133,6 +133,8 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
   const pathname = usePathname();
   const [loggingOut, setLoggingOut] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   useEffect(() => {
@@ -150,12 +152,18 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
   useEffect(() => {
     const media = window.matchMedia("(max-width: 900px)");
     const syncSidebar = () => {
-      if (media.matches) setCollapsed(true);
+      setIsMobile(media.matches);
+      if (media.matches) setCollapsed(false);
+      else setMobileOpen(false);
     };
     syncSidebar();
     media.addEventListener("change", syncSidebar);
     return () => media.removeEventListener("change", syncSidebar);
   }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -179,17 +187,35 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
   }
 
   const totalAlerts = (stats.pendingOrders || 0) + (stats.lowStockProducts || 0);
+  const compact = !isMobile && collapsed;
+
+  const currentItem = NAV_GROUPS.flatMap((group) => group.items)
+    .filter((item) => isActive(item))
+    .sort((a, b) => b.href.length - a.href.length)[0];
 
   return (
+    <>
+      <header className="sf-admin-mobile-bar no-print">
+        <button className="sf-mobile-icon-button" onClick={() => setMobileOpen(true)} aria-label="Mở menu quản trị">
+          <Menu size={22} />
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-[#d7b957]">SmartFurni Admin</div>
+          <div className="truncate text-sm font-semibold text-[#f5edd6]">{currentItem?.label || "Quản trị website"}</div>
+        </div>
+        <Link href="/admin/choose-module" className="sf-mobile-brand" aria-label="Chọn module">
+          <img src="/smartfurni-icon-v2.png" alt="SmartFurni" />
+        </Link>
+      </header>
     <aside
-      className={`sf-admin-sidebar ${collapsed ? "w-[68px]" : "w-[236px]"} min-h-screen flex flex-col transition-all duration-200 flex-shrink-0`}
+      className={`sf-admin-sidebar ${compact ? "w-[68px]" : "w-[236px]"} ${mobileOpen ? "is-mobile-open" : ""} min-h-screen flex flex-col transition-all duration-200 flex-shrink-0`}
     >
       {/* Logo */}
       <div className="h-[68px] border-b border-[rgba(255,200,100,0.12)] flex items-center" style={{ paddingLeft: 12, paddingRight: 8 }}>
         {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
         <img src="/smartfurni-icon-v2.png" alt="" style={{ display: "none" }} />
         <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
-        {!collapsed && (
+        {!compact && (
           <Link href="/admin" className="flex items-center flex-1 min-w-0" style={{ paddingRight: 4 }}>
             <img
               src="/smartfurni-logo.png"
@@ -198,7 +224,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
             />
           </Link>
         )}
-        {collapsed && (
+        {compact && (
           <Link href="/admin" className="relative flex-1 flex items-center justify-center">
             <img
               src="/smartfurni-icon-v2.png"
@@ -213,11 +239,11 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
           </Link>
         )}
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => isMobile ? setMobileOpen(false) : setCollapsed(!collapsed)}
           className="text-[rgba(245,237,214,0.35)] hover:text-[rgba(245,237,214,0.70)] transition-colors p-1 rounded flex-shrink-0"
-          title={collapsed ? "Mở rộng" : "Thu gọn"}
+          title={isMobile ? "Đóng menu" : compact ? "Mở rộng" : "Thu gọn"}
         >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {isMobile ? <X size={19} /> : compact ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
 
@@ -225,12 +251,12 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
       <nav className="flex-1 py-3 overflow-y-auto">
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="mb-1">
-            {!collapsed && (
+            {!compact && (
               <p className="text-[10px] text-[rgba(245,237,214,0.35)] uppercase tracking-widest font-semibold px-4 py-1.5 mt-1">
                 {group.label}
               </p>
             )}
-            {collapsed && <div className="h-px bg-[#C9A84C]/5 mx-3 my-2" />}
+            {compact && <div className="h-px bg-[#C9A84C]/5 mx-3 my-2" />}
             <div className="px-2 space-y-0.5">
               {group.items.map((item) => {
                 const Icon = item.icon;
@@ -249,12 +275,12 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
                             ? "sf-admin-nav-active text-[#E2C97E]"
                             : "text-[rgba(245,237,214,0.55)] hover:text-gray-200 hover:bg-white/4"
                         }`}
-                        title={collapsed ? item.label : undefined}
+                        title={compact ? item.label : undefined}
                       >
                         <span className={`sf-admin-icon-tile h-7 w-7 rounded-lg ${active ? "text-[#E2C97E]" : "text-[rgba(245,237,214,0.50)]"}`}>
                           <Icon size={15} strokeWidth={active ? 2.2 : 1.8} />
                         </span>
-                        {!collapsed && (
+                        {!compact && (
                           <>
                             <span className="flex-1 truncate font-medium">{item.label}</span>
                             {badgeCount > 0 && (
@@ -264,13 +290,13 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
                             )}
                           </>
                         )}
-                        {collapsed && badgeCount > 0 && (
+                        {compact && badgeCount > 0 && (
                           <span className="absolute ml-3 -mt-3 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold">
                             {badgeCount > 9 ? "9+" : badgeCount}
                           </span>
                         )}
                       </Link>
-                      {!collapsed && hasSubItems && (
+                      {!compact && hasSubItems && (
                         <button
                           onClick={() => toggleExpand(item.href)}
                           className="p-1.5 rounded transition-colors flex-shrink-0"
@@ -286,7 +312,7 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
                       )}
                     </div>
 
-                    {!collapsed && hasSubItems && isExpanded && (
+                    {!compact && hasSubItems && isExpanded && (
                       <div className="ml-5 mt-0.5 space-y-0.5 border-l border-[rgba(255,200,100,0.12)] pl-3">
                         {item.subItems!.map((sub) => (
                           <Link
@@ -317,21 +343,44 @@ export default function AdminSidebar({ stats = {} }: { stats?: SidebarStats }) {
           href="/"
           target="_blank"
           className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-[rgba(245,237,214,0.45)] hover:text-gray-300 hover:bg-white/4 transition-colors"
-          title={collapsed ? "Xem website" : undefined}
+          title={compact ? "Xem website" : undefined}
         >
           <span className="sf-admin-icon-tile h-7 w-7 rounded-lg"><ExternalLink size={15} /></span>
-          {!collapsed && <span className="font-medium">Xem website</span>}
+          {!compact && <span className="font-medium">Xem website</span>}
         </Link>
         <button
           onClick={handleLogout}
           disabled={loggingOut}
           className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-[rgba(245,237,214,0.45)] hover:text-red-400 hover:bg-red-500/5 transition-colors"
-          title={collapsed ? "Đăng xuất" : undefined}
+          title={compact ? "Đăng xuất" : undefined}
         >
           <span className="sf-admin-icon-tile h-7 w-7 rounded-lg"><LogOut size={15} /></span>
-          {!collapsed && <span className="font-medium">{loggingOut ? "Đang thoát..." : "Đăng xuất"}</span>}
+          {!compact && <span className="font-medium">{loggingOut ? "Đang thoát..." : "Đăng xuất"}</span>}
         </button>
       </div>
     </aside>
+      <button
+        className={`sf-admin-mobile-overlay no-print ${mobileOpen ? "is-visible" : ""}`}
+        onClick={() => setMobileOpen(false)}
+        aria-label="Đóng menu"
+      />
+      <nav className="sf-admin-mobile-tabs no-print" aria-label="Điều hướng nhanh">
+        {[
+          { href: "/admin", label: "Tổng quan", icon: LayoutDashboard, exact: true },
+          { href: "/admin/products", label: "Sản phẩm", icon: Boxes },
+          { href: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart },
+          { href: "/admin/settings", label: "Cài đặt", icon: Settings2 },
+        ].map((item) => {
+          const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+          const Icon = item.icon;
+          return (
+            <Link key={item.href} href={item.href} className={active ? "is-active" : ""}>
+              <Icon size={19} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </>
   );
 }

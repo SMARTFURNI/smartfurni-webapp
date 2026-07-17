@@ -41,6 +41,8 @@ import {
   Megaphone,
   BrainCircuit,
   Facebook,
+  Menu,
+  X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { RolePermissions } from "@/lib/crm-roles-store";
@@ -191,6 +193,8 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   // Optimistic active: cập nhật ngay khi click, không chờ pathname thay đổi
   const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
   const activePath = optimisticPath ?? pathname;
@@ -213,6 +217,18 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 900px)");
+    const sync = () => {
+      setIsMobile(media.matches);
+      if (media.matches) setCollapsed(false);
+      else setMobileOpen(false);
+    };
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
   function isActive(href: string, exact?: boolean) {
     const path = activePath;
     if (!path) return false;
@@ -223,6 +239,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
   // Reset optimistic khi pathname thực sự thay đổi
   useEffect(() => {
     setOptimisticPath(null);
+    setMobileOpen(false);
   }, [pathname]);
 
   function toggleGroup(label: string) {
@@ -261,11 +278,29 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
     logo: "linear-gradient(135deg, #f59e0b 0%, #fde68a 100%)",
   };
 
+  const compact = !isMobile && collapsed;
+  const currentItem = NAV_GROUPS.flatMap(group => group.items)
+    .filter(item => isActive(item.href, item.exact))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+
   return (
+    <>
+    <header className="crm-mobile-bar no-print">
+      <button className="crm-mobile-icon-button" onClick={() => setMobileOpen(true)} aria-label="Mở menu CRM">
+        <Menu size={22} />
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: C.accentLight }}>SmartFurni CRM</div>
+        <div className="truncate text-sm font-semibold" style={{ color: C.textHover }}>{currentItem?.label || "Trung tâm khách hàng"}</div>
+      </div>
+      <button className="crm-mobile-avatar" onClick={() => setMobileOpen(true)} aria-label="Tài khoản và menu">
+        {(staffName?.[0] || "S").toUpperCase()}
+      </button>
+    </header>
     <aside
-      className="no-print flex flex-col h-full transition-all duration-300 flex-shrink-0 relative select-none"
+      className={`crm-sidebar no-print flex flex-col h-full transition-all duration-300 flex-shrink-0 relative select-none ${mobileOpen ? "is-mobile-open" : ""}`}
       style={{
-        width: collapsed ? "60px" : "220px",
+        width: compact ? "60px" : "220px",
         background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
         borderRight: `1px solid ${C.border}`,
       }}
@@ -278,7 +313,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         {/* Preload cả 2 ảnh để không bị flash khi chuyển */}
         <img src="/smartfurni-icon-v2.png" alt="" style={{ display: "none" }} />
         <img src="/smartfurni-logo.png" alt="" style={{ display: "none" }} />
-        {collapsed ? (
+        {compact ? (
           <div className="flex items-center justify-center flex-1" style={{ height: 40 }}>
             <img
               src="/smartfurni-icon-v2.png"
@@ -296,18 +331,18 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
           </div>
         )}
         <button
-          onClick={() => setCollapsed(c => !c)}
+          onClick={() => isMobile ? setMobileOpen(false) : setCollapsed(c => !c)}
           className="p-1.5 rounded-lg transition-colors flex-shrink-0"
           style={{ color: C.groupLabel }}
           onMouseEnter={e => (e.currentTarget.style.color = C.textHover)}
           onMouseLeave={e => (e.currentTarget.style.color = C.groupLabel)}
         >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          {isMobile ? <X size={18} /> : compact ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </div>
 
       {/* ── User badge ── */}
-      {!collapsed && !isAdmin && staffName && (
+      {!compact && !isAdmin && staffName && (
         <div
           className="mx-3 mt-3 px-3 py-2.5 rounded-xl flex items-center gap-2.5"
           style={{ background: "rgba(245,158,11,0.07)", border: `1px solid rgba(245,158,11,0.20)` }}
@@ -337,7 +372,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
           return (
             <div key={group.label} className="mb-1">
               {/* Group label */}
-              {!collapsed && (
+              {!compact && (
                 <div
                   className={`flex items-center gap-1 px-2 py-1.5 mb-0.5 ${group.collapsible ? "cursor-pointer rounded-lg" : ""}`}
                   onMouseEnter={group.collapsible ? e => ((e.currentTarget as HTMLElement).style.background = C.bgHover) : undefined}
@@ -362,7 +397,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                   )}
                 </div>
               )}
-              {collapsed && <div className="h-px mx-2 my-2" style={{ background: C.border }} />}
+              {compact && <div className="h-px mx-2 my-2" style={{ background: C.border }} />}
 
               {/* Items */}
               {!isGroupCollapsed && visibleItems.map(item => {
@@ -374,7 +409,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                     key={item.href}
                     href={item.href}
                     prefetch={true}
-                    title={collapsed ? item.label : undefined}
+                    title={compact ? item.label : undefined}
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all mb-0.5 group relative"
                     style={{
                       background: active ? C.bgActive : "transparent",
@@ -410,7 +445,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                         size={15}
                         style={{ color: active ? C.accent : C.text }}
                       />
-                      {showBadge && collapsed && (
+                      {showBadge && compact && (
                         <span
                           className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
                           style={{ background: "#EF4444" }}
@@ -419,7 +454,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                     </div>
 
                     {/* Label */}
-                    {!collapsed && (
+                    {!compact && (
                       <>
                         <span className="truncate flex-1 text-[13px] font-medium">{item.label}</span>
                         {showBadge && (
@@ -449,7 +484,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
           <Link
             href="/crm/profile"
             prefetch={false}
-            title={collapsed ? "Hồ sơ cá nhân" : undefined}
+            title={compact ? "Hồ sơ cá nhân" : undefined}
             className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all"
             style={{ color: C.text }}
             onMouseEnter={e => {
@@ -462,7 +497,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
             }}
           >
             <UserCircle size={15} style={{ color: C.text, flexShrink: 0 }} />
-            {!collapsed && (
+            {!compact && (
               <span className="text-[13px] font-medium truncate flex-1">Hồ sơ cá nhân</span>
             )}
           </Link>
@@ -471,7 +506,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
           <Link
             href="/admin"
             prefetch={false}
-            title={collapsed ? "Quản trị Admin" : undefined}
+            title={compact ? "Quản trị Admin" : undefined}
             className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all"
             style={{ color: C.text }}
             onMouseEnter={e => {
@@ -484,13 +519,13 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
             }}
           >
             <Settings size={15} style={{ color: C.text, flexShrink: 0 }} />
-            {!collapsed && <span className="text-[13px] font-medium">Quản trị Admin</span>}
+            {!compact && <span className="text-[13px] font-medium">Quản trị Admin</span>}
           </Link>
         )}
         <button
           onClick={handleLogout}
           type="button"
-          title={collapsed ? "Đăng xuất" : undefined}
+          title={compact ? "Đăng xuất" : undefined}
           className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all w-full"
           style={{ color: "#F87171", background: "transparent", border: "none", cursor: "pointer" }}
           onMouseEnter={e => {
@@ -503,9 +538,32 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
           }}
         >
           <LogOut size={15} style={{ flexShrink: 0 }} />
-          {!collapsed && <span className="text-[13px] font-medium">Đăng xuất</span>}
+          {!compact && <span className="text-[13px] font-medium">Đăng xuất</span>}
         </button>
       </div>
     </aside>
+    <button
+      className={`crm-mobile-overlay no-print ${mobileOpen ? "is-visible" : ""}`}
+      onClick={() => setMobileOpen(false)}
+      aria-label="Đóng menu CRM"
+    />
+    <nav className="crm-mobile-tabs no-print" aria-label="Điều hướng CRM nhanh">
+      {[
+        { href: "/crm", label: "Tổng quan", icon: LayoutDashboard, exact: true },
+        { href: "/crm/kanban", label: "Kanban", icon: Kanban },
+        { href: "/crm/leads", label: "Khách hàng", icon: Users },
+        { href: "/crm/tasks", label: "Công việc", icon: CheckSquare },
+      ].map(item => {
+        const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+        const Icon = item.icon;
+        return (
+          <Link key={item.href} href={item.href} className={active ? "is-active" : ""}>
+            <Icon size={19} />
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+    </>
   );
 }
