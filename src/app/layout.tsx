@@ -44,11 +44,11 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: "/manifest.webmanifest",
     icons: {
       icon: [
-        { url: "/smartfurni-favicon-v3-32.png", type: "image/png", sizes: "32x32" },
-        { url: "/smartfurni-favicon-v3.png", type: "image/png", sizes: "512x512" },
+        { url: "/smartfurni-favicon-v4-32.png", type: "image/png", sizes: "32x32" },
+        { url: "/smartfurni-favicon-v4.png", type: "image/png", sizes: "512x512" },
       ],
-      shortcut: "/smartfurni-favicon-v3-32.png",
-      apple: [{ url: "/smartfurni-favicon-v3.png", type: "image/png", sizes: "512x512" }],
+      shortcut: "/smartfurni-favicon-v4-32.png",
+      apple: [{ url: "/smartfurni-favicon-v4.png", type: "image/png", sizes: "512x512" }],
     },
     verification: {
       google: theme.seo.googleSiteVerification?.trim() || process.env.GOOGLE_SITE_VERIFICATION || undefined,
