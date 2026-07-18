@@ -6,12 +6,15 @@ import {
   Armchair,
   BatteryMedium,
   BedDouble,
+  Bell,
+  BellOff,
   Bluetooth,
   BookOpen,
   Check,
   ChevronDown,
   ChevronUp,
   Clock3,
+  DownloadCloud,
   Gamepad2,
   Home,
   LampDesk,
@@ -46,6 +49,14 @@ import BedSVG from "@/components/ui/BedSVG";
 import { DEFAULT_PRESETS, type MassageLevel, type MassageMode, type Preset, useBedStore } from "@/lib/bed-store";
 import { BED_DEVICE_PROFILES, getBedDeviceProfile } from "@/lib/bed-device-profiles";
 import { useSmartBedDevice, type BedTransport } from "@/lib/use-smart-bed-device";
+import { sendWithBackgroundSync } from "@/lib/pwa-background-sync";
+import { getPushPermissionState, subscribeToPush, unsubscribeFromPush, type PushPermissionState } from "@/lib/pwa-notifications";
+import {
+  checkFirmwareUpdate,
+  registerFirmwareBackgroundCheck,
+  requestFirmwareDownload,
+  type FirmwareCheckResult,
+} from "@/lib/firmware-update-client";
 import { cn } from "@/lib/utils";
 import "./smart-bed.css";
 
@@ -169,6 +180,10 @@ export default function DashboardPage() {
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountSaving, setAccountSaving] = useState(false);
   const [accountError, setAccountError] = useState("");
+  const [pushState, setPushState] = useState<PushPermissionState>("default");
+  const [pushBusy, setPushBusy] = useState(false);
+  const [firmwareCheck, setFirmwareCheck] = useState<FirmwareCheckResult | null>(null);
+  const [firmwareBusy, setFirmwareBusy] = useState(false);
   const [connectionTransport, setConnectionTransport] = useState<BedTransport>("bluetooth");
   const [showAdvancedConnection, setShowAdvancedConnection] = useState(false);
   const [presetName, setPresetName] = useState("");
@@ -188,11 +203,11 @@ export default function DashboardPage() {
       const platform = /iPad|iPhone|iPod/.test(window.navigator.userAgent)
         ? "ios-pwa"
         : /Android/.test(window.navigator.userAgent) ? "android-pwa" : "desktop-pwa";
-      void fetch("/api/bed/install", {
+      void sendWithBackgroundSync("/api/bed/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ platform }),
-      });
+      }, `bed-install:${platform}`);
     };
     if (standalone) reportInstall();
     window.addEventListener("appinstalled", reportInstall);
@@ -212,7 +227,7 @@ export default function DashboardPage() {
       deviceId: device.connection.deviceId,
       transport: device.connection.transport,
     });
-    void fetch("/api/bed/devices", {
+    void sendWithBackgroundSync("/api/bed/devices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -222,8 +237,29 @@ export default function DashboardPage() {
         transport: device.connection.transport,
         firmware: state.firmware,
       }),
-    });
+    }, `bed-device:${device.connection.deviceId}`);
   }, [device.connection.status, device.connection.transport, device.connection.deviceId, device.connection.deviceName]);
+
+  useEffect(() => {
+    let active = true;
+    const runCheck = async () => {
+      try {
+        const result = await checkFirmwareUpdate(state.deviceProfileId, state.firmware);
+        if (active) setFirmwareCheck(result);
+        await registerFirmwareBackgroundCheck(state.deviceProfileId, state.firmware);
+      } catch {
+        // Firmware checks resume on the next online/visibility event.
+      }
+    };
+    void runCheck();
+    const intervalId = window.setInterval(runCheck, 6 * 60 * 60 * 1000);
+    window.addEventListener("online", runCheck);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener("online", runCheck);
+    };
+  }, [state.deviceProfileId, state.firmware]);
 
   useEffect(() => {
     if (device.connection.status !== "connected") return;
@@ -273,6 +309,7 @@ export default function DashboardPage() {
     setAccountError("");
     setAccountLoading(true);
     try {
+      setPushState(await getPushPermissionState());
       const response = await fetch("/api/bed/account", { cache: "no-store" });
       if (response.status === 401) {
         window.location.replace("/smart-bed/login");
@@ -285,6 +322,40 @@ export default function DashboardPage() {
       setAccountError(error instanceof Error ? error.message : "Không thể tải thông tin tài khoản.");
     } finally {
       setAccountLoading(false);
+    }
+  };
+
+  const togglePushNotifications = async () => {
+    setPushBusy(true);
+    setAccountError("");
+    try {
+      if (pushState === "subscribed") {
+        await unsubscribeFromPush();
+        setPushState("unsubscribed");
+        setToast("Đã tắt thông báo ứng dụng");
+      } else {
+        await subscribeToPush();
+        setPushState("subscribed");
+        setToast("Đã bật thông báo SmartFurni");
+      }
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : "Không thể cập nhật thông báo.");
+      setPushState(await getPushPermissionState());
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
+  const downloadFirmware = async () => {
+    if (!firmwareCheck?.release) return;
+    setFirmwareBusy(true);
+    try {
+      await requestFirmwareDownload(firmwareCheck.release);
+      setToast("Đang tải firmware nền. Ứng dụng sẽ báo khi hoàn tất.");
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Chưa thể tải firmware.");
+    } finally {
+      setFirmwareBusy(false);
     }
   };
 
@@ -515,6 +586,20 @@ export default function DashboardPage() {
                   <div><span>Pin điều khiển</span><b>{state.batteryLevel}%</b></div>
                 </div>
                 <div className="bed-device-details"><span><ShieldCheck size={17} /> Trạng thái</span><b className="is-online">Đang trực tuyến</b></div>
+                <div className="bed-firmware-card">
+                  <span><DownloadCloud size={18} /></span>
+                  <div>
+                    <b>Firmware {state.firmware || "chưa xác định"}</b>
+                    <small>{firmwareCheck?.updateAvailable && firmwareCheck.release
+                      ? `Có bản ${firmwareCheck.release.version}${firmwareCheck.release.mandatory ? " · Bắt buộc" : ""}`
+                      : "Đang tự kiểm tra cập nhật nền"}</small>
+                  </div>
+                  {firmwareCheck?.updateAvailable && firmwareCheck.release && (
+                    <button type="button" disabled={firmwareBusy} onClick={() => void downloadFirmware()}>
+                      {firmwareBusy ? "Đang tải" : "Tải nền"}
+                    </button>
+                  )}
+                </div>
                 <button type="button" className="bed-connect-secondary" onClick={async () => { await device.disconnect(); store.disconnectDevice(); setShowConnection(false); }}> <Unplug size={18} /> Ngắt kết nối</button>
               </>
             ) : (
@@ -590,6 +675,18 @@ export default function DashboardPage() {
                   <input type="tel" value={account.phone} onChange={(event) => setAccount({ ...account, phone: event.target.value })} autoComplete="tel" inputMode="tel" maxLength={20} placeholder="Nhập số điện thoại" />
                 </label>
                 {accountError && <div className="bed-connection-error bed-account-error">{accountError}</div>}
+                <button
+                  type="button"
+                  className={cn("bed-account-notification", pushState === "subscribed" && "is-active")}
+                  onClick={() => void togglePushNotifications()}
+                  disabled={pushBusy || pushState === "unsupported" || pushState === "denied"}
+                >
+                  {pushState === "subscribed" ? <Bell size={18} /> : <BellOff size={18} />}
+                  <span>
+                    <b>{pushState === "subscribed" ? "Thông báo đang bật" : pushState === "denied" ? "Thông báo đã bị chặn" : pushState === "unsupported" ? "Thiết bị chưa hỗ trợ thông báo" : "Bật thông báo ứng dụng"}</b>
+                    <small>Nhận cảnh báo thiết bị và firmware mới ngay cả khi không mở ứng dụng.</small>
+                  </span>
+                </button>
                 <button type="submit" className="bed-connect-primary bed-account-save" disabled={accountSaving}>
                   {accountSaving ? <><span className="bed-spinner" /> Đang lưu...</> : <><Save size={18} /> Lưu thông tin</>}
                 </button>

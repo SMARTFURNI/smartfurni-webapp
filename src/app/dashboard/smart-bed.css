@@ -198,6 +198,10 @@
 .bed-advanced-block { margin: 0 0 14px; }.bed-advanced-block>button { display: flex; align-items: center; gap: 5px; margin: 0 0 8px; color: rgba(245,237,214,.42); font-size: 8px; }.bed-advanced-fields { grid-template-columns: 1fr; margin-bottom: 0; }
 .bed-connection-error { margin: 0 0 12px; padding: 10px 12px; border: 1px solid rgba(245,93,93,.22); border-radius: 11px; color: #f39a9a; background: rgba(245,93,93,.07); font-size: 9px; line-height: 1.5; }
 .bed-connected-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 20px 0 12px; }.bed-connected-summary div { padding: 12px; border: 1px solid rgba(245,237,214,.07); border-radius: 12px; background: rgba(6,10,17,.28); }.bed-connected-summary span { display:block;color:rgba(245,237,214,.36);font-size:7px;margin-bottom:5px}.bed-connected-summary b{font-size:10px}.bed-device-details .is-online{color:#79dda0}
+.bed-firmware-card { min-height: 58px; margin-bottom: 10px; padding: 10px 12px; border: 1px solid rgba(224,197,111,.14); border-radius: 13px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; background: rgba(215,185,87,.04); }
+.bed-firmware-card > span { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--bed-gold-light); background: rgba(215,185,87,.09); }
+.bed-firmware-card div { min-width: 0; display: grid; gap: 3px; }.bed-firmware-card b { font-size: 9px; }.bed-firmware-card small { color: rgba(245,237,214,.38); font-size: 7px; line-height: 1.4; }
+.bed-firmware-card button { min-height: 32px; padding: 0 11px; border: 1px solid rgba(224,197,111,.25); border-radius: 9px; color: var(--bed-gold-light); background: rgba(215,185,87,.06); font-size: 8px; font-weight: 800; }
 .bed-account-modal { width: min(570px, 100%); }
 .bed-account-loading { min-height: 190px; display: flex; align-items: center; justify-content: center; gap: 10px; color: rgba(245,237,214,.5); font-size: 10px; }
 .bed-account-form { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -208,6 +212,10 @@
 .bed-account-field input { width: 100%; height: 47px; padding: 0 13px; border: 1px solid rgba(224,197,111,.15); border-radius: 13px; outline: none; color: var(--bed-cream); background: rgba(6,10,17,.42); font-size: 11px; }
 .bed-account-field input:focus { border-color: rgba(224,197,111,.48); box-shadow: 0 0 0 3px rgba(215,185,87,.07); }
 .bed-account-error, .bed-account-save { grid-column: 1 / -1; margin: 0; }
+.bed-account-notification { grid-column: 1 / -1; min-height: 62px; padding: 10px 12px; border: 1px solid rgba(224,197,111,.14); border-radius: 13px; display: flex; align-items: center; gap: 11px; color: rgba(245,237,214,.58); text-align: left; background: rgba(6,10,17,.30); }
+.bed-account-notification > svg { flex: 0 0 auto; color: var(--bed-gold-light); }.bed-account-notification span { display: grid; gap: 3px; }.bed-account-notification b { font-size: 9px; }.bed-account-notification small { color: rgba(245,237,214,.34); font-size: 7px; line-height: 1.45; }
+.bed-account-notification.is-active { border-color: rgba(110,211,147,.22); background: rgba(110,211,147,.055); }.bed-account-notification.is-active > svg { color: #80dda1; }
+.bed-account-notification:disabled { opacity: .48; cursor: not-allowed; }
 .bed-account-actions { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(245,237,214,.07); display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
 .bed-account-signout { min-height: 44px; border: 1px solid rgba(239,68,68,.25); border-radius: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #f09a9a; background: rgba(239,68,68,.065); font-size: 10px; font-weight: 800; }
 .bed-account-delete { display: flex; align-items: center; justify-content: center; gap: 5px; color: rgba(236,111,111,.46); font-size: 8px; text-decoration: underline; text-underline-offset: 3px; }

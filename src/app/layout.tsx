@@ -13,6 +13,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { organizationSchema, productCategoryNavigationSchema, websiteSchema } from "@/lib/seo-schema";
 import WebVitalsReporter from "@/components/WebVitalsReporter";
 import { PRODUCT_FAMILIES } from "@/lib/product-families";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 export const dynamic = "force-dynamic";
 const SMARTFURNI_GOOGLE_ADS_ID = "AW-16742362454";
@@ -94,6 +95,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         className="antialiased"
       >
         <CartProvider>
+          <ServiceWorkerRegistration />
           <Suspense fallback={null}><NavigationProgress /></Suspense>
           {children}
           <FloatingSupport />

@@ -2,6 +2,21 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      ...["/admin-manifest.webmanifest", "/crm-manifest.webmanifest", "/smart-bed-manifest.webmanifest"].map((source) => ({
+        source,
+        headers: [{ key: "Cache-Control", value: "public, max-age=0, must-revalidate" }],
+      })),
+    ];
+  },
   // Redirect domain gốc sang www (PA Vietnam không hỗ trợ CNAME cho @)
   async redirects() {
     return [
@@ -40,7 +55,7 @@ const nextConfig: NextConfig = {
     },
   },
   // Externalize server-only packages (mysql2, pg, googleapis) from server bundle
-  serverExternalPackages: ["mysql2", "pg", "pg-native", "googleapis", "google-auth-library", "google-ads-api", "zca-js", "sharp"],
+  serverExternalPackages: ["mysql2", "pg", "pg-native", "googleapis", "google-auth-library", "google-ads-api", "zca-js", "sharp", "web-push"],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Prevent bundling Node.js-only modules into the client bundle.
