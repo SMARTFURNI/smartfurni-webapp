@@ -1,0 +1,42 @@
+{
+  "id": "/admin",
+  "name": "SmartFurni Admin",
+  "short_name": "SF Admin",
+  "description": "Quản trị sản phẩm, đơn hàng, nội dung và vận hành website SmartFurni.",
+  "start_url": "/admin",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B111B",
+  "theme_color": "#0B111B",
+  "lang": "vi-VN",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/smartfurni-favicon-v4.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/smartfurni-favicon-v4.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tổng quan quản trị",
+      "short_name": "Tổng quan",
+      "url": "/admin",
+      "icons": [{ "src": "/smartfurni-favicon-v4.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Đơn hàng",
+      "short_name": "Đơn hàng",
+      "url": "/admin/orders",
+      "icons": [{ "src": "/smartfurni-favicon-v4.png", "sizes": "512x512" }]
+    }
+  ]
+}

@@ -5,11 +5,36 @@ import type { RolePermissions } from "@/lib/crm-roles-store";
 import CrmSidebar from "@/components/crm/CrmSidebar";
 import DataPoolNotification from "@/components/crm/DataPoolNotification";
 import ItySoftphone from "@/components/crm/ItySoftphone";
-import type { Metadata } from "next";
+import PwaDocumentConfig from "@/components/PwaDocumentConfig";
+import type { Metadata, Viewport } from "next";
 export const dynamic = "force-dynamic";
 
+export const viewport: Viewport = {
+  themeColor: "#0B111B",
+  colorScheme: "dark",
+};
+
 export const metadata: Metadata = {
+  applicationName: "SmartFurni CRM",
+  title: {
+    template: "%s | SmartFurni CRM",
+    default: "Tổng quan | SmartFurni CRM",
+  },
+  description: "Ứng dụng quản lý khách hàng và hoạt động kinh doanh SmartFurni.",
   robots: { index: false, follow: false },
+  manifest: "/crm-manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "SmartFurni CRM",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [{ url: "/smartfurni-favicon-v4.png", type: "image/png", sizes: "512x512" }],
+    apple: [{ url: "/smartfurni-favicon-v4.png", type: "image/png", sizes: "512x512" }],
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
@@ -37,6 +62,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
 
   return (
     <>
+      <PwaDocumentConfig manifestHref="/crm-manifest.webmanifest" />
       {/* Global print CSS — ẩn sidebar, fix layout khi in */}
       <style>{`
         .crm-mobile-bar, .crm-mobile-tabs, .crm-mobile-overlay, .crm-contracts-back { display: none; }

@@ -24,6 +24,7 @@ export function middleware(request: NextRequest) {
   if (
     request.nextUrl.pathname.startsWith("/admin") &&
     !request.nextUrl.pathname.startsWith("/admin/login") &&
+    request.nextUrl.pathname !== "/admin-manifest.webmanifest" &&
     !request.cookies.get(SESSION_COOKIE)?.value
   ) {
     return NextResponse.redirect(new URL("/admin/login", request.url), { status: 302 });

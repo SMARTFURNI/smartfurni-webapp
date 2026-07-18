@@ -1,0 +1,42 @@
+{
+  "id": "/crm",
+  "name": "SmartFurni CRM",
+  "short_name": "SF CRM",
+  "description": "Quản lý khách hàng, cơ hội bán hàng, công việc và chăm sóc sau bán của SmartFurni.",
+  "start_url": "/crm",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B111B",
+  "theme_color": "#0B111B",
+  "lang": "vi-VN",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/smartfurni-favicon-v4.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/smartfurni-favicon-v4.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tổng quan CRM",
+      "short_name": "Tổng quan",
+      "url": "/crm",
+      "icons": [{ "src": "/smartfurni-favicon-v4.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Khách hàng",
+      "short_name": "Khách hàng",
+      "url": "/crm/leads",
+      "icons": [{ "src": "/smartfurni-favicon-v4.png", "sizes": "512x512" }]
+    }
+  ]
+}
