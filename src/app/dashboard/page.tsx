@@ -46,6 +46,7 @@ import {
   Zap,
 } from "lucide-react";
 import BedSVG from "@/components/ui/BedSVG";
+import SmartBedInstallPrompt from "@/components/smart-bed/SmartBedInstallPrompt";
 import { DEFAULT_PRESETS, type MassageLevel, type MassageMode, type Preset, useBedStore } from "@/lib/bed-store";
 import { BED_DEVICE_PROFILES, getBedDeviceProfile } from "@/lib/bed-device-profiles";
 import { useSmartBedDevice, type BedTransport } from "@/lib/use-smart-bed-device";
@@ -416,6 +417,7 @@ export default function DashboardPage() {
 
   return (
     <main className="smart-bed-app">
+      <SmartBedInstallPrompt />
       <div className="smart-bed-grid" aria-hidden="true" />
 
       <header className="smart-bed-header">

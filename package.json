@@ -14,6 +14,7 @@
     "media:migrate:recover": "node scripts/migrate-cloudinary-media.mjs --recover-local",
     "app:sync": "cap sync",
     "app:assets": "node scripts/generate-smart-bed-mobile-assets.mjs",
+    "app:qr": "node scripts/generate-smart-bed-qr.mjs",
     "app:ios": "cap open ios",
     "app:android": "cap open android",
     "app:doctor": "cap doctor"
@@ -62,6 +63,7 @@
   },
   "devDependencies": {
     "@types/node": "^22",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
@@ -69,6 +71,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
     "postcss": "^8",
+    "qrcode": "^1.5.4",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.21.0",
     "typescript": "^5",

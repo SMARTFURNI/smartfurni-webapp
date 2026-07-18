@@ -3,9 +3,11 @@ import {
   SMART_BED_SESSION_COOKIE,
   getSmartBedSession,
   loginSmartBedUser,
+  recordSmartBedAppEvent,
   registerSmartBedUser,
   revokeSmartBedSession,
 } from "@/lib/smart-bed-auth";
+import { detectSmartBedPlatform } from "@/lib/smart-bed-platform";
 
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Bạn đã thử quá nhiều lần. Vui lòng chờ 15 phút." }, { status: 429 });
   }
   try {
-    const body = await request.json() as { mode?: string; fullName?: string; email?: string; phone?: string; password?: string };
+    const body = await request.json() as { mode?: string; fullName?: string; email?: string; phone?: string; password?: string; source?: string };
     const session = body.mode === "register"
       ? await registerSmartBedUser({
         fullName: body.fullName || "",
@@ -46,6 +48,18 @@ export async function POST(request: NextRequest) {
       })
       : await loginSmartBedUser(body.email || "", body.password || "");
     attempts.delete(key);
+    if (body.source === "qr") {
+      try {
+        await recordSmartBedAppEvent({
+          eventType: "qr_login",
+          userId: session.userId,
+          platform: detectSmartBedPlatform(request.headers.get("user-agent") || ""),
+          source: "qr",
+        });
+      } catch (error) {
+        console.error("Unable to record smart-bed QR login", error);
+      }
+    }
     const response = NextResponse.json({ success: true });
     setSessionCookie(response, session.token, session.expiresAt);
     return response;

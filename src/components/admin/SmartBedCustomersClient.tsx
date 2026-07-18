@@ -1,11 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import {
   Check,
   Copy,
+  Download,
   KeyRound,
   MonitorSmartphone,
+  MousePointerClick,
+  QrCode,
   Search,
   ShieldCheck,
   Smartphone,
@@ -13,7 +17,9 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
-import type { SmartBedAdminCustomer } from "@/lib/smart-bed-auth";
+import type { SmartBedAdminCustomer, SmartBedAppFunnelStats } from "@/lib/smart-bed-auth";
+
+const SMART_BED_QR_URL = "https://www.smartfurni.com.vn/go/bed-app";
 
 function formatDate(value: string | null) {
   if (!value) return "Chưa có";
@@ -27,13 +33,21 @@ function platformLabel(platform: string) {
   return platform || "PWA";
 }
 
-export default function SmartBedCustomersClient({ initialCustomers }: { initialCustomers: SmartBedAdminCustomer[] }) {
+export default function SmartBedCustomersClient({
+  initialCustomers,
+  initialFunnelStats,
+}: {
+  initialCustomers: SmartBedAdminCustomer[];
+  initialFunnelStats: SmartBedAppFunnelStats;
+}) {
   const [customers, setCustomers] = useState(initialCustomers);
+  const [funnelStats, setFunnelStats] = useState(initialFunnelStats);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "installed" | "not-installed">("all");
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [temporaryPassword, setTemporaryPassword] = useState<{ name: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [error, setError] = useState("");
 
   const stats = useMemo(() => {
@@ -58,8 +72,9 @@ export default function SmartBedCustomersClient({ initialCustomers }: { initialC
 
   const refresh = async () => {
     const response = await fetch("/api/admin/app-customers", { cache: "no-store" });
-    const data = await response.json() as { customers?: SmartBedAdminCustomer[] };
+    const data = await response.json() as { customers?: SmartBedAdminCustomer[]; funnelStats?: SmartBedAppFunnelStats };
     if (response.ok && data.customers) setCustomers(data.customers);
+    if (response.ok && data.funnelStats) setFunnelStats(data.funnelStats);
   };
 
   const resetPassword = async (customer: SmartBedAdminCustomer) => {
@@ -90,8 +105,44 @@ export default function SmartBedCustomersClient({ initialCustomers }: { initialC
     setCopied(true);
   };
 
+  const copyQrLink = async () => {
+    await navigator.clipboard.writeText(SMART_BED_QR_URL);
+    setLinkCopied(true);
+    window.setTimeout(() => setLinkCopied(false), 1800);
+  };
+
   return (
     <div className="space-y-5">
+      <section className="grid gap-4 overflow-hidden rounded-2xl border border-[rgba(224,197,111,.16)] bg-[linear-gradient(145deg,rgba(24,34,52,.92),rgba(39,27,12,.86))] p-4 shadow-xl shadow-black/15 lg:grid-cols-[210px_1fr] lg:p-5">
+        <div className="mx-auto w-full max-w-[210px] rounded-2xl bg-[#fffdf7] p-3 shadow-2xl shadow-black/25">
+          <Image src="/qr/smartfurni-bed-app.png" width={1600} height={1600} priority alt="Mã QR đăng nhập ứng dụng điều khiển SmartFurni" className="h-auto w-full" />
+        </div>
+        <div className="min-w-0 self-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#d7b957]/20 bg-[#d7b957]/7 px-3 py-1.5 text-[9px] font-extrabold tracking-[.16em] text-[#e5ca72]"><QrCode size={13} /> QR ỨNG DỤNG ĐIỀU KHIỂN</span>
+          <h2 className="mt-3 text-lg font-bold text-[#f5edd6] md:text-2xl">Mã QR cố định cho khách hàng</h2>
+          <p className="mt-2 max-w-2xl text-[11px] leading-5 text-white/45 md:text-xs">In mã này trên tài liệu bàn giao hoặc tem sản phẩm. Khách quét mã sẽ vào đúng trang đăng nhập Smart Bed Control; sau đăng nhập hệ thống hướng dẫn ghim ứng dụng theo thiết bị.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button type="button" onClick={() => void copyQrLink()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#d7b957] px-4 text-[11px] font-bold text-[#171205]"><Copy size={14} /> {linkCopied ? "Đã sao chép" : "Sao chép liên kết"}</button>
+            <a href="/qr/smartfurni-bed-app.png" download className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#d7b957]/22 bg-[#d7b957]/5 px-4 text-[11px] font-bold text-[#e5ca72]"><Download size={14} /> Tải PNG</a>
+            <a href="/qr/smartfurni-bed-app.svg" download className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[.025] px-4 text-[11px] font-bold text-white/55"><Download size={14} /> Tải SVG in ấn</a>
+          </div>
+          <code className="mt-3 block truncate rounded-xl border border-white/5 bg-black/20 px-3 py-2 text-[9px] text-white/35">{SMART_BED_QR_URL}</code>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {[
+          { label: "Lượt quét QR", value: funnelStats.qrScans, icon: QrCode },
+          { label: "Đăng nhập từ QR", value: funnelStats.qrLogins, icon: UserRound },
+          { label: "Đã hiện hướng dẫn", value: funnelStats.installPrompts, icon: Smartphone },
+          { label: "Bấm cài / ghim", value: funnelStats.installClicks, icon: MousePointerClick },
+          { label: "Đã ghi nhận cài", value: Math.max(funnelStats.installs, stats.installed), icon: Check },
+        ].map((item) => {
+          const Icon = item.icon;
+          return <article key={item.label} className="rounded-2xl border border-[rgba(224,197,111,.12)] bg-black/15 p-3.5"><div className="flex items-center justify-between gap-2"><span className="grid h-8 w-8 place-items-center rounded-xl bg-[#d7b957]/8 text-[#e5ca72]"><Icon size={15} /></span><b className="text-xl text-[#f5edd6]">{item.value}</b></div><p className="mt-3 text-[9px] font-bold uppercase tracking-wide text-white/35">{item.label}</p></article>;
+        })}
+      </section>
+
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
           { label: "Tài khoản đã tạo", value: stats.total, note: `${stats.recent} tài khoản trong 30 ngày`, icon: UsersRound, color: "#d7b957" },

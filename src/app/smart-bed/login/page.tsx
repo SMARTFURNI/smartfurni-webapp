@@ -19,14 +19,15 @@ export default function SmartBedLoginPage() {
     setSubmitting(true);
     setError("");
     try {
+      const source = new URLSearchParams(window.location.search).get("source") === "qr" ? "qr" : "direct";
       const response = await fetch("/api/bed/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, mode }),
+        body: JSON.stringify({ ...form, mode, source }),
       });
       const data = await response.json() as { error?: string };
       if (!response.ok) throw new Error(data.error || "Không thể đăng nhập.");
-      router.replace("/dashboard");
+      router.replace(source === "qr" ? "/dashboard?source=qr&install=1" : "/dashboard");
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Không thể đăng nhập.");

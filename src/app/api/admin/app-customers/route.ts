@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { getSmartBedAdminCustomers, resetSmartBedUserPassword } from "@/lib/smart-bed-auth";
+import { getSmartBedAdminCustomers, getSmartBedAppFunnelStats, resetSmartBedUserPassword } from "@/lib/smart-bed-auth";
 
 export async function GET() {
   if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const customers = await getSmartBedAdminCustomers();
-  return NextResponse.json({ customers });
+  const [customers, funnelStats] = await Promise.all([
+    getSmartBedAdminCustomers(),
+    getSmartBedAppFunnelStats(),
+  ]);
+  return NextResponse.json({ customers, funnelStats });
 }
 
 export async function POST(request: NextRequest) {

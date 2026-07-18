@@ -23,6 +23,22 @@ export interface SmartBedAdminCustomer extends SmartBedUserSession {
   lastDeviceSeenAt: string | null;
 }
 
+export type SmartBedAppEventType =
+  | "qr_scan"
+  | "qr_login"
+  | "install_prompt_shown"
+  | "install_click"
+  | "install_dismissed"
+  | "installed";
+
+export interface SmartBedAppFunnelStats {
+  qrScans: number;
+  qrLogins: number;
+  installPrompts: number;
+  installClicks: number;
+  installs: number;
+}
+
 let accountTablesPromise: Promise<void> | null = null;
 
 function normalizeEmail(email: string) {
@@ -83,6 +99,19 @@ export async function ensureSmartBedAccountTables() {
     )
   `);
     await query(`CREATE INDEX IF NOT EXISTS idx_smart_bed_devices_user ON smart_bed_devices(user_id, last_seen_at DESC)`);
+    await query(`
+    CREATE TABLE IF NOT EXISTS smart_bed_app_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES smart_bed_users(id) ON DELETE SET NULL,
+      event_type TEXT NOT NULL,
+      platform TEXT NOT NULL DEFAULT '',
+      source TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_smart_bed_app_events_type_created ON smart_bed_app_events(event_type, created_at DESC)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_smart_bed_app_events_user_created ON smart_bed_app_events(user_id, created_at DESC)`);
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_smart_bed_app_events_unique_install ON smart_bed_app_events(user_id, event_type) WHERE event_type = 'installed' AND user_id IS NOT NULL`);
     await query(`ALTER TABLE smart_bed_users ADD COLUMN IF NOT EXISTS installed_at TIMESTAMPTZ`);
     await query(`ALTER TABLE smart_bed_users ADD COLUMN IF NOT EXISTS install_platform TEXT NOT NULL DEFAULT ''`);
     await query(`DELETE FROM smart_bed_sessions WHERE expires_at < NOW()`);
@@ -128,7 +157,57 @@ async function createSmartBedSession(userId: string) {
     "INSERT INTO smart_bed_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)",
     [hashSessionToken(token), userId, expiresAt],
   );
-  return { token, expiresAt };
+  return { token, expiresAt, userId };
+}
+
+export async function recordSmartBedAppEvent(input: {
+  eventType: SmartBedAppEventType;
+  userId?: string | null;
+  platform?: string;
+  source?: string;
+}) {
+  await ensureSmartBedAccountTables();
+  const values = [
+    `sbe_${randomUUID()}`,
+    input.userId || null,
+    input.eventType,
+    (input.platform || "unknown").trim().slice(0, 40),
+    (input.source || "direct").trim().slice(0, 40),
+  ];
+  if (input.eventType === "installed" && input.userId) {
+    await query(
+      `INSERT INTO smart_bed_app_events (id, user_id, event_type, platform, source)
+       SELECT $1, $2, $3, $4, $5
+       WHERE NOT EXISTS (
+         SELECT 1 FROM smart_bed_app_events WHERE user_id = $2 AND event_type = 'installed'
+       )
+       ON CONFLICT DO NOTHING`,
+      values,
+    );
+    return;
+  }
+  await query(
+    `INSERT INTO smart_bed_app_events (id, user_id, event_type, platform, source)
+     VALUES ($1, $2, $3, $4, $5)`,
+    values,
+  );
+}
+
+export async function getSmartBedAppFunnelStats(): Promise<SmartBedAppFunnelStats> {
+  await ensureSmartBedAccountTables();
+  const rows = await query<{ eventType: SmartBedAppEventType; count: number }>(
+    `SELECT event_type AS "eventType", COUNT(*)::int AS count
+     FROM smart_bed_app_events
+     GROUP BY event_type`,
+  );
+  const counts = new Map(rows.map((row) => [row.eventType, Number(row.count)]));
+  return {
+    qrScans: counts.get("qr_scan") || 0,
+    qrLogins: counts.get("qr_login") || 0,
+    installPrompts: counts.get("install_prompt_shown") || 0,
+    installClicks: counts.get("install_click") || 0,
+    installs: counts.get("installed") || 0,
+  };
 }
 
 export async function getSmartBedSession(): Promise<SmartBedUserSession | null> {
