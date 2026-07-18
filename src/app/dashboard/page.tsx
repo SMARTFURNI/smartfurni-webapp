@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import {
   Armchair,
@@ -22,6 +22,7 @@ import {
   Pause,
   Play,
   Radio,
+  Router,
   RotateCcw,
   Save,
   Settings2,
@@ -34,11 +35,14 @@ import {
   Unplug,
   Vibrate,
   Wifi,
+  WifiOff,
   X,
   Zap,
 } from "lucide-react";
 import BedSVG from "@/components/ui/BedSVG";
 import { DEFAULT_PRESETS, type MassageLevel, type MassageMode, type Preset, useBedStore } from "@/lib/bed-store";
+import { BED_DEVICE_PROFILES, getBedDeviceProfile } from "@/lib/bed-device-profiles";
+import { useSmartBedDevice, type BedTransport } from "@/lib/use-smart-bed-device";
 import { cn } from "@/lib/utils";
 import "./smart-bed.css";
 
@@ -147,11 +151,15 @@ function SettingRow({ icon, title, description, action }: { icon: ReactNode; tit
 export default function DashboardPage() {
   const store = useBedStore();
   const { state } = store;
+  const device = useSmartBedDevice(store.applyDeviceTelemetry);
+  const profile = useMemo(() => getBedDeviceProfile(state.deviceProfileId), [state.deviceProfileId]);
   const [activeView, setActiveView] = useState<ViewId>("control");
   const [showConnection, setShowConnection] = useState(false);
-  const [connecting, setConnecting] = useState(false);
+  const [connectionTransport, setConnectionTransport] = useState<BedTransport>("bluetooth");
+  const [showAdvancedConnection, setShowAdvancedConnection] = useState(false);
   const [presetName, setPresetName] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  const syncTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -162,14 +170,61 @@ export default function DashboardPage() {
   const activePreset = store.presets.find((preset) => preset.id === state.activePreset);
   const controlsLocked = state.childLock;
 
-  const connect = () => {
-    setConnecting(true);
-    window.setTimeout(() => {
-      store.connectDevice();
-      setConnecting(false);
+  useEffect(() => {
+    if (device.connection.status !== "connected" || !device.connection.transport) {
+      if (state.connected) store.disconnectDevice();
+      return;
+    }
+    store.connectDevice({
+      deviceName: device.connection.deviceName,
+      deviceId: device.connection.deviceId,
+      transport: device.connection.transport,
+    });
+    void fetch("/api/bed/devices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        hardwareId: device.connection.deviceId,
+        name: device.connection.deviceName,
+        profileId: state.deviceProfileId,
+        transport: device.connection.transport,
+        firmware: state.firmware,
+      }),
+    });
+  }, [device.connection.status, device.connection.transport, device.connection.deviceId, device.connection.deviceName]);
+
+  useEffect(() => {
+    if (device.connection.status !== "connected") return;
+    if (syncTimerRef.current) window.clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = window.setTimeout(() => {
+      void device.send({
+        type: "sync_state",
+        zone: state.activeZone,
+        profileId: state.deviceProfileId,
+        headAngle: state.headAngle,
+        footAngle: state.footAngle,
+        led: { on: state.ledOn, color: state.ledColor, brightness: state.ledBrightness },
+        massage: { on: state.massageOn, level: state.massageLevel, mode: state.massageMode },
+        childLock: state.childLock,
+      });
+    }, 110);
+    return () => {
+      if (syncTimerRef.current) window.clearTimeout(syncTimerRef.current);
+    };
+  }, [device.connection.status, state.activeZone, state.deviceProfileId, state.headAngle, state.footAngle, state.ledOn, state.ledColor, state.ledBrightness, state.massageOn, state.massageLevel, state.massageMode, state.childLock]);
+
+  useEffect(() => {
+    if (device.connection.status !== "connected") return;
+    void device.send({ type: "set_routine", ...state.routine });
+  }, [device.connection.status, state.routine]);
+
+  const connect = async (transport: BedTransport) => {
+    setConnectionTransport(transport);
+    const connected = await device.connect(transport);
+    if (connected) {
       setShowConnection(false);
-      setToast("Đã kết nối bộ điều khiển SmartFurni");
-    }, 900);
+      setToast(transport === "bluetooth" || transport === "native" ? "Đã kết nối Bluetooth" : transport === "wifi" ? "Đã kết nối Wi‑Fi Gateway" : "Đã bật thiết bị mô phỏng");
+    }
   };
 
   const savePreset = () => {
@@ -192,9 +247,9 @@ export default function DashboardPage() {
             <span><b>SMARTFURNI</b><small>SMART BED CONTROL</small></span>
           </Link>
           <div className="smart-bed-header__status">
-            <button type="button" className={cn("device-pill", state.connected && "is-connected")} onClick={() => setShowConnection(true)} aria-label={state.connected ? `Thiết bị ${state.deviceName} đã kết nối` : "Kết nối giường"}>
-              {state.connected ? <Wifi size={15} /> : <Bluetooth size={15} />}
-              <span>{state.connected ? state.deviceName : "Kết nối giường"}</span>
+            <button type="button" className={cn("device-pill", device.connection.status === "connected" && "is-connected", device.connection.status === "error" && "is-error")} onClick={() => setShowConnection(true)} aria-label={device.connection.status === "connected" ? `Thiết bị ${device.connection.deviceName} đã kết nối` : "Kết nối giường"}>
+              {device.connection.transport === "wifi" ? <Wifi size={15} /> : device.connection.status === "connected" ? <Bluetooth size={15} /> : <WifiOff size={15} />}
+              <span>{device.connection.status === "connected" ? device.connection.deviceName : device.connection.status === "error" ? "Lỗi kết nối" : "Kết nối giường"}</span>
               <i />
             </button>
             <Link href="/admin/choose-module" className="smart-bed-home-link" aria-label="Trung tâm điều hành"><Settings2 size={19} /></Link>
@@ -205,9 +260,9 @@ export default function DashboardPage() {
       <div className="smart-bed-shell">
         <section className="smart-bed-overview">
           <div className="smart-bed-overview__copy">
-            <div className="bed-kicker"><Radio size={14} /> PHÒNG NGỦ CHÍNH</div>
+            <div className="bed-kicker"><Radio size={14} /> {profile.family === "electric_mattress" ? "NỆM THÔNG MINH" : "GIƯỜNG CÔNG THÁI HỌC"}</div>
             <h1>Chào buổi tối</h1>
-            <p>Điều chỉnh tư thế và tiện nghi để cơ thể thư giãn đúng cách.</p>
+            <p>{profile.shortName} · Điều chỉnh tư thế và tiện nghi để cơ thể thư giãn đúng cách.</p>
           </div>
           <div className="smart-bed-metrics">
             <span><BatteryMedium size={17} /> {state.batteryLevel}%</span>
@@ -233,7 +288,7 @@ export default function DashboardPage() {
                 <span className="bed-eyebrow">TRẠNG THÁI HIỆN TẠI</span>
                 <h2>{activePreset?.name ?? "Tư thế tùy chỉnh"}</h2>
               </div>
-              <span className={cn("bed-live-badge", state.connected && "is-live")}><i />{state.connected ? "Đồng bộ" : "Cục bộ"}</span>
+              <span className={cn("bed-live-badge", device.connection.status === "connected" && "is-live")}><i />{device.connection.status === "connected" ? device.connection.transport === "simulator" ? "Mô phỏng" : "Trực tuyến" : "Chưa kết nối"}</span>
             </div>
 
             <div className="bed-visual-stage">
@@ -254,11 +309,18 @@ export default function DashboardPage() {
             {activeView === "control" && (
               <div className="bed-view">
                 <div className="bed-view__heading"><div><span className="bed-eyebrow">ĐIỀU KHIỂN CHÍNH</span><h2>Điều chỉnh tư thế</h2></div>{state.childLock && <span className="bed-warning"><LockKeyhole size={13} /> Đã khóa</span>}</div>
+                {profile.capabilities.dualZone && (
+                  <div className="bed-zone-switch" aria-label="Vùng điều khiển">
+                    <button type="button" className={state.activeZone === "all" ? "is-active" : ""} onClick={() => store.setActiveZone("all")}>Toàn bộ</button>
+                    <button type="button" className={state.activeZone === "left" ? "is-active" : ""} onClick={() => store.setActiveZone("left")}>Bên trái</button>
+                    <button type="button" className={state.activeZone === "right" ? "is-active" : ""} onClick={() => store.setActiveZone("right")}>Bên phải</button>
+                  </div>
+                )}
                 <div className="bed-angle-grid">
-                  <AngleControl label="Đầu giường" value={state.headAngle} max={70} disabled={controlsLocked} onChange={store.setHeadAngle} />
-                  <AngleControl label="Chân giường" value={state.footAngle} max={45} disabled={controlsLocked} onChange={store.setFootAngle} />
+                  <AngleControl label="Đầu giường" value={state.headAngle} max={profile.capabilities.maxHeadAngle} disabled={controlsLocked || !profile.capabilities.head} onChange={store.setHeadAngle} />
+                  {profile.capabilities.foot && <AngleControl label="Chân giường" value={state.footAngle} max={profile.capabilities.maxFootAngle} disabled={controlsLocked} onChange={store.setFootAngle} />}
                 </div>
-                <button type="button" className="bed-flat-action" onClick={() => { store.resetFlat(); setToast("Đang đưa giường về vị trí phẳng"); }}>
+                <button type="button" className="bed-flat-action" onClick={() => { store.resetFlat(); void device.send({ type: "stop_flat", zone: state.activeZone }); setToast("Đang đưa giường về vị trí phẳng"); }}>
                   <RotateCcw size={19} /><span><b>Dừng & về phẳng</b><small>Luôn hoạt động kể cả khi đang khóa</small></span>
                 </button>
                 <SettingRow
@@ -299,17 +361,22 @@ export default function DashboardPage() {
             {activeView === "comfort" && (
               <div className="bed-view">
                 <div className="bed-view__heading"><div><span className="bed-eyebrow">KHÔNG GIAN THƯ GIÃN</span><h2>Đèn & massage</h2></div></div>
+                {!profile.capabilities.led && !profile.capabilities.massage && <div className="bed-capability-note"><ShieldCheck size={19} /><span><b>{profile.shortName}</b><small>Model này tập trung điều khiển tư thế và không cấu hình đèn hoặc massage.</small></span></div>}
+                {profile.capabilities.led && <>
                 <SettingRow icon={<Lightbulb size={20} />} title="Đèn ngủ dưới gầm" description={state.ledOn ? `Đang bật · ${state.ledBrightness}%` : "Đang tắt"} action={<Toggle checked={state.ledOn} onChange={store.toggleLed} label="Đèn ngủ" />} />
                 <div className="bed-comfort-card">
                   <div className="bed-card-label"><Palette size={16} /><span>Màu ánh sáng</span></div>
                   <div className="bed-color-grid">{LED_COLORS.map((color) => <button type="button" key={color} onClick={() => store.setLedColor(color)} className={cn(state.ledColor === color && state.ledOn && "is-active")} style={{ backgroundColor: color }} aria-label={`Màu ${color}`} />)}</div>
                   <div className="bed-slider-row"><LampDesk size={17} /><input className="bed-range" type="range" min={10} max={100} value={state.ledBrightness} onChange={(event) => store.setLedBrightness(Number(event.target.value))} style={{ "--range-progress": `${state.ledBrightness}%` } as CSSProperties} /><b>{state.ledBrightness}%</b></div>
                 </div>
+                </>}
+                {profile.capabilities.massage && <>
                 <SettingRow icon={<Vibrate size={20} />} title="Massage thư giãn" description={state.massageOn ? `Đang chạy · mức ${state.massageLevel}` : "Đang tắt"} action={<Toggle checked={state.massageOn} onChange={() => store.setMassageLevel(state.massageOn ? 0 : 1)} label="Massage" />} />
                 <div className="bed-comfort-card">
                   <div className="bed-segmented">{MASSAGE_LEVELS.map((item) => <button type="button" key={item.level} onClick={() => store.setMassageLevel(item.level)} className={cn(state.massageLevel === item.level && "is-active")}>{item.label}</button>)}</div>
                   <div className="bed-mode-grid">{MASSAGE_MODES.map((mode) => <button type="button" key={mode.id} onClick={() => store.setMassageMode(mode.id)} className={cn(state.massageMode === mode.id && state.massageOn && "is-active")}><Vibrate size={16} /><span>{mode.label}</span></button>)}</div>
                 </div>
+                </>}
               </div>
             )}
 
@@ -342,22 +409,73 @@ export default function DashboardPage() {
       </nav>
 
       {showConnection && (
-        <div className="bed-modal-backdrop" role="presentation" onMouseDown={() => !connecting && setShowConnection(false)}>
+        <div className="bed-modal-backdrop" role="presentation" onMouseDown={() => device.connection.status !== "connecting" && setShowConnection(false)}>
           <section className="bed-connection-modal" role="dialog" aria-modal="true" aria-labelledby="connection-title" onMouseDown={(event) => event.stopPropagation()}>
             <button type="button" className="bed-modal-close" onClick={() => setShowConnection(false)} aria-label="Đóng"><X size={19} /></button>
-            <span className="bed-connection-modal__icon">{state.connected ? <Wifi size={28} /> : <Bluetooth size={28} />}</span>
-            <span className="bed-eyebrow">KẾT NỐI THIẾT BỊ</span>
-            <h2 id="connection-title">{state.connected ? state.deviceName : "SmartFurni Bed"}</h2>
-            <p>{state.connected ? "Bộ điều khiển đang đồng bộ với ứng dụng." : "Kết nối bộ điều khiển để đồng bộ lệnh. Khi chưa kết nối, ứng dụng vẫn hoạt động ở chế độ trải nghiệm cục bộ."}</p>
-            {state.connected ? (
+            <div className="bed-connection-modal__title">
+              <span className="bed-connection-modal__icon">{device.connection.transport === "wifi" ? <Router size={27} /> : <Bluetooth size={27} />}</span>
+              <div><span className="bed-eyebrow">THIẾT BỊ SMARTFURNI</span><h2 id="connection-title">{device.connection.status === "connected" ? device.connection.deviceName : "Kết nối bộ điều khiển"}</h2></div>
+            </div>
+            {device.connection.status === "connected" ? (
               <>
-                <div className="bed-device-details"><span><BatteryMedium size={17} /> Pin điều khiển</span><b>{state.batteryLevel}%</b></div>
-                <button type="button" className="bed-connect-secondary" onClick={() => { store.disconnectDevice(); setShowConnection(false); }}> <Unplug size={18} /> Ngắt kết nối</button>
+                <div className="bed-connected-summary">
+                  <div><span>Kênh kết nối</span><b>{device.connection.transport === "wifi" ? "Wi‑Fi Gateway" : device.connection.transport === "native" ? "Bluetooth ứng dụng" : device.connection.transport === "simulator" ? "Mô phỏng" : "Web Bluetooth"}</b></div>
+                  <div><span>Model</span><b>{profile.shortName}</b></div>
+                  <div><span>Độ trễ</span><b>{device.connection.lastLatencyMs ?? 0} ms</b></div>
+                  <div><span>Pin điều khiển</span><b>{state.batteryLevel}%</b></div>
+                </div>
+                <div className="bed-device-details"><span><ShieldCheck size={17} /> Trạng thái</span><b className="is-online">Đang trực tuyến</b></div>
+                <button type="button" className="bed-connect-secondary" onClick={async () => { await device.disconnect(); store.disconnectDevice(); setShowConnection(false); }}> <Unplug size={18} /> Ngắt kết nối</button>
               </>
             ) : (
-              <button type="button" className="bed-connect-primary" disabled={connecting} onClick={connect}>{connecting ? <><span className="bed-spinner" /> Đang kết nối...</> : <><Bluetooth size={18} /> Kết nối bộ điều khiển</>}</button>
+              <>
+                <p className="bed-connection-intro">Chọn đúng dòng sản phẩm và phương thức kết nối. Ứng dụng chỉ gửi lệnh trong giới hạn an toàn của model đã chọn.</p>
+                <label className="bed-profile-select">
+                  <span>Dòng sản phẩm đang sử dụng</span>
+                  <select value={state.deviceProfileId} onChange={(event) => store.selectDeviceProfile(event.target.value)}>
+                    <optgroup label="Giường Công Thái Học">
+                      {BED_DEVICE_PROFILES.filter((item) => item.family === "ergonomic_bed").map((item) => <option key={item.id} value={item.id}>{item.shortName}</option>)}
+                    </optgroup>
+                    <optgroup label="Nệm Thông Minh Điều Chỉnh Điện">
+                      {BED_DEVICE_PROFILES.filter((item) => item.family === "electric_mattress").map((item) => <option key={item.id} value={item.id}>{item.shortName}</option>)}
+                    </optgroup>
+                  </select>
+                </label>
+                <div className="bed-transport-grid">
+                  {device.connection.nativeBridgeAvailable && <button type="button" onClick={() => setConnectionTransport("native")} className={connectionTransport === "native" ? "is-active" : ""}><span><Bluetooth size={20} /></span><b>Bluetooth App</b><small>iPhone & Android</small></button>}
+                  <button type="button" onClick={() => setConnectionTransport("bluetooth")} className={connectionTransport === "bluetooth" ? "is-active" : ""}><span><Bluetooth size={20} /></span><b>Bluetooth</b><small>{device.connection.bluetoothSupported ? "Chrome / Android" : "Không hỗ trợ trên trình duyệt này"}</small></button>
+                  <button type="button" onClick={() => setConnectionTransport("wifi")} className={connectionTransport === "wifi" ? "is-active" : ""}><span><Router size={20} /></span><b>Wi‑Fi</b><small>Gateway trong nhà</small></button>
+                  <button type="button" onClick={() => setConnectionTransport("simulator")} className={connectionTransport === "simulator" ? "is-active" : ""}><span><Gamepad2 size={20} /></span><b>Trải nghiệm</b><small>Không cần thiết bị</small></button>
+                </div>
+                {connectionTransport === "wifi" && (
+                  <div className="bed-wifi-config">
+                    <label><span>Địa chỉ Gateway</span><input value={device.config.wifiGatewayUrl} onChange={(event) => device.setConfig({ ...device.config, wifiGatewayUrl: event.target.value })} placeholder="https://bed-gateway.local" inputMode="url" /></label>
+                    <label><span>Mã truy cập (nếu có)</span><input type="password" value={device.config.wifiApiToken} onChange={(event) => device.setConfig({ ...device.config, wifiApiToken: event.target.value })} placeholder="••••••••" /></label>
+                  </div>
+                )}
+                {(connectionTransport === "bluetooth" || connectionTransport === "native") && (
+                  <div className="bed-advanced-block">
+                    <button type="button" onClick={() => setShowAdvancedConnection(!showAdvancedConnection)}>Cấu hình giao thức <ChevronDown size={15} /></button>
+                    {showAdvancedConnection && <div className="bed-advanced-fields">
+                      <label><span>Tên thiết bị bắt đầu bằng</span><input value={device.config.deviceNamePrefix} onChange={(event) => device.setConfig({ ...device.config, deviceNamePrefix: event.target.value })} /></label>
+                      <label><span>Service UUID</span><input value={device.config.bleServiceUuid} onChange={(event) => device.setConfig({ ...device.config, bleServiceUuid: event.target.value })} /></label>
+                      <label><span>Write UUID</span><input value={device.config.bleWriteCharacteristicUuid} onChange={(event) => device.setConfig({ ...device.config, bleWriteCharacteristicUuid: event.target.value })} /></label>
+                      <label><span>Notify UUID</span><input value={device.config.bleNotifyCharacteristicUuid} onChange={(event) => device.setConfig({ ...device.config, bleNotifyCharacteristicUuid: event.target.value })} /></label>
+                    </div>}
+                  </div>
+                )}
+                {device.connection.error && <div className="bed-connection-error">{device.connection.error}</div>}
+                <button type="button" className="bed-connect-primary" disabled={device.connection.status === "connecting"} onClick={() => void connect(connectionTransport)}>{device.connection.status === "connecting" ? <><span className="bed-spinner" /> Đang kết nối...</> : <>{connectionTransport === "wifi" ? <Router size={18} /> : connectionTransport === "simulator" ? <Gamepad2 size={18} /> : <Bluetooth size={18} />} Kết nối {connectionTransport === "wifi" ? "Wi‑Fi" : connectionTransport === "simulator" ? "mô phỏng" : "Bluetooth"}</>}</button>
+              </>
             )}
-            <small className="bed-connection-note">Bản web hiện dùng bộ điều khiển cục bộ. Kết nối phần cứng thật sẽ nhận lệnh qua cổng gateway khi cấu hình giao thức thiết bị.</small>
+            <small className="bed-connection-note">Bluetooth trên iPhone hoạt động trong app SmartFurni. Khi dùng website trên iPhone, hãy chọn Wi‑Fi Gateway.</small>
+            <button type="button" className="bed-account-logout" onClick={async () => { await fetch("/api/bed/auth", { method: "DELETE" }); window.location.href = "/smart-bed/login"; }}>Đăng xuất tài khoản điều khiển</button>
+            <button type="button" className="bed-account-delete" onClick={async () => {
+              if (!window.confirm("Xóa tài khoản điều khiển, thiết bị đã ghép đôi và toàn bộ dữ liệu liên quan? Thao tác này không thể hoàn tác.")) return;
+              const response = await fetch("/api/bed/account", { method: "DELETE" });
+              if (response.ok) window.location.href = "/smart-bed/login";
+              else setToast("Chưa thể xóa tài khoản. Vui lòng thử lại.");
+            }}>Xóa tài khoản và dữ liệu</button>
           </section>
         </div>
       )}

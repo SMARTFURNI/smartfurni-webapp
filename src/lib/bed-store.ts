@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DEFAULT_BED_DEVICE_PROFILE_ID, getBedDeviceProfile, type BedZone } from "./bed-device-profiles";
+import type { BedTransport, SmartBedTelemetry } from "./smart-bed-device";
 
 export interface Preset {
   id: string;
@@ -43,7 +45,13 @@ export interface BedState {
   massageMode: MassageMode;
   connected: boolean;
   deviceName: string;
+  deviceId: string;
+  firmware: string;
+  connectionTransport: BedTransport | null;
+  deviceProfileId: string;
+  activeZone: BedZone;
   batteryLevel: number;
+  temperature: number | null;
   childLock: boolean;
   activePreset: string | null;
   customPresets: Preset[];
@@ -65,7 +73,13 @@ export const INITIAL_STATE: BedState = {
   massageMode: "wave",
   connected: false,
   deviceName: "SmartFurni Bed",
+  deviceId: "",
+  firmware: "",
+  connectionTransport: null,
+  deviceProfileId: DEFAULT_BED_DEVICE_PROFILE_ID,
+  activeZone: "all",
   batteryLevel: 86,
+  temperature: null,
   childLock: false,
   activePreset: "flat",
   customPresets: [],
@@ -99,6 +113,8 @@ function readStoredState(): BedState {
       ...INITIAL_STATE,
       ...stored,
       connected: false,
+      connectionTransport: null,
+      activeZone: stored.activeZone === "left" || stored.activeZone === "right" ? stored.activeZone : "all",
       timerEndsAt: stored.timerEndsAt && stored.timerEndsAt > Date.now() ? stored.timerEndsAt : null,
       routine: { ...INITIAL_STATE.routine, ...stored.routine },
       customPresets: Array.isArray(stored.customPresets) ? stored.customPresets.slice(0, 6) : [],
@@ -185,18 +201,18 @@ export function useBedStore() {
   const setHeadAngle = useCallback((value: number) => {
     update((current) => current.childLock ? current : {
       ...current,
-      headAngle: clamp(value, 0, 70),
+      headAngle: clamp(value, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxHeadAngle),
       activePreset: null,
-      lastCommand: `Đầu giường ${clamp(value, 0, 70)}°`,
+      lastCommand: `Đầu giường ${clamp(value, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxHeadAngle)}°`,
     });
   }, [update]);
 
   const setFootAngle = useCallback((value: number) => {
     update((current) => current.childLock ? current : {
       ...current,
-      footAngle: clamp(value, 0, 45),
+      footAngle: clamp(value, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxFootAngle),
       activePreset: null,
-      lastCommand: `Chân giường ${clamp(value, 0, 45)}°`,
+      lastCommand: `Chân giường ${clamp(value, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxFootAngle)}°`,
     });
   }, [update]);
 
@@ -242,12 +258,60 @@ export function useBedStore() {
     update((current) => ({ ...current, massageMode: mode, massageOn: true, massageLevel: current.massageLevel || 1, lastCommand: "Đã đổi nhịp massage" }));
   }, [update]);
 
-  const connectDevice = useCallback(() => {
-    setState((current) => ({ ...current, connected: true, lastSyncedAt: Date.now(), lastCommand: "Đã kết nối bộ điều khiển" }));
+  const connectDevice = useCallback((details?: { deviceName?: string; deviceId?: string; transport?: BedTransport; firmware?: string }) => {
+    setState((current) => ({
+      ...current,
+      connected: true,
+      deviceName: details?.deviceName || current.deviceName,
+      deviceId: details?.deviceId || current.deviceId,
+      connectionTransport: details?.transport || current.connectionTransport,
+      firmware: details?.firmware || current.firmware,
+      lastSyncedAt: Date.now(),
+      lastCommand: "Đã kết nối bộ điều khiển",
+    }));
   }, []);
 
   const disconnectDevice = useCallback(() => {
-    setState((current) => ({ ...current, connected: false, lastCommand: "Đang dùng chế độ điều khiển cục bộ" }));
+    setState((current) => ({ ...current, connected: false, connectionTransport: null, lastCommand: "Đã ngắt kết nối thiết bị" }));
+  }, []);
+
+  const selectDeviceProfile = useCallback((profileId: string) => {
+    const profile = getBedDeviceProfile(profileId);
+    update((current) => ({
+      ...current,
+      deviceProfileId: profile.id,
+      activeZone: profile.capabilities.dualZone ? current.activeZone : "all",
+      headAngle: clamp(current.headAngle, 0, profile.capabilities.maxHeadAngle),
+      footAngle: profile.capabilities.foot ? clamp(current.footAngle, 0, profile.capabilities.maxFootAngle) : 0,
+      ledOn: profile.capabilities.led ? current.ledOn : false,
+      massageOn: profile.capabilities.massage ? current.massageOn : false,
+      massageLevel: profile.capabilities.massage ? current.massageLevel : 0,
+      lastCommand: `Đã chọn ${profile.shortName}`,
+    }));
+  }, [update]);
+
+  const setActiveZone = useCallback((zone: BedZone) => {
+    update((current) => ({ ...current, activeZone: zone, lastCommand: zone === "all" ? "Điều khiển toàn bộ" : zone === "left" ? "Điều khiển bên trái" : "Điều khiển bên phải" }));
+  }, [update]);
+
+  const applyDeviceTelemetry = useCallback((telemetry: SmartBedTelemetry) => {
+    setState((current) => ({
+      ...current,
+      connected: telemetry.online ?? current.connected,
+      deviceId: telemetry.deviceId || current.deviceId,
+      deviceName: telemetry.deviceName || current.deviceName,
+      firmware: telemetry.firmware || current.firmware,
+      batteryLevel: typeof telemetry.batteryLevel === "number" ? clamp(telemetry.batteryLevel, 0, 100) : current.batteryLevel,
+      temperature: typeof telemetry.temperature === "number" ? telemetry.temperature : current.temperature,
+      headAngle: typeof telemetry.headAngle === "number" ? clamp(telemetry.headAngle, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxHeadAngle) : current.headAngle,
+      footAngle: typeof telemetry.footAngle === "number" ? clamp(telemetry.footAngle, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxFootAngle) : current.footAngle,
+      ledOn: telemetry.ledOn ?? current.ledOn,
+      ledColor: telemetry.ledColor || current.ledColor,
+      ledBrightness: typeof telemetry.ledBrightness === "number" ? clamp(telemetry.ledBrightness, 10, 100) : current.ledBrightness,
+      massageLevel: typeof telemetry.massageLevel === "number" ? clamp(telemetry.massageLevel, 0, 3) as MassageLevel : current.massageLevel,
+      massageOn: typeof telemetry.massageLevel === "number" ? telemetry.massageLevel > 0 : current.massageOn,
+      lastSyncedAt: Date.now(),
+    }));
   }, []);
 
   const toggleChildLock = useCallback(() => {
@@ -315,6 +379,9 @@ export function useBedStore() {
     setMassageMode,
     connectDevice,
     disconnectDevice,
+    selectDeviceProfile,
+    setActiveZone,
+    applyDeviceTelemetry,
     toggleChildLock,
     setTimerMinutes,
     startTimer,

@@ -19,6 +19,8 @@ const SECTIONS = [
       "Địa chỉ giao hàng và thông tin đơn hàng",
       "Lịch sử duyệt web và tương tác trên website (qua cookie)",
       "Thông tin thiết bị và trình duyệt (địa chỉ IP, loại thiết bị)",
+      "Thông tin thiết bị SmartFurni đã ghép đôi (mã thiết bị, model, phiên bản firmware và thời điểm kết nối gần nhất)",
+      "Tư thế, lịch ngủ và cấu hình điều khiển được lưu để vận hành thiết bị theo yêu cầu của bạn",
       "Phản hồi và đánh giá sản phẩm bạn cung cấp",
     ],
   },
@@ -30,6 +32,7 @@ const SECTIONS = [
       "Liên hệ tư vấn, hỗ trợ sau bán hàng và bảo hành",
       "Gửi thông báo về đơn hàng, khuyến mãi (nếu bạn đồng ý)",
       "Cải thiện trải nghiệm người dùng trên website",
+      "Đồng bộ tài khoản và thiết bị giữa ứng dụng SmartFurni Bed với website điều khiển",
       "Phân tích dữ liệu để nâng cao chất lượng dịch vụ",
     ],
   },
@@ -60,6 +63,7 @@ const SECTIONS = [
       "Quyền truy cập và xem thông tin cá nhân của mình",
       "Quyền yêu cầu chỉnh sửa thông tin không chính xác",
       "Quyền yêu cầu xóa dữ liệu cá nhân (trong phạm vi pháp luật cho phép)",
+      "Bạn có thể xóa trực tiếp tài khoản điều khiển và thiết bị đã ghép đôi trong phần kết nối của ứng dụng",
       "Quyền từ chối nhận email marketing bất kỳ lúc nào",
       "Quyền khiếu nại về việc xử lý dữ liệu của chúng tôi",
     ],
@@ -97,7 +101,7 @@ export default function PrivacyPage() {
             Bảo vệ thông tin của bạn
           </h1>
           <p className="text-sm leading-relaxed" style={{ color: `${colors.foreground}80` }}>
-            Cập nhật lần cuối: Tháng 1, 2025 · SmartFurni cam kết bảo vệ quyền riêng tư và dữ liệu cá nhân của khách hàng theo đúng quy định pháp luật Việt Nam.
+            Cập nhật lần cuối: Tháng 7, 2026 · SmartFurni cam kết bảo vệ quyền riêng tư và dữ liệu cá nhân của khách hàng theo đúng quy định pháp luật Việt Nam.
           </p>
         </div>
       </div>
