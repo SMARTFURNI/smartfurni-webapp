@@ -63,8 +63,8 @@ export interface BedState {
 }
 
 export const INITIAL_STATE: BedState = {
-  headAngle: 0,
-  footAngle: 0,
+  headAngle: 45,
+  footAngle: 30,
   ledOn: false,
   ledColor: "#D7B957",
   ledBrightness: 72,
@@ -81,7 +81,7 @@ export const INITIAL_STATE: BedState = {
   batteryLevel: 86,
   temperature: null,
   childLock: false,
-  activePreset: "flat",
+  activePreset: null,
   customPresets: [],
   timerMinutes: 30,
   timerEndsAt: null,
@@ -93,7 +93,7 @@ export const INITIAL_STATE: BedState = {
     wakePresetId: "read",
     ledAtBedtime: true,
   },
-  lastCommand: "Sẵn sàng điều khiển",
+  lastCommand: "Tư thế demo mặc định · Đầu 45° · Chân 30°",
   lastSyncedAt: null,
 };
 

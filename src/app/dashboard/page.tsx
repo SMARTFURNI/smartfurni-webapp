@@ -76,6 +76,20 @@ const MASSAGE_MODES: Array<{ id: MassageMode; label: string }> = [
   { id: "steady", label: "Liên tục" },
 ];
 
+function getVietnamGreeting(date = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(date));
+
+  if (hour >= 5 && hour < 11) return "Chào buổi sáng";
+  if (hour >= 11 && hour < 13) return "Chào buổi trưa";
+  if (hour >= 13 && hour < 18) return "Chào buổi chiều";
+  if (hour >= 18 && hour < 23) return "Chào buổi tối";
+  return "Chào buổi khuya";
+}
+
 type AccountProfile = {
   fullName: string;
   email: string;
@@ -188,7 +202,20 @@ export default function DashboardPage() {
   const [showAdvancedConnection, setShowAdvancedConnection] = useState(false);
   const [presetName, setPresetName] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  const [greeting, setGreeting] = useState(() => getVietnamGreeting());
   const syncTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const updateGreeting = () => setGreeting(getVietnamGreeting());
+    const interval = window.setInterval(updateGreeting, 60_000);
+    window.addEventListener("focus", updateGreeting);
+    document.addEventListener("visibilitychange", updateGreeting);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", updateGreeting);
+      document.removeEventListener("visibilitychange", updateGreeting);
+    };
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -412,7 +439,7 @@ export default function DashboardPage() {
         <section className="smart-bed-overview">
           <div className="smart-bed-overview__copy">
             <div className="bed-kicker"><Radio size={14} /> {profile.family === "electric_mattress" ? "NỆM THÔNG MINH" : "GIƯỜNG CÔNG THÁI HỌC"}</div>
-            <h1>Chào buổi tối</h1>
+            <h1>{greeting}</h1>
             <p>{profile.shortName} · Điều chỉnh tư thế và tiện nghi để cơ thể thư giãn đúng cách.</p>
           </div>
           <div className="smart-bed-metrics">
