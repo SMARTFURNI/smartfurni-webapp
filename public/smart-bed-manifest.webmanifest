@@ -38,6 +38,18 @@
       "short_name": "Lịch ngủ",
       "url": "/dashboard?view=routine&source=pwa",
       "icons": [{ "src": "/smartfurni-favicon-v4.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Về phẳng khẩn cấp",
+      "short_name": "Về phẳng",
+      "url": "/dashboard?action=flat&source=pwa",
+      "icons": [{ "src": "/smartfurni-favicon-v4.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Báo cáo giấc ngủ",
+      "short_name": "Giấc ngủ",
+      "url": "/dashboard?view=insights&source=pwa",
+      "icons": [{ "src": "/smartfurni-favicon-v4.png", "sizes": "512x512" }]
     }
   ]
 }

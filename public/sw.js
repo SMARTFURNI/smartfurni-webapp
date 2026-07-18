@@ -4,7 +4,7 @@
  * - CRM/Admin/API/auth/payment data: never cached
  */
 
-const VERSION = "2026-07-18-2";
+const VERSION = "2026-07-19-1";
 const STATIC_CACHE = `smartfurni-static-${VERSION}`;
 const MEDIA_CACHE = `smartfurni-media-${VERSION}`;
 const PAGE_CACHE = `smartfurni-pages-${VERSION}`;

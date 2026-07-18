@@ -112,6 +112,13 @@ export async function ensureSmartBedAccountTables() {
     await query(`CREATE INDEX IF NOT EXISTS idx_smart_bed_app_events_type_created ON smart_bed_app_events(event_type, created_at DESC)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_smart_bed_app_events_user_created ON smart_bed_app_events(user_id, created_at DESC)`);
     await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_smart_bed_app_events_unique_install ON smart_bed_app_events(user_id, event_type) WHERE event_type = 'installed' AND user_id IS NOT NULL`);
+    await query(`
+    CREATE TABLE IF NOT EXISTS smart_bed_preferences (
+      user_id TEXT PRIMARY KEY REFERENCES smart_bed_users(id) ON DELETE CASCADE,
+      settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
     await query(`ALTER TABLE smart_bed_users ADD COLUMN IF NOT EXISTS installed_at TIMESTAMPTZ`);
     await query(`ALTER TABLE smart_bed_users ADD COLUMN IF NOT EXISTS install_platform TEXT NOT NULL DEFAULT ''`);
     await query(`DELETE FROM smart_bed_sessions WHERE expires_at < NOW()`);

@@ -25,6 +25,44 @@ export const DEFAULT_PRESETS: Preset[] = [
 export type MassageLevel = 0 | 1 | 2 | 3;
 export type MassageMode = "wave" | "pulse" | "steady";
 
+export interface BedUserProfile {
+  id: string;
+  name: string;
+  zone: BedZone;
+  preferredPresetId: string;
+  maxHeadAngle: number;
+  maxFootAngle: number;
+}
+
+export interface BedSafetySettings {
+  maxHeadAngle: number;
+  maxFootAngle: number;
+  obstructionAlerts: boolean;
+  overloadAlerts: boolean;
+  caregiverAlerts: boolean;
+  holdToMove: boolean;
+}
+
+export interface BedSleepSettings {
+  antiSnoreEnabled: boolean;
+  antiSnoreRaiseDegrees: number;
+  outOfBedAlerts: boolean;
+  smartAlarmEnabled: boolean;
+  smartAlarmWindowMinutes: number;
+  healthSyncEnabled: boolean;
+}
+
+export interface BedSleepSession {
+  id: string;
+  date: string;
+  durationMinutes: number;
+  score: number;
+  movements: number;
+  snoreMinutes: number;
+  outOfBedEvents: number;
+  source: "sensor" | "simulator";
+}
+
 export interface BedRoutine {
   enabled: boolean;
   bedtime: string;
@@ -32,6 +70,11 @@ export interface BedRoutine {
   sleepPresetId: string;
   wakePresetId: string;
   ledAtBedtime: boolean;
+  days: number[];
+  gradualWakeMinutes: number;
+  massageAtBedtime: boolean;
+  massageMinutes: number;
+  ledAtWake: boolean;
 }
 
 export interface BedState {
@@ -58,6 +101,18 @@ export interface BedState {
   timerMinutes: number;
   timerEndsAt: number | null;
   routine: BedRoutine;
+  profiles: BedUserProfile[];
+  activeUserProfileId: string;
+  safety: BedSafetySettings;
+  sleepSettings: BedSleepSettings;
+  sleepSessions: BedSleepSession[];
+  sensorStatus: "unavailable" | "ready" | "active";
+  obstructionDetected: boolean;
+  overloadDetected: boolean;
+  occupancyDetected: boolean | null;
+  connectionQuality: number | null;
+  motorCycles: number;
+  lastDeviceError: string;
   lastCommand: string;
   lastSyncedAt: number | null;
 }
@@ -92,7 +147,40 @@ export const INITIAL_STATE: BedState = {
     sleepPresetId: "zero_g",
     wakePresetId: "read",
     ledAtBedtime: true,
+    days: [1, 2, 3, 4, 5, 6, 0],
+    gradualWakeMinutes: 15,
+    massageAtBedtime: false,
+    massageMinutes: 15,
+    ledAtWake: true,
   },
+  profiles: [
+    { id: "owner", name: "Tôi", zone: "all", preferredPresetId: "zero_g", maxHeadAngle: 70, maxFootAngle: 45 },
+  ],
+  activeUserProfileId: "owner",
+  safety: {
+    maxHeadAngle: 70,
+    maxFootAngle: 45,
+    obstructionAlerts: true,
+    overloadAlerts: true,
+    caregiverAlerts: false,
+    holdToMove: false,
+  },
+  sleepSettings: {
+    antiSnoreEnabled: false,
+    antiSnoreRaiseDegrees: 8,
+    outOfBedAlerts: false,
+    smartAlarmEnabled: false,
+    smartAlarmWindowMinutes: 20,
+    healthSyncEnabled: false,
+  },
+  sleepSessions: [],
+  sensorStatus: "unavailable",
+  obstructionDetected: false,
+  overloadDetected: false,
+  occupancyDetected: null,
+  connectionQuality: null,
+  motorCycles: 0,
+  lastDeviceError: "",
   lastCommand: "Tư thế demo mặc định · Đầu 45° · Chân 30°",
   lastSyncedAt: null,
 };
@@ -117,6 +205,10 @@ function readStoredState(): BedState {
       activeZone: stored.activeZone === "left" || stored.activeZone === "right" ? stored.activeZone : "all",
       timerEndsAt: stored.timerEndsAt && stored.timerEndsAt > Date.now() ? stored.timerEndsAt : null,
       routine: { ...INITIAL_STATE.routine, ...stored.routine },
+      profiles: Array.isArray(stored.profiles) && stored.profiles.length ? stored.profiles.slice(0, 6) : INITIAL_STATE.profiles,
+      safety: { ...INITIAL_STATE.safety, ...stored.safety },
+      sleepSettings: { ...INITIAL_STATE.sleepSettings, ...stored.sleepSettings },
+      sleepSessions: Array.isArray(stored.sleepSessions) ? stored.sleepSessions.slice(0, 30) : [],
       customPresets: Array.isArray(stored.customPresets) ? stored.customPresets.slice(0, 6) : [],
     };
   } catch {
@@ -168,6 +260,7 @@ export function useBedStore() {
       const storageKey = `smartfurni-routine-${dateKey}-${currentTime}`;
       if (window.sessionStorage.getItem(storageKey)) return;
 
+      if (!state.routine.days.includes(date.getDay())) return;
       const presetId = currentTime === state.routine.bedtime
         ? state.routine.sleepPresetId
         : currentTime === state.routine.wakeTime
@@ -183,6 +276,8 @@ export function useBedStore() {
         footAngle: preset.footAngle,
         activePreset: preset.id,
         ledOn: currentTime === current.routine.bedtime ? current.routine.ledAtBedtime : current.ledOn,
+        massageOn: currentTime === current.routine.bedtime ? current.routine.massageAtBedtime : current.massageOn,
+        massageLevel: currentTime === current.routine.bedtime && current.routine.massageAtBedtime ? 1 : current.massageLevel,
         lastCommand: currentTime === current.routine.bedtime ? "Đã chạy lịch đi ngủ" : "Đã chạy lịch thức dậy",
       }));
     };
@@ -201,27 +296,28 @@ export function useBedStore() {
   const setHeadAngle = useCallback((value: number) => {
     update((current) => current.childLock ? current : {
       ...current,
-      headAngle: clamp(value, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxHeadAngle),
+      headAngle: clamp(value, 0, Math.min(getBedDeviceProfile(current.deviceProfileId).capabilities.maxHeadAngle, current.safety.maxHeadAngle)),
       activePreset: null,
-      lastCommand: `Đầu giường ${clamp(value, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxHeadAngle)}°`,
+      lastCommand: `Đầu giường ${clamp(value, 0, Math.min(getBedDeviceProfile(current.deviceProfileId).capabilities.maxHeadAngle, current.safety.maxHeadAngle))}°`,
     });
   }, [update]);
 
   const setFootAngle = useCallback((value: number) => {
     update((current) => current.childLock ? current : {
       ...current,
-      footAngle: clamp(value, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxFootAngle),
+      footAngle: clamp(value, 0, Math.min(getBedDeviceProfile(current.deviceProfileId).capabilities.maxFootAngle, current.safety.maxFootAngle)),
       activePreset: null,
-      lastCommand: `Chân giường ${clamp(value, 0, getBedDeviceProfile(current.deviceProfileId).capabilities.maxFootAngle)}°`,
+      lastCommand: `Chân giường ${clamp(value, 0, Math.min(getBedDeviceProfile(current.deviceProfileId).capabilities.maxFootAngle, current.safety.maxFootAngle))}°`,
     });
   }, [update]);
 
   const applyPreset = useCallback((preset: Preset) => {
     update((current) => current.childLock ? current : {
       ...current,
-      headAngle: preset.headAngle,
-      footAngle: preset.footAngle,
+      headAngle: clamp(preset.headAngle, 0, current.safety.maxHeadAngle),
+      footAngle: clamp(preset.footAngle, 0, current.safety.maxFootAngle),
       activePreset: preset.id,
+      motorCycles: current.motorCycles + 1,
       lastCommand: `Đã áp dụng · ${preset.name}`,
     });
   }, [update]);
@@ -310,6 +406,13 @@ export function useBedStore() {
       ledBrightness: typeof telemetry.ledBrightness === "number" ? clamp(telemetry.ledBrightness, 10, 100) : current.ledBrightness,
       massageLevel: typeof telemetry.massageLevel === "number" ? clamp(telemetry.massageLevel, 0, 3) as MassageLevel : current.massageLevel,
       massageOn: typeof telemetry.massageLevel === "number" ? telemetry.massageLevel > 0 : current.massageOn,
+      obstructionDetected: telemetry.obstructionDetected ?? current.obstructionDetected,
+      overloadDetected: telemetry.overloadDetected ?? current.overloadDetected,
+      occupancyDetected: telemetry.occupancyDetected ?? current.occupancyDetected,
+      sensorStatus: telemetry.sensorStatus ?? current.sensorStatus,
+      connectionQuality: typeof telemetry.connectionQuality === "number" ? clamp(telemetry.connectionQuality, 0, 100) : current.connectionQuality,
+      motorCycles: typeof telemetry.motorCycles === "number" ? Math.max(0, Math.round(telemetry.motorCycles)) : current.motorCycles,
+      lastDeviceError: telemetry.errorCode || current.lastDeviceError,
       lastSyncedAt: Date.now(),
     }));
   }, []);
@@ -360,6 +463,92 @@ export function useBedStore() {
     update((current) => ({ ...current, routine: { ...current.routine, ...routine }, lastCommand: "Đã cập nhật lịch tự động" }));
   }, [update]);
 
+  const updateSafety = useCallback((safety: Partial<BedSafetySettings>) => {
+    update((current) => {
+      const nextSafety = { ...current.safety, ...safety };
+      return {
+        ...current,
+        safety: nextSafety,
+        headAngle: clamp(current.headAngle, 0, nextSafety.maxHeadAngle),
+        footAngle: clamp(current.footAngle, 0, nextSafety.maxFootAngle),
+        lastCommand: "Đã cập nhật giới hạn an toàn",
+      };
+    });
+  }, [update]);
+
+  const updateSleepSettings = useCallback((settings: Partial<BedSleepSettings>) => {
+    update((current) => ({ ...current, sleepSettings: { ...current.sleepSettings, ...settings }, lastCommand: "Đã cập nhật chăm sóc giấc ngủ" }));
+  }, [update]);
+
+  const addProfile = useCallback((name: string) => {
+    const cleanName = name.trim().slice(0, 30);
+    if (!cleanName) return false;
+    update((current) => {
+      if (current.profiles.length >= 6) return current;
+      const id = `profile-${Date.now()}`;
+      return {
+        ...current,
+        profiles: [...current.profiles, { id, name: cleanName, zone: "all", preferredPresetId: "zero_g", maxHeadAngle: current.safety.maxHeadAngle, maxFootAngle: current.safety.maxFootAngle }],
+        activeUserProfileId: id,
+        lastCommand: `Đã tạo hồ sơ · ${cleanName}`,
+      };
+    });
+    return true;
+  }, [update]);
+
+  const activateProfile = useCallback((profileId: string) => {
+    update((current) => {
+      const profile = current.profiles.find((item) => item.id === profileId);
+      if (!profile) return current;
+      return {
+        ...current,
+        activeUserProfileId: profileId,
+        activeZone: profile.zone,
+        safety: { ...current.safety, maxHeadAngle: profile.maxHeadAngle, maxFootAngle: profile.maxFootAngle },
+        lastCommand: `Đã chọn hồ sơ · ${profile.name}`,
+      };
+    });
+  }, [update]);
+
+  const addSimulatorSleepSession = useCallback(() => {
+    const date = new Date();
+    const seed = date.getDate() + state.sleepSessions.length;
+    const session: BedSleepSession = {
+      id: `sleep-${Date.now()}`,
+      date: date.toISOString(),
+      durationMinutes: 420 + (seed % 40),
+      score: 78 + (seed % 14),
+      movements: 14 + (seed % 8),
+      snoreMinutes: 8 + (seed % 9),
+      outOfBedEvents: seed % 3,
+      source: "simulator",
+    };
+    update((current) => ({ ...current, sleepSessions: [session, ...current.sleepSessions].slice(0, 30), lastCommand: "Đã tạo báo cáo mô phỏng" }));
+  }, [state.sleepSessions.length, update]);
+
+  const hydrateCloudPreferences = useCallback((incoming: Partial<BedState>) => {
+    setState((current) => ({
+      ...current,
+      routine: { ...current.routine, ...(incoming.routine || {}) },
+      profiles: Array.isArray(incoming.profiles) && incoming.profiles.length ? incoming.profiles.slice(0, 6) : current.profiles,
+      activeUserProfileId: incoming.activeUserProfileId || current.activeUserProfileId,
+      safety: { ...current.safety, ...(incoming.safety || {}) },
+      sleepSettings: { ...current.sleepSettings, ...(incoming.sleepSettings || {}) },
+      sleepSessions: Array.isArray(incoming.sleepSessions) ? incoming.sleepSessions.slice(0, 30) : current.sleepSessions,
+      customPresets: Array.isArray(incoming.customPresets) ? incoming.customPresets.slice(0, 6) : current.customPresets,
+    }));
+  }, []);
+
+  const cloudPreferences = useMemo(() => ({
+    routine: state.routine,
+    profiles: state.profiles,
+    activeUserProfileId: state.activeUserProfileId,
+    safety: state.safety,
+    sleepSettings: state.sleepSettings,
+    sleepSessions: state.sleepSessions,
+    customPresets: state.customPresets,
+  }), [state.routine, state.profiles, state.activeUserProfileId, state.safety, state.sleepSettings, state.sleepSessions, state.customPresets]);
+
   const timerRemainingSeconds = useMemo(() => state.timerEndsAt ? Math.max(0, Math.ceil((state.timerEndsAt - now) / 1000)) : 0, [now, state.timerEndsAt]);
   const presets = useMemo(() => [...DEFAULT_PRESETS, ...state.customPresets], [state.customPresets]);
 
@@ -389,5 +578,12 @@ export function useBedStore() {
     saveCurrentPreset,
     deleteCustomPreset,
     updateRoutine,
+    updateSafety,
+    updateSleepSettings,
+    addProfile,
+    activateProfile,
+    addSimulatorSleepSession,
+    hydrateCloudPreferences,
+    cloudPreferences,
   };
 }

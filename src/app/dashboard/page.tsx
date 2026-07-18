@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import {
+  Activity,
+  AlertTriangle,
   Armchair,
   BatteryMedium,
   BedDouble,
@@ -14,8 +16,10 @@ import {
   ChevronDown,
   ChevronUp,
   Clock3,
+  CalendarDays,
   DownloadCloud,
   Gamepad2,
+  HeartPulse,
   Home,
   LampDesk,
   Lightbulb,
@@ -39,6 +43,7 @@ import {
   Tv,
   Unplug,
   UserRound,
+  UsersRound,
   Vibrate,
   Wifi,
   WifiOff,
@@ -61,7 +66,7 @@ import {
 import { cn } from "@/lib/utils";
 import "./smart-bed.css";
 
-type ViewId = "control" | "presets" | "comfort" | "routine";
+type ViewId = "control" | "presets" | "comfort" | "routine" | "insights";
 
 const LED_COLORS = ["#F5EDD6", "#D7B957", "#F0A35E", "#EC6F6F", "#8D7AF4", "#5DA8F5", "#55D6C2", "#7FD179"];
 const TIMER_OPTIONS = [15, 30, 45, 60, 90];
@@ -102,6 +107,7 @@ const NAV_ITEMS: Array<{ id: ViewId; label: string; icon: typeof Gamepad2 }> = [
   { id: "presets", label: "Tư thế", icon: BedDouble },
   { id: "comfort", label: "Tiện nghi", icon: Sparkles },
   { id: "routine", label: "Lịch ngủ", icon: Clock3 },
+  { id: "insights", label: "Giấc ngủ", icon: Activity },
 ];
 
 function formatCountdown(totalSeconds: number) {
@@ -202,9 +208,12 @@ export default function DashboardPage() {
   const [connectionTransport, setConnectionTransport] = useState<BedTransport>("bluetooth");
   const [showAdvancedConnection, setShowAdvancedConnection] = useState(false);
   const [presetName, setPresetName] = useState("");
+  const [profileName, setProfileName] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [greeting, setGreeting] = useState(() => getVietnamGreeting());
   const syncTimerRef = useRef<number | null>(null);
+  const preferenceSyncRef = useRef<number | null>(null);
+  const cloudHydratedRef = useRef(false);
 
   useEffect(() => {
     const updateGreeting = () => setGreeting(getVietnamGreeting());
@@ -217,6 +226,52 @@ export default function DashboardPage() {
       document.removeEventListener("visibilitychange", updateGreeting);
     };
   }, []);
+
+  useEffect(() => {
+    if (!store.hydrated) return;
+    let active = true;
+    void fetch("/api/bed/preferences", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ settings?: Partial<typeof state> }>;
+      })
+      .then((data) => {
+        if (active && data?.settings) store.hydrateCloudPreferences(data.settings);
+      })
+      .finally(() => {
+        if (active) cloudHydratedRef.current = true;
+      });
+    return () => { active = false; };
+  }, [store.hydrated]);
+
+  useEffect(() => {
+    if (!store.hydrated || !cloudHydratedRef.current) return;
+    if (preferenceSyncRef.current) window.clearTimeout(preferenceSyncRef.current);
+    preferenceSyncRef.current = window.setTimeout(() => {
+      void sendWithBackgroundSync("/api/bed/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: store.cloudPreferences }),
+      }, "bed-preferences");
+    }, 900);
+    return () => {
+      if (preferenceSyncRef.current) window.clearTimeout(preferenceSyncRef.current);
+    };
+  }, [store.hydrated, store.cloudPreferences]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get("view");
+    if (view && NAV_ITEMS.some((item) => item.id === view)) setActiveView(view as ViewId);
+    const action = params.get("action");
+    if (action === "flat") {
+      store.resetFlat();
+      setToast("Đang đưa giường về vị trí phẳng");
+    } else if (action) {
+      const preset = store.presets.find((item) => item.id === action);
+      if (preset) store.applyPreset(preset);
+    }
+  }, [store.hydrated]);
 
   useEffect(() => {
     if (!toast) return;
@@ -244,6 +299,11 @@ export default function DashboardPage() {
 
   const activePreset = store.presets.find((preset) => preset.id === state.activePreset);
   const controlsLocked = state.childLock;
+  const activeUserProfile = state.profiles.find((item) => item.id === state.activeUserProfileId) || state.profiles[0];
+  const latestSleep = state.sleepSessions[0];
+  const sleepAverage = state.sleepSessions.length
+    ? Math.round(state.sleepSessions.reduce((sum, item) => sum + item.score, 0) / state.sleepSessions.length)
+    : null;
 
   useEffect(() => {
     if (device.connection.status !== "connected" || !device.connection.transport) {
@@ -255,6 +315,7 @@ export default function DashboardPage() {
       deviceId: device.connection.deviceId,
       transport: device.connection.transport,
     });
+    void device.send({ type: "request_diagnostics" });
     void sendWithBackgroundSync("/api/bed/devices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -267,6 +328,28 @@ export default function DashboardPage() {
       }),
     }, `bed-device:${device.connection.deviceId}`);
   }, [device.connection.status, device.connection.transport, device.connection.deviceId, device.connection.deviceName]);
+
+  useEffect(() => {
+    if (device.connection.status !== "connected") return;
+    void device.send({ type: "set_routine", ...state.routine });
+  }, [device.connection.status, state.routine]);
+
+  useEffect(() => {
+    if (device.connection.status !== "connected") return;
+    void device.send({
+      type: "set_sleep_settings",
+      antiSnoreEnabled: state.sleepSettings.antiSnoreEnabled,
+      antiSnoreRaiseDegrees: state.sleepSettings.antiSnoreRaiseDegrees,
+      outOfBedAlerts: state.sleepSettings.outOfBedAlerts,
+      smartAlarmEnabled: state.sleepSettings.smartAlarmEnabled,
+      smartAlarmWindowMinutes: state.sleepSettings.smartAlarmWindowMinutes,
+    });
+  }, [device.connection.status, state.sleepSettings]);
+
+  useEffect(() => {
+    if (device.connection.status !== "connected") return;
+    void device.send({ type: "set_safety", ...state.safety });
+  }, [device.connection.status, state.safety]);
 
   useEffect(() => {
     let active = true;
@@ -513,6 +596,9 @@ export default function DashboardPage() {
                 <button type="button" className="bed-flat-action" onClick={() => { store.resetFlat(); void device.send({ type: "stop_flat", zone: state.activeZone }); setToast("Đang đưa giường về vị trí phẳng"); }}>
                   <RotateCcw size={19} /><span><b>Dừng & về phẳng</b><small>Luôn hoạt động kể cả khi đang khóa</small></span>
                 </button>
+                <button type="button" className="bed-emergency-action" onClick={() => { store.resetFlat(); void device.send({ type: "emergency_flat", zone: state.activeZone }); setToast("Đã gửi lệnh dừng khẩn cấp"); }}>
+                  <AlertTriangle size={18} /><span><b>Dừng khẩn cấp</b><small>Dừng chuyển động và đưa giường về phẳng</small></span>
+                </button>
                 <SettingRow
                   icon={<LockKeyhole size={20} />}
                   title="Khóa trẻ em"
@@ -544,6 +630,14 @@ export default function DashboardPage() {
                 <div className="bed-save-preset">
                   <div><Save size={19} /><span><b>Lưu tư thế hiện tại</b><small>Đầu {state.headAngle}° · Chân {state.footAngle}°</small></span></div>
                   <div className="bed-save-preset__form"><input value={presetName} onChange={(event) => setPresetName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && savePreset()} placeholder="Ví dụ: Thư giãn" maxLength={28} /><button type="button" onClick={savePreset}>Lưu</button></div>
+                </div>
+                <div className="bed-profile-card">
+                  <div className="bed-card-label"><UsersRound size={16} /><span>Hồ sơ người dùng</span></div>
+                  <div className="bed-profile-chips">
+                    {state.profiles.map((item) => <button type="button" key={item.id} className={cn(item.id === state.activeUserProfileId && "is-active")} onClick={() => store.activateProfile(item.id)}>{item.name}</button>)}
+                  </div>
+                  <div className="bed-save-preset__form"><input value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="Tên thành viên" maxLength={30} /><button type="button" onClick={() => { if (store.addProfile(profileName)) { setProfileName(""); setToast("Đã tạo hồ sơ người dùng"); } }}>Thêm</button></div>
+                  <small>Hồ sơ hiện tại: {activeUserProfile?.name || "Tôi"} · lưu giới hạn góc và vùng điều khiển riêng.</small>
                 </div>
               </div>
             )}
@@ -577,17 +671,61 @@ export default function DashboardPage() {
                   <label className="bed-time-card"><span className="bed-time-card__icon"><MoonStar size={20} /></span><span><small>GIỜ ĐI NGỦ</small><input type="time" value={state.routine.bedtime} onChange={(event) => store.updateRoutine({ bedtime: event.target.value })} /></span></label>
                   <label className="bed-time-card"><span className="bed-time-card__icon is-wake"><SunMedium size={20} /></span><span><small>GIỜ THỨC DẬY</small><input type="time" value={state.routine.wakeTime} onChange={(event) => store.updateRoutine({ wakeTime: event.target.value })} /></span></label>
                 </div>
+                <div className="bed-weekdays" aria-label="Ngày áp dụng">
+                  {[{ id: 1, label: "T2" }, { id: 2, label: "T3" }, { id: 3, label: "T4" }, { id: 4, label: "T5" }, { id: 5, label: "T6" }, { id: 6, label: "T7" }, { id: 0, label: "CN" }].map((day) => (
+                    <button type="button" key={day.id} className={cn(state.routine.days.includes(day.id) && "is-active")} onClick={() => store.updateRoutine({ days: state.routine.days.includes(day.id) ? state.routine.days.filter((item) => item !== day.id) : [...state.routine.days, day.id] })}>{day.label}</button>
+                  ))}
+                </div>
                 <div className="bed-routine-selects">
                   <label><span>Tư thế khi đi ngủ</span><select value={state.routine.sleepPresetId} onChange={(event) => store.updateRoutine({ sleepPresetId: event.target.value })}>{store.presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}</select></label>
                   <label><span>Tư thế khi thức dậy</span><select value={state.routine.wakePresetId} onChange={(event) => store.updateRoutine({ wakePresetId: event.target.value })}>{store.presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}</select></label>
                 </div>
                 <SettingRow icon={<LampDesk size={20} />} title="Bật đèn dịu khi đi ngủ" description="Giữ ánh sáng hiện tại khi lịch bắt đầu" action={<Toggle checked={state.routine.ledAtBedtime} onChange={() => store.updateRoutine({ ledAtBedtime: !state.routine.ledAtBedtime })} label="Đèn theo lịch" />} />
+                {profile.capabilities.massage && <SettingRow icon={<Vibrate size={20} />} title="Massage trước khi ngủ" description={`${state.routine.massageMinutes} phút ở mức nhẹ`} action={<Toggle checked={state.routine.massageAtBedtime} onChange={() => store.updateRoutine({ massageAtBedtime: !state.routine.massageAtBedtime })} label="Massage theo lịch" />} />}
+                <div className="bed-comfort-card">
+                  <div className="bed-card-label"><SunMedium size={16} /><span>Đánh thức từ từ · {state.routine.gradualWakeMinutes} phút</span></div>
+                  <input className="bed-range" type="range" min={5} max={30} step={5} value={state.routine.gradualWakeMinutes} onChange={(event) => store.updateRoutine({ gradualWakeMinutes: Number(event.target.value) })} style={{ "--range-progress": `${((state.routine.gradualWakeMinutes - 5) / 25) * 100}%` } as CSSProperties} />
+                </div>
                 <div className="bed-timer-card">
                   <div className="bed-timer-card__head"><div><TimerReset size={21} /><span><b>Hẹn giờ về phẳng</b><small>Tự tắt massage khi hoàn tất</small></span></div>{state.timerEndsAt && <strong>{formatCountdown(store.timerRemainingSeconds)}</strong>}</div>
                   <div className="bed-timer-options">{TIMER_OPTIONS.map((minutes) => <button type="button" key={minutes} onClick={() => store.setTimerMinutes(minutes)} className={cn(state.timerMinutes === minutes && "is-active")}>{minutes}p</button>)}</div>
                   <button type="button" className={cn("bed-timer-action", state.timerEndsAt && "is-running")} onClick={state.timerEndsAt ? store.cancelTimer : store.startTimer}>{state.timerEndsAt ? <><Pause size={18} /> Hủy hẹn giờ</> : <><Play size={18} /> Bắt đầu {state.timerMinutes} phút</>}</button>
                 </div>
-                <p className="bed-routine-note"><ShieldCheck size={15} /> Lịch tự động được lưu trên thiết bị này và chạy khi ứng dụng đang mở.</p>
+                <p className="bed-routine-note"><ShieldCheck size={15} /> Lịch được đồng bộ với tài khoản và gửi xuống bộ điều khiển khi thiết bị hỗ trợ chạy nền.</p>
+              </div>
+            )}
+
+            {activeView === "insights" && (
+              <div className="bed-view">
+                <div className="bed-view__heading"><div><span className="bed-eyebrow">SỨC KHỎE & AN TOÀN</span><h2>Giấc ngủ của bạn</h2></div><span className={cn("bed-sensor-badge", state.sensorStatus !== "unavailable" && "is-ready")}>{state.sensorStatus === "unavailable" ? "Chờ cảm biến" : "Đã sẵn sàng"}</span></div>
+                <div className="bed-sleep-summary">
+                  <div><Activity size={18} /><span><small>ĐIỂM TRUNG BÌNH</small><b>{sleepAverage ?? "—"}</b></span></div>
+                  <div><Clock3 size={18} /><span><small>THỜI LƯỢNG GẦN NHẤT</small><b>{latestSleep ? `${Math.floor(latestSleep.durationMinutes / 60)}h ${latestSleep.durationMinutes % 60}p` : "Chưa có"}</b></span></div>
+                </div>
+                {latestSleep ? <div className="bed-sleep-session">
+                  <div><strong>{latestSleep.score}</strong><span>điểm giấc ngủ</span></div>
+                  <dl><div><dt>Trở mình</dt><dd>{latestSleep.movements}</dd></div><div><dt>Ngáy</dt><dd>{latestSleep.snoreMinutes} phút</dd></div><div><dt>Rời giường</dt><dd>{latestSleep.outOfBedEvents} lần</dd></div></dl>
+                  {latestSleep.source === "simulator" && <small>Dữ liệu mô phỏng để xem trước giao diện, không phải kết quả y tế.</small>}
+                </div> : <div className="bed-empty-insights"><HeartPulse size={28} /><b>Chưa có phiên ngủ</b><span>Kết nối cảm biến SmartFurni để ghi nhận dữ liệu thật. Bạn có thể tạo một báo cáo mô phỏng để xem trước.</span></div>}
+                {device.connection.transport === "simulator" && <button type="button" className="bed-simulator-report" onClick={store.addSimulatorSleepSession}>Tạo báo cáo mô phỏng</button>}
+                <SettingRow icon={<MoonStar size={20} />} title="Tự động chống ngáy" description={`Nâng đầu thêm ${state.sleepSettings.antiSnoreRaiseDegrees}° khi cảm biến phát hiện ngáy`} action={<Toggle checked={state.sleepSettings.antiSnoreEnabled} onChange={() => store.updateSleepSettings({ antiSnoreEnabled: !state.sleepSettings.antiSnoreEnabled })} label="Chống ngáy" />} />
+                <SettingRow icon={<Bell size={20} />} title="Cảnh báo rời giường" description="Gửi thông báo cho người chăm sóc khi rời giường bất thường" action={<Toggle checked={state.sleepSettings.outOfBedAlerts} onChange={() => store.updateSleepSettings({ outOfBedAlerts: !state.sleepSettings.outOfBedAlerts })} label="Cảnh báo rời giường" />} />
+                <SettingRow icon={<CalendarDays size={20} />} title="Đánh thức thông minh" description={`Chọn thời điểm nhẹ nhàng trong ${state.sleepSettings.smartAlarmWindowMinutes} phút`} action={<Toggle checked={state.sleepSettings.smartAlarmEnabled} onChange={() => store.updateSleepSettings({ smartAlarmEnabled: !state.sleepSettings.smartAlarmEnabled })} label="Đánh thức thông minh" />} />
+                <SettingRow icon={<HeartPulse size={20} />} title="Apple Health / Health Connect" description="Đồng bộ khi cài bản iOS hoặc Android và cấp quyền sức khỏe" action={<Toggle checked={state.sleepSettings.healthSyncEnabled} onChange={() => store.updateSleepSettings({ healthSyncEnabled: !state.sleepSettings.healthSyncEnabled })} label="Đồng bộ sức khỏe" />} />
+                <SettingRow icon={<AlertTriangle size={20} />} title="Cảnh báo vật cản" description="Dừng chuyển động và thông báo khi cảm biến phát hiện vật cản" action={<Toggle checked={state.safety.obstructionAlerts} onChange={() => store.updateSafety({ obstructionAlerts: !state.safety.obstructionAlerts })} label="Cảnh báo vật cản" />} />
+                <SettingRow icon={<ShieldCheck size={20} />} title="Cảnh báo quá tải" description="Bảo vệ động cơ khi tải trọng vượt ngưỡng cho phép" action={<Toggle checked={state.safety.overloadAlerts} onChange={() => store.updateSafety({ overloadAlerts: !state.safety.overloadAlerts })} label="Cảnh báo quá tải" />} />
+                <div className="bed-safety-card">
+                  <div className="bed-card-label"><ShieldCheck size={16} /><span>Giới hạn chuyển động an toàn</span></div>
+                  <label><span>Đầu giường tối đa <b>{state.safety.maxHeadAngle}°</b></span><input className="bed-range" type="range" min={20} max={profile.capabilities.maxHeadAngle} step={5} value={state.safety.maxHeadAngle} onChange={(event) => store.updateSafety({ maxHeadAngle: Number(event.target.value) })} style={{ "--range-progress": `${(state.safety.maxHeadAngle / profile.capabilities.maxHeadAngle) * 100}%` } as CSSProperties} /></label>
+                  {profile.capabilities.foot && <label><span>Chân giường tối đa <b>{state.safety.maxFootAngle}°</b></span><input className="bed-range" type="range" min={10} max={profile.capabilities.maxFootAngle} step={5} value={state.safety.maxFootAngle} onChange={(event) => store.updateSafety({ maxFootAngle: Number(event.target.value) })} style={{ "--range-progress": `${(state.safety.maxFootAngle / profile.capabilities.maxFootAngle) * 100}%` } as CSSProperties} /></label>}
+                  <div className="bed-safety-status"><span className={state.obstructionDetected ? "is-alert" : ""}><AlertTriangle size={14} /> Vật cản: {state.obstructionDetected ? "Phát hiện" : "Bình thường"}</span><span className={state.overloadDetected ? "is-alert" : ""}><ShieldCheck size={14} /> Tải trọng: {state.overloadDetected ? "Quá tải" : "Bình thường"}</span></div>
+                  <div className="bed-maintenance-grid">
+                    <span><small>CHẤT LƯỢNG KẾT NỐI</small><b>{state.connectionQuality == null ? "—" : `${state.connectionQuality}%`}</b></span>
+                    <span><small>CHU KỲ ĐỘNG CƠ</small><b>{state.motorCycles.toLocaleString("vi-VN")}</b></span>
+                    <span><small>FIRMWARE</small><b>{state.firmware || "Chưa nhận"}</b></span>
+                    <span><small>CHẨN ĐOÁN</small><b className={state.lastDeviceError ? "is-alert" : ""}>{state.lastDeviceError || "Bình thường"}</b></span>
+                  </div>
+                </div>
               </div>
             )}
           </section>

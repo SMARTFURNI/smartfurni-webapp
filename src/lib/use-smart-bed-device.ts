@@ -32,6 +32,8 @@ export function useSmartBedDevice(onTelemetry: (telemetry: SmartBedTelemetry) =>
   const telemetryRef = useRef(onTelemetry);
   telemetryRef.current = onTelemetry;
   const clientRef = useRef<SmartBedDeviceClient | null>(null);
+  const lastTransportRef = useRef<BedTransport | null>(null);
+  const manualDisconnectRef = useRef(false);
 
   useEffect(() => {
     const loadedConfig = loadSmartBedProtocolConfig();
@@ -76,6 +78,7 @@ export function useSmartBedDevice(onTelemetry: (telemetry: SmartBedTelemetry) =>
   const connect = useCallback(async (transport: BedTransport) => {
     const client = clientRef.current;
     if (!client) return false;
+    manualDisconnectRef.current = false;
     setConnection((current) => ({ ...current, status: "connecting", transport, error: "" }));
     try {
       const startedAt = Date.now();
@@ -99,6 +102,7 @@ export function useSmartBedDevice(onTelemetry: (telemetry: SmartBedTelemetry) =>
         lastReceivedAt: Date.now(),
         error: "",
       }));
+      lastTransportRef.current = transport;
       return true;
     } catch (error) {
       const message = error instanceof Error
@@ -110,6 +114,8 @@ export function useSmartBedDevice(onTelemetry: (telemetry: SmartBedTelemetry) =>
   }, []);
 
   const disconnect = useCallback(async () => {
+    manualDisconnectRef.current = true;
+    lastTransportRef.current = null;
     await clientRef.current?.disconnect();
     setConnection((current) => ({ ...current, status: "idle", transport: null, error: "" }));
   }, []);
@@ -123,10 +129,29 @@ export function useSmartBedDevice(onTelemetry: (telemetry: SmartBedTelemetry) =>
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Không gửi được lệnh.";
-      setConnection((current) => ({ ...current, error: message }));
+      setConnection((current) => ({ ...current, status: "error", error: message }));
       return false;
     }
   }, [connection.status]);
+
+  useEffect(() => {
+    const transport = lastTransportRef.current;
+    if (manualDisconnectRef.current || !transport || connection.status === "connected" || connection.status === "connecting") return;
+    // Web Bluetooth phải có thao tác người dùng để mở hộp chọn thiết bị. Wi-Fi,
+    // native bridge và simulator có thể tự khôi phục an toàn khi mạng quay lại.
+    if (transport === "bluetooth") return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const reconnect = () => {
+      if (!navigator.onLine && transport === "wifi") return;
+      timer = setTimeout(() => { void connect(transport); }, 1800);
+    };
+    reconnect();
+    window.addEventListener("online", reconnect);
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener("online", reconnect);
+    };
+  }, [connection.status, connect]);
 
   return { config, setConfig, connection, connect, disconnect, send };
 }

@@ -25,12 +25,23 @@ export interface SmartBedTelemetry {
   massageLevel?: number;
   online?: boolean;
   temperature?: number;
+  obstructionDetected?: boolean;
+  overloadDetected?: boolean;
+  occupancyDetected?: boolean;
+  sensorStatus?: "unavailable" | "ready" | "active";
+  connectionQuality?: number;
+  motorCycles?: number;
+  errorCode?: string;
 }
 
 export type SmartBedCommand =
   | { type: "sync_state"; zone: BedZone; profileId: string; headAngle: number; footAngle: number; led: { on: boolean; color: string; brightness: number }; massage: { on: boolean; level: number; mode: string }; childLock: boolean }
   | { type: "stop_flat"; zone: BedZone }
-  | { type: "set_routine"; enabled: boolean; bedtime: string; wakeTime: string; sleepPresetId: string; wakePresetId: string; ledAtBedtime: boolean }
+  | { type: "set_routine"; enabled: boolean; bedtime: string; wakeTime: string; sleepPresetId: string; wakePresetId: string; ledAtBedtime: boolean; days?: number[]; gradualWakeMinutes?: number; massageAtBedtime?: boolean; massageMinutes?: number; ledAtWake?: boolean }
+  | { type: "set_sleep_settings"; antiSnoreEnabled: boolean; antiSnoreRaiseDegrees: number; outOfBedAlerts: boolean; smartAlarmEnabled: boolean; smartAlarmWindowMinutes: number }
+  | { type: "set_safety"; maxHeadAngle: number; maxFootAngle: number; obstructionAlerts: boolean; overloadAlerts: boolean; caregiverAlerts: boolean; holdToMove: boolean }
+  | { type: "emergency_flat"; zone: BedZone }
+  | { type: "request_diagnostics" }
   | { type: "ping" };
 
 export interface SmartBedConnectionSnapshot {
