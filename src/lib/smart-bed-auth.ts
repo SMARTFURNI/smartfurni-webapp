@@ -14,6 +14,15 @@ export interface SmartBedUserSession {
   phone: string;
 }
 
+export interface SmartBedAdminCustomer extends SmartBedUserSession {
+  createdAt: string;
+  updatedAt: string;
+  installedAt: string | null;
+  installPlatform: string;
+  deviceCount: number;
+  lastDeviceSeenAt: string | null;
+}
+
 let accountTablesPromise: Promise<void> | null = null;
 
 function normalizeEmail(email: string) {
@@ -74,6 +83,8 @@ export async function ensureSmartBedAccountTables() {
     )
   `);
     await query(`CREATE INDEX IF NOT EXISTS idx_smart_bed_devices_user ON smart_bed_devices(user_id, last_seen_at DESC)`);
+    await query(`ALTER TABLE smart_bed_users ADD COLUMN IF NOT EXISTS installed_at TIMESTAMPTZ`);
+    await query(`ALTER TABLE smart_bed_users ADD COLUMN IF NOT EXISTS install_platform TEXT NOT NULL DEFAULT ''`);
     await query(`DELETE FROM smart_bed_sessions WHERE expires_at < NOW()`);
   })().catch((error) => {
     accountTablesPromise = null;
@@ -142,6 +153,81 @@ export async function revokeSmartBedSession(token: string | undefined) {
   if (!token) return;
   await ensureSmartBedAccountTables();
   await query("DELETE FROM smart_bed_sessions WHERE token_hash = $1", [hashSessionToken(token)]);
+}
+
+export async function updateSmartBedUserProfile(
+  userId: string,
+  input: { fullName: string; email: string; phone: string },
+): Promise<SmartBedUserSession> {
+  await ensureSmartBedAccountTables();
+  const fullName = input.fullName.trim().slice(0, 100);
+  const email = normalizeEmail(input.email).slice(0, 160);
+  const phone = input.phone.trim().replace(/[\s().-]+/g, "").slice(0, 20);
+
+  if (fullName.length < 2) throw new Error("Họ tên cần có ít nhất 2 ký tự.");
+  if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("Email chưa hợp lệ.");
+  if (phone && !/^\+?\d{8,15}$/.test(phone)) throw new Error("Số điện thoại chưa hợp lệ.");
+
+  const duplicateEmail = await queryOne<{ id: string }>(
+    "SELECT id FROM smart_bed_users WHERE email = $1 AND id <> $2",
+    [email, userId],
+  );
+  if (duplicateEmail) throw new Error("Email này đang được sử dụng bởi tài khoản khác.");
+
+  const updated = await queryOne<SmartBedUserSession>(
+    `UPDATE smart_bed_users
+     SET full_name = $1, email = $2, phone = $3, updated_at = NOW()
+     WHERE id = $4
+     RETURNING id, full_name AS "fullName", email, phone`,
+    [fullName, email, phone, userId],
+  );
+  if (!updated) throw new Error("Không tìm thấy tài khoản khách hàng.");
+  return updated;
+}
+
+export async function markSmartBedAppInstalled(userId: string, platform: string) {
+  await ensureSmartBedAccountTables();
+  const safePlatform = platform.trim().slice(0, 40) || "pwa";
+  await query(
+    `UPDATE smart_bed_users
+     SET installed_at = COALESCE(installed_at, NOW()), install_platform = $1, updated_at = NOW()
+     WHERE id = $2`,
+    [safePlatform, userId],
+  );
+}
+
+export async function getSmartBedAdminCustomers(): Promise<SmartBedAdminCustomer[]> {
+  await ensureSmartBedAccountTables();
+  return query<SmartBedAdminCustomer>(
+    `SELECT u.id,
+            u.full_name AS "fullName",
+            u.email,
+            u.phone,
+            u.created_at::text AS "createdAt",
+            u.updated_at::text AS "updatedAt",
+            u.installed_at::text AS "installedAt",
+            u.install_platform AS "installPlatform",
+            COUNT(d.id)::int AS "deviceCount",
+            MAX(d.last_seen_at)::text AS "lastDeviceSeenAt"
+     FROM smart_bed_users u
+     LEFT JOIN smart_bed_devices d ON d.user_id = u.id
+     GROUP BY u.id
+     ORDER BY u.created_at DESC`,
+  );
+}
+
+export async function resetSmartBedUserPassword(userId: string) {
+  await ensureSmartBedAccountTables();
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const bytes = randomBytes(12);
+  const temporaryPassword = Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+  const updated = await queryOne<{ id: string }>(
+    `UPDATE smart_bed_users SET password_hash = $1, updated_at = NOW() WHERE id = $2 RETURNING id`,
+    [hashPassword(temporaryPassword), userId],
+  );
+  if (!updated) throw new Error("Không tìm thấy tài khoản khách hàng.");
+  await query("DELETE FROM smart_bed_sessions WHERE user_id = $1", [userId]);
+  return temporaryPassword;
 }
 
 export async function deleteSmartBedUserAccount(userId: string) {

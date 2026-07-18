@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import {
   Armchair,
@@ -16,16 +16,18 @@ import {
   Home,
   LampDesk,
   Lightbulb,
+  LogOut,
   LockKeyhole,
+  Mail,
   MoonStar,
   Palette,
   Pause,
+  Phone,
   Play,
   Radio,
   Router,
   RotateCcw,
   Save,
-  Settings2,
   ShieldCheck,
   Sparkles,
   SunMedium,
@@ -33,6 +35,7 @@ import {
   Trash2,
   Tv,
   Unplug,
+  UserRound,
   Vibrate,
   Wifi,
   WifiOff,
@@ -61,6 +64,12 @@ const MASSAGE_MODES: Array<{ id: MassageMode; label: string }> = [
   { id: "pulse", label: "Nhịp" },
   { id: "steady", label: "Liên tục" },
 ];
+
+type AccountProfile = {
+  fullName: string;
+  email: string;
+  phone: string;
+};
 
 const NAV_ITEMS: Array<{ id: ViewId; label: string; icon: typeof Gamepad2 }> = [
   { id: "control", label: "Điều khiển", icon: Gamepad2 },
@@ -155,6 +164,11 @@ export default function DashboardPage() {
   const profile = useMemo(() => getBedDeviceProfile(state.deviceProfileId), [state.deviceProfileId]);
   const [activeView, setActiveView] = useState<ViewId>("control");
   const [showConnection, setShowConnection] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
+  const [account, setAccount] = useState<AccountProfile>({ fullName: "", email: "", phone: "" });
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [accountSaving, setAccountSaving] = useState(false);
+  const [accountError, setAccountError] = useState("");
   const [connectionTransport, setConnectionTransport] = useState<BedTransport>("bluetooth");
   const [showAdvancedConnection, setShowAdvancedConnection] = useState(false);
   const [presetName, setPresetName] = useState("");
@@ -166,6 +180,24 @@ export default function DashboardPage() {
     const timeout = window.setTimeout(() => setToast(null), 2600);
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches
+      || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+    const reportInstall = () => {
+      const platform = /iPad|iPhone|iPod/.test(window.navigator.userAgent)
+        ? "ios-pwa"
+        : /Android/.test(window.navigator.userAgent) ? "android-pwa" : "desktop-pwa";
+      void fetch("/api/bed/install", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform }),
+      });
+    };
+    if (standalone) reportInstall();
+    window.addEventListener("appinstalled", reportInstall);
+    return () => window.removeEventListener("appinstalled", reportInstall);
+  }, []);
 
   const activePreset = store.presets.find((preset) => preset.id === state.activePreset);
   const controlsLocked = state.childLock;
@@ -236,13 +268,61 @@ export default function DashboardPage() {
     setToast("Đã lưu tư thế mới");
   };
 
+  const openAccount = async () => {
+    setShowAccount(true);
+    setAccountError("");
+    setAccountLoading(true);
+    try {
+      const response = await fetch("/api/bed/account", { cache: "no-store" });
+      if (response.status === 401) {
+        window.location.replace("/smart-bed/login");
+        return;
+      }
+      const data = await response.json() as { user?: AccountProfile; error?: string };
+      if (!response.ok || !data.user) throw new Error(data.error || "Không thể tải thông tin tài khoản.");
+      setAccount(data.user);
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : "Không thể tải thông tin tài khoản.");
+    } finally {
+      setAccountLoading(false);
+    }
+  };
+
+  const saveAccount = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAccountError("");
+    setAccountSaving(true);
+    try {
+      const response = await fetch("/api/bed/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(account),
+      });
+      const data = await response.json() as { user?: AccountProfile; error?: string };
+      if (!response.ok || !data.user) throw new Error(data.error || "Không thể lưu thông tin khách hàng.");
+      setAccount(data.user);
+      setToast("Đã cập nhật thông tin khách hàng");
+      setShowAccount(false);
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : "Không thể lưu thông tin khách hàng.");
+    } finally {
+      setAccountSaving(false);
+    }
+  };
+
+  const logoutAccount = async () => {
+    setAccountError("");
+    await fetch("/api/bed/auth", { method: "DELETE" });
+    window.location.replace("/smart-bed/login");
+  };
+
   return (
     <main className="smart-bed-app">
       <div className="smart-bed-grid" aria-hidden="true" />
 
       <header className="smart-bed-header">
         <div className="smart-bed-header__inner">
-          <Link href="/" className="smart-bed-brand" aria-label="Về trang chủ SmartFurni">
+          <Link href="/dashboard" className="smart-bed-brand" aria-label="Trang điều khiển SmartFurni">
             <span className="smart-bed-brand__icon"><Home size={22} strokeWidth={1.6} /></span>
             <span><b>SMARTFURNI</b><small>SMART BED CONTROL</small></span>
           </Link>
@@ -252,7 +332,7 @@ export default function DashboardPage() {
               <span>{device.connection.status === "connected" ? device.connection.deviceName : device.connection.status === "error" ? "Lỗi kết nối" : "Kết nối giường"}</span>
               <i />
             </button>
-            <Link href="/admin/choose-module" className="smart-bed-home-link" aria-label="Trung tâm điều hành"><Settings2 size={19} /></Link>
+            <button type="button" className="smart-bed-home-link" onClick={() => void openAccount()} aria-label="Tài khoản khách hàng"><UserRound size={19} /></button>
           </div>
         </div>
       </header>
@@ -479,13 +559,54 @@ export default function DashboardPage() {
               </>
             )}
             <small className="bed-connection-note">Bluetooth trên iPhone hoạt động trong app SmartFurni. Khi dùng website trên iPhone, hãy chọn Wi‑Fi Gateway.</small>
-            <button type="button" className="bed-account-logout" onClick={async () => { await fetch("/api/bed/auth", { method: "DELETE" }); window.location.href = "/smart-bed/login"; }}>Đăng xuất tài khoản điều khiển</button>
-            <button type="button" className="bed-account-delete" onClick={async () => {
-              if (!window.confirm("Xóa tài khoản điều khiển, thiết bị đã ghép đôi và toàn bộ dữ liệu liên quan? Thao tác này không thể hoàn tác.")) return;
-              const response = await fetch("/api/bed/account", { method: "DELETE" });
-              if (response.ok) window.location.href = "/smart-bed/login";
-              else setToast("Chưa thể xóa tài khoản. Vui lòng thử lại.");
-            }}>Xóa tài khoản và dữ liệu</button>
+          </section>
+        </div>
+      )}
+
+      {showAccount && (
+        <div className="bed-modal-backdrop" role="presentation" onMouseDown={() => !accountSaving && setShowAccount(false)}>
+          <section className="bed-connection-modal bed-account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" onMouseDown={(event) => event.stopPropagation()}>
+            <button type="button" className="bed-modal-close" onClick={() => setShowAccount(false)} disabled={accountSaving} aria-label="Đóng"><X size={19} /></button>
+            <div className="bed-connection-modal__title">
+              <span className="bed-connection-modal__icon"><UserRound size={27} /></span>
+              <div><span className="bed-eyebrow">TÀI KHOẢN SMARTFURNI</span><h2 id="account-title">Thông tin khách hàng</h2></div>
+            </div>
+
+            {accountLoading ? (
+              <div className="bed-account-loading"><span className="bed-spinner" /> Đang tải thông tin...</div>
+            ) : (
+              <form className="bed-account-form" onSubmit={saveAccount}>
+                <p>Cập nhật thông tin liên hệ dùng cho tài khoản điều khiển và hỗ trợ thiết bị.</p>
+                <label className="bed-account-field bed-account-field--wide">
+                  <span><UserRound size={14} /> Họ và tên</span>
+                  <input value={account.fullName} onChange={(event) => setAccount({ ...account, fullName: event.target.value })} autoComplete="name" maxLength={100} required />
+                </label>
+                <label className="bed-account-field">
+                  <span><Mail size={14} /> Email đăng nhập</span>
+                  <input type="email" value={account.email} onChange={(event) => setAccount({ ...account, email: event.target.value })} autoComplete="email" maxLength={160} required />
+                </label>
+                <label className="bed-account-field">
+                  <span><Phone size={14} /> Số điện thoại</span>
+                  <input type="tel" value={account.phone} onChange={(event) => setAccount({ ...account, phone: event.target.value })} autoComplete="tel" inputMode="tel" maxLength={20} placeholder="Nhập số điện thoại" />
+                </label>
+                {accountError && <div className="bed-connection-error bed-account-error">{accountError}</div>}
+                <button type="submit" className="bed-connect-primary bed-account-save" disabled={accountSaving}>
+                  {accountSaving ? <><span className="bed-spinner" /> Đang lưu...</> : <><Save size={18} /> Lưu thông tin</>}
+                </button>
+              </form>
+            )}
+
+            <div className="bed-account-actions">
+              <button type="button" className="bed-account-signout" onClick={() => void logoutAccount()} disabled={accountSaving}>
+                <LogOut size={18} /> Đăng xuất
+              </button>
+              <button type="button" className="bed-account-delete" onClick={async () => {
+                if (!window.confirm("Xóa tài khoản điều khiển, thiết bị đã ghép đôi và toàn bộ dữ liệu liên quan? Thao tác này không thể hoàn tác.")) return;
+                const response = await fetch("/api/bed/account", { method: "DELETE" });
+                if (response.ok) window.location.replace("/smart-bed/login");
+                else setAccountError("Chưa thể xóa tài khoản. Vui lòng thử lại.");
+              }}><Trash2 size={14} /> Xóa tài khoản và dữ liệu</button>
+            </div>
           </section>
         </div>
       )}

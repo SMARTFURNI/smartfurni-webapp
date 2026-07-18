@@ -6,7 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3, BookOpenText, Boxes, ChevronLeft, ChevronRight, ExternalLink,
   FileChartColumn, FileText, GalleryHorizontalEnd, LayoutDashboard, LogOut,
-  Menu, Palette, Route, Settings2, ShoppingCart, Store, UsersRound, X,
+  Menu, Palette, Route, Settings2, ShoppingCart, Smartphone, Store, UsersRound, X,
 } from "lucide-react";
 
 interface SidebarStats {
@@ -43,6 +43,12 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Nội dung",
     items: [
+      {
+        href: "/admin/app-customers",
+        label: "Khách hàng App",
+        icon: Smartphone,
+        exact: false,
+      },
       {
         href: "/admin/catalogue",
         label: "Catalogue B2B",

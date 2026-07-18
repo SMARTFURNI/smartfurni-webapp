@@ -197,8 +197,20 @@
 .bed-wifi-config, .bed-advanced-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 0 0 14px; padding: 12px; border: 1px solid rgba(245,237,214,.07); border-radius: 13px; background: rgba(6,10,17,.24); }
 .bed-advanced-block { margin: 0 0 14px; }.bed-advanced-block>button { display: flex; align-items: center; gap: 5px; margin: 0 0 8px; color: rgba(245,237,214,.42); font-size: 8px; }.bed-advanced-fields { grid-template-columns: 1fr; margin-bottom: 0; }
 .bed-connection-error { margin: 0 0 12px; padding: 10px 12px; border: 1px solid rgba(245,93,93,.22); border-radius: 11px; color: #f39a9a; background: rgba(245,93,93,.07); font-size: 9px; line-height: 1.5; }
-.bed-connected-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 20px 0 12px; }.bed-connected-summary div { padding: 12px; border: 1px solid rgba(245,237,214,.07); border-radius: 12px; background: rgba(6,10,17,.28); }.bed-connected-summary span { display:block;color:rgba(245,237,214,.36);font-size:7px;margin-bottom:5px}.bed-connected-summary b{font-size:10px}.bed-device-details .is-online{color:#79dda0}.bed-account-logout { display:block;margin:12px auto 0;color:rgba(245,237,214,.28);font-size:8px;text-decoration:underline;text-underline-offset:3px; }
-.bed-account-delete { display: block; margin: 8px auto 0; color: rgba(236,111,111,.45); font-size: 8px; text-decoration: underline; text-underline-offset: 3px; }
+.bed-connected-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 20px 0 12px; }.bed-connected-summary div { padding: 12px; border: 1px solid rgba(245,237,214,.07); border-radius: 12px; background: rgba(6,10,17,.28); }.bed-connected-summary span { display:block;color:rgba(245,237,214,.36);font-size:7px;margin-bottom:5px}.bed-connected-summary b{font-size:10px}.bed-device-details .is-online{color:#79dda0}
+.bed-account-modal { width: min(570px, 100%); }
+.bed-account-loading { min-height: 190px; display: flex; align-items: center; justify-content: center; gap: 10px; color: rgba(245,237,214,.5); font-size: 10px; }
+.bed-account-form { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bed-account-form > p { grid-column: 1 / -1; margin: 0 0 2px; color: rgba(245,237,214,.46); font-size: 10px; line-height: 1.65; }
+.bed-account-field { min-width: 0; display: grid; gap: 7px; }
+.bed-account-field--wide { grid-column: 1 / -1; }
+.bed-account-field > span { display: flex; align-items: center; gap: 6px; color: rgba(245,237,214,.58); font-size: 9px; font-weight: 750; }
+.bed-account-field input { width: 100%; height: 47px; padding: 0 13px; border: 1px solid rgba(224,197,111,.15); border-radius: 13px; outline: none; color: var(--bed-cream); background: rgba(6,10,17,.42); font-size: 11px; }
+.bed-account-field input:focus { border-color: rgba(224,197,111,.48); box-shadow: 0 0 0 3px rgba(215,185,87,.07); }
+.bed-account-error, .bed-account-save { grid-column: 1 / -1; margin: 0; }
+.bed-account-actions { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(245,237,214,.07); display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.bed-account-signout { min-height: 44px; border: 1px solid rgba(239,68,68,.25); border-radius: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #f09a9a; background: rgba(239,68,68,.065); font-size: 10px; font-weight: 800; }
+.bed-account-delete { display: flex; align-items: center; justify-content: center; gap: 5px; color: rgba(236,111,111,.46); font-size: 8px; text-decoration: underline; text-underline-offset: 3px; }
 .bed-zone-switch { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; padding: 4px; margin-bottom: 12px; border: 1px solid rgba(245,237,214,.07); border-radius: 12px; background: rgba(5,9,15,.25); }.bed-zone-switch button{height:34px;border-radius:8px;color:rgba(245,237,214,.38);font-size:8px;font-weight:700}.bed-zone-switch button.is-active{color:#171208;background:linear-gradient(135deg,#dec25f,#b88c27)}
 .bed-capability-note { min-height: 72px;padding:13px;display:flex;align-items:center;gap:12px;border:1px solid rgba(224,197,111,.13);border-radius:14px;color:var(--bed-gold-light);background:rgba(215,185,87,.045)}.bed-capability-note span{display:grid;gap:4px}.bed-capability-note b{font-size:10px}.bed-capability-note small{color:rgba(245,237,214,.4);font-size:8px;line-height:1.5}
 .bed-spinner { width: 17px; height: 17px; border: 2px solid rgba(20,15,4,.25); border-top-color: #181203; border-radius: 50%; animation: spin .7s linear infinite; }
@@ -275,6 +287,10 @@
   .bed-connection-modal__title { align-items: flex-start; }
   .bed-connection-modal__icon { width: 46px; height: 46px; border-radius: 14px; }
   .bed-connection-modal h2 { font-size: 17px; }
+  .bed-account-form { grid-template-columns: 1fr; }
+  .bed-account-form > p, .bed-account-field--wide, .bed-account-error, .bed-account-save { grid-column: 1; }
+  .bed-account-actions { grid-template-columns: 1fr; }
+  .bed-account-delete { min-height: 34px; }
   .bed-transport-grid { grid-template-columns: 1fr 1fr; }
   .bed-transport-grid button { min-height: 78px; }
   .bed-wifi-config { grid-template-columns: 1fr; }

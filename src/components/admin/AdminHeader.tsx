@@ -21,6 +21,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "/admin/contacts": "Liên hệ",
   "/admin/users": "Người dùng",
   "/admin/users/new": "Thêm khách hàng",
+  "/admin/app-customers": "Khách hàng App",
   "/admin/settings": "Cài đặt",
 };
 
@@ -74,6 +75,7 @@ const SEARCH_SUGGESTIONS: { label: string; href: string; icon: LucideIcon; categ
   { label: "Đơn hàng", href: "/admin/orders", icon: ShoppingCart, category: "Trang" },
   { label: "Liên hệ", href: "/admin/contacts", icon: MessageSquare, category: "Trang" },
   { label: "Người dùng", href: "/admin/users", icon: UsersRound, category: "Trang" },
+  { label: "Khách hàng App", href: "/admin/app-customers", icon: UsersRound, category: "Trang" },
   { label: "Cài đặt", href: "/admin/settings", icon: Settings2, category: "Trang" },
   { label: "Viết bài mới", href: "/admin/posts/new", icon: FilePenLine, category: "Thao tác" },
   { label: "Thêm sản phẩm", href: "/admin/products/new", icon: PackagePlus, category: "Thao tác" },
