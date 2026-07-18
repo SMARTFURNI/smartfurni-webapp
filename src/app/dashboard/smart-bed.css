@@ -58,6 +58,15 @@
 .bed-live-badge.is-live i { background: #4ade80; }
 .bed-visual-stage { position: relative; flex: 1; min-height: 380px; overflow: hidden; }
 .bed-visual-svg { position: absolute; z-index: 1; top: 50%; left: 50%; width: min(100%, 650px); height: auto; max-width: 100%; transform: translate(-50%, -50%); transform-origin: center; filter: drop-shadow(0 28px 25px rgba(0,0,0,.28)); }
+.bed-massage-ring { transform-box: fill-box; transform-origin: center; vector-effect: non-scaling-stroke; will-change: transform, opacity; animation-name: bed-massage-wave; animation-timing-function: cubic-bezier(.2,.65,.3,1); animation-iteration-count: infinite; }
+.bed-massage-ring--pulse { animation-timing-function: ease-in-out; }
+.bed-massage-ring--steady { animation-timing-function: linear; }
+@keyframes bed-massage-wave {
+  0% { opacity: 0; transform: scale(1); }
+  18% { opacity: var(--bed-ring-opacity, .65); }
+  68% { opacity: .24; }
+  100% { opacity: 0; transform: scale(var(--bed-ring-scale-x, 3), var(--bed-ring-scale-y, 3)); }
+}
 .bed-position-summary { position: relative; z-index: 2; width: min(440px, 92%); margin: 0 auto; padding: 14px 20px; border: 1px solid rgba(224,197,111,.13); border-radius: 17px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 18px; text-align: center; background: rgba(8,12,20,.34); }
 .bed-position-summary div:not(.bed-position-summary__line) { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .bed-position-summary span { color: rgba(245,237,214,.43); font-size: 10px; }
@@ -232,7 +241,11 @@
   .bed-visual-panel__header h2 { font-size: 16px; }
   .bed-live-badge { height: 25px; font-size: 7px; }
   .bed-visual-stage { min-height: 210px; }
-  .bed-visual-svg { width: 100%; max-width: 430px; }
+  .bed-visual-svg { width: 100%; max-width: 430px; filter: none; }
+  .bed-visual-svg .bed-3d-main,
+  .bed-visual-svg .bed-3d-leg,
+  .bed-visual-svg .bed-3d-floor-shadow,
+  .bed-visual-svg .bed-3d-mattress-top { filter: none; }
   .bed-position-summary { width: 100%; padding: 10px 12px; border-radius: 13px; gap: 10px; }
   .bed-position-summary span { font-size: 8px; }
   .bed-position-summary strong { font-size: 16px; }
@@ -277,5 +290,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .bed-view, .bed-spinner { animation: none; }
+  .bed-massage-ring { animation: none; opacity: .3; }
   .smart-bed-app * { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }

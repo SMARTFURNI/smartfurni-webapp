@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useId, useRef, useState } from "react";
 
 type MassageLevel = 0 | 1 | 2 | 3;
 type MassageMode = "wave" | "pulse" | "steady";
@@ -60,9 +60,17 @@ function useAnimatedAngles(headAngle: number, footAngle: number) {
 
     const duration = clamp(260 + distance * 26, 320, 1900);
     const startedAt = performance.now();
+    const compactRenderer = window.matchMedia("(max-width: 640px)").matches;
+    const frameInterval = compactRenderer ? 1000 / 30 : 1000 / 60;
+    let lastPaint = startedAt - frameInterval;
 
     const tick = (now: number) => {
       const progress = clamp((now - startedAt) / duration, 0, 1);
+      if (progress < 1 && now - lastPaint < frameInterval) {
+        animationRef.current = requestAnimationFrame(tick);
+        return;
+      }
+      lastPaint = now;
       // Cosine easing mimics a motor gently starting and slowing before stopping.
       const eased = (1 - Math.cos(Math.PI * progress)) / 2;
       const next = {
@@ -184,6 +192,7 @@ function MattressSection({
       )}
 
       <polygon
+        className="bed-3d-mattress-top"
         points={points([topStartBack, topEndBack, topEndFront, topStartFront])}
         fill={`url(#${gradientId})`}
         stroke="#f8f4e9"
@@ -236,6 +245,13 @@ function MattressSection({
               : 0;
           const maxRingX = 11 + massageLevel * 4.2;
           const maxRingY = 5.5 + massageLevel * 2.1;
+          const ringStyle = {
+            "--bed-ring-scale-x": maxRingX / 5.4,
+            "--bed-ring-scale-y": maxRingY / 2.8,
+            "--bed-ring-opacity": massageMode === "steady" ? 0.34 : 0.72,
+            animationDelay: `${delay}s`,
+            animationDuration: `${duration}s`,
+          } as CSSProperties;
           return (
             <g key={`${column}-${row}`} transform={`rotate(${surfaceAngle} ${tuft.x} ${tuft.y})`}>
               {massageOn && massageLevel > 0 && (
@@ -249,11 +265,9 @@ function MattressSection({
                   stroke="#e4c96f"
                   strokeWidth={massageLevel === 3 ? 1.7 : 1.3}
                   opacity="0"
-                >
-                  <animate attributeName="rx" values={`5.4;${maxRingX};${maxRingX + 4}`} dur={`${duration}s`} begin={`${delay}s`} repeatCount="indefinite" />
-                  <animate attributeName="ry" values={`2.8;${maxRingY};${maxRingY + 2}`} dur={`${duration}s`} begin={`${delay}s`} repeatCount="indefinite" />
-                  <animate attributeName="opacity" values={massageMode === "steady" ? "0;.34;.18;0" : "0;.72;.34;0"} dur={`${duration}s`} begin={`${delay}s`} repeatCount="indefinite" />
-                </ellipse>
+                  className={`bed-massage-ring bed-massage-ring--${massageMode}`}
+                  style={ringStyle}
+                />
               )}
               <ellipse cx={tuft.x} cy={tuft.y + 1.4} rx="8.2" ry="4.4" fill="#8f887c" opacity=".18" />
               <ellipse cx={tuft.x} cy={tuft.y} rx="5.4" ry="2.8" fill="#d1cabd" />
@@ -281,7 +295,7 @@ function FrameLeg({ x, y, filterId }: { x: number; y: number; filterId: string }
   const top = project({ x, y, z: -29 });
   const bottom = project({ x, y, z: -75 });
   return (
-    <g filter={`url(#${filterId})`}>
+    <g className="bed-3d-leg" filter={`url(#${filterId})`}>
       <line x1={top.x} y1={top.y} x2={bottom.x} y2={bottom.y} stroke="#050607" strokeWidth="15" strokeLinecap="round" />
       <line x1={top.x - 2} y1={top.y} x2={bottom.x - 2} y2={bottom.y} stroke="#5f6264" strokeOpacity=".42" strokeWidth="2.2" strokeLinecap="round" />
       <ellipse cx={bottom.x} cy={bottom.y + 2} rx="10" ry="4" fill="#030404" />
@@ -434,9 +448,9 @@ export default function BedSVG({
         </filter>
       </defs>
 
-      <ellipse cx="360" cy="384" rx="275" ry="34" fill="#000" opacity=".36" filter={`url(#${ids.shadow})`} />
+      <ellipse className="bed-3d-floor-shadow" cx="360" cy="384" rx="275" ry="34" fill="#000" opacity=".36" filter={`url(#${ids.shadow})`} />
       {ledOn && (
-        <ellipse cx="360" cy="375" rx="248" ry="15" fill={ledColor} opacity={0.42 * safeLedBrightness} filter={`url(#${ids.glow})`} />
+        <ellipse className="bed-3d-led-glow" cx="360" cy="375" rx="248" ry="15" fill={ledColor} opacity={0.42 * safeLedBrightness} filter={`url(#${ids.glow})`} />
       )}
 
       <FrameLeg x={6} y={19} filterId={ids.leg} />
@@ -444,7 +458,7 @@ export default function BedSVG({
       <FrameLeg x={4} y={205} filterId={ids.leg} />
       <FrameLeg x={506} y={205} filterId={ids.leg} />
 
-      <g filter={`url(#${ids.shadow})`}>
+      <g className="bed-3d-main" filter={`url(#${ids.shadow})`}>
         <polygon points={points(frameTop)} fill="#090b0d" fillOpacity=".34" stroke="#5b5e60" strokeOpacity=".32" strokeWidth="1" />
         <polygon points={points(frameRight)} fill="#08090a" stroke="#404346" strokeWidth="1" />
         <polygon points={points(frameFrontBottom)} fill={`url(#${ids.frameSide})`} stroke="#3b3e40" strokeWidth="1.1" />
