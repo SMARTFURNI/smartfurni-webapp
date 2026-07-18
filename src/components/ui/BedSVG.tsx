@@ -1,12 +1,19 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+
+type MassageLevel = 0 | 1 | 2 | 3;
+type MassageMode = "wave" | "pulse" | "steady";
 
 interface BedSVGProps {
   headAngle?: number;
   footAngle?: number;
   ledColor?: string;
   ledOn?: boolean;
+  ledBrightness?: number;
+  massageOn?: boolean;
+  massageLevel?: MassageLevel;
+  massageMode?: MassageMode;
   size?: number;
   className?: string;
 }
@@ -21,6 +28,65 @@ type MattressPanel = {
 
 const BED_WIDTH = 206;
 const MATTRESS_HEIGHT = 30;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function useAnimatedAngles(headAngle: number, footAngle: number) {
+  const targetHead = clamp(headAngle, 0, 70);
+  const targetFoot = clamp(footAngle, 0, 45);
+  const [angles, setAngles] = useState({ head: targetHead, foot: targetFoot });
+  const currentRef = useRef(angles);
+  const animationRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      const next = { head: targetHead, foot: targetFoot };
+      currentRef.current = next;
+      setAngles(next);
+      return;
+    }
+
+    const start = currentRef.current;
+    const headDistance = targetHead - start.head;
+    const footDistance = targetFoot - start.foot;
+    const distance = Math.max(Math.abs(headDistance), Math.abs(footDistance));
+
+    if (distance < 0.05) return;
+
+    const duration = clamp(260 + distance * 26, 320, 1900);
+    const startedAt = performance.now();
+
+    const tick = (now: number) => {
+      const progress = clamp((now - startedAt) / duration, 0, 1);
+      // Cosine easing mimics a motor gently starting and slowing before stopping.
+      const eased = (1 - Math.cos(Math.PI * progress)) / 2;
+      const next = {
+        head: start.head + headDistance * eased,
+        foot: start.foot + footDistance * eased,
+      };
+      currentRef.current = next;
+      setAngles(next);
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(tick);
+      } else {
+        animationRef.current = null;
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
+    };
+  }, [targetHead, targetFoot]);
+
+  return angles;
+}
 
 function project({ x, y, z }: Point3D): Point2D {
   return {
@@ -51,11 +117,19 @@ function MattressSection({
   gradientId,
   sideGradientId,
   seamId,
+  panelIndex,
+  massageOn,
+  massageLevel,
+  massageMode,
 }: {
   panel: MattressPanel;
   gradientId: string;
   sideGradientId: string;
   seamId: string;
+  panelIndex: number;
+  massageOn: boolean;
+  massageLevel: MassageLevel;
+  massageMode: MassageMode;
 }) {
   const backY = 7;
   const frontY = BED_WIDTH;
@@ -146,16 +220,41 @@ function MattressSection({
         );
       })}
 
-      {tuftColumns.map((column) =>
-        tuftRows.map((row) => {
+      {tuftColumns.map((column, columnIndex) =>
+        tuftRows.map((row, rowIndex) => {
           const axisPoint = interpolate(panel.start, panel.end, column);
           const tuft = project({
             ...axisPoint,
             y: backY + (frontY - backY) * row,
             z: axisPoint.z + MATTRESS_HEIGHT + 1,
           });
+          const duration = massageLevel === 3 ? 1.05 : massageLevel === 2 ? 1.6 : 2.35;
+          const delay = massageMode === "wave"
+            ? panelIndex * 0.24 + columnIndex * 0.12 + rowIndex * 0.055
+            : massageMode === "pulse"
+              ? ((columnIndex + rowIndex) % 2) * 0.18
+              : 0;
+          const maxRingX = 11 + massageLevel * 4.2;
+          const maxRingY = 5.5 + massageLevel * 2.1;
           return (
             <g key={`${column}-${row}`} transform={`rotate(${surfaceAngle} ${tuft.x} ${tuft.y})`}>
+              {massageOn && massageLevel > 0 && (
+                <ellipse
+                  key={`${massageMode}-${massageLevel}-${column}-${row}`}
+                  cx={tuft.x}
+                  cy={tuft.y}
+                  rx="5.4"
+                  ry="2.8"
+                  fill="none"
+                  stroke="#e4c96f"
+                  strokeWidth={massageLevel === 3 ? 1.7 : 1.3}
+                  opacity="0"
+                >
+                  <animate attributeName="rx" values={`5.4;${maxRingX};${maxRingX + 4}`} dur={`${duration}s`} begin={`${delay}s`} repeatCount="indefinite" />
+                  <animate attributeName="ry" values={`2.8;${maxRingY};${maxRingY + 2}`} dur={`${duration}s`} begin={`${delay}s`} repeatCount="indefinite" />
+                  <animate attributeName="opacity" values={massageMode === "steady" ? "0;.34;.18;0" : "0;.72;.34;0"} dur={`${duration}s`} begin={`${delay}s`} repeatCount="indefinite" />
+                </ellipse>
+              )}
               <ellipse cx={tuft.x} cy={tuft.y + 1.4} rx="8.2" ry="4.4" fill="#8f887c" opacity=".18" />
               <ellipse cx={tuft.x} cy={tuft.y} rx="5.4" ry="2.8" fill="#d1cabd" />
               <ellipse cx={tuft.x - 1.2} cy={tuft.y - 0.8} rx="2.5" ry="1.2" fill="#fffdf6" opacity=".9" />
@@ -195,6 +294,10 @@ export default function BedSVG({
   footAngle = 0,
   ledColor = "#C9A84C",
   ledOn = false,
+  ledBrightness = 100,
+  massageOn = false,
+  massageLevel = 0,
+  massageMode = "wave",
   size = 760,
   className = "",
 }: BedSVGProps) {
@@ -211,8 +314,10 @@ export default function BedSVG({
   };
   const W = size;
   const H = size * (440 / 760);
-  const safeHeadAngle = Math.max(0, Math.min(70, headAngle));
-  const safeFootAngle = Math.max(0, Math.min(45, footAngle));
+  const animatedAngles = useAnimatedAngles(headAngle, footAngle);
+  const safeHeadAngle = animatedAngles.head;
+  const safeFootAngle = animatedAngles.foot;
+  const safeLedBrightness = clamp(ledBrightness, 0, 100) / 100;
   const headRadians = (safeHeadAngle * Math.PI) / 180;
   const footRadians = (safeFootAngle * Math.PI) / 180;
   const calfRadians = footRadians * 0.48;
@@ -331,7 +436,7 @@ export default function BedSVG({
 
       <ellipse cx="360" cy="384" rx="275" ry="34" fill="#000" opacity=".36" filter={`url(#${ids.shadow})`} />
       {ledOn && (
-        <ellipse cx="360" cy="375" rx="248" ry="15" fill={ledColor} opacity=".42" filter={`url(#${ids.glow})`} />
+        <ellipse cx="360" cy="375" rx="248" ry="15" fill={ledColor} opacity={0.42 * safeLedBrightness} filter={`url(#${ids.glow})`} />
       )}
 
       <FrameLeg x={6} y={19} filterId={ids.leg} />
@@ -367,7 +472,7 @@ export default function BedSVG({
             x2={project({ x: 520, y: 223, z: -28 }).x}
             y2={project({ x: 520, y: 223, z: -28 }).y}
             stroke={ledColor}
-            strokeOpacity=".78"
+            strokeOpacity={0.78 * safeLedBrightness}
             strokeWidth="3.2"
             strokeLinecap="round"
           />
@@ -386,13 +491,17 @@ export default function BedSVG({
           <circle cx={kneeSupport.x} cy={kneeSupport.y} r="7" fill="#08090a" stroke="#5f6264" strokeWidth="2" />
         </g>
 
-        {panels.map((panel) => (
+        {panels.map((panel, panelIndex) => (
           <MattressSection
             key={panel.id}
             panel={panel}
             gradientId={ids.top}
             sideGradientId={ids.side}
             seamId={ids.seam}
+            panelIndex={panelIndex}
+            massageOn={massageOn}
+            massageLevel={massageLevel}
+            massageMode={massageMode}
           />
         ))}
       </g>

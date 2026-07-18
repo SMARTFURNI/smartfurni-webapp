@@ -56,9 +56,8 @@
 .bed-live-badge i { width: 6px; height: 6px; border-radius: 50%; background: #9e957d; }
 .bed-live-badge.is-live { color: #80d9a0; border-color: rgba(74,222,128,.24); }
 .bed-live-badge.is-live i { background: #4ade80; }
-.bed-visual-stage { position: relative; flex: 1; min-height: 380px; display: grid; place-items: center; }
-.bed-visual-glow { position: absolute; left: 20%; right: 20%; bottom: 25%; height: 45px; border-radius: 50%; filter: blur(30px); transition: background .25s, opacity .25s; }
-.bed-visual-svg { position: relative; z-index: 1; width: min(100%, 650px); height: auto; filter: drop-shadow(0 28px 25px rgba(0,0,0,.28)); }
+.bed-visual-stage { position: relative; flex: 1; min-height: 380px; overflow: hidden; }
+.bed-visual-svg { position: absolute; z-index: 1; top: 50%; left: 50%; width: min(100%, 650px); height: auto; max-width: 100%; transform: translate(-50%, -50%); transform-origin: center; filter: drop-shadow(0 28px 25px rgba(0,0,0,.28)); }
 .bed-position-summary { position: relative; z-index: 2; width: min(440px, 92%); margin: 0 auto; padding: 14px 20px; border: 1px solid rgba(224,197,111,.13); border-radius: 17px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 18px; text-align: center; background: rgba(8,12,20,.34); }
 .bed-position-summary div:not(.bed-position-summary__line) { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .bed-position-summary span { color: rgba(245,237,214,.43); font-size: 10px; }

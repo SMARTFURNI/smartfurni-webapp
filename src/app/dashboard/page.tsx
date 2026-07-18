@@ -292,8 +292,18 @@ export default function DashboardPage() {
             </div>
 
             <div className="bed-visual-stage">
-              <div className="bed-visual-glow" style={{ opacity: state.ledOn ? state.ledBrightness / 100 : 0, background: state.ledColor }} />
-              <BedSVG headAngle={state.headAngle} footAngle={state.footAngle} ledOn={state.ledOn} ledColor={state.ledColor} size={520} className="bed-visual-svg" />
+              <BedSVG
+                headAngle={state.headAngle}
+                footAngle={state.footAngle}
+                ledOn={state.ledOn}
+                ledColor={state.ledColor}
+                ledBrightness={state.ledBrightness}
+                massageOn={state.massageOn}
+                massageLevel={state.massageLevel}
+                massageMode={state.massageMode}
+                size={520}
+                className="bed-visual-svg"
+              />
             </div>
 
             <div className="bed-position-summary">
