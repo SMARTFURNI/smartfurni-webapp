@@ -8,10 +8,20 @@ import { getRawLeadStats } from "@/lib/crm-raw-lead-store";
 import CrmDashboardClient from "@/components/crm/CrmDashboardClient";
 import { cookies } from "next/headers";
 import { queryOne } from "@/lib/db";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function CrmDashboardPage() {
+export default async function CrmDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ source?: string }>;
+}) {
+  const { source } = await searchParams;
+  if (source === "pwa") {
+    redirect("/admin/choose-module?source=pwa&entry=crm");
+  }
+
   const session = await requireCrmAccess();
 
   // Lấy thông tin nhân viên đang đăng nhập

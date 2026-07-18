@@ -1,10 +1,8 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 
 export default function CrmStaffLoginPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -27,7 +25,7 @@ export default function CrmStaffLoginPage() {
       } else {
         // Dùng window.location.href thay vì router.push
         // để đảm bảo full page reload, tránh Next.js router cache
-        window.location.href = "/crm";
+        window.location.href = "/admin/choose-module";
       }
     } catch {
       setError("Lỗi kết nối. Vui lòng thử lại.");

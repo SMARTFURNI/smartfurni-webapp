@@ -6,10 +6,20 @@ import { getSidebarStats } from "@/lib/sidebar-stats";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import DashboardClient from "@/components/admin/DashboardClient";
 import { initDbOnce } from "@/lib/db-init";
+import { redirect } from "next/navigation";
 
 export const metadata = { title: "Dashboard" };
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ source?: string }>;
+}) {
+  const { source } = await searchParams;
+  if (source === "pwa") {
+    redirect("/admin/choose-module?source=pwa&entry=admin");
+  }
+
   await requireAdmin();
   await initDbOnce();
   const blogData = getDashboardStats();

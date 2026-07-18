@@ -3,7 +3,7 @@
   "name": "SmartFurni Admin",
   "short_name": "SF Admin",
   "description": "Quản trị sản phẩm, đơn hàng, nội dung và vận hành website SmartFurni.",
-  "start_url": "/admin?source=pwa",
+  "start_url": "/admin/choose-module?source=pwa&entry=admin",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
