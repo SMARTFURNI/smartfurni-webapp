@@ -1,17 +1,17 @@
 {
-  "id": "/admin",
-  "name": "SmartFurni Admin",
-  "short_name": "SF Admin",
-  "description": "Quản trị sản phẩm, đơn hàng, nội dung và vận hành website SmartFurni.",
-  "start_url": "/admin?source=pwa",
+  "id": "/dashboard",
+  "name": "SmartFurni Bed Control",
+  "short_name": "SmartFurni Bed",
+  "description": "Điều khiển giường công thái học và nệm thông minh SmartFurni qua Bluetooth hoặc Wi-Fi.",
+  "start_url": "/dashboard?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#0B111B",
-  "theme_color": "#0B111B",
+  "theme_color": "#C9A84C",
   "lang": "vi-VN",
-  "categories": ["business", "productivity"],
+  "categories": ["lifestyle", "health", "utilities"],
   "icons": [
     {
       "src": "/smartfurni-favicon-v4.png",
@@ -28,15 +28,15 @@
   ],
   "shortcuts": [
     {
-      "name": "Tổng quan quản trị",
-      "short_name": "Tổng quan",
-      "url": "/admin",
+      "name": "Điều khiển tư thế",
+      "short_name": "Tư thế",
+      "url": "/dashboard?view=control&source=pwa",
       "icons": [{ "src": "/smartfurni-favicon-v4.png", "sizes": "512x512" }]
     },
     {
-      "name": "Đơn hàng",
-      "short_name": "Đơn hàng",
-      "url": "/admin/orders",
+      "name": "Lịch ngủ",
+      "short_name": "Lịch ngủ",
+      "url": "/dashboard?view=routine&source=pwa",
       "icons": [{ "src": "/smartfurni-favicon-v4.png", "sizes": "512x512" }]
     }
   ]

@@ -5,6 +5,7 @@ import "./admin-theme.css";
 export const viewport: Viewport = {
   themeColor: "#0B111B",
   colorScheme: "dark",
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {

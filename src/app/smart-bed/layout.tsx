@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { redirect } from "next/navigation";
-import { getSmartBedSession } from "@/lib/smart-bed-auth";
 import PwaDocumentConfig from "@/components/PwaDocumentConfig";
 
 export const viewport: Viewport = {
@@ -11,8 +9,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   applicationName: "SmartFurni Bed Control",
-  title: "Điều khiển giường — SmartFurni",
-  description: "Ứng dụng điều khiển giường thông minh SmartFurni.",
+  title: "Đăng nhập | SmartFurni Bed Control",
+  description: "Đăng nhập ứng dụng điều khiển giường công thái học và nệm thông minh SmartFurni.",
   robots: { index: false, follow: false },
   manifest: "/smart-bed-manifest.webmanifest",
   appleWebApp: {
@@ -29,9 +27,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSmartBedSession();
-  if (!session) redirect("/smart-bed/login");
+export default function SmartBedLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <PwaDocumentConfig manifestHref="/smart-bed-manifest.webmanifest" themeColor="#C9A84C" />

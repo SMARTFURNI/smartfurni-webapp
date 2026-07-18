@@ -4,6 +4,7 @@ import PwaDocumentConfig from "@/components/PwaDocumentConfig";
 export const viewport: Viewport = {
   themeColor: "#0B111B",
   colorScheme: "dark",
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
