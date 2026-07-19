@@ -58,7 +58,7 @@
 .bed-live-badge.is-live i { background: #4ade80; }
 .bed-visual-stage { position: relative; flex: 1; min-height: 380px; overflow: hidden; }
 .bed-visual-svg { position: absolute; z-index: 1; top: 50%; left: 50%; width: min(100%, 650px); height: auto; max-width: 100%; transform: translate(-50%, -50%); transform-origin: center; filter: drop-shadow(0 28px 25px rgba(0,0,0,.28)); }
-.bed-massage-ring { transform-box: fill-box; transform-origin: center; vector-effect: non-scaling-stroke; will-change: transform, opacity; animation-name: bed-massage-wave; animation-timing-function: cubic-bezier(.2,.65,.3,1); animation-iteration-count: infinite; }
+.bed-massage-ring { transform-box: fill-box; transform-origin: center; vector-effect: non-scaling-stroke; will-change: transform, opacity; filter: drop-shadow(0 0 3px rgba(84,191,255,.46)); animation-name: bed-massage-wave; animation-timing-function: cubic-bezier(.2,.65,.3,1); animation-iteration-count: infinite; }
 .bed-massage-ring--pulse { animation-timing-function: ease-in-out; }
 .bed-massage-ring--steady { animation-timing-function: linear; }
 @keyframes bed-massage-wave {
@@ -98,8 +98,6 @@
 .bed-flat-action span { display: flex; flex-direction: column; gap: 2px; }
 .bed-flat-action b { font-size: 12px; }
 .bed-flat-action small { color: rgba(245,237,214,.38); font-size: 9px; }
-.bed-emergency-action { width: 100%; min-height: 48px; margin: -4px 0 12px; padding: 0 16px; border: 1px solid rgba(239,68,68,.22); border-radius: 15px; display: flex; align-items: center; gap: 12px; color: #ef9292; text-align: left; background: rgba(239,68,68,.055); }
-.bed-emergency-action span { display: grid; gap: 2px; }.bed-emergency-action b { font-size: 10px; }.bed-emergency-action small { color: rgba(245,237,214,.32); font-size: 8px; }
 .bed-setting-row { min-height: 67px; padding: 11px 13px; border: 1px solid var(--bed-border); border-radius: 17px; display: flex; align-items: center; gap: 11px; background: rgba(255,255,255,.022); }
 .bed-setting-row__icon { width: 39px; height: 39px; border: 1px solid rgba(224,197,111,.16); border-radius: 12px; display: grid; place-items: center; color: var(--bed-gold-light); background: linear-gradient(145deg, rgba(215,185,87,.15), rgba(49,70,110,.11)); }
 .bed-setting-row__copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }

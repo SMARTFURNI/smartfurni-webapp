@@ -596,9 +596,6 @@ export default function DashboardPage() {
                 <button type="button" className="bed-flat-action" onClick={() => { store.resetFlat(); void device.send({ type: "stop_flat", zone: state.activeZone }); setToast("Đang đưa giường về vị trí phẳng"); }}>
                   <RotateCcw size={19} /><span><b>Dừng & về phẳng</b><small>Luôn hoạt động kể cả khi đang khóa</small></span>
                 </button>
-                <button type="button" className="bed-emergency-action" onClick={() => { store.resetFlat(); void device.send({ type: "emergency_flat", zone: state.activeZone }); setToast("Đã gửi lệnh dừng khẩn cấp"); }}>
-                  <AlertTriangle size={18} /><span><b>Dừng khẩn cấp</b><small>Dừng chuyển động và đưa giường về phẳng</small></span>
-                </button>
                 <SettingRow
                   icon={<LockKeyhole size={20} />}
                   title="Khóa trẻ em"

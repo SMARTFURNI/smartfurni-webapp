@@ -262,7 +262,7 @@ function MattressSection({
                   rx="5.4"
                   ry="2.8"
                   fill="none"
-                  stroke="#e4c96f"
+                  stroke="#54bfff"
                   strokeWidth={massageLevel === 3 ? 1.7 : 1.3}
                   opacity="0"
                   className={`bed-massage-ring bed-massage-ring--${massageMode}`}
