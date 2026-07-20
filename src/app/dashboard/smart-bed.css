@@ -250,7 +250,12 @@
 @media (max-width: 640px) {
   .smart-bed-app { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
   .smart-bed-grid { display: none; }
-  .smart-bed-header { backdrop-filter: none; -webkit-backdrop-filter: none; background: #0d1421; }
+  .smart-bed-header {
+    padding-top: env(safe-area-inset-top, 0px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: #0d1421;
+  }
   .smart-bed-header__inner { min-height: 62px; padding: 0 14px; }
   .smart-bed-brand { gap: 9px; }
   .smart-bed-brand__icon { width: 36px; height: 36px; border-radius: 12px; }
