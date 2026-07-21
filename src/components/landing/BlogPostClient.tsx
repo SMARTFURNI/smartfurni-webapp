@@ -56,9 +56,9 @@ function escapeHtml(value: string): string {
 
 function formatInlineMarkdown(value: string): string {
   return escapeHtml(value)
-    .replace(/\[([^\]]+)\]\(((?:\/|https:\/\/)[^)]+)\)/g, '<a href="$2" class="text-[#C9A84C] underline decoration-[#C9A84C]/35 underline-offset-4 hover:text-[#E8C56B]">$1</a>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em class="text-[#C9A84C]">$1</em>');
+    .replace(/\[([^\]]+)\]\(((?:\/|https:\/\/)[^)]+)\)/g, '<a href="$2" class="font-medium text-[#856018] underline decoration-[#B88A2B]/35 underline-offset-4 hover:text-[#5E4210]">$1</a>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-[#211D18]">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em class="text-[#7A5817]">$1</em>');
 }
 
 function formatPrice(price: number): string {
@@ -178,16 +178,16 @@ function ShareButtons({ title, slug }: { title: string; slug: string }) {
   ];
 
   return (
-    <div className="mt-10 pt-6 border-t border-[#C9A84C]/10">
+    <div className="mt-10 border-t border-[#DED6C9] pt-6">
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs text-[#F5EDD6]/40 font-medium tracking-wider uppercase">Chia sẻ bài viết</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-[#6F665B]">Chia sẻ bài viết</span>
         {shareLinks.map((s) => (
           <a
             key={s.label}
             href={s.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#2E2800] text-[#F5EDD6]/50 hover:border-[#C9A84C]/40 hover:text-[#C9A84C] transition-all text-xs"
+            className="flex items-center gap-2 rounded-full border border-[#D8D0C4] bg-white px-3 py-1.5 text-xs text-[#5E564D] transition-all hover:border-[#B88A2B] hover:text-[#7A5817]"
           >
             <span style={{ color: s.color }}>{s.icon}</span>
             {s.label}
@@ -195,7 +195,7 @@ function ShareButtons({ title, slug }: { title: string; slug: string }) {
         ))}
         <button
           onClick={copyLink}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#2E2800] text-[#F5EDD6]/50 hover:border-[#C9A84C]/40 hover:text-[#C9A84C] transition-all text-xs"
+          className="flex items-center gap-2 rounded-full border border-[#D8D0C4] bg-white px-3 py-1.5 text-xs text-[#5E564D] transition-all hover:border-[#B88A2B] hover:text-[#7A5817]"
         >
           {copied ? (
             <>
@@ -224,57 +224,59 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
   const funnelCta = FUNNEL_CTA[post.funnelStage || "MOFU"];
 
   return (
-    <main className="sf-site-gradient-bg min-h-screen bg-[#0D0B00] text-white">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#14110D_0,#14110D_72px,#F1ECE3_72px,#F1ECE3_100%)] text-[#2C2721]">
       <ReadingProgressBar />
       <Navbar theme={theme} />
 
-      {/* Breadcrumb */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-24">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-8 flex-wrap">
-          <Link href="/" className="hover:text-[#C9A84C] transition-colors">Trang chủ</Link>
+      <div className="mx-auto max-w-5xl px-0 pb-16 pt-20 sm:px-6 sm:pt-24">
+        <div className="mx-auto mb-5 flex max-w-4xl flex-wrap items-center gap-2 px-4 text-sm text-[#746B61] sm:px-0">
+          <Link href="/" className="transition-colors hover:text-[#856018]">Trang chủ</Link>
           <span>/</span>
-          <Link href="/blog" className="hover:text-[#C9A84C] transition-colors">Blog</Link>
+          <Link href="/blog" className="transition-colors hover:text-[#856018]">Tin tức</Link>
           <span>/</span>
-          <span className="text-gray-400 truncate">{post.title}</span>
+          <span className="max-w-[65vw] truncate text-[#4F4840]">{post.title}</span>
         </div>
 
-        {/* Article Header */}
-        <article>
-          <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <article className="mx-auto max-w-4xl border-y border-[#DED6C9] bg-[#FFFDF9] px-5 py-8 shadow-[0_18px_60px_rgba(70,55,35,.08)] sm:rounded-3xl sm:border sm:px-10 sm:py-12 md:px-16">
+          <div className="mb-5 flex flex-wrap items-center gap-3">
             <span
-              className="text-sm px-3 py-1 rounded-full font-medium"
+              className="rounded-full px-3 py-1 text-sm font-semibold"
               style={{
-                backgroundColor: categoryColor + "20",
+                backgroundColor: categoryColor + "16",
                 color: categoryColor,
-                border: `1px solid ${categoryColor}40`,
+                border: `1px solid ${categoryColor}35`,
               }}
             >
               {post.categoryLabel}
             </span>
-            <span className="text-gray-500 text-sm">{post.readTime} phút đọc</span>
+            <span className="text-sm text-[#746B61]">{post.readTime} phút đọc</span>
           </div>
 
-          <h1 className="text-3xl md:text-4xl font-light text-[#F5EDD6] leading-tight mb-6">
+          <h1 className="mb-6 font-[Georgia,serif] text-3xl font-normal leading-[1.16] text-[#241F1A] sm:text-4xl md:text-[46px]">
             {post.title}
           </h1>
 
-          <p className="text-[#F5EDD6]/50 text-lg leading-relaxed mb-8 border-l-4 pl-4" style={{ borderColor: categoryColor }}>
+          <p className="mb-8 border-l-4 pl-4 text-lg leading-8 text-[#5E564D]" style={{ borderColor: categoryColor }}>
             {post.excerpt}
           </p>
 
-          {/* Author & Date */}
-          <div className="flex items-center gap-4 py-6 border-y border-[#C9A84C]/10 mb-10">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-black flex-shrink-0" style={{ backgroundColor: categoryColor }}>
+          <div className="mb-8 flex items-center gap-4 border-y border-[#DED6C9] py-5">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-base font-bold text-white" style={{ backgroundColor: categoryColor }}>
               {post.author.charAt(post.author.indexOf(" ") + 1) || post.author.charAt(0)}
             </div>
             <div>
-              <div className="font-semibold text-[#F5EDD6]">{post.author}</div>
-              <div className="text-[#F5EDD6]/40 text-sm">{post.authorRole} · {formatDate(post.publishedAt)}</div>
+              <div className="font-semibold text-[#2C2721]">{post.author}</div>
+              <div className="text-sm text-[#756C62]">{post.authorRole} · {formatDate(post.publishedAt)}</div>
             </div>
           </div>
 
-          {/* Content */}
-          <div className="prose prose-invert max-w-none">
+          {post.coverImage && (
+            <figure className="mb-10 overflow-hidden rounded-2xl bg-[#E8E1D6]">
+              <img src={post.coverImage} alt={post.title} className="aspect-[16/9] w-full object-cover" />
+            </figure>
+          )}
+
+          <div className="max-w-none font-[Georgia,serif] text-[17px] leading-[1.85] text-[#3E3831] sm:text-[18px]">
             {post.content.split("\n\n").map((block, i) => {
               if (block.trim() === "[[SMARTFURNI_PRODUCTS]]") {
                 return <ProductRecommendationBlock key={i} post={post} products={recommendedProducts} />;
@@ -284,14 +286,14 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
               }
               if (block.startsWith("## ")) {
                 return (
-                  <h2 key={i} className="text-2xl font-light text-gold-gradient mt-10 mb-4">
+                  <h2 key={i} className="mb-4 mt-11 font-[Georgia,serif] text-2xl font-semibold leading-snug text-[#29231D] sm:text-[30px]">
                     {block.replace("## ", "")}
                   </h2>
                 );
               }
               if (block.startsWith("### ")) {
                 return (
-                  <h3 key={i} className="text-xl font-semibold text-[#F5EDD6] mt-8 mb-3">
+                  <h3 key={i} className="mb-3 mt-8 font-[Georgia,serif] text-xl font-semibold text-[#342D26] sm:text-2xl">
                     {block.replace("### ", "")}
                   </h3>
                 );
@@ -299,14 +301,14 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
               if (block.startsWith("| ")) {
                 const rows = block.split("\n").filter((r) => r.trim() && !r.match(/^\|[-| :]+\|$/));
                 return (
-                  <div key={i} className="overflow-x-auto my-6">
+                  <div key={i} className="my-7 overflow-x-auto rounded-xl border border-[#D8CFC2] bg-white font-sans">
                     <table className="w-full border-collapse text-sm">
                       {rows.map((row, ri) => {
                         const cells = row.split("|").filter((c) => c.trim() !== "");
                         return (
-                          <tr key={ri} className={ri === 0 ? "bg-[#C9A84C]/10" : ""}>
+                          <tr key={ri} className={ri === 0 ? "bg-[#EDE3CF] font-semibold" : "even:bg-[#FAF7F1]"}>
                             {cells.map((cell, ci) => (
-                              <td key={ci} className="border border-[#C9A84C]/20 px-4 py-2 text-gray-300">
+                              <td key={ci} className="border-b border-r border-[#E2DACE] px-4 py-3 text-[#403931] last:border-r-0">
                                 {cell.trim()}
                               </td>
                             ))}
@@ -320,14 +322,14 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
               if (block.startsWith("- ")) {
                 const items = block.split("\n").filter((l) => l.startsWith("- "));
                 return (
-                  <ul key={i} className="my-4 space-y-2">
+                  <ul key={i} className="my-5 space-y-2.5 pl-1">
                     {items.map((item, ii) => {
                       const text = item.replace(/^- (\[.\] )?/, "");
                       const isDone = item.includes("[x]");
                       const isTodo = item.includes("[ ]");
                       return (
-                        <li key={ii} className={`flex items-start gap-2 ${isDone ? "text-green-400" : isTodo ? "text-gray-400" : "text-gray-300"}`}>
-                          <span className="mt-1 flex-shrink-0">{isDone ? "✓" : isTodo ? "○" : "•"}</span>
+                        <li key={ii} className={`flex items-start gap-3 ${isDone ? "text-[#29724E]" : isTodo ? "text-[#7A7167]" : "text-[#403931]"}`}>
+                          <span className="mt-0.5 flex-shrink-0 font-sans text-[#A47920]">{isDone ? "✓" : isTodo ? "○" : "•"}</span>
                           <span dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }} />
                         </li>
                       );
@@ -336,7 +338,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
                 );
               }
               return (
-                <p key={i} className="text-[#F5EDD6]/60 leading-relaxed mb-4"
+                <p key={i} className="mb-5"
                   dangerouslySetInnerHTML={{
                     __html: formatInlineMarkdown(block)
                   }}
@@ -350,25 +352,25 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
           )}
 
           {(post.reviewer || post.sources?.length) && (
-            <section className="mt-10 rounded-2xl border border-[#C9A84C]/15 bg-[#1A1600]/70 p-5 sm:p-6">
+            <section className="mt-10 rounded-2xl border border-[#BFD8C8] bg-[#F1F8F3] p-5 font-sans sm:p-6">
               {post.reviewer && (
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-300">✓</div>
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DCEFE3] text-[#28724D]">✓</div>
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-[.14em] text-emerald-300">Đã được kiểm duyệt nội dung</p>
-                    <p className="mt-1 text-sm font-semibold text-[#F5EDD6]">{post.reviewer}</p>
-                    {post.reviewerRole && <p className="text-xs text-[#F5EDD6]/45">{post.reviewerRole}</p>}
+                    <p className="text-xs font-semibold uppercase tracking-[.14em] text-[#28724D]">Đã được kiểm duyệt nội dung</p>
+                    <p className="mt-1 text-sm font-semibold text-[#2D3D33]">{post.reviewer}</p>
+                    {post.reviewerRole && <p className="text-xs text-[#647168]">{post.reviewerRole}</p>}
                   </div>
                 </div>
               )}
               {post.sources && post.sources.length > 0 && (
-                <div className={post.reviewer ? "mt-5 border-t border-[#C9A84C]/10 pt-5" : ""}>
-                  <h2 className="text-sm font-semibold text-[#F5EDD6]">Nguồn tham khảo</h2>
-                  <ol className="mt-3 space-y-2 text-sm text-[#F5EDD6]/55">
+                <div className={post.reviewer ? "mt-5 border-t border-[#C9DCCF] pt-5" : ""}>
+                  <h2 className="text-sm font-semibold text-[#2D3D33]">Nguồn tham khảo</h2>
+                  <ol className="mt-3 space-y-2 text-sm text-[#59685E]">
                     {post.sources.map((source, index) => (
                       <li key={`${source.url}-${index}`} className="flex gap-2">
-                        <span className="text-[#C9A84C]">{index + 1}.</span>
-                        <a href={source.url} target="_blank" rel="noopener noreferrer nofollow" className="break-words hover:text-[#C9A84C] hover:underline">
+                        <span className="text-[#856018]">{index + 1}.</span>
+                        <a href={source.url} target="_blank" rel="noopener noreferrer nofollow" className="break-words hover:text-[#856018] hover:underline">
                           {source.title}
                         </a>
                       </li>
@@ -377,7 +379,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
                 </div>
               )}
               {(post.category === "suc-khoe" || post.reviewerRequired) && (
-                <p className="mt-5 border-t border-[#C9A84C]/10 pt-4 text-xs leading-5 text-[#F5EDD6]/40">
+                <p className="mt-5 border-t border-[#C9DCCF] pt-4 text-xs leading-5 text-[#647168]">
                   Nội dung chỉ nhằm cung cấp thông tin tham khảo, không thay thế chẩn đoán hoặc tư vấn của người có chuyên môn.
                 </p>
               )}
@@ -385,11 +387,11 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
           )}
 
           {post.internalLinks && post.internalLinks.length > 0 && (
-            <section className="mt-8">
-              <h2 className="text-sm font-semibold uppercase tracking-[.14em] text-[#C9A84C]">Đọc thêm trên SmartFurni</h2>
+            <section className="mt-8 font-sans">
+              <h2 className="text-sm font-semibold uppercase tracking-[.14em] text-[#856018]">Đọc thêm trên SmartFurni</h2>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {post.internalLinks.map((link, index) => (
-                  <Link key={`${link.href}-${index}`} href={link.href} className="rounded-xl border border-[#C9A84C]/15 bg-[#1A1600]/60 px-4 py-3 text-sm text-[#F5EDD6]/60 transition-colors hover:border-[#C9A84C]/40 hover:text-[#C9A84C]">
+                  <Link key={`${link.href}-${index}`} href={link.href} className="rounded-xl border border-[#D8D0C4] bg-white px-4 py-3 text-sm text-[#544C43] transition-colors hover:border-[#B88A2B] hover:text-[#7A5817]">
                     {link.anchor} →
                   </Link>
                 ))}
@@ -398,10 +400,10 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
           )}
 
           {/* Tags */}
-          <div className="mt-10 pt-6 border-t border-[#C9A84C]/10">
+          <div className="mt-10 border-t border-[#DED6C9] pt-6 font-sans">
             <div className="flex flex-wrap gap-2">
               {post.tags.map((tag) => (
-                <span key={tag} className="bg-[#1A1600] border border-[#2E2800] text-[#F5EDD6]/40 px-3 py-1 rounded-full text-sm hover:border-[#C9A84C]/40 hover:text-[#C9A84C] transition-colors cursor-pointer">
+                <span key={tag} className="cursor-pointer rounded-full border border-[#D8D0C4] bg-[#F7F2E9] px-3 py-1 text-sm text-[#6B6258] transition-colors hover:border-[#B88A2B] hover:text-[#7A5817]">
                   #{tag}
                 </span>
               ))}
@@ -412,15 +414,14 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
           <ShareButtons title={post.title} slug={post.slug} />
         </article>
 
-        {/* CTA */}
-        {!post.content.includes("[[SMARTFURNI_CTA]]") && <div className="mt-12 bg-[#1A1600] border border-[#2E2800] rounded-2xl p-6 sm:p-8 text-center">
+        {!post.content.includes("[[SMARTFURNI_CTA]]") && <div className="mx-4 mt-10 rounded-2xl border border-[#58451E] bg-[linear-gradient(125deg,#172231,#302718)] p-6 text-center shadow-[0_18px_50px_rgba(47,36,21,.16)] sm:mx-auto sm:max-w-4xl sm:p-8">
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="w-6 h-px bg-[#C9A84C]" />
             <span className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase">{funnelCta.eyebrow}</span>
             <span className="w-6 h-px bg-[#C9A84C]" />
           </div>
           <h3 className="text-xl font-light text-[#F5EDD6] mb-2">{funnelCta.title}</h3>
-          <p className="text-[#F5EDD6]/40 mb-4 text-sm leading-relaxed">{funnelCta.description}</p>
+          <p className="mb-4 text-sm leading-relaxed text-[#F5EDD6]/65">{funnelCta.description}</p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link href={funnelCta.primaryHref} className="bg-[#C9A84C] text-black px-6 py-2 rounded-full font-semibold text-sm hover:bg-[#E8C56B] transition-colors">
               {funnelCta.primaryLabel}
@@ -433,25 +434,26 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
-          <section className="mt-12 mb-16">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="w-6 h-px bg-[#C9A84C]" />
-              <h2 className="text-xl font-light text-[#F5EDD6]">Bài viết <span className="text-gold-gradient">liên quan</span></h2>
+          <section className="mx-4 mb-2 mt-12 sm:mx-auto sm:max-w-4xl">
+            <div className="mb-6 flex items-center gap-3">
+              <span className="h-px w-8 bg-[#A47A25]" />
+              <h2 className="font-[Georgia,serif] text-2xl text-[#2C2721]">Bài viết liên quan</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
               {relatedPosts.map((related) => (
-                <Link key={related.slug} href={`/blog/${related.slug}`} className="group">
-                  <article className="bg-[#1A1600] border border-[#2E2800] rounded-xl p-4 hover:border-[#C9A84C]/40 transition-all">
+                <Link key={related.slug} href={`/blog/${related.slug}`} className="group overflow-hidden rounded-2xl border border-[#D8D0C4] bg-[#FFFDF9] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                  {related.coverImage && <img src={related.coverImage} alt="" loading="lazy" className="aspect-[16/9] w-full object-cover" />}
+                  <article className="p-4">
                     <span
                       className="text-xs px-2 py-0.5 rounded-full mb-2 inline-block"
                       style={{ backgroundColor: CATEGORIES[related.category].color + "15", color: CATEGORIES[related.category].color }}
                     >
                       {related.categoryLabel}
                     </span>
-                    <h3 className="font-semibold text-[#F5EDD6] text-sm group-hover:text-[#C9A84C] transition-colors line-clamp-2 mb-1">
+                    <h3 className="mb-2 line-clamp-2 font-[Georgia,serif] text-base font-semibold leading-snug text-[#332D27] transition-colors group-hover:text-[#856018]">
                       {related.title}
                     </h3>
-                    <p className="text-[#F5EDD6]/30 text-xs">{related.readTime} phút · {formatDate(related.publishedAt)}</p>
+                    <p className="text-xs text-[#786F64]">{related.readTime} phút · {formatDate(related.publishedAt)}</p>
                   </article>
                 </Link>
               ))}
