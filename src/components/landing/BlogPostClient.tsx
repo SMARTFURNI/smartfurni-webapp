@@ -253,7 +253,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
             <span className="text-sm text-[#746B61]">{post.readTime} phút đọc</span>
           </div>
 
-          <h1 className="mb-6 text-3xl font-light leading-[1.16] tracking-[-0.035em] text-[#1E2630] sm:text-4xl md:text-[46px]">
+          <h1 className="mb-6 text-[26px] font-bold leading-[1.2] tracking-[-0.025em] text-[#1E2630] sm:text-[32px] md:text-[38px]">
             {post.title}
           </h1>
 
