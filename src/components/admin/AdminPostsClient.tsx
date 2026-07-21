@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { BlogPost, PostStatus } from "@/lib/blog-data";
 import { CATEGORIES } from "@/lib/blog-data";
+import type { BlogPostAnalyticsSummary } from "@/lib/analytics-store";
+import { BarChart3, Eye, MousePointerClick } from "lucide-react";
 
 const STATUS_BADGE: Record<PostStatus, { label: string; cls: string }> = {
   published: { label: "Đã đăng", cls: "text-green-400 bg-green-500/10" },
@@ -11,13 +13,34 @@ const STATUS_BADGE: Record<PostStatus, { label: string; cls: string }> = {
   scheduled: { label: "Lên lịch", cls: "text-blue-400 bg-blue-500/10" },
 };
 
-export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogPost[] }) {
+export default function AdminPostsClient({
+  initialPosts,
+  initialAnalytics,
+}: {
+  initialPosts: BlogPost[];
+  initialAnalytics: Record<string, BlogPostAnalyticsSummary>;
+}) {
   const router = useRouter();
   const [posts, setPosts] = useState(initialPosts);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  const publishedSlugs = posts.filter((post) => (post.status || "published") === "published").map((post) => post.slug);
+  const reportTotals = publishedSlugs.reduce(
+    (total, slug) => {
+      const item = initialAnalytics[slug];
+      if (!item) return total;
+      total.totalViews += item.totalViews;
+      total.todayViews += item.todayViews;
+      total.weekViews += item.weekViews;
+      total.monthViews += item.monthViews;
+      total.productClicks += item.totalProductClicks;
+      return total;
+    },
+    { totalViews: 0, todayViews: 0, weekViews: 0, monthViews: 0, productClicks: 0 }
+  );
 
   const filtered = posts.filter((p) => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -56,6 +79,24 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
           + Bài viết mới
         </Link>
       </div>
+
+      <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {[
+          { label: "Tổng lượt xem", value: reportTotals.totalViews, icon: Eye, color: "text-[#E6BF55]" },
+          { label: "Hôm nay", value: reportTotals.todayViews, icon: BarChart3, color: "text-sky-400" },
+          { label: "Tuần này", value: reportTotals.weekViews, icon: BarChart3, color: "text-violet-400" },
+          { label: "Tháng này", value: reportTotals.monthViews, icon: BarChart3, color: "text-emerald-400" },
+          { label: "Click sản phẩm", value: reportTotals.productClicks, icon: MousePointerClick, color: "text-amber-400" },
+        ].map((item) => (
+          <div key={item.label} className="rounded-2xl border border-white/[.08] bg-[linear-gradient(135deg,#192331_0%,#272116_100%)] p-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-[rgba(245,237,214,.52)]">{item.label}</span>
+              <item.icon className={`h-4 w-4 ${item.color}`} />
+            </div>
+            <p className="mt-2 text-2xl font-bold text-white">{item.value.toLocaleString("vi-VN")}</p>
+          </div>
+        ))}
+      </section>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
@@ -97,6 +138,7 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
               <th className="text-left px-4 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider hidden md:table-cell">Chủ đề</th>
               <th className="text-left px-4 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider hidden lg:table-cell">Tác giả</th>
               <th className="text-left px-4 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider hidden lg:table-cell">Ngày đăng</th>
+              <th className="text-left px-4 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider hidden xl:table-cell">Lượt xem</th>
               <th className="text-left px-4 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider hidden xl:table-cell">Trạng thái</th>
               <th className="text-right px-6 py-4 text-xs text-[rgba(245,237,214,0.55)] font-medium uppercase tracking-wider">Thao tác</th>
             </tr>
@@ -104,13 +146,20 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
           <tbody className="divide-y divide-[#C9A84C]/5">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-[rgba(245,237,214,0.45)]">
+                <td colSpan={7} className="px-6 py-12 text-center text-[rgba(245,237,214,0.45)]">
                   Không tìm thấy bài viết nào
                 </td>
               </tr>
             ) : (
               filtered.map((post) => {
                 const cat = CATEGORIES[post.category];
+                const report = initialAnalytics[post.slug] || {
+                  totalViews: 0,
+                  todayViews: 0,
+                  weekViews: 0,
+                  monthViews: 0,
+                  totalProductClicks: 0,
+                };
                 return (
                   <tr key={post.slug} className="hover:bg-white/2 transition-colors">
                     <td className="px-6 py-4">
@@ -138,6 +187,13 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
                     <td className="px-4 py-4 hidden lg:table-cell">
                       <p className="text-sm text-[rgba(245,237,214,0.70)]">{post.author}</p>
                     </td>
+                    <td className="px-4 py-4 hidden xl:table-cell">
+                      <p className="text-sm font-semibold text-[#E6BF55]">{report.totalViews.toLocaleString("vi-VN")}</p>
+                      <p className="mt-1 whitespace-nowrap text-[10px] text-[rgba(245,237,214,.42)]">
+                        Ngày {report.todayViews} · Tuần {report.weekViews} · Tháng {report.monthViews}
+                      </p>
+                      <p className="mt-0.5 text-[10px] text-sky-300/65">{report.totalProductClicks} click sản phẩm</p>
+                    </td>
                     <td className="px-4 py-4 hidden lg:table-cell">
                       <p className="text-sm text-[rgba(245,237,214,0.55)]">
                         {new Date(post.publishedAt).toLocaleDateString("vi-VN")}
@@ -156,6 +212,13 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/posts/${post.slug}/analytics`}
+                          className="inline-flex items-center gap-1 text-xs text-sky-300/70 hover:text-sky-300 px-2 py-1 rounded transition-colors"
+                        >
+                          <BarChart3 className="h-3.5 w-3.5" />
+                          Thống kê
+                        </Link>
                         <Link
                           href={`/blog/${post.slug}`}
                           target="_blank"

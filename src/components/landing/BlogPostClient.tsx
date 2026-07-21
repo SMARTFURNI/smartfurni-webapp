@@ -66,6 +66,31 @@ function formatPrice(price: number): string {
   return new Intl.NumberFormat("vi-VN").format(price) + "đ";
 }
 
+function trackProductClick(postSlug: string, product: Product) {
+  if (typeof window === "undefined") return;
+  const targetPath = `/products/${product.slug}`;
+  const payload = JSON.stringify({
+    postSlug,
+    productSlug: product.slug,
+    productName: product.name,
+    targetPath,
+    sessionId: sessionStorage.getItem("_sf_sid") || "",
+  });
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(
+      "/api/analytics/blog-product-click",
+      new Blob([payload], { type: "application/json" })
+    );
+    return;
+  }
+  fetch("/api/analytics/blog-product-click", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+    keepalive: true,
+  }).catch(() => {});
+}
+
 function createHeadingId(value: string, index: number): string {
   const slug = value
     .normalize("NFD")
@@ -95,7 +120,12 @@ function ProductRecommendationBlock({ post, products }: { post: BlogPost; produc
           {visibleProducts.map((product) => {
             const image = product.coverImage || product.images[0];
             return (
-              <Link key={product.slug} href={`/products/${product.slug}`} className="group overflow-hidden rounded-2xl border border-white/[.08] bg-black/20 transition hover:-translate-y-0.5 hover:border-[#C9A84C]/40">
+              <Link
+                key={product.slug}
+                href={`/products/${product.slug}`}
+                onClick={() => trackProductClick(post.slug, product)}
+                className="group overflow-hidden rounded-2xl border border-white/[.08] bg-black/20 transition hover:-translate-y-0.5 hover:border-[#C9A84C]/40"
+              >
                 {image && <img src={image} alt={product.name} loading="lazy" className="aspect-square w-full bg-[#0F151E] object-contain p-2" />}
                 <div className="p-2.5 sm:p-4">
                   <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-[#F5EDD6] group-hover:text-[#E6BF55] sm:text-sm sm:leading-5">{product.name}</p>

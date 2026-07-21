@@ -46,6 +46,21 @@ export async function initAnalyticsTables(): Promise<void> {
       );
       CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events(created_at);
       CREATE INDEX IF NOT EXISTS idx_analytics_events_path ON analytics_events(path);
+      CREATE TABLE IF NOT EXISTS blog_product_clicks (
+        id BIGSERIAL PRIMARY KEY,
+        post_slug TEXT NOT NULL,
+        product_slug TEXT NOT NULL,
+        product_name TEXT,
+        target_path TEXT NOT NULL,
+        session_id TEXT,
+        ip_hash TEXT,
+        ua TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_blog_product_clicks_post_created
+        ON blog_product_clicks(post_slug, created_at);
+      CREATE INDEX IF NOT EXISTS idx_blog_product_clicks_product
+        ON blog_product_clicks(product_slug);
     `);
     console.log("[analytics] Tables initialized");
   } catch (err) {
@@ -79,6 +94,37 @@ export async function trackPageView(params: {
   } catch (err) {
     // Silently fail — don't break the page
     console.error("[analytics] trackPageView error:", (err as Error).message);
+  }
+}
+
+export async function trackBlogProductClick(params: {
+  postSlug: string;
+  productSlug: string;
+  productName?: string;
+  targetPath: string;
+  sessionId?: string;
+  ipHash?: string;
+  ua?: string;
+}): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
+  try {
+    await pool.query(
+      `INSERT INTO blog_product_clicks
+        (post_slug, product_slug, product_name, target_path, session_id, ip_hash, ua)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        params.postSlug,
+        params.productSlug,
+        params.productName || null,
+        params.targetPath,
+        params.sessionId || null,
+        params.ipHash || null,
+        params.ua || null,
+      ]
+    );
+  } catch (err) {
+    console.error("[analytics] trackBlogProductClick error:", (err as Error).message);
   }
 }
 
@@ -130,6 +176,212 @@ export interface AnalyticsData {
   referrers: ReferrerRow[];
   devices: DeviceRow[];
   hourly: { hour: number; label: string; views: number; uniques: number }[];
+}
+
+export interface BlogPostAnalyticsSummary {
+  slug: string;
+  totalViews: number;
+  todayViews: number;
+  weekViews: number;
+  monthViews: number;
+  totalProductClicks: number;
+}
+
+export interface BlogAnalyticsDailyRow {
+  date: string;
+  label: string;
+  views: number;
+  productClicks: number;
+}
+
+export interface BlogProductClickRow {
+  productSlug: string;
+  productName: string;
+  targetPath: string;
+  clicks: number;
+  lastClickedAt: string | null;
+}
+
+export interface BlogPostAnalyticsDetail extends BlogPostAnalyticsSummary {
+  todayProductClicks: number;
+  weekProductClicks: number;
+  monthProductClicks: number;
+  clickThroughRate: number;
+  daily: BlogAnalyticsDailyRow[];
+  products: BlogProductClickRow[];
+}
+
+function emptyBlogSummary(slug: string): BlogPostAnalyticsSummary {
+  return {
+    slug,
+    totalViews: 0,
+    todayViews: 0,
+    weekViews: 0,
+    monthViews: 0,
+    totalProductClicks: 0,
+  };
+}
+
+export async function getBlogPostAnalyticsSummaries(
+  slugs: string[]
+): Promise<Record<string, BlogPostAnalyticsSummary>> {
+  const summaries = Object.fromEntries(slugs.map((slug) => [slug, emptyBlogSummary(slug)]));
+  const pool = getPool();
+  if (!pool || slugs.length === 0) return summaries;
+
+  try {
+    const paths = slugs.map((slug) => `/blog/${slug}`);
+    const viewsRes = await pool.query(
+      `SELECT split_part(path, '?', 1) AS clean_path,
+              COUNT(*)::INT AS total_views,
+              COUNT(*) FILTER (
+                WHERE (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::DATE =
+                      (NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')::DATE
+              )::INT AS today_views,
+              COUNT(*) FILTER (
+                WHERE date_trunc('week', created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') =
+                      date_trunc('week', NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')
+              )::INT AS week_views,
+              COUNT(*) FILTER (
+                WHERE date_trunc('month', created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') =
+                      date_trunc('month', NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')
+              )::INT AS month_views
+       FROM analytics_events
+       WHERE split_part(path, '?', 1) = ANY($1::TEXT[])
+       GROUP BY 1`,
+      [paths]
+    );
+
+    for (const row of viewsRes.rows) {
+      const slug = String(row.clean_path).replace(/^\/blog\//, "");
+      if (!summaries[slug]) continue;
+      summaries[slug] = {
+        ...summaries[slug],
+        totalViews: Number(row.total_views || 0),
+        todayViews: Number(row.today_views || 0),
+        weekViews: Number(row.week_views || 0),
+        monthViews: Number(row.month_views || 0),
+      };
+    }
+
+    const clicksRes = await pool.query(
+      `SELECT post_slug, COUNT(*)::INT AS total_clicks
+       FROM blog_product_clicks
+       WHERE post_slug = ANY($1::TEXT[])
+       GROUP BY post_slug`,
+      [slugs]
+    );
+    for (const row of clicksRes.rows) {
+      if (!summaries[row.post_slug]) continue;
+      summaries[row.post_slug].totalProductClicks = Number(row.total_clicks || 0);
+    }
+  } catch (err) {
+    console.error("[analytics] getBlogPostAnalyticsSummaries error:", (err as Error).message);
+  }
+
+  return summaries;
+}
+
+export async function getBlogPostAnalyticsDetail(slug: string): Promise<BlogPostAnalyticsDetail> {
+  const summary = (await getBlogPostAnalyticsSummaries([slug]))[slug] || emptyBlogSummary(slug);
+  const empty: BlogPostAnalyticsDetail = {
+    ...summary,
+    todayProductClicks: 0,
+    weekProductClicks: 0,
+    monthProductClicks: 0,
+    clickThroughRate: summary.totalViews > 0
+      ? Math.round((summary.totalProductClicks / summary.totalViews) * 1000) / 10
+      : 0,
+    daily: [],
+    products: [],
+  };
+  const pool = getPool();
+  if (!pool) return empty;
+
+  try {
+    const path = `/blog/${slug}`;
+    const [clickPeriodRes, viewDailyRes, clickDailyRes, productsRes] = await Promise.all([
+      pool.query(
+        `SELECT
+           COUNT(*) FILTER (
+             WHERE (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::DATE =
+                   (NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')::DATE
+           )::INT AS today_clicks,
+           COUNT(*) FILTER (
+             WHERE date_trunc('week', created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') =
+                   date_trunc('week', NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')
+           )::INT AS week_clicks,
+           COUNT(*) FILTER (
+             WHERE date_trunc('month', created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') =
+                   date_trunc('month', NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')
+           )::INT AS month_clicks
+         FROM blog_product_clicks WHERE post_slug = $1`,
+        [slug]
+      ),
+      pool.query(
+        `SELECT TO_CHAR(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS date,
+                COUNT(*)::INT AS views
+         FROM analytics_events
+         WHERE split_part(path, '?', 1) = $1
+           AND created_at >= NOW() - INTERVAL '29 days'
+         GROUP BY 1 ORDER BY 1`,
+        [path]
+      ),
+      pool.query(
+        `SELECT TO_CHAR(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS date,
+                COUNT(*)::INT AS clicks
+         FROM blog_product_clicks
+         WHERE post_slug = $1 AND created_at >= NOW() - INTERVAL '29 days'
+         GROUP BY 1 ORDER BY 1`,
+        [slug]
+      ),
+      pool.query(
+        `SELECT product_slug, COALESCE(MAX(product_name), product_slug) AS product_name,
+                MAX(target_path) AS target_path, COUNT(*)::INT AS clicks,
+                MAX(created_at) AS last_clicked_at
+         FROM blog_product_clicks
+         WHERE post_slug = $1
+         GROUP BY product_slug
+         ORDER BY clicks DESC, product_name ASC`,
+        [slug]
+      ),
+    ]);
+
+    const viewsByDate = new Map(viewDailyRes.rows.map((row) => [row.date, Number(row.views || 0)]));
+    const clicksByDate = new Map(clickDailyRes.rows.map((row) => [row.date, Number(row.clicks || 0)]));
+    const daily: BlogAnalyticsDailyRow[] = [];
+    const today = new Date();
+    for (let offset = 29; offset >= 0; offset -= 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - offset);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      daily.push({
+        date: key,
+        label: date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
+        views: viewsByDate.get(key) || 0,
+        productClicks: clicksByDate.get(key) || 0,
+      });
+    }
+
+    const period = clickPeriodRes.rows[0] || {};
+    return {
+      ...empty,
+      todayProductClicks: Number(period.today_clicks || 0),
+      weekProductClicks: Number(period.week_clicks || 0),
+      monthProductClicks: Number(period.month_clicks || 0),
+      daily,
+      products: productsRes.rows.map((row) => ({
+        productSlug: row.product_slug,
+        productName: row.product_name,
+        targetPath: row.target_path,
+        clicks: Number(row.clicks || 0),
+        lastClickedAt: row.last_clicked_at ? new Date(row.last_clicked_at).toISOString() : null,
+      })),
+    };
+  } catch (err) {
+    console.error("[analytics] getBlogPostAnalyticsDetail error:", (err as Error).message);
+    return empty;
+  }
 }
 
 function growth(current: number, prev: number): number {
