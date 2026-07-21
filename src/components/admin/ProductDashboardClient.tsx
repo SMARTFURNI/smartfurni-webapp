@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProductDashboardStats, Product, ProductCategory, ProductStatus } from "@/lib/product-store";
-import { LayoutDashboard, List, Plus, RefreshCw } from "lucide-react";
+import { BedDouble, Gem, LayoutDashboard, List, Plus, RefreshCw, Star, TriangleAlert, Wrench } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -131,6 +131,7 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
   const margin = product.price - product.cost;
   const marginPct = product.price > 0 ? Math.round((margin / product.price) * 100) : 0;
   const isLowStock = product.totalStock < 10 && product.status === "active";
+  const ProductIcon = product.category === "accessory" ? Wrench : product.category === "elite" ? Gem : product.category === "premium" ? Star : BedDouble;
 
   return (
     <>
@@ -141,7 +142,7 @@ function ProductRow({ product, onStatusChange, onDelete, onEdit }: {
         <td className="px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#C9A84C]/20 to-[#C9A84C]/5 flex items-center justify-center text-lg flex-shrink-0">
-              {product.category === "accessory" ? "🔧" : product.category === "elite" ? "💎" : product.category === "premium" ? "⭐" : "🛏️"}
+              <ProductIcon className="h-5 w-5 text-[#D9BB67]" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -401,7 +402,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs text-[rgba(245,237,214,0.45)] uppercase tracking-wider">Tồn kho</span>
                 {d.stats.lowStockCount > 0 && (
-                  <span className="text-xs text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">⚠ {d.stats.lowStockCount} sắp hết</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full"><TriangleAlert className="h-3 w-3" /> {d.stats.lowStockCount} sắp hết</span>
                 )}
               </div>
               <div className="text-3xl font-bold text-blue-400 mb-1">{d.stats.totalStock}</div>
@@ -513,7 +514,7 @@ export default function ProductDashboardClient({ data: initialData }: { data: Pr
             <div className="space-y-6">
               <div className="bg-[#1a1200] border border-red-500/10 rounded-2xl p-6">
                 <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                  <span className="text-red-400">⚠</span> Cảnh báo tồn kho
+                  <TriangleAlert className="h-4 w-4 text-red-400" /> Cảnh báo tồn kho
                 </h3>
                 {d.lowStockProducts.length === 0 ? (
                   <p className="text-xs text-[rgba(245,237,214,0.45)]">Tất cả sản phẩm đủ hàng ✓</p>

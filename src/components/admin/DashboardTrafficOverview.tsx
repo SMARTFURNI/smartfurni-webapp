@@ -116,7 +116,7 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
     () => (data?.sourceGroups || []).filter((row) => row.sessions > 0 || ["organic_search", "social", "paid", "direct"].includes(row.key)),
     [data]
   );
-  const details = data?.sourceDetails?.slice(0, 10) || [];
+  const details = data?.sourceDetails || [];
   const paidDetails = details.filter((row) => row.group === "paid");
   const summary = data?.summary;
   const pagesPerSession = summary?.totalSessions
@@ -164,8 +164,8 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
             <TrafficMetric label="Trang / lượt" value={String(pagesPerSession)} note="Mức độ khám phá website" icon={Globe2} color="#F472B6" />
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-            <div className="rounded-2xl border border-[rgba(118,138,166,0.22)] bg-black/10 p-4">
+          <div className="grid items-stretch gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="h-full rounded-2xl border border-[rgba(118,138,166,0.22)] bg-black/10 p-4 xl:h-[430px]">
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-white">Cơ cấu kênh truy cập</h3>
@@ -173,12 +173,12 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
                 </div>
                 <span className="text-[10px] text-[rgba(245,237,214,0.38)]">{number(summary?.totalSessions || 0)} lượt</span>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-2 xl:max-h-[348px] xl:overflow-y-auto xl:pr-1">
                 {visibleGroups.map((row) => <SourceCard key={row.key} row={row} />)}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[rgba(118,138,166,0.22)] bg-black/10 p-4 min-w-0">
+            <div className="flex h-full min-w-0 flex-col rounded-2xl border border-[rgba(118,138,166,0.22)] bg-black/10 p-4 xl:h-[430px]">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-semibold text-white">Chi tiết từng nguồn</h3>
@@ -191,7 +191,7 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
               {details.length === 0 ? (
                 <div className="grid min-h-36 place-items-center text-xs text-[rgba(245,237,214,0.38)]">Chưa có dữ liệu nguồn truy cập</div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="min-h-0 flex-1 overflow-auto pr-1">
                   <table className="w-full min-w-[560px] text-left">
                     <thead>
                       <tr className="border-b border-[rgba(118,138,166,0.22)] text-[9px] uppercase tracking-wider text-[rgba(245,237,214,0.36)]">

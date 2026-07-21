@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import FlipBook from "@/components/catalogue/FlipBook";
 import type { CatalogueWithPages, CataloguePage } from "@/lib/catalogue-store";
+import { BookOpen, Eye, FileBox, FileText, Settings2 } from "lucide-react";
 
 interface Props {
   catalogue: CatalogueWithPages;
@@ -12,10 +13,10 @@ interface Props {
 type EditingPage = Partial<CataloguePage> & { isNew?: boolean };
 
 const PAGE_TYPES = [
-  { value: "cover", label: "Bìa trước", icon: "📕" },
-  { value: "content", label: "Nội dung", icon: "📄" },
-  { value: "product", label: "Sản phẩm", icon: "📦" },
-  { value: "back-cover", label: "Bìa sau", icon: "📗" },
+  { value: "cover", label: "Bìa trước", icon: BookOpen },
+  { value: "content", label: "Nội dung", icon: FileText },
+  { value: "product", label: "Sản phẩm", icon: FileBox },
+  { value: "back-cover", label: "Bìa sau", icon: BookOpen },
 ] as const;
 
 const BG_PRESETS = [
@@ -226,7 +227,7 @@ export default function AdminCatalogueEditorClient({ catalogue: initialCatalogue
                 : "border-transparent text-[rgba(245,237,214,0.55)] hover:text-gray-300"
             }`}
           >
-            {tab === "pages" ? "📄 Trang" : tab === "settings" ? "⚙️ Cài đặt" : "👁 Xem trước"}
+            <span className="flex items-center gap-2">{tab === "pages" ? <FileText className="h-4 w-4" /> : tab === "settings" ? <Settings2 className="h-4 w-4" /> : <Eye className="h-4 w-4" />}{tab === "pages" ? "Trang" : tab === "settings" ? "Cài đặt" : "Xem trước"}</span>
           </button>
         ))}
       </div>
@@ -256,7 +257,7 @@ export default function AdminCatalogueEditorClient({ catalogue: initialCatalogue
             {catalogue.pages.length === 0 ? (
               <div className="flex items-center justify-center h-64 text-[rgba(245,237,214,0.55)]">
                 <div className="text-center">
-                  <div className="text-4xl mb-3">📋</div>
+                  <BookOpen className="mx-auto mb-3 h-10 w-10 text-[#C9A84C]" />
                   <p>Thêm trang để xem trước</p>
                 </div>
               </div>
@@ -305,7 +306,7 @@ function PagesTab({
   if (pages.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-        <div className="text-5xl mb-4">📄</div>
+        <FileText className="mx-auto mb-4 h-12 w-12 text-[#C9A84C]" />
         <h2 className="text-lg font-semibold text-white mb-2">Chưa có trang nào</h2>
         <p className="text-[rgba(245,237,214,0.55)] text-sm mb-6">Thêm trang đầu tiên cho catalogue</p>
         <button
@@ -551,7 +552,7 @@ function PageEditorModal({
                         : "text-[rgba(245,237,214,0.55)] border-white/5 hover:border-white/15 hover:text-gray-300"
                     }`}
                   >
-                    <div>{t.icon}</div>
+                    <t.icon className="mx-auto h-5 w-5" />
                     <div className="mt-0.5">{t.label}</div>
                   </button>
                 ))}

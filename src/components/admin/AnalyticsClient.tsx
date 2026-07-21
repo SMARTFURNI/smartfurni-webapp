@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { AnalyticsData } from "@/lib/analytics-store";
 import DashboardTrafficOverview, { type DashboardTrafficRange } from "@/components/admin/DashboardTrafficOverview";
+import { BarChart3, RefreshCw } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Range = "day" | "week" | "month" | "quarter" | "year" | "all";
@@ -282,7 +283,7 @@ export default function AnalyticsClient() {
             onClick={() => fetchData(range)}
             className="px-3 py-1.5 bg-[rgba(14,20,31,0.72)] border border-[rgba(118,138,166,0.24)] text-[#D9BD6A] text-xs rounded-lg hover:border-[rgba(201,168,76,0.4)] transition-colors"
           >
-            ↻ Làm mới
+            <RefreshCw className="h-4 w-4" /> Làm mới
           </button>
         </div>
       </div>
@@ -498,7 +499,7 @@ export default function AnalyticsClient() {
       {/* Empty state */}
       {!loading && data && data.summary.totalViews === 0 && (
         <div className="analytics-panel rounded-xl p-10 text-center">
-          <div className="text-4xl mb-3">📊</div>
+          <BarChart3 className="mx-auto mb-3 h-10 w-10 text-[#C9A84C]/55" />
           <h3 className="text-[#C9A84C] font-semibold text-lg mb-2">Chưa có dữ liệu truy cập</h3>
           <p className="text-[#6B5B2A] text-sm max-w-md mx-auto">
             Hệ thống đã sẵn sàng theo dõi. Dữ liệu sẽ xuất hiện ngay khi có người truy cập trang web.

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Order, OrderStatus, PaymentMethod, PaymentStatus } from "@/lib/order-store";
 import { VIETNAM_PROVINCES } from "@/lib/crm-locations";
+import { ClipboardList, Save, ShoppingCart, Sparkles, Truck, UserRound, WalletCards } from "lucide-react";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -242,7 +243,8 @@ export default function OrderFormClient({ order }: { order?: Order }) {
             disabled={saving}
             className="flex items-center gap-2 text-sm font-semibold bg-[#C9A84C] text-black px-6 py-2 rounded-xl hover:bg-[#E2C97E] transition-colors disabled:opacity-50"
           >
-            {saving ? "Đang lưu..." : isEdit ? "💾 Lưu thay đổi" : "✨ Tạo đơn hàng"}
+            {saving ? null : isEdit ? <Save className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+            {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo đơn hàng"}
           </button>
         </div>
       </div>
@@ -266,7 +268,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           {/* Customer Info */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">
-              👤 Thông tin khách hàng
+              <span className="flex items-center gap-2"><UserRound className="h-4 w-4" />Thông tin khách hàng</span>
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
@@ -334,8 +336,8 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           {/* Order Items */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider">
-                🛒 Sản phẩm đặt hàng
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-[#C9A84C] uppercase tracking-wider">
+                <ShoppingCart className="h-4 w-4" /> Sản phẩm đặt hàng
               </h2>
               <button
                 onClick={addItem}
@@ -450,7 +452,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           {/* Shipping & Notes */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">
-              🚚 Vận chuyển & Ghi chú
+              <span className="flex items-center gap-2"><Truck className="h-4 w-4" />Vận chuyển & Ghi chú</span>
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
@@ -494,7 +496,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           {/* Order Status */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
             <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider mb-4">
-              📋 Trạng thái đơn hàng
+              <span className="flex items-center gap-2"><ClipboardList className="h-4 w-4" />Trạng thái đơn hàng</span>
             </h3>
             <div className="space-y-3">
               <div>
@@ -539,7 +541,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
           {/* Pricing */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
             <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider mb-4">
-              💰 Chi tiết thanh toán
+              <span className="flex items-center gap-2"><WalletCards className="h-4 w-4" />Chi tiết thanh toán</span>
             </h3>
             <div className="space-y-3">
               <div>
@@ -625,9 +627,10 @@ export default function OrderFormClient({ order }: { order?: Order }) {
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className="w-full text-sm font-semibold bg-[#C9A84C] text-black py-3 rounded-xl hover:bg-[#E2C97E] transition-colors disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9A84C] py-3 text-sm font-semibold text-black transition-colors hover:bg-[#E2C97E] disabled:opacity-50"
             >
-              {saving ? "Đang lưu..." : isEdit ? "💾 Lưu thay đổi" : "✨ Tạo đơn hàng"}
+              {saving ? null : isEdit ? <Save className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+              {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo đơn hàng"}
             </button>
             <button
               onClick={() => router.push("/admin/orders")}

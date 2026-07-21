@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { BlogPost, PostStatus } from "@/lib/blog-data";
 import { CATEGORIES } from "@/lib/blog-data";
 import type { BlogPostAnalyticsSummary } from "@/lib/analytics-store";
-import { BarChart3, Eye, MousePointerClick } from "lucide-react";
+import { BarChart3, Eye, MousePointerClick, Star } from "lucide-react";
 
 const STATUS_BADGE: Record<PostStatus, { label: string; cls: string }> = {
   published: { label: "Đã đăng", cls: "text-green-400 bg-green-500/10" },
@@ -127,9 +127,9 @@ export default function AdminPostsClient({
           className="bg-[#1a1200] border border-[rgba(255,200,100,0.22)] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-[rgba(255,200,100,0.08)]0"
         >
           <option value="all">Tất cả trạng thái</option>
-          <option value="published">✅ Đã đăng</option>
-          <option value="draft">📝 Bản nháp</option>
-          <option value="scheduled">🕐 Lên lịch</option>
+          <option value="published">Đã đăng</option>
+          <option value="draft">Bản nháp</option>
+          <option value="scheduled">Lên lịch</option>
         </select>
       </div>
 
@@ -171,7 +171,7 @@ export default function AdminPostsClient({
                   <tr key={post.slug} className="hover:bg-white/2 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        {post.featured && <span className="text-yellow-500 text-xs">⭐</span>}
+                        {post.featured && <Star className="h-3.5 w-3.5 shrink-0 fill-yellow-500 text-yellow-500" />}
                         <div>
                           <p className="text-sm text-white font-medium line-clamp-1">{post.title}</p>
                           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">

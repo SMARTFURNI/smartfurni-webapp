@@ -2,14 +2,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AppUser, UserRole, UserStatus, UserSource } from "@/lib/user-store";
+import type { LucideIcon } from "lucide-react";
+import { Ban, BarChart3, ClipboardList, FileText, Handshake, House, Megaphone, Save, Search, Smartphone, Sparkles, Star, Store, Tag, UserRound } from "lucide-react";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const ROLE_OPTIONS: { value: UserRole; label: string; color: string; icon: string }[] = [
-  { value: "customer", label: "Khách hàng", color: "text-blue-400", icon: "👤" },
-  { value: "dealer", label: "Đại lý", color: "text-purple-400", icon: "🏪" },
-  { value: "vip", label: "VIP", color: "text-yellow-400", icon: "⭐" },
-  { value: "blocked", label: "Bị khóa", color: "text-red-400", icon: "🚫" },
+const ROLE_OPTIONS: { value: UserRole; label: string; color: string; icon: LucideIcon }[] = [
+  { value: "customer", label: "Khách hàng", color: "text-blue-400", icon: UserRound },
+  { value: "dealer", label: "Đại lý", color: "text-purple-400", icon: Store },
+  { value: "vip", label: "VIP", color: "text-yellow-400", icon: Star },
+  { value: "blocked", label: "Bị khóa", color: "text-red-400", icon: Ban },
 ];
 
 const STATUS_OPTIONS: { value: UserStatus; label: string; color: string }[] = [
@@ -18,12 +20,12 @@ const STATUS_OPTIONS: { value: UserStatus; label: string; color: string }[] = [
   { value: "blocked", label: "Bị khóa", color: "text-red-400" },
 ];
 
-const SOURCE_OPTIONS: { value: UserSource; label: string; icon: string }[] = [
-  { value: "organic", label: "Tìm kiếm tự nhiên (SEO)", icon: "🔍" },
-  { value: "referral", label: "Giới thiệu từ bạn bè", icon: "🤝" },
-  { value: "social", label: "Mạng xã hội", icon: "📱" },
-  { value: "ads", label: "Quảng cáo trả phí", icon: "📢" },
-  { value: "direct", label: "Trực tiếp / Khác", icon: "🏠" },
+const SOURCE_OPTIONS: { value: UserSource; label: string; icon: LucideIcon }[] = [
+  { value: "organic", label: "Tìm kiếm tự nhiên (SEO)", icon: Search },
+  { value: "referral", label: "Giới thiệu từ bạn bè", icon: Handshake },
+  { value: "social", label: "Mạng xã hội", icon: Smartphone },
+  { value: "ads", label: "Quảng cáo trả phí", icon: Megaphone },
+  { value: "direct", label: "Trực tiếp / Khác", icon: House },
 ];
 
 const CITIES = [
@@ -103,6 +105,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
 
   const selectedRole = ROLE_OPTIONS.find((r) => r.value === role);
   const selectedStatus = STATUS_OPTIONS.find((s) => s.value === status);
+  const SelectedRoleIcon = selectedRole?.icon || UserRound;
 
   return (
     <div>
@@ -124,7 +127,8 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
             Hủy
           </button>
           <button onClick={handleSubmit} disabled={saving} className="flex items-center gap-2 text-sm font-semibold bg-[#C9A84C] text-black px-6 py-2 rounded-xl hover:bg-[#E2C97E] transition-colors disabled:opacity-50">
-            {saving ? "Đang lưu..." : isEdit ? "💾 Lưu thay đổi" : "✨ Thêm khách hàng"}
+            {saving ? null : isEdit ? <Save className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+            {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Thêm khách hàng"}
           </button>
         </div>
       </div>
@@ -143,7 +147,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
 
           {/* Basic Info */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
-            <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">👤 Thông tin cơ bản</h2>
+            <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#C9A84C]"><UserRound className="h-4 w-4" /> Thông tin cơ bản</h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Họ tên <span className="text-red-400">*</span></label>
@@ -183,7 +187,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
 
           {/* Classification */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
-            <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">🏷️ Phân loại khách hàng</h2>
+            <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#C9A84C]"><Tag className="h-4 w-4" /> Phân loại khách hàng</h2>
 
             {/* Role selector */}
             <div className="mb-5">
@@ -199,7 +203,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
                         : "border-[rgba(255,200,100,0.14)] bg-[#1a1200] text-[rgba(245,237,214,0.55)] hover:border-[rgba(255,200,100,0.22)] hover:text-gray-300"
                     }`}
                   >
-                    <span className="text-xl">{r.icon}</span>
+                    <r.icon className="h-5 w-5" />
                     <span>{r.label}</span>
                   </button>
                 ))}
@@ -216,7 +220,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
               <div>
                 <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-1.5">Nguồn khách hàng</label>
                 <select value={source} onChange={(e) => setSource(e.target.value as UserSource)} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]/40">
-                  {SOURCE_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.icon} {s.label}</option>)}
+                  {SOURCE_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
             </div>
@@ -224,7 +228,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
 
           {/* Tags */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
-            <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">🔖 Tags & Nhãn</h2>
+            <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#C9A84C]"><Tag className="h-4 w-4" /> Tags & Nhãn</h2>
 
             {/* Preset tags */}
             <div className="mb-4">
@@ -275,7 +279,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
 
           {/* Notes */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6">
-            <h2 className="text-sm font-semibold text-[#C9A84C] uppercase tracking-wider mb-5">📝 Ghi chú nội bộ</h2>
+            <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#C9A84C]"><FileText className="h-4 w-4" /> Ghi chú nội bộ</h2>
             <textarea
               value={notes} onChange={(e) => setNotes(e.target.value)} rows={4}
               placeholder="Ghi chú về khách hàng này (chỉ admin thấy)..."
@@ -290,14 +294,14 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
           {/* Avatar placeholder */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5 text-center">
             <div className="w-20 h-20 rounded-full bg-[#C9A84C]/10 border-2 border-[rgba(255,200,100,0.22)] flex items-center justify-center mx-auto mb-3">
-              <span className="text-3xl">{selectedRole?.icon || "👤"}</span>
+              <SelectedRoleIcon className="h-8 w-8 text-[#C9A84C]" />
             </div>
             <p className="text-white font-semibold text-sm">{name || "Tên khách hàng"}</p>
             <p className="text-[rgba(245,237,214,0.45)] text-xs mt-1">{email || "email@example.com"}</p>
             <p className="text-[rgba(245,237,214,0.45)] text-xs">{phone || "Số điện thoại"}</p>
             <div className="mt-3 flex justify-center gap-2">
-              <span className={`text-xs px-2.5 py-1 rounded-full bg-[#C9A84C]/10 border border-[rgba(255,200,100,0.22)] ${selectedRole?.color}`}>
-                {selectedRole?.icon} {selectedRole?.label}
+              <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-[#C9A84C]/10 border border-[rgba(255,200,100,0.22)] ${selectedRole?.color}`}>
+                <SelectedRoleIcon className="h-3.5 w-3.5" /> {selectedRole?.label}
               </span>
               <span className={`text-xs px-2.5 py-1 rounded-full bg-white/5 border border-white/10 ${selectedStatus?.color}`}>
                 {selectedStatus?.label}
@@ -307,7 +311,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
 
           {/* Summary */}
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
-            <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider mb-4">📋 Tóm tắt</h3>
+            <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#C9A84C]"><ClipboardList className="h-4 w-4" /> Tóm tắt</h3>
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-[rgba(245,237,214,0.45)]">Họ tên:</span>
@@ -343,7 +347,7 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
           {/* Existing user stats (edit mode) */}
           {isEdit && (
             <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5">
-              <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wider mb-4">📊 Thống kê</h3>
+              <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#C9A84C]"><BarChart3 className="h-4 w-4" /> Thống kê</h3>
               <div className="space-y-2.5 text-xs">
                 <div className="flex justify-between">
                   <span className="text-[rgba(245,237,214,0.45)]">Tổng đơn hàng:</span>
@@ -373,8 +377,9 @@ export default function UserFormClient({ user }: { user?: AppUser }) {
 
           {/* Submit */}
           <div className="space-y-2">
-            <button onClick={handleSubmit} disabled={saving} className="w-full text-sm font-semibold bg-[#C9A84C] text-black py-3 rounded-xl hover:bg-[#E2C97E] transition-colors disabled:opacity-50">
-              {saving ? "Đang lưu..." : isEdit ? "💾 Lưu thay đổi" : "✨ Thêm khách hàng"}
+            <button onClick={handleSubmit} disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9A84C] py-3 text-sm font-semibold text-black transition-colors hover:bg-[#E2C97E] disabled:opacity-50">
+              {saving ? null : isEdit ? <Save className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+              {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Thêm khách hàng"}
             </button>
             <button onClick={() => router.push("/admin/users")} className="w-full text-sm text-[rgba(245,237,214,0.55)] hover:text-white py-2.5 rounded-xl border border-gray-700 transition-colors">
               Hủy bỏ

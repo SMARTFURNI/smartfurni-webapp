@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { ContactMessage } from "@/lib/admin-store";
+import { Download, Mail, MessageSquareText } from "lucide-react";
 
 export default function AdminContactsClient({ initialContacts }: { initialContacts: ContactMessage[] }) {
   const [contacts, setContacts] = useState(initialContacts);
@@ -76,7 +77,7 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
             {exporting ? (
               <><span className="w-3 h-3 border border-green-400/40 border-t-green-400 rounded-full animate-spin" /> Đang xuất...</>
             ) : (
-              <>📥 Export CSV{filter !== "all" ? ` (${filter === "unread" ? "chưa đọc" : "đã đọc"})` : ""}</>
+              <><Download className="h-4 w-4" /> Export CSV{filter !== "all" ? ` (${filter === "unread" ? "chưa đọc" : "đã đọc"})` : ""}</>
             )}
           </button>
           {(["all", "unread", "read"] as const).map((f) => (
@@ -211,7 +212,7 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
                     href={`mailto:${selected.email}?subject=Re: ${encodeURIComponent(selected.subject)}`}
                     className="inline-flex items-center gap-2 bg-[#C9A84C]/10 border border-[rgba(255,200,100,0.22)] text-[#C9A84C] px-4 py-2.5 rounded-xl text-sm hover:bg-[#C9A84C]/20 transition-colors"
                   >
-                    <span>✉️</span> Trả lời qua Email
+                    <Mail className="h-4 w-4" /> Trả lời qua Email
                   </a>
                 </div>
               </div>
@@ -219,7 +220,7 @@ export default function AdminContactsClient({ initialContacts }: { initialContac
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <div className="text-4xl mb-3">💬</div>
+                <MessageSquareText className="mx-auto mb-3 h-10 w-10 text-[#C9A84C]/55" />
                 <p className="text-[rgba(245,237,214,0.45)] text-sm">Chọn một tin nhắn để xem chi tiết</p>
               </div>
             </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Catalogue } from "@/lib/catalogue-store";
+import { BookOpen, FilePenLine, Pause, Play } from "lucide-react";
 
 interface Props {
   initialCatalogues: Catalogue[];
@@ -171,7 +172,7 @@ export default function AdminCatalogueClient({ initialCatalogues }: Props) {
         {/* Catalogue list */}
         {catalogues.length === 0 ? (
           <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl">
-            <div className="text-5xl mb-4">📋</div>
+            <BookOpen className="mx-auto mb-4 h-12 w-12 text-[#C9A84C]" />
             <h2 className="text-lg font-semibold text-white mb-2">Chưa có catalogue nào</h2>
             <p className="text-[rgba(245,237,214,0.55)] text-sm mb-6">Tạo catalogue đầu tiên để bắt đầu</p>
             <button
@@ -198,7 +199,7 @@ export default function AdminCatalogueClient({ initialCatalogues }: Props) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-4xl opacity-10">📋</span>
+                      <BookOpen className="h-10 w-10 text-[#C9A84C]/20" />
                     </div>
                   )}
                   {/* Status badge */}
@@ -234,7 +235,7 @@ export default function AdminCatalogueClient({ initialCatalogues }: Props) {
                       href={`/admin/catalogue/${cat.id}`}
                       className="flex-1 bg-[#C9A84C]/10 text-[#C9A84C] text-xs font-medium py-1.5 rounded-lg text-center hover:bg-[#C9A84C]/20 transition-colors border border-[rgba(255,200,100,0.22)]"
                     >
-                      ✏️ Chỉnh sửa
+                      <span className="flex items-center justify-center gap-1.5"><FilePenLine className="h-3.5 w-3.5" />Chỉnh sửa</span>
                     </a>
                     <button
                       onClick={() => handleToggleStatus(cat)}
@@ -244,7 +245,7 @@ export default function AdminCatalogueClient({ initialCatalogues }: Props) {
                           : "bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20"
                       }`}
                     >
-                      {cat.status === "published" ? "⏸ Ẩn" : "▶ Xuất bản"}
+                      <span className="flex items-center justify-center gap-1.5">{cat.status === "published" ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}{cat.status === "published" ? "Ẩn" : "Xuất bản"}</span>
                     </button>
                     {cat.status === "published" && (
                       <a

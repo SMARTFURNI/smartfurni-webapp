@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BarChart3, BedDouble, ClipboardList, FilePenLine, SearchX } from "lucide-react";
 
 export default function AdminNotFound() {
   return (
@@ -6,7 +7,7 @@ export default function AdminNotFound() {
       <div className="text-center max-w-md">
         {/* Icon */}
         <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#E2C97E]/10 to-[#9A7A2E]/10 border border-[rgba(255,200,100,0.14)] flex items-center justify-center mx-auto mb-6">
-          <span className="text-4xl">🔍</span>
+          <SearchX className="h-10 w-10 text-[#D9BB67]" />
         </div>
 
         {/* Error code */}
@@ -21,19 +22,24 @@ export default function AdminNotFound() {
         {/* Quick links */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {[
-            { href: "/admin", label: "Dashboard", icon: "📊" },
-            { href: "/admin/posts", label: "Bài viết", icon: "📝" },
-            { href: "/admin/products", label: "Sản phẩm", icon: "🛏️" },
-            { href: "/admin/orders", label: "Đơn hàng", icon: "📋" },
+            { href: "/admin", label: "Dashboard", icon: BarChart3 },
+            { href: "/admin/posts", label: "Bài viết", icon: FilePenLine },
+            { href: "/admin/products", label: "Sản phẩm", icon: BedDouble },
+            { href: "/admin/orders", label: "Đơn hàng", icon: ClipboardList },
           ].map((item) => (
+            (() => {
+              const ItemIcon = item.icon;
+              return (
             <Link
               key={item.href}
               href={item.href}
               className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.14)] text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:border-[#C9A84C]/25 transition-all"
             >
-              <span>{item.icon}</span>
+              <ItemIcon className="h-4 w-4 text-[#D9BB67]" />
               <span>{item.label}</span>
             </Link>
+              );
+            })()
           ))}
         </div>
 

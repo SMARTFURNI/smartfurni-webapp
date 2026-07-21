@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback, useEffect, useRef } from "react";
+import { Badge, ChartNoAxesCombined, CircleCheck, CircleHelp, Clock3, Compass, CreditCard, Download, FileText, GitCompareArrows, History, House, Images, Info, ListOrdered, MapPin, Megaphone, Menu, Paintbrush, Palette, PanelBottom, Phone, RefreshCw, RotateCcw, Ruler, Save, Search, Settings2, ShieldCheck, ShoppingBag, ShoppingCart, Smartphone, Star, SwatchBook, Type, Undo2, Upload, Video, WandSparkles } from "lucide-react";
 import type {
   SiteTheme,
   ThemeColors,
@@ -36,45 +37,45 @@ interface ThemeEditorProps {
 // ─── Sections ────────────────────────────────────────────────────────────────
 const SECTION_GROUPS = [
   {
-    label: "🎨 Giao diện",
+    label: "Giao diện",
     items: [
-      { id: "presets", label: "Giao diện mẫu", icon: "🎨" },
-      { id: "colors", label: "Màu sắc", icon: "🖌️" },
-      { id: "typography", label: "Kiểu chữ", icon: "Aa" },
-      { id: "logo", label: "Logo & Thương hiệu", icon: "🏷️" },
-      { id: "banner", label: "Banner thông báo", icon: "📢" },
-      { id: "hero", label: "Trang chủ (Hero)", icon: "🏠" },
-      { id: "navbar", label: "Thanh điều hướng", icon: "☰" },
-      { id: "footer", label: "Chân trang", icon: "📋" },
-      { id: "layout", label: "Bố cục & Hiệu ứng", icon: "⚡" },
-      { id: "seo", label: "SEO & Analytics", icon: "📈" },
-      { id: "video", label: "Section Video", icon: "🎥" },
-      { id: "homepageVisualProof", label: "Trang chủ: Chuyển động & ảnh", icon: "🖼️" },
-      { id: "homepageFeatures", label: "Section Tính năng", icon: "⚙️" },
-      { id: "homepageComparison", label: "Trang chủ: So sánh", icon: "⇄" },
-      { id: "homepageAudiences", label: "Trang chủ: Chọn đúng nhu cầu", icon: "🧭" },
-      { id: "homepageSpecs", label: "Trang chủ: Thông số kỹ thuật", icon: "📐" },
-      { id: "homepageBuyingProcess", label: "Trang chủ: Quy trình", icon: "①" },
-      { id: "homepageShowrooms", label: "Trang chủ: Showroom", icon: "📍" },
-      { id: "homepageAfterSales", label: "Trang chủ: Hậu mãi", icon: "🛡️" },
-      { id: "homepageProofStats", label: "Trang chủ: Con số tin cậy", icon: "✓" },
-      { id: "homepagePayments", label: "Trang chủ: Thanh toán", icon: "💳" },
-      { id: "homepageFAQ", label: "Trang chủ: Hỏi đáp", icon: "?" },
-      { id: "homepageTestimonials", label: "Section Đánh giá", icon: "⭐" },
-      { id: "homepageDownload", label: "Section Tải app", icon: "📱" },
+      { id: "presets", label: "Giao diện mẫu", icon: Palette },
+      { id: "colors", label: "Màu sắc", icon: SwatchBook },
+      { id: "typography", label: "Kiểu chữ", icon: Type },
+      { id: "logo", label: "Logo & Thương hiệu", icon: Badge },
+      { id: "banner", label: "Banner thông báo", icon: Megaphone },
+      { id: "hero", label: "Trang chủ (Hero)", icon: House },
+      { id: "navbar", label: "Thanh điều hướng", icon: Menu },
+      { id: "footer", label: "Chân trang", icon: PanelBottom },
+      { id: "layout", label: "Bố cục & Hiệu ứng", icon: WandSparkles },
+      { id: "seo", label: "SEO & Analytics", icon: ChartNoAxesCombined },
+      { id: "video", label: "Section Video", icon: Video },
+      { id: "homepageVisualProof", label: "Trang chủ: Chuyển động & ảnh", icon: Images },
+      { id: "homepageFeatures", label: "Section Tính năng", icon: Settings2 },
+      { id: "homepageComparison", label: "Trang chủ: So sánh", icon: GitCompareArrows },
+      { id: "homepageAudiences", label: "Trang chủ: Chọn đúng nhu cầu", icon: Compass },
+      { id: "homepageSpecs", label: "Trang chủ: Thông số kỹ thuật", icon: Ruler },
+      { id: "homepageBuyingProcess", label: "Trang chủ: Quy trình", icon: ListOrdered },
+      { id: "homepageShowrooms", label: "Trang chủ: Showroom", icon: MapPin },
+      { id: "homepageAfterSales", label: "Trang chủ: Hậu mãi", icon: ShieldCheck },
+      { id: "homepageProofStats", label: "Trang chủ: Con số tin cậy", icon: CircleCheck },
+      { id: "homepagePayments", label: "Trang chủ: Thanh toán", icon: CreditCard },
+      { id: "homepageFAQ", label: "Trang chủ: Hỏi đáp", icon: CircleHelp },
+      { id: "homepageTestimonials", label: "Section Đánh giá", icon: Star },
+      { id: "homepageDownload", label: "Section Tải app", icon: Smartphone },
     ],
   },
   {
-    label: "📄 Nội dung trang",
+    label: "Nội dung trang",
     items: [
-      { id: "pageProducts", label: "Trang Sản phẩm", icon: "🛍️" },
-      { id: "pageAbout", label: "Trang Giới thiệu", icon: "ℹ️" },
-      { id: "pageContact", label: "Trang Liên hệ", icon: "📞" },
-      { id: "pageBlog", label: "Trang Blog", icon: "📝" },
-      { id: "pageCart", label: "Trang Giỏ hàng", icon: "🛒" },
-      { id: "pageCheckout", label: "Trang Đặt hàng", icon: "💳" },
-      { id: "pageWarranty", label: "Trang Bảo hành", icon: "🛡️" },
-      { id: "pageReturns", label: "Trang Đổi trả", icon: "↩️" },
+      { id: "pageProducts", label: "Trang Sản phẩm", icon: ShoppingBag },
+      { id: "pageAbout", label: "Trang Giới thiệu", icon: Info },
+      { id: "pageContact", label: "Trang Liên hệ", icon: Phone },
+      { id: "pageBlog", label: "Trang Blog", icon: FileText },
+      { id: "pageCart", label: "Trang Giỏ hàng", icon: ShoppingCart },
+      { id: "pageCheckout", label: "Trang Đặt hàng", icon: CreditCard },
+      { id: "pageWarranty", label: "Trang Bảo hành", icon: ShieldCheck },
+      { id: "pageReturns", label: "Trang Đổi trả", icon: Undo2 },
     ],
   },
 ];
@@ -2090,7 +2091,7 @@ export default function ThemeEditorClient({
               placeholder="Tìm section... (⌘K)"
               className="w-full pl-8 pr-3 py-2 rounded-xl bg-[#1a1200] border border-[rgba(255,200,100,0.18)] text-white text-xs focus:outline-none focus:border-[#C9A84C]/40 placeholder-[rgba(245,237,214,0.30)]"
             />
-            <span className="absolute left-2.5 top-2.5 text-[rgba(245,237,214,0.55)] text-xs">🔍</span>
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[rgba(245,237,214,0.55)]" />
             {searchQuery && (
               <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-2.5 text-[rgba(245,237,214,0.55)] hover:text-white text-xs">✕</button>
             )}
@@ -2107,7 +2108,7 @@ export default function ThemeEditorClient({
                     activeSection === sec.id ? "bg-[#C9A84C]/10 text-[#C9A84C] border border-[rgba(255,200,100,0.22)]" : "text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200]"
                   }`}
                 >
-                  <span className="text-base">{sec.icon}</span>
+                  <sec.icon className="h-4 w-4 shrink-0" />
                   <span className="truncate flex-1">{sec.label}</span>
                   {sectionLastEdited[sec.id] && (
                     <span className="text-xs text-[rgba(245,237,214,0.45)] shrink-0" title={`Lần cuối: ${new Date(sectionLastEdited[sec.id]).toLocaleString("vi-VN")}`}>
@@ -2121,10 +2122,10 @@ export default function ThemeEditorClient({
 
           {!searchQuery && (
             <div className="mt-auto pt-4 border-t border-[rgba(255,200,100,0.14)] space-y-1">
-              <button onClick={handleReset} className="w-full px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.55)] hover:text-red-400 hover:bg-red-500/5 transition-colors text-left">↺ Đặt lại mặc định</button>
-              <button onClick={handleExport} className="w-full px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200] transition-colors text-left">⬇ Export JSON</button>
-              <button onClick={() => document.getElementById("theme-import-input")?.click()} className="w-full px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200] transition-colors text-left">⬆ Import JSON</button>
-              <button onClick={() => setShowVersionHistory(true)} className="w-full px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200] transition-colors text-left">🕐 Lịch sử ({versionHistory.length})</button>
+              <button onClick={handleReset} className="flex w-full items-center gap-2 px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.55)] hover:text-red-400 hover:bg-red-500/5 transition-colors text-left"><RotateCcw className="h-4 w-4" /> Đặt lại mặc định</button>
+              <button onClick={handleExport} className="flex w-full items-center gap-2 px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200] transition-colors text-left"><Download className="h-4 w-4" /> Export JSON</button>
+              <button onClick={() => document.getElementById("theme-import-input")?.click()} className="flex w-full items-center gap-2 px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200] transition-colors text-left"><Upload className="h-4 w-4" /> Import JSON</button>
+              <button onClick={() => setShowVersionHistory(true)} className="flex w-full items-center gap-2 px-3 py-2 rounded-xl text-sm text-[rgba(245,237,214,0.70)] hover:text-white hover:bg-[#1a1200] transition-colors text-left"><History className="h-4 w-4" /> Lịch sử ({versionHistory.length})</button>
             </div>
           )}
         </div>
@@ -2200,7 +2201,7 @@ export default function ThemeEditorClient({
             <div className="flex items-center gap-2">
               <button onClick={handleStartCompare} className="text-xs text-[rgba(245,237,214,0.70)] hover:text-white px-2 py-1 rounded-lg hover:bg-[#1a1200] transition-colors" title="So sánh Before/After">⇄ So sánh</button>
               <button onClick={() => setIsFullscreen(true)} className="text-xs text-[rgba(245,237,214,0.70)] hover:text-white px-2 py-1 rounded-lg hover:bg-[#1a1200] transition-colors" title="Toàn màn hình (F)">⛶ Fullscreen</button>
-              <button onClick={() => setIframeKey((k) => k + 1)} className="text-xs text-[rgba(245,237,214,0.55)] hover:text-white px-2 py-1 rounded-lg hover:bg-[#1a1200] transition-colors" title="Tải lại xem trước">↻ Tải lại</button>
+              <button onClick={() => setIframeKey((k) => k + 1)} className="flex items-center gap-1.5 text-xs text-[rgba(245,237,214,0.55)] hover:text-white px-2 py-1 rounded-lg hover:bg-[#1a1200] transition-colors" title="Tải lại xem trước"><RefreshCw className="h-3.5 w-3.5" /> Tải lại</button>
               <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C9A84C] hover:underline flex items-center gap-1">🔗 Mở trang</a>
             </div>
           </div>

@@ -7,9 +7,10 @@ import type { OrderDashboardStats } from "@/lib/order-store";
 import type { ProductDashboardStats } from "@/lib/product-store";
 import type { LucideIcon } from "lucide-react";
 import {
-  BarChart3, BedDouble, CheckCheck, Factory, FilePenLine, Home,
-  PackageCheck, PackagePlus, RefreshCw, Repeat2, Settings2, ShoppingCart,
-  Target, UsersRound, WalletCards,
+  AlertTriangle, BarChart3, BedDouble, CheckCheck, CircleAlert, Download,
+  Factory, FileJson, FilePenLine, FileSpreadsheet, FileText, Home, Info,
+  LoaderCircle, PackageCheck, PackagePlus, RefreshCw, Repeat2, Settings2,
+  MessageSquareText, ShoppingBag, ShoppingCart, Target, UserRoundSearch, UsersRound, WalletCards,
 } from "lucide-react";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -99,7 +100,7 @@ function KpiCard({ label, value, sub, color, icon, href, trend, trendLabel, grow
 }) {
   const Icon = icon;
   const inner = (
-    <div className="bg-[#1a1200] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all h-full group">
+    <div className="bg-[#1a1200] border border-[rgba(118,138,166,0.18)] rounded-2xl p-5 hover:border-[rgba(201,168,76,0.28)] transition-all h-full group">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="sf-admin-icon-tile h-9 w-9 rounded-xl" style={{ color }}><Icon size={18} strokeWidth={2} /></span>
@@ -385,12 +386,14 @@ function AlertsBanner({ alerts }: { alerts: OrderDashboardStats["alerts"] }) {
     warning: "border-yellow-500/30 bg-yellow-500/8 text-yellow-400",
     info: "border-blue-500/30 bg-blue-500/8 text-blue-400",
   };
-  const typeIcon = { error: "🚨", warning: "⚠️", info: "ℹ️" };
+  const typeIcon = { error: CircleAlert, warning: AlertTriangle, info: Info };
   return (
     <div className="space-y-2">
-      {visible.map((alert) => (
+      {visible.map((alert) => {
+        const AlertIcon = typeIcon[alert.type];
+        return (
         <div key={alert.id} className={`flex items-start gap-3 p-3 rounded-xl border ${typeStyle[alert.type]}`}>
-          <span className="text-base flex-shrink-0 mt-0.5">{typeIcon[alert.type]}</span>
+          <AlertIcon size={16} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
           <div className="flex-1 min-w-0">
             <div className="text-xs font-semibold">{alert.title}</div>
             <div className="text-[11px] opacity-75 mt-0.5">{alert.message}</div>
@@ -400,7 +403,7 @@ function AlertsBanner({ alerts }: { alerts: OrderDashboardStats["alerts"] }) {
             <button onClick={() => setDismissed((s) => new Set([...s, alert.id]))} className="text-xs opacity-40 hover:opacity-80 transition-opacity">✕</button>
           </div>
         </div>
-      ))}
+      );})}
     </div>
   );
 }
@@ -456,7 +459,7 @@ function ToastContainer({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: st
     <div className="fixed bottom-6 right-6 z-50 space-y-2 max-w-xs">
       {toasts.map((t) => (
         <div key={t.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl ${t.type === "order" ? "bg-[#1a1200] border-[rgba(255,200,100,0.30)] text-[#C9A84C]" : "bg-[#001020] border-blue-500/30 text-blue-400"}`}>
-          <span className="text-base">{t.type === "order" ? "🛍️" : "💬"}</span>
+          {t.type === "order" ? <ShoppingBag className="h-4 w-4" /> : <MessageSquareText className="h-4 w-4" />}
           <span className="text-sm font-medium flex-1">{t.message}</span>
           <button onClick={() => dismiss(t.id)} className="text-xs opacity-50 hover:opacity-100">✕</button>
         </div>
@@ -510,13 +513,13 @@ function ExportButton({ orderData, productData, dateRange }: {
   }
   return (
     <div className="relative group">
-      <button disabled={exporting} className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-white/10 px-4 py-2 rounded-xl transition-colors disabled:opacity-50 hover:border-white/20">
-        <span>{exporting ? "⏳" : "⬇️"}</span>
+      <button disabled={exporting} className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-[rgba(118,138,166,0.24)] px-4 py-2 rounded-xl transition-colors disabled:opacity-50 hover:border-[rgba(201,168,76,0.35)]">
+        {exporting ? <LoaderCircle size={15} className="animate-spin" aria-hidden="true" /> : <Download size={15} aria-hidden="true" />}
         {exporting ? "Đang xuất..." : "Xuất báo cáo"}
       </button>
-      <div className="absolute right-0 top-full mt-1 bg-[#1a1200] border border-white/10 rounded-xl overflow-hidden shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-20 min-w-[140px]">
-        <button onClick={() => handleExport("csv")} className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors">📊 Xuất CSV (Excel)</button>
-        <button onClick={() => handleExport("json")} className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors">📋 Xuất JSON</button>
+      <div className="absolute right-0 top-full mt-1 bg-[#151922] border border-[rgba(118,138,166,0.24)] rounded-xl overflow-hidden shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-20 min-w-[170px]">
+        <button onClick={() => handleExport("csv")} className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"><FileSpreadsheet size={14} className="text-emerald-400" /> Xuất CSV (Excel)</button>
+        <button onClick={() => handleExport("json")} className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"><FileJson size={14} className="text-sky-400" /> Xuất JSON</button>
       </div>
     </div>
   );
@@ -579,7 +582,7 @@ export default function DashboardClient({
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl lg:text-2xl font-bold text-white">Tổng Quan Kinh Doanh</h1>
+          <h1 className="text-xl lg:text-2xl font-bold text-white">Trung tâm điều hành</h1>
           <p className="text-[rgba(245,237,214,0.55)] text-sm mt-0.5 capitalize">{dateStr}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -708,7 +711,7 @@ export default function DashboardClient({
           {productData.lowStockProducts.length > 0 && (
             <div className="mt-4 pt-4 border-t border-white/5">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-orange-400 text-xs">⚠️</span>
+                <AlertTriangle size={14} className="text-orange-400" aria-hidden="true" />
                 <span className="text-xs font-medium text-orange-400">Sắp hết hàng ({productData.lowStockProducts.length})</span>
               </div>
               <div className="space-y-1.5">
@@ -844,7 +847,7 @@ export default function DashboardClient({
           <div className="space-y-3">
             <div className="p-3 bg-white/3 rounded-xl">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><span>📝</span><span className="text-xs text-gray-300">Bài viết</span></div>
+                <div className="flex items-center gap-2"><FileText size={15} className="text-[#D9BD6A]" /><span className="text-xs text-gray-300">Bài viết</span></div>
                 <Link href="/admin/posts" className="text-xs text-[#C9A84C]/70 hover:text-[#C9A84C]">Quản lý →</Link>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
@@ -855,7 +858,7 @@ export default function DashboardClient({
             </div>
             <Link href="/crm/data-pool" className="block rounded-xl bg-white/3 p-3 transition-colors hover:bg-white/5">
               <div className="mb-1 flex items-center justify-between">
-                <div className="flex items-center gap-2"><span>◉</span><span className="text-xs text-gray-300">Khách hàng tiềm năng</span></div>
+                <div className="flex items-center gap-2"><UserRoundSearch size={15} className="text-sky-400" /><span className="text-xs text-gray-300">Khách hàng tiềm năng</span></div>
                 <span className="text-xs text-[#C9A84C]/70">Mở CRM →</span>
               </div>
               <p className="text-[10px] leading-relaxed text-[rgba(245,237,214,0.45)]">Tất cả form website và landing page được quản lý tập trung tại kho dữ liệu CRM.</p>

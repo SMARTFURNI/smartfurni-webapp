@@ -5,16 +5,18 @@ import Link from "next/link";
 import type { BlogPost, PostStatus } from "@/lib/blog-data";
 import { CATEGORIES } from "@/lib/blog-data";
 import { PRODUCT_FAMILIES } from "@/lib/product-families";
+import type { LucideIcon } from "lucide-react";
+import { CheckCircle2, Clock3, Eye, FilePenLine, FileText, Star } from "lucide-react";
 
 interface PostEditorProps {
   mode: "create" | "edit";
   initialData?: BlogPost;
 }
 
-const STATUS_CONFIG: Record<PostStatus, { label: string; bg: string }> = {
-  published: { label: "Đã đăng", bg: "bg-green-500/10 border-green-500/30 text-green-400" },
-  draft: { label: "Bản nháp", bg: "bg-gray-500/10 border-gray-500/30 text-[rgba(245,237,214,0.70)]" },
-  scheduled: { label: "Lên lịch", bg: "bg-blue-500/10 border-blue-500/30 text-blue-400" },
+const STATUS_CONFIG: Record<PostStatus, { label: string; bg: string; icon: LucideIcon }> = {
+  published: { label: "Đã đăng", bg: "bg-green-500/10 border-green-500/30 text-green-400", icon: CheckCircle2 },
+  draft: { label: "Bản nháp", bg: "bg-gray-500/10 border-gray-500/30 text-[rgba(245,237,214,0.70)]", icon: FileText },
+  scheduled: { label: "Lên lịch", bg: "bg-blue-500/10 border-blue-500/30 text-blue-400", icon: Clock3 },
 };
 
 export default function PostEditor({ mode, initialData }: PostEditorProps) {
@@ -212,7 +214,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
             onClick={() => setPreview(!preview)}
             className="text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors"
           >
-            {preview ? "✏️ Soạn thảo" : "👁 Xem trước"}
+            <span className="flex items-center gap-2">{preview ? <FilePenLine className="h-4 w-4" /> : <Eye className="h-4 w-4" />}{preview ? "Soạn thảo" : "Xem trước"}</span>
           </button>
           <button
             onClick={handleSave}
@@ -432,6 +434,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
               <div className="grid grid-cols-3 gap-2">
                 {(["published", "draft", "scheduled"] as PostStatus[]).map((s) => {
                   const cfg = STATUS_CONFIG[s];
+                  const StatusIcon = cfg.icon;
                   return (
                     <button
                       key={s}
@@ -442,7 +445,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                           : "border-[rgba(255,200,100,0.14)] text-[rgba(245,237,214,0.45)] hover:text-[rgba(245,237,214,0.70)]"
                       }`}
                     >
-                      {s === "published" ? "✅" : s === "draft" ? "📝" : "🕐"} {cfg.label}
+                      <span className="flex items-center justify-center gap-1.5"><StatusIcon className="h-3.5 w-3.5" />{cfg.label}</span>
                     </button>
                   );
                 })}
@@ -556,7 +559,7 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                     }`}
                   />
                 </div>
-                <span className="text-sm text-[rgba(245,237,214,0.70)]">Bài viết nổi bật ⭐</span>
+                <span className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.70)]">Bài viết nổi bật <Star className="h-4 w-4 fill-[#C9A84C] text-[#C9A84C]" /></span>
               </label>
             </div>
 

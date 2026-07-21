@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { UserDashboardStats, AppUser, UserRole } from "@/lib/user-store";
+import { FileText, LayoutDashboard, List, LoaderCircle, Mail, MapPin, Phone, Plus, RefreshCw, Smartphone } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -181,9 +182,9 @@ function UserRow({ user, onBlock, onDelete }: {
             <div className="grid sm:grid-cols-3 gap-4 text-xs">
               <div>
                 <p className="text-[rgba(245,237,214,0.45)] mb-1 font-medium">Thông tin liên hệ</p>
-                <p className="text-[rgba(245,237,214,0.70)]">📞 {user.phone}</p>
-                <p className="text-[rgba(245,237,214,0.70)]">📧 {user.email}</p>
-                <p className="text-[rgba(245,237,214,0.70)]">📍 {user.city}</p>
+                <p className="flex items-center gap-2 text-[rgba(245,237,214,0.70)]"><Phone className="h-4 w-4 text-[#C9A84C]" /> {user.phone}</p>
+                <p className="flex items-center gap-2 text-[rgba(245,237,214,0.70)]"><Mail className="h-4 w-4 text-[#C9A84C]" /> {user.email}</p>
+                <p className="flex items-center gap-2 text-[rgba(245,237,214,0.70)]"><MapPin className="h-4 w-4 text-[#C9A84C]" /> {user.city}</p>
                 <p className="text-[rgba(245,237,214,0.55)] mt-1">Nguồn: {user.source}</p>
                 <p className="text-[rgba(245,237,214,0.55)]">Đăng ký: {new Date(user.registeredAt).toLocaleDateString("vi-VN")}</p>
               </div>
@@ -194,7 +195,7 @@ function UserRow({ user, onBlock, onDelete }: {
                 ) : (
                   user.devices.map((d, i) => (
                     <div key={i} className="mb-1">
-                      <p className="text-[rgba(245,237,214,0.70)]">📱 {d.model}</p>
+                      <p className="flex items-center gap-2 text-[rgba(245,237,214,0.70)]"><Smartphone className="h-4 w-4 text-[#C9A84C]" /> {d.model}</p>
                       <p className="text-[rgba(245,237,214,0.45)]">Lần cuối: {timeAgo(d.lastActive)}</p>
                     </div>
                   ))
@@ -217,7 +218,7 @@ function UserRow({ user, onBlock, onDelete }: {
                 )}
                 {user.notes && (
                   <div className="mt-2 p-2 bg-[#C9A84C]/5 border border-[rgba(255,200,100,0.14)] rounded-lg">
-                    <p className="text-[rgba(245,237,214,0.55)]">📝 {user.notes}</p>
+                    <p className="flex items-start gap-2 text-[rgba(245,237,214,0.55)]"><FileText className="mt-0.5 h-4 w-4 shrink-0 text-[#C9A84C]" /> {user.notes}</p>
                   </div>
                 )}
               </div>
@@ -328,27 +329,27 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
               onClick={() => setView("dashboard")}
               className={`px-4 py-2 text-sm transition-colors ${view === "dashboard" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
             >
-              📊 Tổng quan
+              <span className="inline-flex items-center gap-1.5"><LayoutDashboard className="h-4 w-4" /> Tổng quan</span>
             </button>
             <button
               onClick={switchToList}
               className={`px-4 py-2 text-sm transition-colors ${view === "list" ? "bg-[#C9A84C]/15 text-[#C9A84C]" : "text-[rgba(245,237,214,0.55)] hover:text-white"}`}
             >
-              👥 Danh sách
+              <span className="inline-flex items-center gap-1.5"><List className="h-4 w-4" /> Danh sách</span>
             </button>
           </div>
           <button
             onClick={() => router.push("/admin/users/new")}
             className="flex items-center gap-2 text-sm font-semibold bg-[#C9A84C] text-black px-4 py-2 rounded-xl hover:bg-[#E2C97E] transition-colors"
           >
-            + Thêm khách hàng
+            <Plus className="h-4 w-4" /> Thêm khách hàng
           </button>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
             className="flex items-center gap-2 text-sm text-[rgba(245,237,214,0.70)] hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
           >
-            <span className={refreshing ? "animate-spin" : ""}>↻</span>
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Đang tải..." : "Làm mới"}
           </button>
         </div>
@@ -603,7 +604,7 @@ export default function UserDashboardClient({ data: initialData }: { data: UserD
           <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl overflow-hidden">
             {!listLoaded ? (
               <div className="flex items-center justify-center py-16 text-[rgba(245,237,214,0.55)]">
-                <span className="animate-spin mr-2">↻</span> Đang tải...
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Đang tải...
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-16 text-[rgba(245,237,214,0.45)]">Không tìm thấy người dùng nào</div>

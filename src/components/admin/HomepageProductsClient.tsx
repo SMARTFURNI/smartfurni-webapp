@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import type { Product } from "@/lib/product-store";
 import type { HomepageProductConfig } from "@/lib/homepage-products-store";
+import { BedDouble } from "lucide-react";
 
 interface HomepageProductsClientProps {
   initialConfig: HomepageProductConfig;
@@ -322,9 +323,7 @@ export default function HomepageProductsClient({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span style={{ color: "#C9A84C" }} className="text-lg">
-                          🛏️
-                        </span>
+                        <BedDouble className="h-5 w-5 text-[#C9A84C]" />
                       )}
                     </div>
 
@@ -464,7 +463,7 @@ export default function HomepageProductsClient({
                         {p.coverImage ? (
                           <img src={p.coverImage} alt={p.name} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-base">🛏️</span>
+                          <BedDouble className="h-5 w-5 text-[#C9A84C]" />
                         )}
                       </div>
 
@@ -799,7 +798,7 @@ export default function HomepageProductsClient({
                   {p.coverImage ? (
                     <img src={p.coverImage} alt={p.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-sm">🛏️</span>
+                    <BedDouble className="h-4 w-4 text-[#C9A84C]" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

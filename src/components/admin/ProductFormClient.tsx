@@ -7,6 +7,7 @@ import {
   getDefaultProductLandingDescriptionTemplate,
   hasProductDescriptionTemplate,
 } from "@/lib/product-description-template";
+import { Camera, LoaderCircle, Save, Sparkles } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -228,12 +229,12 @@ function ProductImageGallery({
         />
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
-            <span className="text-xl animate-spin">↻</span>
+            <LoaderCircle className="h-6 w-6 animate-spin text-[#C9A84C]" />
             <span className="text-xs text-[#C9A84C] animate-pulse">Đang tải lên...</span>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-1 pointer-events-none">
-            <span className="text-2xl">📸</span>
+            <Camera className="h-7 w-7 text-[#C9A84C]" />
             <span className="text-xs text-[rgba(245,237,214,0.70)] font-medium">
               {dragOver ? "Thả ảnh vào đây" : "Click hoặc kéo thả ảnh vào đây"}
             </span>
@@ -531,11 +532,11 @@ export default function ProductFormClient({ product }: { product?: Product }) {
           >
             {saving ? (
               <>
-                <span className="animate-spin text-xs">↻</span>
+                <LoaderCircle className="h-4 w-4 animate-spin" />
                 {isEdit ? "Đang lưu..." : "Đang tạo..."}
               </>
             ) : (
-              isEdit ? "💾 Lưu thay đổi" : "✨ Tạo sản phẩm"
+              <><span>{isEdit ? <Save className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}</span>{isEdit ? "Lưu thay đổi" : "Tạo sản phẩm"}</>
             )}
           </button>
         </div>
@@ -927,9 +928,9 @@ export default function ProductFormClient({ product }: { product?: Product }) {
           className="px-8 py-3 text-sm font-semibold bg-[#C9A84C] text-black rounded-xl hover:bg-[#E2C97E] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
           {saving ? (
-            <><span className="animate-spin">↻</span> {isEdit ? "Đang lưu..." : "Đang tạo..."}</>
+            <><LoaderCircle className="h-4 w-4 animate-spin" /> {isEdit ? "Đang lưu..." : "Đang tạo..."}</>
           ) : (
-            isEdit ? "💾 Lưu thay đổi" : "✨ Tạo sản phẩm"
+            <><span>{isEdit ? <Save className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}</span>{isEdit ? "Lưu thay đổi" : "Tạo sản phẩm"}</>
           )}
         </button>
       </div>

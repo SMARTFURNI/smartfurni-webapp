@@ -2,7 +2,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { OrderDashboardStats, Order, OrderStatus, PaymentMethod } from "@/lib/order-store";
-import { LayoutDashboard, List, Plus, RefreshCw } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Banknote, CheckCircle2, CircleX, Clock3, Cog, CreditCard, Landmark,
+  LayoutDashboard, List, PackageCheck, Plus, RefreshCw, RotateCcw,
+  Truck, WalletCards,
+} from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -23,22 +28,22 @@ function timeAgo(dateStr: string): string {
   return `${days} ngày trước`;
 }
 
-const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bg: string; dot: string; icon: string }> = {
-  pending:    { label: "Chờ xác nhận", color: "text-yellow-400",  bg: "bg-yellow-500/10",  dot: "bg-yellow-400",  icon: "⏳" },
-  confirmed:  { label: "Đã xác nhận",  color: "text-blue-400",    bg: "bg-blue-500/10",    dot: "bg-blue-400",    icon: "✅" },
-  processing: { label: "Đang xử lý",   color: "text-purple-400",  bg: "bg-purple-500/10",  dot: "bg-purple-400",  icon: "⚙️" },
-  shipping:   { label: "Đang giao",    color: "text-cyan-400",    bg: "bg-cyan-500/10",    dot: "bg-cyan-400",    icon: "🚚" },
-  delivered:  { label: "Đã giao",      color: "text-green-400",   bg: "bg-green-500/10",   dot: "bg-green-400",   icon: "📦" },
-  cancelled:  { label: "Đã hủy",       color: "text-red-400",     bg: "bg-red-500/10",     dot: "bg-red-400",     icon: "❌" },
-  refunded:   { label: "Hoàn tiền",    color: "text-[rgba(245,237,214,0.70)]",    bg: "bg-gray-500/10",    dot: "bg-gray-500",    icon: "↩️" },
+const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bg: string; dot: string; icon: LucideIcon }> = {
+  pending:    { label: "Chờ xác nhận", color: "text-yellow-400",  bg: "bg-yellow-500/10",  dot: "bg-yellow-400",  icon: Clock3 },
+  confirmed:  { label: "Đã xác nhận",  color: "text-blue-400",    bg: "bg-blue-500/10",    dot: "bg-blue-400",    icon: CheckCircle2 },
+  processing: { label: "Đang xử lý",   color: "text-purple-400",  bg: "bg-purple-500/10",  dot: "bg-purple-400",  icon: Cog },
+  shipping:   { label: "Đang giao",    color: "text-cyan-400",    bg: "bg-cyan-500/10",    dot: "bg-cyan-400",    icon: Truck },
+  delivered:  { label: "Đã giao",      color: "text-green-400",   bg: "bg-green-500/10",   dot: "bg-green-400",   icon: PackageCheck },
+  cancelled:  { label: "Đã hủy",       color: "text-red-400",     bg: "bg-red-500/10",     dot: "bg-red-400",     icon: CircleX },
+  refunded:   { label: "Hoàn tiền",    color: "text-[rgba(245,237,214,0.70)]", bg: "bg-gray-500/10", dot: "bg-gray-500", icon: RotateCcw },
 };
 
-const PAYMENT_CONFIG: Record<PaymentMethod, { label: string; icon: string }> = {
-  bank_transfer: { label: "Chuyển khoản", icon: "🏦" },
-  cod:           { label: "COD",           icon: "💵" },
-  momo:          { label: "MoMo",          icon: "💜" },
-  vnpay:         { label: "VNPay",         icon: "💳" },
-  credit_card:   { label: "Thẻ tín dụng", icon: "💳" },
+const PAYMENT_CONFIG: Record<PaymentMethod, { label: string; icon: LucideIcon }> = {
+  bank_transfer: { label: "Chuyển khoản", icon: Landmark },
+  cod:           { label: "COD",           icon: Banknote },
+  momo:          { label: "MoMo",          icon: WalletCards },
+  vnpay:         { label: "VNPay",         icon: CreditCard },
+  credit_card:   { label: "Thẻ tín dụng", icon: CreditCard },
 };
 
 const STATUS_FLOW: OrderStatus[] = ["pending", "confirmed", "processing", "shipping", "delivered"];
@@ -119,13 +124,14 @@ function OrderTimeline({ order }: { order: Order }) {
         const done = completedStatuses.has(s);
         const current = order.status === s;
         const sc = STATUS_CONFIG[s];
+        const StatusIcon = sc.icon;
         return (
           <div key={s} className="flex items-center gap-1 flex-shrink-0">
             <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all ${
               current ? `${sc.bg} ${sc.color} font-semibold ring-1 ring-current` :
               done ? "bg-green-500/10 text-green-400" : "bg-gray-800 text-[rgba(245,237,214,0.35)]"
             }`}>
-              <span>{sc.icon}</span>
+              <StatusIcon className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{sc.label}</span>
             </div>
             {i < STATUS_FLOW.length - 1 && (
@@ -136,7 +142,7 @@ function OrderTimeline({ order }: { order: Order }) {
       })}
       {(order.status === "cancelled" || order.status === "refunded") && (
         <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${STATUS_CONFIG[order.status].bg} ${STATUS_CONFIG[order.status].color} font-semibold ring-1 ring-current`}>
-          <span>{STATUS_CONFIG[order.status].icon}</span>
+          {(() => { const StatusIcon = STATUS_CONFIG[order.status].icon; return <StatusIcon className="h-3.5 w-3.5" />; })()}
           <span>{STATUS_CONFIG[order.status].label}</span>
         </div>
       )}
@@ -154,6 +160,7 @@ function OrderRow({ order, onStatusChange, onEdit, onDelete }: {
   const [expanded, setExpanded] = useState(false);
   const sc = STATUS_CONFIG[order.status];
   const pc = PAYMENT_CONFIG[order.paymentMethod];
+  const PaymentIcon = pc.icon;
   const createdDate = new Date(order.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   return (
@@ -188,7 +195,7 @@ function OrderRow({ order, onStatusChange, onEdit, onDelete }: {
         </td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-1">
-            <span className="text-xs">{pc.icon}</span>
+            <PaymentIcon className="h-3.5 w-3.5 text-[#D9BB67]" />
             <span className="text-xs text-[rgba(245,237,214,0.70)]">{pc.label}</span>
           </div>
           <div className={`text-xs mt-0.5 ${order.paymentStatus === "paid" ? "text-green-400" : order.paymentStatus === "refunded" ? "text-[rgba(245,237,214,0.55)]" : "text-yellow-400"}`}>
@@ -411,8 +418,8 @@ export default function OrderDashboardClient({ data: initialData }: { data: Orde
               </div>
               <div className="text-3xl font-bold text-[#C9A84C] mb-1">{d.stats.totalOrders}</div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                <span className="text-cyan-400">🚚 {d.stats.shippingOrders} đang giao</span>
-                <span className="text-green-400">✅ {d.stats.deliveredOrders} đã giao</span>
+                <span className="inline-flex items-center gap-1 text-cyan-400"><Truck className="h-3 w-3" /> {d.stats.shippingOrders} đang giao</span>
+                <span className="inline-flex items-center gap-1 text-green-400"><PackageCheck className="h-3 w-3" /> {d.stats.deliveredOrders} đã giao</span>
               </div>
             </div>
 
@@ -490,11 +497,12 @@ export default function OrderDashboardClient({ data: initialData }: { data: Orde
               <div className="space-y-3">
                 {d.ordersByPayment.map((p) => {
                   const maxCount = Math.max(...d.ordersByPayment.map((x) => x.count), 1);
+                  const PaymentIcon = PAYMENT_CONFIG[p.method].icon;
                   return (
                     <div key={p.method}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm">{PAYMENT_CONFIG[p.method].icon}</span>
+                          <PaymentIcon className="h-4 w-4 text-[#D9BB67]" />
                           <span className="text-xs text-[rgba(245,237,214,0.70)]">{p.label}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -567,10 +575,12 @@ export default function OrderDashboardClient({ data: initialData }: { data: Orde
               {d.recentOrders.map((o) => {
                 const sc = STATUS_CONFIG[o.status];
                 const pc = PAYMENT_CONFIG[o.paymentMethod];
+                const StatusIcon = sc.icon;
+                const PaymentIcon = pc.icon;
                 return (
                   <div key={o.id} className="flex items-center gap-3 p-3 rounded-xl bg-[#1a1200]/50 hover:bg-[#1a1200] transition-colors">
                     <div className="w-8 h-8 rounded-xl bg-[#C9A84C]/10 flex items-center justify-center text-sm flex-shrink-0">
-                      {sc.icon}
+                      <StatusIcon className="h-4 w-4 text-[#D9BB67]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -583,7 +593,7 @@ export default function OrderDashboardClient({ data: initialData }: { data: Orde
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-xs">{pc.icon}</span>
+                      <PaymentIcon className="h-3.5 w-3.5 text-[#D9BB67]" />
                       <div className={`text-xs px-2 py-0.5 rounded-full ${sc.bg} ${sc.color}`}>{sc.label}</div>
                       <div className="text-sm font-bold text-[#C9A84C]">{formatVND(o.total)}</div>
                     </div>
