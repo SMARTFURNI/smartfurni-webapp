@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
+import { trackAttributedProductClick } from "@/lib/blog-attribution";
 
 // ─── Design tokens (giống landing page) ──────────────────────────────────────
 const GOLD = "#C9A84C";
@@ -45,7 +46,13 @@ export function StaticProductCard({ product, index }: { product: Product; index:
   const href = isAvailable || isComingSoon ? `/products/${product.slug}` : "#";
 
   return (
-    <Link href={href} style={{ textDecoration: "none", display: "block" }}>
+    <Link
+      href={href}
+      onClick={() => {
+        if (href !== "#") trackAttributedProductClick(product);
+      }}
+      style={{ textDecoration: "none", display: "block" }}
+    >
       <div
         className="sf-home-product-card"
         onMouseEnter={() => setHovered(true)}

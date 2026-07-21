@@ -7,6 +7,7 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import type { SiteTheme } from "@/lib/theme-types";
 import type { Product } from "@/lib/product-store";
+import { trackBlogCtaClick, trackDirectBlogProductClick } from "@/lib/blog-attribution";
 
 interface Props {
   post: BlogPost;
@@ -66,31 +67,6 @@ function formatPrice(price: number): string {
   return new Intl.NumberFormat("vi-VN").format(price) + "đ";
 }
 
-function trackProductClick(postSlug: string, product: Product) {
-  if (typeof window === "undefined") return;
-  const targetPath = `/products/${product.slug}`;
-  const payload = JSON.stringify({
-    postSlug,
-    productSlug: product.slug,
-    productName: product.name,
-    targetPath,
-    sessionId: sessionStorage.getItem("_sf_sid") || "",
-  });
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(
-      "/api/analytics/blog-product-click",
-      new Blob([payload], { type: "application/json" })
-    );
-    return;
-  }
-  fetch("/api/analytics/blog-product-click", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: payload,
-    keepalive: true,
-  }).catch(() => {});
-}
-
 function createHeadingId(value: string, index: number): string {
   const slug = value
     .normalize("NFD")
@@ -123,7 +99,7 @@ function ProductRecommendationBlock({ post, products }: { post: BlogPost; produc
               <Link
                 key={product.slug}
                 href={`/products/${product.slug}`}
-                onClick={() => trackProductClick(post.slug, product)}
+                onClick={() => trackDirectBlogProductClick(post.slug, product)}
                 className="group overflow-hidden rounded-2xl border border-white/[.08] bg-black/20 transition hover:-translate-y-0.5 hover:border-[#C9A84C]/40"
               >
                 {image && <img src={image} alt={product.name} loading="lazy" className="aspect-square w-full bg-[#0F151E] object-contain p-2" />}
@@ -141,7 +117,16 @@ function ProductRecommendationBlock({ post, products }: { post: BlogPost; produc
         </div>
       )}
       <div className="px-4 pb-5 sm:px-5">
-        <Link href={recommendation.ctaHref} className="flex w-full items-center justify-center rounded-xl bg-[linear-gradient(110deg,#E4C557,#B98B20)] px-5 py-3 text-sm font-semibold text-[#151005] transition hover:brightness-110">
+        <Link
+          href={recommendation.ctaHref}
+          onClick={() => trackBlogCtaClick({
+            postSlug: post.slug,
+            ctaId: "product_recommendation_cta",
+            ctaLabel: recommendation.ctaLabel,
+            targetPath: recommendation.ctaHref,
+          })}
+          className="flex w-full items-center justify-center rounded-xl bg-[linear-gradient(110deg,#E4C557,#B98B20)] px-5 py-3 text-sm font-semibold text-[#151005] transition hover:brightness-110"
+        >
           {recommendation.ctaLabel} →
         </Link>
       </div>
@@ -158,8 +143,16 @@ function ArticleCtaBlock({ post }: { post: BlogPost }) {
       <h2 className="mt-2 text-xl font-semibold text-[#F5EDD6]">{cta.title}</h2>
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[#F5EDD6]/50">{cta.description}</p>
       <div className="mt-5 flex flex-wrap justify-center gap-3">
-        <Link href={cta.primaryHref} className="rounded-full bg-[#C9A84C] px-6 py-2.5 text-sm font-semibold text-black hover:bg-[#E8C56B]">{cta.primaryLabel}</Link>
-        {cta.secondaryLabel && cta.secondaryHref && <Link href={cta.secondaryHref} className="rounded-full border border-[#C9A84C]/40 px-6 py-2.5 text-sm text-[#C9A84C] hover:border-[#C9A84C]">{cta.secondaryLabel}</Link>}
+        <Link
+          href={cta.primaryHref}
+          onClick={() => trackBlogCtaClick({ postSlug: post.slug, ctaId: "article_primary", ctaLabel: cta.primaryLabel, targetPath: cta.primaryHref })}
+          className="rounded-full bg-[#C9A84C] px-6 py-2.5 text-sm font-semibold text-black hover:bg-[#E8C56B]"
+        >{cta.primaryLabel}</Link>
+        {cta.secondaryLabel && cta.secondaryHref && <Link
+          href={cta.secondaryHref}
+          onClick={() => trackBlogCtaClick({ postSlug: post.slug, ctaId: "article_secondary", ctaLabel: cta.secondaryLabel!, targetPath: cta.secondaryHref! })}
+          className="rounded-full border border-[#C9A84C]/40 px-6 py-2.5 text-sm text-[#C9A84C] hover:border-[#C9A84C]"
+        >{cta.secondaryLabel}</Link>}
       </div>
     </aside>
   );
@@ -507,10 +500,18 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
           <h3 className="text-xl font-light text-[#F5EDD6] mb-2">{funnelCta.title}</h3>
           <p className="mb-4 text-sm leading-relaxed text-[#F5EDD6]/65">{funnelCta.description}</p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link href={funnelCta.primaryHref} className="bg-[#C9A84C] text-black px-6 py-2 rounded-full font-semibold text-sm hover:bg-[#E8C56B] transition-colors">
+            <Link
+              href={funnelCta.primaryHref}
+              onClick={() => trackBlogCtaClick({ postSlug: post.slug, ctaId: "funnel_primary", ctaLabel: funnelCta.primaryLabel, targetPath: funnelCta.primaryHref })}
+              className="bg-[#C9A84C] text-black px-6 py-2 rounded-full font-semibold text-sm hover:bg-[#E8C56B] transition-colors"
+            >
               {funnelCta.primaryLabel}
             </Link>
-            <Link href={funnelCta.secondaryHref} className="border border-[#C9A84C]/40 text-[#C9A84C] px-6 py-2 rounded-full text-sm hover:border-[#C9A84C] transition-colors">
+            <Link
+              href={funnelCta.secondaryHref}
+              onClick={() => trackBlogCtaClick({ postSlug: post.slug, ctaId: "funnel_secondary", ctaLabel: funnelCta.secondaryLabel, targetPath: funnelCta.secondaryHref })}
+              className="border border-[#C9A84C]/40 text-[#C9A84C] px-6 py-2 rounded-full text-sm hover:border-[#C9A84C] transition-colors"
+            >
               {funnelCta.secondaryLabel}
             </Link>
           </div>

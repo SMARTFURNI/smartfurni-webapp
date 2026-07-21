@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { initAnalyticsTables, trackBlogProductClick } from "@/lib/analytics-store";
+import { initAnalyticsTables, trackBlogCtaClick } from "@/lib/analytics-store";
 
 let tablesInitialized = false;
 
@@ -19,12 +19,11 @@ function cleanCtaId(value: unknown): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const eventId = cleanEventId(body.eventId);
     const postSlug = cleanSlug(body.postSlug);
-    const productSlug = cleanSlug(body.productSlug);
-    const sourceType = body.sourceType === "cta_assisted" ? "cta_assisted" : "direct";
-    const ctaEventId = cleanEventId(body.ctaEventId);
+    const ctaId = cleanCtaId(body.ctaId);
     const targetPath = typeof body.targetPath === "string" ? body.targetPath.slice(0, 300) : "";
-    if (!postSlug || !productSlug || !targetPath.startsWith(`/products/${productSlug}`) || (sourceType === "cta_assisted" && !ctaEventId)) {
+    if (!eventId || !postSlug || !ctaId || !targetPath.startsWith("/") || targetPath.startsWith("//")) {
       return NextResponse.json({ error: "Invalid tracking payload" }, { status: 400 });
     }
 
@@ -33,23 +32,16 @@ export async function POST(req: NextRequest) {
       tablesInitialized = true;
     }
 
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      req.headers.get("x-real-ip") ||
-      "unknown";
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
     const salt = process.env.DATABASE_URL?.slice(-8) || "smartfurni";
     const ipHash = crypto.createHash("sha256").update(ip + salt).digest("hex").slice(0, 16);
 
-    await trackBlogProductClick({
-      eventId: cleanEventId(body.eventId) || undefined,
+    await trackBlogCtaClick({
+      eventId,
       postSlug,
-      productSlug,
-      productName: typeof body.productName === "string" ? body.productName.slice(0, 220) : "",
+      ctaId,
+      ctaLabel: typeof body.ctaLabel === "string" ? body.ctaLabel.slice(0, 220) : "",
       targetPath,
-      sourceType,
-      ctaEventId: ctaEventId || undefined,
-      ctaId: cleanCtaId(body.ctaId) || undefined,
-      ctaLabel: typeof body.ctaLabel === "string" ? body.ctaLabel.slice(0, 220) : undefined,
       sessionId: typeof body.sessionId === "string" ? body.sessionId.slice(0, 180) : "",
       ipHash,
       ua: req.headers.get("user-agent") || "",

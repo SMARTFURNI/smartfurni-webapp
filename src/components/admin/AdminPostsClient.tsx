@@ -36,10 +36,13 @@ export default function AdminPostsClient({
       total.todayViews += item.todayViews;
       total.weekViews += item.weekViews;
       total.monthViews += item.monthViews;
+      total.ctaClicks += item.totalCtaClicks;
       total.productClicks += item.totalProductClicks;
+      total.directProductClicks += item.directProductClicks;
+      total.assistedProductClicks += item.assistedProductClicks;
       return total;
     },
-    { totalViews: 0, todayViews: 0, weekViews: 0, monthViews: 0, productClicks: 0 }
+    { totalViews: 0, todayViews: 0, weekViews: 0, monthViews: 0, ctaClicks: 0, productClicks: 0, directProductClicks: 0, assistedProductClicks: 0 }
   );
 
   const filtered = posts.filter((p) => {
@@ -80,12 +83,13 @@ export default function AdminPostsClient({
         </Link>
       </div>
 
-      <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-6">
         {[
           { label: "Tổng lượt xem", value: reportTotals.totalViews, icon: Eye, color: "text-[#E6BF55]" },
           { label: "Hôm nay", value: reportTotals.todayViews, icon: BarChart3, color: "text-sky-400" },
           { label: "Tuần này", value: reportTotals.weekViews, icon: BarChart3, color: "text-violet-400" },
           { label: "Tháng này", value: reportTotals.monthViews, icon: BarChart3, color: "text-emerald-400" },
+          { label: "Click CTA", value: reportTotals.ctaClicks, icon: MousePointerClick, color: "text-violet-400" },
           { label: "Click sản phẩm", value: reportTotals.productClicks, icon: MousePointerClick, color: "text-amber-400" },
         ].map((item) => (
           <div key={item.label} className="rounded-2xl border border-white/[.08] bg-[linear-gradient(135deg,#192331_0%,#272116_100%)] p-4">
@@ -158,7 +162,10 @@ export default function AdminPostsClient({
                   todayViews: 0,
                   weekViews: 0,
                   monthViews: 0,
+                  totalCtaClicks: 0,
                   totalProductClicks: 0,
+                  directProductClicks: 0,
+                  assistedProductClicks: 0,
                 };
                 return (
                   <tr key={post.slug} className="hover:bg-white/2 transition-colors">
@@ -192,7 +199,10 @@ export default function AdminPostsClient({
                       <p className="mt-1 whitespace-nowrap text-[10px] text-[rgba(245,237,214,.42)]">
                         Ngày {report.todayViews} · Tuần {report.weekViews} · Tháng {report.monthViews}
                       </p>
-                      <p className="mt-0.5 text-[10px] text-sky-300/65">{report.totalProductClicks} click sản phẩm</p>
+                      <p className="mt-0.5 text-[10px] text-violet-300/70">{report.totalCtaClicks} click CTA</p>
+                      <p className="mt-0.5 text-[10px] text-sky-300/65">
+                        {report.totalProductClicks} click SP · trực tiếp {report.directProductClicks} · qua CTA {report.assistedProductClicks}
+                      </p>
                     </td>
                     <td className="px-4 py-4 hidden lg:table-cell">
                       <p className="text-sm text-[rgba(245,237,214,0.55)]">

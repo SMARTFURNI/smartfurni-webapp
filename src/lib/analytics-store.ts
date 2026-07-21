@@ -48,19 +48,49 @@ export async function initAnalyticsTables(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_analytics_events_path ON analytics_events(path);
       CREATE TABLE IF NOT EXISTS blog_product_clicks (
         id BIGSERIAL PRIMARY KEY,
+        event_id TEXT,
         post_slug TEXT NOT NULL,
         product_slug TEXT NOT NULL,
         product_name TEXT,
+        target_path TEXT NOT NULL,
+        source_type TEXT NOT NULL DEFAULT 'direct',
+        cta_event_id TEXT,
+        cta_id TEXT,
+        cta_label TEXT,
+        session_id TEXT,
+        ip_hash TEXT,
+        ua TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      ALTER TABLE blog_product_clicks ADD COLUMN IF NOT EXISTS event_id TEXT;
+      ALTER TABLE blog_product_clicks ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'direct';
+      ALTER TABLE blog_product_clicks ADD COLUMN IF NOT EXISTS cta_event_id TEXT;
+      ALTER TABLE blog_product_clicks ADD COLUMN IF NOT EXISTS cta_id TEXT;
+      ALTER TABLE blog_product_clicks ADD COLUMN IF NOT EXISTS cta_label TEXT;
+      CREATE INDEX IF NOT EXISTS idx_blog_product_clicks_post_created
+        ON blog_product_clicks(post_slug, created_at);
+      CREATE INDEX IF NOT EXISTS idx_blog_product_clicks_product
+        ON blog_product_clicks(product_slug);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_blog_product_clicks_event_id
+        ON blog_product_clicks(event_id) WHERE event_id IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_blog_product_clicks_cta_event
+        ON blog_product_clicks(cta_event_id) WHERE cta_event_id IS NOT NULL;
+      CREATE TABLE IF NOT EXISTS blog_cta_clicks (
+        id BIGSERIAL PRIMARY KEY,
+        event_id TEXT NOT NULL UNIQUE,
+        post_slug TEXT NOT NULL,
+        cta_id TEXT NOT NULL,
+        cta_label TEXT,
         target_path TEXT NOT NULL,
         session_id TEXT,
         ip_hash TEXT,
         ua TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
-      CREATE INDEX IF NOT EXISTS idx_blog_product_clicks_post_created
-        ON blog_product_clicks(post_slug, created_at);
-      CREATE INDEX IF NOT EXISTS idx_blog_product_clicks_product
-        ON blog_product_clicks(product_slug);
+      CREATE INDEX IF NOT EXISTS idx_blog_cta_clicks_post_created
+        ON blog_cta_clicks(post_slug, created_at);
+      CREATE INDEX IF NOT EXISTS idx_blog_cta_clicks_session
+        ON blog_cta_clicks(session_id) WHERE session_id IS NOT NULL;
     `);
     console.log("[analytics] Tables initialized");
   } catch (err) {
@@ -98,10 +128,15 @@ export async function trackPageView(params: {
 }
 
 export async function trackBlogProductClick(params: {
+  eventId?: string;
   postSlug: string;
   productSlug: string;
   productName?: string;
   targetPath: string;
+  sourceType?: "direct" | "cta_assisted";
+  ctaEventId?: string;
+  ctaId?: string;
+  ctaLabel?: string;
   sessionId?: string;
   ipHash?: string;
   ua?: string;
@@ -111,13 +146,20 @@ export async function trackBlogProductClick(params: {
   try {
     await pool.query(
       `INSERT INTO blog_product_clicks
-        (post_slug, product_slug, product_name, target_path, session_id, ip_hash, ua)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        (event_id, post_slug, product_slug, product_name, target_path, source_type,
+         cta_event_id, cta_id, cta_label, session_id, ip_hash, ua)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       ON CONFLICT (event_id) WHERE event_id IS NOT NULL DO NOTHING`,
       [
+        params.eventId || null,
         params.postSlug,
         params.productSlug,
         params.productName || null,
         params.targetPath,
+        params.sourceType || "direct",
+        params.ctaEventId || null,
+        params.ctaId || null,
+        params.ctaLabel || null,
         params.sessionId || null,
         params.ipHash || null,
         params.ua || null,
@@ -125,6 +167,40 @@ export async function trackBlogProductClick(params: {
     );
   } catch (err) {
     console.error("[analytics] trackBlogProductClick error:", (err as Error).message);
+  }
+}
+
+export async function trackBlogCtaClick(params: {
+  eventId: string;
+  postSlug: string;
+  ctaId: string;
+  ctaLabel?: string;
+  targetPath: string;
+  sessionId?: string;
+  ipHash?: string;
+  ua?: string;
+}): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
+  try {
+    await pool.query(
+      `INSERT INTO blog_cta_clicks
+        (event_id, post_slug, cta_id, cta_label, target_path, session_id, ip_hash, ua)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (event_id) DO NOTHING`,
+      [
+        params.eventId,
+        params.postSlug,
+        params.ctaId,
+        params.ctaLabel || null,
+        params.targetPath,
+        params.sessionId || null,
+        params.ipHash || null,
+        params.ua || null,
+      ]
+    );
+  } catch (err) {
+    console.error("[analytics] trackBlogCtaClick error:", (err as Error).message);
   }
 }
 
@@ -184,13 +260,17 @@ export interface BlogPostAnalyticsSummary {
   todayViews: number;
   weekViews: number;
   monthViews: number;
+  totalCtaClicks: number;
   totalProductClicks: number;
+  directProductClicks: number;
+  assistedProductClicks: number;
 }
 
 export interface BlogAnalyticsDailyRow {
   date: string;
   label: string;
   views: number;
+  ctaClicks: number;
   productClicks: number;
 }
 
@@ -199,16 +279,33 @@ export interface BlogProductClickRow {
   productName: string;
   targetPath: string;
   clicks: number;
+  directClicks: number;
+  assistedClicks: number;
   lastClickedAt: string | null;
+}
+
+export interface BlogCtaClickRow {
+  ctaId: string;
+  ctaLabel: string;
+  targetPath: string;
+  clicks: number;
+  assistedProductClicks: number;
+  convertedCtaClicks: number;
+  conversionRate: number;
 }
 
 export interface BlogPostAnalyticsDetail extends BlogPostAnalyticsSummary {
   todayProductClicks: number;
   weekProductClicks: number;
   monthProductClicks: number;
+  todayCtaClicks: number;
+  weekCtaClicks: number;
+  monthCtaClicks: number;
   clickThroughRate: number;
+  ctaToProductRate: number;
   daily: BlogAnalyticsDailyRow[];
   products: BlogProductClickRow[];
+  ctas: BlogCtaClickRow[];
 }
 
 function emptyBlogSummary(slug: string): BlogPostAnalyticsSummary {
@@ -218,7 +315,10 @@ function emptyBlogSummary(slug: string): BlogPostAnalyticsSummary {
     todayViews: 0,
     weekViews: 0,
     monthViews: 0,
+    totalCtaClicks: 0,
     totalProductClicks: 0,
+    directProductClicks: 0,
+    assistedProductClicks: 0,
   };
 }
 
@@ -265,7 +365,9 @@ export async function getBlogPostAnalyticsSummaries(
     }
 
     const clicksRes = await pool.query(
-      `SELECT post_slug, COUNT(*)::INT AS total_clicks
+      `SELECT post_slug, COUNT(*)::INT AS total_clicks,
+              COUNT(*) FILTER (WHERE source_type = 'direct')::INT AS direct_clicks,
+              COUNT(*) FILTER (WHERE source_type = 'cta_assisted')::INT AS assisted_clicks
        FROM blog_product_clicks
        WHERE post_slug = ANY($1::TEXT[])
        GROUP BY post_slug`,
@@ -274,6 +376,20 @@ export async function getBlogPostAnalyticsSummaries(
     for (const row of clicksRes.rows) {
       if (!summaries[row.post_slug]) continue;
       summaries[row.post_slug].totalProductClicks = Number(row.total_clicks || 0);
+      summaries[row.post_slug].directProductClicks = Number(row.direct_clicks || 0);
+      summaries[row.post_slug].assistedProductClicks = Number(row.assisted_clicks || 0);
+    }
+
+    const ctaRes = await pool.query(
+      `SELECT post_slug, COUNT(*)::INT AS total_clicks
+       FROM blog_cta_clicks
+       WHERE post_slug = ANY($1::TEXT[])
+       GROUP BY post_slug`,
+      [slugs]
+    );
+    for (const row of ctaRes.rows) {
+      if (!summaries[row.post_slug]) continue;
+      summaries[row.post_slug].totalCtaClicks = Number(row.total_clicks || 0);
     }
   } catch (err) {
     console.error("[analytics] getBlogPostAnalyticsSummaries error:", (err as Error).message);
@@ -289,18 +405,23 @@ export async function getBlogPostAnalyticsDetail(slug: string): Promise<BlogPost
     todayProductClicks: 0,
     weekProductClicks: 0,
     monthProductClicks: 0,
+    todayCtaClicks: 0,
+    weekCtaClicks: 0,
+    monthCtaClicks: 0,
     clickThroughRate: summary.totalViews > 0
       ? Math.round((summary.totalProductClicks / summary.totalViews) * 1000) / 10
       : 0,
+    ctaToProductRate: 0,
     daily: [],
     products: [],
+    ctas: [],
   };
   const pool = getPool();
   if (!pool) return empty;
 
   try {
     const path = `/blog/${slug}`;
-    const [clickPeriodRes, viewDailyRes, clickDailyRes, productsRes] = await Promise.all([
+    const [clickPeriodRes, ctaPeriodRes, viewDailyRes, ctaDailyRes, clickDailyRes, productsRes, ctasRes] = await Promise.all([
       pool.query(
         `SELECT
            COUNT(*) FILTER (
@@ -319,6 +440,23 @@ export async function getBlogPostAnalyticsDetail(slug: string): Promise<BlogPost
         [slug]
       ),
       pool.query(
+        `SELECT
+           COUNT(*) FILTER (
+             WHERE (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::DATE =
+                   (NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')::DATE
+           )::INT AS today_clicks,
+           COUNT(*) FILTER (
+             WHERE date_trunc('week', created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') =
+                   date_trunc('week', NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')
+           )::INT AS week_clicks,
+           COUNT(*) FILTER (
+             WHERE date_trunc('month', created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') =
+                   date_trunc('month', NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')
+           )::INT AS month_clicks
+         FROM blog_cta_clicks WHERE post_slug = $1`,
+        [slug]
+      ),
+      pool.query(
         `SELECT TO_CHAR(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS date,
                 COUNT(*)::INT AS views
          FROM analytics_events
@@ -326,6 +464,14 @@ export async function getBlogPostAnalyticsDetail(slug: string): Promise<BlogPost
            AND created_at >= NOW() - INTERVAL '29 days'
          GROUP BY 1 ORDER BY 1`,
         [path]
+      ),
+      pool.query(
+        `SELECT TO_CHAR(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS date,
+                COUNT(*)::INT AS clicks
+         FROM blog_cta_clicks
+         WHERE post_slug = $1 AND created_at >= NOW() - INTERVAL '29 days'
+         GROUP BY 1 ORDER BY 1`,
+        [slug]
       ),
       pool.query(
         `SELECT TO_CHAR(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS date,
@@ -338,6 +484,8 @@ export async function getBlogPostAnalyticsDetail(slug: string): Promise<BlogPost
       pool.query(
         `SELECT product_slug, COALESCE(MAX(product_name), product_slug) AS product_name,
                 MAX(target_path) AS target_path, COUNT(*)::INT AS clicks,
+                COUNT(*) FILTER (WHERE source_type = 'direct')::INT AS direct_clicks,
+                COUNT(*) FILTER (WHERE source_type = 'cta_assisted')::INT AS assisted_clicks,
                 MAX(created_at) AS last_clicked_at
          FROM blog_product_clicks
          WHERE post_slug = $1
@@ -345,9 +493,25 @@ export async function getBlogPostAnalyticsDetail(slug: string): Promise<BlogPost
          ORDER BY clicks DESC, product_name ASC`,
         [slug]
       ),
+      pool.query(
+        `SELECT c.cta_id,
+                COALESCE(MAX(c.cta_label), c.cta_id) AS cta_label,
+                MAX(c.target_path) AS target_path,
+                COUNT(DISTINCT c.event_id)::INT AS clicks,
+                COUNT(p.id)::INT AS assisted_product_clicks,
+                COUNT(DISTINCT p.cta_event_id)::INT AS converted_cta_clicks
+         FROM blog_cta_clicks c
+         LEFT JOIN blog_product_clicks p
+           ON p.cta_event_id = c.event_id AND p.source_type = 'cta_assisted'
+         WHERE c.post_slug = $1
+         GROUP BY c.cta_id
+         ORDER BY clicks DESC, cta_label ASC`,
+        [slug]
+      ),
     ]);
 
     const viewsByDate = new Map(viewDailyRes.rows.map((row) => [row.date, Number(row.views || 0)]));
+    const ctaByDate = new Map(ctaDailyRes.rows.map((row) => [row.date, Number(row.clicks || 0)]));
     const clicksByDate = new Map(clickDailyRes.rows.map((row) => [row.date, Number(row.clicks || 0)]));
     const daily: BlogAnalyticsDailyRow[] = [];
     const today = new Date();
@@ -359,24 +523,49 @@ export async function getBlogPostAnalyticsDetail(slug: string): Promise<BlogPost
         date: key,
         label: date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
         views: viewsByDate.get(key) || 0,
+        ctaClicks: ctaByDate.get(key) || 0,
         productClicks: clicksByDate.get(key) || 0,
       });
     }
 
     const period = clickPeriodRes.rows[0] || {};
+    const ctaPeriod = ctaPeriodRes.rows[0] || {};
+    const ctas = ctasRes.rows.map((row) => {
+      const clicks = Number(row.clicks || 0);
+      const convertedCtaClicks = Number(row.converted_cta_clicks || 0);
+      return {
+        ctaId: row.cta_id,
+        ctaLabel: row.cta_label,
+        targetPath: row.target_path,
+        clicks,
+        assistedProductClicks: Number(row.assisted_product_clicks || 0),
+        convertedCtaClicks,
+        conversionRate: clicks > 0 ? Math.round((convertedCtaClicks / clicks) * 1000) / 10 : 0,
+      };
+    });
+    const convertedCtaClicks = ctas.reduce((total, row) => total + row.convertedCtaClicks, 0);
     return {
       ...empty,
       todayProductClicks: Number(period.today_clicks || 0),
       weekProductClicks: Number(period.week_clicks || 0),
       monthProductClicks: Number(period.month_clicks || 0),
+      todayCtaClicks: Number(ctaPeriod.today_clicks || 0),
+      weekCtaClicks: Number(ctaPeriod.week_clicks || 0),
+      monthCtaClicks: Number(ctaPeriod.month_clicks || 0),
+      ctaToProductRate: summary.totalCtaClicks > 0
+        ? Math.round((convertedCtaClicks / summary.totalCtaClicks) * 1000) / 10
+        : 0,
       daily,
       products: productsRes.rows.map((row) => ({
         productSlug: row.product_slug,
         productName: row.product_name,
         targetPath: row.target_path,
         clicks: Number(row.clicks || 0),
+        directClicks: Number(row.direct_clicks || 0),
+        assistedClicks: Number(row.assisted_clicks || 0),
         lastClickedAt: row.last_clicked_at ? new Date(row.last_clicked_at).toISOString() : null,
       })),
+      ctas,
     };
   } catch (err) {
     console.error("[analytics] getBlogPostAnalyticsDetail error:", (err as Error).message);

@@ -27,14 +27,15 @@ export default async function PostAnalyticsPage({ params }: { params: Promise<{ 
     getBlogPostAnalyticsDetail(slug),
     Promise.resolve(getSidebarStats()),
   ]);
-  const maxDaily = Math.max(1, ...report.daily.map((row) => Math.max(row.views, row.productClicks)));
+  const maxDaily = Math.max(1, ...report.daily.map((row) => Math.max(row.views, row.ctaClicks, row.productClicks)));
 
   const cards = [
     { label: "Tổng lượt xem", value: report.totalViews, note: "Từ khi bài viết được theo dõi", icon: Eye, color: "text-[#E6BF55]" },
-    { label: "Hôm nay", value: report.todayViews, note: `${report.todayProductClicks} click sản phẩm`, icon: BarChart3, color: "text-sky-400" },
-    { label: "Tuần này", value: report.weekViews, note: `${report.weekProductClicks} click sản phẩm`, icon: TrendingUp, color: "text-violet-400" },
-    { label: "Tháng này", value: report.monthViews, note: `${report.monthProductClicks} click sản phẩm`, icon: BarChart3, color: "text-emerald-400" },
-    { label: "Tổng click sản phẩm", value: report.totalProductClicks, note: `CTR ${report.clickThroughRate.toLocaleString("vi-VN")}%`, icon: MousePointerClick, color: "text-amber-400" },
+    { label: "Click CTA", value: report.totalCtaClicks, note: `Hôm nay ${report.todayCtaClicks} · tuần ${report.weekCtaClicks} · tháng ${report.monthCtaClicks}`, icon: MousePointerClick, color: "text-violet-400" },
+    { label: "SP trực tiếp", value: report.directProductClicks, note: "Click ngay trong khối gợi ý của bài", icon: MousePointerClick, color: "text-sky-400" },
+    { label: "SP qua CTA", value: report.assistedProductClicks, note: "CTA → danh mục → chọn sản phẩm", icon: TrendingUp, color: "text-emerald-400" },
+    { label: "Tổng click SP", value: report.totalProductClicks, note: `CTR bài viết ${report.clickThroughRate.toLocaleString("vi-VN")}%`, icon: BarChart3, color: "text-amber-400" },
+    { label: "CTA tạo click SP", value: report.ctaToProductRate, suffix: "%", note: "Tỷ lệ CTA có phát sinh chọn sản phẩm", icon: TrendingUp, color: "text-pink-400" },
   ];
 
   return (
@@ -59,14 +60,14 @@ export default async function PostAnalyticsPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        <section className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+        <section className="grid grid-cols-2 gap-3 xl:grid-cols-6">
           {cards.map((card) => (
             <div key={card.label} className="rounded-2xl border border-white/[.08] bg-[#171B23] p-4 md:p-5">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-xs text-[rgba(245,237,214,.52)]">{card.label}</p>
                 <card.icon className={`h-4 w-4 ${card.color}`} />
               </div>
-              <p className="mt-3 text-2xl font-bold text-white md:text-3xl">{formatNumber(card.value)}</p>
+              <p className="mt-3 text-2xl font-bold text-white md:text-3xl">{formatNumber(card.value)}{card.suffix || ""}</p>
               <p className="mt-1 text-[11px] text-[rgba(245,237,214,.38)]">{card.note}</p>
             </div>
           ))}
@@ -80,16 +81,18 @@ export default async function PostAnalyticsPage({ params }: { params: Promise<{ 
             </div>
             <div className="flex items-center gap-4 text-[11px] text-[rgba(245,237,214,.58)]">
               <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-[#C9A84C]" /> Lượt xem</span>
+              <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-violet-400" /> CTA</span>
               <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-sky-400" /> Click sản phẩm</span>
             </div>
           </div>
           <div className="mt-6 overflow-x-auto pb-2">
             <div className="flex h-56 min-w-[760px] items-end gap-2 border-b border-white/[.08] px-1">
               {report.daily.map((row, index) => (
-                <div key={row.date} className="group flex h-full min-w-4 flex-1 flex-col justify-end" title={`${row.date}: ${row.views} lượt xem, ${row.productClicks} click`}>
+                <div key={row.date} className="group flex h-full min-w-4 flex-1 flex-col justify-end" title={`${row.date}: ${row.views} lượt xem, ${row.ctaClicks} CTA, ${row.productClicks} click sản phẩm`}>
                   <div className="flex h-[185px] items-end justify-center gap-0.5">
-                    <div className="w-[42%] rounded-t bg-[#C9A84C] transition-opacity group-hover:opacity-80" style={{ height: `${Math.max(row.views > 0 ? 4 : 0, (row.views / maxDaily) * 100)}%` }} />
-                    <div className="w-[42%] rounded-t bg-sky-400 transition-opacity group-hover:opacity-80" style={{ height: `${Math.max(row.productClicks > 0 ? 4 : 0, (row.productClicks / maxDaily) * 100)}%` }} />
+                    <div className="w-[28%] rounded-t bg-[#C9A84C] transition-opacity group-hover:opacity-80" style={{ height: `${Math.max(row.views > 0 ? 4 : 0, (row.views / maxDaily) * 100)}%` }} />
+                    <div className="w-[28%] rounded-t bg-violet-400 transition-opacity group-hover:opacity-80" style={{ height: `${Math.max(row.ctaClicks > 0 ? 4 : 0, (row.ctaClicks / maxDaily) * 100)}%` }} />
+                    <div className="w-[28%] rounded-t bg-sky-400 transition-opacity group-hover:opacity-80" style={{ height: `${Math.max(row.productClicks > 0 ? 4 : 0, (row.productClicks / maxDaily) * 100)}%` }} />
                   </div>
                   <span className="mt-2 -rotate-45 whitespace-nowrap text-[9px] text-[rgba(245,237,214,.32)]">
                     {index % 3 === 0 || index === report.daily.length - 1 ? row.label : ""}
@@ -98,6 +101,35 @@ export default async function PostAnalyticsPage({ params }: { params: Promise<{ 
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="mt-5 overflow-hidden rounded-2xl border border-white/[.08] bg-[#171B23]">
+          <div className="border-b border-white/[.08] px-5 py-4 md:px-6">
+            <h2 className="text-lg font-bold text-white">Hiệu quả từng nút CTA</h2>
+            <p className="mt-1 text-xs text-[rgba(245,237,214,.42)]">Một CTA được ghi nhận chuyển đổi khi người đọc chọn sản phẩm trong vòng 30 phút sau khi bấm.</p>
+          </div>
+          {report.ctas.length === 0 ? (
+            <div className="px-6 py-10 text-center text-sm text-[rgba(245,237,214,.48)]">Chưa có lượt click CTA từ bài viết này.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px]">
+                <thead><tr className="border-b border-white/[.08] text-left text-[10px] uppercase tracking-[.12em] text-[rgba(245,237,214,.42)]">
+                  <th className="px-5 py-3 font-medium md:px-6">CTA</th><th className="px-4 py-3 font-medium">Trang đích</th>
+                  <th className="px-4 py-3 text-right font-medium">Lượt bấm</th><th className="px-4 py-3 text-right font-medium">Click SP</th>
+                  <th className="px-5 py-3 text-right font-medium md:px-6">Tỷ lệ</th>
+                </tr></thead>
+                <tbody className="divide-y divide-white/[.05]">{report.ctas.map((cta) => (
+                  <tr key={cta.ctaId} className="hover:bg-white/[.025]">
+                    <td className="px-5 py-4 md:px-6"><p className="text-sm font-semibold text-white">{cta.ctaLabel}</p><p className="mt-1 text-[11px] text-[rgba(245,237,214,.35)]">{cta.ctaId}</p></td>
+                    <td className="px-4 py-4 text-xs text-sky-300/75">{cta.targetPath}</td>
+                    <td className="px-4 py-4 text-right font-bold text-violet-300">{formatNumber(cta.clicks)}</td>
+                    <td className="px-4 py-4 text-right font-bold text-sky-300">{formatNumber(cta.assistedProductClicks)}</td>
+                    <td className="px-5 py-4 text-right font-bold text-emerald-300 md:px-6">{cta.conversionRate.toLocaleString("vi-VN")}%</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <section className="mt-5 overflow-hidden rounded-2xl border border-white/[.08] bg-[#171B23]">
@@ -117,7 +149,9 @@ export default async function PostAnalyticsPage({ params }: { params: Promise<{ 
                   <tr className="border-b border-white/[.08] text-left text-[10px] uppercase tracking-[.12em] text-[rgba(245,237,214,.42)]">
                     <th className="px-5 py-3 font-medium md:px-6">Sản phẩm</th>
                     <th className="px-4 py-3 font-medium">Link đích</th>
-                    <th className="px-4 py-3 text-right font-medium">Lượt click</th>
+                    <th className="px-4 py-3 text-right font-medium">Trực tiếp</th>
+                    <th className="px-4 py-3 text-right font-medium">Qua CTA</th>
+                    <th className="px-4 py-3 text-right font-medium">Tổng</th>
                     <th className="px-5 py-3 text-right font-medium md:px-6">Click gần nhất</th>
                   </tr>
                 </thead>
@@ -133,6 +167,8 @@ export default async function PostAnalyticsPage({ params }: { params: Promise<{ 
                           {product.targetPath} <ExternalLink className="h-3 w-3 shrink-0" />
                         </Link>
                       </td>
+                      <td className="px-4 py-4 text-right text-sm font-bold text-sky-300">{formatNumber(product.directClicks)}</td>
+                      <td className="px-4 py-4 text-right text-sm font-bold text-violet-300">{formatNumber(product.assistedClicks)}</td>
                       <td className="px-4 py-4 text-right text-base font-bold text-[#E6BF55]">{formatNumber(product.clicks)}</td>
                       <td className="px-5 py-4 text-right text-xs text-[rgba(245,237,214,.52)] md:px-6">
                         {product.lastClickedAt ? new Date(product.lastClickedAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "—"}
