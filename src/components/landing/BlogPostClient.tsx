@@ -66,6 +66,19 @@ function formatPrice(price: number): string {
   return new Intl.NumberFormat("vi-VN").format(price) + "đ";
 }
 
+function createHeadingId(value: string, index: number): string {
+  const slug = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `muc-${index + 1}-${slug || "noi-dung"}`;
+}
+
 function ProductRecommendationBlock({ post, products }: { post: BlogPost; products: Product[] }) {
   const recommendation = post.productRecommendation;
   if (!recommendation) return null;
@@ -78,18 +91,18 @@ function ProductRecommendationBlock({ post, products }: { post: BlogPost; produc
         <p className="mt-2 text-sm leading-6 text-[#F5EDD6]/55">{recommendation.description}</p>
       </div>
       {visibleProducts.length > 0 && (
-        <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+        <div className="grid grid-cols-2 gap-2 p-2.5 sm:gap-3 sm:p-5">
           {visibleProducts.map((product) => {
             const image = product.coverImage || product.images[0];
             return (
               <Link key={product.slug} href={`/products/${product.slug}`} className="group overflow-hidden rounded-2xl border border-white/[.08] bg-black/20 transition hover:-translate-y-0.5 hover:border-[#C9A84C]/40">
                 {image && <img src={image} alt={product.name} loading="lazy" className="aspect-square w-full bg-[#0F151E] object-contain p-2" />}
-                <div className="p-4">
-                  <p className="line-clamp-2 text-sm font-semibold leading-5 text-[#F5EDD6] group-hover:text-[#E6BF55]">{product.name}</p>
-                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#F5EDD6]/40">{product.description}</p>
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="text-sm font-semibold text-[#E6BF55]">{formatPrice(product.price)}</span>
-                    <span className="text-xs text-[#F5EDD6]/55">Xem chi tiết →</span>
+                <div className="p-2.5 sm:p-4">
+                  <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-[#F5EDD6] group-hover:text-[#E6BF55] sm:text-sm sm:leading-5">{product.name}</p>
+                  <p className="mt-1.5 line-clamp-2 text-[10px] leading-4 text-[#F5EDD6]/40 sm:mt-2 sm:text-xs sm:leading-5">{product.description}</p>
+                  <div className="mt-2.5 flex flex-col gap-1 sm:mt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                    <span className="text-[11px] font-semibold text-[#E6BF55] sm:text-sm">{formatPrice(product.price)}</span>
+                    <span className="text-[10px] text-[#F5EDD6]/55 sm:text-xs">Xem chi tiết →</span>
                   </div>
                 </div>
               </Link>
@@ -223,6 +236,15 @@ function ShareButtons({ title, slug }: { title: string; slug: string }) {
 export default function BlogPostClient({ post, relatedPosts, theme, recommendedProducts }: Props) {
   const categoryColor = CATEGORIES[post.category].color;
   const funnelCta = FUNNEL_CTA[post.funnelStage || "MOFU"];
+  const contentBlocks = post.content.split("\n\n");
+  let sectionNumber = 0;
+  const articleHeadings = contentBlocks.flatMap((block, blockIndex) => {
+    const level = block.startsWith("## ") ? 2 : block.startsWith("### ") ? 3 : null;
+    if (!level) return [];
+    if (level === 2) sectionNumber += 1;
+    const title = block.replace(/^#{2,3}\s+/, "").trim();
+    return [{ id: createHeadingId(title, blockIndex), level, title, sectionNumber }];
+  });
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#14110D_0,#14110D_72px,#E5E9ED_72px,#F0EBE2_100%)] font-sans text-[#252B33]">
@@ -271,14 +293,43 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
             </div>
           </div>
 
+          <nav aria-label="Dàn ý bài viết" className="mb-9 rounded-2xl border border-[#C7D0D8] bg-[linear-gradient(135deg,#EDF2F6_0%,#F7F1E5_100%)] p-5 shadow-[0_12px_32px_rgba(30,38,48,.06)] sm:p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1E2A38] text-sm font-bold text-[#E6BF55]">≡</span>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#8A651C]">Đọc nhanh</p>
+                <h2 className="mt-0.5 text-lg font-bold text-[#202832]">Dàn ý nội dung bài viết</h2>
+              </div>
+            </div>
+            <ol className="mt-4 space-y-1.5 border-t border-[#C9D0D5] pt-4">
+              {articleHeadings.length > 0 ? articleHeadings.map((heading) => (
+                <li key={heading.id} className={heading.level === 3 ? "pl-6" : ""}>
+                  <a href={`#${heading.id}`} className={`group flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 transition hover:bg-white/70 hover:text-[#7A5817] ${heading.level === 2 ? "font-semibold text-[#303A45]" : "text-[#626B73]"}`}>
+                    <span className={`mt-0.5 shrink-0 text-[#A77B22] ${heading.level === 3 ? "text-[10px]" : "text-xs font-bold"}`}>
+                      {heading.level === 2 ? `${heading.sectionNumber}.` : "•"}
+                    </span>
+                    <span>{heading.title}</span>
+                  </a>
+                </li>
+              )) : (
+                <li>
+                  <a href="#noi-dung-bai-viet" className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-[#303A45] transition hover:bg-white/70 hover:text-[#7A5817]">
+                    <span className="text-[#A77B22]">1.</span>
+                    Đọc nội dung bài viết
+                  </a>
+                </li>
+              )}
+            </ol>
+          </nav>
+
           {post.coverImage && (
             <figure className="mb-10 overflow-hidden rounded-2xl bg-[#E8E1D6]">
               <img src={post.coverImage} alt={post.title} className="aspect-[16/9] w-full object-cover" />
             </figure>
           )}
 
-          <div className="max-w-none text-[16px] leading-[1.85] text-[#3E4650] sm:text-[17px]">
-            {post.content.split("\n\n").map((block, i) => {
+          <div id="noi-dung-bai-viet" className="max-w-none scroll-mt-28 text-[16px] leading-[1.85] text-[#3E4650] sm:text-[17px]">
+            {contentBlocks.map((block, i) => {
               if (block.trim() === "[[SMARTFURNI_PRODUCTS]]") {
                 return <ProductRecommendationBlock key={i} post={post} products={recommendedProducts} />;
               }
@@ -286,16 +337,18 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
                 return <ArticleCtaBlock key={i} post={post} />;
               }
               if (block.startsWith("## ")) {
+                const title = block.replace("## ", "");
                 return (
-                  <h2 key={i} className="mb-4 mt-11 text-2xl font-semibold leading-snug tracking-[-0.025em] text-[#202832] sm:text-[30px]">
-                    {block.replace("## ", "")}
+                  <h2 id={createHeadingId(title, i)} key={i} className="mb-4 mt-11 scroll-mt-28 text-2xl font-semibold leading-snug tracking-[-0.025em] text-[#202832] sm:text-[30px]">
+                    {title}
                   </h2>
                 );
               }
               if (block.startsWith("### ")) {
+                const title = block.replace("### ", "");
                 return (
-                  <h3 key={i} className="mb-3 mt-8 text-xl font-semibold tracking-[-0.015em] text-[#28313C] sm:text-2xl">
-                    {block.replace("### ", "")}
+                  <h3 id={createHeadingId(title, i)} key={i} className="mb-3 mt-8 scroll-mt-28 text-xl font-semibold tracking-[-0.015em] text-[#28313C] sm:text-2xl">
+                    {title}
                   </h3>
                 );
               }
