@@ -80,6 +80,12 @@ function createHeadingId(value: string, index: number): string {
   return `muc-${index + 1}-${slug || "noi-dung"}`;
 }
 
+function removeHeadingNumber(value: string): string {
+  return value
+    .replace(/^\s*(?:phần\s+\d+[:.)-]?|\d+(?:\.\d+)*[.)-])\s+/i, "")
+    .trim();
+}
+
 function ProductRecommendationBlock({ post, products }: { post: BlogPost; products: Product[] }) {
   const recommendation = post.productRecommendation;
   if (!recommendation) return null;
@@ -266,7 +272,12 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
     if (!level) return [];
     if (level === 2) sectionNumber += 1;
     const title = block.replace(/^#{2,3}\s+/, "").trim();
-    return [{ id: createHeadingId(title, blockIndex), level, title, sectionNumber }];
+    return [{
+      id: createHeadingId(title, blockIndex),
+      level,
+      title: removeHeadingNumber(title) || title,
+      sectionNumber,
+    }];
   });
 
   return (
@@ -316,12 +327,12 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
             </div>
           </div>
 
-          <nav aria-label="Dàn ý bài viết" className="mb-9 rounded-2xl border border-[#C7D0D8] bg-[linear-gradient(135deg,#EDF2F6_0%,#F7F1E5_100%)] p-5 shadow-[0_12px_32px_rgba(30,38,48,.06)] sm:p-6">
+          <nav aria-label="Mục lục bài viết" className="mb-9 rounded-2xl border border-[#C7D0D8] bg-[linear-gradient(135deg,#EDF2F6_0%,#F7F1E5_100%)] p-5 shadow-[0_12px_32px_rgba(30,38,48,.06)] sm:p-6">
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1E2A38] text-sm font-bold text-[#E6BF55]">≡</span>
+              <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1E2A38] text-sm font-bold text-[#E6BF55]">≡</span>
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#8A651C]">Đọc nhanh</p>
-                <h2 className="mt-0.5 text-lg font-bold text-[#202832]">Dàn ý nội dung bài viết</h2>
+                <h2 className="mt-0.5 text-lg font-bold text-[#202832]">Mục lục bài viết</h2>
               </div>
             </div>
             <ol className="mt-4 space-y-1.5 border-t border-[#C9D0D5] pt-4">
@@ -377,21 +388,33 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
               }
               if (block.startsWith("| ")) {
                 const rows = block.split("\n").filter((r) => r.trim() && !r.match(/^\|[-| :]+\|$/));
+                const parsedRows = rows.map((row) => row.split("|").filter((cell) => cell.trim() !== ""));
+                const [headerRow, ...bodyRows] = parsedRows;
                 return (
                   <div key={i} className="my-7 overflow-x-auto rounded-xl border border-[#D8CFC2] bg-white font-sans">
-                    <table className="w-full border-collapse text-sm">
-                      {rows.map((row, ri) => {
-                        const cells = row.split("|").filter((c) => c.trim() !== "");
-                        return (
-                          <tr key={ri} className={ri === 0 ? "bg-[#EDE3CF] font-semibold" : "even:bg-[#FAF7F1]"}>
+                    <table className="w-full border-collapse text-left text-sm">
+                      {headerRow && (
+                        <thead className="bg-[#EDE3CF] font-semibold">
+                          <tr>
+                            {headerRow.map((cell, ci) => (
+                              <th key={ci} scope="col" className="border-b border-r border-[#E2DACE] px-4 py-3 text-[#403931] last:border-r-0">
+                                {cell.trim()}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                      )}
+                      <tbody>
+                        {bodyRows.map((cells, ri) => (
+                          <tr key={ri} className="even:bg-[#FAF7F1]">
                             {cells.map((cell, ci) => (
                               <td key={ci} className="border-b border-r border-[#E2DACE] px-4 py-3 text-[#403931] last:border-r-0">
                                 {cell.trim()}
                               </td>
                             ))}
                           </tr>
-                        );
-                      })}
+                        ))}
+                      </tbody>
                     </table>
                   </div>
                 );
@@ -480,7 +503,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
           <div className="mt-10 border-t border-[#DED6C9] pt-6 font-sans">
             <div className="flex flex-wrap gap-2">
               {post.tags.map((tag) => (
-                <span key={tag} className="cursor-pointer rounded-full border border-[#D8D0C4] bg-[#F7F2E9] px-3 py-1 text-sm text-[#6B6258] transition-colors hover:border-[#B88A2B] hover:text-[#7A5817]">
+                <span key={tag} className="rounded-full border border-[#D8D0C4] bg-[#F7F2E9] px-3 py-1 text-sm text-[#6B6258]">
                   #{tag}
                 </span>
               ))}
@@ -527,7 +550,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
               {relatedPosts.map((related) => (
                 <Link key={related.slug} href={`/blog/${related.slug}`} className="group overflow-hidden rounded-2xl border border-[#D8D0C4] bg-[#FFFDF9] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                  {related.coverImage && <img src={related.coverImage} alt="" loading="lazy" className="aspect-[16/9] w-full object-cover" />}
+                  {related.coverImage && <img src={related.coverImage} alt={`Ảnh minh họa: ${related.title}`} loading="lazy" className="aspect-[16/9] w-full object-cover" />}
                   <article className="p-4">
                     <span
                       className="text-xs px-2 py-0.5 rounded-full mb-2 inline-block"
