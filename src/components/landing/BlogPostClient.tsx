@@ -69,20 +69,21 @@ function formatPrice(price: number): string {
 function ProductRecommendationBlock({ post, products }: { post: BlogPost; products: Product[] }) {
   const recommendation = post.productRecommendation;
   if (!recommendation) return null;
+  const visibleProducts = products.slice(0, 4);
   return (
-    <aside className="my-9 overflow-hidden rounded-3xl border border-[#C9A84C]/25 bg-[linear-gradient(135deg,rgba(31,35,44,.98),rgba(39,28,12,.96))] shadow-[0_20px_70px_rgba(0,0,0,.25)]">
+    <aside className="my-9 overflow-hidden rounded-3xl border border-[#C9A84C]/30 bg-[linear-gradient(135deg,#192331_0%,#272116_100%)] font-sans shadow-[0_20px_70px_rgba(18,24,32,.22)]">
       <div className="border-b border-[#C9A84C]/15 px-5 py-5 sm:px-7">
         <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#E6BF55]">SmartFurni gợi ý</p>
         <h2 className="mt-2 text-xl font-semibold text-[#F5EDD6]">{recommendation.title}</h2>
         <p className="mt-2 text-sm leading-6 text-[#F5EDD6]/55">{recommendation.description}</p>
       </div>
-      {products.length > 0 && (
+      {visibleProducts.length > 0 && (
         <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
-          {products.map((product) => {
+          {visibleProducts.map((product) => {
             const image = product.coverImage || product.images[0];
             return (
               <Link key={product.slug} href={`/products/${product.slug}`} className="group overflow-hidden rounded-2xl border border-white/[.08] bg-black/20 transition hover:-translate-y-0.5 hover:border-[#C9A84C]/40">
-                {image && <img src={image} alt={product.name} loading="lazy" className="aspect-[16/10] w-full bg-black/30 object-cover" />}
+                {image && <img src={image} alt={product.name} loading="lazy" className="aspect-square w-full bg-[#0F151E] object-contain p-2" />}
                 <div className="p-4">
                   <p className="line-clamp-2 text-sm font-semibold leading-5 text-[#F5EDD6] group-hover:text-[#E6BF55]">{product.name}</p>
                   <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#F5EDD6]/40">{product.description}</p>
@@ -224,7 +225,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
   const funnelCta = FUNNEL_CTA[post.funnelStage || "MOFU"];
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#14110D_0,#14110D_72px,#F1ECE3_72px,#F1ECE3_100%)] text-[#2C2721]">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#14110D_0,#14110D_72px,#E5E9ED_72px,#F0EBE2_100%)] font-sans text-[#252B33]">
       <ReadingProgressBar />
       <Navbar theme={theme} />
 
@@ -237,7 +238,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
           <span className="max-w-[65vw] truncate text-[#4F4840]">{post.title}</span>
         </div>
 
-        <article className="mx-auto max-w-4xl border-y border-[#DED6C9] bg-[#FFFDF9] px-5 py-8 shadow-[0_18px_60px_rgba(70,55,35,.08)] sm:rounded-3xl sm:border sm:px-10 sm:py-12 md:px-16">
+        <article className="mx-auto max-w-4xl border-y border-[#CDD1D4] bg-[#FCFBF8] px-5 py-8 shadow-[0_22px_70px_rgba(22,30,40,.10)] sm:rounded-3xl sm:border sm:px-10 sm:py-12 md:px-16">
           <div className="mb-5 flex flex-wrap items-center gap-3">
             <span
               className="rounded-full px-3 py-1 text-sm font-semibold"
@@ -252,7 +253,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
             <span className="text-sm text-[#746B61]">{post.readTime} phút đọc</span>
           </div>
 
-          <h1 className="mb-6 font-[Georgia,serif] text-3xl font-normal leading-[1.16] text-[#241F1A] sm:text-4xl md:text-[46px]">
+          <h1 className="mb-6 text-3xl font-light leading-[1.16] tracking-[-0.035em] text-[#1E2630] sm:text-4xl md:text-[46px]">
             {post.title}
           </h1>
 
@@ -276,7 +277,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
             </figure>
           )}
 
-          <div className="max-w-none font-[Georgia,serif] text-[17px] leading-[1.85] text-[#3E3831] sm:text-[18px]">
+          <div className="max-w-none text-[16px] leading-[1.85] text-[#3E4650] sm:text-[17px]">
             {post.content.split("\n\n").map((block, i) => {
               if (block.trim() === "[[SMARTFURNI_PRODUCTS]]") {
                 return <ProductRecommendationBlock key={i} post={post} products={recommendedProducts} />;
@@ -286,14 +287,14 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
               }
               if (block.startsWith("## ")) {
                 return (
-                  <h2 key={i} className="mb-4 mt-11 font-[Georgia,serif] text-2xl font-semibold leading-snug text-[#29231D] sm:text-[30px]">
+                  <h2 key={i} className="mb-4 mt-11 text-2xl font-semibold leading-snug tracking-[-0.025em] text-[#202832] sm:text-[30px]">
                     {block.replace("## ", "")}
                   </h2>
                 );
               }
               if (block.startsWith("### ")) {
                 return (
-                  <h3 key={i} className="mb-3 mt-8 font-[Georgia,serif] text-xl font-semibold text-[#342D26] sm:text-2xl">
+                  <h3 key={i} className="mb-3 mt-8 text-xl font-semibold tracking-[-0.015em] text-[#28313C] sm:text-2xl">
                     {block.replace("### ", "")}
                   </h3>
                 );
@@ -437,7 +438,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
           <section className="mx-4 mb-2 mt-12 sm:mx-auto sm:max-w-4xl">
             <div className="mb-6 flex items-center gap-3">
               <span className="h-px w-8 bg-[#A47A25]" />
-              <h2 className="font-[Georgia,serif] text-2xl text-[#2C2721]">Bài viết liên quan</h2>
+              <h2 className="text-2xl font-light tracking-[-0.025em] text-[#202832]">Bài viết liên quan</h2>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
               {relatedPosts.map((related) => (
@@ -450,7 +451,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
                     >
                       {related.categoryLabel}
                     </span>
-                    <h3 className="mb-2 line-clamp-2 font-[Georgia,serif] text-base font-semibold leading-snug text-[#332D27] transition-colors group-hover:text-[#856018]">
+                    <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-snug text-[#28313C] transition-colors group-hover:text-[#856018]">
                       {related.title}
                     </h3>
                     <p className="text-xs text-[#786F64]">{related.readTime} phút · {formatDate(related.publishedAt)}</p>
