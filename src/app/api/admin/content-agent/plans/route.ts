@@ -9,6 +9,8 @@ const requestSchema = z.object({
   name: z.string().min(3).max(120),
   goal: z.string().min(10).max(600),
   audience: z.string().min(5).max(600),
+  pillarKeyword: z.string().trim().min(2, "Vui lòng nhập từ khóa SEO chính").max(120),
+  supportingKeywords: z.array(z.string().trim().min(2)).max(20).default([]),
   productFamilySlug: z.string().min(3),
   horizonWeeks: z.number().int().min(1).max(12),
   weeklyCadence: z.number().int().min(1).max(4),

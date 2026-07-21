@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { BlogPost, PostStatus } from "@/lib/blog-data";
 import { CATEGORIES } from "@/lib/blog-data";
+import { PRODUCT_FAMILIES } from "@/lib/product-families";
 
 interface PostEditorProps {
   mode: "create" | "edit";
@@ -35,6 +36,8 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
     coverImage: initialData?.coverImage || "",
     publishedAt: initialData?.publishedAt?.split("T")[0] || new Date().toISOString().split("T")[0],
     funnelStage: initialData?.funnelStage || "TOFU",
+    seoClusterRole: initialData?.seoClusterRole || "supporting",
+    pillarKeyword: initialData?.pillarKeyword || "",
     primaryKeyword: initialData?.primaryKeyword || "",
     secondaryKeywords: initialData?.secondaryKeywords?.join(", ") || "",
     searchIntent: initialData?.searchIntent || "",
@@ -48,6 +51,16 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
     aiGenerated: initialData?.aiGenerated || false,
     contentPlanId: initialData?.contentPlanId || "",
     contentPlanItemId: initialData?.contentPlanItemId || "",
+    productFamilySlug: initialData?.productRecommendation?.familySlug || PRODUCT_FAMILIES[0].slug,
+    productBlockTitle: initialData?.productRecommendation?.title || "Sản phẩm SmartFurni phù hợp",
+    productBlockDescription: initialData?.productRecommendation?.description || "Khám phá các lựa chọn phù hợp với nhu cầu vừa được đề cập trong bài viết.",
+    productSlugs: initialData?.productRecommendation?.productSlugs.join(", ") || "",
+    productCtaLabel: initialData?.productRecommendation?.ctaLabel || "Xem toàn bộ dòng sản phẩm",
+    articleCtaEyebrow: initialData?.articleCta?.eyebrow || "Tư vấn từ SmartFurni",
+    articleCtaTitle: initialData?.articleCta?.title || "Tìm giải pháp phù hợp với nhu cầu của bạn",
+    articleCtaDescription: initialData?.articleCta?.description || "Khám phá sản phẩm hoặc trao đổi với SmartFurni để lựa chọn cấu hình phù hợp.",
+    articleCtaPrimaryLabel: initialData?.articleCta?.primaryLabel || "Xem sản phẩm",
+    articleCtaSecondaryLabel: initialData?.articleCta?.secondaryLabel || "Liên hệ tư vấn",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -132,6 +145,23 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
           form.status === "scheduled" && form.scheduledAt
             ? new Date(form.scheduledAt).toISOString()
             : undefined,
+        productRecommendation: {
+          familySlug: form.productFamilySlug,
+          title: form.productBlockTitle,
+          description: form.productBlockDescription,
+          productSlugs: form.productSlugs.split(",").map((slug) => slug.trim()).filter(Boolean),
+          ctaLabel: form.productCtaLabel,
+          ctaHref: `/products/${form.productFamilySlug}`,
+        },
+        articleCta: {
+          eyebrow: form.articleCtaEyebrow,
+          title: form.articleCtaTitle,
+          description: form.articleCtaDescription,
+          primaryLabel: form.articleCtaPrimaryLabel,
+          primaryHref: `/products/${form.productFamilySlug}`,
+          secondaryLabel: form.articleCtaSecondaryLabel,
+          secondaryHref: "/contact",
+        },
       };
       const url =
         mode === "create" ? "/api/admin/posts" : `/api/admin/posts/${initialData?.slug}`;
@@ -212,6 +242,23 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
           </div>
           <div className="prose prose-invert max-w-none">
             {form.content.split("\n\n").map((block, i) => {
+              if (block.trim() === "[[SMARTFURNI_PRODUCTS]]")
+                return (
+                  <div key={i} className="my-6 rounded-2xl border border-[#C9A84C]/25 bg-[linear-gradient(135deg,rgba(31,35,44,.98),rgba(39,28,12,.96))] p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#E6BF55]">SmartFurni gợi ý</p>
+                    <h2 className="mt-2 text-xl font-semibold text-[#F5EDD6]">{form.productBlockTitle}</h2>
+                    <p className="mt-2 text-sm leading-6 text-[#F5EDD6]/55">{form.productBlockDescription}</p>
+                    <div className="mt-4 rounded-xl bg-[#C9A84C] px-4 py-2.5 text-center text-sm font-semibold text-black">{form.productCtaLabel} →</div>
+                  </div>
+                );
+              if (block.trim() === "[[SMARTFURNI_CTA]]")
+                return (
+                  <div key={i} className="my-6 rounded-2xl border border-[#C9A84C]/25 bg-[#1A1600]/90 p-5 text-center">
+                    <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#E6BF55]">{form.articleCtaEyebrow}</p>
+                    <h2 className="mt-2 text-xl font-semibold text-[#F5EDD6]">{form.articleCtaTitle}</h2>
+                    <p className="mt-2 text-sm leading-6 text-[#F5EDD6]/55">{form.articleCtaDescription}</p>
+                  </div>
+                );
               if (block.startsWith("## "))
                 return (
                   <h2 key={i} className="text-2xl font-bold text-[#C9A84C] mt-8 mb-3">
@@ -364,6 +411,8 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                 <span>**in đậm**</span>
                 <span>*in nghiêng*</span>
                 <span>- danh sách</span>
+                <button type="button" onClick={() => setForm((p) => ({ ...p, content: `${p.content}\n\n[[SMARTFURNI_PRODUCTS]]` }))} className="rounded-full border border-[#C9A84C]/20 px-2 py-0.5 text-[#C9A84C]">+ Khối sản phẩm</button>
+                <button type="button" onClick={() => setForm((p) => ({ ...p, content: `${p.content}\n\n[[SMARTFURNI_CTA]]` }))} className="rounded-full border border-[#C9A84C]/20 px-2 py-0.5 text-[#C9A84C]">+ CTA trong bài</button>
               </div>
               <textarea
                 value={form.content}
@@ -525,6 +574,18 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                   <option value="BOFU">BOFU · Chuyển đổi</option>
                 </select>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Vai trò SEO</label>
+                  <select value={form.seoClusterRole} onChange={(e) => setForm((p) => ({ ...p, seoClusterRole: e.target.value as "pillar" | "supporting" | "commercial" }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm">
+                    <option value="pillar">Pillar</option><option value="supporting">Supporting</option><option value="commercial">Commercial</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Từ khóa trụ cột</label>
+                  <input value={form.pillarKeyword} onChange={(e) => setForm((p) => ({ ...p, pillarKeyword: e.target.value }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+              </div>
               <div>
                 <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Từ khóa chính</label>
                 <input value={form.primaryKeyword} onChange={(e) => setForm((p) => ({ ...p, primaryKeyword: e.target.value }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40" />
@@ -548,6 +609,29 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
               <div>
                 <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Nguồn tham khảo <span className="text-[rgba(245,237,214,0.35)]">(Tên | URL, mỗi dòng một nguồn)</span></label>
                 <textarea rows={4} value={form.sources} onChange={(e) => setForm((p) => ({ ...p, sources: e.target.value }))} className="w-full resize-y bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#C9A84C]/40" />
+              </div>
+            </div>
+
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5 space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Sản phẩm & CTA trong bài</h3>
+                <p className="mt-1 text-[11px] leading-5 text-[rgba(245,237,214,0.4)]">Hiển thị tại marker [[SMARTFURNI_PRODUCTS]] và [[SMARTFURNI_CTA]] trong nội dung.</p>
+              </div>
+              <select value={form.productFamilySlug} onChange={(e) => setForm((p) => ({ ...p, productFamilySlug: e.target.value }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm">
+                {PRODUCT_FAMILIES.map((family) => <option key={family.slug} value={family.slug}>{family.label}</option>)}
+              </select>
+              <input value={form.productBlockTitle} onChange={(e) => setForm((p) => ({ ...p, productBlockTitle: e.target.value }))} placeholder="Tiêu đề khối sản phẩm" className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm" />
+              <textarea rows={3} value={form.productBlockDescription} onChange={(e) => setForm((p) => ({ ...p, productBlockDescription: e.target.value }))} placeholder="Mô tả lý do sản phẩm phù hợp" className="w-full resize-none bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm" />
+              <input value={form.productSlugs} onChange={(e) => setForm((p) => ({ ...p, productSlugs: e.target.value }))} placeholder="slug-san-pham-1, slug-san-pham-2" className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-xs font-mono" />
+              <input value={form.productCtaLabel} onChange={(e) => setForm((p) => ({ ...p, productCtaLabel: e.target.value }))} placeholder="Nhãn nút xem dòng sản phẩm" className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm" />
+              <div className="border-t border-[rgba(255,200,100,0.1)] pt-4 space-y-3">
+                <input value={form.articleCtaEyebrow} onChange={(e) => setForm((p) => ({ ...p, articleCtaEyebrow: e.target.value }))} placeholder="Nhãn CTA" className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm" />
+                <input value={form.articleCtaTitle} onChange={(e) => setForm((p) => ({ ...p, articleCtaTitle: e.target.value }))} placeholder="Tiêu đề CTA" className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm" />
+                <textarea rows={2} value={form.articleCtaDescription} onChange={(e) => setForm((p) => ({ ...p, articleCtaDescription: e.target.value }))} placeholder="Mô tả CTA" className="w-full resize-none bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm" />
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={form.articleCtaPrimaryLabel} onChange={(e) => setForm((p) => ({ ...p, articleCtaPrimaryLabel: e.target.value }))} placeholder="Nút chính" className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-xs" />
+                  <input value={form.articleCtaSecondaryLabel} onChange={(e) => setForm((p) => ({ ...p, articleCtaSecondaryLabel: e.target.value }))} placeholder="Nút phụ" className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-xs" />
+                </div>
               </div>
             </div>
 

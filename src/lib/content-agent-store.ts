@@ -2,6 +2,7 @@ import { dbLoadAll, dbSaveOneAndWait } from "./db-store";
 import { registerDbLoader } from "./db-init";
 
 export type FunnelStage = "TOFU" | "MOFU" | "BOFU";
+export type SeoClusterRole = "pillar" | "supporting" | "commercial";
 export type ContentPlanItemStatus = "idea" | "approved" | "drafted" | "review" | "ready" | "published";
 
 export interface ContentQaResult {
@@ -14,6 +15,7 @@ export interface ContentQaResult {
 export interface ContentPlanItem {
   id: string;
   funnelStage: FunnelStage;
+  clusterRole?: SeoClusterRole;
   title: string;
   primaryKeyword: string;
   secondaryKeywords: string[];
@@ -34,6 +36,10 @@ export interface ContentPlan {
   name: string;
   goal: string;
   audience: string;
+  /** Từ khóa hạt nhân dùng để xây toàn bộ topic cluster. */
+  pillarKeyword?: string;
+  /** Các từ khóa/biến thể do admin cung cấp để AI ưu tiên khi lập cluster. */
+  supportingKeywords?: string[];
   productFamilySlug: string;
   productFamilyLabel: string;
   horizonWeeks: number;

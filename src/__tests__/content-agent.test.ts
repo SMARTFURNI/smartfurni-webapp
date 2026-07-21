@@ -23,7 +23,7 @@ function safeArticle(): GeneratedArticle {
   return {
     title: "Hướng dẫn lựa chọn tư thế nghỉ ngơi phù hợp",
     excerpt: "Một hướng dẫn thực tế giúp người đọc cân nhắc tư thế nghỉ ngơi phù hợp với nhu cầu cá nhân.",
-    content: `## Hiểu nhu cầu\n\n${body}\n\n## Các lựa chọn\n\nNội dung thực tế.\n\n## Cách thử an toàn\n\nTheo dõi cảm nhận cá nhân.`,
+    content: `## Hiểu nhu cầu\n\n${body}\n\n[[SMARTFURNI_PRODUCTS]]\n\n## Các lựa chọn\n\nNội dung thực tế.\n\n[[SMARTFURNI_CTA]]\n\n## Cách thử an toàn\n\nTheo dõi cảm nhận cá nhân.`,
     tags: ["giấc ngủ", "tư thế"],
     category: "tips-giac-ngu",
     metaTitle: "Tư thế nghỉ ngơi: hướng dẫn lựa chọn phù hợp",
@@ -37,6 +37,18 @@ function safeArticle(): GeneratedArticle {
     sources: [],
     reviewerRequired: false,
     riskNotes: [],
+    productBlock: {
+      title: "Sản phẩm SmartFurni phù hợp",
+      description: "Các lựa chọn liên quan trực tiếp đến nhu cầu nghỉ ngơi trong bài viết.",
+      ctaLabel: "Xem dòng sản phẩm",
+    },
+    articleCta: {
+      eyebrow: "Tìm hiểu thêm",
+      title: "Chọn giải pháp phù hợp với nhu cầu",
+      description: "Xem sản phẩm hoặc trao đổi cùng SmartFurni trước khi lựa chọn.",
+      primaryLabel: "Xem sản phẩm",
+      secondaryLabel: "Liên hệ tư vấn",
+    },
   };
 }
 

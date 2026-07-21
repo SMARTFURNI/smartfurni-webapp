@@ -6,11 +6,13 @@ import { CATEGORIES, formatDate, type BlogPost } from "@/lib/blog-data";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import type { SiteTheme } from "@/lib/theme-types";
+import type { Product } from "@/lib/product-store";
 
 interface Props {
   post: BlogPost;
   relatedPosts: BlogPost[];
   theme: SiteTheme;
+  recommendedProducts: Product[];
 }
 
 const FUNNEL_CTA = {
@@ -54,8 +56,69 @@ function escapeHtml(value: string): string {
 
 function formatInlineMarkdown(value: string): string {
   return escapeHtml(value)
+    .replace(/\[([^\]]+)\]\(((?:\/|https:\/\/)[^)]+)\)/g, '<a href="$2" class="text-[#C9A84C] underline decoration-[#C9A84C]/35 underline-offset-4 hover:text-[#E8C56B]">$1</a>')
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em class="text-[#C9A84C]">$1</em>');
+}
+
+function formatPrice(price: number): string {
+  if (!price) return "Liên hệ";
+  return new Intl.NumberFormat("vi-VN").format(price) + "đ";
+}
+
+function ProductRecommendationBlock({ post, products }: { post: BlogPost; products: Product[] }) {
+  const recommendation = post.productRecommendation;
+  if (!recommendation) return null;
+  return (
+    <aside className="my-9 overflow-hidden rounded-3xl border border-[#C9A84C]/25 bg-[linear-gradient(135deg,rgba(31,35,44,.98),rgba(39,28,12,.96))] shadow-[0_20px_70px_rgba(0,0,0,.25)]">
+      <div className="border-b border-[#C9A84C]/15 px-5 py-5 sm:px-7">
+        <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#E6BF55]">SmartFurni gợi ý</p>
+        <h2 className="mt-2 text-xl font-semibold text-[#F5EDD6]">{recommendation.title}</h2>
+        <p className="mt-2 text-sm leading-6 text-[#F5EDD6]/55">{recommendation.description}</p>
+      </div>
+      {products.length > 0 && (
+        <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+          {products.map((product) => {
+            const image = product.coverImage || product.images[0];
+            return (
+              <Link key={product.slug} href={`/products/${product.slug}`} className="group overflow-hidden rounded-2xl border border-white/[.08] bg-black/20 transition hover:-translate-y-0.5 hover:border-[#C9A84C]/40">
+                {image && <img src={image} alt={product.name} loading="lazy" className="aspect-[16/10] w-full bg-black/30 object-cover" />}
+                <div className="p-4">
+                  <p className="line-clamp-2 text-sm font-semibold leading-5 text-[#F5EDD6] group-hover:text-[#E6BF55]">{product.name}</p>
+                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#F5EDD6]/40">{product.description}</p>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-[#E6BF55]">{formatPrice(product.price)}</span>
+                    <span className="text-xs text-[#F5EDD6]/55">Xem chi tiết →</span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+      <div className="px-4 pb-5 sm:px-5">
+        <Link href={recommendation.ctaHref} className="flex w-full items-center justify-center rounded-xl bg-[linear-gradient(110deg,#E4C557,#B98B20)] px-5 py-3 text-sm font-semibold text-[#151005] transition hover:brightness-110">
+          {recommendation.ctaLabel} →
+        </Link>
+      </div>
+    </aside>
+  );
+}
+
+function ArticleCtaBlock({ post }: { post: BlogPost }) {
+  const cta = post.articleCta;
+  if (!cta) return null;
+  return (
+    <aside className="my-9 rounded-3xl border border-[#C9A84C]/25 bg-[#1A1600]/90 p-6 text-center sm:p-8">
+      <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#E6BF55]">{cta.eyebrow}</p>
+      <h2 className="mt-2 text-xl font-semibold text-[#F5EDD6]">{cta.title}</h2>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[#F5EDD6]/50">{cta.description}</p>
+      <div className="mt-5 flex flex-wrap justify-center gap-3">
+        <Link href={cta.primaryHref} className="rounded-full bg-[#C9A84C] px-6 py-2.5 text-sm font-semibold text-black hover:bg-[#E8C56B]">{cta.primaryLabel}</Link>
+        {cta.secondaryLabel && cta.secondaryHref && <Link href={cta.secondaryHref} className="rounded-full border border-[#C9A84C]/40 px-6 py-2.5 text-sm text-[#C9A84C] hover:border-[#C9A84C]">{cta.secondaryLabel}</Link>}
+      </div>
+    </aside>
+  );
 }
 
 function ReadingProgressBar() {
@@ -156,7 +219,7 @@ function ShareButtons({ title, slug }: { title: string; slug: string }) {
   );
 }
 
-export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
+export default function BlogPostClient({ post, relatedPosts, theme, recommendedProducts }: Props) {
   const categoryColor = CATEGORIES[post.category].color;
   const funnelCta = FUNNEL_CTA[post.funnelStage || "MOFU"];
 
@@ -213,6 +276,12 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
           {/* Content */}
           <div className="prose prose-invert max-w-none">
             {post.content.split("\n\n").map((block, i) => {
+              if (block.trim() === "[[SMARTFURNI_PRODUCTS]]") {
+                return <ProductRecommendationBlock key={i} post={post} products={recommendedProducts} />;
+              }
+              if (block.trim() === "[[SMARTFURNI_CTA]]") {
+                return <ArticleCtaBlock key={i} post={post} />;
+              }
               if (block.startsWith("## ")) {
                 return (
                   <h2 key={i} className="text-2xl font-light text-gold-gradient mt-10 mb-4">
@@ -275,6 +344,10 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
               );
             })}
           </div>
+
+          {post.productRecommendation && !post.content.includes("[[SMARTFURNI_PRODUCTS]]") && (
+            <ProductRecommendationBlock post={post} products={recommendedProducts} />
+          )}
 
           {(post.reviewer || post.sources?.length) && (
             <section className="mt-10 rounded-2xl border border-[#C9A84C]/15 bg-[#1A1600]/70 p-5 sm:p-6">
@@ -340,7 +413,7 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
         </article>
 
         {/* CTA */}
-        <div className="mt-12 bg-[#1A1600] border border-[#2E2800] rounded-2xl p-6 sm:p-8 text-center">
+        {!post.content.includes("[[SMARTFURNI_CTA]]") && <div className="mt-12 bg-[#1A1600] border border-[#2E2800] rounded-2xl p-6 sm:p-8 text-center">
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="w-6 h-px bg-[#C9A84C]" />
             <span className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase">{funnelCta.eyebrow}</span>
@@ -356,7 +429,7 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
               {funnelCta.secondaryLabel}
             </Link>
           </div>
-        </div>
+        </div>}
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (

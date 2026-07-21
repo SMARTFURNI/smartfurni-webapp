@@ -6,6 +6,8 @@ import { createPost } from "@/lib/admin-store";
 import { dbSaveOneAndWait } from "@/lib/db-store";
 import { categoryLabel, evaluateArticle, generateArticleDraft } from "@/lib/content-agent-engine";
 import { getContentPlan, updateContentPlanItem } from "@/lib/content-agent-store";
+import { getAllProducts } from "@/lib/product-store";
+import { getProductFamilyBySlug, getProductsByFamily } from "@/lib/product-families";
 
 const requestSchema = z.object({ planId: z.string().min(1), itemId: z.string().min(1) });
 
@@ -21,6 +23,16 @@ function draftSlug(title: string, itemId: string): string {
     .replace(/^-|-$/g, "")
     .slice(0, 52);
   return `${base}-${itemId.slice(-4)}`;
+}
+
+function productSlugsForFamily(familySlug: string): string[] {
+  const family = getProductFamilyBySlug(familySlug);
+  if (!family) return [];
+  return getProductsByFamily(getAllProducts(), family.key)
+    .filter((product) => product.status === "active")
+    .sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured) || b.rating - a.rating)
+    .slice(0, 3)
+    .map((product) => product.slug);
 }
 
 export async function POST(req: NextRequest) {
@@ -53,6 +65,8 @@ export async function POST(req: NextRequest) {
       featured: false,
       status: "draft",
       funnelStage: item.funnelStage,
+      seoClusterRole: item.clusterRole,
+      pillarKeyword: plan.pillarKeyword || item.primaryKeyword,
       primaryKeyword: article.primaryKeyword,
       secondaryKeywords: article.secondaryKeywords,
       searchIntent: item.searchIntent,
@@ -65,6 +79,19 @@ export async function POST(req: NextRequest) {
       aiGenerated: true,
       contentPlanId: plan.id,
       contentPlanItemId: item.id,
+      productRecommendation: {
+        familySlug: plan.productFamilySlug,
+        title: article.productBlock.title,
+        description: article.productBlock.description,
+        productSlugs: productSlugsForFamily(plan.productFamilySlug),
+        ctaLabel: article.productBlock.ctaLabel,
+        ctaHref: `/products/${plan.productFamilySlug}`,
+      },
+      articleCta: {
+        ...article.articleCta,
+        primaryHref: `/products/${plan.productFamilySlug}`,
+        secondaryHref: "/contact",
+      },
     });
 
     // createPost updates the in-memory store immediately; wait for PostgreSQL as

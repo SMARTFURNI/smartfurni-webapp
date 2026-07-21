@@ -2,6 +2,25 @@ export type BlogCategory = "tips-giac-ngu" | "huong-dan-su-dung" | "cap-nhat-san
 
 export type PostStatus = "draft" | "published" | "scheduled";
 
+export interface BlogProductRecommendation {
+  familySlug: string;
+  title: string;
+  description: string;
+  productSlugs: string[];
+  ctaLabel: string;
+  ctaHref: string;
+}
+
+export interface BlogArticleCta {
+  eyebrow: string;
+  title: string;
+  description: string;
+  primaryLabel: string;
+  primaryHref: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+}
+
 export interface BlogPost {
   slug: string;
   title: string;
@@ -19,6 +38,8 @@ export interface BlogPost {
   scheduledAt?: string; // ISO date string for scheduled posts
   coverImage?: string; // URL of cover image
   funnelStage?: "TOFU" | "MOFU" | "BOFU";
+  seoClusterRole?: "pillar" | "supporting" | "commercial";
+  pillarKeyword?: string;
   primaryKeyword?: string;
   secondaryKeywords?: string[];
   searchIntent?: string;
@@ -33,6 +54,8 @@ export interface BlogPost {
   aiGenerated?: boolean;
   contentPlanId?: string;
   contentPlanItemId?: string;
+  productRecommendation?: BlogProductRecommendation;
+  articleCta?: BlogArticleCta;
 }
 
 export const CATEGORIES: Record<BlogCategory, { label: string; color: string }> = {

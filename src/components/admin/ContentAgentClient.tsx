@@ -33,7 +33,9 @@ export default function ContentAgentClient({ initialPlans }: { initialPlans: Con
   const [busyItem, setBusyItem] = useState("");
   const [error, setError] = useState("");
   const [form, setForm] = useState({
-    name: "Cụm nội dung SmartFurni",
+    name: "Cụm SEO theo từ khóa",
+    pillarKeyword: "giường công thái học điều chỉnh điện",
+    supportingKeywords: "giường nâng đầu nâng chân, giường điều chỉnh điện, tư thế ngủ",
     goal: "Tăng truy cập tìm kiếm chất lượng và tạo nhu cầu tư vấn sản phẩm SmartFurni",
     audience: "Người trưởng thành quan tâm chất lượng nghỉ ngơi, gia đình có người lớn tuổi và khách hàng đang tìm giải pháp điều chỉnh tư thế",
     productFamilySlug: PRODUCT_FAMILIES[0].slug,
@@ -58,7 +60,10 @@ export default function ContentAgentClient({ initialPlans }: { initialPlans: Con
       const res = await fetch("/api/admin/content-agent/plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          supportingKeywords: form.supportingKeywords.split(",").map((keyword) => keyword.trim()).filter(Boolean),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Không thể tạo kế hoạch");
@@ -163,6 +168,14 @@ export default function ContentAgentClient({ initialPlans }: { initialPlans: Con
       <section className="rounded-3xl border border-white/[.08] bg-[#151820] p-4 md:p-6">
         <div className="mb-5 flex items-center gap-2"><Bot className="text-[#E6BF55]" size={20} /><h2 className="font-semibold text-[#F5EDD6]">Tạo kế hoạch mới</h2></div>
         <div className="grid gap-4 lg:grid-cols-2">
+          <label className="space-y-1.5 text-xs text-[#F5EDD6]/50 lg:col-span-2">
+            <span className="flex items-center gap-2 font-semibold text-[#E6BF55]"><Target size={15} /> Từ khóa SEO chính</span>
+            <input required value={form.pillarKeyword} onChange={(e) => setForm({ ...form, pillarKeyword: e.target.value })} placeholder="Ví dụ: nệm thông minh điều chỉnh điện" className="sf-agent-input text-base font-medium" />
+            <span className="block text-[11px] leading-5 text-[#F5EDD6]/35">AI dùng từ khóa này làm bài trụ cột, sau đó mở rộng thành các bài TOFU–MOFU–BOFU không trùng intent.</span>
+          </label>
+          <label className="space-y-1.5 text-xs text-[#F5EDD6]/50 lg:col-span-2">Từ khóa phụ / biến thể gợi ý <span className="text-[#F5EDD6]/30">(phân cách bằng dấu phẩy)</span>
+            <input value={form.supportingKeywords} onChange={(e) => setForm({ ...form, supportingKeywords: e.target.value })} placeholder="từ khóa 1, từ khóa 2, từ khóa 3" className="sf-agent-input" />
+          </label>
           <label className="space-y-1.5 text-xs text-[#F5EDD6]/50">Tên chiến dịch
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="sf-agent-input" />
           </label>
@@ -192,7 +205,7 @@ export default function ContentAgentClient({ initialPlans }: { initialPlans: Con
           <div className="flex items-end">
             <button onClick={createPlan} disabled={creating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(110deg,#E4C557,#B98B20)] px-4 py-3 text-sm font-semibold text-[#151005] disabled:opacity-50">
               {creating ? <Loader2 size={17} className="animate-spin" /> : <Sparkles size={17} />}
-              {creating ? "AI đang lập kế hoạch..." : "Tạo kế hoạch TOFU–MOFU–BOFU"}
+              {creating ? "AI đang xây cụm từ khóa..." : "Tạo cụm bài SEO theo từ khóa"}
             </button>
           </div>
         </div>
@@ -207,7 +220,8 @@ export default function ContentAgentClient({ initialPlans }: { initialPlans: Con
               <select value={activePlan?.id} onChange={(e) => setActivePlanId(e.target.value)} className="sf-agent-input max-w-xl font-medium text-[#F5EDD6]">
                 {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name} · {plan.productFamilyLabel}</option>)}
               </select>
-              <p className="mt-2 line-clamp-2 text-xs text-[#F5EDD6]/45">{activePlan?.strategySummary}</p>
+              {activePlan?.pillarKeyword && <p className="mt-2 text-xs font-medium text-[#E6BF55]">Từ khóa trụ cột: {activePlan.pillarKeyword}</p>}
+              <p className="mt-1 line-clamp-2 text-xs text-[#F5EDD6]/45">{activePlan?.strategySummary}</p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs text-[#F5EDD6]/55">
               <span className="rounded-full border border-white/10 px-3 py-1.5">{progress.total} brief</span>
@@ -257,6 +271,7 @@ function BriefCard({ item, busy, onStatus, onDraft }: {
     </div>
     <h4 className="mt-3 text-sm font-semibold leading-6 text-[#F5EDD6]">{item.title}</h4>
     <div className="mt-3 grid gap-2 text-xs text-[#F5EDD6]/45 sm:grid-cols-2"><p><span className="text-[#F5EDD6]/65">Keyword:</span> {item.primaryKeyword}</p><p><span className="text-[#F5EDD6]/65">Intent:</span> {item.searchIntent}</p></div>
+    {item.clusterRole && <span className="mt-2 inline-flex rounded-full border border-[#C9A84C]/15 bg-[#C9A84C]/[.05] px-2 py-1 text-[10px] uppercase tracking-wider text-[#E6BF55]">{item.clusterRole === "pillar" ? "Pillar · Bài trụ cột" : item.clusterRole === "commercial" ? "Commercial · Ý định mua" : "Supporting · Bài hỗ trợ"}</span>}
     <details className="mt-3 rounded-xl border border-white/[.06] bg-black/10 p-3 text-xs text-[#F5EDD6]/50">
       <summary className="cursor-pointer font-medium text-[#F5EDD6]/70">Xem brief & dàn ý</summary>
       <p className="mt-3"><strong className="text-[#F5EDD6]/70">Nỗi đau:</strong> {item.audiencePainPoint}</p>

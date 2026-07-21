@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 import { absoluteUrl } from "@/lib/site-url";
 import JsonLd from "@/components/seo/JsonLd";
 import { articleSchema, breadcrumbSchema } from "@/lib/seo-schema";
+import { getProductBySlug, type Product } from "@/lib/product-store";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,9 @@ export default async function BlogPostPage({ params }: Props) {
     .slice(0, 3);
 
   const theme = getTheme();
+  const recommendedProducts = (post.productRecommendation?.productSlugs || [])
+    .map((productSlug) => getProductBySlug(productSlug))
+    .filter((product): product is Product => Boolean(product));
 
   return (
     <>
@@ -65,7 +69,7 @@ export default async function BlogPostPage({ params }: Props) {
         { name: "Blog", path: "/blog" },
         { name: post.title, path: `/blog/${post.slug}` },
       ])} />
-      <BlogPostClient post={post} relatedPosts={relatedPosts} theme={theme} />
+      <BlogPostClient post={post} relatedPosts={relatedPosts} theme={theme} recommendedProducts={recommendedProducts} />
     </>
   );
 }
