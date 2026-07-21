@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import DashboardTrafficOverview from "@/components/admin/DashboardTrafficOverview";
 import type { DashboardStats } from "@/lib/admin-store";
 import type { OrderDashboardStats } from "@/lib/order-store";
 import type { ProductDashboardStats } from "@/lib/product-store";
@@ -608,6 +609,9 @@ export default function DashboardClient({
           </button>
         ))}
       </div>
+
+      {/* Website traffic — intentionally placed before revenue KPIs */}
+      <DashboardTrafficOverview range={dateRange} />
 
       {/* Row 1: Top KPI */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getAnalyticsData, initAnalyticsTables } from "@/lib/analytics-store";
+import { getAnalyticsData, initAnalyticsTables, type AnalyticsRange } from "@/lib/analytics-store";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -20,7 +20,11 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const range = (searchParams.get("range") || "month") as "day" | "week" | "month" | "year" | "all";
+  const requestedRange = searchParams.get("range") || "month";
+  const allowedRanges: AnalyticsRange[] = ["day", "week", "month", "quarter", "year", "all"];
+  const range: AnalyticsRange = allowedRanges.includes(requestedRange as AnalyticsRange)
+    ? requestedRange as AnalyticsRange
+    : "month";
 
   const data = await getAnalyticsData(range);
   return NextResponse.json(data);

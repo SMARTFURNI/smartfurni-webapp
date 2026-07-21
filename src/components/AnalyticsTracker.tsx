@@ -18,6 +18,53 @@ function getOrCreateSessionId(): string {
   return sid;
 }
 
+const ATTRIBUTION_KEY = "_sf_attribution";
+const INTERNAL_PATHS = ["/admin", "/api", "/crm", "/dashboard", "/smart-bed", "/choose-module"];
+
+type Attribution = {
+  referrer: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmTerm: string;
+  utmContent: string;
+  gclid: string;
+  fbclid: string;
+  ttclid: string;
+  msclkid: string;
+};
+
+function isInternalPath(path: string): boolean {
+  return INTERNAL_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
+
+function getAttribution(): Attribution {
+  const params = new URLSearchParams(window.location.search);
+  const current: Attribution = {
+    referrer: document.referrer || "",
+    utmSource: params.get("utm_source") || "",
+    utmMedium: params.get("utm_medium") || "",
+    utmCampaign: params.get("utm_campaign") || "",
+    utmTerm: params.get("utm_term") || "",
+    utmContent: params.get("utm_content") || "",
+    gclid: params.get("gclid") || "",
+    fbclid: params.get("fbclid") || "",
+    ttclid: params.get("ttclid") || "",
+    msclkid: params.get("msclkid") || "",
+  };
+  const hasCampaignSignal = Object.entries(current).some(([key, value]) => key !== "referrer" && Boolean(value));
+
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(ATTRIBUTION_KEY) || "null") as Attribution | null;
+    if (!hasCampaignSignal && stored) return stored;
+  } catch {
+    // A malformed browser value must never block analytics.
+  }
+
+  sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(current));
+  return current;
+}
+
 function sendBeaconData(url: string, data: object) {
   const body = JSON.stringify(data);
   if (navigator.sendBeacon) {
@@ -36,6 +83,7 @@ export default function AnalyticsTracker() {
   const sessionIdRef = useRef<string>("");
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isOfflineRef = useRef<boolean>(false);
+  const trackedKeyRef = useRef<string>("");
 
   // Init session ID
   useEffect(() => {
@@ -44,19 +92,14 @@ export default function AnalyticsTracker() {
 
   // Track page navigation
   useEffect(() => {
-    if (safePathname.startsWith("/admin") || safePathname.startsWith("/api")) return;
+    if (isInternalPath(safePathname)) return;
 
     const search = typeof window !== "undefined" ? window.location.search : "";
     const currentPath = search ? `${safePathname}${search}` : safePathname;
     const currentFullUrl = typeof window !== "undefined" ? window.location.href : currentPath;
-    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-    const utm = {
-      utmSource: urlParams.get("utm_source") || "",
-      utmMedium: urlParams.get("utm_medium") || "",
-      utmCampaign: urlParams.get("utm_campaign") || "",
-      utmTerm: urlParams.get("utm_term") || "",
-      utmContent: urlParams.get("utm_content") || "",
-    };
+    if (trackedKeyRef.current === currentPath) return;
+    trackedKeyRef.current = currentPath;
+    const attribution = getAttribution();
 
     const sessionId = sessionIdRef.current || getOrCreateSessionId();
     sessionIdRef.current = sessionId;
@@ -67,7 +110,7 @@ export default function AnalyticsTracker() {
     const prevDuration = prevPath && enterTimeRef.current > 0
       ? Math.round((now - enterTimeRef.current) / 1000)
       : 0;
-    const referrer = prevPath ? "" : document.referrer || "";
+    const referrer = attribution.referrer;
 
     // Track session journey
     fetch("/api/analytics/track-session", {
@@ -79,9 +122,8 @@ export default function AnalyticsTracker() {
         path: currentPath,
         fullUrl: currentFullUrl,
         title: document.title || currentPath,
-        referrer,
         referrerUrl: referrer,
-        ...utm,
+        ...attribution,
         ua: navigator.userAgent,
         prevPath: prevDuration > 0 ? prevPath : undefined,
         prevFullUrl: prevDuration > 0 ? prevFullUrlRef.current : undefined,
@@ -93,7 +135,12 @@ export default function AnalyticsTracker() {
     fetch("/api/analytics/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: currentPath, referrer, sessionId }),
+      body: JSON.stringify({
+        path: currentPath,
+        fullUrl: currentFullUrl,
+        sessionId,
+        ...attribution,
+      }),
     }).catch(() => {});
 
     prevPathRef.current = currentPath;
@@ -103,7 +150,7 @@ export default function AnalyticsTracker() {
 
   // Heartbeat mỗi 5 giây — cập nhật URL hiện tại và last_seen_at
   useEffect(() => {
-    if (safePathname.startsWith("/admin") || safePathname.startsWith("/api")) return;
+    if (isInternalPath(safePathname)) return;
 
     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
 

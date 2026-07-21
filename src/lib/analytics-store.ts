@@ -11,6 +11,168 @@ import { Pool } from "pg";
 
 let _pool: Pool | null = null;
 
+export type TrafficSourceGroupKey =
+  | "organic_search"
+  | "social"
+  | "paid"
+  | "referral"
+  | "direct"
+  | "email"
+  | "other";
+
+const TRAFFIC_GROUP_LABELS: Record<TrafficSourceGroupKey, string> = {
+  organic_search: "SEO / Tìm kiếm tự nhiên",
+  social: "Mạng xã hội",
+  paid: "Quảng cáo trả phí",
+  referral: "Website giới thiệu",
+  direct: "Truy cập trực tiếp",
+  email: "Email",
+  other: "Nguồn khác",
+};
+
+const SOURCE_NAMES: Record<string, string> = {
+  google: "Google",
+  bing: "Bing",
+  coccoc: "Cốc Cốc",
+  yahoo: "Yahoo",
+  duckduckgo: "DuckDuckGo",
+  baidu: "Baidu",
+  yandex: "Yandex",
+  facebook: "Facebook",
+  fb: "Facebook",
+  instagram: "Instagram",
+  ig: "Instagram",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  zalo: "Zalo",
+  linkedin: "LinkedIn",
+  twitter: "X / Twitter",
+  x: "X / Twitter",
+  pinterest: "Pinterest",
+  threads: "Threads",
+  newsletter: "Email",
+};
+
+const SEARCH_HOSTS = ["google.", "bing.com", "search.yahoo.", "coccoc.com", "duckduckgo.com", "baidu.com", "yandex."];
+const SOCIAL_HOSTS = ["facebook.com", "fb.com", "instagram.com", "tiktok.com", "youtube.com", "youtu.be", "zalo.me", "zalo.com", "linkedin.com", "twitter.com", "x.com", "pinterest.com", "threads.net"];
+const PAID_MEDIUM_RE = /(^|[_\s-])(cpc|ppc|paid|paidsearch|paid_social|display|cpm|cpv|ads?|remarketing|retargeting|affiliate)([_\s-]|$)/i;
+
+function cleanSourceToken(value?: string): string {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function readableSource(value?: string): string {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const token = cleanSourceToken(raw);
+  return SOURCE_NAMES[token] || raw.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function hostnameFromReferrer(referrer?: string): string {
+  if (!referrer) return "";
+  try {
+    return new URL(referrer).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function knownSourceFromHost(host: string): string {
+  if (!host) return "";
+  if (host.includes("google.")) return "Google";
+  if (host.includes("bing.com")) return "Bing";
+  if (host.includes("search.yahoo.")) return "Yahoo";
+  if (host.includes("coccoc.com")) return "Cốc Cốc";
+  if (host.includes("duckduckgo.com")) return "DuckDuckGo";
+  if (host.includes("baidu.com")) return "Baidu";
+  if (host.includes("yandex.")) return "Yandex";
+  if (host.includes("facebook.com") || host.includes("fb.com")) return "Facebook";
+  if (host.includes("instagram.com")) return "Instagram";
+  if (host.includes("tiktok.com")) return "TikTok";
+  if (host.includes("youtube.com") || host.includes("youtu.be")) return "YouTube";
+  if (host.includes("zalo.me") || host.includes("zalo.com")) return "Zalo";
+  if (host.includes("linkedin.com")) return "LinkedIn";
+  if (host.includes("twitter.com") || host === "x.com" || host.endsWith(".x.com")) return "X / Twitter";
+  if (host.includes("pinterest.com")) return "Pinterest";
+  if (host.includes("threads.net")) return "Threads";
+  return "";
+}
+
+function attributionFromPath(path?: string): Partial<TrafficAttribution> {
+  if (!path || !path.includes("?")) return {};
+  try {
+    const url = new URL(path, "https://smartfurni.com.vn");
+    return {
+      utmSource: url.searchParams.get("utm_source") || "",
+      utmMedium: url.searchParams.get("utm_medium") || "",
+      utmCampaign: url.searchParams.get("utm_campaign") || "",
+      gclid: url.searchParams.get("gclid") || "",
+      fbclid: url.searchParams.get("fbclid") || "",
+      ttclid: url.searchParams.get("ttclid") || "",
+      msclkid: url.searchParams.get("msclkid") || "",
+    };
+  } catch {
+    return {};
+  }
+}
+
+interface TrafficAttribution {
+  path?: string;
+  referrer?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  gclid?: string;
+  fbclid?: string;
+  ttclid?: string;
+  msclkid?: string;
+}
+
+export function classifyTrafficSource(input: TrafficAttribution): {
+  group: TrafficSourceGroupKey;
+  name: string;
+} {
+  const fromPath = attributionFromPath(input.path);
+  const source = String(input.utmSource || fromPath.utmSource || "").trim();
+  const sourceToken = cleanSourceToken(source);
+  const medium = String(input.utmMedium || fromPath.utmMedium || "").trim().toLowerCase();
+  const host = hostnameFromReferrer(input.referrer);
+  const hasGoogleClick = Boolean(input.gclid || fromPath.gclid);
+  const hasMetaClick = Boolean(input.fbclid || fromPath.fbclid);
+  const hasTikTokClick = Boolean(input.ttclid || fromPath.ttclid);
+  const hasMicrosoftClick = Boolean(input.msclkid || fromPath.msclkid);
+  const isPaid = PAID_MEDIUM_RE.test(medium) || hasGoogleClick || hasMetaClick || hasTikTokClick || hasMicrosoftClick;
+
+  if (isPaid) {
+    if (hasGoogleClick) return { group: "paid", name: "Google Ads" };
+    if (hasMetaClick) return { group: "paid", name: "Meta Ads" };
+    if (hasTikTokClick) return { group: "paid", name: "TikTok Ads" };
+    if (hasMicrosoftClick) return { group: "paid", name: "Microsoft Ads" };
+    const paidName = readableSource(source) || knownSourceFromHost(host) || "Quảng cáo khác";
+    return { group: "paid", name: /ads$/i.test(paidName) ? paidName : `${paidName} Ads` };
+  }
+
+  if (medium === "email" || sourceToken === "newsletter" || sourceToken === "email") {
+    return { group: "email", name: readableSource(source) || "Email" };
+  }
+
+  if (medium.includes("organic") || SEARCH_HOSTS.some((item) => host.includes(item))) {
+    const engine = readableSource(source) || knownSourceFromHost(host) || "Tìm kiếm";
+    return { group: "organic_search", name: `${engine} Organic` };
+  }
+
+  if (medium.includes("social") || SOCIAL_HOSTS.some((item) => host.includes(item)) || Object.keys(SOURCE_NAMES).some((item) => sourceToken === item && ["facebook", "fb", "instagram", "ig", "tiktok", "youtube", "zalo", "linkedin", "twitter", "x", "pinterest", "threads"].includes(item))) {
+    const network = readableSource(source) || knownSourceFromHost(host) || "Mạng xã hội";
+    return { group: "social", name: network };
+  }
+
+  if (source) return { group: "other", name: readableSource(source) || "Nguồn khác" };
+  if (host && !host.includes("smartfurni.com.vn")) return { group: "referral", name: host };
+  return { group: "direct", name: "Trực tiếp" };
+}
+
+const PUBLIC_EVENT_SQL = `split_part(path, '?', 1) !~ '^/(admin|api|crm|dashboard|smart-bed|choose-module)(/|$)'`;
+
 function getPool(): Pool | null {
   if (!process.env.DATABASE_URL) return null;
   if (!_pool) {
@@ -42,10 +204,36 @@ export async function initAnalyticsTables(): Promise<void> {
         ua TEXT,
         ip_hash TEXT,
         session_id TEXT,
+        full_url TEXT,
+        utm_source TEXT,
+        utm_medium TEXT,
+        utm_campaign TEXT,
+        utm_term TEXT,
+        utm_content TEXT,
+        gclid TEXT,
+        fbclid TEXT,
+        ttclid TEXT,
+        msclkid TEXT,
+        source_group TEXT,
+        source_name TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS full_url TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS utm_source TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS utm_medium TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS utm_campaign TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS utm_term TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS utm_content TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS gclid TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS fbclid TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS ttclid TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS msclkid TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS source_group TEXT;
+      ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS source_name TEXT;
       CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events(created_at);
       CREATE INDEX IF NOT EXISTS idx_analytics_events_path ON analytics_events(path);
+      CREATE INDEX IF NOT EXISTS idx_analytics_events_source_group ON analytics_events(source_group);
+      CREATE INDEX IF NOT EXISTS idx_analytics_events_utm_campaign ON analytics_events(utm_campaign);
       CREATE TABLE IF NOT EXISTS blog_product_clicks (
         id BIGSERIAL PRIMARY KEY,
         event_id TEXT,
@@ -106,19 +294,45 @@ export async function trackPageView(params: {
   ua?: string;
   ipHash?: string;
   sessionId?: string;
+  fullUrl?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
+  gclid?: string;
+  fbclid?: string;
+  ttclid?: string;
+  msclkid?: string;
 }): Promise<void> {
   const pool = getPool();
   if (!pool) return;
   try {
+    const source = classifyTrafficSource(params);
     await pool.query(
-      `INSERT INTO analytics_events (path, referrer, ua, ip_hash, session_id)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO analytics_events
+        (path, referrer, ua, ip_hash, session_id, full_url,
+         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+         gclid, fbclid, ttclid, msclkid, source_group, source_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
       [
         params.path,
         params.referrer || null,
         params.ua || null,
         params.ipHash || null,
         params.sessionId || null,
+        params.fullUrl || null,
+        params.utmSource || null,
+        params.utmMedium || null,
+        params.utmCampaign || null,
+        params.utmTerm || null,
+        params.utmContent || null,
+        params.gclid || null,
+        params.fbclid || null,
+        params.ttclid || null,
+        params.msclkid || null,
+        source.group,
+        source.name,
       ]
     );
   } catch (err) {
@@ -233,6 +447,7 @@ export interface DeviceRow {
 export interface AnalyticsSummary {
   totalViews: number;
   totalUniques: number;
+  totalSessions: number;
   avgViewsPerDay: number;
   topPage: string;
   bounceRate: number; // estimated
@@ -240,6 +455,27 @@ export interface AnalyticsSummary {
   prevTotalUniques: number;
   viewsGrowth: number;
   uniquesGrowth: number;
+}
+
+export interface TrafficSourceGroupRow {
+  key: TrafficSourceGroupKey;
+  label: string;
+  views: number;
+  sessions: number;
+  visitors: number;
+  pct: number;
+}
+
+export interface TrafficSourceDetailRow {
+  group: TrafficSourceGroupKey;
+  groupLabel: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  views: number;
+  sessions: number;
+  visitors: number;
+  pct: number;
 }
 
 export interface AnalyticsData {
@@ -250,6 +486,8 @@ export interface AnalyticsData {
   byYear: AnalyticsRow[];
   topPages: TopPage[];
   referrers: ReferrerRow[];
+  sourceGroups: TrafficSourceGroupRow[];
+  sourceDetails: TrafficSourceDetailRow[];
   devices: DeviceRow[];
   hourly: { hour: number; label: string; views: number; uniques: number }[];
 }
@@ -586,18 +824,22 @@ function deviceFromUA(ua: string | null): string {
   return "Desktop";
 }
 
-export async function getAnalyticsData(range: "day" | "week" | "month" | "year" | "all" = "month"): Promise<AnalyticsData> {
+export type AnalyticsRange = "day" | "week" | "month" | "quarter" | "year" | "all";
+
+export async function getAnalyticsData(range: AnalyticsRange = "month"): Promise<AnalyticsData> {
   const pool = getPool();
 
   // Return empty data if no DB
   const empty: AnalyticsData = {
-    summary: { totalViews: 0, totalUniques: 0, avgViewsPerDay: 0, topPage: "/", bounceRate: 0, prevTotalViews: 0, prevTotalUniques: 0, viewsGrowth: 0, uniquesGrowth: 0 },
+    summary: { totalViews: 0, totalUniques: 0, totalSessions: 0, avgViewsPerDay: 0, topPage: "/", bounceRate: 0, prevTotalViews: 0, prevTotalUniques: 0, viewsGrowth: 0, uniquesGrowth: 0 },
     byDay: [],
     byWeek: [],
     byMonth: [],
     byYear: [],
     topPages: [],
     referrers: [],
+    sourceGroups: [],
+    sourceDetails: [],
     devices: [],
     hourly: Array.from({ length: 24 }, (_, h) => ({ hour: h, label: `${h}:00`, views: 0, uniques: 0 })),
   };
@@ -627,6 +869,11 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
         prevStartDate = new Date(startDate); prevStartDate.setDate(prevStartDate.getDate() - 30);
         prevEndDate = new Date(startDate);
         break;
+      case "quarter":
+        startDate = new Date(now); startDate.setDate(now.getDate() - 89); startDate.setHours(0, 0, 0, 0);
+        prevStartDate = new Date(startDate); prevStartDate.setDate(prevStartDate.getDate() - 90);
+        prevEndDate = new Date(startDate);
+        break;
       case "year":
         startDate = new Date(now); startDate.setFullYear(now.getFullYear() - 1); startDate.setHours(0, 0, 0, 0);
         prevStartDate = new Date(startDate); prevStartDate.setFullYear(prevStartDate.getFullYear() - 1);
@@ -640,17 +887,20 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
 
     // Current period total
     const totalRes = await pool.query(
-      `SELECT COUNT(*) as views, COUNT(DISTINCT COALESCE(ip_hash, session_id, ua)) as uniques
-       FROM analytics_events WHERE created_at >= $1`,
+      `SELECT COUNT(*) as views,
+              COUNT(DISTINCT COALESCE(NULLIF(ip_hash, ''), NULLIF(session_id, ''), ua)) as uniques,
+              COUNT(DISTINCT COALESCE(NULLIF(session_id, ''), NULLIF(ip_hash, ''), ua)) as sessions
+       FROM analytics_events WHERE created_at >= $1 AND ${PUBLIC_EVENT_SQL}`,
       [startDate]
     );
     const totalViews = parseInt(totalRes.rows[0]?.views || "0");
     const totalUniques = parseInt(totalRes.rows[0]?.uniques || "0");
+    const totalSessions = parseInt(totalRes.rows[0]?.sessions || "0");
 
     // Previous period total
     const prevRes = await pool.query(
       `SELECT COUNT(*) as views, COUNT(DISTINCT COALESCE(ip_hash, session_id, ua)) as uniques
-       FROM analytics_events WHERE created_at >= $1 AND created_at < $2`,
+       FROM analytics_events WHERE created_at >= $1 AND created_at < $2 AND ${PUBLIC_EVENT_SQL}`,
       [prevStartDate, prevEndDate]
     );
     const prevTotalViews = parseInt(prevRes.rows[0]?.views || "0");
@@ -662,7 +912,7 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
               COUNT(*) as views,
               COUNT(DISTINCT COALESCE(ip_hash, session_id, ua)) as uniques
        FROM analytics_events
-       WHERE created_at >= NOW() - INTERVAL '30 days'
+       WHERE created_at >= NOW() - INTERVAL '30 days' AND ${PUBLIC_EVENT_SQL}
        GROUP BY 1 ORDER BY 1`
     );
     const byDay: AnalyticsRow[] = byDayRes.rows.map((r) => ({
@@ -678,7 +928,7 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
               COUNT(*) as views,
               COUNT(DISTINCT COALESCE(ip_hash, session_id, ua)) as uniques
        FROM analytics_events
-       WHERE created_at >= NOW() - INTERVAL '12 weeks'
+       WHERE created_at >= NOW() - INTERVAL '12 weeks' AND ${PUBLIC_EVENT_SQL}
        GROUP BY 1 ORDER BY 1`
     );
     const byWeek: AnalyticsRow[] = byWeekRes.rows.map((r) => {
@@ -697,7 +947,7 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
               COUNT(*) as views,
               COUNT(DISTINCT COALESCE(ip_hash, session_id, ua)) as uniques
        FROM analytics_events
-       WHERE created_at >= NOW() - INTERVAL '12 months'
+       WHERE created_at >= NOW() - INTERVAL '12 months' AND ${PUBLIC_EVENT_SQL}
        GROUP BY 1 ORDER BY 1`
     );
     const monthNames = ["Th1","Th2","Th3","Th4","Th5","Th6","Th7","Th8","Th9","Th10","Th11","Th12"];
@@ -717,6 +967,7 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
               COUNT(*) as views,
               COUNT(DISTINCT COALESCE(ip_hash, session_id, ua)) as uniques
        FROM analytics_events
+       WHERE ${PUBLIC_EVENT_SQL}
        GROUP BY 1 ORDER BY 1`
     );
     const byYear: AnalyticsRow[] = byYearRes.rows.map((r) => ({
@@ -728,12 +979,12 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
 
     // Top pages
     const topPagesRes = await pool.query(
-      `SELECT path,
+      `SELECT split_part(path, '?', 1) AS path,
               COUNT(*) as views,
               COUNT(DISTINCT COALESCE(ip_hash, session_id, ua)) as uniques
        FROM analytics_events
-       WHERE created_at >= $1
-       GROUP BY path ORDER BY views DESC LIMIT 10`,
+       WHERE created_at >= $1 AND ${PUBLIC_EVENT_SQL}
+       GROUP BY 1 ORDER BY views DESC LIMIT 10`,
       [startDate]
     );
     const topPages: TopPage[] = topPagesRes.rows.map((r) => ({
@@ -747,7 +998,7 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
       `SELECT COALESCE(NULLIF(referrer, ''), 'Direct') as referrer,
               COUNT(*) as count
        FROM analytics_events
-       WHERE created_at >= $1
+       WHERE created_at >= $1 AND ${PUBLIC_EVENT_SQL}
        GROUP BY 1 ORDER BY count DESC LIMIT 8`,
       [startDate]
     );
@@ -756,9 +1007,70 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
       count: parseInt(r.count),
     }));
 
+    // Traffic acquisition — first-touch attribution persisted on each pageview.
+    // Older rows are classified from the raw referrer and UTM parameters still present in path.
+    const sourceRes = await pool.query(
+      `SELECT source_group, source_name,
+              COALESCE(NULLIF(utm_source, ''), substring(path from '[?&]utm_source=([^&]+)')) AS utm_source,
+              COALESCE(NULLIF(utm_medium, ''), substring(path from '[?&]utm_medium=([^&]+)')) AS utm_medium,
+              COALESCE(NULLIF(utm_campaign, ''), substring(path from '[?&]utm_campaign=([^&]+)')) AS utm_campaign,
+              referrer,
+              COUNT(*)::INT AS views,
+              COUNT(DISTINCT COALESCE(NULLIF(session_id, ''), NULLIF(ip_hash, ''), ua))::INT AS sessions,
+              COUNT(DISTINCT COALESCE(NULLIF(ip_hash, ''), NULLIF(session_id, ''), ua))::INT AS visitors
+       FROM analytics_events
+       WHERE created_at >= $1 AND ${PUBLIC_EVENT_SQL}
+       GROUP BY 1, 2, 3, 4, 5, 6`,
+      [startDate]
+    );
+
+    type MutableSource = Omit<TrafficSourceDetailRow, "pct" | "groupLabel">;
+    const detailMap = new Map<string, MutableSource>();
+    for (const row of sourceRes.rows) {
+      const fallback = classifyTrafficSource({
+        referrer: row.referrer,
+        utmSource: row.utm_source,
+        utmMedium: row.utm_medium,
+        utmCampaign: row.utm_campaign,
+      });
+      const storedGroup = String(row.source_group || "") as TrafficSourceGroupKey;
+      const group = storedGroup && TRAFFIC_GROUP_LABELS[storedGroup] ? storedGroup : fallback.group;
+      const source = String(row.source_name || fallback.name || TRAFFIC_GROUP_LABELS[group]);
+      const medium = String(row.utm_medium || (group === "organic_search" ? "organic" : group === "paid" ? "paid" : group));
+      const campaign = String(row.utm_campaign || "");
+      const key = `${group}\u0000${source}\u0000${medium}\u0000${campaign}`;
+      const current = detailMap.get(key) || { group, source, medium, campaign, views: 0, sessions: 0, visitors: 0 };
+      current.views += Number(row.views || 0);
+      current.sessions += Number(row.sessions || 0);
+      current.visitors += Number(row.visitors || 0);
+      detailMap.set(key, current);
+    }
+
+    const groupOrder: TrafficSourceGroupKey[] = ["organic_search", "social", "paid", "referral", "direct", "email", "other"];
+    const groupTotals = groupOrder.map((key) => {
+      const rows = Array.from(detailMap.values()).filter((row) => row.group === key);
+      const views = rows.reduce((sum, row) => sum + row.views, 0);
+      const sessions = rows.reduce((sum, row) => sum + row.sessions, 0);
+      const visitors = rows.reduce((sum, row) => sum + row.visitors, 0);
+      return { key, label: TRAFFIC_GROUP_LABELS[key], views, sessions, visitors };
+    });
+    const attributedSessions = groupTotals.reduce((sum, row) => sum + row.sessions, 0);
+    const sourceGroups: TrafficSourceGroupRow[] = groupTotals.map((row) => ({
+      ...row,
+      pct: attributedSessions > 0 ? Math.round((row.sessions / attributedSessions) * 1000) / 10 : 0,
+    }));
+    const sourceDetails: TrafficSourceDetailRow[] = Array.from(detailMap.values())
+      .map((row) => ({
+        ...row,
+        groupLabel: TRAFFIC_GROUP_LABELS[row.group],
+        pct: attributedSessions > 0 ? Math.round((row.sessions / attributedSessions) * 1000) / 10 : 0,
+      }))
+      .sort((a, b) => b.sessions - a.sessions || b.views - a.views)
+      .slice(0, 20);
+
     // Devices (from UA)
     const uaRes = await pool.query(
-      `SELECT ua, COUNT(*) as count FROM analytics_events WHERE created_at >= $1 GROUP BY ua`,
+      `SELECT ua, COUNT(*) as count FROM analytics_events WHERE created_at >= $1 AND ${PUBLIC_EVENT_SQL} GROUP BY ua`,
       [startDate]
     );
     const deviceMap: Record<string, number> = {};
@@ -779,7 +1091,7 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
               COUNT(*) as views,
               COUNT(DISTINCT COALESCE(ip_hash, session_id, ua)) as uniques
        FROM analytics_events
-       WHERE created_at >= NOW() - INTERVAL '7 days'
+       WHERE created_at >= NOW() - INTERVAL '7 days' AND ${PUBLIC_EVENT_SQL}
        GROUP BY 1 ORDER BY 1`
     );
     const hourlyMap: Record<number, { views: number; uniques: number }> = {};
@@ -800,6 +1112,7 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
       summary: {
         totalViews,
         totalUniques,
+        totalSessions,
         avgViewsPerDay: Math.round(totalViews / daysInRange),
         topPage: topPages[0]?.path || "/",
         bounceRate: totalUniques > 0 ? Math.round(((totalUniques * 0.6) / totalViews) * 100) : 0,
@@ -814,6 +1127,8 @@ export async function getAnalyticsData(range: "day" | "week" | "month" | "year" 
       byYear,
       topPages,
       referrers,
+      sourceGroups,
+      sourceDetails,
       devices,
       hourly,
     };
