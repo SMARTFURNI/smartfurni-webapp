@@ -13,6 +13,51 @@ interface Props {
   theme: SiteTheme;
 }
 
+const FUNNEL_CTA = {
+  TOFU: {
+    eyebrow: "Khám phá thêm",
+    title: "Tiếp tục tìm hiểu giải pháp nghỉ ngơi phù hợp",
+    description: "Xem thêm các hướng dẫn và kiến thức thực tế trước khi lựa chọn sản phẩm.",
+    primaryLabel: "Đọc thêm bài viết",
+    primaryHref: "/blog",
+    secondaryLabel: "Xem sản phẩm",
+    secondaryHref: "/products",
+  },
+  MOFU: {
+    eyebrow: "Cân nhắc giải pháp",
+    title: "So sánh các dòng sản phẩm SmartFurni",
+    description: "Khám phá cấu hình, lợi ích và lựa chọn phù hợp với nhu cầu sử dụng thực tế.",
+    primaryLabel: "Xem dòng sản phẩm",
+    primaryHref: "/products",
+    secondaryLabel: "Liên hệ tư vấn",
+    secondaryHref: "/contact",
+  },
+  BOFU: {
+    eyebrow: "Sẵn sàng trải nghiệm",
+    title: "Nhận tư vấn giải pháp SmartFurni phù hợp",
+    description: "Trao đổi nhu cầu và không gian sử dụng để được tư vấn cấu hình phù hợp.",
+    primaryLabel: "Liên hệ tư vấn",
+    primaryHref: "/contact",
+    secondaryLabel: "Xem sản phẩm",
+    secondaryHref: "/products",
+  },
+} as const;
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatInlineMarkdown(value: string): string {
+  return escapeHtml(value)
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em class="text-[#C9A84C]">$1</em>');
+}
+
 function ReadingProgressBar() {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -113,6 +158,7 @@ function ShareButtons({ title, slug }: { title: string; slug: string }) {
 
 export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
   const categoryColor = CATEGORIES[post.category].color;
+  const funnelCta = FUNNEL_CTA[post.funnelStage || "MOFU"];
 
   return (
     <main className="sf-site-gradient-bg min-h-screen bg-[#0D0B00] text-white">
@@ -213,7 +259,7 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
                       return (
                         <li key={ii} className={`flex items-start gap-2 ${isDone ? "text-green-400" : isTodo ? "text-gray-400" : "text-gray-300"}`}>
                           <span className="mt-1 flex-shrink-0">{isDone ? "✓" : isTodo ? "○" : "•"}</span>
-                          <span dangerouslySetInnerHTML={{ __html: text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>') }} />
+                          <span dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }} />
                         </li>
                       );
                     })}
@@ -223,14 +269,60 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
               return (
                 <p key={i} className="text-[#F5EDD6]/60 leading-relaxed mb-4"
                   dangerouslySetInnerHTML={{
-                    __html: block
-                      .replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
-                      .replace(/\*(.+?)\*/g, '<em class="text-[#C9A84C]">$1</em>')
+                    __html: formatInlineMarkdown(block)
                   }}
                 />
               );
             })}
           </div>
+
+          {(post.reviewer || post.sources?.length) && (
+            <section className="mt-10 rounded-2xl border border-[#C9A84C]/15 bg-[#1A1600]/70 p-5 sm:p-6">
+              {post.reviewer && (
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-300">✓</div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[.14em] text-emerald-300">Đã được kiểm duyệt nội dung</p>
+                    <p className="mt-1 text-sm font-semibold text-[#F5EDD6]">{post.reviewer}</p>
+                    {post.reviewerRole && <p className="text-xs text-[#F5EDD6]/45">{post.reviewerRole}</p>}
+                  </div>
+                </div>
+              )}
+              {post.sources && post.sources.length > 0 && (
+                <div className={post.reviewer ? "mt-5 border-t border-[#C9A84C]/10 pt-5" : ""}>
+                  <h2 className="text-sm font-semibold text-[#F5EDD6]">Nguồn tham khảo</h2>
+                  <ol className="mt-3 space-y-2 text-sm text-[#F5EDD6]/55">
+                    {post.sources.map((source, index) => (
+                      <li key={`${source.url}-${index}`} className="flex gap-2">
+                        <span className="text-[#C9A84C]">{index + 1}.</span>
+                        <a href={source.url} target="_blank" rel="noopener noreferrer nofollow" className="break-words hover:text-[#C9A84C] hover:underline">
+                          {source.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {(post.category === "suc-khoe" || post.reviewerRequired) && (
+                <p className="mt-5 border-t border-[#C9A84C]/10 pt-4 text-xs leading-5 text-[#F5EDD6]/40">
+                  Nội dung chỉ nhằm cung cấp thông tin tham khảo, không thay thế chẩn đoán hoặc tư vấn của người có chuyên môn.
+                </p>
+              )}
+            </section>
+          )}
+
+          {post.internalLinks && post.internalLinks.length > 0 && (
+            <section className="mt-8">
+              <h2 className="text-sm font-semibold uppercase tracking-[.14em] text-[#C9A84C]">Đọc thêm trên SmartFurni</h2>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {post.internalLinks.map((link, index) => (
+                  <Link key={`${link.href}-${index}`} href={link.href} className="rounded-xl border border-[#C9A84C]/15 bg-[#1A1600]/60 px-4 py-3 text-sm text-[#F5EDD6]/60 transition-colors hover:border-[#C9A84C]/40 hover:text-[#C9A84C]">
+                    {link.anchor} →
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Tags */}
           <div className="mt-10 pt-6 border-t border-[#C9A84C]/10">
@@ -251,17 +343,17 @@ export default function BlogPostClient({ post, relatedPosts, theme }: Props) {
         <div className="mt-12 bg-[#1A1600] border border-[#2E2800] rounded-2xl p-6 sm:p-8 text-center">
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="w-6 h-px bg-[#C9A84C]" />
-            <span className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase">Trải nghiệm</span>
+            <span className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase">{funnelCta.eyebrow}</span>
             <span className="w-6 h-px bg-[#C9A84C]" />
           </div>
-          <h3 className="text-xl font-light text-[#F5EDD6] mb-2">Trải nghiệm <span className="text-gold-gradient">SmartFurni</span></h3>
-          <p className="text-[#F5EDD6]/40 mb-4 text-sm leading-relaxed">Áp dụng những kiến thức trên với giường thông minh SmartFurni.</p>
+          <h3 className="text-xl font-light text-[#F5EDD6] mb-2">{funnelCta.title}</h3>
+          <p className="text-[#F5EDD6]/40 mb-4 text-sm leading-relaxed">{funnelCta.description}</p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link href="/products" className="bg-[#C9A84C] text-black px-6 py-2 rounded-full font-semibold text-sm hover:bg-[#E8C56B] transition-colors">
-              Xem sản phẩm
+            <Link href={funnelCta.primaryHref} className="bg-[#C9A84C] text-black px-6 py-2 rounded-full font-semibold text-sm hover:bg-[#E8C56B] transition-colors">
+              {funnelCta.primaryLabel}
             </Link>
-            <Link href="/contact" className="border border-[#C9A84C]/40 text-[#C9A84C] px-6 py-2 rounded-full text-sm hover:border-[#C9A84C] transition-colors">
-              Liên hệ tư vấn
+            <Link href={funnelCta.secondaryHref} className="border border-[#C9A84C]/40 text-[#C9A84C] px-6 py-2 rounded-full text-sm hover:border-[#C9A84C] transition-colors">
+              {funnelCta.secondaryLabel}
             </Link>
           </div>
         </div>

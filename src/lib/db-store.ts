@@ -213,6 +213,7 @@ export async function initAllTables(): Promise<void> {
     ensureTable("orders"),
     ensureTable("contacts"),
     ensureTable("posts"),
+    ensureTable("content_agent_plans"),
     ensureTable("users"),
     ensureSettingsTable(),
   ]);

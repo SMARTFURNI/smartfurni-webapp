@@ -118,7 +118,12 @@ export default function AdminPostsClient({ initialPosts }: { initialPosts: BlogP
                         {post.featured && <span className="text-yellow-500 text-xs">⭐</span>}
                         <div>
                           <p className="text-sm text-white font-medium line-clamp-1">{post.title}</p>
-                          <p className="text-xs text-[rgba(245,237,214,0.45)] mt-0.5">{post.readTime} phút đọc</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                            <span className="text-[rgba(245,237,214,0.45)]">{post.readTime} phút đọc</span>
+                            {post.funnelStage && <span className="rounded-full bg-blue-500/10 px-1.5 py-0.5 text-blue-300">{post.funnelStage}</span>}
+                            {post.aiGenerated && <span className="rounded-full bg-violet-500/10 px-1.5 py-0.5 text-violet-300">AI draft</span>}
+                            {post.aiGenerated && post.claimReviewStatus !== "approved" && <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-amber-300">Chờ duyệt claim</span>}
+                          </div>
                         </div>
                       </div>
                     </td>

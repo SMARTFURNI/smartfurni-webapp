@@ -6,7 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3, BookOpenText, Boxes, ChevronLeft, ChevronRight, ExternalLink,
   FileChartColumn, FileText, GalleryHorizontalEnd, LayoutDashboard, LogOut,
-  Menu, Palette, Route, Settings2, ShoppingCart, Smartphone, Store, UsersRound, X,
+  Menu, Palette, Route, Settings2, ShoppingCart, Smartphone, Sparkles, Store, UsersRound, X,
 } from "lucide-react";
 
 interface SidebarStats {
@@ -66,6 +66,12 @@ const NAV_GROUPS: NavGroup[] = [
         ],
         badgeKey: "draftPosts",
         badgeColor: "bg-gray-600",
+      },
+      {
+        href: "/admin/content-agent",
+        label: "AI Content Agent",
+        icon: Sparkles,
+        exact: false,
       },
       {
         href: "/admin/landing-pages",

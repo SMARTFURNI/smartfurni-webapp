@@ -18,6 +18,21 @@ export interface BlogPost {
   status?: PostStatus; // draft | published | scheduled (default: published)
   scheduledAt?: string; // ISO date string for scheduled posts
   coverImage?: string; // URL of cover image
+  funnelStage?: "TOFU" | "MOFU" | "BOFU";
+  primaryKeyword?: string;
+  secondaryKeywords?: string[];
+  searchIntent?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  internalLinks?: Array<{ anchor: string; href: string }>;
+  sources?: Array<{ title: string; url: string }>;
+  reviewerRequired?: boolean;
+  reviewer?: string;
+  reviewerRole?: string;
+  claimReviewStatus?: "pending" | "approved" | "changes_requested";
+  aiGenerated?: boolean;
+  contentPlanId?: string;
+  contentPlanItemId?: string;
 }
 
 export const CATEGORIES: Record<BlogCategory, { label: string; color: string }> = {

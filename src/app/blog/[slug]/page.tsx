@@ -26,20 +26,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!post) return { title: "Không tìm thấy bài viết", robots: { index: false, follow: false } };
   const url = absoluteUrl(`/blog/${post.slug}`);
   const image = post.coverImage ? absoluteUrl(post.coverImage) : undefined;
+  const title = post.metaTitle?.trim() || post.title;
+  const description = post.metaDescription?.trim() || post.excerpt;
   return {
-    title: `${post.title} | SmartFurni`,
-    description: post.excerpt,
+    title,
+    description,
     alternates: { canonical: url },
     openGraph: {
-      title: post.title,
-      description: post.excerpt,
+      title,
+      description,
       url,
       type: "article",
       publishedTime: new Date(post.publishedAt).toISOString(),
       authors: [post.author],
       images: image ? [{ url: image, alt: post.title }] : [],
     },
-    twitter: { card: "summary_large_image", title: post.title, description: post.excerpt, images: image ? [image] : [] },
+    twitter: { card: "summary_large_image", title, description, images: image ? [image] : [] },
   };
 }
 

@@ -34,6 +34,20 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
     scheduledAt: initialData?.scheduledAt ? initialData.scheduledAt.slice(0, 16) : "",
     coverImage: initialData?.coverImage || "",
     publishedAt: initialData?.publishedAt?.split("T")[0] || new Date().toISOString().split("T")[0],
+    funnelStage: initialData?.funnelStage || "TOFU",
+    primaryKeyword: initialData?.primaryKeyword || "",
+    secondaryKeywords: initialData?.secondaryKeywords?.join(", ") || "",
+    searchIntent: initialData?.searchIntent || "",
+    metaTitle: initialData?.metaTitle || "",
+    metaDescription: initialData?.metaDescription || "",
+    sources: initialData?.sources?.map((source) => `${source.title} | ${source.url}`).join("\n") || "",
+    reviewerRequired: initialData?.reviewerRequired || false,
+    reviewer: initialData?.reviewer || "",
+    reviewerRole: initialData?.reviewerRole || "",
+    claimReviewStatus: initialData?.claimReviewStatus || "pending",
+    aiGenerated: initialData?.aiGenerated || false,
+    contentPlanId: initialData?.contentPlanId || "",
+    contentPlanItemId: initialData?.contentPlanItemId || "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -93,12 +107,25 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
       setError("Vui lòng chọn ngày giờ lên lịch đăng bài.");
       return;
     }
+    if ((form.status === "published" || form.status === "scheduled") && form.aiGenerated && form.claimReviewStatus !== "approved") {
+      setError("Bản nháp AI phải được duyệt claim trước khi đăng hoặc lên lịch.");
+      return;
+    }
+    if ((form.status === "published" || form.status === "scheduled") && form.reviewerRequired && !form.reviewer.trim()) {
+      setError("Nội dung này yêu cầu nhập người kiểm duyệt trước khi xuất bản.");
+      return;
+    }
     setError("");
     setSaving(true);
     try {
       const payload = {
         ...form,
         tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        secondaryKeywords: form.secondaryKeywords.split(",").map((t) => t.trim()).filter(Boolean),
+        sources: form.sources.split("\n").map((line) => {
+          const [title, ...urlParts] = line.split("|");
+          return { title: title?.trim(), url: urlParts.join("|").trim() };
+        }).filter((source) => source.title && source.url),
         categoryLabel: CATEGORIES[form.category].label,
         publishedAt: new Date(form.publishedAt).toISOString(),
         scheduledAt:
@@ -482,6 +509,63 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                 </div>
                 <span className="text-sm text-[rgba(245,237,214,0.70)]">Bài viết nổi bật ⭐</span>
               </label>
+            </div>
+
+            {/* SEO & AI governance */}
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-white">SEO & Funnel</h3>
+                {form.aiGenerated && <span className="rounded-full bg-violet-500/10 px-2 py-1 text-[10px] text-violet-300">AI draft</span>}
+              </div>
+              <div>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Giai đoạn hành trình</label>
+                <select value={form.funnelStage} onChange={(e) => setForm((p) => ({ ...p, funnelStage: e.target.value as "TOFU" | "MOFU" | "BOFU" }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40">
+                  <option value="TOFU">TOFU · Nhận biết</option>
+                  <option value="MOFU">MOFU · Cân nhắc</option>
+                  <option value="BOFU">BOFU · Chuyển đổi</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Từ khóa chính</label>
+                <input value={form.primaryKeyword} onChange={(e) => setForm((p) => ({ ...p, primaryKeyword: e.target.value }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40" />
+              </div>
+              <div>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Từ khóa phụ (dấu phẩy)</label>
+                <input value={form.secondaryKeywords} onChange={(e) => setForm((p) => ({ ...p, secondaryKeywords: e.target.value }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40" />
+              </div>
+              <div>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Search intent</label>
+                <input value={form.searchIntent} onChange={(e) => setForm((p) => ({ ...p, searchIntent: e.target.value }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40" />
+              </div>
+              <div>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Meta title <span className="text-[rgba(245,237,214,0.35)]">({form.metaTitle.length}/65)</span></label>
+                <input value={form.metaTitle} maxLength={80} onChange={(e) => setForm((p) => ({ ...p, metaTitle: e.target.value }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40" />
+              </div>
+              <div>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Meta description <span className="text-[rgba(245,237,214,0.35)]">({form.metaDescription.length}/165)</span></label>
+                <textarea rows={3} value={form.metaDescription} maxLength={220} onChange={(e) => setForm((p) => ({ ...p, metaDescription: e.target.value }))} className="w-full resize-none bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40" />
+              </div>
+              <div>
+                <label className="block text-xs text-[rgba(245,237,214,0.55)] mb-2">Nguồn tham khảo <span className="text-[rgba(245,237,214,0.35)]">(Tên | URL, mỗi dòng một nguồn)</span></label>
+                <textarea rows={4} value={form.sources} onChange={(e) => setForm((p) => ({ ...p, sources: e.target.value }))} className="w-full resize-y bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#C9A84C]/40" />
+              </div>
+            </div>
+
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-white">Kiểm duyệt claim</h3>
+              <select value={form.claimReviewStatus} onChange={(e) => setForm((p) => ({ ...p, claimReviewStatus: e.target.value as "pending" | "approved" | "changes_requested" }))} className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40">
+                <option value="pending">Chờ kiểm duyệt</option>
+                <option value="changes_requested">Cần chỉnh sửa</option>
+                <option value="approved">Đã duyệt claim</option>
+              </select>
+              <label className="flex items-center gap-3 text-sm text-[rgba(245,237,214,0.70)]">
+                <input type="checkbox" checked={form.reviewerRequired} onChange={(e) => setForm((p) => ({ ...p, reviewerRequired: e.target.checked }))} className="accent-[#C9A84C]" /> Yêu cầu người có chuyên môn duyệt
+              </label>
+              {form.reviewerRequired && <>
+                <input value={form.reviewer} onChange={(e) => setForm((p) => ({ ...p, reviewer: e.target.value }))} placeholder="Tên người kiểm duyệt" className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40" />
+                <input value={form.reviewerRole} onChange={(e) => setForm((p) => ({ ...p, reviewerRole: e.target.value }))} placeholder="Chức danh / chuyên môn" className="w-full bg-[#1a1200] border border-[rgba(255,200,100,0.18)] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C9A84C]/40" />
+              </>}
+              {form.aiGenerated && form.claimReviewStatus !== "approved" && <p className="rounded-xl border border-amber-400/15 bg-amber-500/[.05] p-3 text-xs leading-5 text-amber-200">Không thể xuất bản hoặc lên lịch cho đến khi claim được duyệt.</p>}
             </div>
           </div>
         </div>
