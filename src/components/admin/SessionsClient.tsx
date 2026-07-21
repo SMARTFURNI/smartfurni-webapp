@@ -176,7 +176,7 @@ function AttributionGrid({ session }: { session: VisitorSession }) {
 }
 
 export function SessionsClient() {
-  const [filter, setFilter] = useState<"all" | "active" | "today" | "week">("active");
+  const [filter, setFilter] = useState<"all" | "active" | "today" | "week">("today");
   const [sessions, setSessions] = useState<SessionListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [activeNow, setActiveNow] = useState(0);
@@ -245,6 +245,8 @@ export function SessionsClient() {
   void tick;
 
   const maxDuration = selected ? Math.max(...selected.events.map(e => e.duration || 1), 1) : 1;
+  const totalPageViews = sessions.reduce((sum, session) => sum + session.pageCount, 0);
+  const uniqueSources = new Set(sessions.map(session => sourceLabel(session).label)).size;
 
   return (
     <div className={`sessions-shell flex h-screen overflow-hidden bg-[#F7F4EC] text-slate-900 ${selected ? "has-selection" : "no-selection"}`}>
@@ -266,6 +268,21 @@ export function SessionsClient() {
               >
                 {isLive ? "Live" : "Tạm dừng"}
               </button>
+            </div>
+          </div>
+
+          <div className="sessions-summary mb-3 grid grid-cols-3 gap-2">
+            <div>
+              <strong>{total}</strong>
+              <span>Lượt truy cập</span>
+            </div>
+            <div>
+              <strong>{totalPageViews}</strong>
+              <span>Lượt xem trang</span>
+            </div>
+            <div>
+              <strong>{uniqueSources}</strong>
+              <span>Nguồn truy cập</span>
             </div>
           </div>
 

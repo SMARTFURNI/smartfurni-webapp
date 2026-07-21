@@ -53,9 +53,9 @@ function TrafficMetric({ label, value, note, icon: Icon, color }: {
   color: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/7 bg-white/[0.025] p-4 min-w-0">
+    <div className="rounded-2xl border border-[rgba(118,138,166,0.24)] bg-[linear-gradient(145deg,rgba(27,35,49,0.72),rgba(27,25,22,0.64))] p-4 min-w-0">
       <div className="flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-[0.12em] text-[rgba(245,237,214,0.52)]">
-        <span className="grid h-8 w-8 place-items-center rounded-xl border border-white/8 bg-white/[0.035]" style={{ color }}>
+        <span className="grid h-8 w-8 place-items-center rounded-xl border border-[rgba(201,168,76,0.18)] bg-[rgba(201,168,76,0.055)]" style={{ color }}>
           <Icon size={16} />
         </span>
         <span className="truncate">{label}</span>
@@ -70,7 +70,7 @@ function SourceCard({ row }: { row: TrafficSourceGroupRow }) {
   const style = SOURCE_STYLE[row.key];
   const Icon = style.icon;
   return (
-    <div className="rounded-xl border border-white/7 bg-[#11151d]/70 p-3">
+    <div className="rounded-xl border border-[rgba(118,138,166,0.22)] bg-[#11151d]/70 p-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white/[0.04]" style={{ color: style.color }}>
@@ -125,7 +125,7 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
 
   return (
     <section className="overflow-hidden rounded-2xl border border-[rgba(201,168,76,0.18)] bg-[linear-gradient(135deg,rgba(18,25,37,0.97),rgba(29,24,14,0.96))] shadow-[0_24px_70px_rgba(0,0,0,0.18)]">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/7 px-4 py-4 sm:px-5">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[rgba(201,168,76,0.16)] px-4 py-4 sm:px-5">
         <div>
           <div className="flex items-center gap-2">
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-emerald-400/15 bg-emerald-400/8 text-emerald-300">
@@ -138,7 +138,7 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={load} className="rounded-lg border border-white/8 px-2.5 py-1.5 text-[10px] text-[rgba(245,237,214,0.58)] hover:border-white/15 hover:text-white">
+          <button type="button" onClick={load} className="rounded-lg border border-[rgba(118,138,166,0.24)] px-2.5 py-1.5 text-[10px] text-[rgba(245,237,214,0.58)] hover:border-[rgba(201,168,76,0.35)] hover:text-white">
             Làm mới
           </button>
           <Link href="/admin/analytics" className="inline-flex items-center gap-1.5 rounded-lg border border-[#C9A84C]/25 px-2.5 py-1.5 text-[10px] font-medium text-[#D9BD6A] hover:bg-[#C9A84C]/8">
@@ -165,7 +165,7 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-            <div className="rounded-2xl border border-white/7 bg-black/10 p-4">
+            <div className="rounded-2xl border border-[rgba(118,138,166,0.22)] bg-black/10 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-white">Cơ cấu kênh truy cập</h3>
@@ -178,7 +178,7 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/7 bg-black/10 p-4 min-w-0">
+            <div className="rounded-2xl border border-[rgba(118,138,166,0.22)] bg-black/10 p-4 min-w-0">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-semibold text-white">Chi tiết từng nguồn</h3>
@@ -194,7 +194,7 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[560px] text-left">
                     <thead>
-                      <tr className="border-b border-white/7 text-[9px] uppercase tracking-wider text-[rgba(245,237,214,0.36)]">
+                      <tr className="border-b border-[rgba(118,138,166,0.22)] text-[9px] uppercase tracking-wider text-[rgba(245,237,214,0.36)]">
                         <th className="pb-2 font-medium">Nguồn</th>
                         <th className="pb-2 font-medium">Phân loại</th>
                         <th className="pb-2 text-right font-medium">Lượt</th>
@@ -207,7 +207,7 @@ export default function DashboardTrafficOverview({ range }: { range: DashboardTr
                       {details.map((row, index) => {
                         const style = SOURCE_STYLE[row.group];
                         return (
-                          <tr key={`${row.group}-${row.source}-${row.campaign}-${index}`} className="border-b border-white/[0.045] last:border-0">
+                          <tr key={`${row.group}-${row.source}-${row.campaign}-${index}`} className="border-b border-[rgba(118,138,166,0.12)] last:border-0">
                             <td className="py-2.5 pr-3">
                               <div className="text-xs font-medium text-[rgba(245,237,214,0.82)]">{row.source}</div>
                               <div className="mt-0.5 max-w-[190px] truncate text-[9px] text-[rgba(245,237,214,0.35)]">{row.campaign || row.medium}</div>

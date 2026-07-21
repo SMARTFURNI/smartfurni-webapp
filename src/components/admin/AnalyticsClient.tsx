@@ -1,15 +1,17 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import type { AnalyticsData } from "@/lib/analytics-store";
+import DashboardTrafficOverview, { type DashboardTrafficRange } from "@/components/admin/DashboardTrafficOverview";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Range = "day" | "week" | "month" | "year" | "all";
+type Range = "day" | "week" | "month" | "quarter" | "year" | "all";
 type ChartMode = "views" | "uniques";
 
 const RANGE_LABELS: Record<Range, string> = {
   day: "Hôm nay",
   week: "7 ngày",
   month: "30 ngày",
+  quarter: "Quý",
   year: "12 tháng",
   all: "Tất cả",
 };
@@ -21,56 +23,7 @@ const DEVICE_COLORS: Record<string, string> = {
   Unknown: "#6B7280",
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function fmt(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
-  return n.toString();
-}
-
-function growthColor(g: number): string {
-  if (g > 0) return "text-green-400";
-  if (g < 0) return "text-red-400";
-  return "text-[rgba(245,237,214,0.70)]";
-}
-
-function growthIcon(g: number): string {
-  if (g > 0) return "↑";
-  if (g < 0) return "↓";
-  return "→";
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-function KPICard({
-  label,
-  value,
-  growth,
-  sub,
-  icon,
-}: {
-  label: string;
-  value: string;
-  growth: number;
-  sub: string;
-  icon: string;
-}) {
-  return (
-    <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
-      <div className="flex items-start justify-between mb-3">
-        <span className="text-[#C9A84C]/60 text-xs font-medium uppercase tracking-wider">{label}</span>
-        <span className="text-lg">{icon}</span>
-      </div>
-      <div className="text-3xl font-bold text-[#C9A84C] mb-1">{value}</div>
-      <div className="flex items-center gap-2">
-        <span className={`text-xs font-semibold ${growthColor(growth)}`}>
-          {growthIcon(growth)} {Math.abs(growth)}%
-        </span>
-        <span className="text-[#6B5B2A] text-xs">{sub}</span>
-      </div>
-    </div>
-  );
-}
 
 function BarChart({
   data,
@@ -266,7 +219,7 @@ function DonutChart({ data }: { data: { device: string; count: number; pct: numb
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AnalyticsClient() {
-  const [range, setRange] = useState<Range>("month");
+  const [range, setRange] = useState<Range>("day");
   const [chartMode, setChartMode] = useState<ChartMode>("views");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -299,30 +252,35 @@ export default function AnalyticsClient() {
       case "day": return data.byDay.slice(-1);
       case "week": return data.byDay.slice(-7);
       case "month": return data.byDay;
+      case "quarter": return data.byWeek.slice(-13);
       case "year": return data.byMonth;
       case "all": return data.byYear;
     }
   })();
 
-  const s = data?.summary;
+  const dashboardRange: DashboardTrafficRange =
+    range === "day" ? "today" :
+    range === "week" ? "7d" :
+    range === "month" ? "30d" :
+    range;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="analytics-page p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#C9A84C]">Analytics</h1>
-          <p className="text-[#6B5B2A] text-sm mt-0.5">
-            Theo dõi lượt truy cập trang web
+          <h1 className="text-2xl font-bold text-[#F5EDD6]">Phân tích lưu lượng</h1>
+          <p className="text-[rgba(245,237,214,0.56)] text-sm mt-0.5">
+            Theo dõi người dùng, lượt truy cập, nguồn và hiệu suất nội dung
             {lastUpdated && (
-              <span className="ml-2 text-[#4A3B1A]">· Cập nhật {lastUpdated.toLocaleTimeString("vi-VN")}</span>
+              <span className="ml-2 text-[rgba(245,237,214,0.36)]">· Cập nhật {lastUpdated.toLocaleTimeString("vi-VN")}</span>
             )}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => fetchData(range)}
-            className="px-3 py-1.5 bg-[#1a1200] border border-[rgba(255,200,100,0.22)] text-[#C9A84C] text-xs rounded-lg hover:border-[rgba(255,200,100,0.08)]0 transition-colors"
+            className="px-3 py-1.5 bg-[rgba(14,20,31,0.72)] border border-[rgba(118,138,166,0.24)] text-[#D9BD6A] text-xs rounded-lg hover:border-[rgba(201,168,76,0.4)] transition-colors"
           >
             ↻ Làm mới
           </button>
@@ -330,7 +288,7 @@ export default function AnalyticsClient() {
       </div>
 
       {/* Range Picker */}
-      <div className="flex gap-1 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-xl p-1 w-fit">
+      <div className="flex max-w-full gap-1 overflow-x-auto bg-[rgba(14,20,31,0.72)] border border-[rgba(118,138,166,0.22)] rounded-xl p-1 w-fit">
         {(Object.entries(RANGE_LABELS) as [Range, string][]).map(([r, label]) => (
           <button
             key={r}
@@ -338,7 +296,7 @@ export default function AnalyticsClient() {
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
               range === r
                 ? "bg-[#C9A84C] text-black"
-                : "text-[#6B5B2A] hover:text-[#C9A84C]"
+                : "text-[rgba(245,237,214,0.5)] hover:text-[#D9BD6A]"
             }`}
           >
             {label}
@@ -346,40 +304,11 @@ export default function AnalyticsClient() {
         ))}
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          label="Lượt xem"
-          value={s ? fmt(s.totalViews) : "—"}
-          growth={s?.viewsGrowth || 0}
-          sub="so với kỳ trước"
-          icon="👁"
-        />
-        <KPICard
-          label="Khách duy nhất"
-          value={s ? fmt(s.totalUniques) : "—"}
-          growth={s?.uniquesGrowth || 0}
-          sub="so với kỳ trước"
-          icon="👤"
-        />
-        <KPICard
-          label="TB/ngày"
-          value={s ? fmt(s.avgViewsPerDay) : "—"}
-          growth={0}
-          sub="lượt xem mỗi ngày"
-          icon="📊"
-        />
-        <KPICard
-          label="Trang phổ biến"
-          value={s?.topPage ? (s.topPage.length > 12 ? s.topPage.slice(0, 12) + "…" : s.topPage) : "/"}
-          growth={0}
-          sub="nhiều lượt xem nhất"
-          icon="🏆"
-        />
-      </div>
+      {/* Dùng cùng bộ số liệu và phân loại nguồn với Dashboard. */}
+      <DashboardTrafficOverview range={dashboardRange} />
 
       {/* Main Chart */}
-      <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
+      <div className="analytics-panel rounded-xl p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <h2 className="text-[#C9A84C] font-semibold">Xu hướng lượt truy cập</h2>
@@ -387,11 +316,12 @@ export default function AnalyticsClient() {
               {range === "day" && "Hôm nay"}
               {range === "week" && "7 ngày qua"}
               {range === "month" && "30 ngày qua"}
+              {range === "quarter" && "Quý gần nhất"}
               {range === "year" && "12 tháng qua"}
               {range === "all" && "Tất cả thời gian"}
             </p>
           </div>
-          <div className="flex gap-1 bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-lg p-0.5">
+          <div className="flex gap-1 bg-[rgba(12,18,29,0.72)] border border-[rgba(118,138,166,0.22)] rounded-lg p-0.5">
             <button
               onClick={() => setChartMode("views")}
               className={`px-3 py-1 rounded text-xs font-medium transition-all ${chartMode === "views" ? "bg-[#C9A84C] text-black" : "text-[#6B5B2A] hover:text-[#C9A84C]"}`}
@@ -418,7 +348,7 @@ export default function AnalyticsClient() {
       {/* Row: Top Pages + Referrers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Pages */}
-        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
+        <div className="analytics-panel rounded-xl p-5">
           <h2 className="text-[#C9A84C] font-semibold mb-4">Trang phổ biến nhất</h2>
           {loading ? (
             <div className="space-y-2">
@@ -457,7 +387,7 @@ export default function AnalyticsClient() {
         </div>
 
         {/* Referrers */}
-        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
+        <div className="analytics-panel rounded-xl p-5">
           <h2 className="text-[#C9A84C] font-semibold mb-4">Nguồn truy cập</h2>
           {loading ? (
             <div className="space-y-2">
@@ -501,7 +431,7 @@ export default function AnalyticsClient() {
       {/* Row: Devices + Hourly Heatmap */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Devices */}
-        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
+        <div className="analytics-panel rounded-xl p-5">
           <h2 className="text-[#C9A84C] font-semibold mb-4">Thiết bị truy cập</h2>
           {loading ? (
             <div className="h-40 bg-[#1a1200] rounded animate-pulse" />
@@ -511,7 +441,7 @@ export default function AnalyticsClient() {
         </div>
 
         {/* Hourly Heatmap */}
-        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
+        <div className="analytics-panel rounded-xl p-5">
           <h2 className="text-[#C9A84C] font-semibold mb-1">Phân bố theo giờ</h2>
           <p className="text-[#6B5B2A] text-xs mb-4">7 ngày gần nhất</p>
           {loading ? (
@@ -523,7 +453,7 @@ export default function AnalyticsClient() {
       </div>
 
       {/* Weekly trend (byWeek) */}
-      <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
+      <div className="analytics-panel rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-[#C9A84C] font-semibold">Xu hướng theo tuần</h2>
@@ -538,7 +468,7 @@ export default function AnalyticsClient() {
       </div>
 
       {/* Monthly trend */}
-      <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
+      <div className="analytics-panel rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-[#C9A84C] font-semibold">Xu hướng theo tháng</h2>
@@ -554,7 +484,7 @@ export default function AnalyticsClient() {
 
       {/* Yearly trend */}
       {(data?.byYear?.length || 0) > 0 && (
-        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-5">
+        <div className="analytics-panel rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-[#C9A84C] font-semibold">Xu hướng theo năm</h2>
@@ -567,7 +497,7 @@ export default function AnalyticsClient() {
 
       {/* Empty state */}
       {!loading && data && data.summary.totalViews === 0 && (
-        <div className="bg-[#0E0C00] border border-[rgba(255,200,100,0.14)] rounded-xl p-10 text-center">
+        <div className="analytics-panel rounded-xl p-10 text-center">
           <div className="text-4xl mb-3">📊</div>
           <h3 className="text-[#C9A84C] font-semibold text-lg mb-2">Chưa có dữ liệu truy cập</h3>
           <p className="text-[#6B5B2A] text-sm max-w-md mx-auto">

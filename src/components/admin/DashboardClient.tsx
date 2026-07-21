@@ -529,7 +529,7 @@ export default function DashboardClient({
   blogData: DashboardStats; orderData: OrderDashboardStats; productData: ProductDashboardStats;
 }) {
   const [refreshing, setRefreshing] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange>("all");
+  const [dateRange, setDateRange] = useState<DateRange>("today");
   const [liveEnabled, setLiveEnabled] = useState(true);
   const { toasts, dismiss } = usePollingNotifications(liveEnabled);
 
