@@ -7,6 +7,7 @@ import { CATEGORIES } from "@/lib/blog-data";
 import { PRODUCT_FAMILIES } from "@/lib/product-families";
 import type { LucideIcon } from "lucide-react";
 import { CheckCircle2, Clock3, Eye, FilePenLine, FileText, Star } from "lucide-react";
+import ArticleImageStudio from "@/components/admin/ArticleImageStudio";
 
 interface PostEditorProps {
   mode: "create" | "edit";
@@ -113,74 +114,90 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
     }
   }
 
-  async function handleSave() {
+  function getValidationError() {
     if (!form.title || !form.content || !form.author) {
-      setError("Vui lòng điền đầy đủ Tiêu đề, Nội dung và Tác giả.");
-      return;
+      return "Vui lòng điền đầy đủ Tiêu đề, Nội dung và Tác giả.";
     }
     if (form.status === "scheduled" && !form.scheduledAt) {
-      setError("Vui lòng chọn ngày giờ lên lịch đăng bài.");
-      return;
+      return "Vui lòng chọn ngày giờ lên lịch đăng bài.";
     }
     if ((form.status === "published" || form.status === "scheduled") && form.aiGenerated && form.claimReviewStatus !== "approved") {
-      setError("Bản nháp AI phải được duyệt claim trước khi đăng hoặc lên lịch.");
-      return;
+      return "Bản nháp AI phải được duyệt claim trước khi đăng hoặc lên lịch.";
     }
     if ((form.status === "published" || form.status === "scheduled") && form.reviewerRequired && !form.reviewer.trim()) {
-      setError("Nội dung này yêu cầu nhập người kiểm duyệt trước khi xuất bản.");
-      return;
+      return "Nội dung này yêu cầu nhập người kiểm duyệt trước khi xuất bản.";
+    }
+    return "";
+  }
+
+  function buildPayload() {
+    return {
+      ...form,
+      tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+      secondaryKeywords: form.secondaryKeywords.split(",").map((t) => t.trim()).filter(Boolean),
+      sources: form.sources.split("\n").map((line) => {
+        const [title, ...urlParts] = line.split("|");
+        return { title: title?.trim(), url: urlParts.join("|").trim() };
+      }).filter((source) => source.title && source.url),
+      categoryLabel: CATEGORIES[form.category].label,
+      publishedAt: new Date(form.publishedAt).toISOString(),
+      scheduledAt:
+        form.status === "scheduled" && form.scheduledAt
+          ? new Date(form.scheduledAt).toISOString()
+          : undefined,
+      productRecommendation: {
+        familySlug: form.productFamilySlug,
+        title: form.productBlockTitle,
+        description: form.productBlockDescription,
+        productSlugs: form.productSlugs.split(",").map((slug) => slug.trim()).filter(Boolean),
+        ctaLabel: form.productCtaLabel,
+        ctaHref: `/products/${form.productFamilySlug}`,
+      },
+      articleCta: {
+        eyebrow: form.articleCtaEyebrow,
+        title: form.articleCtaTitle,
+        description: form.articleCtaDescription,
+        primaryLabel: form.articleCtaPrimaryLabel,
+        primaryHref: `/products/${form.productFamilySlug}`,
+        secondaryLabel: form.articleCtaSecondaryLabel,
+        secondaryHref: "/contact",
+      },
+    };
+  }
+
+  async function persistPost(redirectAfterSave: boolean) {
+    const validationError = getValidationError();
+    if (validationError) {
+      setError(validationError);
+      return false;
     }
     setError("");
     setSaving(true);
     try {
-      const payload = {
-        ...form,
-        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
-        secondaryKeywords: form.secondaryKeywords.split(",").map((t) => t.trim()).filter(Boolean),
-        sources: form.sources.split("\n").map((line) => {
-          const [title, ...urlParts] = line.split("|");
-          return { title: title?.trim(), url: urlParts.join("|").trim() };
-        }).filter((source) => source.title && source.url),
-        categoryLabel: CATEGORIES[form.category].label,
-        publishedAt: new Date(form.publishedAt).toISOString(),
-        scheduledAt:
-          form.status === "scheduled" && form.scheduledAt
-            ? new Date(form.scheduledAt).toISOString()
-            : undefined,
-        productRecommendation: {
-          familySlug: form.productFamilySlug,
-          title: form.productBlockTitle,
-          description: form.productBlockDescription,
-          productSlugs: form.productSlugs.split(",").map((slug) => slug.trim()).filter(Boolean),
-          ctaLabel: form.productCtaLabel,
-          ctaHref: `/products/${form.productFamilySlug}`,
-        },
-        articleCta: {
-          eyebrow: form.articleCtaEyebrow,
-          title: form.articleCtaTitle,
-          description: form.articleCtaDescription,
-          primaryLabel: form.articleCtaPrimaryLabel,
-          primaryHref: `/products/${form.productFamilySlug}`,
-          secondaryLabel: form.articleCtaSecondaryLabel,
-          secondaryHref: "/contact",
-        },
-      };
       const url =
         mode === "create" ? "/api/admin/posts" : `/api/admin/posts/${initialData?.slug}`;
       const method = mode === "create" ? "POST" : "PUT";
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(buildPayload()),
       });
       if (!res.ok) throw new Error("Lưu thất bại");
-      router.push("/admin/posts");
-      router.refresh();
+      if (redirectAfterSave) {
+        router.push("/admin/posts");
+        router.refresh();
+      }
+      return true;
     } catch {
       setError("Lỗi khi lưu bài viết. Vui lòng thử lại.");
+      return false;
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleSave() {
+    await persistPost(true);
   }
 
   const statusCfg = STATUS_CONFIG[form.status];
@@ -361,6 +378,22 @@ export default function PostEditor({ mode, initialData }: PostEditorProps) {
                 />
               </div>
             </div>
+
+            {mode === "edit" && initialData?.slug && (
+              <ArticleImageStudio
+                postSlug={initialData.slug}
+                initialImages={initialData.articleImages}
+                initialPlan={initialData.articleImagePlan}
+                onBeforeCreatePlan={() => persistPost(false)}
+                onApplied={({ coverImage, content }) => {
+                  setForm((current) => ({
+                    ...current,
+                    coverImage: coverImage || current.coverImage,
+                    content: content || current.content,
+                  }));
+                }}
+              />
+            )}
 
             {/* Title / Slug / Excerpt */}
             <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-4">

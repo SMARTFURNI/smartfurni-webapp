@@ -22,6 +22,16 @@ interface StoredImage {
   size: number;
 }
 
+export interface BatchImageInput {
+  buffer: Buffer;
+  originalName: string;
+  folder: MediaFolder;
+  subfolder?: string;
+  width: number;
+  height: number;
+  quality?: number;
+}
+
 function githubConfig() {
   const token = process.env.GITHUB_MEDIA_TOKEN?.trim();
   if (!token) throw new Error("GITHUB_MEDIA_TOKEN chưa được cấu hình trên Railway");
@@ -108,6 +118,66 @@ export async function storeImageOnGitHub(options: StoreImageOptions): Promise<St
   );
 
   return { url: `/${relativePath}`, repositoryPath, filename, size: optimized.length };
+}
+
+/** Store a complete article image set in one Git commit to avoid one deploy per image. */
+export async function storeImagesOnGitHubBatch(inputs: BatchImageInput[]): Promise<StoredImage[]> {
+  if (inputs.length === 0) return [];
+  const config = githubConfig();
+  const repo = `/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}`;
+  const refResponse = await githubRequest(`${repo}/git/ref/heads/${encodeURIComponent(config.branch)}`);
+  const ref = (await refResponse.json()) as { object?: { sha?: string } };
+  const parentSha = ref.object?.sha;
+  if (!parentSha) throw new Error("Không tìm thấy commit hiện tại của kho ảnh GitHub");
+
+  const commitResponse = await githubRequest(`${repo}/git/commits/${parentSha}`);
+  const parentCommit = (await commitResponse.json()) as { tree?: { sha?: string } };
+  const baseTree = parentCommit.tree?.sha;
+  if (!baseTree) throw new Error("Không tìm thấy cây thư mục hiện tại của kho ảnh GitHub");
+
+  const stored: StoredImage[] = [];
+  const tree: Array<{ path: string; mode: "100644"; type: "blob"; sha: string }> = [];
+  for (const input of inputs) {
+    const optimized = await sharp(input.buffer, { animated: false })
+      .rotate()
+      .resize(input.width, input.height, { fit: "cover", position: "attention" })
+      .webp({ quality: input.quality ?? 84, effort: 5 })
+      .toBuffer();
+    const filename = uniqueFilename(input.originalName);
+    const subfolder = input.subfolder ? `/${safeSegment(input.subfolder, "general")}` : "";
+    const relativePath = `uploads/${input.folder}${subfolder}/${filename}`;
+    const repositoryPath = `public/${relativePath}`;
+    const blobResponse = await githubRequest(`${repo}/git/blobs`, {
+      method: "POST",
+      body: JSON.stringify({ content: optimized.toString("base64"), encoding: "base64" }),
+    });
+    const blob = (await blobResponse.json()) as { sha?: string };
+    if (!blob.sha) throw new Error(`Không thể tạo ảnh ${filename} trên GitHub`);
+    tree.push({ path: repositoryPath, mode: "100644", type: "blob", sha: blob.sha });
+    stored.push({ url: `/${relativePath}`, repositoryPath, filename, size: optimized.length });
+  }
+
+  const treeResponse = await githubRequest(`${repo}/git/trees`, {
+    method: "POST",
+    body: JSON.stringify({ base_tree: baseTree, tree }),
+  });
+  const nextTree = (await treeResponse.json()) as { sha?: string };
+  if (!nextTree.sha) throw new Error("Không thể tạo cây ảnh mới trên GitHub");
+  const nextCommitResponse = await githubRequest(`${repo}/git/commits`, {
+    method: "POST",
+    body: JSON.stringify({
+      message: `media: add AI article image set (${inputs.length} images)`,
+      tree: nextTree.sha,
+      parents: [parentSha],
+    }),
+  });
+  const nextCommit = (await nextCommitResponse.json()) as { sha?: string };
+  if (!nextCommit.sha) throw new Error("Không thể tạo commit ảnh trên GitHub");
+  await githubRequest(`${repo}/git/refs/heads/${encodeURIComponent(config.branch)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ sha: nextCommit.sha, force: false }),
+  });
+  return stored;
 }
 
 export async function deleteImageFromGitHub(imageUrl: string): Promise<boolean> {

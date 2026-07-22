@@ -21,6 +21,43 @@ export interface BlogArticleCta {
   secondaryHref?: string;
 }
 
+export type BlogArticleImageRole = "cover" | "content";
+export type BlogArticleImageStatus = "planned" | "generating" | "review" | "approved" | "failed";
+
+export interface BlogArticleImageVariant {
+  id: string;
+  dataUrl: string;
+  createdAt: string;
+}
+
+export interface BlogArticleImage {
+  id: string;
+  role: BlogArticleImageRole;
+  sectionAnchor?: string;
+  sectionTitle?: string;
+  order: number;
+  prompt: string;
+  alt: string;
+  caption?: string;
+  aspectRatio: "16:9" | "3:2" | "4:3";
+  status: BlogArticleImageStatus;
+  url?: string;
+  model?: string;
+  version: number;
+  regenerationCount?: number;
+  referenceImageUrls?: string[];
+  variants?: BlogArticleImageVariant[];
+  error?: string;
+}
+
+export interface BlogArticleImagePlan {
+  fingerprint: string;
+  generatedAt: string;
+  wordCount: number;
+  headingCount: number;
+  status: "draft" | "generating" | "review" | "approved";
+}
+
 export interface BlogPost {
   slug: string;
   title: string;
@@ -56,6 +93,8 @@ export interface BlogPost {
   contentPlanItemId?: string;
   productRecommendation?: BlogProductRecommendation;
   articleCta?: BlogArticleCta;
+  articleImages?: BlogArticleImage[];
+  articleImagePlan?: BlogArticleImagePlan;
 }
 
 export const CATEGORIES: Record<BlogCategory, { label: string; color: string }> = {
