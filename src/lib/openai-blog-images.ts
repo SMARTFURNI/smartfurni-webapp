@@ -12,6 +12,7 @@ interface GenerateBlogImageOptions {
   prompt: string;
   aspectRatio?: "16:9" | "3:2" | "4:3";
   referenceImageUrls?: string[];
+  variantCount?: 1 | 2;
 }
 
 const MAX_REFERENCE_IMAGES = 3;
@@ -78,6 +79,7 @@ export async function generateBlogImageVariants({
   prompt,
   aspectRatio = "3:2",
   referenceImageUrls = [],
+  variantCount = 2,
 }: GenerateBlogImageOptions): Promise<{
   variants: GeneratedImageVariant[];
   model: string;
@@ -85,7 +87,11 @@ export async function generateBlogImageVariants({
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) throw new Error("OPENAI_API_KEY chưa được cấu hình trên Railway");
   const model = process.env.OPENAI_IMAGE_MODEL?.trim() || "gpt-image-2";
-  const client = new OpenAI({ apiKey });
+  const configuredTimeout = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 80_000);
+  const timeout = Number.isFinite(configuredTimeout)
+    ? Math.min(Math.max(configuredTimeout, 30_000), 180_000)
+    : 80_000;
+  const client = new OpenAI({ apiKey, timeout, maxRetries: 1 });
   const size = getImageSize(aspectRatio);
 
   if (referenceImageUrls.length) {
@@ -97,7 +103,7 @@ export async function generateBlogImageVariants({
           image: referenceFiles.length === 1 ? referenceFiles[0] : referenceFiles,
           prompt: `${prompt}\n\nUse the attached SmartFurni product images as authoritative product references. Preserve recognizable geometry, materials and brand identity, but create an original editorial composition and background.`,
           input_fidelity: "high",
-          n: 2,
+          n: variantCount,
           size,
           quality: "medium",
           output_format: "webp",
@@ -114,7 +120,7 @@ export async function generateBlogImageVariants({
   const result = await client.images.generate({
     model,
     prompt,
-    n: 2,
+    n: variantCount,
     size,
     quality: "medium",
     output_format: "webp",
@@ -124,6 +130,30 @@ export async function generateBlogImageVariants({
   const variants = extractVariants(result.data);
   if (variants.length === 0) throw new Error("OpenAI không trả về dữ liệu ảnh");
   return { variants, model };
+}
+
+export function getImageGenerationErrorMessage(error: unknown) {
+  const details = error as { status?: number; code?: string; name?: string; message?: string };
+  const message = details?.message || "";
+
+  if (/OPENAI_API_KEY/i.test(message)) return message;
+  if (details.status === 401 || details.status === 403) {
+    return "OpenAI từ chối xác thực. Hãy kiểm tra OPENAI_API_KEY và quyền truy cập model trong Railway.";
+  }
+  if (details.status === 429) {
+    return "OpenAI đang giới hạn yêu cầu hoặc tài khoản đã hết hạn mức. Hãy kiểm tra Usage và Billing của OpenAI rồi thử lại.";
+  }
+  if (details.status === 400) {
+    return "OpenAI từ chối cấu hình tạo ảnh. Hãy kiểm tra OPENAI_IMAGE_MODEL và quyền sử dụng model của tài khoản.";
+  }
+  if ((details.status && details.status >= 500) || /upstream error|gateway|service unavailable/i.test(message)) {
+    return "Dịch vụ tạo ảnh OpenAI đang tạm gián đoạn. Hãy thử lại sau 30–60 giây.";
+  }
+  if (/timeout|timed out|ETIMEDOUT|ECONNRESET|connection reset|aborted/i.test(message)) {
+    return "Yêu cầu tạo ảnh vượt thời gian chờ. Hệ thống đã chuyển sang tạo từng phương án; hãy thử lại một lần nữa.";
+  }
+
+  return message || "Không thể tạo ảnh từ OpenAI";
 }
 
 export function decodeImageDataUrl(dataUrl: string): Buffer {

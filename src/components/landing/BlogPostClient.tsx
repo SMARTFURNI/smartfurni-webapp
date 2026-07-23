@@ -62,6 +62,42 @@ function formatInlineMarkdown(value: string): string {
     .replace(/\*(.+?)\*/g, '<em class="text-[#7A5817]">$1</em>');
 }
 
+interface ArticleImageBlock {
+  src: string;
+  alt: string;
+  caption?: string;
+}
+
+function normalizeArticleMarkdown(content: string): string {
+  return content
+    .replace(
+      /<!--\s*SMARTFURNI_AI_IMAGE:([^\s>]+):START\s*-->\s*([\s\S]*?)\s*<!--\s*SMARTFURNI_AI_IMAGE:\1:END\s*-->/g,
+      (_match, _id: string, imageBlock: string) => {
+        const normalizedImageBlock = imageBlock
+          .trim()
+          .replace(/\)\s*\n+\s*(\*[^*\n]+\*)$/, ") $1");
+
+        return `\n\n${normalizedImageBlock}\n\n`;
+      },
+    )
+    .replace(/<!--\s*SMARTFURNI_AI_IMAGE:[^>]*-->/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function parseArticleImageBlock(block: string): ArticleImageBlock | null {
+  const match = block.trim().match(
+    /^!\[([^\]]*)\]\(((?:\/|https?:\/\/)[^)]+)\)(?:\s+\*([^*\n]+)\*)?$/,
+  );
+  if (!match) return null;
+
+  return {
+    alt: match[1].trim(),
+    src: match[2].trim(),
+    caption: match[3]?.trim() || undefined,
+  };
+}
+
 function formatPrice(price: number): string {
   if (!price) return "Liên hệ";
   return new Intl.NumberFormat("vi-VN").format(price) + "đ";
@@ -265,7 +301,10 @@ function ShareButtons({ title, slug }: { title: string; slug: string }) {
 export default function BlogPostClient({ post, relatedPosts, theme, recommendedProducts }: Props) {
   const categoryColor = CATEGORIES[post.category].color;
   const funnelCta = FUNNEL_CTA[post.funnelStage || "MOFU"];
-  const contentBlocks = post.content.split("\n\n");
+  const normalizedContent = normalizeArticleMarkdown(post.content);
+  const contentBlocks = normalizedContent
+    .split(/\n{2,}/)
+    .filter((block) => block.trim());
   let sectionNumber = 0;
   const articleHeadings = contentBlocks.flatMap((block, blockIndex) => {
     const level = block.startsWith("## ") ? 2 : block.startsWith("### ") ? 3 : null;
@@ -364,6 +403,29 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
 
           <div id="noi-dung-bai-viet" className="max-w-none scroll-mt-28 text-[16px] leading-[1.85] text-[#3E4650] sm:text-[17px]">
             {contentBlocks.map((block, i) => {
+              const articleImage = parseArticleImageBlock(block);
+              if (articleImage) {
+                return (
+                  <figure
+                    key={i}
+                    className="my-8 overflow-hidden rounded-2xl border border-[#D7C79C]/55 bg-[#F7F2E8] shadow-[0_14px_38px_rgba(30,38,48,.08)]"
+                  >
+                    <img
+                      src={articleImage.src}
+                      alt={articleImage.alt}
+                      loading="lazy"
+                      decoding="async"
+                      className="aspect-[3/2] w-full object-cover"
+                    />
+                    {articleImage.caption && (
+                      <figcaption className="border-t border-[#D7C79C]/45 px-4 py-3 text-center text-sm italic leading-6 text-[#6D6256]">
+                        {articleImage.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                );
+              }
+
               if (block.trim() === "[[SMARTFURNI_PRODUCTS]]") {
                 return <ProductRecommendationBlock key={i} post={post} products={recommendedProducts} />;
               }
@@ -447,7 +509,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
             })}
           </div>
 
-          {post.productRecommendation && !post.content.includes("[[SMARTFURNI_PRODUCTS]]") && (
+          {post.productRecommendation && !normalizedContent.includes("[[SMARTFURNI_PRODUCTS]]") && (
             <ProductRecommendationBlock post={post} products={recommendedProducts} />
           )}
 
@@ -514,7 +576,7 @@ export default function BlogPostClient({ post, relatedPosts, theme, recommendedP
           <ShareButtons title={post.title} slug={post.slug} />
         </article>
 
-        {!post.content.includes("[[SMARTFURNI_CTA]]") && <div className="mx-4 mt-10 rounded-2xl border border-[#58451E] bg-[linear-gradient(125deg,#172231,#302718)] p-6 text-center shadow-[0_18px_50px_rgba(47,36,21,.16)] sm:mx-auto sm:max-w-4xl sm:p-8">
+        {!normalizedContent.includes("[[SMARTFURNI_CTA]]") && <div className="mx-4 mt-10 rounded-2xl border border-[#58451E] bg-[linear-gradient(125deg,#172231,#302718)] p-6 text-center shadow-[0_18px_50px_rgba(47,36,21,.16)] sm:mx-auto sm:max-w-4xl sm:p-8">
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="w-6 h-px bg-[#C9A84C]" />
             <span className="text-xs text-[#C9A84C] font-medium tracking-wider uppercase">{funnelCta.eyebrow}</span>

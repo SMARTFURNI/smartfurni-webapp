@@ -29,6 +29,28 @@ const STATUS_LABELS: Record<BlogArticleImage["status"], string> = {
   failed: "Có lỗi",
 };
 
+async function readApiResponse<T>(response: Response): Promise<T> {
+  const raw = await response.text();
+  if (!raw.trim()) {
+    throw new Error(
+      response.ok
+        ? "Máy chủ không trả về dữ liệu. Hãy thử lại."
+        : "Dịch vụ tạo ảnh không phản hồi. Hãy thử lại sau 30–60 giây.",
+    );
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    const isUpstreamFailure = [502, 503, 504].includes(response.status) || /upstream error|gateway|timed?\s*out/i.test(raw);
+    throw new Error(
+      isUpstreamFailure
+        ? "Dịch vụ tạo ảnh bị gián đoạn hoặc quá thời gian chờ. Hãy thử lại sau 30–60 giây; nếu lỗi lặp lại, kiểm tra Usage/Billing của OpenAI."
+        : `Máy chủ trả về dữ liệu không hợp lệ (HTTP ${response.status || "không xác định"}).`,
+    );
+  }
+}
+
 export default function ArticleImageStudio({
   postSlug,
   initialImages = [],
@@ -60,7 +82,7 @@ export default function ArticleImageStudio({
       const saved = await onBeforeCreatePlan();
       if (!saved) return;
       const response = await fetch(`/api/admin/posts/${postSlug}/image-plan`, { method: "POST" });
-      const data = await response.json();
+      const data = await readApiResponse<{ error?: string; images?: BlogArticleImage[]; plan?: BlogArticleImagePlan }>(response);
       if (!response.ok) throw new Error(data.error || "Không thể tạo brief ảnh");
       setImages(data.images || []);
       setPlan(data.plan);
@@ -83,7 +105,7 @@ export default function ArticleImageStudio({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images }),
       });
-      const data = await response.json();
+      const data = await readApiResponse<{ error?: string; images?: BlogArticleImage[] }>(response);
       if (!response.ok) throw new Error(data.error || "Không thể lưu brief");
       setImages(data.images || images);
       setMessage("Đã lưu brief ảnh.");
@@ -100,15 +122,32 @@ export default function ArticleImageStudio({
     setBusy(image.id);
     updateImage(image.id, { status: "generating" });
     try {
-      const response = await fetch(`/api/admin/posts/${postSlug}/images/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Không thể tạo ảnh");
-      setImages((current) => current.map((item) => item.id === image.id ? data.image : item));
-      const firstVariant = data.image?.variants?.[0]?.dataUrl;
+      const variants: NonNullable<BlogArticleImage["variants"]> = [];
+      let generatedImage: BlogArticleImage | undefined;
+
+      // Tạo lần lượt từng phương án để mỗi request đủ ngắn, tránh proxy trả về
+      // plain text "upstream error" trước khi OpenAI hoàn tất hai ảnh độ phân giải cao.
+      for (let index = 0; index < 2; index += 1) {
+        const response = await fetch(`/api/admin/posts/${postSlug}/images/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image, finalize: index === 1 }),
+        });
+        const data = await readApiResponse<{ error?: string; image?: BlogArticleImage }>(response);
+        if (!response.ok) throw new Error(data.error || "Không thể tạo ảnh");
+        if (!data.image) throw new Error("Máy chủ không trả về phương án ảnh");
+
+        generatedImage = data.image;
+        variants.push(...(data.image.variants || []));
+        updateImage(image.id, { status: "generating", variants: [...variants], error: undefined });
+      }
+
+      if (!generatedImage || variants.length < 2) {
+        throw new Error("OpenAI chưa trả về đủ hai phương án ảnh. Hãy thử tạo lại.");
+      }
+      const mergedImage: BlogArticleImage = { ...generatedImage, variants };
+      setImages((current) => current.map((item) => item.id === image.id ? mergedImage : item));
+      const firstVariant = variants[0]?.dataUrl;
       if (firstVariant) setSelected((current) => ({ ...current, [image.id]: firstVariant }));
     } catch (caught) {
       const detail = caught instanceof Error ? caught.message : "Không thể tạo ảnh";
@@ -136,7 +175,13 @@ export default function ArticleImageStudio({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ selections }),
       });
-      const data = await response.json();
+      const data = await readApiResponse<{
+        error?: string;
+        images?: BlogArticleImage[];
+        plan?: BlogArticleImagePlan;
+        coverImage?: string;
+        content?: string;
+      }>(response);
       if (!response.ok) throw new Error(data.error || "Không thể duyệt bộ ảnh");
       setImages(data.images || images);
       setPlan(data.plan || plan);
@@ -251,7 +296,7 @@ export default function ArticleImageStudio({
                       <div className="flex flex-wrap gap-2">
                         <button type="button" onClick={() => generate(image)} disabled={Boolean(busy) || (!canRegenerate && image.status === "review")} className="inline-flex items-center gap-2 rounded-xl border border-[#C9A84C]/30 px-3 py-2 text-xs font-semibold text-[#E6BF55] transition hover:bg-[#C9A84C]/10 disabled:opacity-40">
                           {isGenerating ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : image.status === "review" ? <RefreshCw className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
-                          {isGenerating ? "Đang tạo 2 phương án..." : image.status === "review" ? "Tạo lại" : "Tạo 2 phương án"}
+                          {isGenerating ? "Đang tạo từng phương án..." : image.status === "review" ? "Tạo lại" : "Tạo 2 phương án"}
                         </button>
                         {(image.regenerationCount || 0) > 0 && <span className="self-center text-xs text-[#F5EDD6]/40">Đã tạo lại {image.regenerationCount}/2 lần</span>}
                       </div>
