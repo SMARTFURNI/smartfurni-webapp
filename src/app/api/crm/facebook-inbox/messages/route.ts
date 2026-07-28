@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getPages, loadFacebookSchedulerFromDb } from "@/lib/crm-facebook-scheduler-store";
+import { captureFacebookGroupMessengerSource } from "@/lib/facebook-group-marketing-integration";
 
 export const dynamic = "force-dynamic";
 
 let loaded = false;
 async function ensureLoaded() {
   if (!loaded) { await loadFacebookSchedulerFromDb(); loaded = true; }
+}
+
+interface NormalizedFacebookMessage {
+  id: string;
+  message: string;
+  from?: { id: string; name: string };
+  isSelf: boolean;
+  createdTime?: string;
+  attachments: Array<Record<string, unknown>>;
+  sticker?: string;
 }
 
 /**
@@ -47,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Normalize messages — newest first from API, reverse for display
-    const messages = (data.data || []).map((msg: {
+    const messages: NormalizedFacebookMessage[] = (data.data || []).map((msg: {
       id: string;
       message?: string;
       from?: { id: string; name: string };
@@ -80,9 +91,27 @@ export async function GET(request: NextRequest) {
 
     // Đảo ngược để hiển thị cũ → mới
     messages.reverse();
+    const messagesWithSource = await Promise.all(messages.map(async message => {
+      if (message.isSelf || !message.message || !message.from?.id) return message;
+      try {
+        const sourceAttribution = await captureFacebookGroupMessengerSource({
+          pageFacebookId: page.pageId,
+          conversationId,
+          messageId: message.id,
+          participantId: message.from.id,
+          participantName: message.from.name,
+          message: message.message,
+          createdAt: message.createdTime,
+        });
+        return sourceAttribution.sourceCode ? { ...message, sourceAttribution } : message;
+      } catch (sourceError) {
+        console.error("[facebook-inbox] source attribution error:", sourceError);
+        return message;
+      }
+    }));
 
     return NextResponse.json({
-      messages,
+      messages: messagesWithSource,
       paging: data.paging || null,
     });
   } catch (err) {

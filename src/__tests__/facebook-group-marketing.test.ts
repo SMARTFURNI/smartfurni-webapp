@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
-  extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, validateFacebookGroupSchedule,
+  extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
+  parseFacebookGroupUrl, validateFacebookGroupSchedule,
 } from "@/lib/facebook-group-marketing-business";
 import { DEFAULT_FACEBOOK_GROUP_SETTINGS as settings } from "@/lib/facebook-group-marketing-types";
 
@@ -96,5 +97,24 @@ describe("Facebook Group Marketing business rules", () => {
       "Mình muốn nhận video, mã CHQ7-KHUNG-2807-A nhé",
     )).toBe("CHQ7-KHUNG-2807-A");
     expect(extractFacebookGroupSourceCode("Xin chào Fanpage")).toBeNull();
+  });
+
+  it("chỉ chấp nhận đúng link bài đăng trong Facebook Group", () => {
+    expect(parseFacebookGroupPostUrl(
+      "https://www.facebook.com/groups/123456/posts/987654/",
+    )).toMatchObject({ groupKey: "123456", postKey: "987654", kind: "posts" });
+    expect(parseFacebookGroupPostUrl(
+      "https://m.facebook.com/groups/noithatthongminh/permalink/9988",
+    )).toMatchObject({ groupKey: "noithatthongminh", postKey: "9988", kind: "permalink" });
+    expect(parseFacebookGroupPostUrl("https://www.facebook.com/smartfurni/posts/123")).toBeNull();
+    expect(parseFacebookGroupPostUrl("https://example.com/groups/123/posts/456")).toBeNull();
+  });
+
+  it("đối chiếu được bài đăng với đúng Group đã cấu hình", () => {
+    const group = parseFacebookGroupUrl("https://www.facebook.com/groups/noithatthongminh/");
+    const post = parseFacebookGroupPostUrl(
+      "https://www.facebook.com/groups/noithatthongminh/posts/123456/",
+    );
+    expect(group?.groupKey).toBe(post?.groupKey);
   });
 });

@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test": "vitest run",
     "seed:facebook-groups": "node --env-file-if-exists=.env.local scripts/seed-facebook-group-marketing.mjs --confirm-development",
+    "migrate:facebook-groups:production": "node scripts/run-facebook-group-production-migration.mjs --confirm-production",
     "media:migrate:download": "node --env-file=.env.production scripts/migrate-cloudinary-media.mjs --download",
     "media:migrate:apply": "node --env-file=.env.production scripts/migrate-cloudinary-media.mjs --apply-db",
     "media:migrate:direct": "node scripts/migrate-cloudinary-media.mjs --direct",

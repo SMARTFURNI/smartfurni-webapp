@@ -70,10 +70,11 @@ export default function OrderFormClient({ order }: { order?: Order }) {
   const isEdit = !!order;
 
   // Pre-fill from CRM query params (when navigating from CRM lead detail)
-  const crmName = searchParams.get("customerName") || "";
-  const crmPhone = searchParams.get("customerPhone") || "";
-  const crmEmail = searchParams.get("customerEmail") || "";
-  const fromCrm = !!searchParams.get("customerId");
+  const crmName = searchParams?.get("customerName") || "";
+  const crmPhone = searchParams?.get("customerPhone") || "";
+  const crmEmail = searchParams?.get("customerEmail") || "";
+  const crmCustomerId = searchParams?.get("customerId") || "";
+  const fromCrm = !!crmCustomerId;
 
   // Customer info
   const [customerName, setCustomerName] = useState(order?.customerName || crmName);
@@ -163,6 +164,7 @@ export default function OrderFormClient({ order }: { order?: Order }) {
     setSuccessMsg("");
     try {
       const payload = {
+        customerId: order?.customerId || crmCustomerId || undefined,
         customerName, customerEmail, customerPhone,
         shippingAddress, city,
         items: items.map((i) => ({

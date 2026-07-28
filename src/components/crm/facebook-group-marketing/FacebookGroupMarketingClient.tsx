@@ -10,6 +10,7 @@ import {
 type Row = Record<string, unknown>;
 type FormOptions = {
   pages: Row[]; groups: Row[]; campaigns: Row[]; content: Row[]; posts: Row[];
+  staff: Row[]; products: Row[]; leads: Row[];
 };
 type Permissions = {
   manage: boolean; campaigns: boolean; content: boolean; approve: boolean;
@@ -28,7 +29,9 @@ const labels: Record<string, string> = {
   tasks: "nhiệm vụ", posts: "bài đăng", comments: "bình luận",
 };
 
-const emptyOptions: FormOptions = { pages: [], groups: [], campaigns: [], content: [], posts: [] };
+const emptyOptions: FormOptions = {
+  pages: [], groups: [], campaigns: [], content: [], posts: [], staff: [], products: [], leads: [],
+};
 
 const statusLabel: Record<string, string> = {
   active: "Hoạt động", paused: "Tạm dừng", needs_review: "Cần kiểm tra",
@@ -165,13 +168,15 @@ export default function FacebookGroupMarketingClient({
     const form = new FormData(event.currentTarget);
     const payload: Row = {};
     form.forEach((item, key) => {
-      if (key === "groupIds") return;
+      if (key === "groupIds" || key === "productIds") return;
       if (item === "") return;
       payload[key] = ["memberCount", "maxPostsPerDay", "minPostIntervalMinutes"].includes(key)
         ? Number(item) : item;
     });
     const groupIds = form.getAll("groupIds").map(String).filter(Boolean);
     if (groupIds.length) payload.groupIds = groupIds;
+    const productIds = form.getAll("productIds").map(String).filter(Boolean);
+    if (productIds.length) payload.productIds = productIds;
     try {
       await api(endpoint, { method: "POST", body: JSON.stringify(payload) });
       setNotice("Đã lưu thành công."); setModal(null); await load();
@@ -269,7 +274,13 @@ export default function FacebookGroupMarketingClient({
         <Dashboard data={dashboard || {}} reports={section === "reports"} />
       ) : section === "settings" ? (
         <SettingsView data={settingsData || {}} pages={rows} canEdit={permissions.settings}
-          onSave={async payload => { await action("settings", payload); }} onAddPage={() => setModal("page")} />
+          onSave={async payload => { await action("settings", payload); }}
+          onSyncPages={async () => {
+            const result = await api("pages/sync", { method: "POST", body: "{}" });
+            setNotice(`Đã đồng bộ ${result.found} Fanpage: thêm ${result.created}, cập nhật ${result.updated}.`);
+            await load();
+          }}
+          onAddPage={() => setModal("page")} />
       ) : (
         <>
           {section === "groups" && (
@@ -436,6 +447,15 @@ function DataTable({ section, rows, permissions, onAction }: {
                 {section === "tasks" && Boolean(row.groupUrl) && <a target="_blank" rel="noreferrer" href={String(row.groupUrl)} title="Mở group"><ExternalLink size={17} /></a>}
                 {section === "tasks" && permissions.publish && !["posted", "approved"].includes(String(row.status)) && <MarkPosted task={row} onAction={onAction} />}
                 {section === "posts" && Boolean(row.post_url) && <a target="_blank" rel="noreferrer" href={String(row.post_url)}><ExternalLink size={17} /></a>}
+                {section === "posts" && permissions.publish && row.moderation_status === "pending" && <>
+                  <button onClick={() => void onAction(`posts/${row.id}/moderation`, { status: "approved" })}
+                    title="Xác nhận Group đã duyệt"><CheckCircle2 size={17} className="text-emerald-300" /></button>
+                  <button onClick={() => {
+                    const reason = window.prompt("Lý do Group từ chối bài (nếu biết):", "");
+                    if (reason === null) return;
+                    void onAction(`posts/${row.id}/moderation`, { status: "rejected", reason });
+                  }} title="Đánh dấu bị từ chối"><AlertTriangle size={17} className="text-red-300" /></button>
+                </>}
                 {section === "checks" && Boolean(row.postUrl) && <a target="_blank" rel="noreferrer" href={String(row.postUrl)}><ExternalLink size={17} /></a>}
                 {section === "checks" && permissions.publish && row.status === "pending" && <CompleteCheck check={row} onAction={onAction} />}
                 {section === "comments" && permissions.sales && Boolean(row.sourceCode) && <button onClick={() => {
@@ -521,7 +541,39 @@ function CreateForm({ resource, options, onSubmit }: {
   resource: string; options: FormOptions;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState("");
   const selectClass = "rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white";
+  const suggestContent = async (button: HTMLButtonElement) => {
+    const form = button.form;
+    if (!form) return;
+    const data = new FormData(form);
+    setAiBusy(true); setAiError("");
+    try {
+      const result = await api("content/suggest", {
+        method: "POST",
+        body: JSON.stringify({
+          groupId: data.get("groupId"),
+          campaignId: data.get("campaignId"),
+          productId: data.get("productId"),
+          contentType: data.get("contentType"),
+          brief: data.get("brief"),
+        }),
+      });
+      const setValue = (name: string, value: unknown) => {
+        const field = form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+        if (field) field.value = String(value || "");
+      };
+      setValue("opening", result.opening);
+      setValue("body", result.body);
+      setValue("cta", result.cta);
+      setValue("contentType", result.contentType);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : "Không thể tạo gợi ý AI.");
+    } finally {
+      setAiBusy(false);
+    }
+  };
   return <form className="grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
     {resource === "groups" && <>
       <Field label="Tên group" name="name" required /><Field label="Mã group" name="code" />
@@ -542,8 +594,18 @@ function CreateForm({ resource, options, onSubmit }: {
     {resource === "campaigns" && <>
       <Field label="Tên chiến dịch" name="name" required /><Field label="Mã chiến dịch" name="code" />
       <Field label="Fanpage" name="pageId" required><select name="pageId" required className={selectClass}><option value="">Chọn Fanpage</option>{options.pages.map(page => <option key={String(page.id)} value={String(page.id)}>{String(page.name)}</option>)}</select></Field>
-      <Field label="Người phụ trách ID" name="ownerId" />
+      <Field label="Người phụ trách" name="ownerId"><select name="ownerId" className={selectClass}><option value="">Chọn nhân viên</option>{options.staff.map(staff => <option key={String(staff.id)} value={String(staff.id)}>{String(staff.name)}</option>)}</select></Field>
       <Field label="Ngày bắt đầu" name="startDate" type="date" /><Field label="Ngày kết thúc" name="endDate" type="date" />
+      <div className="md:col-span-2">
+        <span className="mb-2 block text-sm text-slate-300">Sản phẩm trong chiến dịch</span>
+        <div className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-3 md:grid-cols-2">
+          {options.products.map(product => <label key={String(product.id)} className="flex items-start gap-2 text-sm text-slate-200">
+            <input type="checkbox" name="productIds" value={String(product.id)} className="mt-1" />
+            <span>{String(product.name)} <small className="text-slate-500">({String(product.sku || "")})</small></span>
+          </label>)}
+          {!options.products.length && <span className="text-sm text-slate-500">Chưa có sản phẩm CRM.</span>}
+        </div>
+      </div>
       <div className="md:col-span-2">
         <span className="mb-2 block text-sm text-slate-300">Group mục tiêu</span>
         <div className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-3 md:grid-cols-2">
@@ -558,8 +620,18 @@ function CreateForm({ resource, options, onSubmit }: {
     {resource === "content" && <>
       <Field label="Group" name="groupId" required><select name="groupId" required className={selectClass}><option value="">Chọn Group</option>{options.groups.map(group => <option key={String(group.id)} value={String(group.id)}>{String(group.name)}</option>)}</select></Field>
       <Field label="Chiến dịch" name="campaignId"><select name="campaignId" className={selectClass}><option value="">Không thuộc chiến dịch</option>{options.campaigns.map(campaign => <option key={String(campaign.id)} value={String(campaign.id)}>{String(campaign.name)}</option>)}</select></Field>
-      <Field label="Sản phẩm ID" name="productId" /><Field label="Mã sản phẩm" name="productCode" />
+      <Field label="Sản phẩm" name="productId" required><select name="productId" required className={selectClass}><option value="">Chọn sản phẩm</option>{options.products.map(product => <option key={String(product.id)} value={String(product.id)}>{String(product.name)} ({String(product.sku || "")})</option>)}</select></Field>
+      <Field label="Mã sản phẩm dùng trong mã nguồn" name="productCode" />
       <Field label="Loại nội dung" name="contentType"><select name="contentType" className={selectClass}><option value="community_share">Chia sẻ cộng đồng</option><option value="sales">Bài bán hàng</option><option value="education">Kiến thức</option></select></Field>
+      <Field label="Yêu cầu thêm cho AI" name="brief"><input name="brief" placeholder="Ví dụ: tập trung người cao tuổi, không nêu giá" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" /></Field>
+      <div className="md:col-span-2">
+        <button type="button" disabled={aiBusy} onClick={event => void suggestContent(event.currentTarget)}
+          className="inline-flex items-center gap-2 rounded-xl border border-blue-400/30 bg-blue-400/10 px-4 py-2.5 text-sm font-bold text-blue-200 disabled:opacity-50">
+          {aiBusy ? <Loader2 size={15} className="animate-spin" /> : <MessageSquare size={15} />}
+          {aiBusy ? "AI đang đọc nội quy và sản phẩm…" : "AI gợi ý theo nội quy thật"}
+        </button>
+        {aiError && <p className="mt-2 text-xs text-red-300">{aiError}</p>}
+      </div>
       <div className="md:col-span-2"><Field label="Câu mở đầu" name="opening"><textarea name="opening" rows={2} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
       <div className="md:col-span-2"><Field label="Nội dung chính" name="body" required><textarea name="body" required rows={7} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
       <div className="md:col-span-2"><Field label="CTA Messenger" name="cta"><textarea name="cta" rows={2} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
@@ -569,7 +641,8 @@ function CreateForm({ resource, options, onSubmit }: {
       <Field label="Group" name="groupId" required><select name="groupId" required className={selectClass}><option value="">Chọn Group</option>{options.groups.filter(group => group.status === "active").map(group => <option key={String(group.id)} value={String(group.id)}>{String(group.name)}</option>)}</select></Field>
       <Field label="Nội dung đã duyệt" name="contentId" required><select name="contentId" required className={selectClass}><option value="">Chọn nội dung</option>{options.content.filter(item => item.status === "approved").map(item => <option key={String(item.id)} value={String(item.id)}>{String(item.sourceCode || item.opening)}</option>)}</select></Field>
       <Field label="Chiến dịch" name="campaignId"><select name="campaignId" className={selectClass}><option value="">Không thuộc chiến dịch</option>{options.campaigns.map(campaign => <option key={String(campaign.id)} value={String(campaign.id)}>{String(campaign.name)}</option>)}</select></Field>
-      <Field label="Nhân viên phụ trách ID" name="assignedStaffId" /><Field label="Giờ đăng" name="scheduledAt" type="datetime-local" required />
+      <Field label="Nhân viên phụ trách" name="assignedStaffId"><select name="assignedStaffId" className={selectClass}><option value="">Chọn nhân viên</option>{options.staff.map(staff => <option key={String(staff.id)} value={String(staff.id)}>{String(staff.name)}</option>)}</select></Field>
+      <Field label="Giờ đăng" name="scheduledAt" type="datetime-local" required />
     </>}
     {resource === "comments" && <>
       <Field label="Bài đã đăng" name="postId" required><select name="postId" required className={selectClass}><option value="">Chọn bài đăng</option>{options.posts.map(post => <option key={String(post.id)} value={String(post.id)}>{String(post.sourceCode)} — {String(post.groupName)}</option>)}</select></Field>
@@ -578,13 +651,20 @@ function CreateForm({ resource, options, onSubmit }: {
       <Field label="Số điện thoại công khai" name="phone" /><Field label="Thời gian bình luận" name="commentedAt" type="datetime-local" />
       <Field label="Nhu cầu" name="intent"><select name="intent" className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5"><option value="price">Hỏi giá</option><option value="size">Hỏi kích thước</option><option value="delivery">Hỏi giao hàng</option><option value="showroom">Hỏi showroom</option><option value="dealer">Muốn làm đại lý</option><option value="other">Khác</option></select></Field>
       <Field label="Mức độ" name="temperature"><select name="temperature" className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5"><option value="hot">Nóng</option><option value="warm">Ấm</option><option value="cold">Lạnh</option></select></Field>
+      <Field label="Khách hàng CRM (nếu đã có)" name="leadId"><select name="leadId" className={selectClass}><option value="">Chưa gắn khách hàng</option>{options.leads.map(lead => <option key={String(lead.id)} value={String(lead.id)}>{String(lead.name)} {lead.phone ? `• ${String(lead.phone)}` : ""}</option>)}</select></Field>
+      <Field label="Nhân viên xử lý" name="assignedStaffId"><select name="assignedStaffId" className={selectClass}><option value="">Chọn nhân viên</option>{options.staff.map(staff => <option key={String(staff.id)} value={String(staff.id)}>{String(staff.name)}</option>)}</select></Field>
     </>}
     <div className="md:col-span-2 flex justify-end"><button className="rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Lưu</button></div>
   </form>;
 }
 
-function SettingsView({ data, pages, canEdit, onSave, onAddPage }: {
-  data: Row; pages: Row[]; canEdit: boolean; onSave: (payload: Row) => Promise<void>; onAddPage: () => void;
+function SettingsView({ data, pages, canEdit, onSave, onSyncPages, onAddPage }: {
+  data: Row;
+  pages: Row[];
+  canEdit: boolean;
+  onSave: (payload: Row) => Promise<void>;
+  onSyncPages: () => Promise<void>;
+  onAddPage: () => void;
 }) {
   const [form, setForm] = useState(data);
   useEffect(() => setForm(data), [data]);
@@ -601,7 +681,18 @@ function SettingsView({ data, pages, canEdit, onSave, onAddPage }: {
       Chế độ an toàn đang bật: không tự động đăng, không lưu mật khẩu/cookie/token Facebook.
     </div>
     <div className="rounded-2xl border border-white/8 bg-white/[.03] p-5">
-      <div className="mb-4 flex items-center justify-between"><h3 className="font-bold">Fanpage</h3>{canEdit && <button onClick={onAddPage} className="rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-black">Thêm Fanpage</button>}</div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="font-bold">Fanpage đang vận hành</h3>
+          <p className="mt-1 text-xs text-slate-500">Dùng chung kết nối thật từ Content Marketing/Facebook Inbox.</p>
+        </div>
+        {canEdit && <div className="flex gap-2">
+          <button onClick={() => void onSyncPages()} className="rounded-xl border border-blue-400/30 bg-blue-400/10 px-3 py-2 text-xs font-black text-blue-200">
+            Đồng bộ từ Content Marketing
+          </button>
+          <button onClick={onAddPage} className="rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-black">Thêm thủ công</button>
+        </div>}
+      </div>
       <div className="grid gap-3 md:grid-cols-2">{pages.map(page => <div key={String(page.id)} className="rounded-xl border border-white/8 p-3"><b>{String(page.name)}</b><p className="mt-1 text-xs text-slate-500">{String(page.facebookPageId || "Chưa nhập Page ID")}</p></div>)}</div>
     </div>
     <div className="rounded-2xl border border-white/8 bg-white/[.03] p-5">

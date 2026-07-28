@@ -624,6 +624,22 @@ export function getOrderById(id: string): Order | undefined {
   return orders.find((o) => o.id === id);
 }
 
+async function syncOrderFacebookGroupAttribution(order: Order) {
+  if (process.env.NODE_ENV === "test") return;
+  try {
+    const { syncFacebookGroupOrderAttribution } = await import("./facebook-group-marketing-integration");
+    await syncFacebookGroupOrderAttribution({
+      leadId: order.customerId,
+      orderId: order.id,
+      paymentStatus: order.paymentStatus,
+      status: order.status,
+      total: order.total,
+    });
+  } catch (error) {
+    console.error("[order-store] Cannot sync Facebook Group attribution:", error);
+  }
+}
+
 export async function updateOrderStatus(id: string, status: OrderStatus, note?: string): Promise<Order | null> {
   const idx = orders.findIndex((o) => o.id === id);
   if (idx === -1) return null;
@@ -631,6 +647,7 @@ export async function updateOrderStatus(id: string, status: OrderStatus, note?: 
   orders[idx].updatedAt = new Date().toISOString();
   orders[idx].timeline = [...(orders[idx].timeline || []), { status, time: new Date().toISOString(), note }];
   await saveOrder(orders[idx]);
+  await syncOrderFacebookGroupAttribution(orders[idx]);
   return orders[idx];
 }
 
@@ -666,10 +683,12 @@ export async function updateOrder(id: string, updates: Partial<Order>): Promise<
 
   orders[idx] = { ...current, ...updates, updatedAt: now };
   await saveOrder(orders[idx]);
+  await syncOrderFacebookGroupAttribution(orders[idx]);
   return orders[idx];
 }
 
 export async function createOrder(data: {
+  customerId?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -700,7 +719,7 @@ export async function createOrder(data: {
   const newOrder: Order = {
     id,
     orderNumber,
-    customerId: `cust_${Date.now().toString(36)}`,
+    customerId: data.customerId || `cust_${Date.now().toString(36)}`,
     customerName: data.customerName,
     customerEmail: data.customerEmail,
     customerPhone: data.customerPhone,
@@ -724,6 +743,7 @@ export async function createOrder(data: {
 
   orders.unshift(newOrder);
   await saveOrder(newOrder);
+  await syncOrderFacebookGroupAttribution(newOrder);
   return newOrder;
 }
 

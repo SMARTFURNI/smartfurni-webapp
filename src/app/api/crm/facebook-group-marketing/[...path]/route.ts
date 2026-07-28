@@ -5,8 +5,9 @@ import {
   completePostCheckTask, createFacebookGroupMarketing, exportFacebookGroupsCsv, getFacebookGroupDashboard, importFacebookGroups,
   getFacebookGroupMarketingOptions, getFacebookGroupSettings, linkFacebookGroupLead, listFacebookGroupMarketing,
   markPublishingTaskPosted, recalculateGroupScore, saveFacebookGroupSettings,
-  resolveFacebookGroupSourceCode,
-  softDeleteFacebookGroupMarketing, updateFacebookGroupMarketing, updateGroupRules,
+  resolveFacebookGroupSourceCode, suggestFacebookGroupContent,
+  softDeleteFacebookGroupMarketing, syncFacebookGroupPagesFromScheduler,
+  updateFacebookGroupMarketing, updateGroupRules, updatePublishedPostModeration,
 } from "@/lib/facebook-group-marketing-store";
 import {
   authorizeFacebookGroupMarketing, type FacebookGroupPermission,
@@ -86,6 +87,12 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     if (resource === "groups" && entityId && action === "analyze-rules") {
       return NextResponse.json(await analyzeGroupRules(entityId, auth.actor));
     }
+    if (resource === "content" && entityId === "suggest") {
+      return NextResponse.json(await suggestFacebookGroupContent(body, auth.actor));
+    }
+    if (resource === "pages" && entityId === "sync") {
+      return NextResponse.json(await syncFacebookGroupPagesFromScheduler(auth.actor));
+    }
     if (resource === "groups" && entityId === "import") {
       return NextResponse.json(await importFacebookGroups(Array.isArray(body.rows) ? body.rows : [], auth.actor));
     }
@@ -116,6 +123,18 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     }
     if (resource === "checks" && entityId && action === "complete") {
       return NextResponse.json(await completePostCheckTask(entityId, body, auth.actor));
+    }
+    if (resource === "posts" && entityId && action === "moderation") {
+      const status = String(body.status || "");
+      if (!["approved", "rejected"].includes(status)) {
+        return NextResponse.json({ error: "Trạng thái kiểm duyệt không hợp lệ." }, { status: 400 });
+      }
+      return NextResponse.json(await updatePublishedPostModeration(
+        entityId,
+        status as "approved" | "rejected",
+        auth.actor,
+        String(body.reason || ""),
+      ));
     }
     if (resource === "leads" && action === "link") {
       return NextResponse.json(await linkFacebookGroupLead(body, auth.actor));

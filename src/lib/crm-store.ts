@@ -297,6 +297,12 @@ export async function createQuote(input: Omit<Quote, "id" | "quoteNumber" | "cre
     `INSERT INTO crm_quotes (id, lead_id, data, updated_at) VALUES ($1, $2, $3, NOW())`,
     [quote.id, quote.leadId, JSON.stringify(quote)]
   );
+  try {
+    const { syncFacebookGroupQuoteAttribution } = await import("./facebook-group-marketing-integration");
+    await syncFacebookGroupQuoteAttribution({ leadId: quote.leadId, quoteId: quote.id });
+  } catch (error) {
+    console.error("[crm] Cannot link quote to Facebook Group source:", error);
+  }
   return quote;
 }
 

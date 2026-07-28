@@ -4,10 +4,12 @@ import { randomUUID } from "crypto";
 import { getDb, query, queryOne } from "./db";
 import {
   analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
-  extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, validateFacebookGroupSchedule,
+  extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
+  parseFacebookGroupUrl, validateFacebookGroupSchedule,
 } from "./facebook-group-marketing-business";
 import {
-  DEFAULT_FACEBOOK_GROUP_SETTINGS, type DashboardData, type FacebookGroupSettings,
+  DEFAULT_FACEBOOK_GROUP_SETTINGS, type DashboardData, type FacebookGroupLeadSource,
+  type FacebookGroupSettings,
 } from "./facebook-group-marketing-types";
 
 type Actor = { id: string; name: string; isAdmin?: boolean };
@@ -59,7 +61,7 @@ export async function saveFacebookGroupSettings(input: Partial<FacebookGroupSett
 }
 
 export async function getFacebookGroupMarketingOptions() {
-  const [pages, groups, campaigns, content, posts] = await Promise.all([
+  const [pages, groups, campaigns, content, posts, staff, products, leads] = await Promise.all([
     query(
       `SELECT id, name, facebook_page_id AS "facebookPageId", status
        FROM facebook_pages
@@ -95,8 +97,77 @@ export async function getFacebookGroupMarketingOptions() {
        WHERE p.deleted_at IS NULL
        ORDER BY p.actual_posted_at DESC`,
     ),
+    query(
+      `SELECT id, data->>'fullName' AS name
+       FROM crm_staff
+       WHERE status = 'active'
+       ORDER BY data->>'fullName'`,
+    ),
+    query(
+      `SELECT id, data->>'name' AS name, data->>'sku' AS sku
+       FROM crm_products
+       WHERE COALESCE(data->>'isActive', 'true') = 'true'
+       ORDER BY data->>'name'`,
+    ),
+    query(
+      `SELECT id, data->>'name' AS name, data->>'phone' AS phone
+       FROM crm_leads
+       ORDER BY updated_at DESC
+       LIMIT 200`,
+    ),
   ]);
-  return { pages, groups, campaigns, content, posts };
+  return { pages, groups, campaigns, content, posts, staff, products, leads };
+}
+
+export async function syncFacebookGroupPagesFromScheduler(actor: Actor) {
+  const schedulerPages = await query<{
+    id: string;
+    pageId: string;
+    pageName: string;
+    isActive: boolean;
+  }>(
+    `SELECT id,
+            data->>'pageId' AS "pageId",
+            data->>'pageName' AS "pageName",
+            COALESCE((data->>'isActive')::boolean, true) AS "isActive"
+     FROM fb_scheduler_pages
+     WHERE COALESCE(data->>'pageId', '') <> ''`,
+  );
+  let created = 0;
+  let updated = 0;
+  for (const page of schedulerPages) {
+    const existing = await queryOne<{ id: string }>(
+      `SELECT id FROM facebook_pages WHERE facebook_page_id = $1 LIMIT 1`,
+      [page.pageId],
+    );
+    if (existing) {
+      await query(
+        `UPDATE facebook_pages
+         SET name = $1, page_url = $2, status = $3, deleted_at = NULL,
+             data = data || $4::jsonb, updated_by = $5, updated_at = NOW()
+         WHERE id = $6`,
+        [page.pageName, `https://www.facebook.com/${page.pageId}`,
+          page.isActive ? "active" : "paused",
+          JSON.stringify({ schedulerPageId: page.id, syncedFrom: "content-marketing" }),
+          actor.id, existing.id],
+      );
+      updated += 1;
+    } else {
+      await query(
+        `INSERT INTO facebook_pages
+         (id,name,facebook_page_id,page_url,status,data,created_by,updated_by)
+         VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$7)`,
+        [id("fbp"), page.pageName, page.pageId,
+          `https://www.facebook.com/${page.pageId}`, page.isActive ? "active" : "paused",
+          JSON.stringify({ schedulerPageId: page.id, syncedFrom: "content-marketing" }), actor.id],
+      );
+      created += 1;
+    }
+  }
+  await logActivity(actor, "pages.synced", "page", undefined, undefined, {
+    source: "content-marketing", created, updated,
+  });
+  return { ok: true, found: schedulerPages.length, created, updated };
 }
 
 export async function listFacebookGroupMarketing(resource: string, filters: Filters = {}) {
@@ -194,6 +265,7 @@ export async function listFacebookGroupMarketing(resource: string, filters: Filt
        FROM facebook_group_comments c
        JOIN facebook_group_published_posts p ON p.id = c.post_id
        JOIN facebook_groups g ON g.id = p.group_id
+       WHERE p.deleted_at IS NULL AND g.deleted_at IS NULL
        ORDER BY c.commented_at DESC LIMIT $1 OFFSET $2`,
       [limit, offset],
     );
@@ -205,7 +277,8 @@ export async function listFacebookGroupMarketing(resource: string, filters: Filt
        FROM facebook_group_post_check_tasks c
        JOIN facebook_group_published_posts p ON p.id = c.post_id
        JOIN facebook_groups g ON g.id = p.group_id
-       WHERE ($1::text IS NULL OR c.status = $1)
+       WHERE p.deleted_at IS NULL AND g.deleted_at IS NULL
+         AND ($1::text IS NULL OR c.status = $1)
        ORDER BY c.due_at ASC LIMIT $2 OFFSET $3`,
       [filters.status || null, limit, offset],
     );
@@ -299,6 +372,13 @@ export async function createFacebookGroupMarketing(resource: string, input: Reco
 async function createContent(input: Record<string, unknown>, actor: Actor) {
   const body = text(input.body, 30_000);
   if (!body) throw new Error("Nội dung chính là bắt buộc.");
+  const productId = text(input.productId, 120);
+  if (!productId) throw new Error("Sản phẩm CRM là bắt buộc để nội dung có dữ liệu thật.");
+  const productExists = await queryOne<{ id: string }>(
+    `SELECT id FROM crm_products WHERE id = $1`,
+    [productId],
+  );
+  if (!productExists) throw new Error("Không tìm thấy sản phẩm CRM.");
   const group = input.groupId ? await queryOne<{
     code: string; allows_sales: string; rule_analysis: Record<string, unknown> | string | null;
   }>(
@@ -306,6 +386,21 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
      FROM facebook_groups g LEFT JOIN facebook_group_rules r ON r.group_id = g.id
      WHERE g.id = $1 AND g.deleted_at IS NULL`, [input.groupId],
   ) : null;
+  if (input.campaignId) {
+    const campaignContext = await queryOne<{ targets_group: boolean; contains_product: boolean }>(
+      `SELECT EXISTS (
+                SELECT 1 FROM facebook_group_campaign_targets target
+                WHERE target.campaign_id = campaign.id AND target.group_id = $2
+              ) AS targets_group,
+              campaign.product_ids ? $3 AS contains_product
+       FROM facebook_group_campaigns campaign
+       WHERE campaign.id = $1 AND campaign.deleted_at IS NULL`,
+      [input.campaignId, input.groupId || null, productId],
+    );
+    if (!campaignContext) throw new Error("Không tìm thấy chiến dịch.");
+    if (!campaignContext.targets_group) throw new Error("Group không thuộc chiến dịch.");
+    if (!campaignContext.contains_product) throw new Error("Sản phẩm không thuộc chiến dịch.");
+  }
   const recent = await query<{ id: string; opening: string; body: string; cta: string; created_at: Date }>(
     `SELECT id, opening, body, cta, created_at FROM facebook_group_content_drafts
      WHERE deleted_at IS NULL AND created_at >= NOW() - INTERVAL '30 days'
@@ -313,7 +408,7 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
        AND ($2::text IS NULL OR campaign_id = $2)
        AND ($3::text IS NULL OR product_id = $3)
      ORDER BY created_at DESC LIMIT 100`,
-    [input.groupId || null, input.campaignId || null, input.productId || null],
+    [input.groupId || null, input.campaignId || null, productId],
   );
   const full = `${text(input.opening, 5000)} ${body} ${text(input.cta, 5000)}`;
   const match = recent.map(item => ({
@@ -351,6 +446,10 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
     date: new Date(),
     version: Number(versionRow?.count || 0) + 1,
   });
+  const rawCta = text(input.cta, 5000);
+  const cta = rawCta.toUpperCase().includes(sourceCode.toUpperCase())
+    ? rawCta
+    : `${rawCta}${rawCta ? "\n\n" : ""}Nhắn tin cho Fanpage với mã ${sourceCode} để được tư vấn đúng nội dung này.`;
   const entityId = id("fbcd");
   const row = await queryOne(
     `INSERT INTO facebook_group_content_drafts
@@ -358,15 +457,92 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
       duplicate_ratio,spam_risk_score,rule_check,ai_metadata,data,created_by,updated_by)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14::jsonb,$15::jsonb,$16,$16)
      RETURNING *`,
-    [entityId, input.campaignId || null, input.productId || null, input.groupId || null,
+    [entityId, input.campaignId || null, productId, input.groupId || null,
       text(input.contentType, 50) || "community_share", text(input.opening, 5000), body,
-      text(input.cta, 5000), sourceCode, status, duplicateRatio,
+      cta, sourceCode, status, duplicateRatio,
       Math.min(100, Math.max(0, number(input.spamRiskScore))),
       JSON.stringify({ passed: rulesPassed, violations, closestContentId: match?.id || null }),
       JSON.stringify({ generatedByAi: false }), JSON.stringify(asObject(input.data)), actor.id],
   );
   await logActivity(actor, "content.created", "content", entityId, undefined, { duplicateRatio, sourceCode });
   return row;
+}
+
+export async function suggestFacebookGroupContent(input: Record<string, unknown>, actor: Actor) {
+  const groupId = text(input.groupId, 120);
+  const productId = text(input.productId, 120);
+  if (!groupId || !productId) throw new Error("Chọn Group và sản phẩm trước khi yêu cầu AI gợi ý.");
+  const context = await queryOne<{
+    group_name: string;
+    group_topic: string | null;
+    group_region: string | null;
+    allows_sales: string;
+    rule_text: string;
+    rule_analysis: Record<string, unknown> | string;
+    product: Record<string, unknown> | string;
+    campaign_name: string | null;
+  }>(
+    `SELECT g.name AS group_name, g.topic AS group_topic, g.region AS group_region,
+            g.allows_sales, COALESCE(r.raw_text, '') AS rule_text,
+            COALESCE(r.analysis, '{}'::jsonb) AS rule_analysis,
+            product.data AS product, campaign.name AS campaign_name
+     FROM facebook_groups g
+     JOIN crm_products product ON product.id = $2
+     LEFT JOIN facebook_group_rules r ON r.group_id = g.id
+     LEFT JOIN facebook_group_campaigns campaign ON campaign.id = $3
+     WHERE g.id = $1 AND g.deleted_at IS NULL`,
+    [groupId, productId, input.campaignId || null],
+  );
+  if (!context) throw new Error("Không tìm thấy Group hoặc sản phẩm.");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY chưa được cấu hình.");
+  const product = typeof context.product === "string" ? JSON.parse(context.product) : context.product;
+  const analysis = typeof context.rule_analysis === "string"
+    ? JSON.parse(context.rule_analysis) : context.rule_analysis;
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
+    model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+    generationConfig: { temperature: 0.65, maxOutputTokens: 1800 },
+  });
+  const prompt = `Bạn là chuyên viên nội dung Facebook Group của SmartFurni.
+Hãy viết một bài chia sẻ có ích, tự nhiên, phù hợp đúng cộng đồng; không giả làm khách hàng,
+không bịa trải nghiệm, không dùng ngôn ngữ spam và không tự động đăng.
+
+Group:
+- Tên: ${context.group_name}
+- Chủ đề: ${context.group_topic || "chưa phân loại"}
+- Khu vực: ${context.group_region || "không giới hạn"}
+- Cho phép bán hàng: ${context.allows_sales}
+- Nội quy do nhân viên nhập: ${context.rule_text || "chưa có văn bản"}
+- Phân tích nội quy: ${JSON.stringify(analysis)}
+
+Sản phẩm CRM (chỉ dùng dữ liệu có thật, không tự bịa thông số/giá):
+${JSON.stringify(product).slice(0, 8000)}
+
+Chiến dịch: ${context.campaign_name || "nội dung thường xuyên"}
+Góc nội dung mong muốn: ${text(input.contentType, 50) || "community_share"}
+Gợi ý thêm của nhân viên: ${text(input.brief, 2000) || "không có"}
+
+Trả về DUY NHẤT JSON hợp lệ:
+{"opening":"câu mở đầu","body":"nội dung chính 120-250 từ","cta":"lời mời nhắn Fanpage, không tự đặt mã nguồn","contentType":"community_share|education|story|sales"}
+Nếu nội quy không cho bán hàng, phải ưu tiên education hoặc community_share và không ghi giá/số điện thoại/link.`;
+  const response = await model.generateContent(prompt);
+  const raw = response.response.text().trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start < 0 || end <= start) throw new Error("AI trả về nội dung không đúng định dạng.");
+  const suggestion = JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+  const result = {
+    opening: text(suggestion.opening, 5000),
+    body: text(suggestion.body, 30_000),
+    cta: text(suggestion.cta, 5000),
+    contentType: text(suggestion.contentType, 50) || "community_share",
+  };
+  if (!result.body) throw new Error("AI chưa tạo được nội dung chính.");
+  await logActivity(actor, "content.ai_suggested", "content", undefined, undefined, {
+    groupId, productId, model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+  });
+  return result;
 }
 
 async function createPublishingTask(input: Record<string, unknown>, actor: Actor) {
@@ -380,20 +556,51 @@ async function createPublishingTask(input: Record<string, unknown>, actor: Actor
   const settings = await getFacebookGroupSettings();
   const context = await queryOne<{
     content_status: import("./facebook-group-marketing-types").ContentStatus;
+    content_group_id: string | null;
+    content_campaign_id: string | null;
     duplicate_ratio: number;
     rule_check: { passed?: boolean } | string;
     group_status: import("./facebook-group-marketing-types").EntityStatus;
     membership_status: import("./facebook-group-marketing-types").MembershipStatus;
     next_allowed_post_at: Date | null;
+    campaign_page_id: string | null;
+    campaign_status: string | null;
+    campaign_targets_group: boolean | null;
   }>(
-    `SELECT c.status AS content_status, c.duplicate_ratio, c.rule_check,
-            g.status AS group_status, g.membership_status, g.next_allowed_post_at
+    `SELECT c.status AS content_status, c.group_id AS content_group_id,
+            c.campaign_id AS content_campaign_id, c.duplicate_ratio, c.rule_check,
+            g.status AS group_status,
+            COALESCE(m.status, g.membership_status) AS membership_status,
+            g.next_allowed_post_at,
+            campaign.page_id AS campaign_page_id,
+            campaign.status AS campaign_status,
+            CASE WHEN campaign.id IS NULL THEN NULL ELSE EXISTS (
+              SELECT 1 FROM facebook_group_campaign_targets target
+              WHERE target.campaign_id = campaign.id AND target.group_id = g.id
+            ) END AS campaign_targets_group
      FROM facebook_group_content_drafts c
      JOIN facebook_groups g ON g.id = $2
+     LEFT JOIN facebook_group_memberships m ON m.page_id = $3 AND m.group_id = g.id
+     LEFT JOIN facebook_group_campaigns campaign ON campaign.id = COALESCE($4, c.campaign_id)
      WHERE c.id = $1 AND c.deleted_at IS NULL AND g.deleted_at IS NULL`,
-    [contentId, groupId],
+    [contentId, groupId, pageId, input.campaignId || null],
   );
   if (!context) throw new Error("Không tìm thấy nội dung hoặc group.");
+  if (context.content_group_id && context.content_group_id !== groupId) {
+    throw new Error("Nội dung không được viết cho Group đã chọn.");
+  }
+  if (input.campaignId && context.content_campaign_id && input.campaignId !== context.content_campaign_id) {
+    throw new Error("Nội dung không thuộc chiến dịch đã chọn.");
+  }
+  if (context.campaign_page_id && context.campaign_page_id !== pageId) {
+    throw new Error("Fanpage không khớp với Fanpage của chiến dịch.");
+  }
+  if (context.campaign_status && context.campaign_status !== "active") {
+    throw new Error("Chiến dịch phải ở trạng thái hoạt động trước khi xếp lịch.");
+  }
+  if (context.campaign_targets_group === false) {
+    throw new Error("Group không nằm trong danh sách mục tiêu của chiến dịch.");
+  }
   const target = new Date(scheduledAt);
   const start = new Date(target); start.setHours(0, 0, 0, 0);
   const end = new Date(target); end.setHours(23, 59, 59, 999);
@@ -442,6 +649,57 @@ async function createPublishingTask(input: Record<string, unknown>, actor: Actor
 export async function updateFacebookGroupMarketing(
   resource: string, entityId: string, input: Record<string, unknown>, actor: Actor,
 ) {
+  if (resource === "groups" && input.status === "active") {
+    const readiness = await queryOne<{
+      allows_pages: string;
+      membership_status: string;
+      analyzed_at: Date | null;
+    }>(
+      `SELECT g.allows_pages, g.membership_status, r.analyzed_at
+       FROM facebook_groups g
+       LEFT JOIN facebook_group_rules r ON r.group_id = g.id
+       WHERE g.id = $1 AND g.deleted_at IS NULL`,
+      [entityId],
+    );
+    if (!readiness) throw new Error("Không tìm thấy Group.");
+    if (readiness.allows_pages !== "yes") throw new Error("Chưa xác nhận Group cho phép Fanpage đăng bài.");
+    if (readiness.membership_status !== "joined") throw new Error("Chưa xác nhận Fanpage đã tham gia Group.");
+    if (!readiness.analyzed_at) throw new Error("Phải nhập và phân tích nội quy trước khi kích hoạt Group.");
+  }
+  if (resource === "campaigns" && input.status === "active") {
+    const readiness = await queryOne<{
+      page_id: string | null;
+      page_status: string | null;
+      product_count: number;
+      target_count: number;
+      invalid_target_count: number;
+    }>(
+      `SELECT c.page_id, p.status AS page_status,
+              jsonb_array_length(c.product_ids)::int AS product_count,
+              COUNT(t.id)::int AS target_count,
+              COUNT(t.id) FILTER (
+                WHERE g.id IS NULL
+                   OR g.status <> 'active'
+                   OR g.membership_status <> 'joined'
+                   OR g.allows_pages <> 'yes'
+              )::int AS invalid_target_count
+       FROM facebook_group_campaigns c
+       LEFT JOIN facebook_pages p ON p.id = c.page_id AND p.deleted_at IS NULL
+       LEFT JOIN facebook_group_campaign_targets t ON t.campaign_id = c.id
+       LEFT JOIN facebook_groups g ON g.id = t.group_id AND g.deleted_at IS NULL
+       WHERE c.id = $1 AND c.deleted_at IS NULL
+       GROUP BY c.id, p.status`,
+      [entityId],
+    );
+    if (!readiness?.page_id || readiness.page_status !== "active") {
+      throw new Error("Chiến dịch cần một Fanpage đang hoạt động.");
+    }
+    if (!readiness.target_count) throw new Error("Chiến dịch chưa có Group mục tiêu.");
+    if (!readiness.product_count) throw new Error("Chiến dịch chưa có sản phẩm.");
+    if (readiness.invalid_target_count) {
+      throw new Error("Có Group mục tiêu chưa sẵn sàng: cần hoạt động, đã tham gia và cho phép Fanpage.");
+    }
+  }
   const allowed: Record<string, { table: string; columns: Record<string, string> }> = {
     pages: { table: "facebook_pages", columns: {
       name: "name", facebookPageId: "facebook_page_id", avatarUrl: "avatar_url", pageUrl: "page_url",
@@ -579,22 +837,29 @@ export async function markPublishingTaskPosted(taskId: string, input: Record<str
   const postUrl = text(input.postUrl, 2000);
   const actualPostedAt = text(input.actualPostedAt, 60);
   const moderationStatus = text(input.moderationStatus, 30);
-  if (!/^https:\/\/(www\.)?facebook\.com\//i.test(postUrl) || !actualPostedAt
+  const parsedPostUrl = parseFacebookGroupPostUrl(postUrl);
+  if (!parsedPostUrl || !actualPostedAt
       || !["approved", "pending"].includes(moderationStatus)) {
-    throw new Error("Cần link bài Facebook, thời gian đăng và trạng thái hiển thị/chờ duyệt hợp lệ.");
+    throw new Error("Cần đúng link bài trong Facebook Group (…/groups/{group}/posts/{post}), thời gian đăng và trạng thái kiểm duyệt.");
   }
+  if (Number.isNaN(new Date(actualPostedAt).getTime())) throw new Error("Thời gian đăng thực tế không hợp lệ.");
   const db = getDb();
   const client = await db.connect();
   try {
     await client.query("BEGIN");
     const taskResult = await client.query(
-      `SELECT t.*, c.source_code FROM facebook_group_publishing_tasks t
+      `SELECT t.*, c.source_code, g.group_url FROM facebook_group_publishing_tasks t
        JOIN facebook_group_content_drafts c ON c.id = t.content_id
+       JOIN facebook_groups g ON g.id = t.group_id
        WHERE t.id = $1 AND t.deleted_at IS NULL FOR UPDATE`, [taskId],
     );
     const task = taskResult.rows[0];
     if (!task) throw new Error("Không tìm thấy nhiệm vụ.");
     if (["posted", "approved"].includes(task.status)) throw new Error("Nhiệm vụ đã được đánh dấu đăng.");
+    const configuredGroup = parseFacebookGroupUrl(task.group_url);
+    if (!configuredGroup || configuredGroup.groupKey !== parsedPostUrl.groupKey) {
+      throw new Error("Link bài đăng không thuộc đúng Group đã chọn trong nhiệm vụ.");
+    }
     const postId = id("fbgp");
     await client.query(
       `INSERT INTO facebook_group_published_posts
@@ -659,6 +924,81 @@ export async function completePostCheckTask(checkId: string, input: Record<strin
   return { ok: true, postId: row.post_id };
 }
 
+export async function updatePublishedPostModeration(
+  postId: string,
+  moderationStatus: "approved" | "rejected",
+  actor: Actor,
+  reason?: string,
+) {
+  if (!["approved", "rejected"].includes(moderationStatus)) {
+    throw new Error("Trạng thái kiểm duyệt bài đăng không hợp lệ.");
+  }
+  const post = await queryOne<{ group_id: string; task_id: string; content_id: string }>(
+    `UPDATE facebook_group_published_posts
+     SET moderation_status = $1,
+         status = CASE WHEN $1 = 'rejected' THEN 'rejected' ELSE 'tracking' END,
+         metrics = COALESCE(metrics, '{}'::jsonb) || $2::jsonb,
+         updated_by = $3, updated_at = NOW()
+     WHERE id = $4 AND deleted_at IS NULL
+     RETURNING group_id, task_id, content_id`,
+    [moderationStatus, JSON.stringify(reason ? { moderationReason: reason } : {}), actor.id, postId],
+  );
+  if (!post) throw new Error("Không tìm thấy bài đã đăng.");
+  await query(
+    `UPDATE facebook_group_publishing_tasks
+     SET status = $1, updated_by = $2, updated_at = NOW()
+     WHERE id = $3`,
+    [moderationStatus, actor.id, post.task_id],
+  );
+  if (moderationStatus === "rejected") {
+    await query(
+      `UPDATE facebook_group_content_drafts
+       SET status = 'rewrite_required',
+           data = data || $1::jsonb,
+           updated_by = $2, updated_at = NOW()
+       WHERE id = $3`,
+      [JSON.stringify({ moderationRejectionReason: reason || "" }), actor.id, post.content_id],
+    );
+  }
+  await query(
+    `UPDATE facebook_groups g SET
+       approved_posts = (
+         SELECT COUNT(*) FROM facebook_group_published_posts p
+         WHERE p.group_id = g.id AND p.deleted_at IS NULL AND p.moderation_status = 'approved'
+       ),
+       rejected_posts = (
+         SELECT COUNT(*) FROM facebook_group_published_posts p
+         WHERE p.group_id = g.id AND p.deleted_at IS NULL AND p.moderation_status = 'rejected'
+       ),
+       updated_at = NOW()
+     WHERE g.id = $1`,
+    [post.group_id],
+  );
+  if (moderationStatus === "rejected") {
+    const settings = await getFacebookGroupSettings();
+    const recent = await query<{ moderation_status: string }>(
+      `SELECT moderation_status FROM facebook_group_published_posts
+       WHERE group_id = $1 AND deleted_at IS NULL
+       ORDER BY actual_posted_at DESC
+       LIMIT $2`,
+      [post.group_id, settings.consecutiveRejectionsBeforePause],
+    );
+    if (recent.length >= settings.consecutiveRejectionsBeforePause
+        && recent.every(item => item.moderation_status === "rejected")) {
+      await query(
+        `UPDATE facebook_groups
+         SET status = 'paused',
+             data = data || $1::jsonb,
+             updated_by = $2, updated_at = NOW()
+         WHERE id = $3`,
+        [JSON.stringify({ pausedReason: "consecutive_post_rejections" }), actor.id, post.group_id],
+      );
+    }
+  }
+  await logActivity(actor, `post.moderation_${moderationStatus}`, "published_post", postId, undefined, { reason });
+  return { ok: true, postId, moderationStatus };
+}
+
 async function addFacebookGroupComment(input: Record<string, unknown>, actor: Actor) {
   const postId = text(input.postId, 120);
   const facebookName = text(input.facebookName, 300);
@@ -696,15 +1036,28 @@ export async function linkFacebookGroupLead(input: Record<string, unknown>, acto
   const row = await queryOne(
     `INSERT INTO facebook_group_lead_attributions
      (id,lead_id,page_id,group_id,post_id,campaign_id,content_id,source_code,
-      posting_employee_id,first_messenger_at,data,created_by,updated_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12,$12)
+      posting_employee_id,first_messenger_at,conversation_id,message_id,messenger_participant_id,
+      data,created_by,updated_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15,$15)
      ON CONFLICT (lead_id, post_id) DO UPDATE SET
        first_messenger_at = COALESCE(facebook_group_lead_attributions.first_messenger_at, EXCLUDED.first_messenger_at),
+       conversation_id = COALESCE(facebook_group_lead_attributions.conversation_id, EXCLUDED.conversation_id),
+       message_id = COALESCE(facebook_group_lead_attributions.message_id, EXCLUDED.message_id),
+       messenger_participant_id = COALESCE(
+         facebook_group_lead_attributions.messenger_participant_id,
+         EXCLUDED.messenger_participant_id
+       ),
+       data = facebook_group_lead_attributions.data || EXCLUDED.data,
        updated_by = EXCLUDED.updated_by, updated_at = NOW()
      RETURNING *`,
     [attributionId, leadId, post.page_id, post.group_id, post.id, post.campaign_id,
       post.content_id, sourceCode, post.posted_by, input.firstMessengerAt || new Date().toISOString(),
-      JSON.stringify({ contentVersion: input.contentVersion || null }), actor.id],
+      input.conversationId || null, input.messageId || null, input.participantId || null,
+      JSON.stringify({
+        contentVersion: input.contentVersion || null,
+        participantName: input.participantName || null,
+        firstMessage: input.message || null,
+      }), actor.id],
   );
   const lead = await queryOne<{ data: Record<string, unknown> }>(`SELECT data FROM crm_leads WHERE id = $1`, [leadId]);
   if (lead) {
@@ -716,14 +1069,55 @@ export async function linkFacebookGroupLead(input: Record<string, unknown>, acto
       facebookGroupSource: {
         pageId: post.page_id, groupId: post.group_id, postId: post.id,
         campaignId: post.campaign_id, sourceCode,
+        conversationId: input.conversationId || null,
+        messageId: input.messageId || null,
       },
       updatedAt: new Date().toISOString(),
     };
     await query(`UPDATE crm_leads SET data = $1::jsonb, updated_at = NOW() WHERE id = $2`, [JSON.stringify(updated), leadId]);
   }
-  await query(`UPDATE facebook_groups SET total_messenger_leads = total_messenger_leads + 1, updated_at = NOW() WHERE id = $1`, [post.group_id]);
+  await query(
+    `UPDATE facebook_groups g SET
+       total_messenger_leads = (
+         SELECT COUNT(DISTINCT lead_id)
+         FROM facebook_group_lead_attributions
+         WHERE group_id = g.id
+       ),
+       total_qualified_leads = (
+         SELECT COUNT(DISTINCT a.lead_id)
+         FROM facebook_group_lead_attributions a
+         JOIN crm_leads l ON l.id = a.lead_id
+         WHERE a.group_id = g.id AND l.stage <> 'new'
+       ),
+       updated_at = NOW()
+     WHERE g.id = $1`,
+    [post.group_id],
+  );
   await logActivity(actor, "lead.linked", "lead_attribution", String((row as { id?: string })?.id || attributionId), undefined, { leadId, sourceCode });
   return row;
+}
+
+export async function getFacebookGroupLeadSources(leadId: string): Promise<FacebookGroupLeadSource[]> {
+  return query<FacebookGroupLeadSource>(
+    `SELECT a.id AS "attributionId", a.source_code AS "sourceCode",
+            g.name AS "groupName", g.group_url AS "groupUrl",
+            p.post_url AS "postUrl", c.name AS "campaignName",
+            d.opening AS "contentOpening",
+            s.data->>'fullName' AS "postingEmployeeName",
+            a.first_messenger_at::text AS "firstMessengerAt",
+            a.conversation_id AS "conversationId", a.message_id AS "messageId",
+            a.quote_id AS "quoteId", a.order_id AS "orderId",
+            a.revenue::float AS revenue
+     FROM facebook_group_lead_attributions a
+     JOIN facebook_groups g ON g.id = a.group_id
+     JOIN facebook_group_published_posts p ON p.id = a.post_id
+     JOIN facebook_group_content_drafts d ON d.id = a.content_id
+     LEFT JOIN facebook_group_campaigns c ON c.id = a.campaign_id
+     LEFT JOIN crm_staff s ON s.id = a.posting_employee_id
+     WHERE a.lead_id = $1
+     ORDER BY a.first_messenger_at ASC NULLS LAST, a.created_at ASC`,
+    [leadId],
+  );
 }
 
 export async function resolveFacebookGroupSourceCode(message: string) {
@@ -733,10 +1127,14 @@ export async function resolveFacebookGroupSourceCode(message: string) {
     `SELECT p.id AS "postId", p.source_code AS "sourceCode", p.post_url AS "postUrl",
             p.page_id AS "pageId", p.group_id AS "groupId", p.campaign_id AS "campaignId",
             p.content_id AS "contentId", p.posted_by AS "postingEmployeeId",
-            g.name AS "groupName", c.name AS "campaignName"
+            g.name AS "groupName", c.name AS "campaignName",
+            fp.facebook_page_id AS "facebookPageId",
+            s.data->>'fullName' AS "postingEmployeeName"
      FROM facebook_group_published_posts p
      JOIN facebook_groups g ON g.id = p.group_id
+     JOIN facebook_pages fp ON fp.id = p.page_id
      LEFT JOIN facebook_group_campaigns c ON c.id = p.campaign_id
+     LEFT JOIN crm_staff s ON s.id = p.posted_by
      WHERE p.source_code = $1 AND p.deleted_at IS NULL`,
     [sourceCode],
   );
@@ -752,21 +1150,57 @@ export async function addRevenueAttribution(input: Record<string, unknown>, acto
   const client = await db.connect();
   try {
     await client.query("BEGIN");
-    const result = await client.query(
-      `UPDATE facebook_group_lead_attributions
-       SET order_id = COALESCE($1, order_id), quote_id = COALESCE($2, quote_id),
-           revenue = $3, revenue_event_key = $4, updated_by = $5, updated_at = NOW()
-       WHERE id = $6 AND (revenue_event_key IS NULL OR revenue_event_key = $4)
-       RETURNING group_id, campaign_id, content_id`,
-      [input.orderId || null, input.quoteId || null, revenue, eventKey, actor.id, attributionId],
+    const attributionResult = await client.query(
+      `SELECT group_id, campaign_id, content_id
+       FROM facebook_group_lead_attributions
+       WHERE id = $1 FOR UPDATE`,
+      [attributionId],
     );
-    if (!result.rows[0]) throw new Error("Doanh thu đã được ghi nhận bởi sự kiện khác hoặc attribution không tồn tại.");
+    if (!attributionResult.rows[0]) throw new Error("Attribution không tồn tại.");
+    await client.query(
+      `INSERT INTO facebook_group_revenue_events
+       (id,attribution_id,event_key,event_type,quote_id,order_id,revenue,data)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb)
+       ON CONFLICT (event_key) DO UPDATE SET
+         revenue = EXCLUDED.revenue,
+         quote_id = COALESCE(EXCLUDED.quote_id, facebook_group_revenue_events.quote_id),
+         order_id = COALESCE(EXCLUDED.order_id, facebook_group_revenue_events.order_id),
+         data = EXCLUDED.data,
+         updated_at = NOW()
+       WHERE facebook_group_revenue_events.attribution_id = EXCLUDED.attribution_id`,
+      [id("fbgre"), attributionId, eventKey, text(input.eventType, 50) || "manual",
+        input.quoteId || null, input.orderId || null, revenue,
+        JSON.stringify({ source: "facebook-group-marketing-api", actorId: actor.id })],
+    );
+    await client.query(
+      `UPDATE facebook_group_lead_attributions a
+       SET order_id = COALESCE($1, a.order_id),
+           quote_id = COALESCE($2, a.quote_id),
+           revenue = (
+             SELECT COALESCE(SUM(e.revenue), 0)
+             FROM facebook_group_revenue_events e
+             WHERE e.attribution_id = a.id
+           ),
+           updated_by = $3, updated_at = NOW()
+       WHERE a.id = $4`,
+      [input.orderId || null, input.quoteId || null, actor.id, attributionId],
+    );
     await client.query(
       `UPDATE facebook_groups g SET
-       total_orders = (SELECT COUNT(DISTINCT order_id) FROM facebook_group_lead_attributions WHERE group_id = g.id AND order_id IS NOT NULL),
-       total_revenue = (SELECT COALESCE(SUM(revenue),0) FROM facebook_group_lead_attributions WHERE group_id = g.id),
+       total_orders = (
+         SELECT COUNT(DISTINCT e.order_id)
+         FROM facebook_group_revenue_events e
+         JOIN facebook_group_lead_attributions a ON a.id = e.attribution_id
+         WHERE a.group_id = g.id AND e.order_id IS NOT NULL
+       ),
+       total_revenue = (
+         SELECT COALESCE(SUM(e.revenue), 0)
+         FROM facebook_group_revenue_events e
+         JOIN facebook_group_lead_attributions a ON a.id = e.attribution_id
+         WHERE a.group_id = g.id
+       ),
        updated_at = NOW() WHERE g.id = $1`,
-      [result.rows[0].group_id],
+      [attributionResult.rows[0].group_id],
     );
     await client.query("COMMIT");
     return { ok: true, revenue };
@@ -802,7 +1236,7 @@ export async function getFacebookGroupDashboard(filters: Filters = {}): Promise<
   const daily = await query<{ date: string; posts: number; leads: number; revenue: number }>(
     `WITH days AS (SELECT generate_series($1::date, $2::date, '1 day')::date AS day)
      SELECT day::text AS date,
-       (SELECT COUNT(*)::int FROM facebook_group_published_posts WHERE actual_posted_at::date = day) AS posts,
+       (SELECT COUNT(*)::int FROM facebook_group_published_posts WHERE deleted_at IS NULL AND actual_posted_at::date = day) AS posts,
        (SELECT COUNT(*)::int FROM facebook_group_lead_attributions WHERE created_at::date = day) AS leads,
        (SELECT COALESCE(SUM(revenue),0)::float FROM facebook_group_lead_attributions WHERE created_at::date = day) AS revenue
      FROM days ORDER BY day`, [from, to],

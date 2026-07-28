@@ -81,6 +81,14 @@ interface FbMessage {
   createdTime: string;
   attachments: FbAttachment[];
   sticker?: string;
+  sourceAttribution?: {
+    matched: boolean;
+    sourceCode: string;
+    status: string;
+    leadId?: string | null;
+    groupName?: string | null;
+    campaignName?: string | null;
+  };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -862,6 +870,31 @@ export default function FacebookInboxClient() {
                           {/* Sticker */}
                           {msg.sticker && (
                             <img src={msg.sticker} alt="sticker" style={{ width: 80, height: 80 }} />
+                          )}
+                          {msg.sourceAttribution && (
+                            <div style={{
+                              marginTop: 5,
+                              padding: "7px 9px",
+                              borderRadius: 8,
+                              border: `1px solid ${msg.sourceAttribution.matched ? "rgba(16,185,129,.35)" : "rgba(245,158,11,.35)"}`,
+                              background: msg.sourceAttribution.matched ? "rgba(16,185,129,.10)" : "rgba(245,158,11,.10)",
+                              color: T.textPrimary,
+                              fontSize: 11,
+                            }}>
+                              <b>{msg.sourceAttribution.matched ? "✓ Đã nhận nguồn Facebook Group" : "Mã nguồn cần kiểm tra"}</b>
+                              <div style={{ marginTop: 2 }}>
+                                {msg.sourceAttribution.sourceCode}
+                                {msg.sourceAttribution.groupName ? ` • ${msg.sourceAttribution.groupName}` : ""}
+                              </div>
+                              {msg.sourceAttribution.leadId && (
+                                <a
+                                  href={`/crm/leads/${msg.sourceAttribution.leadId}`}
+                                  style={{ display: "inline-block", marginTop: 4, color: T.accent, fontWeight: 700 }}
+                                >
+                                  Mở khách hàng CRM →
+                                </a>
+                              )}
+                            </div>
                           )}
                           {/* Time */}
                           <div style={{

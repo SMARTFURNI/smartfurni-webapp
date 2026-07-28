@@ -12,6 +12,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog } from "@/lib/crm-types";
+import type { FacebookGroupLeadSource } from "@/lib/facebook-group-marketing-types";
 import CustomerContactActions from "@/components/crm/high-performance-features/CustomerContactActions";
 import { ItyCallButton } from "@/components/crm/ItySoftphone";
 import { formatDuration } from "@/lib/crm-types";
@@ -47,12 +48,13 @@ interface Props {
   initialActivities: Activity[];
   initialQuotes: Quote[];
   initialTasks: CrmTask[];
+  facebookGroupSources?: FacebookGroupLeadSource[];
   isAdmin?: boolean;
   currentUserName?: string;
   staffList?: { id: string; fullName: string }[];
 }
 
-const TABS = ["timeline", "calls", "quotes", "tasks", "info"] as const;
+const TABS = ["timeline", "calls", "quotes", "tasks", "facebook_group", "info"] as const;
 type Tab = typeof TABS[number];
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -60,6 +62,7 @@ const TAB_LABELS: Record<Tab, string> = {
   calls: "Cuộc gọi",
   quotes: "Báo giá",
   tasks: "Việc cần làm",
+  facebook_group: "Nguồn Facebook Group",
   info: "Thông tin",
 };
 
@@ -81,7 +84,16 @@ const ACTIVITY_COLORS: Record<ActivityType, string> = {
   contract: "#06b6d4",
 };
 
-export default function LeadDetailClient({ lead: initialLead, initialActivities, initialQuotes, initialTasks, isAdmin = false, currentUserName = "", staffList = [] }: Props) {
+export default function LeadDetailClient({
+  lead: initialLead,
+  initialActivities,
+  initialQuotes,
+  initialTasks,
+  facebookGroupSources = [],
+  isAdmin = false,
+  currentUserName = "",
+  staffList = [],
+}: Props) {
   const [lead, setLead] = useState(initialLead);
   const [activities, setActivities] = useState(initialActivities);
   const [quotes, setQuotes] = useState(initialQuotes);
@@ -310,10 +322,10 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
           <div className="rounded-2xl overflow-hidden"
             style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)" }}>
             {/* Tab bar */}
-            <div className="flex" style={{ borderBottom: `1px solid ${DL.border}` }}>
+            <div className="flex overflow-x-auto" style={{ borderBottom: `1px solid ${DL.border}` }}>
               {TABS.map(tab => (
                 <button key={tab} onClick={() => handleTabChange(tab)}
-                  className="flex-1 py-3 text-sm font-medium transition-all relative"
+                  className="min-w-28 flex-1 py-3 px-2 text-sm font-medium transition-all relative whitespace-nowrap"
                   style={{
                     color: activeTab === tab ? DL.gold : DL.textMuted,
                     background: activeTab === tab ? "rgba(245,158,11,0.06)" : "transparent",
@@ -335,6 +347,12 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                     <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
                       style={{ background: "rgba(245,158,11,0.15)", color: DL.gold }}>
                       {tasks.filter(t => !t.done).length}
+                    </span>
+                  )}
+                  {tab === "facebook_group" && facebookGroupSources.length > 0 && (
+                    <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
+                      style={{ background: "rgba(24,119,242,0.15)", color: "#60a5fa" }}>
+                      {facebookGroupSources.length}
                     </span>
                   )}
                   {activeTab === tab && (
@@ -631,6 +649,68 @@ export default function LeadDetailClient({ lead: initialLead, initialActivities,
                             await fetch(`/api/crm/tasks/${task.id}`, { method: "DELETE" });
                           }}
                         />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Facebook Group source ── */}
+              {activeTab === "facebook_group" && (
+                <div>
+                  <h3 className="font-semibold text-sm mb-4" style={{ color: DL.text }}>
+                    Nguồn Facebook Group đã xác thực từ Messenger
+                  </h3>
+                  {facebookGroupSources.length === 0 ? (
+                    <div className="text-center py-14">
+                      <MessageCircle size={30} className="mx-auto mb-3 opacity-20" style={{ color: DL.textMuted }} />
+                      <p className="text-sm" style={{ color: DL.textMuted }}>
+                        Khách hàng này chưa được gắn mã nguồn từ Facebook Group.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {facebookGroupSources.map(source => (
+                        <div key={source.attributionId} className="rounded-xl p-4"
+                          style={{ background: DL.surface, border: `1px solid ${DL.border}` }}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-bold px-2 py-1 rounded-lg"
+                                  style={{ background: "rgba(24,119,242,.14)", color: "#60a5fa" }}>
+                                  {source.sourceCode}
+                                </span>
+                                <span className="text-sm font-semibold" style={{ color: DL.text }}>
+                                  {source.groupName}
+                                </span>
+                              </div>
+                              {source.campaignName && (
+                                <p className="mt-2 text-xs" style={{ color: DL.textMuted }}>
+                                  Chiến dịch: {source.campaignName}
+                                </p>
+                              )}
+                            </div>
+                            <a href={source.postUrl} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs font-semibold"
+                              style={{ color: "#60a5fa" }}>
+                              Bài gốc <ExternalLink size={11} />
+                            </a>
+                          </div>
+                          <div className="grid sm:grid-cols-2 gap-2 mt-4 text-xs">
+                            <DLInfoRow label="Messenger đầu tiên" value={source.firstMessengerAt
+                              ? new Date(source.firstMessengerAt).toLocaleString("vi-VN") : "—"} />
+                            <DLInfoRow label="Nhân viên đăng" value={source.postingEmployeeName || "—"} />
+                            <DLInfoRow label="Báo giá" value={source.quoteId || "Chưa có"} />
+                            <DLInfoRow label="Đơn hàng / doanh thu"
+                              value={source.orderId ? `${source.orderId} • ${formatVND(source.revenue)}` : "Chưa có"} />
+                          </div>
+                          {source.contentOpening && (
+                            <p className="mt-3 text-xs p-3 rounded-lg"
+                              style={{ background: "rgba(255,255,255,.03)", color: DL.textMuted }}>
+                              {source.contentOpening}
+                            </p>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}

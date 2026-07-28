@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runAutomationEngine } from "@/lib/crm-automation-engine";
+import { runFacebookGroupMarketingCron } from "@/lib/facebook-group-marketing-cron";
 
 /**
  * GET /api/crm/automation/cron
@@ -24,11 +25,15 @@ export async function GET(req: NextRequest) {
 
   try {
     console.log("[CRM Cron] Starting automation engine run...");
-    const result = await runAutomationEngine();
+    const [result, facebookGroupMarketing] = await Promise.all([
+      runAutomationEngine(),
+      runFacebookGroupMarketingCron(),
+    ]);
     console.log(`[CRM Cron] Done. Triggered: ${result.totalTriggered}/${result.totalLeads} leads`);
     return NextResponse.json({
       ok: true,
       ...result,
+      facebookGroupMarketing,
     });
   } catch (e) {
     console.error("[CRM Cron] Error:", e);

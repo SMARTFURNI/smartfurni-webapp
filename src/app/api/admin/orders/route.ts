@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { customerName, customerEmail, customerPhone, shippingAddress, city,
+    const { customerId, leadId, customerName, customerEmail, customerPhone, shippingAddress, city,
       items, shippingFee, discount, status, paymentMethod, paymentStatus,
       notes, trackingCode, shippingPartner } = body;
 
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const order = await createOrder({
+      customerId: customerId || leadId || undefined,
       customerName, customerEmail: customerEmail || "",
       customerPhone, shippingAddress, city,
       items, shippingFee: shippingFee || 0, discount: discount || 0,

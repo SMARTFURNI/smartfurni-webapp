@@ -98,3 +98,19 @@ export interface DashboardData {
   topGroupsByRevenue: Array<{ id: string; name: string; value: number }>;
 }
 
+export interface FacebookGroupLeadSource {
+  attributionId: string;
+  sourceCode: string;
+  groupName: string;
+  groupUrl: string;
+  postUrl: string;
+  campaignName: string | null;
+  contentOpening: string;
+  postingEmployeeName: string | null;
+  firstMessengerAt: string | null;
+  conversationId: string | null;
+  messageId: string | null;
+  quoteId: string | null;
+  orderId: string | null;
+  revenue: number;
+}
