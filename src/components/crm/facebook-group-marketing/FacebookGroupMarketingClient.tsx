@@ -454,15 +454,41 @@ function DataTable({ section, rows, permissions, onAction }: {
 }
 
 function MarkPosted({ task, onAction }: { task: Row; onAction: (endpoint: string, body?: Row) => Promise<void> }) {
-  const handle = () => {
-    const postUrl = window.prompt("Dán đường dẫn bài đăng Facebook:");
-    if (!postUrl) return;
-    const pending = window.confirm("Bài đang chờ quản trị viên group duyệt?");
-    void onAction(`tasks/${task.id}/mark-posted`, {
-      postUrl, actualPostedAt: new Date().toISOString(), moderationStatus: pending ? "pending" : "approved",
+  const [open, setOpen] = useState(false);
+  const localNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  const handle = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const localPostedAt = String(form.get("actualPostedAt") || "");
+    await onAction(`tasks/${task.id}/mark-posted`, {
+      postUrl: String(form.get("postUrl") || ""),
+      actualPostedAt: new Date(localPostedAt).toISOString(),
+      moderationStatus: String(form.get("moderationStatus") || "approved"),
     });
+    setOpen(false);
   };
-  return <button onClick={handle} title="Đánh dấu đã đăng"><CheckCircle2 size={17} className="text-emerald-300" /></button>;
+  return <>
+    <button onClick={() => setOpen(true)} title="Đánh dấu đã đăng"><CheckCircle2 size={17} className="text-emerald-300" /></button>
+    {open && <Modal title="Đánh dấu bài đã đăng" onClose={() => setOpen(false)}>
+      <form className="grid gap-4" onSubmit={handle}>
+        <Field label="Đường dẫn bài đăng Facebook" name="postUrl" type="url" required />
+        <Field label="Thời gian đăng thực tế" name="actualPostedAt" required>
+          <input name="actualPostedAt" type="datetime-local" required defaultValue={localNow}
+            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" />
+        </Field>
+        <Field label="Trạng thái kiểm duyệt" name="moderationStatus">
+          <select name="moderationStatus" defaultValue="approved"
+            className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white">
+            <option value="approved">Đã hiển thị trong Group</option>
+            <option value="pending">Đang chờ quản trị viên Group duyệt</option>
+          </select>
+        </Field>
+        <div className="flex justify-end">
+          <button className="rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Xác nhận đã đăng</button>
+        </div>
+      </form>
+    </Modal>}
+  </>;
 }
 
 function CreateForm({ resource, options, onSubmit }: {
