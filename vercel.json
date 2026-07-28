@@ -11,6 +11,10 @@
     {
       "path": "/api/crm/facebook-scheduler/cron",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/crm/facebook-group-marketing/cron",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

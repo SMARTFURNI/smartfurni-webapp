@@ -58,6 +58,16 @@ export interface RolePermissions {
   ai_agent_view: boolean;
   automation_view: boolean;
   facebook_scheduler_view: boolean;
+  facebook_group_marketing_view: boolean;
+  facebook_group_manage: boolean;
+  facebook_group_campaign_manage: boolean;
+  facebook_group_content_create: boolean;
+  facebook_group_content_approve: boolean;
+  facebook_group_schedule: boolean;
+  facebook_group_publish_task: boolean;
+  facebook_group_sales: boolean;
+  facebook_group_reports: boolean;
+  facebook_group_settings: boolean;
   audit_logs_view: boolean;
   permissions_manage: boolean;
   import_export_view: boolean;
@@ -128,6 +138,16 @@ export const PERMISSION_LABELS: Record<keyof RolePermissions, string> = {
   ai_agent_view: "AI Agent",
   automation_view: "Automation Rules",
   facebook_scheduler_view: "Lịch đăng bài FB",
+  facebook_group_marketing_view: "Xem Facebook Group Marketing",
+  facebook_group_manage: "Quản lý Facebook Group/Fanpage",
+  facebook_group_campaign_manage: "Quản lý chiến dịch Group",
+  facebook_group_content_create: "Tạo nội dung Group",
+  facebook_group_content_approve: "Duyệt nội dung Group",
+  facebook_group_schedule: "Xếp lịch đăng Group",
+  facebook_group_publish_task: "Thực hiện nhiệm vụ đăng/kiểm tra",
+  facebook_group_sales: "Xử lý lead từ Facebook Group",
+  facebook_group_reports: "Xem báo cáo Facebook Group",
+  facebook_group_settings: "Cấu hình Facebook Group Marketing",
   audit_logs_view: "Nhật ký hoạt động",
   permissions_manage: "Phân quyền & API Keys",
   import_export_view: "Import / Export",
@@ -183,7 +203,13 @@ export const PERMISSION_GROUPS: {
     label: "Tự động hóa & Bảo mật",
     icon: "🔐",
     color: "#ef4444",
-    keys: ["ai_agent_view", "automation_view", "facebook_scheduler_view", "audit_logs_view", "permissions_manage", "import_export_view"],
+    keys: [
+      "ai_agent_view", "automation_view", "facebook_scheduler_view",
+      "facebook_group_marketing_view", "facebook_group_manage", "facebook_group_campaign_manage",
+      "facebook_group_content_create", "facebook_group_content_approve", "facebook_group_schedule",
+      "facebook_group_publish_task", "facebook_group_sales", "facebook_group_reports",
+      "facebook_group_settings", "audit_logs_view", "permissions_manage", "import_export_view",
+    ],
   },
 ];
 
@@ -202,6 +228,11 @@ const ALL_FALSE: RolePermissions = {
   products_view: false, products_edit: false, staff_view: false, staff_manage: false,
   reports_view: false, reports_export: false, crm_settings_view: false, crm_settings_edit: false,
   ai_agent_view: false, automation_view: false, facebook_scheduler_view: false,
+  facebook_group_marketing_view: false, facebook_group_manage: false,
+  facebook_group_campaign_manage: false, facebook_group_content_create: false,
+  facebook_group_content_approve: false, facebook_group_schedule: false,
+  facebook_group_publish_task: false, facebook_group_sales: false,
+  facebook_group_reports: false, facebook_group_settings: false,
   audit_logs_view: false, permissions_manage: false, import_export_view: false,
 };
 
@@ -229,6 +260,9 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
       calendar_view: true, content_marketing_view: true, contracts_view: true,
       notifications_view: true, zalo_inbox_view: true, products_view: true,
       staff_view: true, reports_view: true, reports_export: true,
+      facebook_group_marketing_view: true, facebook_group_manage: true,
+      facebook_group_campaign_manage: true, facebook_group_content_approve: true,
+      facebook_group_schedule: true, facebook_group_reports: true,
     },
   },
   sales: {
@@ -245,6 +279,7 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
       call_logs_view: true, call_logs_create: true, tasks_view: true, tasks_create: true,
       calendar_view: true, contracts_view: true, contracts_create: true,
       notifications_view: true, zalo_inbox_view: true, products_view: true,
+      facebook_group_marketing_view: true, facebook_group_sales: true,
     },
   },
   marketing: {
@@ -260,6 +295,10 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
       email_marketing_view: true, content_marketing_view: true,
       nps_view: true, notifications_view: true, zalo_oa_view: true, zalo_inbox_view: true,
       products_view: true, reports_view: true, facebook_scheduler_view: true,
+      facebook_group_marketing_view: true, facebook_group_manage: true,
+      facebook_group_campaign_manage: true, facebook_group_content_create: true,
+      facebook_group_content_approve: true, facebook_group_schedule: true,
+      facebook_group_publish_task: true, facebook_group_reports: true,
     },
   },
   accountant: {
@@ -273,6 +312,7 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
       quotes_view_all: true, quotes_approve: true,
       contracts_view: true, products_view: true,
       reports_view: true, reports_export: true,
+      facebook_group_marketing_view: true, facebook_group_reports: true,
     },
   },
   intern: {
@@ -319,6 +359,16 @@ export async function initRolesSchema(): Promise<void> {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (id) DO NOTHING`,
         [id, tpl.name, tpl.color, tpl.icon, tpl.description, JSON.stringify(tpl.permissions), id === "super_admin", now, now]
+      );
+    }
+  } else {
+    // Thêm permission mới vào role hệ thống mà không ghi đè lựa chọn đã tùy chỉnh.
+    for (const [id, tpl] of Object.entries(ROLE_TEMPLATES)) {
+      await db.query(
+        `UPDATE crm_custom_roles
+         SET permissions = $1::jsonb || permissions
+         WHERE id = $2`,
+        [JSON.stringify(tpl.permissions), id],
       );
     }
   }

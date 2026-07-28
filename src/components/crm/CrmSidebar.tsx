@@ -119,6 +119,24 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Facebook Group Marketing",
+    icon: Facebook,
+    permissionKey: "facebook_group_marketing_view",
+    collapsible: true,
+    items: [
+      { label: "Tổng quan", href: "/crm/facebook-group-marketing", icon: LayoutDashboard, exact: true, permissionKey: "facebook_group_marketing_view" },
+      { label: "Danh sách Group", href: "/crm/facebook-group-marketing/groups", icon: Users, permissionKey: "facebook_group_marketing_view" },
+      { label: "Chiến dịch", href: "/crm/facebook-group-marketing/campaigns", icon: Megaphone, permissionKey: "facebook_group_marketing_view" },
+      { label: "Kho nội dung", href: "/crm/facebook-group-marketing/content", icon: FileText, permissionKey: "facebook_group_marketing_view" },
+      { label: "Lịch đăng", href: "/crm/facebook-group-marketing/calendar", icon: CalendarDays, permissionKey: "facebook_group_marketing_view" },
+      { label: "Nhiệm vụ đăng bài", href: "/crm/facebook-group-marketing/tasks", icon: CheckSquare, permissionKey: "facebook_group_marketing_view" },
+      { label: "Bài đã đăng", href: "/crm/facebook-group-marketing/posts", icon: Share2, permissionKey: "facebook_group_marketing_view" },
+      { label: "Bình luận & khách hàng", href: "/crm/facebook-group-marketing/comments", icon: MessageSquare, permissionKey: "facebook_group_marketing_view" },
+      { label: "Báo cáo", href: "/crm/facebook-group-marketing/reports", icon: BarChart3, permissionKey: "facebook_group_reports" },
+      { label: "Cài đặt", href: "/crm/facebook-group-marketing/settings", icon: Settings, permissionKey: "facebook_group_settings" },
+    ],
+  },
+  {
     label: "Quản lý & Báo cáo",
     items: [
       { label: "Nhân viên", href: "/crm/staff", icon: UserCog, superAdminOnly: true, permissionKey: "staff_view" },
@@ -554,7 +572,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
         { href: "/crm/leads", label: "Khách hàng", icon: Users },
         { href: "/crm/tasks", label: "Công việc", icon: CheckSquare },
       ].map(item => {
-        const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+        const active = item.exact ? pathname === item.href : pathname?.startsWith(item.href);
         const Icon = item.icon;
         return (
           <Link key={item.href} href={item.href} className={active ? "is-active" : ""}>
