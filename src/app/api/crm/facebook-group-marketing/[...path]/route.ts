@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   addRevenueAttribution, analyzeGroupRules, approveContent,
   completePostCheckTask, createFacebookGroupMarketing, exportFacebookGroupsCsv, getFacebookGroupDashboard, importFacebookGroups,
-  getFacebookGroupSettings, linkFacebookGroupLead, listFacebookGroupMarketing,
+  getFacebookGroupMarketingOptions, getFacebookGroupSettings, linkFacebookGroupLead, listFacebookGroupMarketing,
   markPublishingTaskPosted, recalculateGroupScore, saveFacebookGroupSettings,
   resolveFacebookGroupSourceCode,
   softDeleteFacebookGroupMarketing, updateFacebookGroupMarketing, updateGroupRules,
@@ -49,6 +49,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ path: s
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const filters = Object.fromEntries(new URL(req.url).searchParams.entries());
     if (resource === "dashboard") return NextResponse.json(await getFacebookGroupDashboard(filters));
+    if (resource === "options") return NextResponse.json(await getFacebookGroupMarketingOptions());
     if (resource === "settings") return NextResponse.json(await getFacebookGroupSettings());
     if (resource === "groups" && entityId === "export") {
       const csv = await exportFacebookGroupsCsv();
@@ -94,6 +95,13 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     }
     if (resource === "groups" && entityId && action === "recalculate-score") {
       return NextResponse.json(await recalculateGroupScore(entityId, auth.actor));
+    }
+    if (resource === "groups" && entityId && action === "set-status") {
+      const status = String(body.status || "");
+      if (!["active", "paused", "needs_review"].includes(status)) {
+        return NextResponse.json({ error: "Trạng thái Group không hợp lệ." }, { status: 400 });
+      }
+      return NextResponse.json(await updateFacebookGroupMarketing("groups", entityId, { status }, auth.actor));
     }
     if (resource === "content" && entityId && action === "approve") {
       await approveContent(entityId, true, auth.actor);

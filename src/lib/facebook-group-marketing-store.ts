@@ -10,7 +10,7 @@ import {
   DEFAULT_FACEBOOK_GROUP_SETTINGS, type DashboardData, type FacebookGroupSettings,
 } from "./facebook-group-marketing-types";
 
-type Actor = { id: string; name: string };
+type Actor = { id: string; name: string; isAdmin?: boolean };
 type Filters = Record<string, string | undefined>;
 
 const id = (prefix: string) => `${prefix}_${randomUUID()}`;
@@ -56,6 +56,47 @@ export async function saveFacebookGroupSettings(input: Partial<FacebookGroupSett
   );
   await logActivity(actor, "settings.updated", "settings", "default", undefined, { safeMode: true });
   return settings;
+}
+
+export async function getFacebookGroupMarketingOptions() {
+  const [pages, groups, campaigns, content, posts] = await Promise.all([
+    query(
+      `SELECT id, name, facebook_page_id AS "facebookPageId", status
+       FROM facebook_pages
+       WHERE deleted_at IS NULL
+       ORDER BY name`,
+    ),
+    query(
+      `SELECT id, name, code, status,
+              membership_status AS "membershipStatus",
+              allows_pages AS "allowsPages"
+       FROM facebook_groups
+       WHERE deleted_at IS NULL
+       ORDER BY name`,
+    ),
+    query(
+      `SELECT id, name, code, page_id AS "pageId", status
+       FROM facebook_group_campaigns
+       WHERE deleted_at IS NULL
+       ORDER BY created_at DESC`,
+    ),
+    query(
+      `SELECT id, opening, source_code AS "sourceCode",
+              group_id AS "groupId", campaign_id AS "campaignId", status
+       FROM facebook_group_content_drafts
+       WHERE deleted_at IS NULL
+       ORDER BY created_at DESC`,
+    ),
+    query(
+      `SELECT p.id, p.source_code AS "sourceCode", p.post_url AS "postUrl",
+              g.name AS "groupName"
+       FROM facebook_group_published_posts p
+       JOIN facebook_groups g ON g.id = p.group_id
+       WHERE p.deleted_at IS NULL
+       ORDER BY p.actual_posted_at DESC`,
+    ),
+  ]);
+  return { pages, groups, campaigns, content, posts };
 }
 
 export async function listFacebookGroupMarketing(resource: string, filters: Filters = {}) {
@@ -520,7 +561,9 @@ export async function approveContent(contentId: string, approved: boolean, actor
     const settings = await getFacebookGroupSettings();
     if (Number(content.duplicate_ratio) > settings.maxDuplicateRatio) throw new Error("Nội dung trùng lặp vượt ngưỡng.");
     if (rules?.passed !== true) throw new Error("Nội dung chưa đạt kiểm tra nội quy.");
-    if (content.created_by === actor.id) throw new Error("Người tạo không được tự duyệt nội dung của mình.");
+    if (content.created_by === actor.id && !actor.isAdmin) {
+      throw new Error("Người tạo không được tự duyệt nội dung của mình.");
+    }
   }
   await query(
     `UPDATE facebook_group_content_drafts SET status = $1, approved_by = $2,

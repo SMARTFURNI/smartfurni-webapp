@@ -8,6 +8,9 @@ import {
 } from "lucide-react";
 
 type Row = Record<string, unknown>;
+type FormOptions = {
+  pages: Row[]; groups: Row[]; campaigns: Row[]; content: Row[]; posts: Row[];
+};
 type Permissions = {
   manage: boolean; campaigns: boolean; content: boolean; approve: boolean;
   schedule: boolean; publish: boolean; sales: boolean; reports: boolean; settings: boolean;
@@ -24,6 +27,8 @@ const labels: Record<string, string> = {
   groups: "Group", pages: "Fanpage", campaigns: "chiến dịch", content: "nội dung",
   tasks: "nhiệm vụ", posts: "bài đăng", comments: "bình luận",
 };
+
+const emptyOptions: FormOptions = { pages: [], groups: [], campaigns: [], content: [], posts: [] };
 
 const statusLabel: Record<string, string> = {
   active: "Hoạt động", paused: "Tạm dừng", needs_review: "Cần kiểm tra",
@@ -105,6 +110,7 @@ export default function FacebookGroupMarketingClient({
   const [checkRows, setCheckRows] = useState<Row[]>([]);
   const [dashboard, setDashboard] = useState<Row | null>(null);
   const [settingsData, setSettingsData] = useState<Row | null>(null);
+  const [formOptions, setFormOptions] = useState<FormOptions>(emptyOptions);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -126,16 +132,23 @@ export default function FacebookGroupMarketingClient({
         setSettingsData(settingsResult);
         setRows(pages);
       } else if (section === "comments") {
-        const [comments, checks] = await Promise.all([
+        const [comments, checks, options] = await Promise.all([
           api(`comments?limit=50&offset=${page * 50}`),
           api("checks?status=pending&limit=50"),
+          api("options"),
         ]);
-        setRows(comments); setCheckRows(checks);
+        setRows(comments); setCheckRows(checks); setFormOptions(options);
       } else {
         const params = new URLSearchParams({ limit: "50", offset: String(page * 50) });
         if (section === "groups" && search) params.set("search", search);
         const query = `?${params.toString()}`;
-        setRows(await api(`${resource}${query}`));
+        const needsOptions = ["campaigns", "content", "calendar", "tasks"].includes(section);
+        const [result, options] = await Promise.all([
+          api(`${resource}${query}`),
+          needsOptions ? api("options") : Promise.resolve(emptyOptions),
+        ]);
+        setRows(result);
+        if (needsOptions) setFormOptions(options);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tải dữ liệu.");
@@ -151,19 +164,22 @@ export default function FacebookGroupMarketingClient({
     const form = new FormData(event.currentTarget);
     const payload: Row = {};
     form.forEach((item, key) => {
+      if (key === "groupIds") return;
       if (item === "") return;
       payload[key] = ["memberCount", "maxPostsPerDay", "minPostIntervalMinutes"].includes(key)
         ? Number(item) : item;
     });
+    const groupIds = form.getAll("groupIds").map(String).filter(Boolean);
+    if (groupIds.length) payload.groupIds = groupIds;
     try {
       await api(endpoint, { method: "POST", body: JSON.stringify(payload) });
       setNotice("Đã lưu thành công."); setModal(null); await load();
     } catch (err) { setError(err instanceof Error ? err.message : "Không thể lưu."); }
   };
 
-  const action = async (endpoint: string, body: Row = {}) => {
+  const action = async (endpoint: string, body: Row = {}, method = "POST") => {
     try {
-      await api(endpoint, { method: "POST", body: JSON.stringify(body) });
+      await api(endpoint, { method, body: JSON.stringify(body) });
       setNotice("Đã cập nhật thành công."); setModal(null); await load();
     } catch (err) { setError(err instanceof Error ? err.message : "Không thể cập nhật."); }
   };
@@ -280,12 +296,12 @@ export default function FacebookGroupMarketingClient({
 
       {modal === "create" && (
         <Modal title={`Thêm ${labels[resource] || ""}`} onClose={() => setModal(null)}>
-          <CreateForm resource={resource} onSubmit={submit} />
+          <CreateForm resource={resource} options={formOptions} onSubmit={submit} />
         </Modal>
       )}
       {modal === "page" && (
         <Modal title="Thêm Fanpage" onClose={() => setModal(null)}>
-          <CreateForm resource="pages" onSubmit={(event) => submit(event, "pages")} />
+          <CreateForm resource="pages" options={formOptions} onSubmit={(event) => submit(event, "pages")} />
         </Modal>
       )}
     </div>
@@ -366,7 +382,7 @@ function Ranking({ title, rows, format }: { title: string; rows: Row[]; format: 
 
 function DataTable({ section, rows, permissions, onAction }: {
   section: string; rows: Row[]; permissions: Permissions;
-  onAction: (endpoint: string, body?: Row) => Promise<void>;
+  onAction: (endpoint: string, body?: Row, method?: string) => Promise<void>;
 }) {
   if (!rows.length) return <div className="grid min-h-64 place-items-center rounded-2xl border border-dashed border-white/10 text-sm text-slate-500">Chưa có dữ liệu.</div>;
   const columns: Record<string, Array<[string, string]>> = {
@@ -400,6 +416,9 @@ function DataTable({ section, rows, permissions, onAction }: {
               <div className="flex gap-2">
                 {section === "groups" && Boolean(row.group_url) && <a target="_blank" rel="noreferrer" href={String(row.group_url)} title="Mở group"><ExternalLink size={17} /></a>}
                 {section === "groups" && permissions.manage && <button onClick={() => void onAction(`groups/${row.id}/recalculate-score`)} title="Tính lại điểm"><RefreshCw size={17} /></button>}
+                {section === "groups" && permissions.manage && row.status !== "active" && <button
+                  onClick={() => void onAction(`groups/${row.id}/set-status`, { status: "active" })}
+                  title="Kích hoạt Group"><CheckCircle2 size={17} className="text-emerald-300" /></button>}
                 {section === "groups" && permissions.manage && <button onClick={() => {
                   const rawText = window.prompt("Dán nội quy do nhân viên đọc từ group:", String(row.ruleText || ""));
                   if (rawText === null) return;
@@ -446,7 +465,11 @@ function MarkPosted({ task, onAction }: { task: Row; onAction: (endpoint: string
   return <button onClick={handle} title="Đánh dấu đã đăng"><CheckCircle2 size={17} className="text-emerald-300" /></button>;
 }
 
-function CreateForm({ resource, onSubmit }: { resource: string; onSubmit: (event: React.FormEvent<HTMLFormElement>) => void }) {
+function CreateForm({ resource, options, onSubmit }: {
+  resource: string; options: FormOptions;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+}) {
+  const selectClass = "rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white";
   return <form className="grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
     {resource === "groups" && <>
       <Field label="Tên group" name="name" required /><Field label="Mã group" name="code" />
@@ -456,6 +479,7 @@ function CreateForm({ resource, onSubmit }: { resource: string; onSubmit: (event
       <Field label="Fanpage tham gia" name="membershipStatus"><select name="membershipStatus" className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5"><option value="not_joined">Chưa tham gia</option><option value="requested">Đã gửi yêu cầu</option><option value="pending">Chờ duyệt</option><option value="joined">Đã tham gia</option></select></Field>
       <Field label="Cho phép Fanpage" name="allowsPages"><select name="allowsPages" className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5"><option value="unknown">Chưa kiểm tra</option><option value="yes">Có</option><option value="no">Không</option></select></Field>
       <Field label="Cho phép bán hàng" name="allowsSales"><select name="allowsSales" className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5"><option value="unknown">Chưa kiểm tra</option><option value="yes">Có</option><option value="no">Không</option><option value="limited">Hạn chế</option></select></Field>
+      <Field label="Trạng thái vận hành" name="status"><select name="status" defaultValue="needs_review" className={selectClass}><option value="needs_review">Cần kiểm tra</option><option value="active">Hoạt động</option><option value="paused">Tạm dừng</option></select></Field>
       <div className="md:col-span-2"><Field label="Nội quy do nhân viên nhập" name="ruleText"><textarea name="ruleText" rows={5} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
     </>}
     {resource === "pages" && <>
@@ -465,23 +489,39 @@ function CreateForm({ resource, onSubmit }: { resource: string; onSubmit: (event
     </>}
     {resource === "campaigns" && <>
       <Field label="Tên chiến dịch" name="name" required /><Field label="Mã chiến dịch" name="code" />
-      <Field label="Fanpage ID" name="pageId" /><Field label="Người phụ trách ID" name="ownerId" />
+      <Field label="Fanpage" name="pageId" required><select name="pageId" required className={selectClass}><option value="">Chọn Fanpage</option>{options.pages.map(page => <option key={String(page.id)} value={String(page.id)}>{String(page.name)}</option>)}</select></Field>
+      <Field label="Người phụ trách ID" name="ownerId" />
       <Field label="Ngày bắt đầu" name="startDate" type="date" /><Field label="Ngày kết thúc" name="endDate" type="date" />
+      <div className="md:col-span-2">
+        <span className="mb-2 block text-sm text-slate-300">Group mục tiêu</span>
+        <div className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-3 md:grid-cols-2">
+          {options.groups.map(group => <label key={String(group.id)} className="flex items-start gap-2 text-sm text-slate-200">
+            <input type="checkbox" name="groupIds" value={String(group.id)} className="mt-1" />
+            <span>{String(group.name)} <small className="text-slate-500">({String(group.status)})</small></span>
+          </label>)}
+          {!options.groups.length && <span className="text-sm text-slate-500">Chưa có Group.</span>}
+        </div>
+      </div>
     </>}
     {resource === "content" && <>
-      <Field label="Group ID" name="groupId" /><Field label="Chiến dịch ID" name="campaignId" />
+      <Field label="Group" name="groupId" required><select name="groupId" required className={selectClass}><option value="">Chọn Group</option>{options.groups.map(group => <option key={String(group.id)} value={String(group.id)}>{String(group.name)}</option>)}</select></Field>
+      <Field label="Chiến dịch" name="campaignId"><select name="campaignId" className={selectClass}><option value="">Không thuộc chiến dịch</option>{options.campaigns.map(campaign => <option key={String(campaign.id)} value={String(campaign.id)}>{String(campaign.name)}</option>)}</select></Field>
       <Field label="Sản phẩm ID" name="productId" /><Field label="Mã sản phẩm" name="productCode" />
+      <Field label="Loại nội dung" name="contentType"><select name="contentType" className={selectClass}><option value="community_share">Chia sẻ cộng đồng</option><option value="sales">Bài bán hàng</option><option value="education">Kiến thức</option></select></Field>
       <div className="md:col-span-2"><Field label="Câu mở đầu" name="opening"><textarea name="opening" rows={2} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
       <div className="md:col-span-2"><Field label="Nội dung chính" name="body" required><textarea name="body" required rows={7} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
       <div className="md:col-span-2"><Field label="CTA Messenger" name="cta"><textarea name="cta" rows={2} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
     </>}
     {resource === "tasks" && <>
-      <Field label="Fanpage ID" name="pageId" required /><Field label="Group ID" name="groupId" required />
-      <Field label="Nội dung ID" name="contentId" required /><Field label="Chiến dịch ID" name="campaignId" />
+      <Field label="Fanpage" name="pageId" required><select name="pageId" required className={selectClass}><option value="">Chọn Fanpage</option>{options.pages.map(page => <option key={String(page.id)} value={String(page.id)}>{String(page.name)}</option>)}</select></Field>
+      <Field label="Group" name="groupId" required><select name="groupId" required className={selectClass}><option value="">Chọn Group</option>{options.groups.filter(group => group.status === "active").map(group => <option key={String(group.id)} value={String(group.id)}>{String(group.name)}</option>)}</select></Field>
+      <Field label="Nội dung đã duyệt" name="contentId" required><select name="contentId" required className={selectClass}><option value="">Chọn nội dung</option>{options.content.filter(item => item.status === "approved").map(item => <option key={String(item.id)} value={String(item.id)}>{String(item.sourceCode || item.opening)}</option>)}</select></Field>
+      <Field label="Chiến dịch" name="campaignId"><select name="campaignId" className={selectClass}><option value="">Không thuộc chiến dịch</option>{options.campaigns.map(campaign => <option key={String(campaign.id)} value={String(campaign.id)}>{String(campaign.name)}</option>)}</select></Field>
       <Field label="Nhân viên phụ trách ID" name="assignedStaffId" /><Field label="Giờ đăng" name="scheduledAt" type="datetime-local" required />
     </>}
     {resource === "comments" && <>
-      <Field label="Bài đăng ID" name="postId" required /><Field label="Tên Facebook" name="facebookName" required />
+      <Field label="Bài đã đăng" name="postId" required><select name="postId" required className={selectClass}><option value="">Chọn bài đăng</option>{options.posts.map(post => <option key={String(post.id)} value={String(post.id)}>{String(post.sourceCode)} — {String(post.groupName)}</option>)}</select></Field>
+      <Field label="Tên Facebook" name="facebookName" required />
       <div className="md:col-span-2"><Field label="Nội dung bình luận" name="content" required><textarea name="content" required rows={4} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
       <Field label="Số điện thoại công khai" name="phone" /><Field label="Thời gian bình luận" name="commentedAt" type="datetime-local" />
       <Field label="Nhu cầu" name="intent"><select name="intent" className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5"><option value="price">Hỏi giá</option><option value="size">Hỏi kích thước</option><option value="delivery">Hỏi giao hàng</option><option value="showroom">Hỏi showroom</option><option value="dealer">Muốn làm đại lý</option><option value="other">Khác</option></select></Field>

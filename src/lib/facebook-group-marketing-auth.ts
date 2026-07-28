@@ -10,7 +10,7 @@ export async function authorizeFacebookGroupMarketing(permission: FacebookGroupP
   const session = await getCrmSession();
   if (!session) return null;
   if (session.isAdmin) {
-    return { session, actor: { id: "admin", name: "Admin" }, permissions: null };
+    return { session, actor: { id: "admin", name: "Admin", isAdmin: true }, permissions: null };
   }
   if (!session.staffId) return null;
   const staff = await getStaffById(session.staffId);
@@ -18,8 +18,7 @@ export async function authorizeFacebookGroupMarketing(permission: FacebookGroupP
   if (!role?.permissions?.[permission]) return null;
   return {
     session,
-    actor: { id: session.staffId, name: staff?.fullName || session.staffId },
+    actor: { id: session.staffId, name: staff?.fullName || session.staffId, isAdmin: false },
     permissions: role.permissions,
   };
 }
-
