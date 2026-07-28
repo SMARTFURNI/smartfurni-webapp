@@ -82,12 +82,15 @@ function Status({ status }: { status: unknown }) {
 
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/70 p-3 md:items-center" onMouseDown={onClose}>
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-amber-300/15 bg-[#12151d] p-5 shadow-2xl"
+    <div className="fbg-modal-overlay fixed inset-0 z-[120] flex items-end justify-center bg-black/70 p-3 md:items-center" onMouseDown={onClose}>
+      <div className="fbg-modal-card max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-amber-300/15 bg-[#12151d] p-5 shadow-2xl"
         onMouseDown={event => event.stopPropagation()}>
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-black text-white">{title}</h2>
-          <button onClick={onClose} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-300">Đóng</button>
+          <div>
+            <div className="mb-1 text-[10px] font-bold uppercase tracking-[.18em] text-amber-300/80">Facebook Group Marketing</div>
+            <h2 className="text-lg font-black text-white">{title}</h2>
+          </div>
+          <button onClick={onClose} className="fbg-modal-close rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-300">Đóng</button>
         </div>
         {children}
       </div>
@@ -99,7 +102,7 @@ function Field({ label, name, type = "text", required = false, children }: {
   label: string; name: string; type?: string; required?: boolean; children?: React.ReactNode;
 }) {
   return (
-    <label className="grid gap-1.5 text-sm text-slate-300">
+    <label className="fbg-field grid gap-1.5 text-sm text-slate-300">
       <span>{label}{required && <b className="text-red-400"> *</b>}</span>
       {children || <input name={name} type={type} required={required}
         className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white outline-none focus:border-amber-400/50" />}
@@ -223,50 +226,53 @@ export default function FacebookGroupMarketingClient({
   const title = sections.find(item => item[0] === section)?.[1] || "Facebook Group Marketing";
 
   return (
-    <div className="min-h-full bg-[#0d0f14] px-4 py-5 text-slate-100 md:px-7 md:py-7">
-      <header className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <div className="fbg-admin-shell min-h-full px-4 py-5 text-slate-100 md:px-7 md:py-7">
+      <header className="fbg-admin-header mb-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-amber-300">
-            <Facebook size={15} /> Facebook Group Marketing
+          <div className="fbg-admin-eyebrow mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.2em] text-amber-300">
+            <span className="fbg-admin-eyebrow-icon"><Facebook size={15} /></span>
+            Facebook Group Marketing
           </div>
-          <h1 className="text-2xl font-black text-white">{title}</h1>
-          <p className="mt-1 max-w-3xl text-sm text-slate-400">
+          <h1 className="fbg-admin-title text-3xl font-black text-white">{title}</h1>
+          <p className="fbg-admin-subtitle mt-1.5 max-w-3xl text-sm text-slate-400">
             Quy trình đăng thủ công an toàn: CRM chuẩn bị và theo dõi, nhân viên trực tiếp đăng bằng Fanpage.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => void load()} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
+        <div className="fbg-admin-actions flex flex-wrap gap-2">
+          <button onClick={() => void load()} className="fbg-secondary-button inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
             <RefreshCw size={15} /> Làm mới
           </button>
           {section === "groups" && (
             <>
-              {permissions.manage && <label className="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
+              {permissions.manage && <label className="fbg-secondary-button cursor-pointer rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
                 Nhập CSV<input type="file" accept=".csv,text/csv" className="hidden" onChange={event => {
                   const file = event.target.files?.[0]; if (file) void importCsv(file);
                 }} />
               </label>}
-              <a href="/api/crm/facebook-group-marketing/groups/export" className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Xuất CSV</a>
+              <a href="/api/crm/facebook-group-marketing/groups/export" className="fbg-secondary-button rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Xuất CSV</a>
             </>
           )}
           {canCreate && (
-            <button onClick={() => setModal("create")} className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-sm font-black text-black">
+            <button onClick={() => setModal("create")} className="fbg-primary-button inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-sm font-black text-black">
               <Plus size={16} /> Thêm {labels[resource]}
             </button>
           )}
         </div>
       </header>
 
-      <nav className="mb-6 flex gap-2 overflow-x-auto pb-2">
+      <nav className="fbg-admin-tabs mb-6 flex gap-1 overflow-x-auto">
         {sections.map(([key, label]) => (
           <Link key={key} href={key === "overview" ? "/crm/facebook-group-marketing" : `/crm/facebook-group-marketing/${key}`}
             className={`whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-bold ${
+              section === key ? "is-active " : ""
+            }${
               section === key ? "border-amber-400/50 bg-amber-400/15 text-amber-200" : "border-white/8 bg-white/[.03] text-slate-400"
             }`}>{label}</Link>
         ))}
       </nav>
 
-      {notice && <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-200"><CheckCircle2 size={16} />{notice}</div>}
-      {error && <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200"><AlertTriangle size={16} />{error}</div>}
+      {notice && <div className="fbg-alert mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-200"><CheckCircle2 size={16} />{notice}</div>}
+      {error && <div className="fbg-alert mb-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200"><AlertTriangle size={16} />{error}</div>}
 
       {loading ? (
         <div className="grid min-h-64 place-items-center"><Loader2 className="animate-spin text-amber-300" /></div>
@@ -284,10 +290,10 @@ export default function FacebookGroupMarketingClient({
       ) : (
         <>
           {section === "groups" && (
-            <div className="mb-4 flex flex-wrap gap-2">
+            <div className="fbg-filter mb-4 flex flex-wrap gap-2">
               <input value={search} onChange={event => { setSearch(event.target.value); setPage(0); }} placeholder="Tìm tên hoặc mã group…"
                 className="min-w-64 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm outline-none" />
-              <button onClick={() => void load()} className="rounded-xl bg-white/10 px-4 text-sm">Lọc</button>
+              <button onClick={() => void load()} className="fbg-secondary-button rounded-xl border px-4 text-sm">Lọc</button>
             </div>
           )}
           {section === "comments" && <>
@@ -296,7 +302,7 @@ export default function FacebookGroupMarketingClient({
             <h2 className="mb-3 mt-6 font-bold text-white">Bình luận có nhu cầu đã nhập</h2>
           </>}
           <DataTable section={section} rows={rows} permissions={permissions} onAction={action} />
-          <div className="mt-4 flex items-center justify-end gap-2">
+          <div className="fbg-pagination mt-4 flex items-center justify-end gap-2">
             <button disabled={page === 0} onClick={() => setPage(current => Math.max(0, current - 1))}
               className="rounded-xl border border-white/10 px-3 py-2 text-sm disabled:opacity-30">Trang trước</button>
             <span className="text-xs text-slate-500">Trang {page + 1}</span>
@@ -326,44 +332,72 @@ function Dashboard({ data, reports }: { data: Row; reports: boolean }) {
   const funnel = (data.funnel || []) as Row[];
   const topLeads = (data.topGroupsByLeads || []) as Row[];
   const topRevenue = (data.topGroupsByRevenue || []) as Row[];
+  const dailyMax = Math.max(1, ...daily.flatMap(row => [Number(row.posts || 0), Number(row.leads || 0)]));
+  const funnelMax = Math.max(1, ...funnel.map(row => Number(row.value || 0)));
   const cards = [
-    ["Group đã lưu", metrics.groups, Users], ["Group cho phép Fanpage", metrics.groupsAllowPages, Facebook],
-    ["Fanpage đã tham gia", metrics.groupsJoined, CheckCircle2], ["Nhiệm vụ hôm nay", metrics.tasksToday, CalendarDays],
-    ["Nhiệm vụ quá hạn", metrics.overdue, AlertTriangle], ["Cần kiểm tra bình luận", metrics.checksDue, MessageSquare],
-    ["Khách hôm nay", metrics.leadsToday, Users], ["Đơn hàng", metrics.orders, FileText],
+    ["Group đã lưu", metrics.groups, Users, "#d7b957", "rgba(215,185,87,.18)"],
+    ["Group cho phép Fanpage", metrics.groupsAllowPages, Facebook, "#6d9fdb", "rgba(85,132,190,.18)"],
+    ["Fanpage đã tham gia", metrics.groupsJoined, CheckCircle2, "#66c59c", "rgba(68,177,129,.18)"],
+    ["Nhiệm vụ hôm nay", metrics.tasksToday, CalendarDays, "#d9a94a", "rgba(217,169,74,.18)"],
+    ["Nhiệm vụ quá hạn", metrics.overdue, AlertTriangle, "#e37a76", "rgba(209,78,73,.18)"],
+    ["Cần kiểm tra bình luận", metrics.checksDue, MessageSquare, "#9b8ad2", "rgba(130,103,188,.18)"],
+    ["Khách hôm nay", metrics.leadsToday, Users, "#61b8bd", "rgba(63,157,164,.18)"],
+    ["Đơn hàng", metrics.orders, FileText, "#e0c86d", "rgba(215,185,87,.18)"],
   ] as const;
   return (
-    <div className="space-y-5">
+    <div className="fbg-dashboard space-y-5">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {cards.map(([label, amount, Icon]) => (
-          <div key={label} className="rounded-2xl border border-white/8 bg-white/[.035] p-4">
-            <div className="flex items-center justify-between text-slate-400"><span className="text-xs">{label}</span><Icon size={17} /></div>
-            <div className="mt-3 text-2xl font-black text-white">{Number(amount || 0).toLocaleString("vi-VN")}</div>
+        {cards.map(([label, amount, Icon, color, glow]) => (
+          <div key={label} className="fbg-metric-card rounded-2xl border border-white/8 bg-white/[.035] p-4"
+            style={{ "--metric-color": color, "--metric-glow": glow } as React.CSSProperties}>
+            <div className="flex items-center justify-between gap-3">
+              <span className="fbg-metric-label text-[10px] font-semibold">{label}</span>
+              <span className="fbg-metric-icon"><Icon size={17} /></span>
+            </div>
+            <div className="fbg-metric-value mt-3 text-3xl font-black text-white">{Number(amount || 0).toLocaleString("vi-VN")}</div>
           </div>
         ))}
       </div>
       <div className="grid gap-4 xl:grid-cols-3">
-        <div className="rounded-2xl border border-white/8 bg-white/[.035] p-5 xl:col-span-2">
-          <h3 className="mb-4 font-bold">Bài đăng, khách hàng và doanh thu theo ngày</h3>
-          <div className="flex h-52 items-end gap-1 overflow-x-auto">
-            {daily.map(row => {
-              const height = Math.max(6, Number(row.posts || 0) * 18);
-              return <div key={String(row.date)} className="group flex min-w-7 flex-1 flex-col items-center gap-1" title={`${row.date}: ${row.posts} bài, ${row.leads} khách`}>
-                <span className="text-[9px] text-slate-500">{Number(row.posts || 0)}</span>
-                <div className="w-full rounded-t bg-gradient-to-t from-blue-600 to-cyan-300" style={{ height }} />
-                <span className="rotate-[-45deg] text-[8px] text-slate-500">{String(row.date).slice(5)}</span>
+        <div className="fbg-panel fbg-chart rounded-2xl border border-white/8 bg-white/[.035] p-5 xl:col-span-2">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="fbg-panel-title font-bold">Hiệu suất theo ngày</h3>
+              <p className="fbg-panel-kicker mt-1 text-xs">Bài đã đăng và khách hàng quy nguồn từ Group</p>
+            </div>
+            <div className="fbg-chart-legend flex items-center gap-4 text-[10px] font-semibold uppercase tracking-wider">
+              <span className="flex items-center gap-1.5"><i className="bg-[#d7b957]" /> Bài đăng</span>
+              <span className="flex items-center gap-1.5"><i className="bg-[#5e89c3]" /> Khách hàng</span>
+            </div>
+          </div>
+          <div className="fbg-chart-grid flex h-52 items-end gap-1.5 overflow-x-auto rounded-xl px-2 pt-3">
+            {daily.length ? daily.map(row => {
+              const postHeight = Math.max(5, (Number(row.posts || 0) / dailyMax) * 160);
+              const leadHeight = Math.max(5, (Number(row.leads || 0) / dailyMax) * 160);
+              return <div key={String(row.date)} className="fbg-chart-day group flex min-w-9 flex-1 flex-col items-center gap-1.5"
+                title={`${row.date}: ${row.posts || 0} bài, ${row.leads || 0} khách`}>
+                <div className="flex flex-1 items-end gap-1">
+                  <div className="fbg-chart-column w-2.5 bg-gradient-to-t from-[#80651e] to-[#e6ce72]" style={{ height: postHeight }} />
+                  <div className="fbg-chart-column w-2.5 bg-gradient-to-t from-[#304e79] to-[#6f9bd6]" style={{ height: leadHeight }} />
+                </div>
+                <span className="text-[9px] text-[rgba(245,237,214,.36)]">{String(row.date).slice(5)}</span>
               </div>;
-            })}
+            }) : <div className="grid h-full w-full place-items-center text-center">
+              <div><BarChart3 className="mx-auto mb-2 text-amber-300/40" size={28} /><p className="text-xs text-slate-500">Chưa có dữ liệu theo ngày.</p></div>
+            </div>}
           </div>
         </div>
-        <div className="rounded-2xl border border-white/8 bg-white/[.035] p-5">
-          <h3 className="mb-4 font-bold">Phễu chuyển đổi</h3>
+        <div className="fbg-panel rounded-2xl border border-white/8 bg-white/[.035] p-5">
+          <h3 className="fbg-panel-title font-bold">Phễu chuyển đổi</h3>
+          <p className="fbg-panel-kicker mb-4 mt-1 text-xs">Từ tương tác đến đơn hàng ghi nhận</p>
           <div className="space-y-2">
             {funnel.map((row, index) => (
-              <div key={String(row.label)} className="rounded-lg bg-blue-500/10 px-3 py-2" style={{ marginInline: `${index * 5}px` }}>
-                <div className="flex justify-between text-xs"><span>{String(row.label)}</span><b>{Number(row.value || 0)}</b></div>
+              <div key={String(row.label)} className="fbg-funnel-step rounded-xl px-3 py-2.5" style={{ marginInline: `${index * 4}px` }}>
+                <div className="mb-2 flex justify-between gap-3 text-xs"><span className="text-slate-300">{String(row.label)}</span><b className="text-white">{Number(row.value || 0)}</b></div>
+                <div className="fbg-funnel-track"><div className="fbg-funnel-fill" style={{ width: `${Math.max(3, Number(row.value || 0) / funnelMax * 100)}%` }} /></div>
               </div>
             ))}
+            {!funnel.length && <p className="py-12 text-center text-sm text-slate-500">Chưa có dữ liệu chuyển đổi.</p>}
           </div>
         </div>
       </div>
@@ -371,9 +405,9 @@ function Dashboard({ data, reports }: { data: Row; reports: boolean }) {
         <Ranking title="Top group tạo khách hàng" rows={topLeads} format={String} />
         <Ranking title="Top group theo doanh thu" rows={topRevenue} format={money} />
       </div>
-      <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[.06] p-5">
-        <div className="flex items-center gap-2 font-bold text-amber-200"><BarChart3 size={18} /> Tổng doanh thu quy nguồn</div>
-        <div className="mt-2 text-3xl font-black">{money(metrics.revenue)}</div>
+      <div className="fbg-revenue-card rounded-2xl border border-amber-400/15 bg-amber-400/[.06] p-6">
+        <div className="relative z-[1] flex items-center gap-2 text-xs font-bold uppercase tracking-[.12em] text-amber-200"><BarChart3 size={18} /> Tổng doanh thu quy nguồn</div>
+        <div className="relative z-[1] mt-2 text-4xl font-black tracking-[-.04em]">{money(metrics.revenue)}</div>
         {reports && <p className="mt-2 text-sm text-slate-400">Doanh thu được khử trùng theo revenue event key trước khi cộng vào group và chiến dịch.</p>}
       </div>
     </div>
@@ -381,12 +415,12 @@ function Dashboard({ data, reports }: { data: Row; reports: boolean }) {
 }
 
 function Ranking({ title, rows, format }: { title: string; rows: Row[]; format: (input: unknown) => string }) {
-  return <div className="rounded-2xl border border-white/8 bg-white/[.035] p-5">
-    <h3 className="mb-3 font-bold">{title}</h3>
+  return <div className="fbg-ranking rounded-2xl border border-white/8 bg-white/[.035] p-5">
+    <h3 className="fbg-panel-title mb-3 font-bold">{title}</h3>
     <div className="space-y-2">{rows.length ? rows.map((row, index) => (
-      <div key={String(row.id)} className="flex items-center justify-between rounded-lg bg-white/[.035] px-3 py-2 text-sm">
-        <span className="truncate"><b className="mr-2 text-amber-300">#{index + 1}</b>{String(row.name)}</span>
-        <b>{format(row.value)}</b>
+      <div key={String(row.id)} className="fbg-ranking-row flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm">
+        <span className="flex min-w-0 items-center gap-2.5 truncate"><b className="fbg-ranking-index">#{index + 1}</b><span className="truncate">{String(row.name)}</span></span>
+        <b className="shrink-0 text-[#e5d386]">{format(row.value)}</b>
       </div>
     )) : <p className="text-sm text-slate-500">Chưa có dữ liệu.</p>}</div>
   </div>;
@@ -396,7 +430,9 @@ function DataTable({ section, rows, permissions, onAction }: {
   section: string; rows: Row[]; permissions: Permissions;
   onAction: (endpoint: string, body?: Row, method?: string) => Promise<void>;
 }) {
-  if (!rows.length) return <div className="grid min-h-64 place-items-center rounded-2xl border border-dashed border-white/10 text-sm text-slate-500">Chưa có dữ liệu.</div>;
+  if (!rows.length) return <div className="fbg-empty-state grid min-h-64 place-items-center rounded-2xl border border-dashed border-white/10 text-sm text-slate-500">
+    <div className="text-center"><span className="fbg-empty-icon"><FileText size={21} /></span><p className="mt-3 font-medium text-slate-400">Chưa có dữ liệu.</p><p className="mt-1 text-xs text-slate-600">Dữ liệu vận hành sẽ xuất hiện tại đây.</p></div>
+  </div>;
   const columns: Record<string, Array<[string, string]>> = {
     groups: [["name", "Group"], ["region", "Khu vực"], ["topic", "Chủ đề"], ["membership_status", "Tham gia"], ["grade", "Hạng"], ["quality_score", "Điểm"], ["status", "Trạng thái"]],
     campaigns: [["name", "Chiến dịch"], ["code", "Mã"], ["pageName", "Fanpage"], ["groupCount", "Group"], ["start_date", "Bắt đầu"], ["end_date", "Kết thúc"], ["status", "Trạng thái"]],
@@ -409,7 +445,7 @@ function DataTable({ section, rows, permissions, onAction }: {
   };
   const selected = columns[section] || columns.tasks;
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/8 bg-white/[.025]">
+    <div className="fbg-table-wrap overflow-x-auto rounded-2xl border border-white/8 bg-white/[.025]">
       <table className="w-full min-w-[900px] text-left text-sm">
         <thead className="border-b border-white/8 bg-white/[.035] text-xs uppercase tracking-wide text-slate-500">
           <tr>{selected.map(([, label]) => <th key={label} className="px-4 py-3">{label}</th>)}<th className="px-4 py-3">Thao tác</th></tr>
@@ -425,7 +461,7 @@ function DataTable({ section, rows, permissions, onAction }: {
               </td>;
             })}
             <td className="px-4 py-3">
-              <div className="flex gap-2">
+              <div className="fbg-table-actions flex gap-2">
                 {section === "groups" && Boolean(row.group_url) && <a target="_blank" rel="noreferrer" href={String(row.group_url)} title="Mở group"><ExternalLink size={17} /></a>}
                 {section === "groups" && permissions.manage && <button onClick={() => void onAction(`groups/${row.id}/recalculate-score`)} title="Tính lại điểm"><RefreshCw size={17} /></button>}
                 {section === "groups" && permissions.manage && row.status !== "active" && <button
@@ -488,11 +524,11 @@ function CompleteCheck({ check, onAction }: { check: Row; onAction: (endpoint: s
   return <>
     <button onClick={() => setOpen(true)} title="Hoàn thành kiểm tra"><CheckCircle2 size={17} className="text-emerald-300" /></button>
     {open && <Modal title="Hoàn thành kiểm tra bình luận" onClose={() => setOpen(false)}>
-      <form className="grid gap-4 md:grid-cols-2" onSubmit={handle}>
+      <form className="fbg-form grid gap-4 md:grid-cols-2" onSubmit={handle}>
         <Field label="Tổng số bình luận hiện tại" name="commentCount" type="number" required />
         <Field label="Tổng số lượt phản ứng hiện tại" name="reactionCount" type="number" required />
         <div className="md:col-span-2 flex justify-end">
-          <button className="rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Xác nhận hoàn thành</button>
+          <button className="fbg-primary-button rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Xác nhận hoàn thành</button>
         </div>
       </form>
     </Modal>}
@@ -516,7 +552,7 @@ function MarkPosted({ task, onAction }: { task: Row; onAction: (endpoint: string
   return <>
     <button onClick={() => setOpen(true)} title="Đánh dấu đã đăng"><CheckCircle2 size={17} className="text-emerald-300" /></button>
     {open && <Modal title="Đánh dấu bài đã đăng" onClose={() => setOpen(false)}>
-      <form className="grid gap-4" onSubmit={handle}>
+      <form className="fbg-form grid gap-4" onSubmit={handle}>
         <Field label="Đường dẫn bài đăng Facebook" name="postUrl" type="url" required />
         <Field label="Thời gian đăng thực tế" name="actualPostedAt" required>
           <input name="actualPostedAt" type="datetime-local" required defaultValue={localNow}
@@ -530,7 +566,7 @@ function MarkPosted({ task, onAction }: { task: Row; onAction: (endpoint: string
           </select>
         </Field>
         <div className="flex justify-end">
-          <button className="rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Xác nhận đã đăng</button>
+          <button className="fbg-primary-button rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Xác nhận đã đăng</button>
         </div>
       </form>
     </Modal>}
@@ -543,7 +579,7 @@ function CreateForm({ resource, options, onSubmit }: {
 }) {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState("");
-  const selectClass = "rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white";
+  const selectClass = "fbg-form-control rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white";
   const suggestContent = async (button: HTMLButtonElement) => {
     const form = button.form;
     if (!form) return;
@@ -574,7 +610,7 @@ function CreateForm({ resource, options, onSubmit }: {
       setAiBusy(false);
     }
   };
-  return <form className="grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
+  return <form className="fbg-form grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
     {resource === "groups" && <>
       <Field label="Tên group" name="name" required /><Field label="Mã group" name="code" />
       <div className="md:col-span-2"><Field label="Link group" name="groupUrl" type="url" required /></div>
@@ -598,7 +634,7 @@ function CreateForm({ resource, options, onSubmit }: {
       <Field label="Ngày bắt đầu" name="startDate" type="date" /><Field label="Ngày kết thúc" name="endDate" type="date" />
       <div className="md:col-span-2">
         <span className="mb-2 block text-sm text-slate-300">Sản phẩm trong chiến dịch</span>
-        <div className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-3 md:grid-cols-2">
+        <div className="fbg-choice-list grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-3 md:grid-cols-2">
           {options.products.map(product => <label key={String(product.id)} className="flex items-start gap-2 text-sm text-slate-200">
             <input type="checkbox" name="productIds" value={String(product.id)} className="mt-1" />
             <span>{String(product.name)} <small className="text-slate-500">({String(product.sku || "")})</small></span>
@@ -608,7 +644,7 @@ function CreateForm({ resource, options, onSubmit }: {
       </div>
       <div className="md:col-span-2">
         <span className="mb-2 block text-sm text-slate-300">Group mục tiêu</span>
-        <div className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-3 md:grid-cols-2">
+        <div className="fbg-choice-list grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-3 md:grid-cols-2">
           {options.groups.map(group => <label key={String(group.id)} className="flex items-start gap-2 text-sm text-slate-200">
             <input type="checkbox" name="groupIds" value={String(group.id)} className="mt-1" />
             <span>{String(group.name)} <small className="text-slate-500">({String(group.status)})</small></span>
@@ -626,7 +662,7 @@ function CreateForm({ resource, options, onSubmit }: {
       <Field label="Yêu cầu thêm cho AI" name="brief"><input name="brief" placeholder="Ví dụ: tập trung người cao tuổi, không nêu giá" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" /></Field>
       <div className="md:col-span-2">
         <button type="button" disabled={aiBusy} onClick={event => void suggestContent(event.currentTarget)}
-          className="inline-flex items-center gap-2 rounded-xl border border-blue-400/30 bg-blue-400/10 px-4 py-2.5 text-sm font-bold text-blue-200 disabled:opacity-50">
+          className="fbg-ai-button inline-flex items-center gap-2 rounded-xl border border-blue-400/30 bg-blue-400/10 px-4 py-2.5 text-sm font-bold text-blue-200 disabled:opacity-50">
           {aiBusy ? <Loader2 size={15} className="animate-spin" /> : <MessageSquare size={15} />}
           {aiBusy ? "AI đang đọc nội quy và sản phẩm…" : "AI gợi ý theo nội quy thật"}
         </button>
@@ -654,7 +690,7 @@ function CreateForm({ resource, options, onSubmit }: {
       <Field label="Khách hàng CRM (nếu đã có)" name="leadId"><select name="leadId" className={selectClass}><option value="">Chưa gắn khách hàng</option>{options.leads.map(lead => <option key={String(lead.id)} value={String(lead.id)}>{String(lead.name)} {lead.phone ? `• ${String(lead.phone)}` : ""}</option>)}</select></Field>
       <Field label="Nhân viên xử lý" name="assignedStaffId"><select name="assignedStaffId" className={selectClass}><option value="">Chọn nhân viên</option>{options.staff.map(staff => <option key={String(staff.id)} value={String(staff.id)}>{String(staff.name)}</option>)}</select></Field>
     </>}
-    <div className="md:col-span-2 flex justify-end"><button className="rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Lưu</button></div>
+    <div className="md:col-span-2 flex justify-end"><button className="fbg-primary-button rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Lưu</button></div>
   </form>;
 }
 
@@ -677,28 +713,29 @@ function SettingsView({ data, pages, canEdit, onSave, onSyncPages, onAddPage }: 
     ["responseTargetMinutes", "Mục tiêu phản hồi (phút)"],
   ];
   return <div className="space-y-5">
-    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[.06] p-4 text-sm text-emerald-200">
-      Chế độ an toàn đang bật: không tự động đăng, không lưu mật khẩu/cookie/token Facebook.
+    <div className="fbg-safe-banner flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/[.06] p-4 text-sm text-emerald-200">
+      <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
+      <div><b className="block text-emerald-200">Chế độ vận hành an toàn đang bật</b><span className="mt-0.5 block text-xs text-emerald-200/65">Không tự động đăng và không lưu mật khẩu, cookie hoặc token Facebook.</span></div>
     </div>
-    <div className="rounded-2xl border border-white/8 bg-white/[.03] p-5">
+    <div className="fbg-settings-card rounded-2xl border border-white/8 bg-white/[.03] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-bold">Fanpage đang vận hành</h3>
           <p className="mt-1 text-xs text-slate-500">Dùng chung kết nối thật từ Content Marketing/Facebook Inbox.</p>
         </div>
         {canEdit && <div className="flex gap-2">
-          <button onClick={() => void onSyncPages()} className="rounded-xl border border-blue-400/30 bg-blue-400/10 px-3 py-2 text-xs font-black text-blue-200">
+          <button onClick={() => void onSyncPages()} className="fbg-ai-button rounded-xl border border-blue-400/30 bg-blue-400/10 px-3 py-2 text-xs font-black text-blue-200">
             Đồng bộ từ Content Marketing
           </button>
-          <button onClick={onAddPage} className="rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-black">Thêm thủ công</button>
+          <button onClick={onAddPage} className="fbg-primary-button rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-black">Thêm thủ công</button>
         </div>}
       </div>
-      <div className="grid gap-3 md:grid-cols-2">{pages.map(page => <div key={String(page.id)} className="rounded-xl border border-white/8 p-3"><b>{String(page.name)}</b><p className="mt-1 text-xs text-slate-500">{String(page.facebookPageId || "Chưa nhập Page ID")}</p></div>)}</div>
+      <div className="grid gap-3 md:grid-cols-2">{pages.map(page => <div key={String(page.id)} className="fbg-page-card rounded-xl border border-white/8 p-3.5"><b className="text-[13px] text-[#f5edd6]">{String(page.name)}</b><p className="mt-1 text-xs text-slate-500">{String(page.facebookPageId || "Chưa nhập Page ID")}</p></div>)}</div>
     </div>
-    <div className="rounded-2xl border border-white/8 bg-white/[.03] p-5">
+    <div className="fbg-settings-card rounded-2xl border border-white/8 bg-white/[.03] p-5">
       <h3 className="mb-4 font-bold">Giới hạn vận hành</h3>
       <div className="grid gap-4 md:grid-cols-2">{fields.map(([key, label]) => <label key={key} className="grid gap-1 text-sm text-slate-300">{label}<input type="number" disabled={!canEdit} value={Number(form[key] || 0)} onChange={event => setForm(current => ({ ...current, [key]: Number(event.target.value) }))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></label>)}</div>
-      {canEdit && <button onClick={() => void onSave(form)} className="mt-5 rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Lưu cấu hình</button>}
+      {canEdit && <button onClick={() => void onSave(form)} className="fbg-primary-button mt-5 rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Lưu cấu hình</button>}
     </div>
   </div>;
 }

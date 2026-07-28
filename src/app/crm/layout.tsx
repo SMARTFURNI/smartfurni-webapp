@@ -7,6 +7,7 @@ import DataPoolNotification from "@/components/crm/DataPoolNotification";
 import ItySoftphone from "@/components/crm/ItySoftphone";
 import PwaDocumentConfig from "@/components/PwaDocumentConfig";
 import type { Metadata, Viewport } from "next";
+import "./facebook-group-marketing.css";
 export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
