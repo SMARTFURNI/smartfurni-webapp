@@ -36,6 +36,7 @@ const statusLabel: Record<string, string> = {
   requested: "Đã gửi yêu cầu", draft: "Bản nháp", pending_approval: "Chờ duyệt",
   approved: "Đã duyệt", scheduled: "Đã xếp lịch", due: "Đến hạn", posted: "Đã đăng",
   pending_moderation: "Chờ group duyệt", rejected: "Bị từ chối", tracking: "Đang theo dõi",
+  completed: "Đã hoàn tất",
 };
 
 function value(row: Row, ...keys: string[]) {
@@ -66,7 +67,7 @@ async function api(path: string, init?: RequestInit) {
 function Status({ status }: { status: unknown }) {
   const key = String(status || "draft");
   const danger = ["rejected", "overdue", "blocked"].includes(key);
-  const good = ["active", "approved", "posted", "joined"].includes(key);
+  const good = ["active", "approved", "posted", "joined", "completed"].includes(key);
   return (
     <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${
       danger ? "border-red-500/30 bg-red-500/10 text-red-300"
@@ -424,19 +425,19 @@ function DataTable({ section, rows, permissions, onAction }: {
                   if (rawText === null) return;
                   void onAction(`groups/${row.id}/rules`, { rawText }).then(() => onAction(`groups/${row.id}/analyze-rules`));
                 }} title="Cập nhật và phân tích nội quy"><FileText size={17} /></button>}
+                {section === "campaigns" && permissions.campaigns && ["draft", "paused"].includes(String(row.status)) && <button
+                  onClick={() => void onAction(`campaigns/${row.id}`, { status: "active" }, "PATCH")}
+                  title="Kích hoạt chiến dịch"><CheckCircle2 size={17} className="text-emerald-300" /></button>}
+                {section === "campaigns" && permissions.campaigns && row.status === "active" && <button
+                  onClick={() => void onAction(`campaigns/${row.id}`, { status: "completed" }, "PATCH")}
+                  title="Hoàn tất chiến dịch"><CheckCircle2 size={17} className="text-blue-300" /></button>}
                 {section === "content" && permissions.approve && row.status !== "approved" && <button onClick={() => void onAction(`content/${row.id}/approve`)} title="Duyệt"><CheckCircle2 size={17} /></button>}
                 {section === "tasks" && <button onClick={() => navigator.clipboard.writeText(`${value(row, "opening")}\n\n${value(row, "body")}\n\n${value(row, "cta")}`)} title="Sao chép nội dung"><ClipboardCopy size={17} /></button>}
                 {section === "tasks" && Boolean(row.groupUrl) && <a target="_blank" rel="noreferrer" href={String(row.groupUrl)} title="Mở group"><ExternalLink size={17} /></a>}
                 {section === "tasks" && permissions.publish && !["posted", "approved"].includes(String(row.status)) && <MarkPosted task={row} onAction={onAction} />}
                 {section === "posts" && Boolean(row.post_url) && <a target="_blank" rel="noreferrer" href={String(row.post_url)}><ExternalLink size={17} /></a>}
                 {section === "checks" && Boolean(row.postUrl) && <a target="_blank" rel="noreferrer" href={String(row.postUrl)}><ExternalLink size={17} /></a>}
-                {section === "checks" && permissions.publish && <button onClick={() => {
-                  const commentCount = window.prompt("Tổng số bình luận hiện tại:", "0");
-                  if (commentCount === null) return;
-                  const reactionCount = window.prompt("Tổng số lượt phản ứng hiện tại:", "0");
-                  if (reactionCount === null) return;
-                  void onAction(`checks/${row.id}/complete`, { commentCount: Number(commentCount), reactionCount: Number(reactionCount) });
-                }} title="Hoàn thành kiểm tra"><CheckCircle2 size={17} className="text-emerald-300" /></button>}
+                {section === "checks" && permissions.publish && row.status === "pending" && <CompleteCheck check={row} onAction={onAction} />}
                 {section === "comments" && permissions.sales && Boolean(row.sourceCode) && <button onClick={() => {
                   const leadId = window.prompt("Nhập ID khách hàng CRM cần gắn nguồn:");
                   if (!leadId) return;
@@ -451,6 +452,31 @@ function DataTable({ section, rows, permissions, onAction }: {
       </table>
     </div>
   );
+}
+
+function CompleteCheck({ check, onAction }: { check: Row; onAction: (endpoint: string, body?: Row) => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const handle = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    await onAction(`checks/${check.id}/complete`, {
+      commentCount: Number(form.get("commentCount") || 0),
+      reactionCount: Number(form.get("reactionCount") || 0),
+    });
+    setOpen(false);
+  };
+  return <>
+    <button onClick={() => setOpen(true)} title="Hoàn thành kiểm tra"><CheckCircle2 size={17} className="text-emerald-300" /></button>
+    {open && <Modal title="Hoàn thành kiểm tra bình luận" onClose={() => setOpen(false)}>
+      <form className="grid gap-4 md:grid-cols-2" onSubmit={handle}>
+        <Field label="Tổng số bình luận hiện tại" name="commentCount" type="number" required />
+        <Field label="Tổng số lượt phản ứng hiện tại" name="reactionCount" type="number" required />
+        <div className="md:col-span-2 flex justify-end">
+          <button className="rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Xác nhận hoàn thành</button>
+        </div>
+      </form>
+    </Modal>}
+  </>;
 }
 
 function MarkPosted({ task, onAction }: { task: Row; onAction: (endpoint: string, body?: Row) => Promise<void> }) {

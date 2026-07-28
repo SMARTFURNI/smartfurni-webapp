@@ -147,6 +147,9 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ path:
     const auth = await authorizeFacebookGroupMarketing(resourcePermission[resource].mutate);
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const body = safeBody.parse(await req.json());
+    if (resource === "campaigns" && body.status && !["draft", "active", "paused", "completed"].includes(String(body.status))) {
+      return NextResponse.json({ error: "Trạng thái chiến dịch không hợp lệ." }, { status: 400 });
+    }
     return NextResponse.json(await updateFacebookGroupMarketing(resource, entityId, body, auth.actor));
   } catch (error) {
     return errorResponse(error);
