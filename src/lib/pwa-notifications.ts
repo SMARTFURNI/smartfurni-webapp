@@ -9,6 +9,16 @@ function urlBase64ToUint8Array(value: string) {
   return Uint8Array.from([...raw].map((character) => character.charCodeAt(0)));
 }
 
+async function saveSubscriptionForCurrentAccount(subscription: PushSubscription) {
+  const response = await fetch("/api/pwa/push", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ subscription: subscription.toJSON() }),
+  });
+  if (!response.ok) throw new Error("Chưa lưu được đăng ký thông báo.");
+}
+
 export async function getPushPermissionState(): Promise<PushPermissionState> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return "unsupported";
   if (Notification.permission === "denied") return "denied";
@@ -33,14 +43,17 @@ export async function subscribeToPush() {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(keyData.publicKey),
     });
-  const response = await fetch("/api/pwa/push", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ subscription: subscription.toJSON() }),
-  });
-  if (!response.ok) throw new Error("Chưa lưu được đăng ký thông báo.");
+  await saveSubscriptionForCurrentAccount(subscription);
   return subscription;
+}
+
+export async function syncPushSubscription() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription) return false;
+  await saveSubscriptionForCurrentAccount(subscription);
+  return true;
 }
 
 export async function unsubscribeFromPush() {

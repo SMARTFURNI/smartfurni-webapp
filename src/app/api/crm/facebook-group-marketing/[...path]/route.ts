@@ -5,7 +5,7 @@ import {
   completePostCheckTask, createFacebookGroupMarketing, exportFacebookGroupsCsv, getFacebookGroupDashboard, importFacebookGroups,
   getFacebookGroupMarketingOptions, getFacebookGroupSettings, linkFacebookGroupLead, listFacebookGroupMarketing,
   markPublishingTaskPosted, recalculateGroupScore, saveFacebookGroupSettings,
-  resolveFacebookGroupSourceCode, suggestFacebookGroupContent,
+  resolveFacebookGroupSourceCode, sendFacebookGroupTaskDigest, suggestFacebookGroupContent,
   softDeleteFacebookGroupMarketing, syncFacebookGroupPagesFromScheduler,
   updateFacebookGroupMarketing, updateGroupRules, updatePublishedPostModeration,
 } from "@/lib/facebook-group-marketing-store";
@@ -90,6 +90,9 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     }
     if (resource === "content" && entityId === "suggest") {
       return NextResponse.json(await suggestFacebookGroupContent(body, auth.actor));
+    }
+    if (resource === "notifications" && entityId === "sync") {
+      return NextResponse.json(await sendFacebookGroupTaskDigest(auth.actor));
     }
     if (resource === "pages" && entityId === "sync") {
       return NextResponse.json(await syncFacebookGroupPagesFromScheduler(auth.actor));

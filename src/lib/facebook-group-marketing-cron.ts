@@ -13,12 +13,13 @@ export async function runFacebookGroupMarketingCron() {
      FROM facebook_group_publishing_tasks t
      JOIN facebook_groups g ON g.id = t.group_id
      WHERE t.deleted_at IS NULL AND t.notification_sent_at IS NULL
+       AND t.assigned_staff_id IS NOT NULL
        AND t.status IN ('scheduled','due')
        AND (t.scheduled_at <= NOW() + INTERVAL '30 minutes' OR t.due_at < NOW())
      ORDER BY t.scheduled_at LIMIT 100`,
   );
   for (const task of publishingTasks) {
-    await sendPushNotification({
+    const result = await sendPushNotification({
       ownerScope: "crm",
       ownerId: task.assigned_staff_id || undefined,
       title: task.overdue ? "Nhiệm vụ đăng bài quá hạn" : "Sắp đến giờ đăng Facebook Group",
@@ -27,13 +28,15 @@ export async function runFacebookGroupMarketingCron() {
       tag: `fbg-publish-${task.id}`,
       data: { taskId: task.id, module: "facebook-group-marketing" },
     });
-    await query(
-      `UPDATE facebook_group_publishing_tasks
-       SET notification_sent_at = NOW(), status = CASE WHEN due_at < NOW() THEN 'due' ELSE status END
-       WHERE id = $1`,
-      [task.id],
-    );
-    sent += 1;
+    if (result.sent > 0) {
+      await query(
+        `UPDATE facebook_group_publishing_tasks
+         SET notification_sent_at = NOW(), status = CASE WHEN due_at < NOW() THEN 'due' ELSE status END
+         WHERE id = $1`,
+        [task.id],
+      );
+      sent += result.sent;
+    }
   }
 
   const commentChecks = await query<{
@@ -44,11 +47,12 @@ export async function runFacebookGroupMarketingCron() {
      JOIN facebook_group_published_posts p ON p.id = c.post_id
      JOIN facebook_groups g ON g.id = p.group_id
      WHERE c.deleted_at IS NULL AND p.deleted_at IS NULL AND g.deleted_at IS NULL
+       AND c.assigned_staff_id IS NOT NULL
        AND c.status = 'pending' AND c.notification_sent_at IS NULL AND c.due_at <= NOW()
      ORDER BY c.due_at LIMIT 100`,
   );
   for (const task of commentChecks) {
-    await sendPushNotification({
+    const result = await sendPushNotification({
       ownerScope: "crm",
       ownerId: task.assigned_staff_id || undefined,
       title: "Đến giờ kiểm tra bình luận",
@@ -57,13 +61,15 @@ export async function runFacebookGroupMarketingCron() {
       tag: `fbg-check-${task.id}`,
       data: { checkTaskId: task.id, postId: task.post_id, module: "facebook-group-marketing" },
     });
-    await query(
-      `UPDATE facebook_group_post_check_tasks
-       SET notification_sent_at = NOW()
-       WHERE id = $1 AND deleted_at IS NULL`,
-      [task.id],
-    );
-    sent += 1;
+    if (result.sent > 0) {
+      await query(
+        `UPDATE facebook_group_post_check_tasks
+         SET notification_sent_at = NOW()
+         WHERE id = $1 AND deleted_at IS NULL`,
+        [task.id],
+      );
+      sent += result.sent;
+    }
   }
 
   const rejectedPosts = await query<{
@@ -72,11 +78,12 @@ export async function runFacebookGroupMarketingCron() {
     `SELECT p.id, p.posted_by, g.name AS group_name
      FROM facebook_group_published_posts p
      JOIN facebook_groups g ON g.id = p.group_id
-     WHERE p.deleted_at IS NULL AND p.moderation_status = 'rejected' AND p.notification_sent_at IS NULL
+     WHERE p.deleted_at IS NULL AND p.posted_by IS NOT NULL
+       AND p.moderation_status = 'rejected' AND p.notification_sent_at IS NULL
      LIMIT 100`,
   );
   for (const post of rejectedPosts) {
-    await sendPushNotification({
+    const result = await sendPushNotification({
       ownerScope: "crm",
       ownerId: post.posted_by || undefined,
       title: "Bài Facebook Group bị từ chối",
@@ -85,8 +92,10 @@ export async function runFacebookGroupMarketingCron() {
       tag: `fbg-rejected-${post.id}`,
       data: { postId: post.id, module: "facebook-group-marketing" },
     });
-    await query(`UPDATE facebook_group_published_posts SET notification_sent_at = NOW() WHERE id = $1`, [post.id]);
-    sent += 1;
+    if (result.sent > 0) {
+      await query(`UPDATE facebook_group_published_posts SET notification_sent_at = NOW() WHERE id = $1`, [post.id]);
+      sent += result.sent;
+    }
   }
 
   return {

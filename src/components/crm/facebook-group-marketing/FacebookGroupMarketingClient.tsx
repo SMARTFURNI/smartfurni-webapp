@@ -201,8 +201,16 @@ export default function FacebookGroupMarketingClient({
     const productIds = form.getAll("productIds").map(String).filter(Boolean);
     if (productIds.length) payload.productIds = productIds;
     try {
-      await api(endpoint, { method: "POST", body: JSON.stringify(payload) });
-      setNotice("Đã lưu thành công."); setModal(null); await load();
+      const result = await api(endpoint, { method: "POST", body: JSON.stringify(payload) });
+      const notification = result?.assignmentNotification as { matched?: number; sent?: number; error?: string } | undefined;
+      setNotice(endpoint === "tasks"
+        ? notification?.sent
+          ? "Đã xếp lịch và gửi thông báo PWA cho nhân viên."
+          : notification?.error
+            ? `Đã xếp lịch nhưng Web Push gặp lỗi: ${notification.error}`
+            : "Đã xếp lịch. Nhân viên chưa bật thông báo PWA trên thiết bị."
+        : "Đã lưu thành công.");
+      setModal(null); await load();
     } catch (err) { setError(err instanceof Error ? err.message : "Không thể lưu."); }
   };
 
@@ -600,8 +608,8 @@ function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
     groups: [["name", "Group"], ["region", "Khu vực"], ["topic", "Chủ đề"], ["membership_status", "Tham gia"], ["grade", "Hạng"], ["quality_score", "Điểm"], ["status", "Trạng thái"]],
     campaigns: [["name", "Chiến dịch"], ["code", "Mã"], ["pageName", "Fanpage"], ["groupCount", "Group"], ["start_date", "Bắt đầu"], ["end_date", "Kết thúc"], ["status", "Trạng thái"]],
     content: [["opening", "Mở đầu"], ["groupName", "Group"], ["source_code", "Mã nguồn"], ["duplicate_ratio", "Trùng lặp"], ["status", "Trạng thái"]],
-    calendar: [["scheduled_at", "Thời gian"], ["groupName", "Group"], ["pageName", "Fanpage"], ["campaignName", "Chiến dịch"], ["assigned_staff_id", "Nhân viên"], ["status", "Trạng thái"]],
-    tasks: [["scheduled_at", "Giờ đăng"], ["groupName", "Group"], ["sourceCode", "Mã nguồn"], ["assigned_staff_id", "Nhân viên"], ["status", "Trạng thái"]],
+    calendar: [["scheduled_at", "Thời gian"], ["groupName", "Group"], ["pageName", "Fanpage"], ["campaignName", "Chiến dịch"], ["staffName", "Nhân viên"], ["status", "Trạng thái"]],
+    tasks: [["scheduled_at", "Giờ đăng"], ["groupName", "Group"], ["sourceCode", "Mã nguồn"], ["staffName", "Nhân viên"], ["status", "Trạng thái"]],
     posts: [["actual_posted_at", "Đã đăng"], ["groupName", "Group"], ["source_code", "Mã nguồn"], ["moderation_status", "Kiểm duyệt"], ["status", "Theo dõi"]],
     comments: [["commented_at", "Thời gian"], ["groupName", "Group"], ["facebook_name", "Facebook"], ["content", "Bình luận"], ["intent", "Nhu cầu"], ["temperature", "Mức độ"]],
     checks: [["due_at", "Hạn kiểm tra"], ["groupName", "Group"], ["actualPostedAt", "Đã đăng"], ["check_type", "Mốc"], ["status", "Trạng thái"]],

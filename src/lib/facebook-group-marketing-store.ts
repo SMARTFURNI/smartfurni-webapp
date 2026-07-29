@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomUUID } from "crypto";
 import { getDb, query, queryOne } from "./db";
+import { sendPushNotification } from "./pwa-server";
 import {
   analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
   extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
@@ -239,12 +240,14 @@ export async function listFacebookGroupMarketing(resource: string, filters: Filt
     return query(
       `SELECT t.*, g.name AS "groupName", g.group_url AS "groupUrl", p.name AS "pageName",
               c.opening, c.body, c.cta, c.source_code AS "sourceCode",
-              x.name AS "campaignName"
+              x.name AS "campaignName",
+              COALESCE(staff.data->>'fullName', staff.username) AS "staffName"
        FROM facebook_group_publishing_tasks t
        JOIN facebook_groups g ON g.id = t.group_id
        JOIN facebook_pages p ON p.id = t.page_id
        JOIN facebook_group_content_drafts c ON c.id = t.content_id
        LEFT JOIN facebook_group_campaigns x ON x.id = t.campaign_id
+       LEFT JOIN crm_staff staff ON staff.id = t.assigned_staff_id
        WHERE t.deleted_at IS NULL AND ($1::text IS NULL OR t.assigned_staff_id = $1)
        ORDER BY t.scheduled_at ASC LIMIT $2 OFFSET $3`,
       [assigned || null, limit, offset],
@@ -562,6 +565,89 @@ Nếu nội quy không cho bán hàng, phải ưu tiên education hoặc communi
   return result;
 }
 
+type AssignmentNotificationResult = {
+  matched: number;
+  sent: number;
+  removed: number;
+  error?: string;
+};
+
+async function notifyPublishingTaskAssignment(taskId: string): Promise<AssignmentNotificationResult> {
+  const task = await queryOne<{
+    id: string;
+    assigned_staff_id: string | null;
+    scheduled_at: Date;
+    group_name: string;
+    page_name: string;
+  }>(
+    `SELECT t.id, t.assigned_staff_id, t.scheduled_at,
+            g.name AS group_name, p.name AS page_name
+     FROM facebook_group_publishing_tasks t
+     JOIN facebook_groups g ON g.id = t.group_id
+     JOIN facebook_pages p ON p.id = t.page_id
+     WHERE t.id = $1 AND t.deleted_at IS NULL`,
+    [taskId],
+  );
+  if (!task?.assigned_staff_id) return { matched: 0, sent: 0, removed: 0 };
+  try {
+    return await sendPushNotification({
+      ownerScope: "crm",
+      ownerId: task.assigned_staff_id,
+      title: "Bạn được giao nhiệm vụ đăng Facebook Group",
+      body: `${task.page_name} → ${task.group_name} • ${new Date(task.scheduled_at).toLocaleString("vi-VN", {
+        timeZone: "Asia/Ho_Chi_Minh",
+      })}`,
+      url: "/crm/facebook-group-marketing/tasks",
+      tag: `fbg-assigned-${task.id}`,
+      data: { taskId: task.id, module: "facebook-group-marketing", type: "task-assigned" },
+    });
+  } catch (error) {
+    console.error("[Facebook Group Marketing] Không thể gửi thông báo giao nhiệm vụ:", error);
+    return {
+      matched: 0,
+      sent: 0,
+      removed: 0,
+      error: error instanceof Error ? error.message : "Không thể gửi Web Push.",
+    };
+  }
+}
+
+export async function sendFacebookGroupTaskDigest(actor: Actor) {
+  if (!actor.id || actor.id === "admin") {
+    return { matched: 0, sent: 0, removed: 0, taskCount: 0 };
+  }
+  const tasks = await query<{
+    id: string;
+    scheduled_at: Date;
+    group_name: string;
+  }>(
+    `SELECT t.id, t.scheduled_at, g.name AS group_name
+     FROM facebook_group_publishing_tasks t
+     JOIN facebook_groups g ON g.id = t.group_id
+     WHERE t.deleted_at IS NULL
+       AND t.assigned_staff_id = $1
+       AND t.status IN ('scheduled', 'due')
+       AND t.due_at >= NOW() - INTERVAL '1 day'
+     ORDER BY t.scheduled_at ASC
+     LIMIT 5`,
+    [actor.id],
+  );
+  if (!tasks.length) return { matched: 0, sent: 0, removed: 0, taskCount: 0 };
+  const first = tasks[0];
+  const result = await sendPushNotification({
+    ownerScope: "crm",
+    ownerId: actor.id,
+    title: tasks.length === 1 ? "Bạn có 1 nhiệm vụ đăng Facebook Group" : `Bạn có ${tasks.length} nhiệm vụ đăng Facebook Group`,
+    body: `${first.group_name} • ${new Date(first.scheduled_at).toLocaleString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+    })}${tasks.length > 1 ? ` • và ${tasks.length - 1} nhiệm vụ khác` : ""}`,
+    url: "/crm/facebook-group-marketing/tasks",
+    tag: `fbg-task-digest-${actor.id}`,
+    data: { taskId: first.id, module: "facebook-group-marketing", type: "task-digest" },
+  });
+  return { ...result, taskCount: tasks.length };
+}
+
 async function createPublishingTask(input: Record<string, unknown>, actor: Actor) {
   const pageId = text(input.pageId, 120);
   const groupId = text(input.groupId, 120);
@@ -660,7 +746,8 @@ async function createPublishingTask(input: Record<string, unknown>, actor: Actor
   );
   await query(`UPDATE facebook_group_content_drafts SET status = 'scheduled', updated_at = NOW() WHERE id = $1`, [contentId]);
   await logActivity(actor, "task.scheduled", "publishing_task", entityId, undefined, { scheduledAt });
-  return row;
+  const assignmentNotification = await notifyPublishingTaskAssignment(entityId);
+  return { ...row, assignmentNotification };
 }
 
 export async function updateFacebookGroupMarketing(
@@ -833,6 +920,10 @@ export async function updateFacebookGroupMarketing(
     }
   }
   await logActivity(actor, `${resource}.updated`, resource, entityId, undefined, { fields: Object.keys(input) });
+  if (resource === "tasks") {
+    const assignmentNotification = await notifyPublishingTaskAssignment(entityId);
+    return { ...row, assignmentNotification };
+  }
   return row;
 }
 
