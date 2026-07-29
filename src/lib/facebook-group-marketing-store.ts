@@ -427,7 +427,6 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
   });
   const cta = buildFacebookGroupContactCta({
     rawCta: text(input.cta, 5000),
-    sourceCode,
     ruleAnalysis,
     contact: settings.contact,
   });
@@ -840,14 +839,12 @@ export async function updateFacebookGroupMarketing(
   }
   if (resource === "content") {
     const current = await queryOne<{
-      group_id: string | null;
-      source_code: string;
       opening: string;
       body: string;
       cta: string;
       rule_analysis: Record<string, unknown> | string | null;
     }>(
-      `SELECT content.group_id, content.source_code, content.opening, content.body, content.cta,
+      `SELECT content.opening, content.body, content.cta,
               rules.analysis AS rule_analysis
        FROM facebook_group_content_drafts content
        LEFT JOIN facebook_group_rules rules ON rules.group_id = content.group_id
@@ -855,17 +852,12 @@ export async function updateFacebookGroupMarketing(
       [entityId],
     );
     if (!current) throw new Error("Không tìm thấy nội dung.");
-    const settings = await getFacebookGroupSettings();
     const ruleAnalysis = current.rule_analysis
       ? (typeof current.rule_analysis === "string" ? JSON.parse(current.rule_analysis) : current.rule_analysis)
       : {};
-    const sourceCode = text(input.sourceCode, 80) || current.source_code;
-    const cta = buildFacebookGroupContactCta({
-      rawCta: "cta" in input ? text(input.cta, 5000) : current.cta,
-      sourceCode,
-      ruleAnalysis,
-      contact: settings.contact,
-    });
+    // Khi chỉnh sửa, nội dung người dùng nhập là nguồn dữ liệu chính xác.
+    // Hệ thống chỉ kiểm tra nội quy, không tự chèn lại mã nguồn hoặc liên hệ đã bị xóa.
+    const cta = "cta" in input ? text(input.cta, 5000) : current.cta;
     const full = `${"opening" in input ? text(input.opening, 5000) : current.opening} ${
       "body" in input ? text(input.body, 30_000) : current.body
     } ${cta}`;

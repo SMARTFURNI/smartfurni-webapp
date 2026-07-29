@@ -102,25 +102,20 @@ describe("Facebook Group Marketing business rules", () => {
   it("chỉ bổ sung kênh liên hệ đã được nội quy Group cho phép", () => {
     const phoneAllowed = buildFacebookGroupContactCta({
       rawCta: "Nhắn Fanpage để xem mẫu thực tế.",
-      sourceCode: "GROUP-SMF-2907-A",
       ruleAnalysis: { allowsPhone: true, allowsLink: null },
       contact: settings.contact,
     });
-    expect(phoneAllowed).toContain("GROUP-SMF-2907-A");
     expect(phoneAllowed).toContain("Liên hệ/Zalo: 0918.326.552");
     expect(phoneAllowed).not.toContain("https://");
 
     const phoneDenied = buildFacebookGroupContactCta({
       rawCta: "Nhắn Fanpage để xem mẫu thực tế.",
-      sourceCode: "GROUP-SMF-2907-A",
       ruleAnalysis: { allowsPhone: false, allowsLink: false },
       contact: settings.contact,
     });
-    expect(phoneDenied).toContain("GROUP-SMF-2907-A");
     expect(phoneDenied).not.toContain("0918.326.552");
 
     const linksAllowed = buildFacebookGroupContactCta({
-      sourceCode: "GROUP-SMF-2907-A",
       ruleAnalysis: { allowsPhone: true, allowsLink: true },
       contact: settings.contact,
     });

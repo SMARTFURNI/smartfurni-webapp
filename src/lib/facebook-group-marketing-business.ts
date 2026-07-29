@@ -9,20 +9,13 @@ const digits = (value: string) => value.replace(/\D/g, "");
 
 export function buildFacebookGroupContactCta(input: {
   rawCta?: string;
-  sourceCode?: string;
   ruleAnalysis?: Partial<RuleAnalysis> | null;
   contact: FacebookGroupSettings["contact"];
 }) {
   const rawCta = String(input.rawCta || "").trim();
-  const sourceCode = String(input.sourceCode || "").trim();
   const analysis = input.ruleAnalysis || {};
   const blocks = rawCta ? [rawCta] : [];
-  const normalizedRaw = normalize(rawCta);
   const rawDigits = digits(rawCta);
-
-  if (sourceCode && !normalizedRaw.includes(normalize(sourceCode))) {
-    blocks.push(`Nhắn tin cho Fanpage với mã ${sourceCode} để được tư vấn đúng nội dung này.`);
-  }
 
   if (analysis.allowsPhone === true) {
     const contactParts: string[] = [];
