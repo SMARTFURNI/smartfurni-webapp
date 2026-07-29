@@ -210,7 +210,11 @@ export async function listFacebookGroupMarketing(resource: string, filters: Filt
   if (resource === "campaigns") {
     return query(
       `SELECT c.*, p.name AS "pageName",
-              COUNT(t.id)::int AS "groupCount"
+              COUNT(t.id)::int AS "groupCount",
+              COALESCE(
+                jsonb_agg(t.group_id ORDER BY t.created_at) FILTER (WHERE t.id IS NOT NULL),
+                '[]'::jsonb
+              ) AS "groupIds"
        FROM facebook_group_campaigns c
        LEFT JOIN facebook_pages p ON p.id = c.page_id
        LEFT JOIN facebook_group_campaign_targets t ON t.campaign_id = c.id
@@ -649,6 +653,20 @@ async function createPublishingTask(input: Record<string, unknown>, actor: Actor
 export async function updateFacebookGroupMarketing(
   resource: string, entityId: string, input: Record<string, unknown>, actor: Actor,
 ) {
+  if (resource === "posts" && input.postUrl) {
+    const parsedPost = parseFacebookGroupPostUrl(text(input.postUrl, 2000));
+    const postContext = await queryOne<{ group_url: string }>(
+      `SELECT g.group_url
+       FROM facebook_group_published_posts p
+       JOIN facebook_groups g ON g.id = p.group_id
+       WHERE p.id = $1 AND p.deleted_at IS NULL`,
+      [entityId],
+    );
+    const configuredGroup = postContext ? parseFacebookGroupUrl(postContext.group_url) : null;
+    if (!parsedPost || !configuredGroup || parsedPost.groupKey !== configuredGroup.groupKey) {
+      throw new Error("Link bài đăng phải thuộc đúng Facebook Group đã cấu hình.");
+    }
+  }
   if (resource === "groups" && input.status === "active") {
     const readiness = await queryOne<{
       allows_pages: string;
@@ -667,36 +685,43 @@ export async function updateFacebookGroupMarketing(
     if (!readiness.analyzed_at) throw new Error("Phải nhập và phân tích nội quy trước khi kích hoạt Group.");
   }
   if (resource === "campaigns" && input.status === "active") {
-    const readiness = await queryOne<{
-      page_id: string | null;
-      page_status: string | null;
-      product_count: number;
-      target_count: number;
-      invalid_target_count: number;
-    }>(
-      `SELECT c.page_id, p.status AS page_status,
-              jsonb_array_length(c.product_ids)::int AS product_count,
-              COUNT(t.id)::int AS target_count,
-              COUNT(t.id) FILTER (
-                WHERE g.id IS NULL
-                   OR g.status <> 'active'
-                   OR g.membership_status <> 'joined'
-                   OR g.allows_pages <> 'yes'
-              )::int AS invalid_target_count
-       FROM facebook_group_campaigns c
-       LEFT JOIN facebook_pages p ON p.id = c.page_id AND p.deleted_at IS NULL
-       LEFT JOIN facebook_group_campaign_targets t ON t.campaign_id = c.id
-       LEFT JOIN facebook_groups g ON g.id = t.group_id AND g.deleted_at IS NULL
-       WHERE c.id = $1 AND c.deleted_at IS NULL
-       GROUP BY c.id, p.status`,
+    const current = await queryOne<{ page_id: string | null; product_ids: unknown }>(
+      `SELECT page_id, product_ids
+       FROM facebook_group_campaigns
+       WHERE id = $1 AND deleted_at IS NULL`,
       [entityId],
     );
-    if (!readiness?.page_id || readiness.page_status !== "active") {
+    if (!current) throw new Error("Không tìm thấy chiến dịch.");
+    const pageId = text(input.pageId, 120) || current.page_id;
+    const currentProducts = Array.isArray(current.product_ids)
+      ? current.product_ids
+      : typeof current.product_ids === "string" ? JSON.parse(current.product_ids) : [];
+    const productIds = Array.isArray(input.productIds) ? input.productIds : currentProducts;
+    const currentTargets = await query<{ group_id: string }>(
+      `SELECT group_id FROM facebook_group_campaign_targets WHERE campaign_id = $1`,
+      [entityId],
+    );
+    const groupIds = Array.isArray(input.groupIds)
+      ? input.groupIds.map(item => text(item, 120)).filter(Boolean)
+      : currentTargets.map(item => item.group_id);
+    const page = pageId ? await queryOne<{ status: string }>(
+      `SELECT status FROM facebook_pages WHERE id = $1 AND deleted_at IS NULL`,
+      [pageId],
+    ) : null;
+    const targetReadiness = groupIds.length ? await queryOne<{ valid_count: number }>(
+      `SELECT COUNT(*) FILTER (
+         WHERE status = 'active' AND membership_status = 'joined' AND allows_pages = 'yes'
+       )::int AS valid_count
+       FROM facebook_groups
+       WHERE id = ANY($1::text[]) AND deleted_at IS NULL`,
+      [groupIds],
+    ) : null;
+    if (!pageId || page?.status !== "active") {
       throw new Error("Chiến dịch cần một Fanpage đang hoạt động.");
     }
-    if (!readiness.target_count) throw new Error("Chiến dịch chưa có Group mục tiêu.");
-    if (!readiness.product_count) throw new Error("Chiến dịch chưa có sản phẩm.");
-    if (readiness.invalid_target_count) {
+    if (!groupIds.length) throw new Error("Chiến dịch chưa có Group mục tiêu.");
+    if (!productIds.length) throw new Error("Chiến dịch chưa có sản phẩm.");
+    if (Number(targetReadiness?.valid_count || 0) !== groupIds.length) {
       throw new Error("Có Group mục tiêu chưa sẵn sàng: cần hoạt động, đã tham gia và cho phép Fanpage.");
     }
   }
@@ -727,8 +752,19 @@ export async function updateFacebookGroupMarketing(
       priority: "priority", status: "status", notes: "notes",
     } },
     posts: { table: "facebook_group_published_posts", columns: {
+      postUrl: "post_url", actualPostedAt: "actual_posted_at",
       moderationStatus: "moderation_status", status: "status", metrics: "metrics",
       lastCheckedAt: "last_checked_at",
+    } },
+    comments: { table: "facebook_group_comments", columns: {
+      facebookName: "facebook_name", facebookUrl: "facebook_url", content: "content",
+      commentedAt: "commented_at", phone: "phone", intent: "intent",
+      temperature: "temperature", replied: "replied",
+      invitedToMessenger: "invited_to_messenger", enteredMessenger: "entered_messenger",
+      leadId: "lead_id", assignedStaffId: "assigned_staff_id", notes: "notes",
+    } },
+    checks: { table: "facebook_group_post_check_tasks", columns: {
+      dueAt: "due_at", assignedStaffId: "assigned_staff_id", status: "status", result: "result",
     } },
   };
   const config = allowed[resource];
@@ -742,14 +778,47 @@ export async function updateFacebookGroupMarketing(
       ? JSON.stringify(raw) : raw);
     fields.push(`${column} = $${values.length}${["data", "targets", "productIds", "allowedPostingHours", "ruleCheck", "metrics"].includes(key) ? "::jsonb" : ""}`);
   }
-  if (!fields.length) throw new Error("Không có dữ liệu hợp lệ để cập nhật.");
-  values.push(actor.id, entityId);
-  const row = await queryOne(
-    `UPDATE ${config.table} SET ${fields.join(", ")}, updated_by = $${values.length - 1}, updated_at = NOW()
-     WHERE id = $${values.length} RETURNING *`,
-    values,
-  );
+  const hasCampaignGroups = resource === "campaigns" && Array.isArray(input.groupIds);
+  if (!fields.length && !hasCampaignGroups) throw new Error("Không có dữ liệu hợp lệ để cập nhật.");
+  let row: Record<string, unknown> | null = null;
+  const activeRowClause = ["comments", "checks"].includes(resource) ? "" : " AND deleted_at IS NULL";
+  if (fields.length) {
+    values.push(actor.id, entityId);
+    row = await queryOne(
+      `UPDATE ${config.table} SET ${fields.join(", ")}, updated_by = $${values.length - 1}, updated_at = NOW()
+       WHERE id = $${values.length}${activeRowClause} RETURNING *`,
+      values,
+    );
+  } else {
+    row = await queryOne(`SELECT * FROM ${config.table} WHERE id = $1${activeRowClause}`, [entityId]);
+  }
   if (!row) throw new Error("Không tìm thấy bản ghi.");
+  if (resource === "content" && input.status === "draft") {
+    await query(
+      `UPDATE facebook_group_content_drafts
+       SET approved_by = NULL, approved_at = NULL
+       WHERE id = $1`,
+      [entityId],
+    );
+  }
+  if (hasCampaignGroups) {
+    const groupIds = [...new Set((input.groupIds as unknown[]).map(item => text(item, 120)).filter(Boolean))];
+    await query(
+      `DELETE FROM facebook_group_campaign_targets
+       WHERE campaign_id = $1 AND NOT (group_id = ANY($2::text[]))`,
+      [entityId, groupIds],
+    );
+    for (const groupId of groupIds) {
+      await query(
+        `INSERT INTO facebook_group_campaign_targets
+         (id, campaign_id, group_id, created_by, updated_by)
+         VALUES ($1,$2,$3,$4,$4)
+         ON CONFLICT (campaign_id, group_id) DO UPDATE
+         SET updated_by = EXCLUDED.updated_by, updated_at = NOW()`,
+        [id("fbct"), entityId, groupId, actor.id],
+      );
+    }
+  }
   await logActivity(actor, `${resource}.updated`, resource, entityId, undefined, { fields: Object.keys(input) });
   return row;
 }
