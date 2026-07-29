@@ -873,7 +873,7 @@ export async function updateFacebookGroupMarketing(
   const values: unknown[] = [];
   for (const [key, column] of Object.entries(config.columns)) {
     if (!(key in input)) continue;
-    const raw = input[key];
+    const raw = key === "notes" && input[key] == null ? "" : input[key];
     values.push(["data", "targets", "productIds", "allowedPostingHours", "ruleCheck", "metrics"].includes(key)
       ? JSON.stringify(raw) : raw);
     fields.push(`${column} = $${values.length}${["data", "targets", "productIds", "allowedPostingHours", "ruleCheck", "metrics"].includes(key) ? "::jsonb" : ""}`);

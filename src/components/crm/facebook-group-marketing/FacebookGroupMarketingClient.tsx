@@ -221,7 +221,7 @@ export default function FacebookGroupMarketingClient({
     const form = new FormData(event.currentTarget);
     const payload: Row = {};
     const nullableKeys = new Set([
-      "facebookPageId", "pageUrl", "brand", "notes", "region", "topic", "assignedStaffId",
+      "facebookPageId", "pageUrl", "brand", "region", "topic", "assignedStaffId",
       "ownerId", "startDate", "endDate", "phone", "leadId", "commentedAt",
     ]);
     const datetimeKeys = new Set(["scheduledAt", "dueAt", "actualPostedAt", "commentedAt", "lastCheckedAt"]);
