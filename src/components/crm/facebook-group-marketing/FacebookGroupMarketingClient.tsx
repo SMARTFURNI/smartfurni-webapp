@@ -549,14 +549,8 @@ export default function FacebookGroupMarketingClient({
               <GroupTopicPlanner groups={formOptions.groups} topics={formOptions.topics}
                 selectedTopic={selectedTopic}
                 canManage={permissions.manage}
-                canDelete={permissions.admin}
                 onAdd={() => setTopicEditor({})}
                 onEdit={topic => setTopicEditor(topic)}
-                onDelete={topic => requestDelete("topics", {
-                  ...topic,
-                  id: topic.key,
-                  name: topic.label,
-                })}
                 onSelect={topic => {
                   setSelectedTopic(topic);
                   setPage(0);
@@ -619,7 +613,17 @@ export default function FacebookGroupMarketingClient({
       {topicEditor && (
         <Modal title={topicEditor.key ? "Sửa chủ đề Group" : "Thêm chủ đề Group"}
           onClose={() => setTopicEditor(null)}>
-          <TopicForm topic={topicEditor} onSubmit={submitTopic} />
+          <TopicForm topic={topicEditor} canDelete={permissions.admin}
+            onDelete={() => {
+              const topic = topicEditor;
+              setTopicEditor(null);
+              requestDelete("topics", {
+                ...topic,
+                id: topic.key,
+                name: topic.label,
+              });
+            }}
+            onSubmit={submitTopic} />
         </Modal>
       )}
       {editingRow && (
@@ -667,9 +671,11 @@ export default function FacebookGroupMarketingClient({
 }
 
 function TopicForm({
-  topic, onSubmit,
+  topic, canDelete, onDelete, onSubmit,
 }: {
   topic: Row;
+  canDelete: boolean;
+  onDelete: () => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
   const controlClass = "rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white outline-none focus:border-amber-400/50";
@@ -693,7 +699,11 @@ function TopicForm({
           className={controlClass}
           placeholder="Nhập các từ khóa, phân cách bằng dấu phẩy." />
       </Field>
-      <div className="flex justify-end">
+      <div className={`flex items-center gap-3 ${topic.key && canDelete ? "justify-between" : "justify-end"}`}>
+        {Boolean(topic.key) && canDelete && <button type="button" onClick={onDelete}
+          className="fbg-danger-button inline-flex items-center gap-2 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-2.5 text-sm font-black text-red-200">
+          <Trash2 size={16} /> Xóa chủ đề
+        </button>}
         <button className="fbg-primary-button rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">
           {topic.key ? "Lưu thay đổi" : "Thêm chủ đề"}
         </button>
@@ -703,18 +713,16 @@ function TopicForm({
 }
 
 function GroupTopicPlanner({
-  groups, topics: configuredTopics, selectedTopic, canManage, canDelete,
-  onSelect, onAdd, onEdit, onDelete,
+  groups, topics: configuredTopics, selectedTopic, canManage,
+  onSelect, onAdd, onEdit,
 }: {
   groups: Row[];
   topics: Row[];
   selectedTopic: string;
   canManage: boolean;
-  canDelete: boolean;
   onSelect: (topic: string) => void;
   onAdd: () => void;
   onEdit: (topic: Row) => void;
-  onDelete: (topic: Row) => void;
 }) {
   const counts = new Map<string, number>();
   for (const group of groups) {
@@ -786,12 +794,6 @@ function GroupTopicPlanner({
                   onClick={event => { event.stopPropagation(); onEdit(topic); }}
                   className="fbg-topic-edit-button rounded-lg border p-1.5">
                   <Pencil size={13} />
-                </button>}
-                {!isUnclassified && canDelete && <button type="button" title="Xóa chủ đề"
-                  aria-label={`Xóa chủ đề ${String(topic.label)}`}
-                  onClick={event => { event.stopPropagation(); onDelete(topic); }}
-                  className="fbg-topic-delete-button rounded-lg border p-1.5">
-                  <Trash2 size={13} />
                 </button>}
                 <span className="fbg-topic-count rounded-full px-2 py-0.5 text-[11px] font-black">
                   {counts.get(topicKey) || 0}
