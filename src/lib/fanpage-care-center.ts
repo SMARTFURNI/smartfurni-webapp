@@ -475,8 +475,8 @@ async function generateGeminiPlans(
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
   const plans = new Map<string, GeneratedCarePlan>();
   const errors: string[] = [];
-  const batchSize = Math.max(2, Math.min(8, Number(process.env.FANPAGE_AI_GEMINI_BATCH_SIZE || 5)));
-  const concurrency = Math.max(1, Math.min(4, Number(process.env.FANPAGE_AI_GEMINI_CONCURRENCY || 3)));
+  const batchSize = Math.max(2, Math.min(8, Number(process.env.FANPAGE_AI_GEMINI_BATCH_SIZE || 3)));
+  const concurrency = Math.max(1, Math.min(4, Number(process.env.FANPAGE_AI_GEMINI_CONCURRENCY || 2)));
   const batches: typeof inputs[] = [];
   for (let offset = 0; offset < inputs.length; offset += batchSize) {
     batches.push(inputs.slice(offset, offset + batchSize));
@@ -519,22 +519,28 @@ async function generateGeminiPlans(
           "Mỗi hội thoại cần 3-4 bước trong tối đa 7 ngày. Viết tiếng Việt tự nhiên, ngắn gọn.",
           JSON.stringify(safePayload),
         ].join("\n");
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.2,
-                responseMimeType: "application/json",
-                maxOutputTokens: 8192,
-              },
-            }),
-            signal: AbortSignal.timeout(50_000),
-          },
-        );
+        let response: Response | undefined;
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                  temperature: 0.2,
+                  responseMimeType: "application/json",
+                  maxOutputTokens: 8192,
+                },
+              }),
+              signal: AbortSignal.timeout(50_000),
+            },
+          );
+          if (response.status !== 429 || attempt === 2) break;
+          await new Promise(resolve => setTimeout(resolve, 1_500 * (attempt + 1)));
+        }
+        if (!response) throw new Error("không nhận được phản hồi");
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = await response.json() as {
           candidates?: Array<{
@@ -544,7 +550,14 @@ async function generateGeminiPlans(
         };
         const candidate = payload.candidates?.[0];
         const text = candidate?.content?.parts?.map(part => part.text || "").join("") || "";
-        if (candidate?.finishReason === "MAX_TOKENS") throw new Error("phản hồi vượt giới hạn token");
+        if (candidate?.finishReason === "MAX_TOKENS") {
+          if (batch.length > 1) {
+            const middle = Math.ceil(batch.length / 2);
+            batches.push(batch.slice(0, middle), batch.slice(middle));
+            continue;
+          }
+          throw new Error("phản hồi vượt giới hạn token");
+        }
         if (!text) throw new Error("phản hồi trống");
         const parsed = parseGeminiJson(text) as { plans?: Array<Record<string, unknown>> };
         const allowedIds = new Set(batch.map(item => item.conversation.conversationId));
@@ -565,6 +578,11 @@ async function generateGeminiPlans(
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : "lỗi không xác định";
+        if (batch.length > 1 && /JSON|Unterminated|Unexpected end/i.test(message)) {
+          const middle = Math.ceil(batch.length / 2);
+          batches.push(batch.slice(0, middle), batch.slice(middle));
+          continue;
+        }
         errors.push(`Lô ${batchIndex + 1}/${batches.length}: ${message}`);
       }
     }
@@ -771,7 +789,7 @@ export async function runDailyFanpageCareCenter(input: {
       );
       if (existingRuns.length) {
         const latest = existingRuns[0];
-        retryFailedGemini = Boolean(latest.gemini_error) && existingRuns.length < 2;
+        retryFailedGemini = Boolean(latest.gemini_error) && existingRuns.length < 3;
         if (!retryFailedGemini) {
           return { skipped: "already-ran-today", runId: latest.id, ranAt: new Date().toISOString() };
         }
