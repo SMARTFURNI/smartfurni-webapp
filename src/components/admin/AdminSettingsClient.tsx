@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
-import { CircleHelp, LoaderCircle, LockKeyhole, Mail, PlugZap, UserRound } from "lucide-react";
+import { BellRing, CircleHelp, LoaderCircle, LockKeyhole, Mail, PlugZap, Send, UserRound } from "lucide-react";
 
 interface SettingSection {
   id: string;
@@ -12,11 +12,20 @@ interface SettingSection {
 const SECTIONS: SettingSection[] = [
   { id: "account", title: "Tài khoản", icon: UserRound },
   { id: "email", title: "Email thông báo", icon: Mail },
+  { id: "push", title: "Thông báo PWA", icon: BellRing },
   { id: "integrations", title: "Tích hợp hệ thống", icon: PlugZap },
   { id: "security", title: "Bảo mật", icon: LockKeyhole },
 ];
 
 type SystemStatus = Record<"database" | "githubMedia" | "resend" | "smtp" | "zalo" | "sessionSecret", boolean>;
+type PushTestResult = {
+  ok: boolean;
+  message: string;
+  matched?: number;
+  sent?: number;
+  removed?: number;
+  failed?: number;
+};
 
 export default function AdminSettingsClient() {
   const [activeSection, setActiveSection] = useState("account");
@@ -42,6 +51,9 @@ export default function AdminSettingsClient() {
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [adminPushSubscriptions, setAdminPushSubscriptions] = useState<number | null>(null);
+  const [testingPush, setTestingPush] = useState(false);
+  const [pushTestResult, setPushTestResult] = useState<PushTestResult | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/email-settings")
@@ -60,7 +72,59 @@ export default function AdminSettingsClient() {
       .then((r) => r.json())
       .then((d) => { if (!d.error) setSystemStatus(d); })
       .catch(() => {});
+    fetch("/api/pwa/push/send?ownerScope=admin&ownerId=admin", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.error && typeof d.subscriptions === "number") {
+          setAdminPushSubscriptions(d.subscriptions);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  async function handleTestPush() {
+    setTestingPush(true);
+    setPushTestResult(null);
+    try {
+      const sentAt = new Intl.DateTimeFormat("vi-VN", {
+        dateStyle: "short",
+        timeStyle: "medium",
+        timeZone: "Asia/Ho_Chi_Minh",
+      }).format(new Date());
+      const response = await fetch("/api/pwa/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ownerScope: "admin",
+          ownerId: "admin",
+          title: "Kiểm tra thông báo PWA Admin",
+          body: `Đây là thông báo thử từ SmartFurni lúc ${sentAt}.`,
+          url: "/admin/settings",
+          tag: `admin-pwa-test-${Date.now()}`,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Không thể gửi thông báo thử.");
+      setAdminPushSubscriptions(Number(result.matched || 0));
+      setPushTestResult({
+        ok: Number(result.sent || 0) > 0,
+        message: Number(result.sent || 0) > 0
+          ? `Dịch vụ Web Push đã nhận ${result.sent}/${result.matched} thông báo.`
+          : "Không có thiết bị admin nào nhận được thông báo.",
+        matched: Number(result.matched || 0),
+        sent: Number(result.sent || 0),
+        removed: Number(result.removed || 0),
+        failed: Number(result.failed || 0),
+      });
+    } catch (error) {
+      setPushTestResult({
+        ok: false,
+        message: error instanceof Error ? error.message : "Không thể gửi thông báo thử.",
+      });
+    } finally {
+      setTestingPush(false);
+    }
+  }
 
   async function handleTestEmail() {
     setTestingEmail(true);
@@ -415,6 +479,55 @@ export default function AdminSettingsClient() {
                   <li>Dùng smtp.gmail.com, port 587</li>
                 </ol>
               </div>
+            </div>
+          )}
+
+          {activeSection === "push" && (
+            <div className="bg-[#1a1200] border border-[rgba(255,200,100,0.14)] rounded-2xl p-6 space-y-5">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Thông báo PWA Admin</h2>
+                <p className="text-xs text-[rgba(245,237,214,0.55)] mt-1">
+                  Gửi thông báo thử tới tất cả điện thoại và trình duyệt đang đăng ký bằng tài khoản admin.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-[rgba(255,200,100,0.14)] bg-black/15 p-4">
+                <div>
+                  <p className="text-sm font-medium text-white">Thiết bị admin đã đăng ký</p>
+                  <p className="mt-1 text-xs text-[rgba(245,237,214,0.50)]">
+                    Subscription hết hạn sẽ tự được loại bỏ khi gửi thử.
+                  </p>
+                </div>
+                <span className="min-w-10 rounded-full border border-[#C9A84C]/25 bg-[#C9A84C]/10 px-3 py-1.5 text-center text-sm font-bold text-[#E2C97E]">
+                  {adminPushSubscriptions === null ? "…" : adminPushSubscriptions}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void handleTestPush()}
+                disabled={testingPush || adminPushSubscriptions === 0}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#C9A84C] px-5 py-2.5 text-sm font-semibold text-[#0D0B00] transition-colors hover:bg-[#E2C97E] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {testingPush ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {testingPush ? "Đang gửi…" : "Gửi thông báo thử"}
+              </button>
+
+              {pushTestResult && (
+                <div className={`rounded-xl border p-4 text-sm ${
+                  pushTestResult.ok
+                    ? "border-green-500/30 bg-green-500/10 text-green-300"
+                    : "border-red-500/30 bg-red-500/10 text-red-300"
+                }`}>
+                  <p className="font-medium">{pushTestResult.ok ? "✓" : "✗"} {pushTestResult.message}</p>
+                  {pushTestResult.matched !== undefined && (
+                    <p className="mt-2 text-xs opacity-80">
+                      Khớp: {pushTestResult.matched} · Gửi thành công: {pushTestResult.sent}
+                      {" · "}Hết hạn đã xoá: {pushTestResult.removed} · Lỗi: {pushTestResult.failed}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
