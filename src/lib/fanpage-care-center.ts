@@ -755,19 +755,27 @@ export async function runDailyFanpageCareCenter(input: {
   const client = await getDb().connect();
   let locked = false;
   let activeRunId: string | null = null;
+  let retryFailedGemini = false;
   try {
     const lock = await client.query<{ locked: boolean }>(`SELECT pg_try_advisory_lock($1) AS locked`, [DAILY_LOCK_ID]);
     locked = lock.rows[0]?.locked === true;
     if (!locked) return { skipped: "already-running", ranAt: new Date().toISOString() };
 
     if (!input.force) {
-      const existing = await queryOne<{ id: string }>(
-        `SELECT id FROM fanpage_ai_sync_runs
+      const existingRuns = await query<{ id: string; gemini_error: string | null }>(
+        `SELECT id, NULLIF(details->>'geminiError', '') AS gemini_error
+         FROM fanpage_ai_sync_runs
          WHERE run_date = $1 AND status IN ('success', 'partial')
-         ORDER BY started_at DESC LIMIT 1`,
+         ORDER BY started_at DESC LIMIT 2`,
         [vietnamDate()],
       );
-      if (existing) return { skipped: "already-ran-today", runId: existing.id, ranAt: new Date().toISOString() };
+      if (existingRuns.length) {
+        const latest = existingRuns[0];
+        retryFailedGemini = Boolean(latest.gemini_error) && existingRuns.length < 2;
+        if (!retryFailedGemini) {
+          return { skipped: "already-ran-today", runId: latest.id, ranAt: new Date().toISOString() };
+        }
+      }
     }
 
     await loadFacebookSchedulerFromDb();
@@ -811,7 +819,9 @@ export async function runDailyFanpageCareCenter(input: {
       assessment: DeterministicConversationAssessment;
     }> = [];
     for (const item of assessed) {
-      if (input.force || await hasNewActivitySinceLatestPlan(item.conversation)) qualified.push(item);
+      if (input.force || retryFailedGemini || await hasNewActivitySinceLatestPlan(item.conversation)) {
+        qualified.push(item);
+      }
       if (qualified.length >= Math.max(10, Math.min(100, Number(process.env.FANPAGE_AI_MAX_PLANS_PER_RUN || 50)))) break;
     }
 
@@ -847,6 +857,7 @@ export async function runDailyFanpageCareCenter(input: {
       geminiError,
       geminiPlans: generatedByGemini.size,
       rulesPlans: plans.length - generatedByGemini.size,
+      retryFailedGemini,
       safety: "AI only proposes; customer contact requires human approval",
     };
     const updated = await query<DbRow>(
