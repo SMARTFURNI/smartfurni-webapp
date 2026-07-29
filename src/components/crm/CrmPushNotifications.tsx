@@ -10,12 +10,20 @@ import {
 } from "@/lib/pwa-notifications";
 
 async function requestTaskDigest() {
-  await fetch("/api/crm/facebook-group-marketing/notifications/sync", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: "{}",
-  });
+  await Promise.allSettled([
+    fetch("/api/crm/facebook-group-marketing/notifications/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: "{}",
+    }),
+    fetch("/api/crm/conversation-learning/notifications/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: "{}",
+    }),
+  ]);
 }
 
 export default function CrmPushNotifications({ staffName }: { staffName: string }) {
@@ -72,16 +80,16 @@ export default function CrmPushNotifications({ staffName }: { staffName: string 
         </span>
         <div className="min-w-0">
           <b className="block text-sm">
-            {justEnabled ? "Đã bật thông báo nhiệm vụ" : "Bật thông báo PWA"}
+            {justEnabled ? "Đã bật thông báo CRM" : "Bật thông báo PWA"}
           </b>
           <p className="mt-1 text-xs leading-5 text-slate-400">
             {justEnabled
-              ? `${staffName || "Tài khoản này"} sẽ nhận thông báo khi được giao nhiệm vụ đăng bài.`
+              ? `${staffName || "Tài khoản này"} sẽ nhận thông báo nhiệm vụ, lead và kế hoạch chăm sóc Fanpage.`
               : blocked
                 ? "Trình duyệt đang chặn thông báo. Hãy cho phép thông báo cho smartfurni.com.vn trong cài đặt trình duyệt."
                 : unsupported
                   ? "Trình duyệt hiện tại chưa hỗ trợ Web Push. Trên iPhone, hãy cài CRM vào Màn hình chính trước."
-                  : `${staffName || "Nhân viên"} cần bật một lần trên thiết bị này để nhận nhiệm vụ đăng bài.`}
+                  : `${staffName || "Nhân viên"} cần bật một lần trên thiết bị này để nhận nhiệm vụ và kế hoạch chăm sóc khách hàng.`}
           </p>
           {error && <p className="mt-1 text-xs text-red-300">{error}</p>}
           {!justEnabled && !blocked && !unsupported && (

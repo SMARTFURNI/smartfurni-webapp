@@ -7,13 +7,16 @@ if (!process.argv.includes("--confirm-production")) {
 const connectionString = process.env.DATABASE_PUBLIC_URL
   || process.env.POSTGRESQL_URL
   || process.env.DATABASE_URL;
-const migrationName = "007_add_facebook_group_ai_operations.sql";
+const migrationNames = [
+  "007_add_facebook_group_ai_operations.sql",
+  "008_add_fanpage_ai_care_center.sql",
+];
 const result = await applyFacebookGroupMigrations({
   connectionString,
-  migrationNames: [migrationName],
+  migrationNames,
 });
 if (result.applied.length) {
-  console.log(`Applied ${migrationName}.`);
+  console.log(`Applied ${result.applied.join(", ")}.`);
 } else {
-  console.log(`${migrationName} was already applied.`);
+  console.log(`${migrationNames.join(", ")} were already applied.`);
 }
