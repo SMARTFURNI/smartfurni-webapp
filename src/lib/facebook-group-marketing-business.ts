@@ -147,6 +147,11 @@ export type FacebookGroupDiscoverySuggestion = {
   matchScore: number;
 };
 
+export type FacebookGroupGroundedSource = {
+  title: string;
+  groupUrl: string;
+};
+
 export function parseFacebookGroupDiscoveryResponse(
   rawResponse: string,
   fallback: { topic: string; region: string },
@@ -200,6 +205,34 @@ export function parseFacebookGroupDiscoveryResponse(
       matchScore: Math.round(Math.min(100, Math.max(0, Number.isFinite(normalizedScore) ? normalizedScore : 70))),
     }];
   }).slice(0, 12);
+}
+
+export function keepGroundedFacebookGroupSuggestions(
+  suggestions: FacebookGroupDiscoverySuggestion[],
+  sources: FacebookGroupGroundedSource[],
+  fallback: { topic: string; region: string },
+) {
+  const suggestionsByKey = new Map(suggestions.flatMap(suggestion => {
+    const parsed = parseFacebookGroupUrl(suggestion.groupUrl);
+    return parsed ? [[parsed.groupKey, suggestion] as const] : [];
+  }));
+  const seen = new Set<string>();
+  return sources.flatMap(source => {
+    const parsed = parseFacebookGroupUrl(source.groupUrl);
+    if (!parsed || seen.has(parsed.groupKey)) return [];
+    seen.add(parsed.groupKey);
+    const suggestion = suggestionsByKey.get(parsed.groupKey);
+    const sourceTitle = source.title.replace(/\s*[|·-]\s*Facebook\s*$/i, "").trim();
+    return [{
+      name: sourceTitle || suggestion?.name || parsed.groupKey,
+      groupUrl: `https://www.facebook.com/groups/${parsed.groupKey}/`,
+      topic: suggestion?.topic || fallback.topic,
+      region: suggestion?.region || fallback.region,
+      reason: suggestion?.reason || `URL xuất hiện trực tiếp trong nguồn Google Search cho chủ đề ${fallback.topic}.`,
+      matchScore: suggestion?.matchScore || 70,
+      groundedSource: true as const,
+    }];
+  }).slice(0, 10);
 }
 
 export function parseFacebookGroupAiSuggestion(rawResponse: string): FacebookGroupAiSuggestion {

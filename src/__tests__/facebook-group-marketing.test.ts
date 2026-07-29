@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeFacebookGroupRules, buildFacebookGroupContactCta, calculateFacebookGroupScore, contentSimilarityPercent,
   extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
-  parseFacebookGroupAiSuggestion, parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
+  keepGroundedFacebookGroupSuggestions, parseFacebookGroupAiSuggestion,
+  parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
   validateFacebookGroupSchedule,
 } from "@/lib/facebook-group-marketing-business";
 import { DEFAULT_FACEBOOK_GROUP_SETTINGS as settings } from "@/lib/facebook-group-marketing-types";
@@ -211,5 +212,36 @@ Loại nội dung: Chia sẻ cộng đồng
       matchScore: 0.86,
     }]), { topic: "Căn hộ & chung cư", region: "Hồ Chí Minh" });
     expect(suggestions[0]?.matchScore).toBe(86);
+  });
+
+  it("loại URL do AI tự viết nếu không xuất hiện trong nguồn Grounding", () => {
+    const grounded = keepGroundedFacebookGroupSuggestions([
+      {
+        name: "Group do AI ghép slug",
+        groupUrl: "https://www.facebook.com/groups/groupkhongcotrongnguon/",
+        topic: "Phòng trọ",
+        region: "Hồ Chí Minh",
+        reason: "Tên có vẻ phù hợp.",
+        matchScore: 99,
+      },
+      {
+        name: "Tên AI cho nguồn thật",
+        groupUrl: "https://www.facebook.com/groups/groupconguon/",
+        topic: "Phòng trọ",
+        region: "Hồ Chí Minh",
+        reason: "URL có citation.",
+        matchScore: 94,
+      },
+    ], [{
+      title: "GROUP CÓ NGUỒN | Facebook",
+      groupUrl: "https://www.facebook.com/groups/groupconguon/",
+    }], { topic: "Phòng trọ", region: "Hồ Chí Minh" });
+    expect(grounded).toHaveLength(1);
+    expect(grounded[0]).toMatchObject({
+      name: "GROUP CÓ NGUỒN",
+      groupUrl: "https://www.facebook.com/groups/groupconguon/",
+      groundedSource: true,
+      matchScore: 94,
+    });
   });
 });

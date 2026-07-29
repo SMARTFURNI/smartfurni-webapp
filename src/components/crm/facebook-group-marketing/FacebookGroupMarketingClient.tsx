@@ -379,6 +379,10 @@ export default function FacebookGroupMarketingClient({
 
   const addSuggestedGroup = async (suggestion: Row) => {
     if (!permissions.manage || suggestion.alreadySaved) return;
+    if (!suggestion.manualAccessConfirmed) {
+      setError("Hãy mở Group và xác nhận xem được trước khi thêm vào CRM.");
+      return;
+    }
     setError("");
     try {
       const created = await api("groups", {
@@ -411,6 +415,23 @@ export default function FacebookGroupMarketingClient({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể thêm Group đề xuất.");
     }
+  };
+
+  const updateSuggestionReview = (groupUrl: unknown, changes: Row) => {
+    setDiscoveryResult(current => current ? {
+      ...current,
+      suggestions: current.suggestions.map(item => item.groupUrl === groupUrl
+        ? { ...item, ...changes }
+        : item),
+    } : current);
+  };
+
+  const dismissSuggestion = (groupUrl: unknown) => {
+    setDiscoveryResult(current => current ? {
+      ...current,
+      suggestions: current.suggestions.filter(item => item.groupUrl !== groupUrl),
+    } : current);
+    setNotice("Đã loại đề xuất không truy cập được khỏi danh sách hiện tại.");
   };
 
   const canCreate = section === "groups" ? permissions.manage
@@ -509,6 +530,8 @@ export default function FacebookGroupMarketingClient({
                 onKeywordsChange={setDiscoveryKeywords}
                 onDiscover={() => void discoverGroups()}
                 onAdd={suggestion => void addSuggestedGroup(suggestion)}
+                onReviewChange={updateSuggestionReview}
+                onDismiss={dismissSuggestion}
               />
               <div className="fbg-filter mb-4 flex flex-wrap gap-2">
                 <input value={search} onChange={event => { setSearch(event.target.value); setPage(0); }} placeholder="Tìm tên hoặc mã group…"
@@ -662,6 +685,7 @@ function GroupTopicPlanner({
 function GroupDiscoveryAgent({
   groups, canManage, topic, region, keywords, busy, result,
   onTopicChange, onRegionChange, onKeywordsChange, onDiscover, onAdd,
+  onReviewChange, onDismiss,
 }: {
   groups: Row[];
   canManage: boolean;
@@ -675,6 +699,8 @@ function GroupDiscoveryAgent({
   onKeywordsChange: (value: string) => void;
   onDiscover: () => void;
   onAdd: (suggestion: Row) => void;
+  onReviewChange: (groupUrl: unknown, changes: Row) => void;
+  onDismiss: (groupUrl: unknown) => void;
 }) {
   const existingTopics = [...new Set(groups.map(group => String(group.topic || "")).filter(Boolean))];
   const topics = [...new Set([
@@ -752,12 +778,26 @@ function GroupDiscoveryAgent({
             <p className="mt-3 text-xs leading-5 text-slate-400">{String(suggestion.reason)}</p>
             <div className="mt-3 flex flex-wrap justify-end gap-2">
               <a href={String(suggestion.groupUrl)} target="_blank" rel="noreferrer"
+                onClick={() => onReviewChange(suggestion.groupUrl, { openedForReview: true })}
                 className="fbg-secondary-button inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-bold">
                 <ExternalLink size={14} /> Mở kiểm tra
               </a>
-              {canManage && <button type="button" disabled={Boolean(suggestion.alreadySaved)}
+              {!suggestion.alreadySaved && <button type="button"
+                disabled={!suggestion.openedForReview}
+                onClick={() => onReviewChange(suggestion.groupUrl, { manualAccessConfirmed: true })}
+                className="fbg-secondary-button inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40">
+                <ShieldCheck size={14} />
+                {suggestion.manualAccessConfirmed ? "Đã xác nhận xem được" : "Xác nhận xem được"}
+              </button>}
+              {!suggestion.alreadySaved && <button type="button" onClick={() => onDismiss(suggestion.groupUrl)}
+                className="fbg-danger-button inline-flex items-center gap-1.5 rounded-lg border border-red-400/25 bg-red-400/10 px-3 py-2 text-xs font-bold text-red-200">
+                <Trash2 size={14} /> Không mở được
+              </button>}
+              {canManage && <button type="button"
+                disabled={Boolean(suggestion.alreadySaved) || !Boolean(suggestion.manualAccessConfirmed)}
                 onClick={() => onAdd(suggestion)}
-                className="fbg-primary-button inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-xs font-black text-black disabled:bg-emerald-500/15 disabled:text-emerald-300">
+                title={!suggestion.manualAccessConfirmed ? "Cần xác nhận xem được Group trước" : undefined}
+                className="fbg-primary-button inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-xs font-black text-black disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-500">
                 {suggestion.alreadySaved ? <CheckCircle2 size={14} /> : <Plus size={14} />}
                 {suggestion.alreadySaved ? "Đã có trong CRM" : "Thêm vào CRM"}
               </button>}

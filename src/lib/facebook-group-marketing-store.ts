@@ -6,7 +6,8 @@ import { sendPushNotification } from "./pwa-server";
 import {
   analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
   buildFacebookGroupContactCta, extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
-  parseFacebookGroupAiSuggestion, parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
+  keepGroundedFacebookGroupSuggestions, parseFacebookGroupAiSuggestion,
+  parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
   validateFacebookGroupSchedule,
 } from "./facebook-group-marketing-business";
 import {
@@ -490,6 +491,48 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
   return row;
 }
 
+async function resolveGroundedFacebookGroupSource(source: { title?: string; uri?: string }) {
+  const uri = text(source.uri, 4000);
+  if (!uri) return null;
+  const direct = parseFacebookGroupUrl(uri);
+  if (direct) {
+    return {
+      title: text(source.title, 300),
+      groupUrl: `https://www.facebook.com/groups/${direct.groupKey}/`,
+    };
+  }
+  let redirectUrl: URL;
+  try {
+    redirectUrl = new URL(uri);
+  } catch {
+    return null;
+  }
+  const host = redirectUrl.hostname.toLowerCase();
+  const trustedGoogleRedirect = host === "google.com"
+    || host.endsWith(".google.com")
+    || host.endsWith(".googleusercontent.com");
+  if (!trustedGoogleRedirect || redirectUrl.protocol !== "https:") return null;
+  try {
+    const response = await fetch(uri, {
+      method: "GET",
+      redirect: "manual",
+      headers: { "User-Agent": "SmartFurni-CRM/1.0 (grounding-source-verification)" },
+      signal: AbortSignal.timeout(8_000),
+    });
+    const location = response.headers.get("location");
+    if (!location) return null;
+    const target = new URL(location, uri).toString();
+    const parsed = parseFacebookGroupUrl(target);
+    if (!parsed) return null;
+    return {
+      title: text(source.title, 300),
+      groupUrl: `https://www.facebook.com/groups/${parsed.groupKey}/`,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function discoverFacebookGroups(input: Record<string, unknown>, actor: Actor) {
   const topic = text(input.topic, 120);
   const region = text(input.region, 120) || "Việt Nam";
@@ -569,22 +612,16 @@ Trả về duy nhất JSON hợp lệ:
   }
   const candidate = payload.candidates?.[0];
   const rawText = candidate?.content?.parts?.map(part => part.text || "").join("\n") || "";
-  const suggestions = parseFacebookGroupDiscoveryResponse(rawText, { topic, region });
-  const seen = new Set(suggestions.map(item => parseFacebookGroupUrl(item.groupUrl)?.groupKey).filter(Boolean));
-  for (const chunk of candidate?.groundingMetadata?.groundingChunks || []) {
-    const uri = chunk.web?.uri || "";
-    const parsed = parseFacebookGroupUrl(uri);
-    if (!parsed || seen.has(parsed.groupKey)) continue;
-    seen.add(parsed.groupKey);
-    suggestions.push({
-      name: text(chunk.web?.title, 300) || parsed.groupKey,
-      groupUrl: `https://www.facebook.com/groups/${parsed.groupKey}/`,
-      topic,
-      region,
-      reason: `Kết quả Google Search phù hợp với chủ đề ${topic}.`,
-      matchScore: 70,
-    });
-  }
+  const parsedSuggestions = parseFacebookGroupDiscoveryResponse(rawText, { topic, region });
+  const groundedSources = (await Promise.all(
+    (candidate?.groundingMetadata?.groundingChunks || [])
+      .map(chunk => resolveGroundedFacebookGroupSource(chunk.web || {})),
+  )).filter((source): source is NonNullable<typeof source> => Boolean(source));
+  const suggestions = keepGroundedFacebookGroupSuggestions(
+    parsedSuggestions,
+    groundedSources,
+    { topic, region },
+  );
   const result = suggestions.slice(0, 10).map(item => {
     const parsed = parseFacebookGroupUrl(item.groupUrl);
     const saved = parsed ? existingKeys.get(parsed.groupKey) : undefined;
@@ -592,7 +629,7 @@ Trả về duy nhất JSON hợp lệ:
       ...item,
       alreadySaved: Boolean(saved),
       existingGroupId: saved?.id || null,
-      verificationStatus: "needs_manual_review",
+      verificationStatus: "grounded_needs_manual_confirmation",
     };
   });
   await logActivity(actor, "groups.ai_discovered", "group", undefined, undefined, {
@@ -602,7 +639,7 @@ Trả về duy nhất JSON hợp lệ:
     suggestions: result,
     searchQueries: candidate?.groundingMetadata?.webSearchQueries || [],
     model,
-    notice: "Đề xuất lấy từ Google Search; nhân viên phải mở Group và kiểm tra trước khi thêm.",
+    notice: "Chỉ hiển thị URL có trong nguồn Google Search; nhân viên vẫn phải mở và xác nhận xem được trước khi thêm.",
   };
 }
 
