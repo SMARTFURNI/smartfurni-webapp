@@ -138,6 +138,69 @@ export type FacebookGroupAiSuggestion = {
   contentType: "community_share" | "education" | "story" | "sales";
 };
 
+export type FacebookGroupDiscoverySuggestion = {
+  name: string;
+  groupUrl: string;
+  topic: string;
+  region: string;
+  reason: string;
+  matchScore: number;
+};
+
+export function parseFacebookGroupDiscoveryResponse(
+  rawResponse: string,
+  fallback: { topic: string; region: string },
+): FacebookGroupDiscoverySuggestion[] {
+  const cleaned = String(rawResponse || "").trim()
+    .replace(/^\uFEFF/, "")
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const candidates = [cleaned];
+  const arrayStart = cleaned.indexOf("[");
+  const arrayEnd = cleaned.lastIndexOf("]");
+  if (arrayStart >= 0 && arrayEnd > arrayStart) candidates.push(cleaned.slice(arrayStart, arrayEnd + 1));
+  const objectStart = cleaned.indexOf("{");
+  const objectEnd = cleaned.lastIndexOf("}");
+  if (objectStart >= 0 && objectEnd > objectStart) candidates.push(cleaned.slice(objectStart, objectEnd + 1));
+
+  let source: unknown[] = [];
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (Array.isArray(parsed)) source = parsed;
+      else if (parsed && typeof parsed === "object") {
+        const record = parsed as Record<string, unknown>;
+        const nested = record.groups || record.suggestions || record.results;
+        if (Array.isArray(nested)) source = nested;
+      }
+      if (source.length) break;
+    } catch {
+      // Tiếp tục thử phần JSON được tách khỏi câu trả lời có chú thích.
+    }
+  }
+
+  const seen = new Set<string>();
+  return source.flatMap(item => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const record = item as Record<string, unknown>;
+    const groupUrl = String(record.groupUrl || record.url || "").trim();
+    const parsedUrl = parseFacebookGroupUrl(groupUrl);
+    if (!parsedUrl || seen.has(parsedUrl.groupKey)) return [];
+    seen.add(parsedUrl.groupKey);
+    const rawScore = Number(record.matchScore ?? record.score ?? 70);
+    return [{
+      name: String(record.name || record.title || parsedUrl.groupKey).trim().slice(0, 300),
+      groupUrl: `https://www.facebook.com/groups/${parsedUrl.groupKey}/`,
+      topic: String(record.topic || fallback.topic).trim().slice(0, 120),
+      region: String(record.region || fallback.region).trim().slice(0, 120),
+      reason: String(record.reason || record.relevance || "Phù hợp với chủ đề đang tìm.")
+        .trim().slice(0, 1000),
+      matchScore: Math.round(Math.min(100, Math.max(0, Number.isFinite(rawScore) ? rawScore : 70))),
+    }];
+  }).slice(0, 12);
+}
+
 export function parseFacebookGroupAiSuggestion(rawResponse: string): FacebookGroupAiSuggestion {
   const raw = String(rawResponse || "").trim();
   const cleaned = raw

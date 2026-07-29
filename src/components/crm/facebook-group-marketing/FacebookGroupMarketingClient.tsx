@@ -4,13 +4,21 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle, BarChart3, CalendarDays, CheckCircle2, ClipboardCopy, ExternalLink,
-  Facebook, FileText, Loader2, MessageSquare, Pencil, Plus, RefreshCw, Trash2, Users,
+  Bot, Facebook, FileText, Loader2, MapPin, MessageSquare, Pencil, Plus, RefreshCw,
+  Search as SearchIcon, ShieldCheck, Sparkles, Tags, Trash2, Users,
 } from "lucide-react";
+import { FACEBOOK_GROUP_TOPIC_TAXONOMY } from "@/lib/facebook-group-marketing-types";
 
 type Row = Record<string, unknown>;
 type FormOptions = {
   pages: Row[]; groups: Row[]; campaigns: Row[]; content: Row[]; posts: Row[];
   staff: Row[]; products: Row[]; leads: Row[];
+};
+type GroupDiscoveryResult = {
+  suggestions: Row[];
+  searchQueries: string[];
+  notice: string;
+  model: string;
 };
 type Permissions = {
   admin: boolean;
@@ -143,6 +151,12 @@ export default function FacebookGroupMarketingClient({
   const [deletingResource, setDeletingResource] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedTopic, setSelectedTopic] = useState("");
+  const [discoveryTopic, setDiscoveryTopic] = useState("Phòng trọ");
+  const [discoveryRegion, setDiscoveryRegion] = useState("Hồ Chí Minh");
+  const [discoveryKeywords, setDiscoveryKeywords] = useState("");
+  const [discoveryBusy, setDiscoveryBusy] = useState(false);
+  const [discoveryResult, setDiscoveryResult] = useState<GroupDiscoveryResult | null>(null);
   const [page, setPage] = useState(0);
 
   const resource = section === "calendar" ? "tasks"
@@ -168,6 +182,7 @@ export default function FacebookGroupMarketingClient({
       } else {
         const params = new URLSearchParams({ limit: "50", offset: String(page * 50) });
         if (section === "groups" && search) params.set("search", search);
+        if (section === "groups" && selectedTopic) params.set("topic", selectedTopic);
         const query = `?${params.toString()}`;
         const needsOptions = ["groups", "campaigns", "content", "calendar", "tasks", "posts"].includes(section);
         const [result, options] = await Promise.all([
@@ -182,7 +197,7 @@ export default function FacebookGroupMarketingClient({
     } finally {
       setLoading(false);
     }
-  }, [page, resource, search, section]);
+  }, [page, resource, search, section, selectedTopic]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -339,6 +354,65 @@ export default function FacebookGroupMarketingClient({
     } catch (err) { setError(err instanceof Error ? err.message : "Không thể nhập CSV."); }
   };
 
+  const discoverGroups = async () => {
+    setDiscoveryBusy(true);
+    setError("");
+    try {
+      const result = await api("groups/discover", {
+        method: "POST",
+        body: JSON.stringify({
+          topic: discoveryTopic,
+          region: discoveryRegion,
+          keywords: discoveryKeywords,
+        }),
+      }) as GroupDiscoveryResult;
+      setDiscoveryResult(result);
+      setNotice(result.suggestions.length
+        ? `AI Agent đã tìm thấy ${result.suggestions.length} Group cần kiểm tra.`
+        : "Chưa tìm thấy Group có URL công khai đủ tin cậy. Hãy đổi từ khóa hoặc khu vực.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "AI Agent chưa thể tìm Group.");
+    } finally {
+      setDiscoveryBusy(false);
+    }
+  };
+
+  const addSuggestedGroup = async (suggestion: Row) => {
+    if (!permissions.manage || suggestion.alreadySaved) return;
+    setError("");
+    try {
+      const created = await api("groups", {
+        method: "POST",
+        body: JSON.stringify({
+          name: suggestion.name,
+          groupUrl: suggestion.groupUrl,
+          topic: suggestion.topic || discoveryTopic,
+          region: suggestion.region || discoveryRegion,
+          allowsPages: "unknown",
+          membershipStatus: "not_joined",
+          allowsSales: "unknown",
+          status: "needs_review",
+          data: {
+            source: "ai-google-search",
+            discoveryReason: suggestion.reason,
+            matchScore: suggestion.matchScore,
+            discoveredAt: new Date().toISOString(),
+          },
+        }),
+      });
+      setDiscoveryResult(current => current ? {
+        ...current,
+        suggestions: current.suggestions.map(item => item.groupUrl === suggestion.groupUrl
+          ? { ...item, alreadySaved: true, existingGroupId: created.id }
+          : item),
+      } : current);
+      setNotice("Đã thêm Group vào CRM với trạng thái Cần kiểm tra.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể thêm Group đề xuất.");
+    }
+  };
+
   const canCreate = section === "groups" ? permissions.manage
     : section === "campaigns" ? permissions.campaigns
       : section === "content" ? permissions.content
@@ -415,11 +489,33 @@ export default function FacebookGroupMarketingClient({
       ) : (
         <>
           {section === "groups" && (
-            <div className="fbg-filter mb-4 flex flex-wrap gap-2">
-              <input value={search} onChange={event => { setSearch(event.target.value); setPage(0); }} placeholder="Tìm tên hoặc mã group…"
-                className="min-w-64 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm outline-none" />
-              <button onClick={() => void load()} className="fbg-secondary-button rounded-xl border px-4 text-sm">Lọc</button>
-            </div>
+            <>
+              <GroupTopicPlanner groups={formOptions.groups} selectedTopic={selectedTopic}
+                onSelect={topic => {
+                  setSelectedTopic(topic);
+                  setPage(0);
+                  if (topic && topic !== "__unclassified__") setDiscoveryTopic(topic);
+                }} />
+              <GroupDiscoveryAgent
+                groups={formOptions.groups}
+                canManage={permissions.manage}
+                topic={discoveryTopic}
+                region={discoveryRegion}
+                keywords={discoveryKeywords}
+                busy={discoveryBusy}
+                result={discoveryResult}
+                onTopicChange={setDiscoveryTopic}
+                onRegionChange={setDiscoveryRegion}
+                onKeywordsChange={setDiscoveryKeywords}
+                onDiscover={() => void discoverGroups()}
+                onAdd={suggestion => void addSuggestedGroup(suggestion)}
+              />
+              <div className="fbg-filter mb-4 flex flex-wrap gap-2">
+                <input value={search} onChange={event => { setSearch(event.target.value); setPage(0); }} placeholder="Tìm tên hoặc mã group…"
+                  className="min-w-64 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm outline-none" />
+                <button onClick={() => void load()} className="fbg-secondary-button rounded-xl border px-4 text-sm">Lọc</button>
+              </div>
+            </>
           )}
           {section === "comments" && <>
             <h2 className="mb-3 mt-1 font-bold text-white">Hàng chờ cần kiểm tra bình luận</h2>
@@ -492,6 +588,184 @@ export default function FacebookGroupMarketingClient({
         </Modal>
       )}
     </div>
+  );
+}
+
+function GroupTopicPlanner({
+  groups, selectedTopic, onSelect,
+}: {
+  groups: Row[];
+  selectedTopic: string;
+  onSelect: (topic: string) => void;
+}) {
+  const counts = new Map<string, number>();
+  for (const group of groups) {
+    const topic = String(group.topic || "").trim() || "__unclassified__";
+    counts.set(topic, (counts.get(topic) || 0) + 1);
+  }
+  const canonicalKeys = new Set<string>(FACEBOOK_GROUP_TOPIC_TAXONOMY.map(item => item.key));
+  const extraTopics = [...counts.keys()]
+    .filter(topic => topic !== "__unclassified__" && !canonicalKeys.has(topic))
+    .map(topic => ({
+      key: topic,
+      label: topic,
+      description: "Chủ đề đang được sử dụng trong dữ liệu CRM.",
+    }));
+  const topics = [
+    ...FACEBOOK_GROUP_TOPIC_TAXONOMY,
+    ...extraTopics,
+    ...(counts.has("__unclassified__") ? [{
+      key: "__unclassified__",
+      label: "Chưa phân loại",
+      description: "Group cần được rà soát và gán vào một chủ đề chuẩn.",
+    }] : []),
+  ];
+  return (
+    <section className="mb-4 rounded-2xl border border-white/8 bg-white/[.025] p-4">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-black text-white"><Tags size={17} className="text-amber-300" />Quy hoạch Group theo chủ đề</div>
+          <p className="mt-1 text-xs text-slate-500">Bấm một chủ đề để lọc danh sách Group bên dưới.</p>
+        </div>
+        <button type="button" onClick={() => onSelect("")}
+          className={`rounded-xl border px-3 py-2 text-xs font-bold ${
+            !selectedTopic ? "border-amber-400/45 bg-amber-400/15 text-amber-200" : "border-white/10 bg-white/[.03] text-slate-400"
+          }`}>
+          Tất cả · {groups.length}
+        </button>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {topics.map(topic => {
+          const active = selectedTopic === topic.key;
+          return <button key={topic.key} type="button" onClick={() => onSelect(topic.key)}
+            className={`group rounded-xl border p-3 text-left transition ${
+              active
+                ? "border-amber-400/45 bg-amber-400/[.11]"
+                : "border-white/8 bg-black/10 hover:border-white/15 hover:bg-white/[.035]"
+            }`}>
+            <span className="flex items-center justify-between gap-3">
+              <b className={active ? "text-amber-200" : "text-slate-200"}>{topic.label}</b>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
+                active ? "bg-amber-300 text-black" : "bg-white/[.06] text-slate-400"
+              }`}>{counts.get(topic.key) || 0}</span>
+            </span>
+            <span className="mt-1.5 block text-xs leading-5 text-slate-500">{topic.description}</span>
+          </button>;
+        })}
+      </div>
+    </section>
+  );
+}
+
+function GroupDiscoveryAgent({
+  groups, canManage, topic, region, keywords, busy, result,
+  onTopicChange, onRegionChange, onKeywordsChange, onDiscover, onAdd,
+}: {
+  groups: Row[];
+  canManage: boolean;
+  topic: string;
+  region: string;
+  keywords: string;
+  busy: boolean;
+  result: GroupDiscoveryResult | null;
+  onTopicChange: (value: string) => void;
+  onRegionChange: (value: string) => void;
+  onKeywordsChange: (value: string) => void;
+  onDiscover: () => void;
+  onAdd: (suggestion: Row) => void;
+}) {
+  const existingTopics = [...new Set(groups.map(group => String(group.topic || "")).filter(Boolean))];
+  const topics = [...new Set([
+    ...FACEBOOK_GROUP_TOPIC_TAXONOMY.map(item => item.key),
+    ...existingTopics,
+  ])];
+  return (
+    <section className="mb-4 overflow-hidden rounded-2xl border border-blue-400/15 bg-blue-400/[.035]">
+      <div className="grid gap-4 p-4 xl:grid-cols-[1.1fr_1.9fr]">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-black text-blue-100">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-blue-400/15 text-blue-200"><Bot size={17} /></span>
+            AI Agent tìm Group liên quan
+          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            Agent dùng Google Search công khai, không quét Facebook. Mọi đề xuất phải được nhân viên mở kiểm tra trước khi thêm.
+          </p>
+          <div className="mt-3 flex items-center gap-2 text-[11px] text-emerald-300/80">
+            <ShieldCheck size={14} /> Không tự tham gia Group, không tự đọc nội quy, không tự đăng bài.
+          </div>
+        </div>
+        <div className="grid gap-2 md:grid-cols-2">
+          <label className="grid gap-1 text-xs text-slate-400">Chủ đề
+            <select value={topic} onChange={event => onTopicChange(event.target.value)}
+              className="rounded-xl border border-white/10 bg-[#111722] px-3 py-2.5 text-sm text-white">
+              {topics.map(item => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs text-slate-400">Khu vực ưu tiên
+            <div className="relative">
+              <MapPin className="pointer-events-none absolute left-3 top-3 text-slate-500" size={15} />
+              <input value={region} onChange={event => onRegionChange(event.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-[#111722] py-2.5 pl-9 pr-3 text-sm text-white"
+                placeholder="Ví dụ: Hồ Chí Minh" />
+            </div>
+          </label>
+          <label className="grid gap-1 text-xs text-slate-400 md:col-span-2">Từ khóa hoặc yêu cầu bổ sung
+            <input value={keywords} onChange={event => onKeywordsChange(event.target.value)}
+              className="rounded-xl border border-white/10 bg-[#111722] px-3 py-2.5 text-sm text-white"
+              placeholder="Ví dụ: ưu tiên nhóm sinh viên, người thuê căn hộ nhỏ" />
+          </label>
+          <div className="md:col-span-2 flex justify-end">
+            <button type="button" disabled={!canManage || busy || !topic || !region.trim()} onClick={onDiscover}
+              className="fbg-ai-button inline-flex items-center gap-2 rounded-xl border border-blue-300/25 bg-blue-400/15 px-4 py-2.5 text-sm font-black text-blue-100 disabled:cursor-not-allowed disabled:opacity-45">
+              {busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+              {busy ? "Agent đang tìm và đối chiếu…" : "Tìm Group cùng chủ đề"}
+            </button>
+          </div>
+        </div>
+      </div>
+      {result && <div className="border-t border-blue-300/10 p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <b className="text-sm text-white">Đề xuất cần kiểm tra ({result.suggestions.length})</b>
+            <p className="mt-1 text-[11px] text-slate-500">{result.notice}</p>
+          </div>
+          {result.searchQueries.length > 0 && <span className="text-[11px] text-slate-500">
+            Truy vấn: {result.searchQueries.join(" · ")}
+          </span>}
+        </div>
+        {result.suggestions.length ? <div className="grid gap-3 lg:grid-cols-2">
+          {result.suggestions.map(suggestion => <article key={String(suggestion.groupUrl)}
+            className="rounded-xl border border-white/8 bg-black/15 p-3.5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <b className="block truncate text-sm text-[#f5edd6]">{String(suggestion.name)}</b>
+                <div className="mt-1 flex flex-wrap gap-1.5 text-[10px]">
+                  <span className="rounded-full bg-amber-400/10 px-2 py-1 text-amber-200">{String(suggestion.topic)}</span>
+                  <span className="rounded-full bg-white/[.05] px-2 py-1 text-slate-400">{String(suggestion.region)}</span>
+                  <span className="rounded-full bg-blue-400/10 px-2 py-1 text-blue-200">Phù hợp {Number(suggestion.matchScore || 0)}%</span>
+                </div>
+              </div>
+              <SearchIcon size={16} className="shrink-0 text-blue-300" />
+            </div>
+            <p className="mt-3 text-xs leading-5 text-slate-400">{String(suggestion.reason)}</p>
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              <a href={String(suggestion.groupUrl)} target="_blank" rel="noreferrer"
+                className="fbg-secondary-button inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-bold">
+                <ExternalLink size={14} /> Mở kiểm tra
+              </a>
+              {canManage && <button type="button" disabled={Boolean(suggestion.alreadySaved)}
+                onClick={() => onAdd(suggestion)}
+                className="fbg-primary-button inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-xs font-black text-black disabled:bg-emerald-500/15 disabled:text-emerald-300">
+                {suggestion.alreadySaved ? <CheckCircle2 size={14} /> : <Plus size={14} />}
+                {suggestion.alreadySaved ? "Đã có trong CRM" : "Thêm vào CRM"}
+              </button>}
+            </div>
+          </article>)}
+        </div> : <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-500">
+          Không có URL Group đủ tin cậy trong lần tìm này.
+        </div>}
+      </div>}
+    </section>
   );
 }
 
@@ -794,7 +1068,12 @@ function CreateForm({ resource, options, onSubmit }: {
     {resource === "groups" && <>
       <Field label="Tên group" name="name" required /><Field label="Mã group" name="code" />
       <div className="md:col-span-2"><Field label="Link group" name="groupUrl" type="url" required /></div>
-      <Field label="Khu vực" name="region" /><Field label="Chủ đề" name="topic" />
+      <Field label="Khu vực" name="region" />
+      <Field label="Chủ đề" name="topic" required>
+        <select name="topic" required defaultValue="Phòng trọ" className={selectClass}>
+          {FACEBOOK_GROUP_TOPIC_TAXONOMY.map(topic => <option key={topic.key} value={topic.key}>{topic.label}</option>)}
+        </select>
+      </Field>
       <Field label="Số thành viên" name="memberCount" type="number" />
       <Field label="Fanpage tham gia" name="membershipStatus"><select name="membershipStatus" className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5"><option value="not_joined">Chưa tham gia</option><option value="requested">Đã gửi yêu cầu</option><option value="pending">Chờ duyệt</option><option value="joined">Đã tham gia</option></select></Field>
       <Field label="Cho phép Fanpage" name="allowsPages"><select name="allowsPages" className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5"><option value="unknown">Chưa kiểm tra</option><option value="yes">Có</option><option value="no">Không</option></select></Field>
@@ -928,7 +1207,12 @@ function EditForm({ resource, row, options, onSubmit }: {
         <input name="region" defaultValue={String(value(row, "region"))} className={selectClass} />
       </Field>
       <Field label="Chủ đề" name="topic">
-        <input name="topic" defaultValue={String(value(row, "topic"))} className={selectClass} />
+        <select name="topic" defaultValue={String(value(row, "topic") || "Phòng trọ")} className={selectClass}>
+          {!FACEBOOK_GROUP_TOPIC_TAXONOMY.some(topic => topic.key === String(value(row, "topic")))
+            && value(row, "topic")
+            && <option value={String(value(row, "topic"))}>{String(value(row, "topic"))}</option>}
+          {FACEBOOK_GROUP_TOPIC_TAXONOMY.map(topic => <option key={topic.key} value={topic.key}>{topic.label}</option>)}
+        </select>
       </Field>
       <Field label="Số thành viên" name="memberCount">
         <input name="memberCount" type="number" min={0} defaultValue={Number(value(row, "member_count", "memberCount") || 0)} className={selectClass} />

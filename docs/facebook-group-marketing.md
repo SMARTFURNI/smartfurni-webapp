@@ -62,15 +62,17 @@ Script từ chối chạy nếu `NODE_ENV=production` và bắt buộc cờ xác
 
 ## Quy trình sử dụng
 
-1. **Danh sách Group**: nhập link, phân loại, xác nhận Fanpage đã tham gia và dán nội
-   quy do nhân viên tự đọc.
+1. **Danh sách Group**: Group được quy hoạch theo bộ chủ đề chuẩn. Bấm thẻ chủ đề để
+   lọc danh sách; có thể nhập link thủ công hoặc dùng AI Agent tìm các Group liên quan
+   theo chủ đề, khu vực và từ khóa bổ sung. Đề xuất từ AI luôn ở trạng thái cần kiểm
+   tra, nhân viên phải mở link thật trước khi thêm/kích hoạt.
 2. **Nội quy**: gọi `POST /groups/:id/analyze-rules`; bộ phân tích chỉ xử lý văn bản
    đã nhập, không truy cập Facebook.
 3. **Chiến dịch**: chọn Fanpage, sản phẩm CRM, nhân viên, thời gian và các group đã sẵn
    sàng. Backend không cho kích hoạt chiến dịch thiếu dữ liệu thật.
 4. **Kho nội dung**: AI có thể đọc dữ liệu sản phẩm + nội quy đã nhập để gợi ý bản nháp.
-   Nhân viên chỉnh sửa rồi lưu; CRM sinh mã nguồn, tự chèn mã vào CTA và so sánh nội
-   dung 30 ngày.
+   Nhân viên chỉnh sửa rồi lưu; CRM sinh mã nguồn để quy nguồn nội bộ và so sánh nội
+   dung 30 ngày. Mã nguồn không bị tự chèn vào nội dung liên hệ hiển thị cho khách.
 5. **Duyệt**: nội dung vượt ngưỡng trùng hoặc chưa đạt rule check không thể duyệt.
    Người tạo không được tự duyệt bài của mình.
 6. **Lịch đăng**: backend kiểm tra giới hạn Fanpage, khoảng cách, ngày đăng lại,
@@ -95,6 +97,7 @@ Các API đều yêu cầu session CRM và permission tương ứng.
 - `GET|POST /pages`, `PATCH|DELETE /pages/:id`
 - `POST /pages/sync` (đồng bộ Fanpage từ Content Marketing)
 - `GET|POST /groups`, `PATCH|DELETE /groups/:id`
+- `POST /groups/discover` (Gemini + Google Search, chỉ đề xuất URL công khai để duyệt)
 - `POST /groups/import` (CSV đã được UI chuyển thành danh sách có validation từng dòng)
 - `GET /groups/export`
 - `POST /groups/:id/rules`
@@ -152,6 +155,10 @@ phân tích nội quy và chấm điểm.
   có UI mapping cột riêng.
 - Số reaction/comment và trạng thái kiểm duyệt được nhân viên cập nhật từ bài thật;
   module không scrape Group và không dùng browser automation.
+- AI Agent tìm Group dùng kết quả Google Search công khai, loại URL không đúng dạng
+  Facebook Group và chống trùng với CRM. Agent không tự tham gia Group, không đọc nội
+  quy và không suy đoán số thành viên/quyền đăng; các thông tin này phải được nhân viên
+  kiểm tra rồi cập nhật.
 - Tự động nhận nguồn hiện chạy khi Facebook Inbox tải tin nhắn thật. Nếu cần nhận ngay
   cả khi không ai mở Inbox, webhook Messenger production phải gọi cùng hàm ingestion.
 - AI chỉ tạo bản nháp/gợi ý. Nhân viên vẫn duyệt, mở Group và bấm đăng.

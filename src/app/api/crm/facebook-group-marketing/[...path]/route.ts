@@ -3,7 +3,8 @@ import { z } from "zod";
 import {
   addRevenueAttribution, analyzeGroupRules, approveContent,
   completePostCheckTask, createFacebookGroupMarketing, exportFacebookGroupsCsv, getFacebookGroupDashboard, importFacebookGroups,
-  getFacebookGroupMarketingOptions, getFacebookGroupSettings, linkFacebookGroupLead, listFacebookGroupMarketing,
+  discoverFacebookGroups, getFacebookGroupMarketingOptions, getFacebookGroupSettings,
+  linkFacebookGroupLead, listFacebookGroupMarketing,
   markPublishingTaskPosted, recalculateGroupScore, saveFacebookGroupSettings,
   resolveFacebookGroupSourceCode, sendFacebookGroupTaskDigest, suggestFacebookGroupContent,
   softDeleteFacebookGroupMarketing, syncFacebookGroupPagesFromScheduler,
@@ -99,6 +100,9 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     }
     if (resource === "groups" && entityId === "import") {
       return NextResponse.json(await importFacebookGroups(Array.isArray(body.rows) ? body.rows : [], auth.actor));
+    }
+    if (resource === "groups" && entityId === "discover") {
+      return NextResponse.json(await discoverFacebookGroups(body, auth.actor));
     }
     if (resource === "groups" && entityId && action === "rules") {
       await updateGroupRules(entityId, String(body.rawText || ""), auth.actor);

@@ -7,6 +7,63 @@ export type PublishingTaskStatus =
   | "scheduled" | "due" | "posted" | "pending_moderation" | "approved"
   | "rejected" | "postponed" | "cancelled";
 
+export const FACEBOOK_GROUP_TOPIC_TAXONOMY = [
+  {
+    key: "Phòng trọ",
+    label: "Phòng trọ",
+    description: "Sinh viên, người thuê trọ và không gian nhỏ.",
+    searchTerms: ["phòng trọ", "nhà trọ", "ở ghép", "căn hộ mini"],
+  },
+  {
+    key: "Căn hộ & chung cư",
+    label: "Căn hộ & chung cư",
+    description: "Cư dân chung cư, căn hộ và cộng đồng dự án.",
+    searchTerms: ["căn hộ", "chung cư", "cư dân"],
+  },
+  {
+    key: "Nhà nhỏ & tối ưu không gian",
+    label: "Nhà nhỏ & tối ưu không gian",
+    description: "Giải pháp bố trí nhà nhỏ và nội thất đa năng.",
+    searchTerms: ["nhà nhỏ", "tối ưu không gian", "nội thất đa năng"],
+  },
+  {
+    key: "Nội thất & trang trí",
+    label: "Nội thất & trang trí",
+    description: "Thiết kế, decor và kinh nghiệm chọn nội thất.",
+    searchTerms: ["nội thất", "trang trí nhà", "decor nhà"],
+  },
+  {
+    key: "Sofa giường",
+    label: "Sofa giường",
+    description: "Sofa bed, giường gấp và sản phẩm chuyển đổi.",
+    searchTerms: ["sofa giường", "sofa bed", "giường gấp"],
+  },
+  {
+    key: "Giường thông minh & sức khỏe",
+    label: "Giường thông minh & sức khỏe",
+    description: "Giấc ngủ, công thái học và chăm sóc tại nhà.",
+    searchTerms: ["giường thông minh", "giấc ngủ", "công thái học"],
+  },
+  {
+    key: "Nhà ở & bất động sản",
+    label: "Nhà ở & bất động sản",
+    description: "Mua bán, cho thuê và cộng đồng nhà ở.",
+    searchTerms: ["nhà ở", "bất động sản", "cho thuê nhà"],
+  },
+  {
+    key: "Thanh lý & mua bán nội thất",
+    label: "Thanh lý & mua bán nội thất",
+    description: "Cộng đồng mua bán và thanh lý đồ gia dụng.",
+    searchTerms: ["thanh lý nội thất", "mua bán nội thất", "đồ gia dụng"],
+  },
+  {
+    key: "Cộng đồng địa phương",
+    label: "Cộng đồng địa phương",
+    description: "Nhóm cư dân và cộng đồng theo khu vực.",
+    searchTerms: ["cộng đồng cư dân", "hội đồng hương", "chợ địa phương"],
+  },
+] as const;
+
 export interface FacebookGroupSettings {
   contact: {
     hotline: string;

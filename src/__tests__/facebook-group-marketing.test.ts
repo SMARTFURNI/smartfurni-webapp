@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeFacebookGroupRules, buildFacebookGroupContactCta, calculateFacebookGroupScore, contentSimilarityPercent,
   extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
-  parseFacebookGroupAiSuggestion, parseFacebookGroupUrl, validateFacebookGroupSchedule,
+  parseFacebookGroupAiSuggestion, parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
+  validateFacebookGroupSchedule,
 } from "@/lib/facebook-group-marketing-business";
 import { DEFAULT_FACEBOOK_GROUP_SETTINGS as settings } from "@/lib/facebook-group-marketing-types";
 import { canDeleteFacebookGroupMarketing } from "@/lib/facebook-group-marketing-permissions";
@@ -169,6 +170,37 @@ Loại nội dung: Chia sẻ cộng đồng
 `)).toMatchObject({
       body: "Sofa giường giúp một khu vực đảm nhiệm nhiều công năng mà vẫn gọn gàng.",
       contentType: "community_share",
+    });
+  });
+
+  it("chỉ nhận đề xuất AI có URL Facebook Group hợp lệ và loại trùng", () => {
+    const suggestions = parseFacebookGroupDiscoveryResponse(JSON.stringify({
+      groups: [
+        {
+          name: "Cộng đồng căn hộ nhỏ",
+          groupUrl: "https://www.facebook.com/groups/canhonho/",
+          reason: "Thảo luận về tối ưu không gian.",
+          matchScore: 91,
+        },
+        {
+          name: "Bản trùng",
+          groupUrl: "https://m.facebook.com/groups/canhonho",
+          matchScore: 80,
+        },
+        {
+          name: "Không phải Group",
+          groupUrl: "https://www.facebook.com/smartfurni",
+          matchScore: 99,
+        },
+      ],
+    }), { topic: "Căn hộ & chung cư", region: "Hồ Chí Minh" });
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]).toMatchObject({
+      name: "Cộng đồng căn hộ nhỏ",
+      groupUrl: "https://www.facebook.com/groups/canhonho/",
+      topic: "Căn hộ & chung cư",
+      region: "Hồ Chí Minh",
+      matchScore: 91,
     });
   });
 });

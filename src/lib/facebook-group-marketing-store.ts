@@ -6,10 +6,12 @@ import { sendPushNotification } from "./pwa-server";
 import {
   analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
   buildFacebookGroupContactCta, extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
-  parseFacebookGroupAiSuggestion, parseFacebookGroupUrl, validateFacebookGroupSchedule,
+  parseFacebookGroupAiSuggestion, parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
+  validateFacebookGroupSchedule,
 } from "./facebook-group-marketing-business";
 import {
-  DEFAULT_FACEBOOK_GROUP_SETTINGS, type DashboardData, type FacebookGroupLeadSource,
+  DEFAULT_FACEBOOK_GROUP_SETTINGS, FACEBOOK_GROUP_TOPIC_TAXONOMY,
+  type DashboardData, type FacebookGroupLeadSource,
   type FacebookGroupSettings,
 } from "./facebook-group-marketing-types";
 
@@ -72,7 +74,7 @@ export async function getFacebookGroupMarketingOptions() {
        ORDER BY name`,
     ),
     query(
-      `SELECT id, name, code, status,
+      `SELECT id, name, code, topic, region, status,
               membership_status AS "membershipStatus",
               allows_pages AS "allowsPages"
        FROM facebook_groups
@@ -199,7 +201,11 @@ export async function listFacebookGroupMarketing(resource: string, filters: Filt
     if (filters.status) add("g.status = ?", filters.status);
     if (filters.grade) add("g.grade = ?", filters.grade);
     if (filters.region) add("g.region = ?", filters.region);
-    if (filters.topic) add("g.topic = ?", filters.topic);
+    if (filters.topic === "__unclassified__") {
+      conditions.push("(g.topic IS NULL OR BTRIM(g.topic) = '')");
+    } else if (filters.topic) {
+      add("g.topic = ?", filters.topic);
+    }
     if (filters.membershipStatus) add("g.membership_status = ?", filters.membershipStatus);
     params.push(limit, offset);
     const searchSql = conditions.join(" AND ");
@@ -319,9 +325,15 @@ export async function createFacebookGroupMarketing(resource: string, input: Reco
   if (resource === "groups") {
     const name = text(input.name, 300);
     const groupUrl = text(input.groupUrl, 2000);
-    if (!name || !/^https:\/\/(www\.)?facebook\.com\/groups\//i.test(groupUrl)) {
+    const parsedGroupUrl = parseFacebookGroupUrl(groupUrl);
+    if (!name || !parsedGroupUrl) {
       throw new Error("Tên và đường dẫn Facebook Group hợp lệ là bắt buộc.");
     }
+    const existingGroups = await query<{ id: string; name: string; group_url: string }>(
+      `SELECT id, name, group_url FROM facebook_groups WHERE deleted_at IS NULL`,
+    );
+    const duplicate = existingGroups.find(group => parseFacebookGroupUrl(group.group_url)?.groupKey === parsedGroupUrl.groupKey);
+    if (duplicate) throw new Error(`Group “${duplicate.name}” đã có trong CRM.`);
     const entityId = id("fbg");
     const code = (text(input.code, 20) || name).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12) || `GR${Date.now()}`;
@@ -476,6 +488,109 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
   );
   await logActivity(actor, "content.created", "content", entityId, undefined, { duplicateRatio, sourceCode });
   return row;
+}
+
+export async function discoverFacebookGroups(input: Record<string, unknown>, actor: Actor) {
+  const topic = text(input.topic, 120);
+  const region = text(input.region, 120) || "Việt Nam";
+  const keywords = text(input.keywords, 500);
+  if (!topic) throw new Error("Chọn một chủ đề trước khi yêu cầu AI Agent tìm Group.");
+  const topicConfig = FACEBOOK_GROUP_TOPIC_TAXONOMY.find(item => item.key === topic);
+  const searchTerms = topicConfig?.searchTerms.join(", ") || topic;
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY chưa được cấu hình.");
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const existing = await query<{ id: string; name: string; group_url: string }>(
+    `SELECT id, name, group_url FROM facebook_groups WHERE deleted_at IS NULL`,
+  );
+  const existingKeys = new Map(existing.flatMap(group => {
+    const parsed = parseFacebookGroupUrl(group.group_url);
+    return parsed ? [[parsed.groupKey, { id: group.id, name: group.name }]] : [];
+  }));
+  const prompt = `Bạn là AI Agent nghiên cứu cộng đồng cho SmartFurni.
+Dùng Google Search để tìm tối đa 10 Facebook Group công khai, còn tồn tại và liên quan trực tiếp.
+
+Tiêu chí:
+- Chủ đề chuẩn: ${topic}
+- Từ khóa chủ đề: ${searchTerms}
+- Khu vực ưu tiên: ${region}
+- Yêu cầu bổ sung: ${keywords || "không có"}
+- Chỉ chấp nhận URL chính xác có dạng https://www.facebook.com/groups/<id-hoặc-slug>/
+- Không đưa Fanpage, profile, bài viết riêng lẻ hoặc URL tìm kiếm.
+- Không đưa các Group CRM đã có: ${existing.map(group => group.group_url).join(", ") || "chưa có"}.
+- Không suy đoán số thành viên, nội quy, khả năng cho Fanpage hoặc khả năng bán hàng.
+- Mỗi đề xuất phải nêu ngắn gọn lý do liên quan dựa trên tên/mô tả xuất hiện trong kết quả tìm kiếm.
+- Nếu không xác minh được URL chính xác từ Google Search thì bỏ qua, không bịa.
+
+Trả về duy nhất JSON hợp lệ:
+{"groups":[{"name":"Tên Group","groupUrl":"https://www.facebook.com/groups/.../","topic":"${topic}","region":"${region}","reason":"Lý do phù hợp","matchScore":0}]}`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        tools: [{ google_search: {} }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 4000 },
+      }),
+      signal: AbortSignal.timeout(45_000),
+    },
+  );
+  const payload = await response.json().catch(() => ({})) as {
+    error?: { message?: string };
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string }> };
+      groundingMetadata?: {
+        webSearchQueries?: string[];
+        groundingChunks?: Array<{ web?: { title?: string; uri?: string } }>;
+      };
+    }>;
+  };
+  if (!response.ok) {
+    throw new Error(payload.error?.message || "Gemini Google Search chưa trả về được đề xuất Group.");
+  }
+  const candidate = payload.candidates?.[0];
+  const rawText = candidate?.content?.parts?.map(part => part.text || "").join("\n") || "";
+  const suggestions = parseFacebookGroupDiscoveryResponse(rawText, { topic, region });
+  const seen = new Set(suggestions.map(item => parseFacebookGroupUrl(item.groupUrl)?.groupKey).filter(Boolean));
+  for (const chunk of candidate?.groundingMetadata?.groundingChunks || []) {
+    const uri = chunk.web?.uri || "";
+    const parsed = parseFacebookGroupUrl(uri);
+    if (!parsed || seen.has(parsed.groupKey)) continue;
+    seen.add(parsed.groupKey);
+    suggestions.push({
+      name: text(chunk.web?.title, 300) || parsed.groupKey,
+      groupUrl: `https://www.facebook.com/groups/${parsed.groupKey}/`,
+      topic,
+      region,
+      reason: `Kết quả Google Search phù hợp với chủ đề ${topic}.`,
+      matchScore: 70,
+    });
+  }
+  const result = suggestions.slice(0, 10).map(item => {
+    const parsed = parseFacebookGroupUrl(item.groupUrl);
+    const saved = parsed ? existingKeys.get(parsed.groupKey) : undefined;
+    return {
+      ...item,
+      alreadySaved: Boolean(saved),
+      existingGroupId: saved?.id || null,
+      verificationStatus: "needs_manual_review",
+    };
+  });
+  await logActivity(actor, "groups.ai_discovered", "group", undefined, undefined, {
+    topic, region, keywords: keywords || null, resultCount: result.length, model,
+  });
+  return {
+    suggestions: result,
+    searchQueries: candidate?.groundingMetadata?.webSearchQueries || [],
+    model,
+    notice: "Đề xuất lấy từ Google Search; nhân viên phải mở Group và kiểm tra trước khi thêm.",
+  };
 }
 
 export async function suggestFacebookGroupContent(input: Record<string, unknown>, actor: Actor) {
