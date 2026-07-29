@@ -46,11 +46,11 @@ type TabKey = "overview" | "care-plans" | "conversations" | "analysis" | "script
 
 const tabs: Array<{ key: TabKey; label: string; icon: LucideIcon }> = [
   { key: "overview", label: "Tổng quan", icon: BrainCircuit },
-  { key: "care-plans", label: "Kế hoạch hằng ngày", icon: CalendarCheck2 },
-  { key: "conversations", label: "Hội thoại nguồn", icon: MessageSquareText },
-  { key: "analysis", label: "Phân tích lead", icon: Bot },
-  { key: "scripts", label: "Script sale", icon: FileText },
-  { key: "workflows", label: "Workflow", icon: GitBranch },
+  { key: "care-plans", label: "Công việc hôm nay", icon: CalendarCheck2 },
+  { key: "conversations", label: "Hội thoại", icon: MessageSquareText },
+  { key: "analysis", label: "Phân tích AI", icon: Bot },
+  { key: "scripts", label: "Kịch bản tư vấn", icon: FileText },
+  { key: "workflows", label: "Quy trình", icon: GitBranch },
 ];
 
 interface CareCenterResponse {
@@ -103,7 +103,7 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
   return (
     <div
       className={cn(
-        "rounded-3xl border border-amber-200/10 bg-white/[0.055] shadow-[0_18px_70px_rgba(0,0,0,0.28)] backdrop-blur",
+        "rounded-2xl border border-[rgba(118,138,166,0.18)] bg-[linear-gradient(145deg,rgba(31,37,52,0.82),rgba(29,24,15,0.76))] shadow-[0_18px_45px_rgba(2,5,12,0.22)] backdrop-blur-xl",
         className
       )}
     >
@@ -114,7 +114,7 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 
 function Pill({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold", className)}>
+    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold", className)}>
       {children}
     </span>
   );
@@ -137,10 +137,10 @@ function ActionButton({
       onClick={onClick}
       disabled={loading}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
         variant === "primary"
-          ? "bg-amber-500 text-black shadow-[0_12px_35px_rgba(245,158,11,0.28)] hover:bg-amber-400"
-          : "border border-white/10 bg-white/5 text-amber-100 hover:bg-white/10"
+          ? "bg-[#C9A84C] text-[#0D0B00] shadow-[0_10px_28px_rgba(201,168,76,0.18)] hover:bg-[#E2C97E]"
+          : "border border-[rgba(255,200,100,0.18)] bg-[#1a1200]/70 text-[rgba(245,237,214,0.72)] hover:border-[#C9A84C]/35 hover:text-white"
       )}
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -203,17 +203,27 @@ export function ConversationLearningClient() {
     if (requestedPlan) setExpandedPlanId(requestedPlan);
   }, []);
 
-  const topHotAnalyses = useMemo(
-    () => analyses.filter(item => item.leadTemperature === "hot").slice(0, 5),
-    [analyses]
+  const filteredCarePlans = useMemo(
+    () => (careCenter?.plans || [])
+      .filter(plan =>
+        (careStatusFilter === "all" || plan.status === careStatusFilter) &&
+        (carePageFilter === "all" || plan.pageInternalId === carePageFilter)
+      )
+      .sort((a, b) => b.leadScore - a.leadScore),
+    [careCenter?.plans, carePageFilter, careStatusFilter]
   );
 
-  const filteredCarePlans = useMemo(
-    () => (careCenter?.plans || []).filter(plan =>
-      (careStatusFilter === "all" || plan.status === careStatusFilter) &&
-      (carePageFilter === "all" || plan.pageInternalId === carePageFilter)
-    ),
-    [careCenter?.plans, carePageFilter, careStatusFilter]
+  const selectedCarePlan = useMemo(
+    () => filteredCarePlans.find(plan => plan.id === expandedPlanId) || filteredCarePlans[0] || null,
+    [expandedPlanId, filteredCarePlans],
+  );
+
+  const priorityCarePlans = useMemo(
+    () => [...(careCenter?.plans || [])]
+      .filter(plan => plan.status === "pending" || plan.status === "approved" || plan.status === "in_progress")
+      .sort((a, b) => b.leadScore - a.leadScore)
+      .slice(0, 6),
+    [careCenter?.plans],
   );
 
   async function runAnalyze() {
@@ -329,48 +339,73 @@ export function ConversationLearningClient() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[520px] items-center justify-center text-amber-100">
+      <div className="flex min-h-[520px] items-center justify-center text-[#E2C97E]">
         <Loader2 className="mr-3 h-6 w-6 animate-spin" />
-        Đang mở bộ học hội thoại...
+        Đang tải Trung tâm AI Fanpage...
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 text-stone-100">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-500 text-black shadow-[0_14px_40px_rgba(245,158,11,0.32)]">
-            <BrainCircuit className="h-8 w-8" />
+    <div className="mx-auto max-w-[1680px] space-y-4 text-[#F5EDD6]">
+      <Card className="overflow-hidden">
+        <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between lg:p-6">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#C9A84C]/25 bg-[#C9A84C]/12 text-[#E2C97E]">
+              <BrainCircuit className="h-6 w-6" />
+            </div>
+            <div className="min-w-0">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9BD6A]">
+                <Sparkles className="h-3.5 w-3.5" />
+                AI Customer Care Center
+              </p>
+              <h1 className="mt-1.5 text-2xl font-bold text-[#F5EDD6] lg:text-[28px]">Trung tâm AI chăm sóc Fanpage</h1>
+              <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[rgba(245,237,214,0.52)]">
+                Theo dõi hội thoại, ưu tiên khách tiềm năng và giao việc chăm sóc cho đúng nhân viên.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.22em] text-amber-300">
-              <Sparkles className="h-4 w-4" />
-              AI Customer Care Center
-            </p>
-            <h1 className="mt-2 text-3xl font-black text-white">Trung tâm AI chăm sóc khách hàng Fanpage</h1>
-            <p className="mt-2 max-w-3xl text-sm text-stone-400">
-              Đồng bộ từng Fanpage mỗi ngày, phân tích hội thoại, lập kế hoạch riêng cho từng khách tiềm năng và gửi
-              thông báo PWA đến đúng người phụ trách. AI không tự nhắn khách.
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <ActionButton onClick={loadAll} loading={actionLoading === "reload"} variant="secondary">
-            <RefreshCw className="h-4 w-4" />
-            Tải lại dữ liệu
-          </ActionButton>
-          <ActionButton onClick={runAnalyze} loading={actionLoading === "analyze"}>
-            Phân tích 50 hội thoại
-          </ActionButton>
-          {careCenter?.permissions.canRun ? (
-            <ActionButton onClick={runDailyCareCenter} loading={actionLoading === "daily-care"}>
-              <Sparkles className="h-4 w-4" />
-              Chạy AI Fanpage ngay
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            <ActionButton onClick={loadAll} loading={actionLoading === "reload"} variant="secondary">
+              <RefreshCw className="h-4 w-4" />
+              Làm mới
             </ActionButton>
-          ) : null}
+            {careCenter?.permissions.canRun ? (
+              <ActionButton onClick={runDailyCareCenter} loading={actionLoading === "daily-care"}>
+                <Sparkles className="h-4 w-4" />
+                Chạy AI hôm nay
+              </ActionButton>
+            ) : null}
+          </div>
         </div>
-      </div>
+        <div className="flex gap-1 overflow-x-auto border-t border-[rgba(255,200,100,0.10)] bg-black/10 px-3 py-2">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium transition",
+                  active
+                    ? "bg-[#C9A84C]/15 text-[#E2C97E] shadow-[inset_0_0_0_1px_rgba(201,168,76,0.20)]"
+                    : "text-[rgba(245,237,214,0.48)] hover:bg-white/[0.04] hover:text-[#F5EDD6]"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+                {tab.key === "care-plans" && (careCenter?.overview.pendingPlans || 0) > 0 ? (
+                  <span className="rounded-full bg-[#C9A84C] px-1.5 py-0.5 text-[10px] font-bold text-black">
+                    {careCenter?.overview.pendingPlans}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      </Card>
 
       {error ? (
         <Card className="border-red-300/20 bg-red-500/10 p-4 text-red-100">
@@ -381,85 +416,74 @@ export function ConversationLearningClient() {
         </Card>
       ) : null}
 
-      <div className="grid gap-3 rounded-3xl border border-white/10 bg-white/[0.055] p-2 md:grid-cols-2 xl:grid-cols-6">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          const active = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                "flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition",
-                active ? "bg-amber-500 text-black shadow-[0_12px_32px_rgba(245,158,11,0.25)]" : "text-stone-400 hover:bg-white/10 hover:text-white"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
       {activeTab === "overview" ? (
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Metric label="Fanpage đang theo dõi" value={careCenter?.overview.totalPages ?? 0} icon={MessageSquareText} />
             <Metric label="Lead tiềm năng hôm nay" value={careCenter?.overview.qualifiedLeadsToday ?? 0} icon={Users} />
             <Metric label="Lead nóng hôm nay" value={careCenter?.overview.hotLeadsToday ?? 0} icon={Flame} />
             <Metric label="Kế hoạch chờ xử lý" value={careCenter?.overview.pendingPlans ?? 0} icon={CalendarCheck2} />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
             <Card className="p-5">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <SectionTitle
-                  title="Tình trạng từng Fanpage"
-                  subtitle="Mỗi Fanpage được đồng bộ riêng; số liệu không trộn giữa các trang."
+                  title="Việc cần xử lý hôm nay"
+                  subtitle="Ưu tiên theo điểm lead và hạn chăm sóc gần nhất."
                 />
-                <Pill className="border-emerald-300/25 bg-emerald-500/10 text-emerald-100">
-                  <BellRing className="mr-1.5 h-3.5 w-3.5" />
-                  {careCenter?.overview.pushSentToday ?? 0} kế hoạch đã thông báo PWA
-                </Pill>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("care-plans")}
+                  className="shrink-0 text-sm font-semibold text-[#D9BD6A] transition hover:text-[#F5EDD6]"
+                >
+                  Mở tất cả
+                </button>
               </div>
-              <div className="mt-5 grid gap-3 lg:grid-cols-2">
-                {(careCenter?.overview.pages || []).map(page => (
+              <div className="mt-4 divide-y divide-[rgba(118,138,166,0.12)] overflow-hidden rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55">
+                {priorityCarePlans.map(plan => (
                   <button
-                    key={page.pageInternalId}
+                    key={plan.id}
                     type="button"
                     onClick={() => {
-                      setCarePageFilter(page.pageInternalId);
+                      setExpandedPlanId(plan.id);
                       setActiveTab("care-plans");
                     }}
-                    className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:border-amber-300/25 hover:bg-white/[0.07]"
+                    className="grid w-full gap-3 p-3.5 text-left transition hover:bg-white/[0.035] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="font-black text-white">{page.pageName}</h3>
-                      {page.hotLeads > 0 ? (
-                        <Pill className="border-red-300/30 bg-red-500/10 text-red-100">{page.hotLeads} nóng</Pill>
-                      ) : null}
+                    <div className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-xl border text-sm font-bold",
+                      toneByTemperature(plan.leadTemperature),
+                    )}>
+                      {plan.leadScore}
                     </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-stone-400">
-                      <span>{page.conversationCount} hội thoại</span>
-                      <span>{page.qualifiedLeads} tiềm năng</span>
-                      <span>{page.pendingPlans} chờ xử lý</span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="truncate text-sm font-semibold text-[#F5EDD6]">{plan.customerName}</h3>
+                        <Pill className={toneByCareStatus(plan.status)}>{careStatusLabel(plan.status)}</Pill>
+                      </div>
+                      <p className="mt-1 truncate text-xs text-[rgba(245,237,214,0.48)]">
+                        {plan.pageName} · {shortText(plan.nextBestAction, 90)}
+                      </p>
                     </div>
-                    <p className="mt-3 text-xs text-stone-500">Đồng bộ: {formatDate(page.lastSyncedAt)}</p>
+                    <div className="flex items-center justify-between gap-3 text-xs text-[rgba(245,237,214,0.40)] sm:block sm:text-right">
+                      <span className="block">{plan.assignedStaffName || "Chưa phân công"}</span>
+                      <span className="mt-1 block">{formatDate(plan.dueAt)}</span>
+                    </div>
                   </button>
                 ))}
-                {!careCenter?.overview.pages.length ? (
-                  <EmptyState text="Chưa có dữ liệu đồng bộ Fanpage. Quản lý có thể bấm “Chạy AI Fanpage ngay”." />
+                {!priorityCarePlans.length ? (
+                  <EmptyState text="Không còn kế hoạch đang chờ xử lý." />
                 ) : null}
               </div>
             </Card>
 
             <Card className="p-5">
-              <h2 className="text-xl font-black text-white">Lần chạy gần nhất</h2>
+              <SectionTitle title="Tình trạng hệ thống" subtitle="Lần chạy AI gần nhất và kênh thông báo." />
               {careCenter?.overview.lastRun ? (
-                <div className="mt-4 space-y-3 text-sm">
+                <div className="mt-4 space-y-2.5 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-stone-400">Trạng thái</span>
+                    <span className="text-[rgba(245,237,214,0.48)]">Trạng thái</span>
                     <Pill className={toneByCareRun(careCenter.overview.lastRun.status)}>
                       {careRunLabel(careCenter.overview.lastRun.status)}
                     </Pill>
@@ -474,74 +498,96 @@ export function ConversationLearningClient() {
               ) : (
                 <EmptyState text="Chưa có lần phân tích hằng ngày." />
               )}
+              <div className="mt-4 flex items-start gap-3 rounded-xl border border-emerald-300/15 bg-emerald-500/[0.055] p-3">
+                <BellRing className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-100">
+                    {careCenter?.overview.pushSentToday ?? 0} thông báo PWA hôm nay
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-emerald-100/55">
+                    Chỉ gửi tới người phụ trách; AI không tự nhắn khách hàng.
+                  </p>
+                </div>
+              </div>
             </Card>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-            <Metric label="Đã phân tích" value={overview?.totalAnalyzed ?? 0} icon={Database} />
-            <Metric label="Cần kiểm tra" value={overview?.needHumanReview ?? 0} icon={AlertTriangle} />
-            <Metric label="Lead nóng" value={overview?.hotLeads ?? 0} icon={Users} />
-            <Metric label="Script nháp" value={overview?.draftScripts ?? 0} icon={FileText} />
-            <Metric label="Script duyệt" value={overview?.approvedScripts ?? 0} icon={CheckCircle2} />
-            <Metric label="Workflow bật" value={overview?.activeWorkflows ?? 0} icon={GitBranch} />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <Card className="p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-black text-white">Lead cần ưu tiên</h2>
-                <Pill className="border-amber-300/25 bg-amber-500/10 text-amber-100">Từ hội thoại mới nhất</Pill>
+          <Card className="p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <SectionTitle
+                title="Tình trạng từng Fanpage"
+                subtitle="Chọn một Fanpage để mở các công việc chăm sóc tương ứng."
+              />
+              <Pill className="border-[#C9A84C]/25 bg-[#C9A84C]/10 text-[#E2C97E]">
+                {careCenter?.overview.totalPages ?? 0} Fanpage đang theo dõi
+              </Pill>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-xl border border-[rgba(118,138,166,0.16)]">
+              <div className="hidden grid-cols-[minmax(220px,1.4fr)_repeat(4,minmax(90px,0.55fr))_minmax(140px,0.7fr)] gap-3 bg-[#0d1420]/70 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[rgba(245,237,214,0.36)] md:grid">
+                <span>Fanpage</span>
+                <span>Hội thoại</span>
+                <span>Tiềm năng</span>
+                <span>Lead nóng</span>
+                <span>Chờ xử lý</span>
+                <span>Đồng bộ</span>
               </div>
-              <div className="space-y-3">
-                {(topHotAnalyses.length ? topHotAnalyses : analyses.slice(0, 5)).map(item => (
-                  <AnalysisRow key={item.id} item={item} compact />
+              <div className="divide-y divide-[rgba(118,138,166,0.12)]">
+                {(careCenter?.overview.pages || []).map(page => (
+                  <button
+                    key={page.pageInternalId}
+                    type="button"
+                    onClick={() => {
+                      setCarePageFilter(page.pageInternalId);
+                      setActiveTab("care-plans");
+                    }}
+                    className="grid w-full gap-2 px-4 py-3.5 text-left transition hover:bg-white/[0.035] md:grid-cols-[minmax(220px,1.4fr)_repeat(4,minmax(90px,0.55fr))_minmax(140px,0.7fr)] md:items-center md:gap-3"
+                  >
+                    <span className="truncate text-sm font-semibold text-[#F5EDD6]">{page.pageName}</span>
+                    <span className="text-xs text-[rgba(245,237,214,0.52)]">{page.conversationCount} hội thoại</span>
+                    <span className="text-xs text-[rgba(245,237,214,0.52)]">{page.qualifiedLeads} tiềm năng</span>
+                    <span className={cn("text-xs", page.hotLeads > 0 ? "font-semibold text-red-200" : "text-[rgba(245,237,214,0.52)]")}>
+                      {page.hotLeads} lead nóng
+                    </span>
+                    <span className="text-xs text-[rgba(245,237,214,0.52)]">{page.pendingPlans} chờ xử lý</span>
+                    <span className="text-xs text-[rgba(245,237,214,0.38)]">{formatDate(page.lastSyncedAt)}</span>
+                  </button>
                 ))}
-                {!analyses.length ? <EmptyState text="Chưa có phân tích. Bấm “Phân tích 50 hội thoại” để bắt đầu." /> : null}
+                {!careCenter?.overview.pages.length ? (
+                  <EmptyState text="Chưa có dữ liệu Fanpage. Quản lý có thể chạy AI để đồng bộ." />
+                ) : null}
               </div>
-            </Card>
+            </div>
+          </Card>
 
-            <Card className="p-5">
-              <h2 className="text-xl font-black text-white">Quy trình an toàn</h2>
-              <div className="mt-4 space-y-3 text-sm text-stone-300">
-                <SafetyLine text="AI chỉ phân tích và tạo bản nháp, không tự gửi tin nhắn cho khách." />
-                <SafetyLine text="Nếu thiếu dữ liệu sản phẩm/giá/size, kết quả chuyển sang cần người kiểm tra." />
-                <SafetyLine text="Script phải được duyệt trước khi đưa vào Knowledge Base." />
-                <SafetyLine text="Mọi lần phân tích được ghi log trong agent_actions." />
-              </div>
-              <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                <ActionButton onClick={generateScripts} loading={actionLoading === "scripts"} variant="secondary">
-                  Tạo script nháp
-                </ActionButton>
-                <ActionButton onClick={generateWorkflows} loading={actionLoading === "workflows"} variant="secondary">
-                  Tạo workflow mẫu
-                </ActionButton>
-              </div>
-            </Card>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Metric label="Hội thoại đã phân tích" value={overview?.totalAnalyzed ?? 0} icon={Database} />
+            <Metric label="Kết quả cần kiểm tra" value={overview?.needHumanReview ?? 0} icon={AlertTriangle} />
+            <Metric label="Kịch bản đang nháp" value={overview?.draftScripts ?? 0} icon={FileText} />
+            <Metric label="Quy trình đang bật" value={overview?.activeWorkflows ?? 0} icon={GitBranch} />
           </div>
         </div>
       ) : null}
 
       {activeTab === "care-plans" ? (
-        <div className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Metric label="Chờ xác nhận" value={careCenter?.overview.pendingPlans ?? 0} icon={Clock3} />
             <Metric label="Đang chăm sóc" value={careCenter?.overview.approvedPlans ?? 0} icon={UserRoundCheck} />
-            <Metric label="Đã hoàn tất" value={careCenter?.overview.completedPlans ?? 0} icon={CheckCircle2} />
             <Metric label="Lead nóng hôm nay" value={careCenter?.overview.hotLeadsToday ?? 0} icon={Flame} />
             <Metric label="Đã gửi PWA hôm nay" value={careCenter?.overview.pushSentToday ?? 0} icon={BellRing} />
           </div>
 
-          <Card className="p-5">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <Card className="overflow-hidden">
+            <div className="flex flex-col gap-4 border-b border-[rgba(118,138,166,0.14)] p-5 xl:flex-row xl:items-center xl:justify-between">
               <SectionTitle
-                title="Kế hoạch chăm sóc theo từng khách tiềm năng"
-                subtitle="AI tạo nháp theo dữ liệu hội thoại thật. Nhân viên xác nhận trước khi gọi hoặc gửi Messenger/Zalo."
+                title="Công việc chăm sóc khách hàng"
+                subtitle="Chọn khách ở bên trái để xem kế hoạch và cập nhật trạng thái."
               />
               <div className="flex flex-col gap-2 sm:flex-row">
                 <select
                   value={careStatusFilter}
                   onChange={event => setCareStatusFilter(event.target.value as FanpageCarePlanStatus | "all")}
-                  className="rounded-xl border border-white/10 bg-[#111018] px-3 py-2.5 text-sm text-stone-200 outline-none"
+                  className="rounded-xl border border-[rgba(118,138,166,0.20)] bg-[#0d1420] px-3 py-2.5 text-sm text-[#F5EDD6] outline-none focus:border-[#C9A84C]/50"
                   aria-label="Lọc trạng thái kế hoạch"
                 >
                   <option value="all">Tất cả trạng thái</option>
@@ -554,7 +600,7 @@ export function ConversationLearningClient() {
                 <select
                   value={carePageFilter}
                   onChange={event => setCarePageFilter(event.target.value)}
-                  className="rounded-xl border border-white/10 bg-[#111018] px-3 py-2.5 text-sm text-stone-200 outline-none"
+                  className="rounded-xl border border-[rgba(118,138,166,0.20)] bg-[#0d1420] px-3 py-2.5 text-sm text-[#F5EDD6] outline-none focus:border-[#C9A84C]/50"
                   aria-label="Lọc Fanpage"
                 >
                   <option value="all">Tất cả Fanpage</option>
@@ -565,154 +611,188 @@ export function ConversationLearningClient() {
               </div>
             </div>
 
-            <div className="mt-5 space-y-4">
-              {filteredCarePlans.map(plan => {
-                const expanded = expandedPlanId === plan.id;
-                return (
-                  <article
-                    key={plan.id}
-                    id={`care-plan-${plan.id}`}
-                    className={cn(
-                      "rounded-2xl border bg-black/20 p-4 transition",
-                      plan.leadTemperature === "hot" ? "border-red-300/25" : "border-white/10",
-                    )}
-                  >
-                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Pill className={toneByTemperature(plan.leadTemperature)}>
-                            {CONVERSATION_LEAD_TEMPERATURE_LABELS[plan.leadTemperature]} • {plan.leadScore}/100
-                          </Pill>
-                          <Pill className={toneByCareStatus(plan.status)}>{careStatusLabel(plan.status)}</Pill>
-                          <Pill className="border-sky-300/20 bg-sky-500/10 text-sky-100">{plan.pageName}</Pill>
-                          <Pill className="border-white/10 bg-white/5 text-stone-300">
-                            {plan.engine === "gemini" ? "Gemini" : "Rules an toàn"} • {Math.round(plan.confidence * 100)}%
-                          </Pill>
+            <div className="grid min-h-[640px] xl:grid-cols-[390px_minmax(0,1fr)]">
+              <div className="border-b border-[rgba(118,138,166,0.14)] bg-[#0b111b]/35 xl:border-b-0 xl:border-r">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-[rgba(245,237,214,0.38)]">
+                    {filteredCarePlans.length} khách hàng
+                  </span>
+                  <span className="text-xs text-[rgba(245,237,214,0.34)]">Theo điểm ưu tiên</span>
+                </div>
+                <div className="max-h-[720px] divide-y divide-[rgba(118,138,166,0.11)] overflow-y-auto border-t border-[rgba(118,138,166,0.12)]">
+                  {filteredCarePlans.map(plan => (
+                    <button
+                      key={plan.id}
+                      id={`care-plan-${plan.id}`}
+                      type="button"
+                      onClick={() => setExpandedPlanId(plan.id)}
+                      className={cn(
+                        "w-full px-4 py-4 text-left transition",
+                        selectedCarePlan?.id === plan.id
+                          ? "bg-[#C9A84C]/10 shadow-[inset_3px_0_0_#C9A84C]"
+                          : "hover:bg-white/[0.035]",
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-sm font-semibold text-[#F5EDD6]">{plan.customerName}</h3>
+                          <p className="mt-1 truncate text-xs text-[rgba(245,237,214,0.42)]">{plan.pageName}</p>
                         </div>
-                        <h3 className="mt-3 text-lg font-black text-white">{plan.customerName}</h3>
-                        <p className="mt-2 text-sm leading-relaxed text-stone-300">{plan.summary}</p>
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-stone-400">
-                          <span>Hạn: {formatDate(plan.dueAt)}</span>
-                          <span>•</span>
-                          <span>{plan.sourceMessageCount} tin nhắn nguồn</span>
-                          <span>•</span>
-                          <span>{plan.assignedStaffName || "Chưa phân công"}</span>
-                          {plan.notificationSentAt ? (
-                            <>
-                              <span>•</span>
-                              <span className="text-emerald-300">Đã push PWA</span>
-                            </>
-                          ) : null}
+                        <div className={cn(
+                          "flex h-9 min-w-9 shrink-0 items-center justify-center rounded-xl border px-2 text-xs font-bold",
+                          toneByTemperature(plan.leadTemperature),
+                        )}>
+                          {plan.leadScore}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setExpandedPlanId(expanded ? null : plan.id)}
-                          className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-stone-200 hover:bg-white/10"
-                        >
-                          {expanded ? "Thu gọn" : "Xem kế hoạch"}
-                        </button>
-                        {plan.status === "pending" ? (
-                          <button
-                            type="button"
-                            disabled={actionLoading === `care-${plan.id}`}
-                            onClick={() => void patchCarePlan(plan.id, { status: "approved" })}
-                            className="rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-black disabled:opacity-50"
+                      <p className="mt-3 line-clamp-2 text-xs leading-5 text-[rgba(245,237,214,0.54)]">{plan.summary}</p>
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <Pill className={toneByCareStatus(plan.status)}>{careStatusLabel(plan.status)}</Pill>
+                        <span className="truncate text-[11px] text-[rgba(245,237,214,0.34)]">
+                          {plan.assignedStaffName || "Chưa phân công"}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                  {!filteredCarePlans.length ? (
+                    <div className="p-4">
+                      <EmptyState text="Không có kế hoạch phù hợp bộ lọc." />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="min-w-0 p-5 lg:p-6">
+                {selectedCarePlan ? (
+                  <div className="space-y-5">
+                    <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Pill className={toneByTemperature(selectedCarePlan.leadTemperature)}>
+                            {CONVERSATION_LEAD_TEMPERATURE_LABELS[selectedCarePlan.leadTemperature]} · {selectedCarePlan.leadScore}/100
+                          </Pill>
+                          <Pill className={toneByCareStatus(selectedCarePlan.status)}>
+                            {careStatusLabel(selectedCarePlan.status)}
+                          </Pill>
+                          <Pill className="border-sky-300/20 bg-sky-500/10 text-sky-100">{selectedCarePlan.pageName}</Pill>
+                        </div>
+                        <h2 className="mt-3 text-xl font-bold text-[#F5EDD6]">{selectedCarePlan.customerName}</h2>
+                        <p className="mt-2 max-w-4xl text-sm leading-6 text-[rgba(245,237,214,0.60)]">{selectedCarePlan.summary}</p>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap gap-2">
+                        {selectedCarePlan.status === "pending" ? (
+                          <ActionButton
+                            loading={actionLoading === `care-${selectedCarePlan.id}`}
+                            onClick={() => void patchCarePlan(selectedCarePlan.id, { status: "approved" })}
                           >
+                            <CheckCircle2 className="h-4 w-4" />
                             Duyệt kế hoạch
-                          </button>
+                          </ActionButton>
                         ) : null}
-                        {plan.status === "approved" ? (
-                          <button
-                            type="button"
-                            disabled={actionLoading === `care-${plan.id}`}
-                            onClick={() => void patchCarePlan(plan.id, { status: "in_progress" })}
-                            className="rounded-xl bg-sky-400 px-3 py-2 text-xs font-black text-[#07111f] disabled:opacity-50"
+                        {selectedCarePlan.status === "approved" ? (
+                          <ActionButton
+                            loading={actionLoading === `care-${selectedCarePlan.id}`}
+                            onClick={() => void patchCarePlan(selectedCarePlan.id, { status: "in_progress" })}
                           >
                             Bắt đầu chăm sóc
-                          </button>
+                          </ActionButton>
                         ) : null}
-                        {plan.status === "in_progress" ? (
-                          <button
-                            type="button"
-                            disabled={actionLoading === `care-${plan.id}`}
-                            onClick={() => void patchCarePlan(plan.id, { status: "completed" })}
-                            className="rounded-xl bg-emerald-400 px-3 py-2 text-xs font-black text-[#06170d] disabled:opacity-50"
+                        {selectedCarePlan.status === "in_progress" ? (
+                          <ActionButton
+                            loading={actionLoading === `care-${selectedCarePlan.id}`}
+                            onClick={() => void patchCarePlan(selectedCarePlan.id, { status: "completed" })}
                           >
                             Hoàn tất
-                          </button>
+                          </ActionButton>
                         ) : null}
                       </div>
                     </div>
 
+                    <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+                      <DetailMetric label="Hạn chăm sóc" value={formatDate(selectedCarePlan.dueAt)} />
+                      <DetailMetric label="Tin nhắn nguồn" value={`${selectedCarePlan.sourceMessageCount} tin nhắn`} />
+                      <DetailMetric
+                        label="Độ tin cậy"
+                        value={`${Math.round(selectedCarePlan.confidence * 100)}% · ${selectedCarePlan.engine === "gemini" ? "Gemini" : "Rules an toàn"}`}
+                      />
+                      <DetailMetric
+                        label="Thông báo PWA"
+                        value={selectedCarePlan.notificationSentAt ? "Đã gửi" : "Chưa gửi"}
+                        success={Boolean(selectedCarePlan.notificationSentAt)}
+                      />
+                    </div>
+
                     {careCenter?.permissions.canAssign ? (
-                      <div className="mt-4 flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.035] p-3 sm:flex-row sm:items-center">
-                        <label className="text-xs font-bold uppercase tracking-[0.16em] text-stone-500" htmlFor={`staff-${plan.id}`}>
+                      <div className="flex flex-col gap-2 rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-3 sm:flex-row sm:items-center">
+                        <label className="shrink-0 text-xs font-bold uppercase tracking-[0.14em] text-[rgba(245,237,214,0.38)]" htmlFor={`staff-${selectedCarePlan.id}`}>
                           Người phụ trách
                         </label>
                         <select
-                          id={`staff-${plan.id}`}
-                          value={plan.assignedStaffId || ""}
-                          disabled={actionLoading === `care-${plan.id}`}
-                          onChange={event => void patchCarePlan(plan.id, { assignedStaffId: event.target.value || null })}
-                          className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#111018] px-3 py-2 text-sm text-stone-200 outline-none"
+                          id={`staff-${selectedCarePlan.id}`}
+                          value={selectedCarePlan.assignedStaffId || ""}
+                          disabled={actionLoading === `care-${selectedCarePlan.id}`}
+                          onChange={event => void patchCarePlan(selectedCarePlan.id, { assignedStaffId: event.target.value || null })}
+                          className="min-w-0 flex-1 rounded-xl border border-[rgba(118,138,166,0.20)] bg-[#0b111b] px-3 py-2.5 text-sm text-[#F5EDD6] outline-none focus:border-[#C9A84C]/50"
                         >
                           <option value="">Chưa phân công — thông báo Admin</option>
                           {(careCenter.staff || []).map(staff => (
                             <option key={staff.id} value={staff.id}>
-                              {staff.fullName} • {staff.pushSubscriptions > 0 ? `${staff.pushSubscriptions} thiết bị PWA` : "chưa bật PWA"}
+                              {staff.fullName} · {staff.pushSubscriptions > 0 ? `${staff.pushSubscriptions} thiết bị PWA` : "chưa bật PWA"}
                             </option>
                           ))}
                         </select>
                       </div>
                     ) : null}
 
-                    {expanded ? (
-                      <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
-                        <div className="grid gap-3 lg:grid-cols-3">
-                          <InfoBlock label="Nhu cầu" value={plan.customerNeed} />
-                          <InfoBlock label="Tín hiệu mua" value={plan.buyingSignals.join(", ") || "Chưa rõ"} />
-                          <InfoBlock label="Trở ngại" value={plan.objections.join(", ") || "Chưa thấy rõ"} />
-                        </div>
-                        <div className="rounded-2xl border border-amber-300/15 bg-amber-500/[0.06] p-4">
-                          <div className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Hành động tốt nhất tiếp theo</div>
-                          <p className="mt-2 text-sm leading-relaxed text-amber-50">{plan.nextBestAction}</p>
-                        </div>
-                        <div className="grid gap-3 lg:grid-cols-2">
-                          {plan.planSteps.map((step, index) => (
-                            <div key={`${plan.id}-${index}`} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <div className="text-xs font-bold uppercase tracking-[0.16em] text-amber-300">
-                                    Bước {index + 1} • {step.when}
-                                  </div>
-                                  <h4 className="mt-2 font-black text-white">{step.goal}</h4>
+                    <div className="grid gap-3 lg:grid-cols-3">
+                      <InfoPanel label="Nhu cầu" value={selectedCarePlan.customerNeed} />
+                      <InfoPanel label="Tín hiệu mua" value={selectedCarePlan.buyingSignals.join(", ") || "Chưa rõ"} />
+                      <InfoPanel label="Trở ngại" value={selectedCarePlan.objections.join(", ") || "Chưa thấy rõ"} />
+                    </div>
+
+                    <div className="rounded-xl border border-[#C9A84C]/20 bg-[#C9A84C]/[0.065] p-4">
+                      <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#D9BD6A]">Hành động tốt nhất tiếp theo</div>
+                      <p className="mt-2 text-sm leading-6 text-[#F5EDD6]">{selectedCarePlan.nextBestAction}</p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#F5EDD6]">Các bước chăm sóc đề xuất</h3>
+                      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                        {selectedCarePlan.planSteps.map((step, index) => (
+                          <div key={`${selectedCarePlan.id}-${index}`} className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#D9BD6A]">
+                                  Bước {index + 1} · {step.when}
                                 </div>
-                                <Pill className="border-white/10 bg-black/20 text-stone-300">{step.channel}</Pill>
+                                <h4 className="mt-1.5 text-sm font-semibold text-[#F5EDD6]">{step.goal}</h4>
                               </div>
-                              <p className="mt-3 text-sm leading-relaxed text-stone-300">{step.action}</p>
-                              {step.draftMessage ? (
-                                <div className="mt-3 rounded-xl border border-sky-300/15 bg-sky-500/[0.06] p-3 text-sm leading-relaxed text-sky-100">
-                                  <div className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-sky-300">Tin nhắn nháp</div>
-                                  {step.draftMessage}
-                                </div>
-                              ) : null}
-                              <p className="mt-3 flex items-center gap-2 text-xs text-emerald-300">
-                                <ShieldCheck className="h-3.5 w-3.5" />
-                                Nhân viên phải xác nhận trước khi liên hệ
-                              </p>
+                              <Pill className="border-[rgba(118,138,166,0.18)] bg-white/[0.035] text-[rgba(245,237,214,0.58)]">
+                                {step.channel}
+                              </Pill>
                             </div>
-                          ))}
-                        </div>
+                            <p className="mt-3 text-sm leading-6 text-[rgba(245,237,214,0.58)]">{step.action}</p>
+                            {step.draftMessage ? (
+                              <div className="mt-3 rounded-xl border border-sky-300/15 bg-sky-500/[0.055] p-3 text-sm leading-6 text-sky-100/80">
+                                <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-300">Tin nhắn nháp</div>
+                                {step.draftMessage}
+                              </div>
+                            ) : null}
+                            <p className="mt-3 flex items-center gap-2 text-xs text-emerald-300/80">
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                              Nhân viên xác nhận trước khi liên hệ
+                            </p>
+                          </div>
+                        ))}
                       </div>
-                    ) : null}
-                  </article>
-                );
-              })}
-              {!filteredCarePlans.length ? (
-                <EmptyState text="Chưa có kế hoạch phù hợp bộ lọc. AI sẽ tự chạy hằng ngày hoặc quản lý có thể chạy ngay." />
-              ) : null}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex min-h-[520px] items-center justify-center">
+                    <EmptyState text="Chọn bộ lọc khác hoặc chạy AI để tạo kế hoạch chăm sóc." />
+                  </div>
+                )}
+              </div>
             </div>
           </Card>
         </div>
@@ -720,28 +800,28 @@ export function ConversationLearningClient() {
 
       {activeTab === "conversations" ? (
         <Card className="p-5">
-          <SectionTitle title="Hội thoại nguồn" subtitle="Dữ liệu đọc từ bảng conversations, đã che bớt thông tin nhạy cảm trên giao diện." />
+          <SectionTitle title="Hội thoại Fanpage" subtitle="Nguồn dữ liệu CRM đã được che bớt thông tin nhạy cảm trên giao diện." />
           <div className="mt-5 space-y-3">
             {sources.map(source => {
               const latest = source.messages[source.messages.length - 1];
               return (
-                <div key={source.conversationId} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div key={source.conversationId} className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-black text-white">{source.customerName || "Khách chưa có tên"}</h3>
-                        <Pill className="border-white/10 bg-white/5 text-stone-300">{maskPhone(source.facebookUserId)}</Pill>
+                        <h3 className="font-semibold text-[#F5EDD6]">{source.customerName || "Khách chưa có tên"}</h3>
+                        <Pill className="border-[rgba(118,138,166,0.18)] bg-white/[0.035] text-[rgba(245,237,214,0.58)]">{maskPhone(source.facebookUserId)}</Pill>
                         {source.assignedSale ? <Pill className="border-amber-300/25 bg-amber-500/10 text-amber-100">{source.assignedSale}</Pill> : null}
                       </div>
-                      <p className="mt-2 text-sm text-stone-400">{shortText(latest?.content || "Không có nội dung tin nhắn", 180)}</p>
+                      <p className="mt-2 text-sm text-[rgba(245,237,214,0.52)]">{shortText(latest?.content || "Không có nội dung tin nhắn", 180)}</p>
                     </div>
-                    <div className="text-sm text-stone-500">{formatDate(source.latestMessageAt)}</div>
+                    <div className="text-sm text-[rgba(245,237,214,0.34)]">{formatDate(source.latestMessageAt)}</div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Pill className="border-sky-300/20 bg-sky-500/10 text-sky-100">{source.messages.length} tin nhắn</Pill>
                     {source.orderStatus ? <Pill className="border-emerald-300/20 bg-emerald-500/10 text-emerald-100">{source.orderStatus}</Pill> : null}
                     {source.tags.slice(0, 5).map(tag => (
-                      <Pill key={tag} className="border-white/10 bg-white/5 text-stone-300">{tag}</Pill>
+                      <Pill key={tag} className="border-[rgba(118,138,166,0.18)] bg-white/[0.035] text-[rgba(245,237,214,0.58)]">{tag}</Pill>
                     ))}
                   </div>
                 </div>
@@ -754,7 +834,13 @@ export function ConversationLearningClient() {
 
       {activeTab === "analysis" ? (
         <Card className="p-5">
-          <SectionTitle title="Phân tích lead" subtitle="Mỗi hội thoại được chấm điểm, phát hiện nhu cầu, từ chối và bước tiếp theo cho sale." />
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <SectionTitle title="Phân tích AI" subtitle="Chấm điểm hội thoại, nhận diện nhu cầu và đề xuất bước tiếp theo cho nhân viên." />
+            <ActionButton onClick={runAnalyze} loading={actionLoading === "analyze"}>
+              <Sparkles className="h-4 w-4" />
+              Phân tích 50 hội thoại
+            </ActionButton>
+          </div>
           <div className="mt-5 space-y-3">
             {analyses.map(item => <AnalysisRow key={item.id} item={item} />)}
             {!analyses.length ? <EmptyState text="Chưa có dữ liệu phân tích." /> : null}
@@ -765,22 +851,22 @@ export function ConversationLearningClient() {
       {activeTab === "scripts" ? (
         <Card className="p-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <SectionTitle title="Script sale AI tạo nháp" subtitle="Quản lý duyệt rồi mới đưa vào Knowledge Base cho các AI agent dùng." />
+            <SectionTitle title="Kịch bản tư vấn AI" subtitle="Quản lý duyệt trước khi đưa vào kho kiến thức dùng chung." />
             <ActionButton onClick={generateScripts} loading={actionLoading === "scripts"}>
-              Tạo/cập nhật script nháp
+              Tạo kịch bản nháp
             </ActionButton>
           </div>
           <div className="mt-5 grid gap-4 xl:grid-cols-2">
             {scripts.map(script => (
-              <div key={script.id} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div key={script.id} className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-black text-white">{script.scriptName}</h3>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-amber-300">{script.customerSituation}</p>
+                    <h3 className="text-lg font-semibold text-[#F5EDD6]">{script.scriptName}</h3>
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[#D9BD6A]">{script.customerSituation}</p>
                   </div>
                   <Pill className={toneByStatus(script.status)}>{script.status === "approved" ? "Đã duyệt" : "Bản nháp"}</Pill>
                 </div>
-                <div className="mt-4 space-y-3 text-sm text-stone-300">
+                <div className="mt-4 space-y-3 text-sm text-[rgba(245,237,214,0.58)]">
                   <InfoBlock label="Dấu hiệu" value={script.triggerSignals.join(", ")} />
                   <InfoBlock label="Câu hỏi nên hỏi" value={script.suggestedQuestions.join(" | ")} />
                   <InfoBlock label="Gợi ý trả lời" value={script.suggestedReply} />
@@ -813,22 +899,22 @@ export function ConversationLearningClient() {
       {activeTab === "workflows" ? (
         <Card className="p-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <SectionTitle title="Workflow chăm sóc tự động dạng rule" subtitle="MVP tạo luật gợi ý và task cho sale, chưa tự nhắn khách." />
+            <SectionTitle title="Quy trình chăm sóc" subtitle="Tạo luật gợi ý và công việc cho nhân viên; hệ thống không tự nhắn khách." />
             <ActionButton onClick={generateWorkflows} loading={actionLoading === "workflows"}>
-              Tạo workflow mẫu
+              Tạo quy trình mẫu
             </ActionButton>
           </div>
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             {workflows.map(workflow => (
-              <div key={workflow.id} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div key={workflow.id} className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-black text-white">{workflow.workflowName}</h3>
-                    <p className="mt-1 text-xs text-stone-500">Ưu tiên {workflow.priority} • {workflow.delayTime}</p>
+                    <h3 className="font-semibold text-[#F5EDD6]">{workflow.workflowName}</h3>
+                    <p className="mt-1 text-xs text-[rgba(245,237,214,0.34)]">Ưu tiên {workflow.priority} · {workflow.delayTime}</p>
                   </div>
                   <Pill className={toneByStatus(workflow.status)}>{workflow.status === "approved" ? "Đang bật" : "Bản nháp"}</Pill>
                 </div>
-                <div className="mt-4 space-y-3 text-sm text-stone-300">
+                <div className="mt-4 space-y-3 text-sm text-[rgba(245,237,214,0.58)]">
                   <InfoBlock label="Điều kiện" value={workflow.triggerCondition} />
                   <InfoBlock label="AI làm" value={workflow.aiAction} />
                   <InfoBlock label="Người phụ trách" value={workflow.humanAction} />
@@ -879,51 +965,70 @@ function toneByCareRun(status: FanpageCareRun["status"]) {
 
 function RunMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-white/5 pb-2">
-      <span className="text-stone-500">{label}</span>
-      <span className="text-right font-semibold text-stone-200">{value}</span>
+    <div className="flex items-center justify-between gap-3 border-b border-[rgba(118,138,166,0.10)] pb-2">
+      <span className="text-[rgba(245,237,214,0.40)]">{label}</span>
+      <span className="text-right font-medium text-[rgba(245,237,214,0.72)]">{value}</span>
     </div>
   );
 }
 
 function Metric({ label, value, icon: Icon }: { label: string; value: number; icon: LucideIcon }) {
   return (
-    <Card className="p-4">
+    <Card className="p-4 transition hover:border-[#C9A84C]/20">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-500/10 text-amber-200">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#C9A84C]/20 bg-[#C9A84C]/10 text-[#E2C97E]">
           <Icon className="h-5 w-5" />
         </div>
-        <div>
-          <div className="text-2xl font-black text-white">{value}</div>
-          <div className="text-xs text-stone-500">{label}</div>
+        <div className="min-w-0">
+          <div className="text-2xl font-bold text-[#F5EDD6]">{value}</div>
+          <div className="truncate text-xs text-[rgba(245,237,214,0.40)]">{label}</div>
         </div>
       </div>
     </Card>
   );
 }
 
+function DetailMetric({
+  label,
+  value,
+  success = false,
+}: {
+  label: string;
+  value: string;
+  success?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-3">
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[rgba(245,237,214,0.34)]">{label}</div>
+      <div className={cn("mt-1.5 text-sm font-semibold", success ? "text-emerald-300" : "text-[rgba(245,237,214,0.72)]")}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div>
-      <h2 className="text-xl font-black text-white">{title}</h2>
-      <p className="mt-1 text-sm text-stone-400">{subtitle}</p>
+      <h2 className="text-lg font-semibold text-[#F5EDD6]">{title}</h2>
+      <p className="mt-1 text-sm leading-5 text-[rgba(245,237,214,0.46)]">{subtitle}</p>
     </div>
   );
 }
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-8 text-center text-sm text-stone-400">
+    <div className="rounded-xl border border-dashed border-[rgba(118,138,166,0.18)] bg-[#0d1420]/45 p-7 text-center text-sm text-[rgba(245,237,214,0.44)]">
       {text}
     </div>
   );
 }
 
-function SafetyLine({ text }: { text: string }) {
+function InfoPanel({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 p-3">
-      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-      <span>{text}</span>
+    <div className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-4">
+      <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#D9BD6A]">{label}</div>
+      <p className="mt-2 text-sm leading-6 text-[rgba(245,237,214,0.60)]">{value || "-"}</p>
     </div>
   );
 }
@@ -931,15 +1036,15 @@ function SafetyLine({ text }: { text: string }) {
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300/80">{label}</div>
-      <div className="mt-1 leading-relaxed text-stone-300">{value || "-"}</div>
+      <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#D9BD6A]">{label}</div>
+      <div className="mt-1.5 leading-relaxed text-[rgba(245,237,214,0.60)]">{value || "-"}</div>
     </div>
   );
 }
 
 function AnalysisRow({ item, compact = false }: { item: ConversationAnalysis; compact?: boolean }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+    <div className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -949,12 +1054,12 @@ function AnalysisRow({ item, compact = false }: { item: ConversationAnalysis; co
             <Pill className={toneByStatus(item.reviewStatus)}>
               {CONVERSATION_REVIEW_STATUS_LABELS[item.reviewStatus]}
             </Pill>
-            <Pill className="border-white/10 bg-white/5 text-stone-300">{item.finalStatus}</Pill>
+            <Pill className="border-[rgba(118,138,166,0.18)] bg-white/[0.035] text-[rgba(245,237,214,0.58)]">{item.finalStatus}</Pill>
           </div>
-          <h3 className="mt-3 font-black text-white">{item.productInterest.join(", ") || "Chưa rõ sản phẩm"}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-stone-300">{compact ? shortText(item.conversationSummary, 180) : item.conversationSummary}</p>
+          <h3 className="mt-3 font-semibold text-[#F5EDD6]">{item.productInterest.join(", ") || "Chưa rõ sản phẩm"}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-[rgba(245,237,214,0.58)]">{compact ? shortText(item.conversationSummary, 180) : item.conversationSummary}</p>
         </div>
-        <div className="text-sm text-stone-500">{formatDate(item.updatedAt)}</div>
+        <div className="text-sm text-[rgba(245,237,214,0.34)]">{formatDate(item.updatedAt)}</div>
       </div>
       {!compact ? (
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
