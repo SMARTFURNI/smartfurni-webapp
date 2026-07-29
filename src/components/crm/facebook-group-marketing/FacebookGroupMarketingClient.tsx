@@ -779,26 +779,26 @@ function GroupTopicPlanner({
                 : "border-white/8 bg-black/10 hover:border-white/15 hover:bg-white/[.035]"
             }`}>
             <span className="flex items-center justify-between gap-3">
-              <b className={active ? "text-amber-200" : "text-slate-200"}>{String(topic.label)}</b>
+              <b className="fbg-topic-title">{String(topic.label)}</b>
               <span className="flex items-center gap-1.5">
                 {!isUnclassified && canManage && <button type="button" title="Sửa chủ đề"
                   aria-label={`Sửa chủ đề ${String(topic.label)}`}
                   onClick={event => { event.stopPropagation(); onEdit(topic); }}
-                  className="rounded-lg border border-blue-300/20 bg-blue-400/10 p-1.5 text-blue-200 hover:bg-blue-400/20">
+                  className="fbg-topic-edit-button rounded-lg border p-1.5">
                   <Pencil size={13} />
                 </button>}
                 {!isUnclassified && canDelete && <button type="button" title="Xóa chủ đề"
                   aria-label={`Xóa chủ đề ${String(topic.label)}`}
                   onClick={event => { event.stopPropagation(); onDelete(topic); }}
-                  className="rounded-lg border border-red-300/20 bg-red-400/10 p-1.5 text-red-200 hover:bg-red-400/20">
+                  className="fbg-topic-delete-button rounded-lg border p-1.5">
                   <Trash2 size={13} />
                 </button>}
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
-                  active ? "bg-amber-300 text-black" : "bg-white/[.06] text-slate-400"
-                }`}>{counts.get(topicKey) || 0}</span>
+                <span className="fbg-topic-count rounded-full px-2 py-0.5 text-[11px] font-black">
+                  {counts.get(topicKey) || 0}
+                </span>
               </span>
             </span>
-            <span className="mt-1.5 block text-xs leading-5 text-slate-500">{String(topic.description || "")}</span>
+            <span className="fbg-topic-description mt-1.5 block text-xs leading-5">{String(topic.description || "")}</span>
           </div>;
         })}
       </div>
@@ -837,8 +837,8 @@ function GroupDiscoveryAgent({
     <section className="fbg-discovery-panel mb-4 overflow-hidden rounded-2xl border">
       <div className="grid gap-4 p-4 xl:grid-cols-[1.1fr_1.9fr]">
         <div>
-          <div className="flex items-center gap-2 text-sm font-black text-blue-100">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-blue-400/15 text-blue-200"><Bot size={17} /></span>
+          <div className="fbg-discovery-title flex items-center gap-2 text-sm font-black">
+            <span className="fbg-discovery-icon grid h-8 w-8 place-items-center rounded-xl"><Bot size={17} /></span>
             AI Agent tìm Group liên quan
           </div>
           <p className="mt-2 text-xs leading-5 text-slate-400">
@@ -877,7 +877,7 @@ function GroupDiscoveryAgent({
           </div>
         </div>
       </div>
-      {result && <div className="border-t border-blue-300/10 p-4">
+      {result && <div className="fbg-discovery-results border-t p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <b className="text-sm text-white">Đề xuất cần kiểm tra ({result.suggestions.length})</b>
@@ -912,10 +912,10 @@ function GroupDiscoveryAgent({
                 <div className="mt-1 flex flex-wrap gap-1.5 text-[10px]">
                   <span className="rounded-full bg-amber-400/10 px-2 py-1 text-amber-200">{String(suggestion.topic)}</span>
                   <span className="rounded-full bg-white/[.05] px-2 py-1 text-slate-400">{String(suggestion.region)}</span>
-                  <span className="rounded-full bg-blue-400/10 px-2 py-1 text-blue-200">Phù hợp {Number(suggestion.matchScore || 0)}%</span>
+                  <span className="fbg-match-chip rounded-full px-2 py-1">Phù hợp {Number(suggestion.matchScore || 0)}%</span>
                 </div>
               </div>
-              <SearchIcon size={16} className="shrink-0 text-blue-300" />
+              <SearchIcon size={16} className="fbg-discovery-search-icon shrink-0" />
             </div>
             <p className="mt-3 text-xs leading-5 text-slate-400">{String(suggestion.reason)}</p>
             {Boolean(suggestion.requiresVerifiedUrl) && <label className="mt-3 grid gap-1.5 text-[11px] text-slate-400">
