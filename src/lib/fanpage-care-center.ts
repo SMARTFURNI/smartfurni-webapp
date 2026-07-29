@@ -476,7 +476,7 @@ async function generateGeminiPlans(
   const plans = new Map<string, GeneratedCarePlan>();
   const errors: string[] = [];
   const batchSize = Math.max(2, Math.min(8, Number(process.env.FANPAGE_AI_GEMINI_BATCH_SIZE || 3)));
-  const concurrency = Math.max(1, Math.min(4, Number(process.env.FANPAGE_AI_GEMINI_CONCURRENCY || 2)));
+  const concurrency = Math.max(1, Math.min(4, Number(process.env.FANPAGE_AI_GEMINI_CONCURRENCY || 1)));
   const batches: typeof inputs[] = [];
   for (let offset = 0; offset < inputs.length; offset += batchSize) {
     batches.push(inputs.slice(offset, offset + batchSize));
@@ -789,7 +789,7 @@ export async function runDailyFanpageCareCenter(input: {
       );
       if (existingRuns.length) {
         const latest = existingRuns[0];
-        retryFailedGemini = Boolean(latest.gemini_error) && existingRuns.length < 3;
+        retryFailedGemini = Boolean(latest.gemini_error) && existingRuns.length < 2;
         if (!retryFailedGemini) {
           return { skipped: "already-ran-today", runId: latest.id, ranAt: new Date().toISOString() };
         }
@@ -858,6 +858,7 @@ export async function runDailyFanpageCareCenter(input: {
     const plans: FanpageCarePlan[] = [];
     for (const item of qualified) {
       const aiPlan = generatedByGemini.get(item.conversation.conversationId);
+      if (retryFailedGemini && !aiPlan) continue;
       plans.push(await upsertCarePlan({
         runId,
         conversation: item.conversation,
