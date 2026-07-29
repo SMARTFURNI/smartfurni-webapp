@@ -132,7 +132,8 @@
 
 .crm-admin-refresh [style*="background: #fffbeb"],
 .crm-admin-refresh [style*="background:#fffbeb"],
-.crm-admin-refresh [style*="background: #FFFBEB"] {
+.crm-admin-refresh [style*="background: #FFFBEB"],
+.crm-admin-refresh [style*="background: rgb(255, 251, 235)"] {
   background: rgba(245, 158, 11, 0.09) !important;
 }
 
@@ -145,21 +146,29 @@
   background: rgba(34, 197, 94, 0.09) !important;
 }
 
+.crm-admin-refresh [style*="background: rgb(240, 253, 244)"],
+.crm-admin-refresh [style*="background: rgb(209, 250, 229)"] {
+  background: rgba(34, 197, 94, 0.09) !important;
+}
+
 .crm-admin-refresh [style*="background: #eff6ff"],
 .crm-admin-refresh [style*="background:#eff6ff"],
-.crm-admin-refresh [style*="background: #EFF6FF"] {
+.crm-admin-refresh [style*="background: #EFF6FF"],
+.crm-admin-refresh [style*="background: rgb(239, 246, 255)"] {
   background: rgba(59, 130, 246, 0.09) !important;
 }
 
 .crm-admin-refresh [style*="background: #f5f3ff"],
 .crm-admin-refresh [style*="background:#f5f3ff"],
-.crm-admin-refresh [style*="background: #F5F3FF"] {
+.crm-admin-refresh [style*="background: #F5F3FF"],
+.crm-admin-refresh [style*="background: rgb(245, 243, 255)"] {
   background: rgba(139, 92, 246, 0.09) !important;
 }
 
 .crm-admin-refresh [style*="background: #fef2f2"],
 .crm-admin-refresh [style*="background:#fef2f2"],
-.crm-admin-refresh [style*="background: #FEF2F2"] {
+.crm-admin-refresh [style*="background: #FEF2F2"],
+.crm-admin-refresh [style*="background: rgb(254, 242, 242)"] {
   background: rgba(239, 68, 68, 0.09) !important;
 }
 
@@ -283,6 +292,10 @@
 .crm-admin-refresh[data-crm-route="tasks"] > div > .space-y-2 > div {
   background: linear-gradient(145deg, rgba(22, 30, 44, 0.94), rgba(26, 23, 19, 0.92)) !important;
   border-color: var(--crm-border) !important;
+}
+
+.crm-admin-refresh[data-crm-route="tasks"] .opacity-60 {
+  opacity: 0.78 !important;
 }
 
 .crm-admin-refresh[data-crm-route="calendar"] .crm-calendar-agenda {
