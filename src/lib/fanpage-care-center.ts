@@ -469,79 +469,108 @@ async function generateGeminiPlans(
   inputs: Array<{ conversation: ConversationForAnalysis; assessment: DeterministicConversationAssessment }>,
 ) {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey || !inputs.length) return { plans: new Map<string, GeneratedCarePlan>(), model: undefined };
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-  const safePayload = inputs.map(({ conversation, assessment }) => ({
-    id: conversation.conversationId,
-    page: conversation.pageName,
-    customerLabel: conversation.participantName.slice(0, 80),
-    baseline: {
-      score: assessment.leadScore,
-      temperature: assessment.leadTemperature,
-      stage: assessment.funnelStage,
-      need: assessment.customerNeed,
-      products: assessment.productInterest,
-      objections: assessment.objections,
-      signals: assessment.buyingSignals,
-    },
-    messages: conversation.messages.slice(-16).map(message => ({
-      direction: message.direction,
-      content: message.content.slice(0, 600),
-      at: message.createdAt,
-    })),
-  }));
-  const prompt = [
-    "Bạn là AI Customer Care Planner của CRM nội bộ SmartFurni.",
-    "Hãy lập kế hoạch chăm sóc riêng cho từng hội thoại dựa hoàn toàn trên dữ liệu được cung cấp.",
-    "Không bịa giá, chính sách, số điện thoại, khuyến mãi hoặc thông tin sản phẩm.",
-    "Không tự gửi tin. Mọi bước liên hệ phải requiresHumanApproval=true.",
-    "Tránh spam: tối đa một liên hệ/ngày, dừng nếu khách từ chối, ưu tiên trả lời tin chưa phản hồi.",
-    "Trả về JSON thuần dạng {\"plans\":[...]} với mỗi phần tử gồm:",
-    "conversationId, summary, customerNeed, productInterest[], objections[], buyingSignals[],",
-    "nextBestAction, confidence (0..1), planSteps[] gồm dayOffset, when, channel (Messenger|Điện thoại|Zalo|CRM), goal, action, draftMessage, requiresHumanApproval.",
-    "Mỗi hội thoại cần 3-5 bước trong tối đa 7 ngày. Viết tiếng Việt tự nhiên, ngắn gọn.",
-    JSON.stringify(safePayload),
-  ].join("\n");
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          responseMimeType: "application/json",
-          maxOutputTokens: 8192,
-        },
-      }),
-      signal: AbortSignal.timeout(50_000),
-    },
-  );
-  if (!response.ok) throw new Error(`Gemini trả lỗi ${response.status}`);
-  const payload = await response.json() as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
-  const text = payload.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("") || "";
-  const parsed = parseGeminiJson(text) as { plans?: Array<Record<string, unknown>> };
-  const allowedIds = new Set(inputs.map(item => item.conversation.conversationId));
-  const plans = new Map<string, GeneratedCarePlan>();
-  for (const raw of parsed.plans || []) {
-    const conversationId = String(raw.conversationId || "");
-    if (!allowedIds.has(conversationId)) continue;
-    plans.set(conversationId, {
-      conversationId,
-      summary: String(raw.summary || "").slice(0, 1500),
-      customerNeed: String(raw.customerNeed || "").slice(0, 1000),
-      productInterest: stringArray(raw.productInterest).slice(0, 12),
-      objections: stringArray(raw.objections).slice(0, 12),
-      buyingSignals: stringArray(raw.buyingSignals).slice(0, 12),
-      nextBestAction: String(raw.nextBestAction || "").slice(0, 1000),
-      confidence: Math.max(0, Math.min(1, Number(raw.confidence || 0.75))),
-      planSteps: normalizePlanSteps(raw.planSteps),
-    });
+  if (!apiKey || !inputs.length) {
+    return { plans: new Map<string, GeneratedCarePlan>(), model: undefined, errors: [] as string[] };
   }
-  return { plans, model };
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const plans = new Map<string, GeneratedCarePlan>();
+  const errors: string[] = [];
+  const batchSize = Math.max(2, Math.min(8, Number(process.env.FANPAGE_AI_GEMINI_BATCH_SIZE || 5)));
+  const concurrency = Math.max(1, Math.min(4, Number(process.env.FANPAGE_AI_GEMINI_CONCURRENCY || 3)));
+  const batches: typeof inputs[] = [];
+  for (let offset = 0; offset < inputs.length; offset += batchSize) {
+    batches.push(inputs.slice(offset, offset + batchSize));
+  }
+  let nextBatch = 0;
+  const workers = Array.from({ length: Math.min(concurrency, batches.length) }, async () => {
+    while (nextBatch < batches.length) {
+      const batchIndex = nextBatch;
+      nextBatch += 1;
+      const batch = batches[batchIndex];
+      try {
+        const safePayload = batch.map(({ conversation, assessment }) => ({
+          id: conversation.conversationId,
+          page: conversation.pageName,
+          customerLabel: conversation.participantName.slice(0, 80),
+          baseline: {
+            score: assessment.leadScore,
+            temperature: assessment.leadTemperature,
+            stage: assessment.funnelStage,
+            need: assessment.customerNeed,
+            products: assessment.productInterest,
+            objections: assessment.objections,
+            signals: assessment.buyingSignals,
+          },
+          messages: conversation.messages.slice(-14).map(message => ({
+            direction: message.direction,
+            content: message.content.slice(0, 500),
+            at: message.createdAt,
+          })),
+        }));
+        const prompt = [
+          "Bạn là AI Customer Care Planner của CRM nội bộ SmartFurni.",
+          "Hãy lập kế hoạch chăm sóc riêng cho từng hội thoại dựa hoàn toàn trên dữ liệu được cung cấp.",
+          "Không bịa giá, chính sách, số điện thoại, khuyến mãi hoặc thông tin sản phẩm.",
+          "Không tự gửi tin. Mọi bước liên hệ phải requiresHumanApproval=true.",
+          "Tránh spam: tối đa một liên hệ/ngày, dừng nếu khách từ chối, ưu tiên trả lời tin chưa phản hồi.",
+          "Trả về JSON thuần dạng {\"plans\":[...]} với mỗi phần tử gồm:",
+          "conversationId, summary, customerNeed, productInterest[], objections[], buyingSignals[],",
+          "nextBestAction, confidence (0..1), planSteps[] gồm dayOffset, when, channel (Messenger|Điện thoại|Zalo|CRM), goal, action, draftMessage, requiresHumanApproval.",
+          "Mỗi hội thoại cần 3-4 bước trong tối đa 7 ngày. Viết tiếng Việt tự nhiên, ngắn gọn.",
+          JSON.stringify(safePayload),
+        ].join("\n");
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.2,
+                responseMimeType: "application/json",
+                maxOutputTokens: 8192,
+              },
+            }),
+            signal: AbortSignal.timeout(50_000),
+          },
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json() as {
+          candidates?: Array<{
+            finishReason?: string;
+            content?: { parts?: Array<{ text?: string }> };
+          }>;
+        };
+        const candidate = payload.candidates?.[0];
+        const text = candidate?.content?.parts?.map(part => part.text || "").join("") || "";
+        if (candidate?.finishReason === "MAX_TOKENS") throw new Error("phản hồi vượt giới hạn token");
+        if (!text) throw new Error("phản hồi trống");
+        const parsed = parseGeminiJson(text) as { plans?: Array<Record<string, unknown>> };
+        const allowedIds = new Set(batch.map(item => item.conversation.conversationId));
+        for (const raw of parsed.plans || []) {
+          const conversationId = String(raw.conversationId || "");
+          if (!allowedIds.has(conversationId)) continue;
+          plans.set(conversationId, {
+            conversationId,
+            summary: String(raw.summary || "").slice(0, 1500),
+            customerNeed: String(raw.customerNeed || "").slice(0, 1000),
+            productInterest: stringArray(raw.productInterest).slice(0, 12),
+            objections: stringArray(raw.objections).slice(0, 12),
+            buyingSignals: stringArray(raw.buyingSignals).slice(0, 12),
+            nextBestAction: String(raw.nextBestAction || "").slice(0, 1000),
+            confidence: Math.max(0, Math.min(1, Number(raw.confidence || 0.75))),
+            planSteps: normalizePlanSteps(raw.planSteps),
+          });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "lỗi không xác định";
+        errors.push(`Lô ${batchIndex + 1}/${batches.length}: ${message}`);
+      }
+    }
+  });
+  await Promise.all(workers);
+  return { plans, model, errors };
 }
 
 async function upsertCarePlan(input: {
@@ -793,6 +822,7 @@ export async function runDailyFanpageCareCenter(input: {
       const result = await generateGeminiPlans(qualified);
       generatedByGemini = result.plans;
       model = result.model;
+      if (result.errors.length) geminiError = result.errors.join("; ").slice(0, 2000);
     } catch (error) {
       geminiError = error instanceof Error ? error.message : "Gemini lỗi không xác định";
     }
