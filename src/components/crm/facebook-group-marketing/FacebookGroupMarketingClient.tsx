@@ -99,7 +99,7 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
     <div className="fbg-modal-overlay fixed inset-0 z-[120] flex items-end justify-center bg-black/70 p-3 md:items-center" onMouseDown={onClose}>
       <div className="fbg-modal-card max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-amber-300/15 bg-[#12151d] p-5 shadow-2xl"
         onMouseDown={event => event.stopPropagation()}>
-        <div className="mb-5 flex items-center justify-between">
+        <div className="fbg-modal-header mb-5 flex items-center justify-between">
           <div>
             <div className="mb-1 text-[10px] font-bold uppercase tracking-[.18em] text-amber-300/80">Facebook Group Marketing</div>
             <h2 className="text-lg font-black text-white">{title}</h2>
@@ -794,7 +794,7 @@ function CreateForm({ resource, options, onSubmit }: {
       <Field label="Khách hàng CRM (nếu đã có)" name="leadId"><select name="leadId" className={selectClass}><option value="">Chưa gắn khách hàng</option>{options.leads.map(lead => <option key={String(lead.id)} value={String(lead.id)}>{String(lead.name)} {lead.phone ? `• ${String(lead.phone)}` : ""}</option>)}</select></Field>
       <Field label="Nhân viên xử lý" name="assignedStaffId"><select name="assignedStaffId" className={selectClass}><option value="">Chọn nhân viên</option>{options.staff.map(staff => <option key={String(staff.id)} value={String(staff.id)}>{String(staff.name)}</option>)}</select></Field>
     </>}
-    <div className="md:col-span-2 flex justify-end"><button className="fbg-primary-button rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Lưu</button></div>
+    <div className="fbg-form-actions md:col-span-2 flex justify-end"><button className="fbg-primary-button rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Lưu</button></div>
   </form>;
 }
 
@@ -1096,7 +1096,7 @@ function EditForm({ resource, row, options, onSubmit }: {
       </Field>
     </>}
 
-    <div className="md:col-span-2 flex justify-end">
+    <div className="fbg-form-actions md:col-span-2 flex justify-end">
       <button className="fbg-primary-button rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Lưu thay đổi</button>
     </div>
   </form>;

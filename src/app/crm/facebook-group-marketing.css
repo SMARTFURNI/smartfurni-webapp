@@ -452,12 +452,49 @@
 }
 
 .fbg-field {
+  min-width: 0;
   color: rgba(245, 237, 214, 0.68) !important;
   font-weight: 600;
 }
 
 .fbg-field > span {
   font-size: 12px;
+}
+
+.fbg-form {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.fbg-form > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fbg-form input:not([type="checkbox"]):not([type="radio"]),
+.fbg-form select,
+.fbg-form textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fbg-form select {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fbg-form-actions {
+  position: sticky;
+  z-index: 4;
+  bottom: -20px;
+  margin: 4px -20px -20px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid rgba(224, 197, 111, 0.1);
+  background: linear-gradient(to bottom, rgba(25, 25, 24, 0.88), rgba(24, 21, 16, 0.98));
+  backdrop-filter: blur(18px);
 }
 
 .fbg-choice-list {
@@ -487,11 +524,25 @@
 }
 
 .fbg-modal-card {
+  width: 100%;
+  max-width: min(860px, calc(100vw - 32px)) !important;
+  overflow-x: hidden !important;
   border-color: rgba(224, 197, 111, 0.2) !important;
   background:
     radial-gradient(circle at 90% 0, rgba(164, 112, 24, 0.13), transparent 18rem),
     linear-gradient(145deg, rgba(23, 31, 46, 0.98), rgba(28, 23, 15, 0.98)) !important;
   box-shadow: 0 34px 100px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
+}
+
+.fbg-modal-header {
+  position: sticky;
+  z-index: 6;
+  top: -20px;
+  margin: -20px -20px 20px !important;
+  padding: 20px;
+  border-bottom: 1px solid rgba(224, 197, 111, 0.1);
+  background: linear-gradient(to bottom, rgba(23, 29, 42, 0.99), rgba(24, 26, 32, 0.94));
+  backdrop-filter: blur(18px);
 }
 
 .fbg-settings-card {
@@ -593,6 +644,12 @@
 
   .fbg-modal-card {
     border-radius: 24px 24px 16px 16px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .fbg-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

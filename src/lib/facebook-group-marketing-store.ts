@@ -5,7 +5,7 @@ import { getDb, query, queryOne } from "./db";
 import {
   analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
   extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
-  parseFacebookGroupUrl, validateFacebookGroupSchedule,
+  parseFacebookGroupAiSuggestion, parseFacebookGroupUrl, validateFacebookGroupSchedule,
 } from "./facebook-group-marketing-business";
 import {
   DEFAULT_FACEBOOK_GROUP_SETTINGS, type DashboardData, type FacebookGroupLeadSource,
@@ -503,10 +503,27 @@ export async function suggestFacebookGroupContent(input: Record<string, unknown>
   const product = typeof context.product === "string" ? JSON.parse(context.product) : context.product;
   const analysis = typeof context.rule_analysis === "string"
     ? JSON.parse(context.rule_analysis) : context.rule_analysis;
-  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const { GoogleGenerativeAI, SchemaType } = await import("@google/generative-ai");
   const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
     model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
-    generationConfig: { temperature: 0.65, maxOutputTokens: 1800 },
+    generationConfig: {
+      temperature: 0.65,
+      maxOutputTokens: 1800,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: SchemaType.OBJECT,
+        properties: {
+          opening: { type: SchemaType.STRING },
+          body: { type: SchemaType.STRING },
+          cta: { type: SchemaType.STRING },
+          contentType: {
+            type: SchemaType.STRING,
+            enum: ["community_share", "education", "story", "sales"],
+          },
+        },
+        required: ["opening", "body", "cta", "contentType"],
+      },
+    },
   });
   const prompt = `Bạn là chuyên viên nội dung Facebook Group của SmartFurni.
 Hãy viết một bài chia sẻ có ích, tự nhiên, phù hợp đúng cộng đồng; không giả làm khách hàng,
@@ -531,11 +548,7 @@ Trả về DUY NHẤT JSON hợp lệ:
 {"opening":"câu mở đầu","body":"nội dung chính 120-250 từ","cta":"lời mời nhắn Fanpage, không tự đặt mã nguồn","contentType":"community_share|education|story|sales"}
 Nếu nội quy không cho bán hàng, phải ưu tiên education hoặc community_share và không ghi giá/số điện thoại/link.`;
   const response = await model.generateContent(prompt);
-  const raw = response.response.text().trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new Error("AI trả về nội dung không đúng định dạng.");
-  const suggestion = JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+  const suggestion = parseFacebookGroupAiSuggestion(response.response.text());
   const result = {
     opening: text(suggestion.opening, 5000),
     body: text(suggestion.body, 30_000),

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
   extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
-  parseFacebookGroupUrl, validateFacebookGroupSchedule,
+  parseFacebookGroupAiSuggestion, parseFacebookGroupUrl, validateFacebookGroupSchedule,
 } from "@/lib/facebook-group-marketing-business";
 import { DEFAULT_FACEBOOK_GROUP_SETTINGS as settings } from "@/lib/facebook-group-marketing-types";
 
@@ -116,5 +116,28 @@ describe("Facebook Group Marketing business rules", () => {
       "https://www.facebook.com/groups/noithatthongminh/posts/123456/",
     );
     expect(group?.groupKey).toBe(post?.groupKey);
+  });
+
+  it("đọc được nội dung AI dạng JSON chuẩn, code fence và văn bản có nhãn", () => {
+    expect(parseFacebookGroupAiSuggestion(JSON.stringify({
+      opening: "Một căn hộ nhỏ vẫn có thể thật thoáng.",
+      body: "Ưu tiên nội thất đa năng giúp tiết kiệm diện tích sử dụng.",
+      cta: "Nhắn Fanpage để xem thêm.",
+      contentType: "education",
+    }))).toMatchObject({ contentType: "education", opening: "Một căn hộ nhỏ vẫn có thể thật thoáng." });
+
+    expect(parseFacebookGroupAiSuggestion(`\`\`\`json
+{"opening":"Mở đầu","body":"Nội dung hữu ích","cta":"Nhắn Fanpage","contentType":"community_share"}
+\`\`\``).body).toBe("Nội dung hữu ích");
+
+    expect(parseFacebookGroupAiSuggestion(`
+Mở đầu: Không gian nhỏ cần cách bố trí thông minh.
+Nội dung chính: Sofa giường giúp một khu vực đảm nhiệm nhiều công năng mà vẫn gọn gàng.
+CTA: Nhắn Fanpage nếu bạn cần tư vấn theo diện tích thực tế.
+Loại nội dung: Chia sẻ cộng đồng
+`)).toMatchObject({
+      body: "Sofa giường giúp một khu vực đảm nhiệm nhiều công năng mà vẫn gọn gàng.",
+      contentType: "community_share",
+    });
   });
 });

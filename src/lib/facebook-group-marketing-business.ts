@@ -90,6 +90,75 @@ export function contentSimilarityPercent(left: string, right: string) {
   return Math.round((intersection / union) * 10000) / 100;
 }
 
+export type FacebookGroupAiSuggestion = {
+  opening: string;
+  body: string;
+  cta: string;
+  contentType: "community_share" | "education" | "story" | "sales";
+};
+
+export function parseFacebookGroupAiSuggestion(rawResponse: string): FacebookGroupAiSuggestion {
+  const raw = String(rawResponse || "").trim();
+  const cleaned = raw
+    .replace(/^\uFEFF/, "")
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const candidates = [cleaned];
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start >= 0 && end > start) candidates.push(cleaned.slice(start, end + 1));
+
+  let parsed: Record<string, unknown> | null = null;
+  for (const candidate of candidates) {
+    try {
+      const value = JSON.parse(candidate);
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        parsed = value as Record<string, unknown>;
+        break;
+      }
+    } catch {
+      // Thử định dạng tiếp theo trước khi dùng bộ tách văn bản dự phòng.
+    }
+  }
+
+  const source = parsed && parsed.suggestion && typeof parsed.suggestion === "object"
+    ? parsed.suggestion as Record<string, unknown>
+    : parsed;
+  const pick = (...keys: string[]) => {
+    for (const key of keys) {
+      const result = source?.[key];
+      if (typeof result === "string" && result.trim()) return result.trim();
+    }
+    return "";
+  };
+  const extractSection = (labels: string[], nextLabels: string[]) => {
+    const labelPattern = labels.map(label => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+    const nextPattern = nextLabels.map(label => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+    const pattern = new RegExp(
+      `(?:^|\\n)\\s*(?:#{1,4}\\s*)?(?:${labelPattern})\\s*[:\\-]?\\s*([\\s\\S]*?)(?=\\n\\s*(?:#{1,4}\\s*)?(?:${nextPattern})\\s*[:\\-]?|$)`,
+      "i",
+    );
+    return cleaned.match(pattern)?.[1]?.trim() || "";
+  };
+
+  const opening = pick("opening", "cauMoDau", "cau_mo_dau", "hook")
+    || extractSection(["Câu mở đầu", "Mở đầu", "Opening", "Hook"], ["Nội dung chính", "Nội dung", "Body", "CTA", "Loại nội dung"]);
+  const body = pick("body", "content", "noiDungChinh", "noi_dung_chinh")
+    || extractSection(["Nội dung chính", "Nội dung", "Body", "Content"], ["CTA", "Kêu gọi hành động", "Loại nội dung", "Content type"]);
+  const cta = pick("cta", "callToAction", "call_to_action")
+    || extractSection(["CTA", "Kêu gọi hành động", "Call to action"], ["Loại nội dung", "Content type"]);
+  const rawType = normalize(pick("contentType", "content_type", "type")
+    || extractSection(["Loại nội dung", "Content type"], ["$"]));
+  const contentType = rawType.includes("sale") || rawType.includes("ban hang") ? "sales"
+    : rawType.includes("story") || rawType.includes("cau chuyen") ? "story"
+      : rawType.includes("education") || rawType.includes("kien thuc") ? "education"
+        : "community_share";
+
+  if (!body) throw new Error("AI chưa trả về phần nội dung chính có thể sử dụng.");
+  return { opening, body, cta, contentType };
+}
+
 export function analyzeFacebookGroupRules(rawText: string): RuleAnalysis {
   const text = normalize(rawText);
   const containsAny = (terms: string[]) => terms.some(term => text.includes(normalize(term)));
