@@ -13,7 +13,7 @@ import {
 import {
   DEFAULT_FACEBOOK_GROUP_SETTINGS, FACEBOOK_GROUP_TOPIC_TAXONOMY,
   type DashboardData, type FacebookGroupLeadSource,
-  type FacebookGroupSettings,
+  type FacebookGroupSettings, type FacebookGroupTopicDefinition,
 } from "./facebook-group-marketing-types";
 
 type Actor = { id: string; name: string; isAdmin?: boolean };
@@ -28,6 +28,45 @@ const number = (value: unknown, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+function normalizeGroupTopics(value: unknown): FacebookGroupTopicDefinition[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    return DEFAULT_FACEBOOK_GROUP_SETTINGS.groupTopics.map(topic => ({
+      ...topic,
+      searchTerms: [...topic.searchTerms],
+    }));
+  }
+  const seen = new Set<string>();
+  return value.flatMap(item => {
+    const source = asObject(item);
+    const label = text(source.label || source.key, 120);
+    const key = text(source.key || label, 120);
+    const identity = key.toLocaleLowerCase("vi");
+    if (!key || !label || seen.has(identity)) return [];
+    seen.add(identity);
+    const rawTerms = Array.isArray(source.searchTerms) ? source.searchTerms : [];
+    return [{
+      key,
+      label,
+      description: text(source.description, 500),
+      searchTerms: rawTerms.map(term => text(term, 120)).filter(Boolean).slice(0, 20),
+    }];
+  });
+}
+
+function topicFromInput(input: Record<string, unknown>): FacebookGroupTopicDefinition {
+  const label = text(input.label || input.key, 120);
+  if (!label) throw new Error("Tên chủ đề là bắt buộc.");
+  const rawTerms = Array.isArray(input.searchTerms)
+    ? input.searchTerms
+    : String(input.searchTerms || "").split(/[\n,]/);
+  return {
+    key: label,
+    label,
+    description: text(input.description, 500),
+    searchTerms: rawTerms.map(term => text(term, 120)).filter(Boolean).slice(0, 20),
+  };
+}
+
 export async function getFacebookGroupSettings(): Promise<FacebookGroupSettings> {
   const row = await queryOne<{ settings: FacebookGroupSettings | string }>(
     `SELECT settings FROM facebook_group_settings WHERE id = 'default'`,
@@ -37,6 +76,7 @@ export async function getFacebookGroupSettings(): Promise<FacebookGroupSettings>
   return {
     ...DEFAULT_FACEBOOK_GROUP_SETTINGS,
     ...value,
+    groupTopics: normalizeGroupTopics(value.groupTopics),
     contact: { ...DEFAULT_FACEBOOK_GROUP_SETTINGS.contact, ...value.contact },
     scoreWeights: { ...DEFAULT_FACEBOOK_GROUP_SETTINGS.scoreWeights, ...value.scoreWeights },
     gradeRules: { ...DEFAULT_FACEBOOK_GROUP_SETTINGS.gradeRules, ...value.gradeRules },
@@ -67,7 +107,7 @@ export async function saveFacebookGroupSettings(input: Partial<FacebookGroupSett
 }
 
 export async function getFacebookGroupMarketingOptions() {
-  const [pages, groups, campaigns, content, posts, staff, products, leads] = await Promise.all([
+  const [pages, groups, campaigns, content, posts, staff, products, leads, settings] = await Promise.all([
     query(
       `SELECT id, name, facebook_page_id AS "facebookPageId", status
        FROM facebook_pages
@@ -121,8 +161,90 @@ export async function getFacebookGroupMarketingOptions() {
        ORDER BY updated_at DESC
        LIMIT 200`,
     ),
+    getFacebookGroupSettings(),
   ]);
-  return { pages, groups, campaigns, content, posts, staff, products, leads };
+  return { pages, groups, campaigns, content, posts, staff, products, leads, topics: settings.groupTopics };
+}
+
+export async function createFacebookGroupTopic(input: Record<string, unknown>, actor: Actor) {
+  const topic = topicFromInput(input);
+  const settings = await getFacebookGroupSettings();
+  if (settings.groupTopics.some(item =>
+    item.key.localeCompare(topic.key, "vi", { sensitivity: "accent" }) === 0)) {
+    throw new Error("Tên chủ đề đã tồn tại.");
+  }
+  await saveFacebookGroupSettings({
+    groupTopics: [...settings.groupTopics, topic],
+  }, actor);
+  await logActivity(actor, "topic.created", "group_topic", topic.key, undefined, { topic });
+  return topic;
+}
+
+export async function updateFacebookGroupTopic(
+  currentKey: string, input: Record<string, unknown>, actor: Actor,
+) {
+  const settings = await getFacebookGroupSettings();
+  const index = settings.groupTopics.findIndex(item => item.key === currentKey);
+  if (index < 0) throw new Error("Không tìm thấy chủ đề.");
+  const topic = topicFromInput(input);
+  if (settings.groupTopics.some((item, itemIndex) =>
+    itemIndex !== index
+    && item.key.localeCompare(topic.key, "vi", { sensitivity: "accent" }) === 0)) {
+    throw new Error("Tên chủ đề đã tồn tại.");
+  }
+  const nextSettings = {
+    ...settings,
+    groupTopics: settings.groupTopics.map((item, itemIndex) => itemIndex === index ? topic : item),
+  };
+  const client = await getDb().connect();
+  try {
+    await client.query("BEGIN");
+    if (topic.key !== currentKey) {
+      await client.query(
+        `UPDATE facebook_groups
+         SET topic = $1, updated_by = $2, updated_at = NOW()
+         WHERE topic = $3 AND deleted_at IS NULL`,
+        [topic.key, actor.id, currentKey],
+      );
+    }
+    await client.query(
+      `INSERT INTO facebook_group_settings (id, settings, created_by, updated_by)
+       VALUES ('default', $1::jsonb, $2, $2)
+       ON CONFLICT (id) DO UPDATE
+       SET settings = EXCLUDED.settings, updated_by = EXCLUDED.updated_by, updated_at = NOW()`,
+      [JSON.stringify(nextSettings), actor.id],
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+  await logActivity(actor, "topic.updated", "group_topic", topic.key, {
+    previousKey: currentKey,
+  }, { topic });
+  return topic;
+}
+
+export async function deleteFacebookGroupTopic(topicKey: string, actor: Actor) {
+  const settings = await getFacebookGroupSettings();
+  const topic = settings.groupTopics.find(item => item.key === topicKey);
+  if (!topic) throw new Error("Không tìm thấy chủ đề.");
+  if (settings.groupTopics.length <= 1) throw new Error("Không được xóa chủ đề cuối cùng.");
+  const usage = await queryOne<{ total: number }>(
+    `SELECT COUNT(*)::int AS total
+     FROM facebook_groups
+     WHERE topic = $1 AND deleted_at IS NULL`,
+    [topicKey],
+  );
+  if (Number(usage?.total || 0) > 0) {
+    throw new Error(`Không được xóa: chủ đề đang có ${usage?.total} Group. Hãy chuyển các Group sang chủ đề khác trước.`);
+  }
+  await saveFacebookGroupSettings({
+    groupTopics: settings.groupTopics.filter(item => item.key !== topicKey),
+  }, actor);
+  await logActivity(actor, "topic.deleted", "group_topic", topicKey, undefined, { topic });
 }
 
 export async function syncFacebookGroupPagesFromScheduler(actor: Actor) {
@@ -567,7 +689,9 @@ export async function discoverFacebookGroups(input: Record<string, unknown>, act
   const region = text(input.region, 120) || "Việt Nam";
   const keywords = text(input.keywords, 500);
   if (!topic) throw new Error("Chọn một chủ đề trước khi yêu cầu AI Agent tìm Group.");
-  const topicConfig = FACEBOOK_GROUP_TOPIC_TAXONOMY.find(item => item.key === topic);
+  const topicSettings = await getFacebookGroupSettings();
+  const topicConfig = topicSettings.groupTopics.find(item => item.key === topic)
+    || FACEBOOK_GROUP_TOPIC_TAXONOMY.find(item => item.key === topic);
   const searchTerms = topicConfig?.searchTerms.join(", ") || topic;
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY chưa được cấu hình.");

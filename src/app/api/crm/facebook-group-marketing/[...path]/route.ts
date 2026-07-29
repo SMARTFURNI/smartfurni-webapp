@@ -3,12 +3,13 @@ import { z } from "zod";
 import {
   addRevenueAttribution, analyzeGroupRules, approveContent,
   completePostCheckTask, createFacebookGroupMarketing, exportFacebookGroupsCsv, getFacebookGroupDashboard, importFacebookGroups,
-  discoverFacebookGroups, getFacebookGroupMarketingOptions, getFacebookGroupSettings,
+  createFacebookGroupTopic, deleteFacebookGroupTopic, discoverFacebookGroups,
+  getFacebookGroupMarketingOptions, getFacebookGroupSettings,
   linkFacebookGroupLead, listFacebookGroupMarketing,
   markPublishingTaskPosted, recalculateGroupScore, saveFacebookGroupSettings,
   resolveFacebookGroupSourceCode, sendFacebookGroupTaskDigest, suggestFacebookGroupContent,
   softDeleteFacebookGroupMarketing, syncFacebookGroupPagesFromScheduler,
-  updateFacebookGroupMarketing, updateGroupRules, updatePublishedPostModeration,
+  updateFacebookGroupMarketing, updateFacebookGroupTopic, updateGroupRules, updatePublishedPostModeration,
 } from "@/lib/facebook-group-marketing-store";
 import {
   authorizeFacebookGroupMarketing, authorizeFacebookGroupMarketingAdmin,
@@ -30,6 +31,7 @@ const resourcePermission: Record<string, {
   posts: { view: "facebook_group_marketing_view", mutate: "facebook_group_publish_task" },
   comments: { view: "facebook_group_marketing_view", mutate: "facebook_group_publish_task" },
   checks: { view: "facebook_group_marketing_view", mutate: "facebook_group_publish_task" },
+  topics: { view: "facebook_group_marketing_view", mutate: "facebook_group_manage" },
 };
 
 const safeBody = z.record(z.string(), z.unknown());
@@ -54,6 +56,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ path: s
     if (resource === "dashboard") return NextResponse.json(await getFacebookGroupDashboard(filters));
     if (resource === "options") return NextResponse.json(await getFacebookGroupMarketingOptions());
     if (resource === "settings") return NextResponse.json(await getFacebookGroupSettings());
+    if (resource === "topics") {
+      const settings = await getFacebookGroupSettings();
+      return NextResponse.json(settings.groupTopics);
+    }
     if (resource === "groups" && entityId === "export") {
       const csv = await exportFacebookGroupsCsv();
       return new NextResponse(csv, {
@@ -156,6 +162,9 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     if (resource === "settings") {
       return NextResponse.json(await saveFacebookGroupSettings(body, auth.actor));
     }
+    if (resource === "topics") {
+      return NextResponse.json(await createFacebookGroupTopic(body, auth.actor), { status: 201 });
+    }
     if (!resourcePermission[resource]) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(await createFacebookGroupMarketing(resource, body, auth.actor), { status: 201 });
   } catch (error) {
@@ -174,6 +183,9 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ path:
     const auth = await authorizeFacebookGroupMarketing(resourcePermission[resource].mutate);
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const body = safeBody.parse(await req.json());
+    if (resource === "topics") {
+      return NextResponse.json(await updateFacebookGroupTopic(entityId, body, auth.actor));
+    }
     if (resource === "campaigns" && body.status && !["draft", "active", "paused", "completed"].includes(String(body.status))) {
       return NextResponse.json({ error: "Trạng thái chiến dịch không hợp lệ." }, { status: 400 });
     }
@@ -190,6 +202,10 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ pat
     if (!entityId || !resourcePermission[resource]) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const auth = await authorizeFacebookGroupMarketingAdmin();
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (resource === "topics") {
+      await deleteFacebookGroupTopic(entityId, auth.actor);
+      return NextResponse.json({ ok: true });
+    }
     await softDeleteFacebookGroupMarketing(resource, entityId, auth.actor);
     return NextResponse.json({ ok: true });
   } catch (error) {

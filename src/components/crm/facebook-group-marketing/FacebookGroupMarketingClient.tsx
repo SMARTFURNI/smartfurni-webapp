@@ -13,7 +13,7 @@ import { FACEBOOK_GROUP_TOPIC_TAXONOMY } from "@/lib/facebook-group-marketing-ty
 type Row = Record<string, unknown>;
 type FormOptions = {
   pages: Row[]; groups: Row[]; campaigns: Row[]; content: Row[]; posts: Row[];
-  staff: Row[]; products: Row[]; leads: Row[];
+  staff: Row[]; products: Row[]; leads: Row[]; topics: Row[];
 };
 type GroupDiscoveryResult = {
   suggestions: Row[];
@@ -36,11 +36,11 @@ const sections = [
 
 const labels: Record<string, string> = {
   groups: "Group", pages: "Fanpage", campaigns: "chiến dịch", content: "nội dung",
-  tasks: "nhiệm vụ", posts: "bài đăng", comments: "bình luận",
+  tasks: "nhiệm vụ", posts: "bài đăng", comments: "bình luận", topics: "chủ đề",
 };
 
 const emptyOptions: FormOptions = {
-  pages: [], groups: [], campaigns: [], content: [], posts: [], staff: [], products: [], leads: [],
+  pages: [], groups: [], campaigns: [], content: [], posts: [], staff: [], products: [], leads: [], topics: [],
 };
 
 const statusLabel: Record<string, string> = {
@@ -151,6 +151,7 @@ export default function FacebookGroupMarketingClient({
   const [deletingRow, setDeletingRow] = useState<Row | null>(null);
   const [deletingResource, setDeletingResource] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [topicEditor, setTopicEditor] = useState<Row | null>(null);
   const [search, setSearch] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("");
   const [discoveryTopic, setDiscoveryTopic] = useState("Phòng trọ");
@@ -319,7 +320,7 @@ export default function FacebookGroupMarketingClient({
     setDeleting(true);
     setError("");
     try {
-      await api(`${deletingResource}/${deletingRow.id}`, { method: "DELETE" });
+      await api(`${deletingResource}/${encodeURIComponent(String(deletingRow.id))}`, { method: "DELETE" });
       setNotice("Đã xóa bản ghi. Thao tác đã được ghi vào nhật ký hệ thống.");
       setDeletingRow(null);
       setDeletingResource(null);
@@ -328,6 +329,32 @@ export default function FacebookGroupMarketingClient({
       setError(err instanceof Error ? err.message : "Không thể xóa bản ghi.");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const submitTopic = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!permissions.manage || !topicEditor) return;
+    const form = new FormData(event.currentTarget);
+    const payload = {
+      label: String(form.get("label") || ""),
+      description: String(form.get("description") || ""),
+      searchTerms: String(form.get("searchTerms") || "")
+        .split(/[\n,]/)
+        .map(item => item.trim())
+        .filter(Boolean),
+    };
+    const currentKey = String(topicEditor.key || "");
+    try {
+      await api(currentKey ? `topics/${encodeURIComponent(currentKey)}` : "topics", {
+        method: currentKey ? "PATCH" : "POST",
+        body: JSON.stringify(payload),
+      });
+      setTopicEditor(null);
+      setNotice(currentKey ? "Đã cập nhật chủ đề và đồng bộ các Group liên quan." : "Đã thêm chủ đề mới.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể lưu chủ đề.");
     }
   };
 
@@ -519,7 +546,17 @@ export default function FacebookGroupMarketingClient({
         <>
           {section === "groups" && (
             <>
-              <GroupTopicPlanner groups={formOptions.groups} selectedTopic={selectedTopic}
+              <GroupTopicPlanner groups={formOptions.groups} topics={formOptions.topics}
+                selectedTopic={selectedTopic}
+                canManage={permissions.manage}
+                canDelete={permissions.admin}
+                onAdd={() => setTopicEditor({})}
+                onEdit={topic => setTopicEditor(topic)}
+                onDelete={topic => requestDelete("topics", {
+                  ...topic,
+                  id: topic.key,
+                  name: topic.label,
+                })}
                 onSelect={topic => {
                   setSelectedTopic(topic);
                   setPage(0);
@@ -527,6 +564,7 @@ export default function FacebookGroupMarketingClient({
                 }} />
               <GroupDiscoveryAgent
                 groups={formOptions.groups}
+                configuredTopics={formOptions.topics}
                 canManage={permissions.manage}
                 topic={discoveryTopic}
                 region={discoveryRegion}
@@ -578,6 +616,12 @@ export default function FacebookGroupMarketingClient({
           <CreateForm resource="pages" options={formOptions} onSubmit={(event) => submit(event, "pages")} />
         </Modal>
       )}
+      {topicEditor && (
+        <Modal title={topicEditor.key ? "Sửa chủ đề Group" : "Thêm chủ đề Group"}
+          onClose={() => setTopicEditor(null)}>
+          <TopicForm topic={topicEditor} onSubmit={submitTopic} />
+        </Modal>
+      )}
       {editingRow && (
         <Modal title={`Sửa ${labels[editingResource || resource] || ((editingResource || resource) === "posts" ? "bài đăng" : "bản ghi")}`}
           onClose={() => { setEditingRow(null); setEditingResource(null); }}>
@@ -622,19 +666,65 @@ export default function FacebookGroupMarketingClient({
   );
 }
 
+function TopicForm({
+  topic, onSubmit,
+}: {
+  topic: Row;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+}) {
+  const controlClass = "rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white outline-none focus:border-amber-400/50";
+  const searchTerms = Array.isArray(topic.searchTerms)
+    ? topic.searchTerms.map(String).join(", ")
+    : "";
+  return (
+    <form className="grid gap-4" onSubmit={onSubmit}>
+      <Field label="Tên chủ đề" name="label" required>
+        <input name="label" required maxLength={120} defaultValue={String(topic.label || "")}
+          className={controlClass} placeholder="Ví dụ: Nội thất văn phòng" />
+      </Field>
+      <Field label="Mô tả" name="description">
+        <textarea name="description" rows={3} maxLength={500}
+          defaultValue={String(topic.description || "")}
+          className={controlClass}
+          placeholder="Mô tả nhóm đối tượng và nội dung của chủ đề." />
+      </Field>
+      <Field label="Từ khóa để AI tìm Group" name="searchTerms">
+        <textarea name="searchTerms" rows={3} defaultValue={searchTerms}
+          className={controlClass}
+          placeholder="Nhập các từ khóa, phân cách bằng dấu phẩy." />
+      </Field>
+      <div className="flex justify-end">
+        <button className="fbg-primary-button rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">
+          {topic.key ? "Lưu thay đổi" : "Thêm chủ đề"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function GroupTopicPlanner({
-  groups, selectedTopic, onSelect,
+  groups, topics: configuredTopics, selectedTopic, canManage, canDelete,
+  onSelect, onAdd, onEdit, onDelete,
 }: {
   groups: Row[];
+  topics: Row[];
   selectedTopic: string;
+  canManage: boolean;
+  canDelete: boolean;
   onSelect: (topic: string) => void;
+  onAdd: () => void;
+  onEdit: (topic: Row) => void;
+  onDelete: (topic: Row) => void;
 }) {
   const counts = new Map<string, number>();
   for (const group of groups) {
     const topic = String(group.topic || "").trim() || "__unclassified__";
     counts.set(topic, (counts.get(topic) || 0) + 1);
   }
-  const canonicalKeys = new Set<string>(FACEBOOK_GROUP_TOPIC_TAXONOMY.map(item => item.key));
+  const savedTopics = configuredTopics.length
+    ? configuredTopics
+    : FACEBOOK_GROUP_TOPIC_TAXONOMY;
+  const canonicalKeys = new Set<string>(savedTopics.map(item => String(item.key)));
   const extraTopics = [...counts.keys()]
     .filter(topic => topic !== "__unclassified__" && !canonicalKeys.has(topic))
     .map(topic => ({
@@ -643,7 +733,7 @@ function GroupTopicPlanner({
       description: "Chủ đề đang được sử dụng trong dữ liệu CRM.",
     }));
   const topics = [
-    ...FACEBOOK_GROUP_TOPIC_TAXONOMY,
+    ...savedTopics,
     ...extraTopics,
     ...(counts.has("__unclassified__") ? [{
       key: "__unclassified__",
@@ -658,18 +748,30 @@ function GroupTopicPlanner({
           <div className="flex items-center gap-2 text-sm font-black text-white"><Tags size={17} className="text-amber-300" />Quy hoạch Group theo chủ đề</div>
           <p className="mt-1 text-xs text-slate-500">Bấm một chủ đề để lọc danh sách Group bên dưới.</p>
         </div>
-        <button type="button" onClick={() => onSelect("")}
-          data-active={!selectedTopic}
-          className={`rounded-xl border px-3 py-2 text-xs font-bold ${
-            !selectedTopic ? "border-amber-400/45 bg-amber-400/15 text-amber-200" : "border-white/10 bg-white/[.03] text-slate-400"
-          }`}>
-          Tất cả · {groups.length}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {canManage && <button type="button" onClick={onAdd}
+            className="fbg-primary-button inline-flex items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-black">
+            <Plus size={14} /> Thêm chủ đề
+          </button>}
+          <button type="button" onClick={() => onSelect("")}
+            data-active={!selectedTopic}
+            className={`rounded-xl border px-3 py-2 text-xs font-bold ${
+              !selectedTopic ? "border-amber-400/45 bg-amber-400/15 text-amber-200" : "border-white/10 bg-white/[.03] text-slate-400"
+            }`}>
+            Tất cả · {groups.length}
+          </button>
+        </div>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {topics.map(topic => {
-          const active = selectedTopic === topic.key;
-          return <button key={topic.key} type="button" onClick={() => onSelect(topic.key)}
+          const topicKey = String(topic.key);
+          const active = selectedTopic === topicKey;
+          const isUnclassified = topicKey === "__unclassified__";
+          return <div key={topicKey} role="button" tabIndex={0}
+            onClick={() => onSelect(topicKey)}
+            onKeyDown={event => {
+              if (event.key === "Enter" || event.key === " ") onSelect(topicKey);
+            }}
             data-active={active}
             className={`group rounded-xl border p-3 text-left transition ${
               active
@@ -677,13 +779,27 @@ function GroupTopicPlanner({
                 : "border-white/8 bg-black/10 hover:border-white/15 hover:bg-white/[.035]"
             }`}>
             <span className="flex items-center justify-between gap-3">
-              <b className={active ? "text-amber-200" : "text-slate-200"}>{topic.label}</b>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
-                active ? "bg-amber-300 text-black" : "bg-white/[.06] text-slate-400"
-              }`}>{counts.get(topic.key) || 0}</span>
+              <b className={active ? "text-amber-200" : "text-slate-200"}>{String(topic.label)}</b>
+              <span className="flex items-center gap-1.5">
+                {!isUnclassified && canManage && <button type="button" title="Sửa chủ đề"
+                  aria-label={`Sửa chủ đề ${String(topic.label)}`}
+                  onClick={event => { event.stopPropagation(); onEdit(topic); }}
+                  className="rounded-lg border border-blue-300/20 bg-blue-400/10 p-1.5 text-blue-200 hover:bg-blue-400/20">
+                  <Pencil size={13} />
+                </button>}
+                {!isUnclassified && canDelete && <button type="button" title="Xóa chủ đề"
+                  aria-label={`Xóa chủ đề ${String(topic.label)}`}
+                  onClick={event => { event.stopPropagation(); onDelete(topic); }}
+                  className="rounded-lg border border-red-300/20 bg-red-400/10 p-1.5 text-red-200 hover:bg-red-400/20">
+                  <Trash2 size={13} />
+                </button>}
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
+                  active ? "bg-amber-300 text-black" : "bg-white/[.06] text-slate-400"
+                }`}>{counts.get(topicKey) || 0}</span>
+              </span>
             </span>
-            <span className="mt-1.5 block text-xs leading-5 text-slate-500">{topic.description}</span>
-          </button>;
+            <span className="mt-1.5 block text-xs leading-5 text-slate-500">{String(topic.description || "")}</span>
+          </div>;
         })}
       </div>
     </section>
@@ -691,11 +807,12 @@ function GroupTopicPlanner({
 }
 
 function GroupDiscoveryAgent({
-  groups, canManage, topic, region, keywords, busy, result,
+  groups, configuredTopics, canManage, topic, region, keywords, busy, result,
   onTopicChange, onRegionChange, onKeywordsChange, onDiscover, onAdd,
   onReviewChange, onDismiss,
 }: {
   groups: Row[];
+  configuredTopics: Row[];
   canManage: boolean;
   topic: string;
   region: string;
@@ -712,7 +829,8 @@ function GroupDiscoveryAgent({
 }) {
   const existingTopics = [...new Set(groups.map(group => String(group.topic || "")).filter(Boolean))];
   const topics = [...new Set([
-    ...FACEBOOK_GROUP_TOPIC_TAXONOMY.map(item => item.key),
+    ...(configuredTopics.length ? configuredTopics : FACEBOOK_GROUP_TOPIC_TAXONOMY)
+      .map(item => String(item.key)),
     ...existingTopics,
   ])];
   return (
@@ -1110,6 +1228,7 @@ function CreateForm({ resource, options, onSubmit }: {
 }) {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState("");
+  const topicOptions = options.topics.length ? options.topics : FACEBOOK_GROUP_TOPIC_TAXONOMY;
   const selectClass = "fbg-form-control rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white";
   const suggestContent = async (button: HTMLButtonElement) => {
     const form = button.form;
@@ -1147,8 +1266,8 @@ function CreateForm({ resource, options, onSubmit }: {
       <div className="md:col-span-2"><Field label="Link group" name="groupUrl" type="url" required /></div>
       <Field label="Khu vực" name="region" />
       <Field label="Chủ đề" name="topic" required>
-        <select name="topic" required defaultValue="Phòng trọ" className={selectClass}>
-          {FACEBOOK_GROUP_TOPIC_TAXONOMY.map(topic => <option key={topic.key} value={topic.key}>{topic.label}</option>)}
+        <select name="topic" required defaultValue={String(topicOptions[0]?.key || "")} className={selectClass}>
+          {topicOptions.map(topic => <option key={String(topic.key)} value={String(topic.key)}>{String(topic.label)}</option>)}
         </select>
       </Field>
       <Field label="Số thành viên" name="memberCount" type="number" />
@@ -1240,6 +1359,7 @@ function EditForm({ resource, row, options, onSubmit }: {
   const productIds = new Set((Array.isArray(row.product_ids) ? row.product_ids : []).map(String));
   const groupIds = new Set((Array.isArray(row.groupIds) ? row.groupIds : []).map(String));
   const currentStatus = String(value(row, "status") || "");
+  const topicOptions = options.topics.length ? options.topics : FACEBOOK_GROUP_TOPIC_TAXONOMY;
   return <form className="fbg-form grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
     {resource === "pages" && <>
       <Field label="Tên Fanpage" name="name" required>
@@ -1285,10 +1405,10 @@ function EditForm({ resource, row, options, onSubmit }: {
       </Field>
       <Field label="Chủ đề" name="topic">
         <select name="topic" defaultValue={String(value(row, "topic") || "Phòng trọ")} className={selectClass}>
-          {!FACEBOOK_GROUP_TOPIC_TAXONOMY.some(topic => topic.key === String(value(row, "topic")))
+          {!topicOptions.some(topic => String(topic.key) === String(value(row, "topic")))
             && value(row, "topic")
             && <option value={String(value(row, "topic"))}>{String(value(row, "topic"))}</option>}
-          {FACEBOOK_GROUP_TOPIC_TAXONOMY.map(topic => <option key={topic.key} value={topic.key}>{topic.label}</option>)}
+          {topicOptions.map(topic => <option key={String(topic.key)} value={String(topic.key)}>{String(topic.label)}</option>)}
         </select>
       </Field>
       <Field label="Số thành viên" name="memberCount">

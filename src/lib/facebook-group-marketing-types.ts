@@ -7,6 +7,13 @@ export type PublishingTaskStatus =
   | "scheduled" | "due" | "posted" | "pending_moderation" | "approved"
   | "rejected" | "postponed" | "cancelled";
 
+export interface FacebookGroupTopicDefinition {
+  key: string;
+  label: string;
+  description: string;
+  searchTerms: string[];
+}
+
 export const FACEBOOK_GROUP_TOPIC_TAXONOMY = [
   {
     key: "Phòng trọ",
@@ -65,6 +72,7 @@ export const FACEBOOK_GROUP_TOPIC_TAXONOMY = [
 ] as const;
 
 export interface FacebookGroupSettings {
+  groupTopics: FacebookGroupTopicDefinition[];
   contact: {
     hotline: string;
     zalo: string;
@@ -98,6 +106,10 @@ export interface FacebookGroupSettings {
 }
 
 export const DEFAULT_FACEBOOK_GROUP_SETTINGS: FacebookGroupSettings = {
+  groupTopics: FACEBOOK_GROUP_TOPIC_TAXONOMY.map(topic => ({
+    ...topic,
+    searchTerms: [...topic.searchTerms],
+  })),
   contact: {
     hotline: "0918.326.552",
     zalo: "0918.326.552",
