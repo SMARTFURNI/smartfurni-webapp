@@ -7,8 +7,10 @@ import DataPoolNotification from "@/components/crm/DataPoolNotification";
 import CrmPushNotifications from "@/components/crm/CrmPushNotifications";
 import ItySoftphone from "@/components/crm/ItySoftphone";
 import PwaDocumentConfig from "@/components/PwaDocumentConfig";
+import CrmAdminThemeBoundary from "@/components/crm/CrmAdminThemeBoundary";
 import type { Metadata, Viewport } from "next";
 import "./facebook-group-marketing.css";
+import "./admin-refresh.css";
 export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
@@ -240,7 +242,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           roleName={roleName}
         />
         <main className="flex-1 overflow-auto min-w-0" style={{ background: "inherit" }}>
-          {children}
+          <CrmAdminThemeBoundary>{children}</CrmAdminThemeBoundary>
         </main>
         {/* Real-time notification khi có lead mới vào Data Pool */}
         <DataPoolNotification />

@@ -184,7 +184,7 @@ export default function QuoteDetailClient({ quote: initialQuote, lead, company }
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div ref={printRef} className="max-w-3xl mx-auto space-y-4">
+        <div ref={printRef} className="crm-quote-document max-w-3xl mx-auto space-y-4">
 
           {/* ── Phần in / PDF ── */}
           {/* Header công ty + số báo giá */}
