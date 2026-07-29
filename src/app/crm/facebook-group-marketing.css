@@ -469,19 +469,34 @@
   box-shadow: 0 18px 42px rgba(2, 8, 18, 0.2), inset 0 1px 0 rgba(126, 174, 219, 0.04);
 }
 
-.fbg-topic-planner button {
+.fbg-topic-card,
+.fbg-topic-filter-all {
   border-color: rgba(79, 123, 164, 0.42) !important;
   background: rgba(12, 22, 34, 0.5) !important;
 }
 
-.fbg-topic-planner button:hover {
+.fbg-topic-card:hover,
+.fbg-topic-filter-all:hover {
   border-color: rgba(109, 169, 218, 0.66) !important;
   background: rgba(42, 79, 111, 0.2) !important;
 }
 
-.fbg-topic-planner button[data-active="true"] {
+.fbg-topic-card[data-active="true"],
+.fbg-topic-filter-all[data-active="true"] {
   border-color: rgba(224, 190, 82, 0.62) !important;
   background: linear-gradient(145deg, rgba(188, 142, 31, 0.2), rgba(74, 67, 34, 0.16)) !important;
+}
+
+.fbg-topic-add-button {
+  border-color: rgba(147, 197, 253, 0.58) !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+}
+
+.fbg-topic-add-button:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 13px 30px rgba(37, 99, 235, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
 }
 
 .fbg-discovery-panel {

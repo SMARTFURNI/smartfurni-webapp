@@ -750,12 +750,12 @@ function GroupTopicPlanner({
         </div>
         <div className="flex flex-wrap gap-2">
           {canManage && <button type="button" onClick={onAdd}
-            className="fbg-primary-button inline-flex items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-black">
+            className="fbg-topic-add-button inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black">
             <Plus size={14} /> Thêm chủ đề
           </button>}
           <button type="button" onClick={() => onSelect("")}
             data-active={!selectedTopic}
-            className={`rounded-xl border px-3 py-2 text-xs font-bold ${
+            className={`fbg-topic-filter-all rounded-xl border px-3 py-2 text-xs font-bold ${
               !selectedTopic ? "border-amber-400/45 bg-amber-400/15 text-amber-200" : "border-white/10 bg-white/[.03] text-slate-400"
             }`}>
             Tất cả · {groups.length}
@@ -773,7 +773,7 @@ function GroupTopicPlanner({
               if (event.key === "Enter" || event.key === " ") onSelect(topicKey);
             }}
             data-active={active}
-            className={`group rounded-xl border p-3 text-left transition ${
+            className={`fbg-topic-card group rounded-xl border p-3 text-left transition ${
               active
                 ? "border-amber-400/45 bg-amber-400/[.11]"
                 : "border-white/8 bg-black/10 hover:border-white/15 hover:bg-white/[.035]"
