@@ -21,6 +21,7 @@ export default async function FacebookGroupMarketingSectionPage({
     if (section === "settings" && !permissions.facebook_group_settings) redirect("/crm/facebook-group-marketing");
   }
   return <FacebookGroupMarketingClient section={section} permissions={{
+    admin: session.isAdmin,
     manage: session.isAdmin || !!permissions?.facebook_group_manage,
     campaigns: session.isAdmin || !!permissions?.facebook_group_campaign_manage,
     content: session.isAdmin || !!permissions?.facebook_group_content_create,
@@ -32,4 +33,3 @@ export default async function FacebookGroupMarketingSectionPage({
     settings: session.isAdmin || !!permissions?.facebook_group_settings,
   }} />;
 }
-

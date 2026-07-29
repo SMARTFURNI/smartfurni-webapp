@@ -3,6 +3,7 @@ import "server-only";
 import { getCrmSession } from "./admin-auth";
 import { getRoleById, type RolePermissions } from "./crm-roles-store";
 import { getStaffById } from "./crm-staff-store";
+import { canDeleteFacebookGroupMarketing } from "./facebook-group-marketing-permissions";
 
 export type FacebookGroupPermission = Extract<keyof RolePermissions, `facebook_group_${string}`>;
 
@@ -20,5 +21,15 @@ export async function authorizeFacebookGroupMarketing(permission: FacebookGroupP
     session,
     actor: { id: session.staffId, name: staff?.fullName || session.staffId, isAdmin: false },
     permissions: role.permissions,
+  };
+}
+
+export async function authorizeFacebookGroupMarketingAdmin() {
+  const session = await getCrmSession();
+  if (!canDeleteFacebookGroupMarketing(session)) return null;
+  return {
+    session,
+    actor: { id: "admin", name: "Admin", isAdmin: true },
+    permissions: null,
   };
 }

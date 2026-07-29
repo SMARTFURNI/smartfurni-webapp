@@ -10,7 +10,8 @@ import {
   updateFacebookGroupMarketing, updateGroupRules, updatePublishedPostModeration,
 } from "@/lib/facebook-group-marketing-store";
 import {
-  authorizeFacebookGroupMarketing, type FacebookGroupPermission,
+  authorizeFacebookGroupMarketing, authorizeFacebookGroupMarketingAdmin,
+  type FacebookGroupPermission,
 } from "@/lib/facebook-group-marketing-auth";
 
 export const runtime = "nodejs";
@@ -180,7 +181,7 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ pat
     const { path } = await context.params;
     const [resource, entityId] = path;
     if (!entityId || !resourcePermission[resource]) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    const auth = await authorizeFacebookGroupMarketing(resourcePermission[resource].mutate);
+    const auth = await authorizeFacebookGroupMarketingAdmin();
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     await softDeleteFacebookGroupMarketing(resource, entityId, auth.actor);
     return NextResponse.json({ ok: true });

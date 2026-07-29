@@ -43,7 +43,7 @@ export async function runFacebookGroupMarketingCron() {
      FROM facebook_group_post_check_tasks c
      JOIN facebook_group_published_posts p ON p.id = c.post_id
      JOIN facebook_groups g ON g.id = p.group_id
-     WHERE p.deleted_at IS NULL AND g.deleted_at IS NULL
+     WHERE c.deleted_at IS NULL AND p.deleted_at IS NULL AND g.deleted_at IS NULL
        AND c.status = 'pending' AND c.notification_sent_at IS NULL AND c.due_at <= NOW()
      ORDER BY c.due_at LIMIT 100`,
   );
@@ -57,7 +57,12 @@ export async function runFacebookGroupMarketingCron() {
       tag: `fbg-check-${task.id}`,
       data: { checkTaskId: task.id, postId: task.post_id, module: "facebook-group-marketing" },
     });
-    await query(`UPDATE facebook_group_post_check_tasks SET notification_sent_at = NOW() WHERE id = $1`, [task.id]);
+    await query(
+      `UPDATE facebook_group_post_check_tasks
+       SET notification_sent_at = NOW()
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [task.id],
+    );
     sent += 1;
   }
 

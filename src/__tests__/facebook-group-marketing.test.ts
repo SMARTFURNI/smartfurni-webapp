@@ -5,6 +5,7 @@ import {
   parseFacebookGroupAiSuggestion, parseFacebookGroupUrl, validateFacebookGroupSchedule,
 } from "@/lib/facebook-group-marketing-business";
 import { DEFAULT_FACEBOOK_GROUP_SETTINGS as settings } from "@/lib/facebook-group-marketing-types";
+import { canDeleteFacebookGroupMarketing } from "@/lib/facebook-group-marketing-permissions";
 
 const validSchedule = {
   scheduledAt: "2026-07-29T09:00:00.000Z",
@@ -19,6 +20,12 @@ const validSchedule = {
 };
 
 describe("Facebook Group Marketing business rules", () => {
+  it("chỉ cho phép phiên đăng nhập admin xóa bản ghi", () => {
+    expect(canDeleteFacebookGroupMarketing({ isAdmin: true })).toBe(true);
+    expect(canDeleteFacebookGroupMarketing({ isAdmin: false })).toBe(false);
+    expect(canDeleteFacebookGroupMarketing(null)).toBe(false);
+  });
+
   it("không xếp lịch khi Fanpage đã đạt giới hạn ngày", () => {
     const result = validateFacebookGroupSchedule({
       ...validSchedule,

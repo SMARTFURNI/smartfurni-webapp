@@ -269,7 +269,7 @@ export async function listFacebookGroupMarketing(resource: string, filters: Filt
        FROM facebook_group_comments c
        JOIN facebook_group_published_posts p ON p.id = c.post_id
        JOIN facebook_groups g ON g.id = p.group_id
-       WHERE p.deleted_at IS NULL AND g.deleted_at IS NULL
+       WHERE c.deleted_at IS NULL AND p.deleted_at IS NULL AND g.deleted_at IS NULL
        ORDER BY c.commented_at DESC LIMIT $1 OFFSET $2`,
       [limit, offset],
     );
@@ -281,7 +281,7 @@ export async function listFacebookGroupMarketing(resource: string, filters: Filt
        FROM facebook_group_post_check_tasks c
        JOIN facebook_group_published_posts p ON p.id = c.post_id
        JOIN facebook_groups g ON g.id = p.group_id
-       WHERE p.deleted_at IS NULL AND g.deleted_at IS NULL
+       WHERE c.deleted_at IS NULL AND p.deleted_at IS NULL AND g.deleted_at IS NULL
          AND ($1::text IS NULL OR c.status = $1)
        ORDER BY c.due_at ASC LIMIT $2 OFFSET $3`,
       [filters.status || null, limit, offset],
@@ -794,7 +794,7 @@ export async function updateFacebookGroupMarketing(
   const hasCampaignGroups = resource === "campaigns" && Array.isArray(input.groupIds);
   if (!fields.length && !hasCampaignGroups) throw new Error("Không có dữ liệu hợp lệ để cập nhật.");
   let row: Record<string, unknown> | null = null;
-  const activeRowClause = ["comments", "checks"].includes(resource) ? "" : " AND deleted_at IS NULL";
+  const activeRowClause = " AND deleted_at IS NULL";
   if (fields.length) {
     values.push(actor.id, entityId);
     row = await queryOne(
@@ -840,10 +840,18 @@ export async function softDeleteFacebookGroupMarketing(resource: string, entityI
   const table = {
     pages: "facebook_pages", groups: "facebook_groups", campaigns: "facebook_group_campaigns",
     content: "facebook_group_content_drafts", tasks: "facebook_group_publishing_tasks",
-    posts: "facebook_group_published_posts",
+    posts: "facebook_group_published_posts", comments: "facebook_group_comments",
+    checks: "facebook_group_post_check_tasks",
   }[resource];
   if (!table) throw new Error("Tài nguyên không hỗ trợ xóa.");
-  await query(`UPDATE ${table} SET deleted_at = NOW(), updated_by = $1, updated_at = NOW() WHERE id = $2`, [actor.id, entityId]);
+  const deleted = await queryOne(
+    `UPDATE ${table}
+     SET deleted_at = NOW(), updated_by = $1, updated_at = NOW()
+     WHERE id = $2 AND deleted_at IS NULL
+     RETURNING id`,
+    [actor.id, entityId],
+  );
+  if (!deleted) throw new Error("Không tìm thấy bản ghi hoặc bản ghi đã được xóa.");
   await logActivity(actor, `${resource}.deleted`, resource, entityId);
 }
 
@@ -989,7 +997,7 @@ export async function completePostCheckTask(checkId: string, input: Record<strin
     `UPDATE facebook_group_post_check_tasks SET
        status = 'completed', result = $1::jsonb, completed_at = NOW(),
        updated_by = $2, updated_at = NOW()
-     WHERE id = $3 AND status = 'pending' RETURNING post_id`,
+     WHERE id = $3 AND status = 'pending' AND deleted_at IS NULL RETURNING post_id`,
     [JSON.stringify(input), actor.id, checkId],
   );
   if (!row) throw new Error("Nhiệm vụ kiểm tra không tồn tại hoặc đã hoàn thành.");
@@ -1307,7 +1315,7 @@ export async function getFacebookGroupDashboard(filters: Filters = {}): Promise<
        (SELECT COUNT(*) FROM facebook_group_publishing_tasks WHERE deleted_at IS NULL AND scheduled_at::date = CURRENT_DATE AND status IN ('scheduled','due'))::text AS "tasksToday",
        (SELECT COUNT(*) FROM facebook_group_publishing_tasks WHERE deleted_at IS NULL AND due_at < NOW() AND status IN ('scheduled','due'))::text AS overdue,
        (SELECT COUNT(*) FROM facebook_group_published_posts WHERE deleted_at IS NULL AND moderation_status = 'pending')::text AS "pendingModeration",
-       (SELECT COUNT(*) FROM facebook_group_post_check_tasks WHERE status = 'pending' AND due_at <= NOW())::text AS "checksDue",
+       (SELECT COUNT(*) FROM facebook_group_post_check_tasks WHERE deleted_at IS NULL AND status = 'pending' AND due_at <= NOW())::text AS "checksDue",
        (SELECT COUNT(*) FROM facebook_group_lead_attributions WHERE created_at::date = CURRENT_DATE)::text AS "leadsToday",
        (SELECT COUNT(*) FROM facebook_group_lead_attributions WHERE created_at::date BETWEEN $1 AND $2)::text AS leads,
        (SELECT COUNT(*) FROM facebook_group_lead_attributions WHERE quote_id IS NOT NULL AND created_at::date BETWEEN $1 AND $2)::text AS quotes,
@@ -1341,7 +1349,7 @@ export async function getFacebookGroupDashboard(filters: Filters = {}): Promise<
   );
   const comments = await queryOne<{ count: string }>(
     `SELECT COUNT(*)::text AS count FROM facebook_group_comments
-     WHERE commented_at::date BETWEEN $1 AND $2`, [from, to],
+     WHERE deleted_at IS NULL AND commented_at::date BETWEEN $1 AND $2`, [from, to],
   );
   return {
     metrics: numeric,

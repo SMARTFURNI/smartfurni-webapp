@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle, BarChart3, CalendarDays, CheckCircle2, ClipboardCopy, ExternalLink,
-  Facebook, FileText, Loader2, MessageSquare, Pencil, Plus, RefreshCw, Users,
+  Facebook, FileText, Loader2, MessageSquare, Pencil, Plus, RefreshCw, Trash2, Users,
 } from "lucide-react";
 
 type Row = Record<string, unknown>;
@@ -13,6 +13,7 @@ type FormOptions = {
   staff: Row[]; products: Row[]; leads: Row[];
 };
 type Permissions = {
+  admin: boolean;
   manage: boolean; campaigns: boolean; content: boolean; approve: boolean;
   schedule: boolean; publish: boolean; sales: boolean; reports: boolean; settings: boolean;
 };
@@ -138,6 +139,9 @@ export default function FacebookGroupMarketingClient({
   const [modal, setModal] = useState<string | null>(null);
   const [editingRow, setEditingRow] = useState<Row | null>(null);
   const [editingResource, setEditingResource] = useState<string | null>(null);
+  const [deletingRow, setDeletingRow] = useState<Row | null>(null);
+  const [deletingResource, setDeletingResource] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
 
@@ -280,6 +284,29 @@ export default function FacebookGroupMarketingClient({
     } catch (err) { setError(err instanceof Error ? err.message : "Không thể cập nhật."); }
   };
 
+  const requestDelete = (targetResource: string, row: Row) => {
+    if (!permissions.admin) return;
+    setDeletingResource(targetResource);
+    setDeletingRow(row);
+  };
+
+  const confirmDelete = async () => {
+    if (!permissions.admin || !deletingResource || !deletingRow?.id) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await api(`${deletingResource}/${deletingRow.id}`, { method: "DELETE" });
+      setNotice("Đã xóa bản ghi. Thao tác đã được ghi vào nhật ký hệ thống.");
+      setDeletingRow(null);
+      setDeletingResource(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể xóa bản ghi.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const importCsv = async (file: File) => {
     try {
       const source = await file.text();
@@ -367,6 +394,7 @@ export default function FacebookGroupMarketingClient({
         <Dashboard data={dashboard || {}} reports={section === "reports"} />
       ) : section === "settings" ? (
         <SettingsView data={settingsData || {}} pages={rows} canEdit={permissions.settings}
+          canDelete={permissions.admin}
           onSave={async payload => { await action("settings", payload); }}
           onSyncPages={async () => {
             const result = await api("pages/sync", { method: "POST", body: "{}" });
@@ -374,7 +402,8 @@ export default function FacebookGroupMarketingClient({
             await load();
           }}
           onAddPage={() => setModal("page")}
-          onEditPage={pageRow => { setEditingResource("pages"); setEditingRow(pageRow); }} />
+          onEditPage={pageRow => { setEditingResource("pages"); setEditingRow(pageRow); }}
+          onDeletePage={pageRow => requestDelete("pages", pageRow)} />
       ) : (
         <>
           {section === "groups" && (
@@ -387,11 +416,13 @@ export default function FacebookGroupMarketingClient({
           {section === "comments" && <>
             <h2 className="mb-3 mt-1 font-bold text-white">Hàng chờ cần kiểm tra bình luận</h2>
             <DataTable section="checks" rows={checkRows} permissions={permissions} onAction={action}
-              onEdit={row => { setEditingResource("checks"); setEditingRow(row); }} />
+              onEdit={row => { setEditingResource("checks"); setEditingRow(row); }}
+              onDelete={row => requestDelete("checks", row)} />
             <h2 className="mb-3 mt-6 font-bold text-white">Bình luận có nhu cầu đã nhập</h2>
           </>}
           <DataTable section={section} rows={rows} permissions={permissions} onAction={action}
-            onEdit={row => { setEditingResource(resource); setEditingRow(row); }} />
+            onEdit={row => { setEditingResource(resource); setEditingRow(row); }}
+            onDelete={row => requestDelete(resource, row)} />
           <div className="fbg-pagination mt-4 flex items-center justify-end gap-2">
             <button disabled={page === 0} onClick={() => setPage(current => Math.max(0, current - 1))}
               className="rounded-xl border border-white/10 px-3 py-2 text-sm disabled:opacity-30">Trang trước</button>
@@ -416,6 +447,40 @@ export default function FacebookGroupMarketingClient({
         <Modal title={`Sửa ${labels[editingResource || resource] || ((editingResource || resource) === "posts" ? "bài đăng" : "bản ghi")}`}
           onClose={() => { setEditingRow(null); setEditingResource(null); }}>
           <EditForm resource={editingResource || resource} row={editingRow} options={formOptions} onSubmit={submitEdit} />
+        </Modal>
+      )}
+      {deletingRow && deletingResource && (
+        <Modal title="Xác nhận xóa bản ghi"
+          onClose={() => {
+            if (deleting) return;
+            setDeletingRow(null);
+            setDeletingResource(null);
+          }}>
+          <div className="space-y-5">
+            <div className="flex items-start gap-3 rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-sm text-red-100">
+              <AlertTriangle className="mt-0.5 shrink-0 text-red-300" size={19} />
+              <div>
+                <b className="block">Chỉ quản trị viên mới được thực hiện thao tác này.</b>
+                <p className="mt-1 text-red-100/75">
+                  Bạn sắp xóa “{String(value(
+                    deletingRow, "name", "opening", "facebook_name", "check_type", "sourceCode", "source_code", "id",
+                  ))}”. Bản ghi sẽ bị ẩn khỏi các luồng vận hành và thao tác được lưu trong nhật ký.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" disabled={deleting}
+                onClick={() => { setDeletingRow(null); setDeletingResource(null); }}
+                className="fbg-secondary-button rounded-xl border border-white/10 px-4 py-2.5 text-sm font-bold disabled:opacity-50">
+                Hủy
+              </button>
+              <button type="button" disabled={deleting} onClick={() => void confirmDelete()}
+                className="fbg-danger-button inline-flex items-center gap-2 rounded-xl border border-red-400/30 bg-red-500/15 px-4 py-2.5 text-sm font-black text-red-200 disabled:opacity-50">
+                {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                {deleting ? "Đang xóa…" : "Xóa bản ghi"}
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>
@@ -522,10 +587,11 @@ function Ranking({ title, rows, format }: { title: string; rows: Row[]; format: 
   </div>;
 }
 
-function DataTable({ section, rows, permissions, onAction, onEdit }: {
+function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
   section: string; rows: Row[]; permissions: Permissions;
   onAction: (endpoint: string, body?: Row, method?: string) => Promise<void>;
   onEdit: (row: Row) => void;
+  onDelete: (row: Row) => void;
 }) {
   if (!rows.length) return <div className="fbg-empty-state grid min-h-64 place-items-center rounded-2xl border border-dashed border-white/10 text-sm text-slate-500">
     <div className="text-center"><span className="fbg-empty-icon"><FileText size={21} /></span><p className="mt-3 font-medium text-slate-400">Chưa có dữ liệu.</p><p className="mt-1 text-xs text-slate-600">Dữ liệu vận hành sẽ xuất hiện tại đây.</p></div>
@@ -566,6 +632,8 @@ function DataTable({ section, rows, permissions, onAction, onEdit }: {
             <td className="px-4 py-3">
               <div className="fbg-table-actions flex gap-2">
                 {canEdit && <button onClick={() => onEdit(row)} title="Sửa bản ghi" aria-label="Sửa bản ghi"><Pencil size={16} /></button>}
+                {permissions.admin && <button onClick={() => onDelete(row)} title="Xóa bản ghi" aria-label="Xóa bản ghi"
+                  className="fbg-delete-button"><Trash2 size={16} /></button>}
                 {section === "groups" && Boolean(row.group_url) && <a target="_blank" rel="noreferrer" href={String(row.group_url)} title="Mở group"><ExternalLink size={17} /></a>}
                 {section === "groups" && permissions.manage && <button onClick={() => void onAction(`groups/${row.id}/recalculate-score`)} title="Tính lại điểm"><RefreshCw size={17} /></button>}
                 {section === "groups" && permissions.manage && row.status !== "active" && <button
@@ -1102,14 +1170,18 @@ function EditForm({ resource, row, options, onSubmit }: {
   </form>;
 }
 
-function SettingsView({ data, pages, canEdit, onSave, onSyncPages, onAddPage, onEditPage }: {
+function SettingsView({
+  data, pages, canEdit, canDelete, onSave, onSyncPages, onAddPage, onEditPage, onDeletePage,
+}: {
   data: Row;
   pages: Row[];
   canEdit: boolean;
+  canDelete: boolean;
   onSave: (payload: Row) => Promise<void>;
   onSyncPages: () => Promise<void>;
   onAddPage: () => void;
   onEditPage: (page: Row) => void;
+  onDeletePage: (page: Row) => void;
 }) {
   const [form, setForm] = useState(data);
   useEffect(() => setForm(data), [data]);
@@ -1141,8 +1213,12 @@ function SettingsView({ data, pages, canEdit, onSave, onSyncPages, onAddPage, on
       </div>
       <div className="grid gap-3 md:grid-cols-2">{pages.map(page => <div key={String(page.id)} className="fbg-page-card flex items-center justify-between gap-3 rounded-xl border border-white/8 p-3.5">
         <div className="min-w-0"><b className="block truncate text-[13px] text-[#f5edd6]">{String(page.name)}</b><p className="mt-1 text-xs text-slate-500">{String(page.facebookPageId || "Chưa nhập Page ID")}</p></div>
-        {canEdit && <button type="button" onClick={() => onEditPage(page)} title="Sửa Fanpage" aria-label={`Sửa ${String(page.name)}`}
-          className="fbg-secondary-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"><Pencil size={15} /></button>}
+        <div className="flex shrink-0 gap-2">
+          {canEdit && <button type="button" onClick={() => onEditPage(page)} title="Sửa Fanpage" aria-label={`Sửa ${String(page.name)}`}
+            className="fbg-secondary-button inline-flex h-9 w-9 items-center justify-center rounded-xl border"><Pencil size={15} /></button>}
+          {canDelete && <button type="button" onClick={() => onDeletePage(page)} title="Xóa Fanpage" aria-label={`Xóa ${String(page.name)}`}
+            className="fbg-delete-button inline-flex h-9 w-9 items-center justify-center rounded-xl border"><Trash2 size={15} /></button>}
+        </div>
       </div>)}</div>
     </div>
     <div className="fbg-settings-card rounded-2xl border border-white/8 bg-white/[.03] p-5">

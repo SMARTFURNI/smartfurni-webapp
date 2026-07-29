@@ -199,6 +199,7 @@ export async function captureFacebookGroupMessengerSource(
         `UPDATE facebook_group_comments
          SET entered_messenger = TRUE, lead_id = $1, updated_by = $2, updated_at = NOW()
          WHERE post_id = $3
+           AND deleted_at IS NULL
            AND LOWER(facebook_name) = LOWER($4)
            AND (lead_id IS NULL OR lead_id = $1)`,
         [lead.id, systemActor.id, String(attribution.postId), input.participantName],

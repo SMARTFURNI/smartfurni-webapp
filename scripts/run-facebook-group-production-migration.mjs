@@ -11,7 +11,7 @@ const connectionString = process.env.DATABASE_PUBLIC_URL
   || process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL chưa được cấu hình.");
 
-const migrationName = "005_upgrade_facebook_group_marketing_operations.sql";
+const migrationName = "006_add_facebook_group_soft_delete.sql";
 const migration = await readFile(path.join(process.cwd(), "migrations", migrationName), "utf8");
 const pool = new pg.Pool({
   connectionString,
