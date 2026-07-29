@@ -2,6 +2,7 @@ import "server-only";
 
 import { getDb, query } from "@/lib/db";
 import { sendPushNotification } from "@/lib/pwa-server";
+import { refreshFacebookGroupAiRecommendationsIfStale } from "@/lib/facebook-group-marketing-ai";
 
 const FACEBOOK_GROUP_CRON_LOCK_ID = 26_072_901;
 
@@ -107,11 +108,22 @@ async function runFacebookGroupMarketingCronUnlocked() {
     }
   }
 
+  let aiOperations: Record<string, unknown>;
+  try {
+    aiOperations = await refreshFacebookGroupAiRecommendationsIfStale();
+  } catch (error) {
+    console.error("[Facebook Group Marketing Cron] AI Operations lỗi:", error);
+    aiOperations = {
+      error: error instanceof Error ? error.message : "Không thể cập nhật đề xuất AI.",
+    };
+  }
+
   return {
     sent,
     publishingTasks: publishingTasks.length,
     commentChecks: commentChecks.length,
     rejectedPosts: rejectedPosts.length,
+    aiOperations,
     ranAt: new Date().toISOString(),
   };
 }

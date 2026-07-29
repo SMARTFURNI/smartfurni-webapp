@@ -728,6 +728,105 @@
   background: rgba(215, 185, 87, 0.13) !important;
 }
 
+.fbg-ai-operations {
+  border-color: rgba(224, 197, 111, 0.15) !important;
+  background:
+    radial-gradient(circle at 92% 0, rgba(215, 185, 87, 0.08), transparent 18rem),
+    linear-gradient(145deg, rgba(24, 29, 38, 0.94), rgba(21, 20, 17, 0.94));
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.16);
+}
+
+.fbg-ai-operations > div:first-child {
+  border-color: rgba(224, 197, 111, 0.1) !important;
+}
+
+.fbg-ai-operations-icon {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border: 1px solid rgba(215, 185, 87, 0.22);
+  border-radius: 12px;
+  color: #e2c97e;
+  background: rgba(215, 185, 87, 0.09);
+}
+
+.fbg-ai-recommendation {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(224, 197, 111, 0.11) !important;
+  background: rgba(9, 12, 18, 0.35);
+}
+
+.fbg-ai-recommendation::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #86733d;
+}
+
+.fbg-ai-recommendation.priority-critical::before {
+  background: #d96f69;
+}
+
+.fbg-ai-recommendation.priority-high::before {
+  background: #d7a848;
+}
+
+.fbg-ai-recommendation.priority-low::before {
+  background: #5c9c7c;
+}
+
+.fbg-ai-priority,
+.fbg-ai-agent-chip,
+.fbg-ai-confidence {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.fbg-ai-priority {
+  color: #e5d386;
+  background: rgba(215, 185, 87, 0.1);
+}
+
+.fbg-ai-priority.priority-critical {
+  color: #f0a09a;
+  background: rgba(217, 85, 77, 0.12);
+}
+
+.fbg-ai-priority.priority-high {
+  color: #e8bf69;
+  background: rgba(215, 168, 72, 0.12);
+}
+
+.fbg-ai-agent-chip {
+  color: rgba(245, 237, 214, 0.66);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.fbg-ai-confidence {
+  color: #82c8a7;
+  background: rgba(63, 177, 129, 0.1);
+}
+
+.fbg-ai-evidence {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(245, 237, 214, 0.5);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.fbg-ai-editor {
+  border-color: rgba(224, 197, 111, 0.14) !important;
+  background: linear-gradient(135deg, rgba(215, 185, 87, 0.055), rgba(10, 13, 19, 0.2));
+}
+
 .fbg-admin-shell ::-webkit-scrollbar {
   width: 7px;
   height: 7px;

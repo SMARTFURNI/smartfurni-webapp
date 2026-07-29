@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
-  AlertTriangle, BarChart3, CalendarDays, CheckCircle2, ClipboardCopy, ExternalLink,
+  AlertTriangle, ArrowRight, BarChart3, BrainCircuit, CalendarDays, CheckCircle2, ClipboardCopy, ExternalLink,
   Bot, Facebook, FileText, Loader2, MapPin, MessageSquare, Pencil, Plus, RefreshCw,
-  Search as SearchIcon, ShieldCheck, Sparkles, Tags, Trash2, Users,
+  Search as SearchIcon, ShieldCheck, Sparkles, Tags, Trash2, Users, X,
 } from "lucide-react";
 import { parseFacebookGroupUrl } from "@/lib/facebook-group-marketing-business";
 import { FACEBOOK_GROUP_TOPIC_TAXONOMY } from "@/lib/facebook-group-marketing-types";
@@ -159,6 +159,8 @@ export default function FacebookGroupMarketingClient({
   const [discoveryKeywords, setDiscoveryKeywords] = useState("");
   const [discoveryBusy, setDiscoveryBusy] = useState(false);
   const [discoveryResult, setDiscoveryResult] = useState<GroupDiscoveryResult | null>(null);
+  const [aiRecommendations, setAiRecommendations] = useState<Row[]>([]);
+  const [aiBusy, setAiBusy] = useState(false);
   const [page, setPage] = useState(0);
 
   const resource = section === "calendar" ? "tasks"
@@ -168,6 +170,10 @@ export default function FacebookGroupMarketingClient({
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
+      const aiQuery = section === "overview" || section === "reports"
+        ? "ai/recommendations?status=all&limit=60"
+        : `ai/recommendations?status=pending&limit=12&section=${encodeURIComponent(section)}`;
+      const aiRequest = api(aiQuery).catch(() => []);
       if (section === "overview" || section === "reports") {
         setDashboard(await api("dashboard"));
       } else if (section === "settings") {
@@ -194,6 +200,7 @@ export default function FacebookGroupMarketingClient({
         setRows(result);
         if (needsOptions) setFormOptions(options);
       }
+      setAiRecommendations(await aiRequest);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tải dữ liệu.");
     } finally {
@@ -202,6 +209,44 @@ export default function FacebookGroupMarketingClient({
   }, [page, resource, search, section, selectedTopic]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const runAiOperationsReview = async () => {
+    setAiBusy(true); setError(""); setNotice("");
+    try {
+      const result = await api("ai/generate", {
+        method: "POST",
+        body: JSON.stringify({ section: section === "reports" ? "overview" : section }),
+      });
+      setNotice(`AI đã phân tích ${result.candidateCount} tín hiệu và cập nhật ${result.recommendationCount} đề xuất.`);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể chạy AI điều phối.");
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const reviewAiRecommendation = async (
+    recommendationId: string,
+    status: "approved" | "dismissed" | "applied",
+  ) => {
+    try {
+      await api(`ai/${recommendationId}/review`, {
+        method: "POST",
+        body: JSON.stringify({ status }),
+      });
+      setAiRecommendations(current => section === "overview" || section === "reports"
+        ? current.map(item => item.id === recommendationId ? { ...item, status } : item)
+        : current.filter(item => item.id !== recommendationId));
+      setNotice(status === "approved"
+        ? "Đã duyệt đề xuất. Mở màn hình liên quan để thực hiện."
+        : status === "applied"
+          ? "Đã ghi nhận đề xuất được thực hiện."
+          : "Đã bỏ qua đề xuất.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể cập nhật đề xuất.");
+    }
+  };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>, endpoint = resource) => {
     event.preventDefault();
@@ -525,6 +570,17 @@ export default function FacebookGroupMarketingClient({
 
       {notice && <div className="fbg-alert mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-200"><CheckCircle2 size={16} />{notice}</div>}
       {error && <div className="fbg-alert mb-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200"><AlertTriangle size={16} />{error}</div>}
+
+      {!loading && <AiOperationsCenter
+        section={section}
+        recommendations={aiRecommendations}
+        busy={aiBusy}
+        canGenerate={permissions.admin || permissions.manage || permissions.campaigns
+          || permissions.content || permissions.approve || permissions.reports || permissions.settings}
+        canReview={permissions.admin || permissions.manage}
+        onGenerate={() => void runAiOperationsReview()}
+        onReview={(id, status) => void reviewAiRecommendation(id, status)}
+      />}
 
       {loading ? (
         <div className="grid min-h-64 place-items-center"><Loader2 className="animate-spin text-amber-300" /></div>
@@ -966,6 +1022,158 @@ function GroupDiscoveryAgent({
   );
 }
 
+function AiOperationsCenter({
+  section, recommendations, busy, canGenerate, canReview, onGenerate, onReview,
+}: {
+  section: string;
+  recommendations: Row[];
+  busy: boolean;
+  canGenerate: boolean;
+  canReview: boolean;
+  onGenerate: () => void;
+  onReview: (id: string, status: "approved" | "dismissed" | "applied") => void;
+}) {
+  const isOverview = section === "overview" || section === "reports";
+  const pending = recommendations.filter(item => String(item.status || "pending") === "pending");
+  const visible = isOverview ? pending : pending.slice(0, 4);
+  const learned = {
+    approved: recommendations.filter(item => item.status === "approved").length,
+    dismissed: recommendations.filter(item => item.status === "dismissed").length,
+    applied: recommendations.filter(item => item.status === "applied").length,
+  };
+  const approvedItems = recommendations.filter(item => item.status === "approved").slice(0, 5);
+  const priorityLabel: Record<string, string> = {
+    critical: "Khẩn cấp", high: "Cao", medium: "Trung bình", low: "Thấp",
+  };
+  const agentLabel: Record<string, string> = {
+    operations_coordinator: "Điều phối",
+    group_research: "Nghiên cứu Group",
+    group_quality: "Chất lượng Group",
+    campaign_planner: "Lập chiến dịch",
+    content_compliance: "Nội dung & nội quy",
+    schedule_optimizer: "Tối ưu lịch",
+    task_dispatcher: "Điều phối nhiệm vụ",
+    post_monitor: "Theo dõi bài đăng",
+    engagement_assistant: "Chăm sóc khách",
+    lead_attribution: "Quy nguồn khách",
+    performance_analyst: "Phân tích hiệu quả",
+    configuration_guard: "Kiểm tra cấu hình",
+  };
+  return <section className="fbg-ai-operations mb-5 overflow-hidden rounded-2xl border">
+    <div className="flex flex-col gap-3 border-b px-4 py-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex items-start gap-3">
+        <span className="fbg-ai-operations-icon"><BrainCircuit size={19} /></span>
+        <div>
+          <h2 className="font-black text-[#f5edd6]">
+            {isOverview ? "Trung tâm AI điều phối" : "AI đề xuất cho màn hình này"}
+          </h2>
+          <p className="mt-1 text-xs text-slate-400">
+            Dựa trên dữ liệu CRM thật; mọi thay đổi vận hành vẫn cần người có quyền xác nhận.
+          </p>
+          {isOverview && <div className="mt-2 flex flex-wrap gap-2 text-[10px]">
+            <span className="fbg-ai-confidence">Đang chờ {pending.length}</span>
+            <span className="fbg-ai-agent-chip">Đã duyệt {learned.approved}</span>
+            <span className="fbg-ai-agent-chip">Đã thực hiện {learned.applied}</span>
+            <span className="fbg-ai-agent-chip">Đã bỏ qua {learned.dismissed}</span>
+          </div>}
+        </div>
+      </div>
+      {canGenerate && <button type="button" onClick={onGenerate} disabled={busy}
+        className="fbg-ai-button inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-black disabled:opacity-50">
+        {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+        {busy ? "AI đang phân tích…" : "Phân tích dữ liệu mới"}
+      </button>}
+    </div>
+    {visible.length ? <div className={`grid gap-3 p-4 ${isOverview ? "xl:grid-cols-2" : ""}`}>
+      {visible.map(item => {
+        const action = item.proposedAction && typeof item.proposedAction === "object"
+          ? item.proposedAction as Row : {};
+        const evidence = item.evidence && typeof item.evidence === "object"
+          ? item.evidence as Row : {};
+        const priority = String(item.priority || "medium");
+        const risk = String(item.risk || "low");
+        return <article key={String(item.id)}
+          className={`fbg-ai-recommendation priority-${priority} rounded-xl border p-4`}>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap gap-1.5 text-[10px] font-bold">
+                <span className={`fbg-ai-priority priority-${priority}`}>
+                  {priorityLabel[priority] || priority}
+                </span>
+                <span className="fbg-ai-agent-chip">
+                  {agentLabel[String(item.agentType)] || String(item.agentType || "AI Agent")}
+                </span>
+                <span className="fbg-ai-confidence">
+                  Tin cậy {Math.round(Number(item.confidence || 0))}%
+                </span>
+              </div>
+              <h3 className="text-sm font-black text-[#f5edd6]">{String(item.title)}</h3>
+            </div>
+            {risk === "high" && <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-300">
+              <AlertTriangle size={12} /> Rủi ro cao
+            </span>}
+          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-300">{String(item.summary)}</p>
+          {Boolean(item.rationale) && <p className="mt-1.5 text-[11px] leading-5 text-slate-500">{String(item.rationale)}</p>}
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {Object.entries(evidence).slice(0, 4).map(([key, evidenceValue]) => (
+              <span key={key} className="fbg-ai-evidence rounded-full px-2 py-1 text-[9px]">
+                {key}: {typeof evidenceValue === "object" ? JSON.stringify(evidenceValue) : String(evidenceValue ?? "—")}
+              </span>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap justify-end gap-2">
+            {canReview && <button type="button" onClick={() => onReview(String(item.id), "dismissed")}
+              className="fbg-secondary-button inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold">
+              <X size={13} /> Bỏ qua
+            </button>}
+            {canReview && <button type="button" onClick={() => onReview(String(item.id), "approved")}
+              className="fbg-secondary-button inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold">
+              <CheckCircle2 size={13} /> Duyệt đề xuất
+            </button>}
+            {Boolean(action.href) && <Link href={String(action.href)}
+              className="fbg-primary-button inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black">
+              {String(action.label || "Mở xử lý")} <ArrowRight size={13} />
+            </Link>}
+          </div>
+        </article>;
+      })}
+    </div> : <div className="flex flex-col items-center justify-center px-5 py-7 text-center">
+      <CheckCircle2 size={24} className="text-emerald-300/70" />
+      <p className="mt-2 text-sm font-bold text-slate-300">Chưa có cảnh báo AI đang chờ xử lý.</p>
+      <p className="mt-1 text-xs text-slate-500">Chạy phân tích để đọc trạng thái mới nhất từ các tab.</p>
+    </div>}
+    {isOverview && approvedItems.length > 0 && <div className="border-t border-white/8 px-4 py-4">
+      <h3 className="text-xs font-black uppercase tracking-[.1em] text-slate-400">
+        Đã duyệt, chờ xác nhận kết quả
+      </h3>
+      <div className="mt-3 grid gap-2">
+        {approvedItems.map(item => {
+          const action = item.proposedAction && typeof item.proposedAction === "object"
+            ? item.proposedAction as Row : {};
+          return <div key={String(item.id)}
+            className="flex flex-col gap-3 rounded-xl border border-white/8 bg-black/15 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <b className="block truncate text-xs text-[#f5edd6]">{String(item.title)}</b>
+              <p className="mt-1 truncate text-[10px] text-slate-500">{String(item.summary)}</p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              {Boolean(action.href) && <Link href={String(action.href)}
+                className="fbg-secondary-button inline-flex items-center gap-1 rounded-lg border px-2.5 py-2 text-[10px] font-bold">
+                Mở xử lý <ArrowRight size={11} />
+              </Link>}
+              {canReview && <button type="button" onClick={() => onReview(String(item.id), "applied")}
+                className="fbg-primary-button rounded-lg px-2.5 py-2 text-[10px] font-black">
+                Đã thực hiện
+              </button>}
+            </div>
+          </div>;
+        })}
+      </div>
+    </div>}
+  </section>;
+}
+
 function Dashboard({ data, reports }: { data: Row; reports: boolean }) {
   const metrics = (data.metrics || {}) as Row;
   const daily = (data.daily || []) as Row[];
@@ -1152,6 +1360,8 @@ function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
                     leadId, sourceCode: row.sourceCode, firstMessengerAt: new Date().toISOString(),
                   });
                 }} title="Gắn khách hàng CRM"><Users size={17} className="text-blue-300" /></button>}
+                {section === "comments" && permissions.sales
+                  && <CommentAiReply comment={row} onAction={onAction} />}
               </div>
             </td>
           </tr>
@@ -1159,6 +1369,90 @@ function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
       </table>
     </div>
   );
+}
+
+function CommentAiReply({
+  comment, onAction,
+}: {
+  comment: Row;
+  onAction: (endpoint: string, body?: Row, method?: string) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [suggestion, setSuggestion] = useState<Row | null>(null);
+  const generate = async () => {
+    setBusy(true); setError("");
+    try {
+      setSuggestion(await api(`comments/${comment.id}/suggest-reply`, {
+        method: "POST",
+        body: "{}",
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể soạn câu trả lời.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const applyClassification = async () => {
+    if (!suggestion) return;
+    await onAction(`comments/${comment.id}`, {
+      intent: suggestion.intent,
+      temperature: suggestion.temperature,
+    }, "PATCH");
+    setOpen(false);
+  };
+  return <>
+    <button type="button" onClick={() => { setOpen(true); void generate(); }}
+      title="AI phân loại và soạn câu trả lời">
+      <Sparkles size={17} className="text-amber-200" />
+    </button>
+    {open && <Modal title="AI hỗ trợ trả lời bình luận" onClose={() => setOpen(false)}>
+      <div className="space-y-4">
+        <div className="fbg-choice-list rounded-xl border p-3 text-sm text-slate-300">
+          <b className="block text-[#f5edd6]">{String(value(comment, "facebook_name", "facebookName") || "Khách Facebook")}</b>
+          <p className="mt-2 whitespace-pre-wrap text-xs leading-5">{String(value(comment, "content"))}</p>
+        </div>
+        {busy && <div className="flex items-center gap-2 py-8 text-sm text-slate-400">
+          <Loader2 size={17} className="animate-spin" /> AI đang đọc nội dung, nội quy và dữ liệu sản phẩm…
+        </div>}
+        {error && <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-200">{error}</div>}
+        {suggestion && !busy && <>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-white/8 bg-black/15 p-3 text-xs">
+              <span className="text-slate-500">Nhu cầu</span>
+              <b className="mt-1 block text-[#f5edd6]">{String(suggestion.intent)}</b>
+            </div>
+            <div className="rounded-xl border border-white/8 bg-black/15 p-3 text-xs">
+              <span className="text-slate-500">Mức độ</span>
+              <b className="mt-1 block text-[#f5edd6]">{String(suggestion.temperature)}</b>
+            </div>
+          </div>
+          <div>
+            <div className="mb-1.5 text-xs font-bold text-slate-300">Bản nháp trả lời</div>
+            <div className="rounded-xl border border-amber-300/15 bg-amber-300/[.045] p-4 text-sm leading-6 text-[#f5edd6]">
+              {String(suggestion.reply)}
+            </div>
+          </div>
+          <p className="text-xs leading-5 text-slate-500">{String(suggestion.rationale || "")}</p>
+          {Array.isArray(suggestion.warnings) && suggestion.warnings.length > 0 && <div className="rounded-xl border border-amber-400/20 bg-amber-400/[.06] p-3 text-xs text-amber-200">
+            {suggestion.warnings.map((warning, index) => <p key={index}>• {String(warning)}</p>)}
+          </div>}
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" onClick={() => navigator.clipboard.writeText(String(suggestion.reply || ""))}
+              className="fbg-secondary-button inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold">
+              <ClipboardCopy size={14} /> Sao chép trả lời
+            </button>
+            <button type="button" onClick={() => void applyClassification()}
+              className="fbg-primary-button rounded-xl px-4 py-2.5 text-xs font-black">
+              Lưu phân loại vào CRM
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-600">AI không tự gửi bình luận. Nhân viên phải kiểm tra và tự trả lời trên Facebook.</p>
+        </>}
+      </div>
+    </Modal>}
+  </>;
 }
 
 function CompleteCheck({ check, onAction }: { check: Row; onAction: (endpoint: string, body?: Row) => Promise<void> }) {
@@ -1357,11 +1651,39 @@ function EditForm({ resource, row, options, onSubmit }: {
   options: FormOptions;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
+  const [rewriteBusy, setRewriteBusy] = useState(false);
+  const [rewriteError, setRewriteError] = useState("");
+  const [rewriteInstruction, setRewriteInstruction] = useState("Viết tự nhiên hơn và giảm nguy cơ spam");
+  const [rewriteSummary, setRewriteSummary] = useState("");
   const selectClass = "fbg-form-control rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white";
   const productIds = new Set((Array.isArray(row.product_ids) ? row.product_ids : []).map(String));
   const groupIds = new Set((Array.isArray(row.groupIds) ? row.groupIds : []).map(String));
   const currentStatus = String(value(row, "status") || "");
   const topicOptions = options.topics.length ? options.topics : FACEBOOK_GROUP_TOPIC_TAXONOMY;
+  const rewriteContent = async (button: HTMLButtonElement, instruction = rewriteInstruction) => {
+    const form = button.form;
+    if (!form || resource !== "content") return;
+    setRewriteBusy(true); setRewriteError(""); setRewriteSummary("");
+    try {
+      const result = await api(`content/${row.id}/ai-rewrite`, {
+        method: "POST",
+        body: JSON.stringify({ instruction }),
+      });
+      const setValue = (name: string, nextValue: unknown) => {
+        const field = form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+        if (field) field.value = String(nextValue || "");
+      };
+      setValue("opening", result.opening);
+      setValue("body", result.body);
+      setValue("cta", result.cta);
+      setValue("contentType", result.contentType);
+      setRewriteSummary(String(result.changeSummary || "AI đã tạo một phiên bản mới để bạn kiểm tra."));
+    } catch (err) {
+      setRewriteError(err instanceof Error ? err.message : "Không thể viết lại nội dung.");
+    } finally {
+      setRewriteBusy(false);
+    }
+  };
   return <form className="fbg-form grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
     {resource === "pages" && <>
       <Field label="Tên Fanpage" name="name" required>
@@ -1507,6 +1829,43 @@ function EditForm({ resource, row, options, onSubmit }: {
       <div className="fbg-choice-list md:col-span-2 rounded-xl border p-3 text-xs text-slate-400">
         <b className="mb-1 block text-slate-200">Ngữ cảnh được bảo vệ</b>
         Group: {String(value(row, "groupName") || "—")} · Chiến dịch: {String(value(row, "campaignName") || "Không có")} · Mã nguồn: {String(value(row, "source_code", "sourceCode") || "—")}
+      </div>
+      <div className="fbg-ai-editor md:col-span-2 rounded-xl border p-4">
+        <div className="flex items-start gap-2">
+          <Sparkles size={17} className="mt-0.5 shrink-0 text-amber-200" />
+          <div>
+            <b className="text-sm text-[#f5edd6]">AI viết lại theo dữ liệu thật</b>
+            <p className="mt-1 text-xs text-slate-500">AI đọc sản phẩm và nội quy hiện có; bản sửa chỉ được điền vào form, chưa tự lưu hay duyệt.</p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-col gap-2 md:flex-row">
+          <input value={rewriteInstruction} onChange={event => setRewriteInstruction(event.target.value)}
+            placeholder="Ví dụ: ngắn hơn, hướng tới người thuê căn hộ nhỏ…"
+            className="min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-xs" />
+          <button type="button" disabled={rewriteBusy}
+            onClick={event => void rewriteContent(event.currentTarget)}
+            className="fbg-ai-button inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-black disabled:opacity-50">
+            {rewriteBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            Viết lại
+          </button>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {[
+            "Viết ngắn hơn, giữ đủ thông tin thật",
+            "Chuyển sang phong cách chia sẻ cộng đồng",
+            "Giảm tính bán hàng và tăng giá trị tư vấn",
+            "Tạo câu mở đầu khác biệt rõ ràng",
+          ].map(instruction => <button key={instruction} type="button" disabled={rewriteBusy}
+            onClick={event => {
+              setRewriteInstruction(instruction);
+              void rewriteContent(event.currentTarget, instruction);
+            }}
+            className="fbg-secondary-button rounded-lg border px-2.5 py-1.5 text-[10px] font-bold">
+            {instruction}
+          </button>)}
+        </div>
+        {rewriteError && <p className="mt-2 text-xs text-red-300">{rewriteError}</p>}
+        {rewriteSummary && <p className="mt-2 text-xs text-emerald-300">{rewriteSummary}</p>}
       </div>
       <Field label="Loại nội dung" name="contentType">
         <select name="contentType" defaultValue={String(value(row, "content_type", "contentType") || "community_share")} className={selectClass}>

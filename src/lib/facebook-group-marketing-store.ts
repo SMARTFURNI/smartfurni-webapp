@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { getDb, query, queryOne } from "./db";
 import { sendPushNotification } from "./pwa-server";
 import {
-  analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
+  calculateFacebookGroupScore, contentSimilarityPercent,
   buildFacebookGroupContactCta, extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
   keepGroundedFacebookGroupSuggestions, parseFacebookGroupAiSuggestion,
   parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
@@ -15,6 +15,7 @@ import {
   type DashboardData, type FacebookGroupLeadSource,
   type FacebookGroupSettings, type FacebookGroupTopicDefinition,
 } from "./facebook-group-marketing-types";
+import { analyzeFacebookGroupRulesWithAi } from "./facebook-group-marketing-ai";
 
 type Actor = { id: string; name: string; isAdmin?: boolean };
 type Filters = Record<string, string | undefined>;
@@ -1358,14 +1359,18 @@ export async function softDeleteFacebookGroupMarketing(resource: string, entityI
 export async function analyzeGroupRules(groupId: string, actor: Actor) {
   const row = await queryOne<{ raw_text: string }>(`SELECT raw_text FROM facebook_group_rules WHERE group_id = $1`, [groupId]);
   if (!row) throw new Error("Không tìm thấy nội quy group.");
-  const analysis = analyzeFacebookGroupRules(row.raw_text);
+  const result = await analyzeFacebookGroupRulesWithAi(row.raw_text);
+  const analysis = result.analysis;
   await query(
     `UPDATE facebook_group_rules SET analysis = $1::jsonb, analyzed_at = NOW(),
      analyzed_by = $2, updated_by = $2, updated_at = NOW() WHERE group_id = $3`,
     [JSON.stringify(analysis), actor.id, groupId],
   );
-  await logActivity(actor, "group.rules_analyzed", "group", groupId);
-  return analysis;
+  await logActivity(actor, "group.rules_analyzed", "group", groupId, undefined, {
+    model: result.model,
+    mode: result.mode,
+  });
+  return { ...analysis, _ai: { model: result.model, mode: result.mode } };
 }
 
 export async function updateGroupRules(groupId: string, rawText: string, actor: Actor) {

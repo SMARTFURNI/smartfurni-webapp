@@ -1,10 +1,19 @@
 import { randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { applyFacebookGroupMigrations } from "./apply-facebook-group-migrations.mjs";
 
 const port = String(process.env.PORT || "3000");
 const cronSecret = process.env.CRON_SECRET || randomBytes(32).toString("hex");
 const nextBin = fileURLToPath(new URL("../node_modules/next/dist/bin/next", import.meta.url));
+const databaseUrl = process.env.POSTGRESQL_URL || process.env.DATABASE_URL;
+const migrationResult = await applyFacebookGroupMigrations({
+  connectionString: databaseUrl,
+  migrationNames: ["007_add_facebook_group_ai_operations.sql"],
+});
+if (migrationResult.applied.length) {
+  console.log("[Production Migration] Applied:", migrationResult.applied.join(", "));
+}
 const intervalMs = Math.max(
   15_000,
   Number(process.env.FACEBOOK_GROUP_CRON_INTERVAL_MS || 30_000),

@@ -15,6 +15,13 @@ import {
   authorizeFacebookGroupMarketing, authorizeFacebookGroupMarketingAdmin,
   type FacebookGroupPermission,
 } from "@/lib/facebook-group-marketing-auth";
+import {
+  generateFacebookGroupAiRecommendations,
+  listFacebookGroupAiRecommendations,
+  reviewFacebookGroupAiRecommendation,
+  rewriteFacebookGroupContentWithAi,
+  suggestFacebookGroupCommentReply,
+} from "@/lib/facebook-group-marketing-ai";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,6 +63,13 @@ export async function GET(req: NextRequest, context: { params: Promise<{ path: s
     if (resource === "dashboard") return NextResponse.json(await getFacebookGroupDashboard(filters));
     if (resource === "options") return NextResponse.json(await getFacebookGroupMarketingOptions());
     if (resource === "settings") return NextResponse.json(await getFacebookGroupSettings());
+    if (resource === "ai" && entityId === "recommendations") {
+      return NextResponse.json(await listFacebookGroupAiRecommendations({
+        section: filters.section,
+        status: filters.status,
+        limit: Number(filters.limit || 30),
+      }));
+    }
     if (resource === "topics") {
       const settings = await getFacebookGroupSettings();
       return NextResponse.json(settings.groupTopics);
@@ -85,10 +99,12 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     let permission = resourcePermission[resource]?.mutate || "facebook_group_marketing_view";
     if (resource === "content" && action === "approve") permission = "facebook_group_content_approve";
     if (resource === "tasks" && action === "mark-posted") permission = "facebook_group_publish_task";
+    if (resource === "comments" && action === "suggest-reply") permission = "facebook_group_sales";
     if (resource === "leads") permission = "facebook_group_sales";
     if (resource === "source-code") permission = "facebook_group_sales";
     if (resource === "revenue") permission = "facebook_group_sales";
     if (resource === "settings") permission = "facebook_group_settings";
+    if (resource === "ai" && action === "review") permission = "facebook_group_manage";
     const auth = await authorizeFacebookGroupMarketing(permission);
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -97,6 +113,34 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     }
     if (resource === "content" && entityId === "suggest") {
       return NextResponse.json(await suggestFacebookGroupContent(body, auth.actor));
+    }
+    if (resource === "content" && entityId && action === "ai-rewrite") {
+      return NextResponse.json(await rewriteFacebookGroupContentWithAi(
+        entityId,
+        String(body.instruction || ""),
+        auth.actor,
+      ));
+    }
+    if (resource === "comments" && entityId && action === "suggest-reply") {
+      return NextResponse.json(await suggestFacebookGroupCommentReply(entityId, auth.actor));
+    }
+    if (resource === "ai" && entityId === "generate") {
+      return NextResponse.json(await generateFacebookGroupAiRecommendations(
+        auth.actor,
+        String(body.section || "") || undefined,
+      ));
+    }
+    if (resource === "ai" && entityId && action === "review") {
+      const status = String(body.status || "");
+      if (!["approved", "dismissed", "applied"].includes(status)) {
+        return NextResponse.json({ error: "Trạng thái duyệt đề xuất AI không hợp lệ." }, { status: 400 });
+      }
+      return NextResponse.json(await reviewFacebookGroupAiRecommendation(
+        entityId,
+        status as "approved" | "dismissed" | "applied",
+        auth.actor,
+        String(body.notes || ""),
+      ));
     }
     if (resource === "notifications" && entityId === "sync") {
       return NextResponse.json(await sendFacebookGroupTaskDigest(auth.actor));
@@ -180,7 +224,10 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ path:
     const { path } = await context.params;
     const [resource, entityId] = path;
     if (!entityId || !resourcePermission[resource]) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    const auth = await authorizeFacebookGroupMarketing(resourcePermission[resource].mutate);
+    let auth = await authorizeFacebookGroupMarketing(resourcePermission[resource].mutate);
+    if (!auth && resource === "comments") {
+      auth = await authorizeFacebookGroupMarketing("facebook_group_sales");
+    }
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const body = safeBody.parse(await req.json());
     if (resource === "topics") {
