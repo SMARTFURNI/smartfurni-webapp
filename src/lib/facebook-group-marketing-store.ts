@@ -508,7 +508,7 @@ export async function discoverFacebookGroups(input: Record<string, unknown>, act
     return parsed ? [[parsed.groupKey, { id: group.id, name: group.name }]] : [];
   }));
   const prompt = `Bạn là AI Agent nghiên cứu cộng đồng cho SmartFurni.
-Dùng Google Search để tìm tối đa 10 Facebook Group công khai, còn tồn tại và liên quan trực tiếp.
+Dùng Google Search để tìm tối đa 6 Facebook Group công khai, còn tồn tại và liên quan trực tiếp.
 
 Tiêu chí:
 - Chủ đề chuẩn: ${topic}
@@ -525,22 +525,34 @@ Tiêu chí:
 Trả về duy nhất JSON hợp lệ:
 {"groups":[{"name":"Tên Group","groupUrl":"https://www.facebook.com/groups/.../","topic":"${topic}","region":"${region}","reason":"Lý do phù hợp","matchScore":0}]}`;
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          tools: [{ google_search: {} }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 2048,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+        signal: AbortSignal.timeout(65_000),
       },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 4000 },
-      }),
-      signal: AbortSignal.timeout(45_000),
-    },
-  );
+    );
+  } catch (error) {
+    if (error instanceof Error && ["AbortError", "TimeoutError"].includes(error.name)) {
+      throw new Error("Google Search đang phản hồi chậm. Hãy thử lại hoặc thu hẹp khu vực/từ khóa.");
+    }
+    throw error;
+  }
   const payload = await response.json().catch(() => ({})) as {
     error?: { message?: string };
     candidates?: Array<{
