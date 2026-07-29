@@ -8,6 +8,13 @@ export type PublishingTaskStatus =
   | "rejected" | "postponed" | "cancelled";
 
 export interface FacebookGroupSettings {
+  contact: {
+    hotline: string;
+    zalo: string;
+    zaloUrl: string;
+    website: string;
+    email: string;
+  };
   maxPostsPerPagePerDay: number;
   minPagePostIntervalMinutes: number;
   minGroupPostIntervalDays: number;
@@ -34,6 +41,13 @@ export interface FacebookGroupSettings {
 }
 
 export const DEFAULT_FACEBOOK_GROUP_SETTINGS: FacebookGroupSettings = {
+  contact: {
+    hotline: "028.7122.0818",
+    zalo: "0918.326.552",
+    zaloUrl: "https://zalo.me/0918326552",
+    website: "https://www.smartfurni.com.vn",
+    email: "b2b@smartfurni.com.vn",
+  },
   maxPostsPerPagePerDay: 4,
   minPagePostIntervalMinutes: 60,
   minGroupPostIntervalDays: 7,

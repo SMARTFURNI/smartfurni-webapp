@@ -850,7 +850,7 @@ function CreateForm({ resource, options, onSubmit }: {
       </div>
       <div className="md:col-span-2"><Field label="Câu mở đầu" name="opening"><textarea name="opening" rows={2} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
       <div className="md:col-span-2"><Field label="Nội dung chính" name="body" required><textarea name="body" required rows={7} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
-      <div className="md:col-span-2"><Field label="CTA Messenger" name="cta"><textarea name="cta" rows={2} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
+      <div className="md:col-span-2"><Field label="Kêu gọi hành động & liên hệ" name="cta"><textarea name="cta" rows={3} placeholder="Hệ thống sẽ bổ sung Messenger, Hotline/Zalo hoặc link theo nội quy Group." className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
     </>}
     {resource === "tasks" && <>
       <Field label="Fanpage" name="pageId" required><select name="pageId" required className={selectClass}><option value="">Chọn Fanpage</option>{options.pages.map(page => <option key={String(page.id)} value={String(page.id)}>{String(page.name)}</option>)}</select></Field>
@@ -1039,7 +1039,7 @@ function EditForm({ resource, row, options, onSubmit }: {
       <div className="md:col-span-2"><Field label="Nội dung chính" name="body" required>
         <textarea name="body" required rows={8} defaultValue={String(value(row, "body"))} className={selectClass} />
       </Field></div>
-      <div className="md:col-span-2"><Field label="CTA Messenger" name="cta">
+      <div className="md:col-span-2"><Field label="Kêu gọi hành động & liên hệ" name="cta">
         <textarea name="cta" rows={3} defaultValue={String(value(row, "cta"))} className={selectClass} />
       </Field></div>
       {["approved", "scheduled", "used"].includes(currentStatus) && <div className="fbg-alert md:col-span-2 rounded-xl border border-amber-400/20 bg-amber-400/[.07] p-3 text-xs text-amber-200">
@@ -1193,6 +1193,15 @@ function SettingsView({
 }) {
   const [form, setForm] = useState(data);
   useEffect(() => setForm(data), [data]);
+  const contact = form.contact && typeof form.contact === "object" && !Array.isArray(form.contact)
+    ? form.contact as Row : {};
+  const updateContact = (key: string, nextValue: string) => {
+    setForm(current => {
+      const currentContact = current.contact && typeof current.contact === "object" && !Array.isArray(current.contact)
+        ? current.contact as Row : {};
+      return { ...current, contact: { ...currentContact, [key]: nextValue } };
+    });
+  };
   const fields = [
     ["maxPostsPerPagePerDay", "Tối đa bài/Fanpage/ngày"],
     ["minPagePostIntervalMinutes", "Khoảng cách hai bài (phút)"],
@@ -1205,6 +1214,28 @@ function SettingsView({
     <div className="fbg-safe-banner flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/[.06] p-4 text-sm text-emerald-200">
       <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
       <div><b className="block text-emerald-200">Chế độ vận hành an toàn đang bật</b><span className="mt-0.5 block text-xs text-emerald-200/65">Không tự động đăng và không lưu mật khẩu, cookie hoặc token Facebook.</span></div>
+    </div>
+    <div className="fbg-settings-card rounded-2xl border border-white/8 bg-white/[.03] p-5">
+      <div className="mb-4">
+        <h3 className="font-bold">Liên hệ dùng trong nội dung Group</h3>
+        <p className="mt-1 text-xs text-slate-500">Chỉ tự chèn số điện thoại hoặc link khi nội quy của Group đã được xác minh cho phép.</p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {[
+          ["hotline", "Hotline"],
+          ["zalo", "Số Zalo"],
+          ["zaloUrl", "Link Zalo"],
+          ["website", "Website"],
+          ["email", "Email"],
+        ].map(([key, label]) => <label key={key} className="grid gap-1 text-sm text-slate-300">
+          {label}
+          <input type={key === "email" ? "email" : key.toLowerCase().includes("url") || key === "website" ? "url" : "text"}
+            disabled={!canEdit} value={String(contact[key] || "")}
+            onChange={event => updateContact(key, event.target.value)}
+            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" />
+        </label>)}
+      </div>
+      {canEdit && <button onClick={() => void onSave(form)} className="fbg-primary-button mt-5 rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Lưu thông tin liên hệ</button>}
     </div>
     <div className="fbg-settings-card rounded-2xl border border-white/8 bg-white/[.03] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

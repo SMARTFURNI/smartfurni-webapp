@@ -5,6 +5,52 @@ import type {
 const normalize = (value: string) =>
   value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+const digits = (value: string) => value.replace(/\D/g, "");
+
+export function buildFacebookGroupContactCta(input: {
+  rawCta?: string;
+  sourceCode?: string;
+  ruleAnalysis?: Partial<RuleAnalysis> | null;
+  contact: FacebookGroupSettings["contact"];
+}) {
+  const rawCta = String(input.rawCta || "").trim();
+  const sourceCode = String(input.sourceCode || "").trim();
+  const analysis = input.ruleAnalysis || {};
+  const blocks = rawCta ? [rawCta] : [];
+  const normalizedRaw = normalize(rawCta);
+  const rawDigits = digits(rawCta);
+
+  if (sourceCode && !normalizedRaw.includes(normalize(sourceCode))) {
+    blocks.push(`Nhắn tin cho Fanpage với mã ${sourceCode} để được tư vấn đúng nội dung này.`);
+  }
+
+  if (analysis.allowsPhone === true) {
+    const contactParts: string[] = [];
+    const hotlineDigits = digits(input.contact.hotline);
+    const zaloDigits = digits(input.contact.zalo);
+    if (input.contact.hotline && hotlineDigits && !rawDigits.includes(hotlineDigits)) {
+      contactParts.push(`Hotline: ${input.contact.hotline}`);
+    }
+    if (input.contact.zalo && zaloDigits && !rawDigits.includes(zaloDigits)) {
+      contactParts.push(`Zalo: ${input.contact.zalo}`);
+    }
+    if (contactParts.length) blocks.push(contactParts.join(" · "));
+  }
+
+  if (analysis.allowsLink === true) {
+    const links: string[] = [];
+    if (input.contact.zaloUrl && !rawCta.includes(input.contact.zaloUrl)) {
+      links.push(`Zalo trực tiếp: ${input.contact.zaloUrl}`);
+    }
+    if (input.contact.website && !rawCta.includes(input.contact.website)) {
+      links.push(`Website: ${input.contact.website}`);
+    }
+    if (links.length) blocks.push(links.join("\n"));
+  }
+
+  return blocks.join("\n\n");
+}
+
 export function generateFacebookGroupSourceCode(input: {
   groupCode: string;
   productCode: string;

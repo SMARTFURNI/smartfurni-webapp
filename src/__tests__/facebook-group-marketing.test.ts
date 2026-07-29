@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
+  analyzeFacebookGroupRules, buildFacebookGroupContactCta, calculateFacebookGroupScore, contentSimilarityPercent,
   extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
   parseFacebookGroupAiSuggestion, parseFacebookGroupUrl, validateFacebookGroupSchedule,
 } from "@/lib/facebook-group-marketing-business";
@@ -97,6 +97,37 @@ describe("Facebook Group Marketing business rules", () => {
     expect(analysis.allowsPrice).toBe(false);
     expect(analysis.allowsPhone).toBe(false);
     expect(analysis.requiresApproval).toBe(true);
+  });
+
+  it("chỉ bổ sung kênh liên hệ đã được nội quy Group cho phép", () => {
+    const phoneAllowed = buildFacebookGroupContactCta({
+      rawCta: "Nhắn Fanpage để xem mẫu thực tế.",
+      sourceCode: "GROUP-SMF-2907-A",
+      ruleAnalysis: { allowsPhone: true, allowsLink: null },
+      contact: settings.contact,
+    });
+    expect(phoneAllowed).toContain("GROUP-SMF-2907-A");
+    expect(phoneAllowed).toContain("Hotline: 028.7122.0818");
+    expect(phoneAllowed).toContain("Zalo: 0918.326.552");
+    expect(phoneAllowed).not.toContain("https://");
+
+    const phoneDenied = buildFacebookGroupContactCta({
+      rawCta: "Nhắn Fanpage để xem mẫu thực tế.",
+      sourceCode: "GROUP-SMF-2907-A",
+      ruleAnalysis: { allowsPhone: false, allowsLink: false },
+      contact: settings.contact,
+    });
+    expect(phoneDenied).toContain("GROUP-SMF-2907-A");
+    expect(phoneDenied).not.toContain("028.7122.0818");
+    expect(phoneDenied).not.toContain("0918.326.552");
+
+    const linksAllowed = buildFacebookGroupContactCta({
+      sourceCode: "GROUP-SMF-2907-A",
+      ruleAnalysis: { allowsPhone: true, allowsLink: true },
+      contact: settings.contact,
+    });
+    expect(linksAllowed).toContain("https://zalo.me/0918326552");
+    expect(linksAllowed).toContain("https://www.smartfurni.com.vn");
   });
 
   it("nhận diện mã nguồn trong tin nhắn Messenger mà không ảnh hưởng automation khác", () => {

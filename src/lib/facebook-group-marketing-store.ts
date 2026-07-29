@@ -5,7 +5,7 @@ import { getDb, query, queryOne } from "./db";
 import { sendPushNotification } from "./pwa-server";
 import {
   analyzeFacebookGroupRules, calculateFacebookGroupScore, contentSimilarityPercent,
-  extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
+  buildFacebookGroupContactCta, extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
   parseFacebookGroupAiSuggestion, parseFacebookGroupUrl, validateFacebookGroupSchedule,
 } from "./facebook-group-marketing-business";
 import {
@@ -34,6 +34,7 @@ export async function getFacebookGroupSettings(): Promise<FacebookGroupSettings>
   return {
     ...DEFAULT_FACEBOOK_GROUP_SETTINGS,
     ...value,
+    contact: { ...DEFAULT_FACEBOOK_GROUP_SETTINGS.contact, ...value.contact },
     scoreWeights: { ...DEFAULT_FACEBOOK_GROUP_SETTINGS.scoreWeights, ...value.scoreWeights },
     gradeRules: { ...DEFAULT_FACEBOOK_GROUP_SETTINGS.gradeRules, ...value.gradeRules },
     manualPostingOnly: true,
@@ -46,6 +47,7 @@ export async function saveFacebookGroupSettings(input: Partial<FacebookGroupSett
   const settings: FacebookGroupSettings = {
     ...current,
     ...input,
+    contact: { ...current.contact, ...input.contact },
     scoreWeights: { ...current.scoreWeights, ...input.scoreWeights },
     gradeRules: { ...current.gradeRules, ...input.gradeRules },
     manualPostingOnly: true,
@@ -408,40 +410,10 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
     if (!campaignContext.targets_group) throw new Error("Group không thuộc chiến dịch.");
     if (!campaignContext.contains_product) throw new Error("Sản phẩm không thuộc chiến dịch.");
   }
-  const recent = await query<{ id: string; opening: string; body: string; cta: string; created_at: Date }>(
-    `SELECT id, opening, body, cta, created_at FROM facebook_group_content_drafts
-     WHERE deleted_at IS NULL AND created_at >= NOW() - INTERVAL '30 days'
-       AND ($1::text IS NULL OR group_id = $1)
-       AND ($2::text IS NULL OR campaign_id = $2)
-       AND ($3::text IS NULL OR product_id = $3)
-     ORDER BY created_at DESC LIMIT 100`,
-    [input.groupId || null, input.campaignId || null, productId],
-  );
-  const full = `${text(input.opening, 5000)} ${body} ${text(input.cta, 5000)}`;
-  const match = recent.map(item => ({
-    id: item.id,
-    ratio: contentSimilarityPercent(full, `${item.opening} ${item.body} ${item.cta}`),
-  })).sort((a, b) => b.ratio - a.ratio)[0];
   const settings = await getFacebookGroupSettings();
-  const duplicateRatio = match?.ratio || 0;
   const ruleAnalysis = group?.rule_analysis
     ? (typeof group.rule_analysis === "string" ? JSON.parse(group.rule_analysis) : group.rule_analysis)
     : {};
-  const violations: string[] = [];
-  if (group?.allows_sales === "no" && ["sales", "direct_sale"].includes(text(input.contentType, 50))) {
-    violations.push("Group không cho phép bài bán hàng.");
-  }
-  if (ruleAnalysis.allowsPrice === false && /\b\d[\d.,]*\s*(đ|vnd|triệu|tr)\b/i.test(full)) {
-    violations.push("Nội quy không cho phép đăng giá.");
-  }
-  if (ruleAnalysis.allowsPhone === false && /(?:\+?84|0)\d{8,10}/.test(full.replace(/\s/g, ""))) {
-    violations.push("Nội quy không cho phép số điện thoại.");
-  }
-  if (ruleAnalysis.allowsLink === false && /https?:\/\//i.test(full)) {
-    violations.push("Nội quy không cho phép đường dẫn.");
-  }
-  const rulesPassed = violations.length === 0 && duplicateRatio <= settings.maxDuplicateRatio;
-  const status = duplicateRatio > 60 || violations.length ? "rewrite_required" : text(input.status, 30) || "draft";
   const versionRow = await queryOne<{ count: string }>(
     `SELECT COUNT(*)::text AS count FROM facebook_group_content_drafts
      WHERE group_id IS NOT DISTINCT FROM $1 AND created_at::date = CURRENT_DATE`,
@@ -453,10 +425,42 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
     date: new Date(),
     version: Number(versionRow?.count || 0) + 1,
   });
-  const rawCta = text(input.cta, 5000);
-  const cta = rawCta.toUpperCase().includes(sourceCode.toUpperCase())
-    ? rawCta
-    : `${rawCta}${rawCta ? "\n\n" : ""}Nhắn tin cho Fanpage với mã ${sourceCode} để được tư vấn đúng nội dung này.`;
+  const cta = buildFacebookGroupContactCta({
+    rawCta: text(input.cta, 5000),
+    sourceCode,
+    ruleAnalysis,
+    contact: settings.contact,
+  });
+  const recent = await query<{ id: string; opening: string; body: string; cta: string; created_at: Date }>(
+    `SELECT id, opening, body, cta, created_at FROM facebook_group_content_drafts
+     WHERE deleted_at IS NULL AND created_at >= NOW() - INTERVAL '30 days'
+       AND ($1::text IS NULL OR group_id = $1)
+       AND ($2::text IS NULL OR campaign_id = $2)
+       AND ($3::text IS NULL OR product_id = $3)
+     ORDER BY created_at DESC LIMIT 100`,
+    [input.groupId || null, input.campaignId || null, productId],
+  );
+  const full = `${text(input.opening, 5000)} ${body} ${cta}`;
+  const match = recent.map(item => ({
+    id: item.id,
+    ratio: contentSimilarityPercent(full, `${item.opening} ${item.body} ${item.cta}`),
+  })).sort((a, b) => b.ratio - a.ratio)[0];
+  const duplicateRatio = match?.ratio || 0;
+  const violations: string[] = [];
+  if (group?.allows_sales === "no" && ["sales", "direct_sale"].includes(text(input.contentType, 50))) {
+    violations.push("Group không cho phép bài bán hàng.");
+  }
+  if (ruleAnalysis.allowsPrice === false && /\b\d[\d.,]*\s*(đ|vnd|triệu|tr)\b/i.test(full)) {
+    violations.push("Nội quy không cho phép đăng giá.");
+  }
+  if (ruleAnalysis.allowsPhone === false && /(?:\+?84|0)(?:[\s.\-]?\d){8,10}/.test(full)) {
+    violations.push("Nội quy không cho phép số điện thoại.");
+  }
+  if (ruleAnalysis.allowsLink === false && /https?:\/\//i.test(full)) {
+    violations.push("Nội quy không cho phép đường dẫn.");
+  }
+  const rulesPassed = violations.length === 0 && duplicateRatio <= settings.maxDuplicateRatio;
+  const status = duplicateRatio > 60 || violations.length ? "rewrite_required" : text(input.status, 30) || "draft";
   const entityId = id("fbcd");
   const row = await queryOne(
     `INSERT INTO facebook_group_content_drafts
@@ -506,6 +510,7 @@ export async function suggestFacebookGroupContent(input: Record<string, unknown>
   const product = typeof context.product === "string" ? JSON.parse(context.product) : context.product;
   const analysis = typeof context.rule_analysis === "string"
     ? JSON.parse(context.rule_analysis) : context.rule_analysis;
+  const settings = await getFacebookGroupSettings();
   const { GoogleGenerativeAI, SchemaType } = await import("@google/generative-ai");
   const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
     model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
@@ -548,14 +553,19 @@ Góc nội dung mong muốn: ${text(input.contentType, 50) || "community_share"}
 Gợi ý thêm của nhân viên: ${text(input.brief, 2000) || "không có"}
 
 Trả về DUY NHẤT JSON hợp lệ:
-{"opening":"câu mở đầu","body":"nội dung chính 120-250 từ","cta":"lời mời nhắn Fanpage, không tự đặt mã nguồn","contentType":"community_share|education|story|sales"}
-Nếu nội quy không cho bán hàng, phải ưu tiên education hoặc community_share và không ghi giá/số điện thoại/link.`;
+{"opening":"câu mở đầu","body":"nội dung chính 120-250 từ","cta":"lời mời hành động ngắn, không tự đặt mã nguồn và không tự bịa liên hệ","contentType":"community_share|education|story|sales"}
+Nếu nội quy không cho bán hàng, phải ưu tiên education hoặc community_share.
+Không tự chèn giá, số điện thoại hoặc link; hệ thống sẽ bổ sung liên hệ chính thức theo nội quy đã xác minh.`;
   const response = await model.generateContent(prompt);
   const suggestion = parseFacebookGroupAiSuggestion(response.response.text());
   const result = {
     opening: text(suggestion.opening, 5000),
     body: text(suggestion.body, 30_000),
-    cta: text(suggestion.cta, 5000),
+    cta: buildFacebookGroupContactCta({
+      rawCta: text(suggestion.cta, 5000),
+      ruleAnalysis: analysis,
+      contact: settings.contact,
+    }),
     contentType: text(suggestion.contentType, 50) || "community_share",
   };
   if (!result.body) throw new Error("AI chưa tạo được nội dung chính.");
@@ -827,6 +837,51 @@ export async function updateFacebookGroupMarketing(
     if (Number(targetReadiness?.valid_count || 0) !== groupIds.length) {
       throw new Error("Có Group mục tiêu chưa sẵn sàng: cần hoạt động, đã tham gia và cho phép Fanpage.");
     }
+  }
+  if (resource === "content") {
+    const current = await queryOne<{
+      group_id: string | null;
+      source_code: string;
+      opening: string;
+      body: string;
+      cta: string;
+      rule_analysis: Record<string, unknown> | string | null;
+    }>(
+      `SELECT content.group_id, content.source_code, content.opening, content.body, content.cta,
+              rules.analysis AS rule_analysis
+       FROM facebook_group_content_drafts content
+       LEFT JOIN facebook_group_rules rules ON rules.group_id = content.group_id
+       WHERE content.id = $1 AND content.deleted_at IS NULL`,
+      [entityId],
+    );
+    if (!current) throw new Error("Không tìm thấy nội dung.");
+    const settings = await getFacebookGroupSettings();
+    const ruleAnalysis = current.rule_analysis
+      ? (typeof current.rule_analysis === "string" ? JSON.parse(current.rule_analysis) : current.rule_analysis)
+      : {};
+    const sourceCode = text(input.sourceCode, 80) || current.source_code;
+    const cta = buildFacebookGroupContactCta({
+      rawCta: "cta" in input ? text(input.cta, 5000) : current.cta,
+      sourceCode,
+      ruleAnalysis,
+      contact: settings.contact,
+    });
+    const full = `${"opening" in input ? text(input.opening, 5000) : current.opening} ${
+      "body" in input ? text(input.body, 30_000) : current.body
+    } ${cta}`;
+    const violations: string[] = [];
+    if (ruleAnalysis.allowsPrice === false && /\b\d[\d.,]*\s*(đ|vnd|triệu|tr)\b/i.test(full)) {
+      violations.push("Nội quy không cho phép đăng giá.");
+    }
+    if (ruleAnalysis.allowsPhone === false && /(?:\+?84|0)(?:[\s.\-]?\d){8,10}/.test(full)) {
+      violations.push("Nội quy không cho phép số điện thoại.");
+    }
+    if (ruleAnalysis.allowsLink === false && /https?:\/\//i.test(full)) {
+      violations.push("Nội quy không cho phép đường dẫn.");
+    }
+    input.cta = cta;
+    input.ruleCheck = { passed: violations.length === 0, violations, checkedAfterEdit: true };
+    if (violations.length) input.status = "rewrite_required";
   }
   const allowed: Record<string, { table: string; columns: Record<string, string> }> = {
     pages: { table: "facebook_pages", columns: {
