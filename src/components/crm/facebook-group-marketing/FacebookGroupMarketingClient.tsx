@@ -370,7 +370,9 @@ export default function FacebookGroupMarketingClient({
       setDiscoveryResult(result);
       setNotice(result.suggestions.length
         ? `AI Agent đã tìm thấy ${result.suggestions.length} Group cần kiểm tra.`
-        : "Chưa tìm thấy Group có URL công khai đủ tin cậy. Hãy đổi từ khóa hoặc khu vực.");
+        : result.searchQueries.length
+          ? "AI chưa nhận được URL citation đủ tin cậy. Hãy mở kết quả Google bên dưới và chỉ thêm Group bạn xem được."
+          : "Chưa tìm thấy nguồn Group đủ tin cậy. Hãy đổi từ khóa hoặc khu vực.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "AI Agent chưa thể tìm Group.");
     } finally {
@@ -764,9 +766,22 @@ function GroupDiscoveryAgent({
             <p className="mt-1 text-[11px] text-slate-500">{result.notice}</p>
           </div>
           {result.searchQueries.length > 0 && <span className="text-[11px] text-slate-500">
-            Truy vấn: {result.searchQueries.join(" · ")}
+            {result.searchQueries.length} truy vấn Google có thể kiểm tra
           </span>}
         </div>
+        {result.searchQueries.length > 0 && <div className="mb-3 flex flex-wrap gap-2">
+          {result.searchQueries.map((query, index) => {
+            const scopedQuery = query.includes("site:facebook.com/groups")
+              ? query
+              : `site:facebook.com/groups ${query}`;
+            return <a key={`${query}-${index}`}
+              href={`https://www.google.com/search?q=${encodeURIComponent(scopedQuery)}`}
+              target="_blank" rel="noreferrer"
+              className="fbg-secondary-button inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold">
+              <SearchIcon size={13} /> Mở kết quả Google {index + 1}
+            </a>;
+          })}
+        </div>}
         {result.suggestions.length ? <div className="grid gap-3 lg:grid-cols-2">
           {result.suggestions.map(suggestion => {
             const identity = suggestion.sourceUrl || suggestion.groupUrl;
@@ -824,7 +839,7 @@ function GroupDiscoveryAgent({
           </article>;
           })}
         </div> : <div className="fbg-discovery-empty rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
-          Không có URL Group đủ tin cậy trong lần tìm này.
+          Không hiển thị URL do AI tự viết. Hãy mở kết quả Google ở trên, kiểm tra Group thật rồi dùng nút “Thêm Group”.
         </div>}
       </div>}
     </section>
