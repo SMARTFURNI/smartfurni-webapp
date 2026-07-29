@@ -136,6 +136,17 @@ export async function deletePushSubscription(endpoint: string) {
   await query(`DELETE FROM pwa_push_subscriptions WHERE endpoint = $1`, [endpoint]);
 }
 
+export async function countPushSubscriptions(ownerScope: PwaOwnerScope, ownerId: string) {
+  await ensurePwaTables();
+  const row = await queryOne<{ count: number }>(
+    `SELECT COUNT(*)::int AS count
+     FROM pwa_push_subscriptions
+     WHERE owner_scope = $1 AND owner_id = $2`,
+    [ownerScope, ownerId],
+  );
+  return row?.count || 0;
+}
+
 export async function sendPushNotification(input: {
   ownerScope?: PwaOwnerScope;
   ownerId?: string;
@@ -144,6 +155,7 @@ export async function sendPushNotification(input: {
   url?: string;
   tag?: string;
   data?: Record<string, unknown>;
+  urgency?: "very-low" | "low" | "normal" | "high";
 }) {
   await ensurePwaTables();
   const keys = await getOrCreateVapidKeys();
@@ -177,22 +189,35 @@ export async function sendPushNotification(input: {
   });
   let sent = 0;
   let removed = 0;
+  let failed = 0;
+  const errors: string[] = [];
   await Promise.all(rows.map(async (row) => {
     try {
       await webpush.sendNotification({
         endpoint: row.endpoint,
         keys: { p256dh: row.p256dh, auth: row.auth },
-      }, payload, { TTL: 6 * 60 * 60, urgency: "normal" });
+      }, payload, { TTL: 6 * 60 * 60, urgency: input.urgency || "normal" });
       sent += 1;
     } catch (error) {
       const statusCode = (error as { statusCode?: number }).statusCode;
       if (statusCode === 404 || statusCode === 410) {
         await query(`DELETE FROM pwa_push_subscriptions WHERE id = $1`, [row.id]);
         removed += 1;
+      } else {
+        failed += 1;
+        const message = error instanceof Error ? error.message : "Web Push không xác định";
+        errors.push(statusCode ? `${statusCode}: ${message}` : message);
+        console.error("[PWA Push] Không thể gửi subscription:", {
+          subscriptionId: row.id,
+          ownerScope: input.ownerScope,
+          ownerId: input.ownerId,
+          statusCode,
+          message,
+        });
       }
     }
   }));
-  return { matched: rows.length, sent, removed };
+  return { matched: rows.length, sent, removed, failed, errors: errors.slice(0, 5) };
 }
 
 export async function getLatestFirmwareRelease(profileId: string): Promise<FirmwareRelease | null> {

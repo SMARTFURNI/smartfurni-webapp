@@ -569,6 +569,8 @@ type AssignmentNotificationResult = {
   matched: number;
   sent: number;
   removed: number;
+  failed?: number;
+  errors?: string[];
   error?: string;
 };
 
@@ -600,6 +602,7 @@ async function notifyPublishingTaskAssignment(taskId: string): Promise<Assignmen
       url: "/crm/facebook-group-marketing/tasks",
       tag: `fbg-assigned-${task.id}`,
       data: { taskId: task.id, module: "facebook-group-marketing", type: "task-assigned" },
+      urgency: "high",
     });
   } catch (error) {
     console.error("[Facebook Group Marketing] Không thể gửi thông báo giao nhiệm vụ:", error);
@@ -877,6 +880,18 @@ export async function updateFacebookGroupMarketing(
     values.push(["data", "targets", "productIds", "allowedPostingHours", "ruleCheck", "metrics"].includes(key)
       ? JSON.stringify(raw) : raw);
     fields.push(`${column} = $${values.length}${["data", "targets", "productIds", "allowedPostingHours", "ruleCheck", "metrics"].includes(key) ? "::jsonb" : ""}`);
+  }
+  if (
+    resource === "tasks"
+    && (
+      "scheduledAt" in input
+      || "assignedStaffId" in input
+      || input.status === "scheduled"
+      || input.status === "due"
+    )
+  ) {
+    // A changed schedule or assignee must produce a fresh due-time reminder.
+    fields.push("notification_sent_at = NULL");
   }
   const hasCampaignGroups = resource === "campaigns" && Array.isArray(input.groupIds);
   if (!fields.length && !hasCampaignGroups) throw new Error("Không có dữ liệu hợp lệ để cập nhật.");

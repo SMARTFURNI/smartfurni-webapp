@@ -1,0 +1,62 @@
+import { randomBytes } from "node:crypto";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+const port = String(process.env.PORT || "3000");
+const cronSecret = process.env.CRON_SECRET || randomBytes(32).toString("hex");
+const nextBin = fileURLToPath(new URL("../node_modules/next/dist/bin/next", import.meta.url));
+const intervalMs = Math.max(
+  15_000,
+  Number(process.env.FACEBOOK_GROUP_CRON_INTERVAL_MS || 30_000),
+);
+const cronUrl = `http://127.0.0.1:${port}/api/crm/facebook-group-marketing/cron`;
+
+const nextProcess = spawn(process.execPath, [nextBin, "start", "-p", port], {
+  env: { ...process.env, CRON_SECRET: cronSecret },
+  stdio: "inherit",
+});
+
+let stopping = false;
+let cronTimer;
+
+async function runFacebookGroupCron() {
+  if (stopping) return;
+  try {
+    const response = await fetch(cronUrl, {
+      headers: { authorization: `Bearer ${cronSecret}` },
+      signal: AbortSignal.timeout(25_000),
+      cache: "no-store",
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("[Production Scheduler] Facebook Group cron lỗi:", response.status, result);
+    } else if (result.sent > 0 || result.publishingTasks > 0 || result.commentChecks > 0 || result.rejectedPosts > 0) {
+      console.log("[Production Scheduler] Facebook Group cron:", result);
+    }
+  } catch (error) {
+    console.error(
+      "[Production Scheduler] Chưa gọi được Facebook Group cron:",
+      error instanceof Error ? error.message : error,
+    );
+  } finally {
+    if (!stopping) cronTimer = setTimeout(runFacebookGroupCron, intervalMs);
+  }
+}
+
+cronTimer = setTimeout(runFacebookGroupCron, 8_000);
+
+function stop(signal) {
+  if (stopping) return;
+  stopping = true;
+  if (cronTimer) clearTimeout(cronTimer);
+  if (!nextProcess.killed) nextProcess.kill(signal);
+}
+
+process.on("SIGTERM", () => stop("SIGTERM"));
+process.on("SIGINT", () => stop("SIGINT"));
+
+nextProcess.on("exit", (code, signal) => {
+  stopping = true;
+  if (cronTimer) clearTimeout(cronTimer);
+  process.exit(code ?? (signal ? 0 : 1));
+});

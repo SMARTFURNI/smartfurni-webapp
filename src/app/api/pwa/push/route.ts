@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession, getCrmSession } from "@/lib/admin-auth";
+import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
 import { getSmartBedSession } from "@/lib/smart-bed-auth";
 import {
   deletePushSubscription,
@@ -11,9 +11,11 @@ import {
 async function resolveActor(): Promise<{ ownerScope: PwaOwnerScope; ownerId: string } | null> {
   const bed = await getSmartBedSession();
   if (bed) return { ownerScope: "smart-bed", ownerId: bed.id };
+  // CRM itself also prioritizes the staff session. Keep the same order here so
+  // a stale admin cookie cannot attach a staff phone subscription to "admin".
+  const staff = await getStaffSession();
+  if (staff) return { ownerScope: "crm", ownerId: staff.staffId };
   if (await getAdminSession()) return { ownerScope: "admin", ownerId: "admin" };
-  const crm = await getCrmSession();
-  if (crm) return { ownerScope: "crm", ownerId: crm.staffId || "admin" };
   return null;
 }
 

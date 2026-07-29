@@ -1,9 +1,15 @@
 import "server-only";
 
-import { query } from "@/lib/db";
+import { getDb, query } from "@/lib/db";
 import { sendPushNotification } from "@/lib/pwa-server";
 
-export async function runFacebookGroupMarketingCron() {
+const FACEBOOK_GROUP_CRON_LOCK_ID = 26_072_901;
+
+function formatVietnamDate(value: Date) {
+  return value.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+}
+
+async function runFacebookGroupMarketingCronUnlocked() {
   let sent = 0;
   const publishingTasks = await query<{
     id: string; assigned_staff_id: string | null; group_name: string; scheduled_at: Date; overdue: boolean;
@@ -15,18 +21,19 @@ export async function runFacebookGroupMarketingCron() {
      WHERE t.deleted_at IS NULL AND t.notification_sent_at IS NULL
        AND t.assigned_staff_id IS NOT NULL
        AND t.status IN ('scheduled','due')
-       AND (t.scheduled_at <= NOW() + INTERVAL '30 minutes' OR t.due_at < NOW())
+       AND t.scheduled_at <= NOW()
      ORDER BY t.scheduled_at LIMIT 100`,
   );
   for (const task of publishingTasks) {
     const result = await sendPushNotification({
       ownerScope: "crm",
       ownerId: task.assigned_staff_id || undefined,
-      title: task.overdue ? "Nhiệm vụ đăng bài quá hạn" : "Sắp đến giờ đăng Facebook Group",
-      body: `${task.group_name} • ${task.scheduled_at.toLocaleString("vi-VN")}`,
+      title: task.overdue ? "Nhiệm vụ đăng bài quá hạn" : "Đến giờ đăng Facebook Group",
+      body: `${task.group_name} • ${formatVietnamDate(task.scheduled_at)}`,
       url: "/crm/facebook-group-marketing/tasks",
       tag: `fbg-publish-${task.id}`,
       data: { taskId: task.id, module: "facebook-group-marketing" },
+      urgency: "high",
     });
     if (result.sent > 0) {
       await query(
@@ -60,6 +67,7 @@ export async function runFacebookGroupMarketingCron() {
       url: "/crm/facebook-group-marketing/comments",
       tag: `fbg-check-${task.id}`,
       data: { checkTaskId: task.id, postId: task.post_id, module: "facebook-group-marketing" },
+      urgency: "high",
     });
     if (result.sent > 0) {
       await query(
@@ -91,6 +99,7 @@ export async function runFacebookGroupMarketingCron() {
       url: "/crm/facebook-group-marketing/posts",
       tag: `fbg-rejected-${post.id}`,
       data: { postId: post.id, module: "facebook-group-marketing" },
+      urgency: "high",
     });
     if (result.sent > 0) {
       await query(`UPDATE facebook_group_published_posts SET notification_sent_at = NOW() WHERE id = $1`, [post.id]);
@@ -105,4 +114,33 @@ export async function runFacebookGroupMarketingCron() {
     rejectedPosts: rejectedPosts.length,
     ranAt: new Date().toISOString(),
   };
+}
+
+export async function runFacebookGroupMarketingCron() {
+  const lockClient = await getDb().connect();
+  let locked = false;
+  try {
+    const lockResult = await lockClient.query<{ locked: boolean }>(
+      `SELECT pg_try_advisory_lock($1) AS locked`,
+      [FACEBOOK_GROUP_CRON_LOCK_ID],
+    );
+    locked = lockResult.rows[0]?.locked === true;
+    if (!locked) {
+      return {
+        sent: 0,
+        publishingTasks: 0,
+        commentChecks: 0,
+        rejectedPosts: 0,
+        skipped: "already-running",
+        ranAt: new Date().toISOString(),
+      };
+    }
+    return await runFacebookGroupMarketingCronUnlocked();
+  } finally {
+    if (locked) {
+      await lockClient.query(`SELECT pg_advisory_unlock($1)`, [FACEBOOK_GROUP_CRON_LOCK_ID])
+        .catch(error => console.error("[Facebook Group Marketing Cron] Không thể mở khóa:", error));
+    }
+    lockClient.release();
+  }
 }
