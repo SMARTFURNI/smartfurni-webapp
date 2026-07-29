@@ -498,6 +498,7 @@ async function resolveGroundedFacebookGroupSource(source: { title?: string; uri?
   if (direct) {
     return {
       title: text(source.title, 300),
+      sourceUrl: uri,
       groupUrl: `https://www.facebook.com/groups/${direct.groupKey}/`,
     };
   }
@@ -505,13 +506,24 @@ async function resolveGroundedFacebookGroupSource(source: { title?: string; uri?
   try {
     redirectUrl = new URL(uri);
   } catch {
-    return null;
+    return {
+      title: text(source.title, 300),
+      sourceUrl: uri,
+      groupUrl: null,
+    };
   }
   const host = redirectUrl.hostname.toLowerCase();
   const trustedGoogleRedirect = host === "google.com"
     || host.endsWith(".google.com")
     || host.endsWith(".googleusercontent.com");
-  if (!trustedGoogleRedirect || redirectUrl.protocol !== "https:") return null;
+  if (redirectUrl.protocol !== "https:") return null;
+  if (!trustedGoogleRedirect) {
+    return {
+      title: text(source.title, 300),
+      sourceUrl: uri,
+      groupUrl: null,
+    };
+  }
   try {
     const response = await fetch(uri, {
       method: "GET",
@@ -520,16 +532,33 @@ async function resolveGroundedFacebookGroupSource(source: { title?: string; uri?
       signal: AbortSignal.timeout(8_000),
     });
     const location = response.headers.get("location");
-    if (!location) return null;
+    if (!location) {
+      return {
+        title: text(source.title, 300),
+        sourceUrl: uri,
+        groupUrl: null,
+      };
+    }
     const target = new URL(location, uri).toString();
     const parsed = parseFacebookGroupUrl(target);
-    if (!parsed) return null;
+    if (!parsed) {
+      return {
+        title: text(source.title, 300),
+        sourceUrl: uri,
+        groupUrl: null,
+      };
+    }
     return {
       title: text(source.title, 300),
+      sourceUrl: uri,
       groupUrl: `https://www.facebook.com/groups/${parsed.groupKey}/`,
     };
   } catch {
-    return null;
+    return {
+      title: text(source.title, 300),
+      sourceUrl: uri,
+      groupUrl: null,
+    };
   }
 }
 
@@ -558,6 +587,7 @@ Tiêu chí:
 - Từ khóa chủ đề: ${searchTerms}
 - Khu vực ưu tiên: ${region}
 - Yêu cầu bổ sung: ${keywords || "không có"}
+- Mọi truy vấn Google phải giới hạn bằng site:facebook.com/groups.
 - Chỉ chấp nhận URL chính xác có dạng https://www.facebook.com/groups/<id-hoặc-slug>/
 - Không đưa Fanpage, profile, bài viết riêng lẻ hoặc URL tìm kiếm.
 - Không đưa các Group CRM đã có: ${existing.map(group => group.group_url).join(", ") || "chưa có"}.
@@ -619,10 +649,13 @@ Trả về duy nhất JSON hợp lệ:
   )).filter((source): source is NonNullable<typeof source> => Boolean(source));
   const suggestions = keepGroundedFacebookGroupSuggestions(
     parsedSuggestions,
-    groundedSources,
+    groundedSources.flatMap(source => source.groupUrl ? [{
+      title: source.title,
+      groupUrl: source.groupUrl,
+    }] : []),
     { topic, region },
   );
-  const result = suggestions.slice(0, 10).map(item => {
+  const verifiedResult = suggestions.map(item => {
     const parsed = parseFacebookGroupUrl(item.groupUrl);
     const saved = parsed ? existingKeys.get(parsed.groupKey) : undefined;
     return {
@@ -632,6 +665,31 @@ Trả về duy nhất JSON hợp lệ:
       verificationStatus: "grounded_needs_manual_confirmation",
     };
   });
+  const verifiedSourceUrls = new Set(groundedSources
+    .filter(source => source.groupUrl)
+    .map(source => source.sourceUrl));
+  const seenSourceUrls = new Set<string>();
+  const sourceOnlyResult = groundedSources
+    .filter(source => {
+      if (verifiedSourceUrls.has(source.sourceUrl) || seenSourceUrls.has(source.sourceUrl)) return false;
+      seenSourceUrls.add(source.sourceUrl);
+      return true;
+    })
+    .map((source, index) => ({
+      name: source.title || `Nguồn Google Search ${index + 1}`,
+      groupUrl: source.groupUrl || "",
+      sourceUrl: source.sourceUrl,
+      topic,
+      region,
+      reason: `Mở nguồn Google, kiểm tra Group trên Facebook rồi dán lại URL đang truy cập được.`,
+      matchScore: 70,
+      alreadySaved: false,
+      existingGroupId: null,
+      groundedSource: true,
+      requiresVerifiedUrl: !source.groupUrl,
+      verificationStatus: "grounded_source_needs_verified_url",
+    }));
+  const result = [...verifiedResult, ...sourceOnlyResult].slice(0, 10);
   await logActivity(actor, "groups.ai_discovered", "group", undefined, undefined, {
     topic, region, keywords: keywords || null, resultCount: result.length, model,
   });
@@ -639,7 +697,7 @@ Trả về duy nhất JSON hợp lệ:
     suggestions: result,
     searchQueries: candidate?.groundingMetadata?.webSearchQueries || [],
     model,
-    notice: "Chỉ hiển thị URL có trong nguồn Google Search; nhân viên vẫn phải mở và xác nhận xem được trước khi thêm.",
+    notice: "Chỉ hiển thị nguồn Google Search thật; nếu citation không lộ URL Facebook, hãy mở nguồn và dán URL Group đang xem được để xác nhận.",
   };
 }
 

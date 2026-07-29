@@ -65,8 +65,9 @@ Script từ chối chạy nếu `NODE_ENV=production` và bắt buộc cờ xác
 1. **Danh sách Group**: Group được quy hoạch theo bộ chủ đề chuẩn. Bấm thẻ chủ đề để
    lọc danh sách; có thể nhập link thủ công hoặc dùng AI Agent tìm các Group liên quan
    theo chủ đề, khu vực và từ khóa bổ sung. Backend chỉ giữ URL xuất hiện trực tiếp
-   trong nguồn Grounding của Google Search, không tin URL do mô hình tự viết. Nhân viên
-   phải bấm mở và xác nhận xem được thì UI mới cho thêm vào CRM.
+   trong nguồn Grounding của Google Search, không tin URL do mô hình tự viết. Nếu Google
+   chỉ trả citation chuyển hướng, nhân viên mở nguồn rồi dán URL Facebook Group đang xem
+   được; sau khi xác nhận, UI mới cho thêm vào CRM.
 2. **Nội quy**: gọi `POST /groups/:id/analyze-rules`; bộ phân tích chỉ xử lý văn bản
    đã nhập, không truy cập Facebook.
 3. **Chiến dịch**: chọn Fanpage, sản phẩm CRM, nhân viên, thời gian và các group đã sẵn

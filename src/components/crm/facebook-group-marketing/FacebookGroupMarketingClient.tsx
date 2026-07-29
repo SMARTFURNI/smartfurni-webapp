@@ -7,6 +7,7 @@ import {
   Bot, Facebook, FileText, Loader2, MapPin, MessageSquare, Pencil, Plus, RefreshCw,
   Search as SearchIcon, ShieldCheck, Sparkles, Tags, Trash2, Users,
 } from "lucide-react";
+import { parseFacebookGroupUrl } from "@/lib/facebook-group-marketing-business";
 import { FACEBOOK_GROUP_TOPIC_TAXONOMY } from "@/lib/facebook-group-marketing-types";
 
 type Row = Record<string, unknown>;
@@ -379,6 +380,11 @@ export default function FacebookGroupMarketingClient({
 
   const addSuggestedGroup = async (suggestion: Row) => {
     if (!permissions.manage || suggestion.alreadySaved) return;
+    const confirmedGroupUrl = String(suggestion.groupUrl || suggestion.verifiedGroupUrl || "");
+    if (!parseFacebookGroupUrl(confirmedGroupUrl)) {
+      setError("Hãy dán URL Facebook Group hợp lệ sau khi mở nguồn kiểm tra.");
+      return;
+    }
     if (!suggestion.manualAccessConfirmed) {
       setError("Hãy mở Group và xác nhận xem được trước khi thêm vào CRM.");
       return;
@@ -389,7 +395,7 @@ export default function FacebookGroupMarketingClient({
         method: "POST",
         body: JSON.stringify({
           name: suggestion.name,
-          groupUrl: suggestion.groupUrl,
+          groupUrl: confirmedGroupUrl,
           topic: suggestion.topic || discoveryTopic,
           region: suggestion.region || discoveryRegion,
           allowsPages: "unknown",
@@ -406,7 +412,7 @@ export default function FacebookGroupMarketingClient({
       });
       setDiscoveryResult(current => current ? {
         ...current,
-        suggestions: current.suggestions.map(item => item.groupUrl === suggestion.groupUrl
+        suggestions: current.suggestions.map(item => (item.sourceUrl || item.groupUrl) === (suggestion.sourceUrl || suggestion.groupUrl)
           ? { ...item, alreadySaved: true, existingGroupId: created.id }
           : item),
       } : current);
@@ -417,19 +423,19 @@ export default function FacebookGroupMarketingClient({
     }
   };
 
-  const updateSuggestionReview = (groupUrl: unknown, changes: Row) => {
+  const updateSuggestionReview = (identity: unknown, changes: Row) => {
     setDiscoveryResult(current => current ? {
       ...current,
-      suggestions: current.suggestions.map(item => item.groupUrl === groupUrl
+      suggestions: current.suggestions.map(item => (item.sourceUrl || item.groupUrl) === identity
         ? { ...item, ...changes }
         : item),
     } : current);
   };
 
-  const dismissSuggestion = (groupUrl: unknown) => {
+  const dismissSuggestion = (identity: unknown) => {
     setDiscoveryResult(current => current ? {
       ...current,
-      suggestions: current.suggestions.filter(item => item.groupUrl !== groupUrl),
+      suggestions: current.suggestions.filter(item => (item.sourceUrl || item.groupUrl) !== identity),
     } : current);
     setNotice("Đã loại đề xuất không truy cập được khỏi danh sách hiện tại.");
   };
@@ -762,8 +768,11 @@ function GroupDiscoveryAgent({
           </span>}
         </div>
         {result.suggestions.length ? <div className="grid gap-3 lg:grid-cols-2">
-          {result.suggestions.map(suggestion => <article key={String(suggestion.groupUrl)}
-            className="fbg-discovery-result rounded-xl border p-3.5">
+          {result.suggestions.map(suggestion => {
+            const identity = suggestion.sourceUrl || suggestion.groupUrl;
+            const confirmedUrl = String(suggestion.groupUrl || suggestion.verifiedGroupUrl || "");
+            const hasValidGroupUrl = Boolean(parseFacebookGroupUrl(confirmedUrl));
+            return <article key={String(identity)} className="fbg-discovery-result rounded-xl border p-3.5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <b className="block truncate text-sm text-[#f5edd6]">{String(suggestion.name)}</b>
@@ -776,20 +785,30 @@ function GroupDiscoveryAgent({
               <SearchIcon size={16} className="shrink-0 text-blue-300" />
             </div>
             <p className="mt-3 text-xs leading-5 text-slate-400">{String(suggestion.reason)}</p>
+            {Boolean(suggestion.requiresVerifiedUrl) && <label className="mt-3 grid gap-1.5 text-[11px] text-slate-400">
+              URL Facebook Group sau khi đã mở nguồn
+              <input value={String(suggestion.verifiedGroupUrl || "")}
+                onChange={event => onReviewChange(identity, {
+                  verifiedGroupUrl: event.target.value,
+                  manualAccessConfirmed: false,
+                })}
+                placeholder="https://www.facebook.com/groups/..."
+                className="rounded-lg border px-3 py-2 text-xs" />
+            </label>}
             <div className="mt-3 flex flex-wrap justify-end gap-2">
-              <a href={String(suggestion.groupUrl)} target="_blank" rel="noreferrer"
-                onClick={() => onReviewChange(suggestion.groupUrl, { openedForReview: true })}
+              <a href={String(suggestion.sourceUrl || suggestion.groupUrl)} target="_blank" rel="noreferrer"
+                onClick={() => onReviewChange(identity, { openedForReview: true })}
                 className="fbg-secondary-button inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-bold">
-                <ExternalLink size={14} /> Mở kiểm tra
+                <ExternalLink size={14} /> {suggestion.requiresVerifiedUrl ? "Mở nguồn Google" : "Mở kiểm tra"}
               </a>
               {!suggestion.alreadySaved && <button type="button"
-                disabled={!suggestion.openedForReview}
-                onClick={() => onReviewChange(suggestion.groupUrl, { manualAccessConfirmed: true })}
+                disabled={!suggestion.openedForReview || !hasValidGroupUrl}
+                onClick={() => onReviewChange(identity, { manualAccessConfirmed: true })}
                 className="fbg-secondary-button inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40">
                 <ShieldCheck size={14} />
                 {suggestion.manualAccessConfirmed ? "Đã xác nhận xem được" : "Xác nhận xem được"}
               </button>}
-              {!suggestion.alreadySaved && <button type="button" onClick={() => onDismiss(suggestion.groupUrl)}
+              {!suggestion.alreadySaved && <button type="button" onClick={() => onDismiss(identity)}
                 className="fbg-danger-button inline-flex items-center gap-1.5 rounded-lg border border-red-400/25 bg-red-400/10 px-3 py-2 text-xs font-bold text-red-200">
                 <Trash2 size={14} /> Không mở được
               </button>}
@@ -802,7 +821,8 @@ function GroupDiscoveryAgent({
                 {suggestion.alreadySaved ? "Đã có trong CRM" : "Thêm vào CRM"}
               </button>}
             </div>
-          </article>)}
+          </article>;
+          })}
         </div> : <div className="fbg-discovery-empty rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
           Không có URL Group đủ tin cậy trong lần tìm này.
         </div>}
