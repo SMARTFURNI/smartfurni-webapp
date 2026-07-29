@@ -28,10 +28,12 @@ export function buildFacebookGroupContactCta(input: {
     const contactParts: string[] = [];
     const hotlineDigits = digits(input.contact.hotline);
     const zaloDigits = digits(input.contact.zalo);
-    if (input.contact.hotline && hotlineDigits && !rawDigits.includes(hotlineDigits)) {
+    if (hotlineDigits && hotlineDigits === zaloDigits && !rawDigits.includes(hotlineDigits)) {
+      contactParts.push(`Liên hệ/Zalo: ${input.contact.zalo || input.contact.hotline}`);
+    } else if (input.contact.hotline && hotlineDigits && !rawDigits.includes(hotlineDigits)) {
       contactParts.push(`Hotline: ${input.contact.hotline}`);
     }
-    if (input.contact.zalo && zaloDigits && !rawDigits.includes(zaloDigits)) {
+    if (hotlineDigits !== zaloDigits && input.contact.zalo && zaloDigits && !rawDigits.includes(zaloDigits)) {
       contactParts.push(`Zalo: ${input.contact.zalo}`);
     }
     if (contactParts.length) blocks.push(contactParts.join(" · "));

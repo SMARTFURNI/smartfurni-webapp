@@ -1222,7 +1222,7 @@ function SettingsView({
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {[
-          ["hotline", "Hotline"],
+          ["hotline", "Số liên hệ"],
           ["zalo", "Số Zalo"],
           ["zaloUrl", "Link Zalo"],
           ["website", "Website"],

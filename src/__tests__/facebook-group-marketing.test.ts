@@ -107,8 +107,7 @@ describe("Facebook Group Marketing business rules", () => {
       contact: settings.contact,
     });
     expect(phoneAllowed).toContain("GROUP-SMF-2907-A");
-    expect(phoneAllowed).toContain("Hotline: 028.7122.0818");
-    expect(phoneAllowed).toContain("Zalo: 0918.326.552");
+    expect(phoneAllowed).toContain("Liên hệ/Zalo: 0918.326.552");
     expect(phoneAllowed).not.toContain("https://");
 
     const phoneDenied = buildFacebookGroupContactCta({
@@ -118,7 +117,6 @@ describe("Facebook Group Marketing business rules", () => {
       contact: settings.contact,
     });
     expect(phoneDenied).toContain("GROUP-SMF-2907-A");
-    expect(phoneDenied).not.toContain("028.7122.0818");
     expect(phoneDenied).not.toContain("0918.326.552");
 
     const linksAllowed = buildFacebookGroupContactCta({
