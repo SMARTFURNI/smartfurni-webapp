@@ -189,6 +189,7 @@ export function parseFacebookGroupDiscoveryResponse(
     if (!parsedUrl || seen.has(parsedUrl.groupKey)) return [];
     seen.add(parsedUrl.groupKey);
     const rawScore = Number(record.matchScore ?? record.score ?? 70);
+    const normalizedScore = rawScore > 0 && rawScore <= 1 ? rawScore * 100 : rawScore;
     return [{
       name: String(record.name || record.title || parsedUrl.groupKey).trim().slice(0, 300),
       groupUrl: `https://www.facebook.com/groups/${parsedUrl.groupKey}/`,
@@ -196,7 +197,7 @@ export function parseFacebookGroupDiscoveryResponse(
       region: String(record.region || fallback.region).trim().slice(0, 120),
       reason: String(record.reason || record.relevance || "Phù hợp với chủ đề đang tìm.")
         .trim().slice(0, 1000),
-      matchScore: Math.round(Math.min(100, Math.max(0, Number.isFinite(rawScore) ? rawScore : 70))),
+      matchScore: Math.round(Math.min(100, Math.max(0, Number.isFinite(normalizedScore) ? normalizedScore : 70))),
     }];
   }).slice(0, 12);
 }

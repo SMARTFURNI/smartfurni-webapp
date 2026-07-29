@@ -520,10 +520,11 @@ Tiêu chí:
 - Không đưa các Group CRM đã có: ${existing.map(group => group.group_url).join(", ") || "chưa có"}.
 - Không suy đoán số thành viên, nội quy, khả năng cho Fanpage hoặc khả năng bán hàng.
 - Mỗi đề xuất phải nêu ngắn gọn lý do liên quan dựa trên tên/mô tả xuất hiện trong kết quả tìm kiếm.
+- matchScore phải là số nguyên từ 0 đến 100 (ví dụ 92), không dùng thang 0 đến 1.
 - Nếu không xác minh được URL chính xác từ Google Search thì bỏ qua, không bịa.
 
 Trả về duy nhất JSON hợp lệ:
-{"groups":[{"name":"Tên Group","groupUrl":"https://www.facebook.com/groups/.../","topic":"${topic}","region":"${region}","reason":"Lý do phù hợp","matchScore":0}]}`;
+{"groups":[{"name":"Tên Group","groupUrl":"https://www.facebook.com/groups/.../","topic":"${topic}","region":"${region}","reason":"Lý do phù hợp","matchScore":92}]}`;
 
   let response: Response;
   try {

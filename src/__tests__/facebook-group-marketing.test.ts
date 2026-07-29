@@ -203,4 +203,13 @@ Loại nội dung: Chia sẻ cộng đồng
       matchScore: 91,
     });
   });
+
+  it("chuẩn hóa điểm phù hợp AI từ thang 0-1 sang phần trăm", () => {
+    const suggestions = parseFacebookGroupDiscoveryResponse(JSON.stringify([{
+      name: "Hội cư dân căn hộ",
+      groupUrl: "https://www.facebook.com/groups/hoicudancanho/",
+      matchScore: 0.86,
+    }]), { topic: "Căn hộ & chung cư", region: "Hồ Chí Minh" });
+    expect(suggestions[0]?.matchScore).toBe(86);
+  });
 });

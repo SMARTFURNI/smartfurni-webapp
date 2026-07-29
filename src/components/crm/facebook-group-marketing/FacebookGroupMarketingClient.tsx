@@ -621,13 +621,14 @@ function GroupTopicPlanner({
     }] : []),
   ];
   return (
-    <section className="mb-4 rounded-2xl border border-white/8 bg-white/[.025] p-4">
+    <section className="fbg-topic-planner mb-4 rounded-2xl border p-4">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-sm font-black text-white"><Tags size={17} className="text-amber-300" />Quy hoạch Group theo chủ đề</div>
           <p className="mt-1 text-xs text-slate-500">Bấm một chủ đề để lọc danh sách Group bên dưới.</p>
         </div>
         <button type="button" onClick={() => onSelect("")}
+          data-active={!selectedTopic}
           className={`rounded-xl border px-3 py-2 text-xs font-bold ${
             !selectedTopic ? "border-amber-400/45 bg-amber-400/15 text-amber-200" : "border-white/10 bg-white/[.03] text-slate-400"
           }`}>
@@ -638,6 +639,7 @@ function GroupTopicPlanner({
         {topics.map(topic => {
           const active = selectedTopic === topic.key;
           return <button key={topic.key} type="button" onClick={() => onSelect(topic.key)}
+            data-active={active}
             className={`group rounded-xl border p-3 text-left transition ${
               active
                 ? "border-amber-400/45 bg-amber-400/[.11]"
@@ -680,7 +682,7 @@ function GroupDiscoveryAgent({
     ...existingTopics,
   ])];
   return (
-    <section className="mb-4 overflow-hidden rounded-2xl border border-blue-400/15 bg-blue-400/[.035]">
+    <section className="fbg-discovery-panel mb-4 overflow-hidden rounded-2xl border">
       <div className="grid gap-4 p-4 xl:grid-cols-[1.1fr_1.9fr]">
         <div>
           <div className="flex items-center gap-2 text-sm font-black text-blue-100">
@@ -735,7 +737,7 @@ function GroupDiscoveryAgent({
         </div>
         {result.suggestions.length ? <div className="grid gap-3 lg:grid-cols-2">
           {result.suggestions.map(suggestion => <article key={String(suggestion.groupUrl)}
-            className="rounded-xl border border-white/8 bg-black/15 p-3.5">
+            className="fbg-discovery-result rounded-xl border p-3.5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <b className="block truncate text-sm text-[#f5edd6]">{String(suggestion.name)}</b>
@@ -761,7 +763,7 @@ function GroupDiscoveryAgent({
               </button>}
             </div>
           </article>)}
-        </div> : <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-500">
+        </div> : <div className="fbg-discovery-empty rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
           Không có URL Group đủ tin cậy trong lần tìm này.
         </div>}
       </div>}
