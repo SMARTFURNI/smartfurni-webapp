@@ -3,6 +3,7 @@ import "server-only";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -238,6 +239,14 @@ export async function getMediaObject(key: string, range?: string) {
     Bucket: config.bucket,
     Key: normalizeMediaKey(key),
     ...(range ? { Range: range } : {}),
+  }));
+}
+
+export async function headMediaObject(key: string) {
+  const { client: s3, config } = getClient();
+  return s3.send(new HeadObjectCommand({
+    Bucket: config.bucket,
+    Key: normalizeMediaKey(key),
   }));
 }
 

@@ -28,6 +28,24 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    if (process.env.MEDIA_SERVE_LEGACY_UPLOADS_FROM_BUCKET !== "true") {
+      return [];
+    }
+    return {
+      // Chỉ bật sau khi `media:railway:upload` và `media:railway:verify`
+      // thành công. URL công khai `/uploads/...` không đổi nên Google Images,
+      // Open Graph và các liên kết cũ không phải lập chỉ mục lại.
+      beforeFiles: [
+        {
+          source: "/uploads/:path*",
+          destination: "/api/media/public/legacy/uploads/:path*",
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -26,6 +26,16 @@ type PushTestResult = {
   removed?: number;
   failed?: number;
 };
+type MediaMigrationResult = {
+  ok: boolean;
+  uploadedFiles: number;
+  uploadedBytes: number;
+  totalFiles: number;
+  preservedLegacyUrls: boolean;
+  databaseChanged: boolean;
+  githubFilesDeleted: boolean;
+  failures?: string[];
+};
 
 export default function AdminSettingsClient() {
   const [activeSection, setActiveSection] = useState("account");
@@ -54,6 +64,8 @@ export default function AdminSettingsClient() {
   const [adminPushSubscriptions, setAdminPushSubscriptions] = useState<number | null>(null);
   const [testingPush, setTestingPush] = useState(false);
   const [pushTestResult, setPushTestResult] = useState<PushTestResult | null>(null);
+  const [migratingMedia, setMigratingMedia] = useState(false);
+  const [mediaMigrationResult, setMediaMigrationResult] = useState<MediaMigrationResult | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/email-settings")
@@ -123,6 +135,36 @@ export default function AdminSettingsClient() {
       });
     } finally {
       setTestingPush(false);
+    }
+  }
+
+  async function handleMigrateLegacyMedia() {
+    setMigratingMedia(true);
+    setMediaMigrationResult(null);
+    try {
+      const response = await fetch("/api/admin/media-migration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "copy-and-verify-legacy" }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || result.failures?.[0] || "Không thể sao chép ảnh");
+      }
+      setMediaMigrationResult(result);
+    } catch (error) {
+      setMediaMigrationResult({
+        ok: false,
+        uploadedFiles: 0,
+        uploadedBytes: 0,
+        totalFiles: 0,
+        preservedLegacyUrls: true,
+        databaseChanged: false,
+        githubFilesDeleted: false,
+        failures: [error instanceof Error ? error.message : "Không thể sao chép ảnh"],
+      });
+    } finally {
+      setMigratingMedia(false);
     }
   }
 
@@ -560,6 +602,36 @@ export default function AdminSettingsClient() {
                     </div>
                   );
                 })}
+              </div>
+              <div className="rounded-xl border border-[rgba(255,200,100,0.14)] bg-black/15 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-white">Sao lưu ảnh cũ sang Railway</p>
+                    <p className="mt-1 text-xs text-[rgba(245,237,214,0.50)]">
+                      Chỉ sao chép và xác minh; giữ nguyên URL, database và toàn bộ ảnh GitHub.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleMigrateLegacyMedia()}
+                    disabled={migratingMedia || !systemStatus?.railwayMedia}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#C9A84C] px-4 py-2.5 text-sm font-semibold text-[#0D0B00] transition-colors hover:bg-[#E2C97E] disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {migratingMedia && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                    {migratingMedia ? "Đang sao chép và xác minh…" : "Sao chép ảnh cũ"}
+                  </button>
+                </div>
+                {mediaMigrationResult && (
+                  <div className={`mt-3 rounded-lg border px-3 py-2 text-xs ${
+                    mediaMigrationResult.ok
+                      ? "border-green-500/30 bg-green-500/10 text-green-300"
+                      : "border-red-500/30 bg-red-500/10 text-red-300"
+                  }`}>
+                    {mediaMigrationResult.ok
+                      ? `Đã xác minh ${mediaMigrationResult.uploadedFiles}/${mediaMigrationResult.totalFiles} tệp (${(mediaMigrationResult.uploadedBytes / 1024 / 1024).toFixed(1)} MB). URL cũ và bản GitHub được giữ nguyên.`
+                      : `Migration thất bại: ${mediaMigrationResult.failures?.[0] || "Lỗi không xác định"}`}
+                  </div>
+                )}
               </div>
               <p className="text-xs text-[rgba(245,237,214,0.45)]">Các khóa bí mật được quản lý bằng biến môi trường Railway. Cấu hình nghiệp vụ CRM và Google Sheets tiếp tục được quản lý trong module CRM.</p>
             </div>

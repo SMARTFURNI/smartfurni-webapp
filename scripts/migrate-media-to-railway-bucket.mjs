@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import pg from "pg";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -10,7 +10,9 @@ const uploadsRoot = path.join(root, "public", "uploads");
 const manifestPath = path.join(root, ".media-migration-manifest.json");
 const args = new Set(process.argv.slice(2));
 const shouldUpload = args.has("--upload");
+const shouldVerify = args.has("--verify");
 const shouldApplyDb = args.has("--apply-db");
+const confirmedUrlChange = args.has("--confirm-url-change");
 const shouldExternalizeBase64 = args.has("--externalize-base64") || shouldApplyDb;
 
 function env(...names) {
@@ -38,6 +40,26 @@ function bucketConfig() {
 
 function mediaUrl(key) {
   return `/api/media/${key.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+function sanitizeMediaSegment(value, fallback = "file") {
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/gi, "d")
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 100);
+  return normalized || fallback;
+}
+
+function normalizeMediaKey(key) {
+  return key
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => sanitizeMediaSegment(segment))
+    .join("/");
 }
 
 function contentType(filename) {
@@ -86,7 +108,7 @@ async function createLegacyManifest(s3, config) {
   for (const [index, filename] of files.entries()) {
     const relative = path.relative(path.join(root, "public"), filename).split(path.sep).join("/");
     const oldUrl = `/${relative}`;
-    const key = `public/legacy/${relative}`;
+    const key = normalizeMediaKey(`public/legacy/${relative}`);
     const size = (await stat(filename)).size;
     totalBytes += size;
     if (shouldUpload) {
@@ -105,6 +127,38 @@ async function createLegacyManifest(s3, config) {
   console.log(`${shouldUpload ? "Đã upload" : "Kế hoạch"}: ${manifest.length} file, ${(totalBytes / 1024 / 1024).toFixed(1)}MB`);
   console.log(`Manifest: ${manifestPath}`);
   return manifest;
+}
+
+async function verifyBucketObjects(s3, config, manifest) {
+  let checked = 0;
+  let totalBytes = 0;
+  const failures = [];
+  for (const [index, item] of manifest.entries()) {
+    try {
+      const object = await s3.send(new HeadObjectCommand({
+        Bucket: config.bucket,
+        Key: item.key,
+      }));
+      const actualSize = Number(object.ContentLength || 0);
+      if (actualSize !== item.size) {
+        failures.push(`${item.oldUrl}: ${actualSize} bytes trên Bucket, mong đợi ${item.size}`);
+        continue;
+      }
+      checked += 1;
+      totalBytes += actualSize;
+      if ((index + 1) % 25 === 0 || index === manifest.length - 1) {
+        console.log(`[Verify] ${index + 1}/${manifest.length}`);
+      }
+    } catch (error) {
+      failures.push(`${item.oldUrl}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  if (failures.length) {
+    throw new Error(
+      `Xác minh Bucket thất bại ${failures.length}/${manifest.length} file:\n${failures.slice(0, 20).join("\n")}`,
+    );
+  }
+  console.log(`[Verify] Đủ ${checked} file, ${(totalBytes / 1024 / 1024).toFixed(1)}MB`);
 }
 
 async function tableHasColumn(client, table, column) {
@@ -215,7 +269,7 @@ async function migrateDatabaseBase64(client, s3, config) {
   }
 }
 
-const requiresBucket = shouldUpload || shouldApplyDb || shouldExternalizeBase64;
+const requiresBucket = shouldUpload || shouldVerify || shouldApplyDb || shouldExternalizeBase64;
 const config = requiresBucket ? bucketConfig() : null;
 const s3 = config ? new S3Client({
   endpoint: config.endpoint,
@@ -228,8 +282,13 @@ const s3 = config ? new S3Client({
 }) : null;
 
 try {
+  if (shouldApplyDb && !confirmedUrlChange) {
+    throw new Error(
+      "Đổi URL database đang bị khóa để bảo vệ SEO. Chỉ dùng --confirm-url-change sau khi đã có kế hoạch redirect/giữ URL cũ.",
+    );
+  }
   let resolvedManifest;
-  if (shouldUpload || !shouldApplyDb) {
+  if (shouldUpload || (!shouldApplyDb && !shouldVerify)) {
     resolvedManifest = await createLegacyManifest(s3, config);
   } else {
     const document = JSON.parse(await readFile(manifestPath, "utf8"));
@@ -237,6 +296,9 @@ try {
       throw new Error("Manifest mới chỉ là kế hoạch. Hãy chạy media:railway:upload trước.");
     }
     resolvedManifest = document.files;
+  }
+  if (shouldVerify) {
+    await verifyBucketObjects(s3, config, resolvedManifest);
   }
   if (shouldApplyDb || shouldExternalizeBase64) {
     const databaseUrl = env("POSTGRESQL_URL", "DATABASE_URL");

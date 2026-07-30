@@ -24,17 +24,21 @@ const STATIC_PAGES = [
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await initDbOnce();
   const products = getAllProducts().filter((product) => product.status !== "discontinued");
+  const posts = getAllPosts().filter((post) => !post.status || post.status === "published");
+  const defaultImage = absoluteUrl("/uploads/products/smartfurni-bed-main.webp");
 
   const staticPages: MetadataRoute.Sitemap = STATIC_PAGES.map(([path, changeFrequency, priority]) => ({
     url: absoluteUrl(path),
     changeFrequency,
     priority,
+    images: path === "/" || path === "/products" ? [defaultImage] : undefined,
   }));
 
   const categoryPages: MetadataRoute.Sitemap = PRODUCT_FAMILIES.map((family) => ({
     url: absoluteUrl(`/products/${family.slug}`),
     changeFrequency: "weekly",
     priority: 0.9,
+    images: [absoluteUrl(family.seoImage)],
   }));
 
   const productPages: MetadataRoute.Sitemap = products.map((product) => ({
@@ -42,13 +46,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(product.updatedAt),
     changeFrequency: "weekly",
     priority: product.isFeatured ? 0.9 : 0.8,
+    images: [...new Set(
+      [product.coverImage, ...product.images]
+        .filter((image): image is string => Boolean(image))
+        .map(absoluteUrl),
+    )],
   }));
 
-  const blogPages: MetadataRoute.Sitemap = getAllPosts().filter((post) => !post.status || post.status === "published").map((post) => ({
+  const blogPages: MetadataRoute.Sitemap = posts.map((post) => ({
     url: absoluteUrl(`/blog/${post.slug}`),
     lastModified: new Date(post.publishedAt),
     changeFrequency: "monthly",
     priority: post.featured ? 0.75 : 0.65,
+    images: post.coverImage ? [absoluteUrl(post.coverImage)] : undefined,
   }));
 
   return [...staticPages, ...categoryPages, ...productPages, ...blogPages];

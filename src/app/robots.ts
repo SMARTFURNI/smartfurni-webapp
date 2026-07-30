@@ -6,7 +6,10 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        // Ảnh public mới được phục vụ qua API media. Rule cụ thể này phải
+        // dài hơn `/api/` để Googlebot có thể thu thập ảnh nhưng vẫn giữ
+        // toàn bộ API quản trị/CRM ngoài chỉ mục.
+        allow: ["/", "/api/media/public/"],
         disallow: [
           "/api/",
           "/admin/",
