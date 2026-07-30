@@ -66,7 +66,6 @@ function Modal({
     </div>
   );
 }
-
 export default function AiGroupGrowthBuilder({
   canManage,
   isAdmin,
@@ -501,4 +500,3 @@ export default function AiGroupGrowthBuilder({
     </div>
   );
 }
-

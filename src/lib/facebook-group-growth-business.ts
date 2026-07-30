@@ -44,4 +44,3 @@ export const blueprintInputSchema = z.object({
 export function totalPillarRatio(plan: z.infer<typeof blueprintPlanSchema>) {
   return plan.pillars.reduce((sum, pillar) => sum + pillar.contentRatio, 0);
 }
-
