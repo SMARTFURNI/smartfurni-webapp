@@ -448,7 +448,7 @@ export default function TasksListClient({ initialTasks, isAdmin = false, current
   return (
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="crm-admin-page-header flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <CheckSquare size={24} className="text-amber-600" />

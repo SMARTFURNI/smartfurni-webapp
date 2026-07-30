@@ -470,13 +470,13 @@ export default function RolesManagementClient() {
   const totalPerms = Object.keys(PERMISSION_LABELS).length;
 
   return (
-    <div className="min-h-screen p-6" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1a0e 50%, #1a1200 100%)" }}>
+    <div className="min-h-full p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="crm-admin-page-header flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #d97706, #b45309)", boxShadow: "0 4px 16px rgba(217,119,6,0.3)" }}>
-            <Shield size={20} style={{ color: "#fff" }} />
+            style={{ background: "linear-gradient(145deg, rgba(215,185,87,.22), rgba(49,70,110,.15))", border: "1px solid rgba(224,197,111,.22)" }}>
+            <Shield size={20} style={{ color: "#ead899" }} />
           </div>
           <div>
             <h1 className="text-lg font-bold" style={{ color: "#f5edd6" }}>Quản lý Vai trò & Phân quyền</h1>
@@ -489,9 +489,9 @@ export default function RolesManagementClient() {
           onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
           style={{
-            background: "linear-gradient(135deg, #d97706, #b45309)",
-            color: "#fff",
-            boxShadow: "0 4px 16px rgba(217,119,6,0.3)",
+            background: "linear-gradient(110deg, #e3c65f, #b88822)",
+            color: "#1a1200",
+            boxShadow: "0 12px 30px rgba(187,135,31,.18)",
           }}>
           <Plus size={15} /> Tạo vai trò mới
         </button>

@@ -386,7 +386,7 @@ export default function ImportExportClient() {
 
   return (
     <div className="space-y-5" style={{ color: "#111827" }}>
-      <div>
+      <div className="crm-admin-page-header">
         <h1 className="text-lg font-bold text-gray-900">Dữ liệu & Tích hợp</h1>
         <p className="text-xs mt-0.5" style={{  }}>
           Import/Export dữ liệu và kết nối kênh bên thứ 3

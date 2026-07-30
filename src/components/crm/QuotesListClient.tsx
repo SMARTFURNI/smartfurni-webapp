@@ -20,7 +20,7 @@ export default function QuotesListClient({ initialQuotes }: Props) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "#f0f2f5" }}>
-      <div className="flex-shrink-0 bg-white px-6 py-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
+      <div className="crm-admin-page-header m-5 mb-0 flex-shrink-0 bg-white px-6 py-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Báo giá</h1>

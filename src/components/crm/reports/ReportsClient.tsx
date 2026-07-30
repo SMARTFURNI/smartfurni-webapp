@@ -120,7 +120,7 @@ export default function ReportsClient({ leads, stats, quotes }: Props) {
   return (
     <div className="flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
-      <div className="flex-shrink-0 px-6 py-4"
+      <div className="crm-admin-page-header m-5 mb-0 flex-shrink-0 px-6 py-4"
         style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>

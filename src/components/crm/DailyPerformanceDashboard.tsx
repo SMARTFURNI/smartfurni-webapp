@@ -89,7 +89,7 @@ export default function DailyPerformanceDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="crm-admin-page-header flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">{t.title}</h1>
         <button
           onClick={fetchPerformanceData}
@@ -100,7 +100,7 @@ export default function DailyPerformanceDashboard() {
       </div>
 
       {/* Email Metrics */}
-      <div className="bg-[#1A1500] border border-[#2D2500] rounded-lg p-6">
+      <div className="crm-admin-metric-panel rounded-2xl p-6">
         <div className="flex items-center gap-2 mb-4">
           <Mail className="w-5 h-5 text-[#C9A84C]" />
           <h2 className="text-xl font-semibold text-white">{t.emailMetrics}</h2>
@@ -108,7 +108,7 @@ export default function DailyPerformanceDashboard() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Total Sent */}
-          <div className="bg-[#080600] rounded p-4">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <div className="text-sm text-[#9CA3AF] mb-2">{t.totalSent}</div>
             <div className="text-2xl font-bold text-[#C9A84C]">
               {data.emailMetrics.totalSent.toLocaleString('vi-VN')}
@@ -116,7 +116,7 @@ export default function DailyPerformanceDashboard() {
           </div>
 
           {/* Open Rate */}
-          <div className="bg-[#080600] rounded p-4">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <div className="text-sm text-[#9CA3AF] mb-2">{t.openRate}</div>
             <div className="flex items-baseline gap-2">
               <div className="text-2xl font-bold text-[#22C55E]">
@@ -136,7 +136,7 @@ export default function DailyPerformanceDashboard() {
           </div>
 
           {/* Click Rate */}
-          <div className="bg-[#080600] rounded p-4">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <div className="text-sm text-[#9CA3AF] mb-2">{t.clickRate}</div>
             <div className="text-2xl font-bold text-[#3B82F6]">
               {data.emailMetrics.clickRate.toFixed(1)}%
@@ -144,7 +144,7 @@ export default function DailyPerformanceDashboard() {
           </div>
 
           {/* Conversion Rate */}
-          <div className="bg-[#080600] rounded p-4">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <div className="text-sm text-[#9CA3AF] mb-2">{t.conversionRate}</div>
             <div className="flex items-baseline gap-2">
               <div className="text-2xl font-bold text-[#F59E0B]">
@@ -166,7 +166,7 @@ export default function DailyPerformanceDashboard() {
       </div>
 
       {/* Lead Metrics */}
-      <div className="bg-[#1A1500] border border-[#2D2500] rounded-lg p-6">
+      <div className="crm-admin-metric-panel rounded-2xl p-6">
         <div className="flex items-center gap-2 mb-4">
           <Users className="w-5 h-5 text-[#C9A84C]" />
           <h2 className="text-xl font-semibold text-white">{t.leadMetrics}</h2>
@@ -174,7 +174,7 @@ export default function DailyPerformanceDashboard() {
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {/* Total Leads */}
-          <div className="bg-[#080600] rounded p-4">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <div className="text-sm text-[#9CA3AF] mb-2">{t.totalLeads}</div>
             <div className="text-2xl font-bold text-[#C9A84C]">
               {data.leadMetrics.totalLeads.toLocaleString('vi-VN')}
@@ -182,7 +182,7 @@ export default function DailyPerformanceDashboard() {
           </div>
 
           {/* Hot Leads */}
-          <div className="bg-[#080600] rounded p-4">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <div className="text-sm text-[#9CA3AF] mb-2">{t.hotLeads}</div>
             <div className="text-2xl font-bold text-[#EF4444]">
               {data.leadMetrics.hotLeads}
@@ -193,7 +193,7 @@ export default function DailyPerformanceDashboard() {
           </div>
 
           {/* Warm Leads */}
-          <div className="bg-[#080600] rounded p-4">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <div className="text-sm text-[#9CA3AF] mb-2">{t.warmLeads}</div>
             <div className="text-2xl font-bold text-[#F59E0B]">
               {data.leadMetrics.warmLeads}
@@ -204,7 +204,7 @@ export default function DailyPerformanceDashboard() {
           </div>
 
           {/* Cold Leads */}
-          <div className="bg-[#080600] rounded p-4">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <div className="text-sm text-[#9CA3AF] mb-2">{t.coldLeads}</div>
             <div className="text-2xl font-bold text-[#6B7280]">
               {data.leadMetrics.coldLeads}
@@ -215,7 +215,7 @@ export default function DailyPerformanceDashboard() {
           </div>
 
           {/* Average Score */}
-          <div className="bg-[#080600] rounded p-4">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <div className="text-sm text-[#9CA3AF] mb-2">{t.avgScore}</div>
             <div className="flex items-baseline gap-2">
               <div className="text-2xl font-bold text-[#22C55E]">
@@ -237,28 +237,28 @@ export default function DailyPerformanceDashboard() {
       </div>
 
       {/* Summary */}
-      <div className="bg-[#1A1500] border border-[#2D2500] rounded-lg p-6">
+      <div className="crm-admin-metric-panel rounded-2xl p-6">
         <div className="flex items-center gap-2 mb-4">
           <BarChart3 className="w-5 h-5 text-[#C9A84C]" />
           <h2 className="text-xl font-semibold text-white">Tóm Tắt</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-[#080600] rounded">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <p className="text-sm text-[#9CA3AF] mb-2">Doanh Thu Ước Tính</p>
             <p className="text-2xl font-bold text-[#C9A84C]">
               {(data.emailMetrics.totalConverted * 45).toLocaleString('vi-VN')} triệu VNĐ
             </p>
           </div>
 
-          <div className="p-4 bg-[#080600] rounded">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <p className="text-sm text-[#9CA3AF] mb-2">ROI</p>
             <p className="text-2xl font-bold text-[#22C55E]">
               {((data.emailMetrics.conversionRate / 100) * 1000).toFixed(0)}%
             </p>
           </div>
 
-          <div className="p-4 bg-[#080600] rounded">
+          <div className="crm-admin-metric-card rounded-xl p-4">
             <p className="text-sm text-[#9CA3AF] mb-2">Hiệu Suất Tổng Thể</p>
             <p className="text-2xl font-bold text-[#3B82F6]">
               {((data.emailMetrics.openRate + data.emailMetrics.clickRate + data.emailMetrics.conversionRate) / 3).toFixed(1)}%

@@ -196,7 +196,7 @@ export default function StaffManagementClient({ initialStaff }: Props) {
     <div className="flex flex-col h-full bg-white overflow-y-auto">
 
       {/* Header */}
-      <div className="flex-shrink-0 px-8 py-5 flex items-center justify-between"
+      <div className="crm-admin-page-header m-5 mb-0 flex-shrink-0 px-8 py-5 flex items-center justify-between"
         style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div>
           <h1 className="text-xl font-bold text-gray-900">Quản lý nhân viên</h1>

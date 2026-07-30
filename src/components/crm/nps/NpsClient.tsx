@@ -110,7 +110,7 @@ export default function NpsClient() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="crm-admin-page-header m-5 mb-0 p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl font-semibold text-gray-900">Đánh giá NPS</h1>

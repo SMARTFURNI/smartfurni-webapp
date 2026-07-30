@@ -233,7 +233,13 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           body, html { overflow: visible !important; height: auto !important; background: #fff !important; }
         }
       `}</style>
-      <div className="crm-root flex h-screen overflow-hidden" style={{ background: "#0D0D0F" }}>
+      <div
+        className="crm-root flex h-screen overflow-hidden"
+        style={{
+          background:
+            "radial-gradient(circle at 12% 4%, rgba(50,76,124,0.22), transparent 28rem), radial-gradient(circle at 86% 12%, rgba(164,112,24,0.18), transparent 32rem), radial-gradient(circle at 58% 96%, rgba(94,56,12,0.17), transparent 34rem), linear-gradient(135deg, #0c1321 0%, #17160f 47%, #1a1105 100%)",
+        }}
+      >
         <CrmSidebar
           isAdmin={session.isAdmin}
           staffRole={staffRole}

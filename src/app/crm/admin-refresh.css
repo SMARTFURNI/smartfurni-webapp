@@ -1,27 +1,32 @@
 .crm-admin-refresh {
-  --crm-canvas: #0b111b;
-  --crm-canvas-deep: #080d16;
-  --crm-panel: rgba(19, 27, 41, 0.9);
-  --crm-panel-soft: rgba(24, 32, 47, 0.76);
-  --crm-panel-muted: rgba(35, 43, 58, 0.66);
-  --crm-gold: #d4b557;
-  --crm-gold-bright: #ead477;
+  --crm-canvas: #0c1321;
+  --crm-canvas-deep: #090f1a;
+  --crm-panel: rgba(18, 22, 35, 0.72);
+  --crm-panel-strong: rgba(23, 21, 24, 0.86);
+  --crm-panel-soft: rgba(24, 29, 42, 0.66);
+  --crm-panel-muted: rgba(12, 18, 29, 0.54);
+  --crm-gold: #d7b957;
+  --crm-gold-bright: #ead899;
   --crm-cream: #f5edd6;
-  --crm-text: rgba(245, 237, 214, 0.9);
-  --crm-muted: rgba(205, 214, 229, 0.66);
-  --crm-faint: rgba(205, 214, 229, 0.44);
-  --crm-border: rgba(127, 148, 181, 0.18);
-  --crm-border-gold: rgba(212, 181, 87, 0.22);
+  --crm-text: rgba(245, 237, 214, 0.92);
+  --crm-muted: rgba(245, 237, 214, 0.64);
+  --crm-faint: rgba(245, 237, 214, 0.45);
+  --crm-border: rgba(224, 197, 111, 0.16);
+  --crm-border-strong: rgba(224, 197, 111, 0.24);
+  --crm-border-cool: rgba(118, 138, 166, 0.22);
+  --crm-border-gold: rgba(224, 197, 111, 0.16);
   position: relative;
   isolation: isolate;
   min-height: 100%;
   height: 100%;
+  box-sizing: border-box;
   overflow: auto;
   color: var(--crm-text);
   background:
-    radial-gradient(circle at 4% 0%, rgba(55, 83, 132, 0.2), transparent 30rem),
-    radial-gradient(circle at 96% 3%, rgba(168, 115, 25, 0.16), transparent 31rem),
-    linear-gradient(135deg, var(--crm-canvas) 0%, #11151b 51%, #171106 100%);
+    radial-gradient(circle at 12% 4%, rgba(50, 76, 124, 0.22), transparent 28rem),
+    radial-gradient(circle at 86% 12%, rgba(164, 112, 24, 0.18), transparent 32rem),
+    radial-gradient(circle at 58% 96%, rgba(94, 56, 12, 0.17), transparent 34rem),
+    linear-gradient(135deg, #0c1321 0%, #17160f 47%, #1a1105 100%);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -31,12 +36,12 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.42;
+  opacity: 0.62;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: linear-gradient(to bottom, black, transparent 92%);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
 }
 
 .crm-admin-refresh > * {
@@ -53,13 +58,13 @@
 /* Typography — repair legacy light-theme utility classes without touching semantic colours. */
 .crm-admin-refresh :is(.text-gray-900, .text-slate-900) { color: var(--crm-cream) !important; }
 .crm-admin-refresh :is(.text-gray-800, .text-slate-800) { color: rgba(245, 237, 214, 0.94) !important; }
-.crm-admin-refresh :is(.text-gray-700, .text-slate-700) { color: rgba(233, 226, 208, 0.82) !important; }
+.crm-admin-refresh :is(.text-gray-700, .text-slate-700) { color: rgba(245, 237, 214, 0.8) !important; }
 .crm-admin-refresh :is(.text-gray-600, .text-slate-600) { color: var(--crm-muted) !important; }
-.crm-admin-refresh :is(.text-gray-500, .text-slate-500) { color: rgba(205, 214, 229, 0.62) !important; }
-.crm-admin-refresh :is(.text-gray-400, .text-slate-400) { color: rgba(205, 214, 229, 0.48) !important; }
-.crm-admin-refresh :is(.text-gray-300, .text-slate-300) { color: rgba(205, 214, 229, 0.36) !important; }
+.crm-admin-refresh :is(.text-gray-500, .text-slate-500) { color: rgba(245, 237, 214, 0.62) !important; }
+.crm-admin-refresh :is(.text-gray-400, .text-slate-400) { color: rgba(245, 237, 214, 0.5) !important; }
+.crm-admin-refresh :is(.text-gray-300, .text-slate-300) { color: rgba(245, 237, 214, 0.4) !important; }
 .crm-admin-refresh :is(.placeholder-gray-300, .placeholder-gray-400, .placeholder-gray-500)::placeholder {
-  color: rgba(205, 214, 229, 0.38) !important;
+  color: rgba(245, 237, 214, 0.38) !important;
 }
 
 .crm-admin-refresh [style*="color: #111827"],
@@ -87,12 +92,14 @@
 /* Surfaces and borders. */
 .crm-admin-refresh :is(.bg-white, .bg-gray-50, .bg-slate-50, .bg-slate-900) {
   color: var(--crm-text);
-  background: linear-gradient(145deg, var(--crm-panel), rgba(27, 24, 18, 0.86)) !important;
+  background:
+    linear-gradient(145deg, rgba(31, 37, 52, 0.84), rgba(29, 24, 15, 0.8)) !important;
+  border-color: var(--crm-border) !important;
 }
 
 .crm-admin-refresh :is(.bg-gray-100, .bg-gray-200, .bg-slate-100, .bg-slate-800) {
   color: var(--crm-text);
-  background: var(--crm-panel-muted) !important;
+  background: rgba(12, 18, 29, 0.54) !important;
 }
 
 .crm-admin-refresh :is(
@@ -118,7 +125,8 @@
 .crm-admin-refresh [style*="background: #fff"],
 .crm-admin-refresh [style*="background:#fff"],
 .crm-admin-refresh [style*="background: rgb(255, 255, 255)"] {
-  background: linear-gradient(145deg, var(--crm-panel), rgba(27, 24, 18, 0.88)) !important;
+  background:
+    linear-gradient(145deg, rgba(31, 37, 52, 0.84), rgba(29, 24, 15, 0.8)) !important;
 }
 
 .crm-admin-refresh [style*="background: #f9fafb"],
@@ -127,7 +135,25 @@
 .crm-admin-refresh [style*="background: #f3f4f6"],
 .crm-admin-refresh [style*="background:#f3f4f6"],
 .crm-admin-refresh [style*="background: rgb(243, 244, 246)"] {
-  background: var(--crm-panel-soft) !important;
+  background: rgba(12, 18, 29, 0.54) !important;
+}
+
+.crm-admin-refresh [style*="background: #f0f2f5"],
+.crm-admin-refresh [style*="background:#f0f2f5"],
+.crm-admin-refresh [style*="background: rgb(240, 242, 245)"],
+.crm-admin-refresh [style*="background: #0f172a"],
+.crm-admin-refresh [style*="background:#0f172a"],
+.crm-admin-refresh [style*="background: #1e1a0e"],
+.crm-admin-refresh [style*="background:#1e1a0e"],
+.crm-admin-refresh [style*="background: #1a1200"],
+.crm-admin-refresh [style*="background:#1a1200"],
+.crm-admin-refresh [style*="background: #0f0d00"],
+.crm-admin-refresh [style*="background:#0f0d00"],
+.crm-admin-refresh [style*="background: #080600"],
+.crm-admin-refresh [style*="background:#080600"] {
+  background:
+    linear-gradient(145deg, rgba(31, 37, 52, 0.82), rgba(29, 24, 15, 0.76)) !important;
+  border-color: var(--crm-border) !important;
 }
 
 .crm-admin-refresh [style*="background: #fffbeb"],
@@ -195,7 +221,7 @@
 .crm-admin-refresh :is(input, select, textarea) {
   color: var(--crm-cream) !important;
   border-color: var(--crm-border) !important;
-  background-color: rgba(7, 12, 22, 0.72) !important;
+  background-color: rgba(7, 12, 23, 0.56) !important;
   color-scheme: dark;
 }
 
@@ -249,7 +275,7 @@
 }
 
 .crm-admin-refresh tbody tr:hover {
-  background: rgba(212, 181, 87, 0.055) !important;
+  background: rgba(215, 185, 87, 0.035) !important;
 }
 
 .crm-admin-refresh :is(td, th) {
@@ -263,17 +289,132 @@
   .rounded-\[20px\],
   .rounded-\[24px\]
 ).border {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  border-color: var(--crm-border) !important;
+  box-shadow:
+    0 14px 38px rgba(2, 5, 12, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(18px);
 }
 
-.crm-admin-refresh > div > :first-child:is(.flex, header),
-.crm-admin-refresh > div > div:first-child:has(h1) {
+.crm-admin-refresh .crm-admin-page-header {
   position: relative;
   z-index: 1;
-  border-bottom-color: var(--crm-border-gold) !important;
+  padding: 16px 18px !important;
+  border: 1px solid rgba(224, 197, 111, 0.13) !important;
+  border-radius: 20px;
   background:
-    radial-gradient(circle at 90% -40%, rgba(212, 181, 87, 0.16), transparent 16rem),
-    linear-gradient(115deg, rgba(20, 29, 45, 0.88), rgba(31, 25, 15, 0.84)) !important;
+    radial-gradient(circle at 90% -40%, rgba(215, 185, 87, 0.14), transparent 16rem),
+    linear-gradient(115deg, rgba(22, 29, 44, 0.68), rgba(31, 24, 14, 0.62)) !important;
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+}
+
+.crm-admin-refresh :is(.shadow-sm, .shadow, .shadow-md) {
+  box-shadow: 0 14px 38px rgba(2, 5, 12, 0.18) !important;
+}
+
+.crm-admin-refresh ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.crm-admin-refresh ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.crm-admin-refresh ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(#4c4431, #8c7330);
+}
+
+.crm-admin-refresh .crm-daily-report [class*="bg-[#1a1200]"],
+.crm-admin-refresh .crm-daily-report [class*="bg-[#0E0C00]"],
+.crm-admin-refresh .crm-daily-report [class*="bg-[#050400]"] {
+  border: 1px solid var(--crm-border) !important;
+  background:
+    linear-gradient(145deg, rgba(31, 37, 52, 0.82), rgba(29, 24, 15, 0.76)) !important;
+  box-shadow:
+    0 18px 45px rgba(2, 5, 12, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.crm-admin-refresh .crm-admin-metric-panel {
+  color: var(--crm-text);
+  border: 1px solid var(--crm-border);
+  background:
+    linear-gradient(145deg, rgba(31, 37, 52, 0.82), rgba(29, 24, 15, 0.76));
+  box-shadow:
+    0 18px 45px rgba(2, 5, 12, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(18px);
+}
+
+.crm-admin-refresh .crm-admin-metric-card {
+  color: var(--crm-text);
+  border: 1px solid var(--crm-border-cool);
+  background: rgba(12, 18, 29, 0.58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* Các màu chức năng sáng của màn cũ được giữ ý nghĩa nhưng chuyển sang tint tối. */
+.crm-admin-refresh :is(.bg-green-50, .bg-green-100) {
+  background: rgba(34, 197, 94, 0.1) !important;
+}
+
+.crm-admin-refresh :is(.bg-blue-50, .bg-blue-100) {
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.crm-admin-refresh :is(.bg-red-50, .bg-red-100) {
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.crm-admin-refresh :is(.bg-amber-50, .bg-amber-100, .bg-yellow-50, .bg-yellow-100) {
+  background: rgba(215, 185, 87, 0.11) !important;
+}
+
+.crm-admin-refresh :is(.bg-indigo-50, .bg-indigo-100, .bg-violet-50, .bg-violet-100) {
+  background: rgba(139, 92, 246, 0.1) !important;
+}
+
+.crm-admin-refresh :is(.bg-indigo-600, .bg-violet-600) {
+  color: #1a1200 !important;
+  background: linear-gradient(110deg, #e3c65f, #b88822) !important;
+  box-shadow: 0 12px 30px rgba(187, 135, 31, 0.18);
+}
+
+.crm-admin-refresh :is(.text-indigo-600, .text-indigo-700) {
+  color: #d9bd6a !important;
+}
+
+.crm-admin-refresh :is(.border-indigo-200, .border-indigo-300, .border-indigo-500) {
+  border-color: rgba(215, 185, 87, 0.26) !important;
+}
+
+.crm-admin-refresh [style*="background: linear-gradient(135deg, #d97706, #b45309)"],
+.crm-admin-refresh [style*="background:linear-gradient(135deg, #d97706, #b45309)"] {
+  color: #1a1200 !important;
+  background: linear-gradient(110deg, #e3c65f, #b88822) !important;
+  box-shadow: 0 12px 30px rgba(187, 135, 31, 0.18) !important;
+}
+
+.crm-admin-refresh[data-crm-route="plans-management"] > div {
+  min-height: 100%;
+  background: transparent !important;
+}
+
+.crm-admin-refresh[data-crm-route="plans-management"] > div > div {
+  max-width: 1180px;
+}
+
+.crm-admin-refresh[data-crm-route="permissions"] > div,
+.crm-admin-refresh[data-crm-route="audit"] > div,
+.crm-admin-refresh[data-crm-route="import-export"] > div,
+.crm-admin-refresh[data-crm-route="automation"] > div {
+  max-width: 1440px;
+  margin-inline: auto;
 }
 
 /* Route-specific refinements. */

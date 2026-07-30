@@ -130,7 +130,7 @@ export default function CalendarClient({ initialAppointments, upcomingAppointmen
       {/* Left: Calendar */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="crm-calendar-header flex-shrink-0 px-6 py-4 flex items-center justify-between"
+        <div className="crm-admin-page-header crm-calendar-header m-4 mb-0 flex-shrink-0 px-6 py-4 flex items-center justify-between"
           style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">

@@ -674,7 +674,7 @@ export default function AutomationSettingsClient() {
   return (
     <div className="space-y-5" style={{ color: "#111827" }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="crm-admin-page-header flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-gray-900">Tự động hóa CRM</h1>
           <p className="text-xs mt-0.5" style={{ color: "#4b5563" }}>

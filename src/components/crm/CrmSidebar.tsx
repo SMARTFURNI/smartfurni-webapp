@@ -280,20 +280,20 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
     }
   };
 
-  // Color tokens — Dark Luxury Warm Theme (đồng bộ Content Marketing AI)
+  // Color tokens — dùng chung ngôn ngữ thị giác với trang Quản trị Admin.
   const C = {
-    bg: "#0d0b1a",              // deep purple-navy
-    bgHover: "rgba(255,255,255,0.08)",  // glass hover
-    bgActive: "rgba(245,158,11,0.15)",  // gold tint active
-    border: "rgba(255,200,100,0.12)",   // warm gold border
-    groupLabel: "rgba(245,237,214,0.40)", // warm cream dim
-    text: "rgba(245,237,214,0.65)",     // warm cream muted
-    textActive: "#fde68a",              // bright gold-cream
-    textHover: "#f5edd6",              // warm cream hover
-    accent: "#f59e0b",                  // amber gold
-    accentLight: "#fde68a",             // gold light
-    activeIndicator: "#f59e0b",         // gold indicator
-    logo: "linear-gradient(135deg, #f59e0b 0%, #fde68a 100%)",
+    bg: "#0c121f",
+    bgHover: "rgba(255,255,255,0.055)",
+    bgActive: "linear-gradient(90deg, rgba(215,185,87,0.18), rgba(215,185,87,0.055))",
+    border: "rgba(224,197,111,0.15)",
+    groupLabel: "rgba(245,237,214,0.46)",
+    text: "rgba(245,237,214,0.64)",
+    textActive: "#ead899",
+    textHover: "#f5edd6",
+    accent: "#d7b957",
+    accentLight: "#ead899",
+    activeIndicator: "#d7b957",
+    logo: "linear-gradient(135deg, #e3c65f 0%, #b88822 100%)",
   };
 
   const compact = !isMobile && collapsed;
@@ -318,9 +318,10 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
     <aside
       className={`crm-sidebar no-print flex flex-col h-full transition-all duration-300 flex-shrink-0 relative select-none ${mobileOpen ? "is-mobile-open" : ""}`}
       style={{
-        width: compact ? "60px" : "220px",
-        background: "linear-gradient(160deg, #0d0b1a 0%, #1a1000 45%, #2a1800 100%)",
+        width: compact ? "68px" : "236px",
+        background: "radial-gradient(circle at 0 0, rgba(64,88,137,0.20), transparent 17rem), linear-gradient(165deg, rgba(12,18,31,0.98), rgba(24,20,14,0.96) 58%, rgba(31,19,6,0.97))",
         borderRight: `1px solid ${C.border}`,
+        boxShadow: "16px 0 45px rgba(0,0,0,0.22)",
       }}
     >
       {/* ── Logo header ── */}
@@ -432,6 +433,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
                     style={{
                       background: active ? C.bgActive : "transparent",
                       color: active ? C.textActive : C.text,
+                      boxShadow: active ? "inset 2px 0 0 #d7b957, 0 8px 22px rgba(0,0,0,0.12)" : "none",
                     }}
                     onClick={() => {
                       if (!active) setOptimisticPath(item.href);

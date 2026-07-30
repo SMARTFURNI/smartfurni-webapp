@@ -137,7 +137,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   return (
     <div className="crm-kanban flex flex-col h-full" style={{ background: "#ffffff" }}>
       {/* Header */}
-      <div className="flex-shrink-0 px-6 py-4"
+      <div className="crm-admin-page-header m-4 mb-0 flex-shrink-0 px-6 py-4"
         style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>

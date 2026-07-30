@@ -782,7 +782,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
   return (
     <div className="h-full flex flex-col" style={{ background: "#f8f9fb", color: "#111827" }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-white" style={{ borderBottom: "1px solid #e5e7eb" }}>
+      <div className="crm-admin-page-header m-5 mb-0 flex items-center justify-between px-6 py-4 bg-white" style={{ borderBottom: "1px solid #e5e7eb" }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{ background: "linear-gradient(135deg, #C9A84C20, #C9A84C10)", border: "1px solid #C9A84C30" }}>

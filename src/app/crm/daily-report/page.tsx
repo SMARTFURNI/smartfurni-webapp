@@ -4,7 +4,7 @@ import DailyPerformanceDashboard from '@/components/crm/DailyPerformanceDashboar
 
 export default function DailyReportPage() {
   return (
-    <div className="min-h-screen bg-[#080600] p-6">
+    <div className="crm-daily-report min-h-full p-6">
       <div className="max-w-7xl mx-auto">
         <DailyPerformanceDashboard />
       </div>
