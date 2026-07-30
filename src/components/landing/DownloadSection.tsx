@@ -179,7 +179,7 @@ export default function DownloadSection({ theme }: Props) {
                 className="relative flex items-center justify-center border-t px-5 py-9 sm:px-10 sm:py-12 lg:border-l lg:border-t-0 lg:px-12"
                 style={{ borderColor: `${primary}22` }}
               >
-                <div className="w-full max-w-[390px]">
+                <div className="w-full max-w-[340px]">
                   <div
                     className="rounded-[26px] border p-4 shadow-[0_24px_65px_rgba(0,0,0,.28)] sm:p-5"
                     style={{
@@ -215,13 +215,13 @@ export default function DownloadSection({ theme }: Props) {
                       href={SMART_BED_APP_URL}
                       prefetch={false}
                       aria-label="Quét hoặc mở ứng dụng SmartFurni Bed"
-                      className="group relative block overflow-hidden rounded-[22px] bg-[#fffdf7] p-4 sm:p-5"
+                      className="group relative mx-auto block w-full max-w-[278px] overflow-hidden rounded-[20px] bg-[#fffdf7] p-3.5 sm:p-4"
                     >
                       <Image
                         src="/qr/smartfurni-bed-app.png"
                         width={1600}
                         height={1600}
-                        sizes="(max-width: 640px) 78vw, 330px"
+                        sizes="(max-width: 640px) 68vw, 246px"
                         alt="Mã QR tải và cài ứng dụng SmartFurni Bed"
                         className="h-auto w-full transition-transform duration-300 group-hover:scale-[1.015]"
                       />
