@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle, ArrowRight, BarChart3, BrainCircuit, CalendarDays, CheckCircle2, ClipboardCopy, ExternalLink,
-  Bot, Facebook, FileText, Loader2, MapPin, MessageSquare, Pencil, Plus, RefreshCw,
+  Bot, Facebook, FileText, ImageIcon, Loader2, MapPin, MessageSquare, Pencil, Plus, RefreshCw,
   Search as SearchIcon, ShieldCheck, Sparkles, Tags, Trash2, Users, X,
 } from "lucide-react";
 import { parseFacebookGroupUrl } from "@/lib/facebook-group-marketing-business";
@@ -37,6 +37,11 @@ type GroupDiscoveryResult = {
   searchQueries: string[];
   notice: string;
   model: string;
+};
+type GeneratedContentImage = {
+  id: string;
+  dataUrl: string;
+  createdAt: string;
 };
 type Permissions = {
   admin: boolean;
@@ -88,6 +93,47 @@ const statusLabel: Record<string, string> = {
 function value(row: Row, ...keys: string[]) {
   for (const key of keys) if (row[key] !== undefined && row[key] !== null) return row[key];
   return "";
+}
+
+function primaryContentAsset(row: Row): Row | null {
+  const assets = Array.isArray(row.assets) ? row.assets.filter(item => item && typeof item === "object") as Row[] : [];
+  return assets.find(asset => {
+    const metadata = asset.metadata && typeof asset.metadata === "object" && !Array.isArray(asset.metadata)
+      ? asset.metadata as Row
+      : {};
+    return metadata.isPrimary !== false;
+  }) || assets[0] || null;
+}
+
+async function copyImageDataUrl(dataUrl: string) {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => reject(new Error("Không thể đọc ảnh vừa tạo."));
+    element.src = dataUrl;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Trình duyệt không thể chuẩn bị ảnh để sao chép.");
+  context.drawImage(image, 0, 0);
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(value => value ? resolve(value) : reject(new Error("Không thể chuyển ảnh sang PNG.")), "image/png");
+  });
+  if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+    throw new Error("Trình duyệt không hỗ trợ sao chép ảnh trực tiếp.");
+  }
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+}
+
+function downloadTemporaryImage(dataUrl: string, filename: string) {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 function formatDate(input: unknown) {
@@ -1362,7 +1408,7 @@ function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
   const columns: Record<string, Array<[string, string]>> = {
     groups: [["name", "Group"], ["group_kind", "Loại"], ["lifecycle_stage", "Giai đoạn"], ["region", "Khu vực"], ["topic", "Chủ đề"], ["grade", "Hạng"], ["status", "Trạng thái"]],
     campaigns: [["name", "Chiến dịch"], ["code", "Mã"], ["pageName", "Fanpage"], ["groupCount", "Group"], ["start_date", "Bắt đầu"], ["end_date", "Kết thúc"], ["status", "Trạng thái"]],
-    content: [["opening", "Mở đầu"], ["groupName", "Group"], ["pillarName", "Trụ cột"], ["source_code", "Mã nguồn"], ["duplicate_ratio", "Trùng lặp"], ["status", "Trạng thái"]],
+    content: [["opening", "Mở đầu"], ["groupName", "Group"], ["pillarName", "Trụ cột"], ["assets", "Ảnh"], ["source_code", "Mã nguồn"], ["duplicate_ratio", "Trùng lặp"], ["status", "Trạng thái"]],
     calendar: [["scheduled_at", "Thời gian"], ["groupName", "Group"], ["pageName", "Fanpage"], ["campaignName", "Chiến dịch"], ["staffName", "Nhân viên"], ["status", "Trạng thái"]],
     tasks: [["scheduled_at", "Giờ đăng"], ["groupName", "Group"], ["sourceCode", "Mã nguồn"], ["staffName", "Nhân viên"], ["status", "Trạng thái"]],
     posts: [["actual_posted_at", "Đã đăng"], ["groupName", "Group"], ["source_code", "Mã nguồn"], ["moderation_status", "Kiểm duyệt"], ["status", "Theo dõi"]],
@@ -1389,7 +1435,12 @@ function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
               const isStatus = key.includes("status") || key === "group_kind" || key === "lifecycle_stage";
               const isDate = key.includes("_at") || key.includes("date");
               return <td key={key} className="max-w-[280px] truncate px-4 py-3">
-                {isStatus ? <Status status={item} /> : isDate ? formatDate(item) : key.includes("ratio") ? `${Number(item || 0)}%` : String(item || "—")}
+                {key === "assets"
+                  ? <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
+                    <ImageIcon size={15} className={Array.isArray(item) && item.length ? "text-emerald-300" : "text-slate-600"} />
+                    {Array.isArray(item) && item.length ? `${item.length} ảnh` : "Chưa có"}
+                  </span>
+                  : isStatus ? <Status status={item} /> : isDate ? formatDate(item) : key.includes("ratio") ? `${Number(item || 0)}%` : String(item || "—")}
               </td>;
             })}
             <td className="px-4 py-3">
@@ -1758,6 +1809,22 @@ function EditForm({ resource, row, options, onSubmit }: {
   const [rewriteError, setRewriteError] = useState("");
   const [rewriteInstruction, setRewriteInstruction] = useState("Viết tự nhiên hơn và giảm nguy cơ spam");
   const [rewriteSummary, setRewriteSummary] = useState("");
+  const [imageBusy, setImageBusy] = useState(false);
+  const [imageSaving, setImageSaving] = useState(false);
+  const [imageCopying, setImageCopying] = useState(false);
+  const [imageError, setImageError] = useState("");
+  const [imageSummary, setImageSummary] = useState("");
+  const [imageBrief, setImageBrief] = useState("");
+  const [imageAspectRatio, setImageAspectRatio] = useState<"4:3" | "3:2" | "16:9">("4:3");
+  const [imageRetentionMode, setImageRetentionMode] = useState<"github" | "temporary">("github");
+  const [generatedImages, setGeneratedImages] = useState<GeneratedContentImage[]>([]);
+  const [selectedImageId, setSelectedImageId] = useState("");
+  const [generatedImageMeta, setGeneratedImageMeta] = useState<{
+    model: string;
+    aspectRatio: string;
+    usedProductReferences: boolean;
+  } | null>(null);
+  const [savedImage, setSavedImage] = useState<Row | null>(() => primaryContentAsset(row));
   const selectClass = "fbg-form-control rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white";
   const productIds = new Set((Array.isArray(row.product_ids) ? row.product_ids : []).map(String));
   const groupIds = new Set((Array.isArray(row.groupIds) ? row.groupIds : []).map(String));
@@ -1786,6 +1853,105 @@ function EditForm({ resource, row, options, onSubmit }: {
     } finally {
       setRewriteBusy(false);
     }
+  };
+  const generateContentImages = async (button: HTMLButtonElement) => {
+    const form = button.form;
+    if (!form || resource !== "content") return;
+    const readField = (name: string) => {
+      const field = form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null;
+      return field?.value || "";
+    };
+    setImageBusy(true);
+    setImageError("");
+    setImageSummary("");
+    try {
+      const result = await api(`content/${row.id}/generate-image`, {
+        method: "POST",
+        body: JSON.stringify({
+          opening: readField("opening"),
+          body: readField("body"),
+          cta: readField("cta"),
+          brief: imageBrief,
+          aspectRatio: imageAspectRatio,
+        }),
+      }) as {
+        variants?: GeneratedContentImage[];
+        model?: string;
+        aspectRatio?: string;
+        usedProductReferences?: boolean;
+      };
+      const variants = Array.isArray(result.variants) ? result.variants : [];
+      if (!variants.length) throw new Error("AI không trả về phương án ảnh.");
+      setGeneratedImages(variants);
+      setSelectedImageId(variants[0].id);
+      setGeneratedImageMeta({
+        model: String(result.model || ""),
+        aspectRatio: String(result.aspectRatio || imageAspectRatio),
+        usedProductReferences: Boolean(result.usedProductReferences),
+      });
+      setImageSummary(
+        result.usedProductReferences
+          ? "AI đã tạo một ảnh và dùng ảnh sản phẩm CRM làm tham chiếu. Hãy kiểm tra kỹ trước khi sử dụng."
+          : "AI đã tạo một ảnh minh họa. Sản phẩm chưa có ảnh tham chiếu trong CRM nên cần kiểm tra kỹ hình dáng.",
+      );
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : "Không thể tạo ảnh cho bài viết.");
+    } finally {
+      setImageBusy(false);
+    }
+  };
+  const approveContentImage = async () => {
+    const selected = generatedImages.find(image => image.id === selectedImageId);
+    if (!selected || !generatedImageMeta) return;
+    setImageSaving(true);
+    setImageError("");
+    try {
+      const result = await api(`content/${row.id}/approve-image`, {
+        method: "POST",
+        body: JSON.stringify({
+          dataUrl: selected.dataUrl,
+          model: generatedImageMeta.model,
+          aspectRatio: generatedImageMeta.aspectRatio,
+          usedProductReferences: generatedImageMeta.usedProductReferences,
+        }),
+      }) as Row;
+      setSavedImage(result);
+      setGeneratedImages([]);
+      setSelectedImageId("");
+      setImageSummary(
+        result.contentStatus === "draft"
+          ? "Đã lưu ảnh dự phòng vào GitHub, liên kết với bài viết và đưa nội dung về Bản nháp để duyệt lại."
+          : "Đã lưu ảnh dự phòng vào GitHub và liên kết với bài viết.",
+      );
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : "Không thể lưu ảnh đã chọn.");
+    } finally {
+      setImageSaving(false);
+    }
+  };
+  const copyAndDiscardTemporaryImage = async () => {
+    const selected = generatedImages[0];
+    if (!selected) return;
+    setImageCopying(true);
+    setImageError("");
+    let copied = false;
+    try {
+      await copyImageDataUrl(selected.dataUrl);
+      copied = true;
+    } catch {
+      downloadTemporaryImage(
+        selected.dataUrl,
+        `${String(value(row, "source_code", "sourceCode") || row.id)}-facebook-group.webp`,
+      );
+    } finally {
+      setGeneratedImages([]);
+      setSelectedImageId("");
+      setGeneratedImageMeta(null);
+      setImageCopying(false);
+    }
+    setImageSummary(copied
+      ? "Đã sao chép ảnh vào clipboard và xóa bản tạm khỏi CRM. Hãy dán ảnh vào bài đăng Facebook."
+      : "Trình duyệt không cho sao chép trực tiếp nên ảnh đã được tải xuống; bản tạm trong CRM đã được xóa.");
   };
   return <form className="fbg-form grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
     {resource === "pages" && <>
@@ -2005,6 +2171,87 @@ function EditForm({ resource, row, options, onSubmit }: {
       <div className="md:col-span-2"><Field label="Kêu gọi hành động & liên hệ" name="cta">
         <textarea name="cta" rows={3} defaultValue={String(value(row, "cta"))} className={selectClass} />
       </Field></div>
+      <div className="fbg-ai-editor md:col-span-2 rounded-xl border p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start gap-2">
+            <ImageIcon size={18} className="mt-0.5 shrink-0 text-amber-200" />
+            <div>
+              <b className="text-sm text-[#f5edd6]">Ảnh cho bài viết</b>
+              <p className="mt-1 text-xs text-slate-500">
+                Mỗi lần AI tạo một ảnh, mặc định tỷ lệ 4:3. Bạn có thể lưu dự phòng vào GitHub hoặc chỉ sao chép để đăng rồi xóa bản tạm.
+              </p>
+            </div>
+          </div>
+
+          {savedImage && <div className="grid gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[.04] p-3 sm:grid-cols-[132px_1fr]">
+            <a href={String(savedImage.url || "#")} target="_blank" rel="noreferrer"
+              className="block overflow-hidden rounded-lg border border-white/10 bg-black/20">
+              <img src={String(savedImage.url || "")} alt={String(savedImage.name || "Ảnh bài viết Facebook Group")}
+                className="aspect-[4/3] h-full w-full object-cover" />
+            </a>
+            <div className="min-w-0 self-center">
+              <b className="text-xs text-emerald-200">Ảnh chính đang dùng</b>
+              <p className="mt-1 truncate text-xs text-slate-400">{String(savedImage.name || "Ảnh nội dung")}</p>
+              <p className="mt-2 text-[11px] text-slate-500">Tạo ảnh mới không ghi đè ngay; ảnh cũ chỉ được thay sau khi bạn duyệt phương án mới.</p>
+            </div>
+          </div>}
+
+          <div className="grid gap-2 lg:grid-cols-[1fr_150px_230px_auto]">
+            <input value={imageBrief} onChange={event => setImageBrief(event.target.value)}
+              placeholder="Yêu cầu thêm: căn hộ nhỏ, ánh sáng tự nhiên, không có người…"
+              className="min-w-0 rounded-xl border px-3 py-2.5 text-xs" />
+            <select value={imageAspectRatio}
+              onChange={event => setImageAspectRatio(event.target.value as "4:3" | "3:2" | "16:9")}
+              className="rounded-xl border px-3 py-2.5 text-xs">
+              <option value="4:3">4:3 · Bài đăng</option>
+              <option value="3:2">3:2 · Phối cảnh</option>
+              <option value="16:9">16:9 · Toàn cảnh</option>
+            </select>
+            <select value={imageRetentionMode}
+              onChange={event => setImageRetentionMode(event.target.value as "github" | "temporary")}
+              className="rounded-xl border px-3 py-2.5 text-xs">
+              <option value="github">Lưu dự phòng vào GitHub</option>
+              <option value="temporary">Sao chép rồi xóa bản tạm</option>
+            </select>
+            <button type="button" disabled={imageBusy || imageSaving}
+              onClick={event => void generateContentImages(event.currentTarget)}
+              className="fbg-ai-button inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-black disabled:opacity-50">
+              {imageBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              {generatedImages.length ? "Tạo lại" : "Tạo ảnh AI"}
+            </button>
+          </div>
+
+          {generatedImages[0] && <div>
+            <p className="mb-2 text-xs font-bold text-slate-300">Ảnh AI vừa tạo</p>
+            <div className="max-w-xl overflow-hidden rounded-xl border border-amber-300/60 bg-black/20">
+              <img src={generatedImages[0].dataUrl} alt="Ảnh AI cho bài viết Facebook Group"
+                className="aspect-[4/3] w-full object-cover" />
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button type="button" disabled={imageSaving || imageCopying || imageBusy}
+                onClick={() => void (imageRetentionMode === "github"
+                  ? approveContentImage()
+                  : copyAndDiscardTemporaryImage())}
+                className="fbg-primary-button inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-black disabled:opacity-50">
+                {imageSaving || imageCopying ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                {imageSaving
+                  ? "Đang lưu GitHub…"
+                  : imageCopying
+                    ? "Đang sao chép…"
+                    : imageRetentionMode === "github"
+                      ? "Lưu dự phòng vào GitHub"
+                      : "Sao chép và xóa bản tạm"}
+              </button>
+            </div>
+          </div>}
+
+          {imageError && <p className="text-xs text-red-300">{imageError}</p>}
+          {imageSummary && <p className="text-xs text-emerald-300">{imageSummary}</p>}
+          <p className="text-[11px] text-slate-600">
+            AI có thể tạo chi tiết chưa chính xác. Nhân viên phải đối chiếu sản phẩm, nội quy Group và quyền sử dụng hình ảnh trước khi đăng.
+          </p>
+        </div>
+      </div>
       {["approved", "scheduled", "used"].includes(currentStatus) && <div className="fbg-alert md:col-span-2 rounded-xl border border-amber-400/20 bg-amber-400/[.07] p-3 text-xs text-amber-200">
         Nội dung này đã qua duyệt hoặc đã được sử dụng. Sau khi sửa, hệ thống sẽ đưa về Bản nháp để duyệt lại.
       </div>}

@@ -386,7 +386,22 @@ export async function listFacebookGroupMarketing(resource: string, filters: Filt
   if (resource === "content") {
     return query(
       `SELECT c.*, g.name AS "groupName", x.name AS "campaignName",
-              pillar.name AS "pillarName"
+              pillar.name AS "pillarName",
+              COALESCE((
+                SELECT jsonb_agg(
+                  jsonb_build_object(
+                    'id', asset.id,
+                    'assetType', asset.asset_type,
+                    'url', asset.url,
+                    'name', asset.name,
+                    'metadata', asset.metadata,
+                    'createdAt', asset.created_at
+                  )
+                  ORDER BY asset.created_at DESC
+                )
+                FROM facebook_group_content_assets asset
+                WHERE asset.content_id = c.id
+              ), '[]'::jsonb) AS assets
        FROM facebook_group_content_drafts c
        LEFT JOIN facebook_groups g ON g.id = c.group_id
        LEFT JOIN facebook_group_campaigns x ON x.id = c.campaign_id
@@ -2015,6 +2030,113 @@ export async function importFacebookGroups(rows: unknown[], actor: Actor) {
     }
   }
   return result;
+}
+
+export async function attachFacebookGroupContentImage(
+  contentId: string,
+  image: {
+    url: string;
+    storage: string;
+    storageId: string;
+    size: number;
+    width?: number;
+    height?: number;
+    format: string;
+    model?: string;
+    aspectRatio?: string;
+    usedProductReferences?: boolean;
+  },
+  actor: Actor,
+) {
+  const current = await queryOne<{ id: string; source_code: string | null; status: string }>(
+    `SELECT id, source_code, status
+     FROM facebook_group_content_drafts
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [contentId],
+  );
+  if (!current) throw new Error("Không tìm thấy bài viết để lưu ảnh.");
+  if (!image.url) throw new Error("Đường dẫn ảnh là bắt buộc.");
+
+  const assetId = id("fbgca");
+  const metadata = {
+    isPrimary: true,
+    generatedByAi: true,
+    provider: "openai",
+    model: text(image.model, 120) || null,
+    aspectRatio: text(image.aspectRatio, 20) || null,
+    usedProductReferences: Boolean(image.usedProductReferences),
+    storage: text(image.storage, 40),
+    storageId: text(image.storageId, 1000),
+    size: number(image.size),
+    width: number(image.width),
+    height: number(image.height),
+    format: text(image.format, 20) || "webp",
+    approvedAt: new Date().toISOString(),
+    approvedBy: actor.id,
+  };
+  const client = await getDb().connect();
+  let row: Record<string, unknown> | null = null;
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `UPDATE facebook_group_content_assets
+       SET metadata = COALESCE(metadata, '{}'::jsonb) || '{"isPrimary":false}'::jsonb,
+           updated_by = $2,
+           updated_at = NOW()
+       WHERE content_id = $1`,
+      [contentId, actor.id],
+    );
+    const inserted = await client.query<Record<string, unknown>>(
+      `INSERT INTO facebook_group_content_assets
+       (id,content_id,asset_type,url,name,metadata,created_by,updated_by)
+       VALUES ($1,$2,'ai_image',$3,$4,$5::jsonb,$6,$6)
+       RETURNING id, content_id AS "contentId", asset_type AS "assetType", url, name,
+                 metadata, created_at AS "createdAt"`,
+      [
+        assetId,
+        contentId,
+        image.url,
+        `${current.source_code || contentId}-facebook-group.webp`,
+        JSON.stringify(metadata),
+        actor.id,
+      ],
+    );
+    row = inserted.rows[0] || null;
+    if (["approved", "scheduled", "used"].includes(current.status)) {
+      await client.query(
+        `UPDATE facebook_group_content_drafts
+         SET status = 'draft', approved_by = NULL, approved_at = NULL,
+             updated_by = $2, updated_at = NOW()
+         WHERE id = $1`,
+        [contentId, actor.id],
+      );
+    } else {
+      await client.query(
+        `UPDATE facebook_group_content_drafts
+         SET updated_by = $2, updated_at = NOW()
+         WHERE id = $1`,
+        [contentId, actor.id],
+      );
+    }
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  await logActivity(actor, "content.image_attached", "content", contentId, undefined, {
+    assetId,
+    storage: metadata.storage,
+    model: metadata.model,
+    previousStatus: current.status,
+    requiresReapproval: ["approved", "scheduled", "used"].includes(current.status),
+  });
+  return {
+    ...row,
+    contentStatus: ["approved", "scheduled", "used"].includes(current.status) ? "draft" : current.status,
+  };
 }
 
 async function logActivity(

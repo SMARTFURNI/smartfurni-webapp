@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   addRevenueAttribution, analyzeGroupRules, approveContent,
+  attachFacebookGroupContentImage,
   completePostCheckTask, createFacebookGroupMarketing, exportFacebookGroupsCsv, getFacebookGroupDashboard, importFacebookGroups,
   createFacebookGroupTopic, deleteFacebookGroupTopic, discoverFacebookGroups,
   getFacebookGroupMarketingOptions, getFacebookGroupSettings,
@@ -32,9 +33,14 @@ import {
   softDeleteFacebookGroupBlueprint,
   updateFacebookGroupBlueprint,
 } from "@/lib/facebook-group-growth-store";
+import {
+  generateFacebookGroupContentImages,
+  persistFacebookGroupGeneratedImage,
+} from "@/lib/facebook-group-content-images";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 180;
 
 const resourcePermission: Record<string, {
   view: FacebookGroupPermission;
@@ -152,6 +158,22 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
         String(body.instruction || ""),
         auth.actor,
       ));
+    }
+    if (resource === "content" && entityId && action === "generate-image") {
+      return NextResponse.json(await generateFacebookGroupContentImages(entityId, body, auth.actor));
+    }
+    if (resource === "content" && entityId && action === "approve-image") {
+      const dataUrl = String(body.dataUrl || "");
+      if (!dataUrl) {
+        return NextResponse.json({ error: "Chưa chọn ảnh để dùng cho bài viết." }, { status: 400 });
+      }
+      const stored = await persistFacebookGroupGeneratedImage(entityId, dataUrl);
+      return NextResponse.json(await attachFacebookGroupContentImage(entityId, {
+        ...stored,
+        model: String(body.model || ""),
+        aspectRatio: String(body.aspectRatio || ""),
+        usedProductReferences: Boolean(body.usedProductReferences),
+      }, auth.actor));
     }
     if (resource === "comments" && entityId && action === "suggest-reply") {
       return NextResponse.json(await suggestFacebookGroupCommentReply(entityId, auth.actor));

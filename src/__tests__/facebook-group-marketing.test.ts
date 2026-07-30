@@ -16,6 +16,12 @@ import {
   blueprintPlanSchema,
   totalPillarRatio,
 } from "@/lib/facebook-group-growth-business";
+import {
+  FACEBOOK_GROUP_CONTENT_IMAGE_VARIANT_COUNT,
+  buildFacebookGroupContentImagePrompt,
+  getFacebookGroupProductReferenceImages,
+  normalizeFacebookGroupContentImageAspect,
+} from "@/lib/facebook-group-content-image-business";
 
 const validSchedule = {
   scheduledAt: "2026-07-29T09:00:00.000Z",
@@ -30,6 +36,38 @@ const validSchedule = {
 };
 
 describe("Facebook Group Marketing business rules", () => {
+  it("tạo brief ảnh từ dữ liệu bài viết và không yêu cầu chữ quảng cáo trong ảnh", () => {
+    const prompt = buildFacebookGroupContentImagePrompt({
+      opening: "Căn hộ nhỏ vẫn có thể thoáng.",
+      body: "Bố trí sofa giường để tối ưu diện tích sinh hoạt.",
+      groupName: "Cộng đồng căn hộ nhỏ",
+      groupTopic: "Nội thất",
+      groupRegion: "Hồ Chí Minh",
+      product: {
+        name: "Sofa giường SMF12",
+        sku: "SMF12",
+        description: "Sofa giường gấp gọn.",
+        specs: { material: "Vải canvas" },
+      },
+      aspectRatio: "4:3",
+    });
+    expect(prompt).toContain("Sofa giường SMF12");
+    expect(prompt).toContain("Cộng đồng căn hộ nhỏ");
+    expect(prompt).toContain("Do not add text");
+    expect(normalizeFacebookGroupContentImageAspect("không hợp lệ")).toBe("4:3");
+    expect(FACEBOOK_GROUP_CONTENT_IMAGE_VARIANT_COUNT).toBe(1);
+  });
+
+  it("chỉ lấy tối đa ba ảnh sản phẩm CRM không trùng để làm tham chiếu", () => {
+    expect(getFacebookGroupProductReferenceImages({
+      imageUrl: "/main.webp",
+      imageSpec: "/spec.webp",
+      imageAngle1: "/main.webp",
+      imageAngle2: "/angle.webp",
+      imageScene: "/scene.webp",
+    })).toEqual(["/main.webp", "/spec.webp", "/angle.webp"]);
+  });
+
   it("chuẩn hóa cấu hình model AI và luôn dùng nhà cung cấp dự phòng khác model chính", () => {
     expect(normalizeFacebookGroupAiSettings({
       primaryProvider: "openai",
