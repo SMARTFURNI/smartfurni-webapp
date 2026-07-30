@@ -1,4 +1,5 @@
 "use client";
+import type { CSSProperties } from "react";
 import { ScrollReveal } from "./ScrollReveal";
 import type { SiteTheme, HomepageFeatureItem } from "@/lib/theme-store";
 import { SvgIcon } from "@/components/ui/SvgIcon";
@@ -59,7 +60,7 @@ export default function FeaturesSection({ theme }: Props) {
   const bgFrom = theme?.hero?.bgGradientFrom ?? "#080600";
 
   return (
-    <section id="features" className="relative isolate min-h-screen overflow-hidden px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
+    <section id="features" className="relative isolate overflow-hidden px-3 py-10 sm:min-h-screen sm:px-6 sm:py-20 lg:py-24">
       {backgroundImageUrl && (
         <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
           <div
@@ -90,19 +91,19 @@ export default function FeaturesSection({ theme }: Props) {
         </div>
       )}
 
-      <div className="relative z-10 max-w-7xl mx-auto space-y-16 sm:space-y-20">
+      <div className="relative z-10 mx-auto max-w-7xl space-y-10 sm:space-y-20">
 
         {/* ── 3 Core Benefits ── */}
         <div>
           <ScrollReveal variant="fadeUp" delay={0}>
-            <div className="text-center mb-10 sm:mb-14">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4"
+            <div className="mb-7 text-center sm:mb-14">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 sm:mb-4"
                 style={{ borderColor: `${primary}30`, backgroundColor: `${primary}08` }}>
                 <span style={{ fontSize: badge ? `${badge.fontSize}px` : "11px", color: badge?.color ?? primary, fontWeight: badge ? FW_MAP[badge.fontWeight] : "500" }} className="tracking-widest uppercase">
                   {badge?.text ?? "Tại Sao Chọn SmartFurni"}
                 </span>
               </div>
-              <h2 className="mb-3">
+              <h2 className="mb-2 sm:mb-3">
                 <span style={{ fontSize: title ? `clamp(24px, 3vw, ${title.fontSize}px)` : "clamp(24px, 3vw, 40px)", color: title?.color ?? textColor, fontWeight: title ? FW_MAP[title.fontWeight] : "300", display: "block" }}>
                   {title?.text ?? "Lợi ích thực sự"}
                 </span>
@@ -116,15 +117,15 @@ export default function FeaturesSection({ theme }: Props) {
             </div>
           </ScrollReveal>
 
-          <div className="grid sm:grid-cols-3 gap-5 sm:gap-6">
+          <div className="grid gap-3 sm:grid-cols-3 sm:gap-6">
             {CORE_BENEFITS.map((b, i) => (
               <ScrollReveal key={i} variant="fadeUp" delay={80 + i * 80}>
                 <div
-                  className="relative p-6 sm:p-7 rounded-3xl h-full flex flex-col gap-4 group"
+                  className="group relative flex h-full flex-col gap-3 rounded-2xl p-5 sm:gap-4 sm:rounded-3xl sm:p-7"
                   style={{ backgroundColor: `${surfaceColor}E6`, border: `1px solid ${borderColor}`, backdropFilter: "blur(14px)" }}
                 >
                   {/* Icon */}
-                  <div className="flex items-center justify-center w-12 h-12 rounded-2xl"
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl sm:h-12 sm:w-12 sm:rounded-2xl"
                     style={{ backgroundColor: `${primary}12`, border: `1px solid ${primary}25` }}>
                     <SvgIcon name={b.icon} size={22} color={primary} strokeWidth={1.5} />
                   </div>
@@ -136,8 +137,8 @@ export default function FeaturesSection({ theme }: Props) {
                   </span>
 
                   <div>
-                    <h3 className="text-base font-semibold mb-2" style={{ color: textColor }}>{b.title}</h3>
-                    <p className="text-sm leading-relaxed" style={{ color: `${textColor}60` }}>{b.desc}</p>
+                    <h3 className="mb-1.5 text-sm font-semibold sm:mb-2 sm:text-base" style={{ color: textColor }}>{b.title}</h3>
+                    <p className="text-xs leading-5 sm:text-sm sm:leading-relaxed" style={{ color: `${textColor}60` }}>{b.desc}</p>
                   </div>
                 </div>
               </ScrollReveal>
@@ -148,7 +149,7 @@ export default function FeaturesSection({ theme }: Props) {
         {/* ── Feature grid (8 items) ── */}
         <div>
           <ScrollReveal variant="fadeUp" delay={0}>
-            <div className="text-center mb-10">
+            <div className="mb-5 text-center sm:mb-10">
               <h3 className="text-xl sm:text-2xl font-light mb-2" style={{ color: textColor }}>
                 Tính năng chính <span style={{ color: primary }}>nhìn là hiểu</span>
               </h3>
@@ -156,27 +157,27 @@ export default function FeaturesSection({ theme }: Props) {
             </div>
           </ScrollReveal>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
             {items.map((f, i) => (
               <ScrollReveal key={i} variant="fadeUp" delay={60 + i * 50}>
                 <div
-                  className="group p-5 rounded-2xl transition-all duration-300 h-full"
-                  style={{ backgroundColor: `${bgFrom}D9`, border: `1px solid ${borderColor}`, backdropFilter: "blur(12px)" }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = `${primary}40`;
-                    (e.currentTarget as HTMLElement).style.backgroundColor = surfaceColor;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = borderColor;
-                    (e.currentTarget as HTMLElement).style.backgroundColor = bgFrom;
-                  }}
+                  className="group h-full min-h-[132px] rounded-xl border p-3 shadow-[0_10px_30px_rgba(0,0,0,.16)] transition-all duration-300 [background:var(--feature-mobile-bg)] [border-color:var(--feature-mobile-border)] hover:[background:var(--feature-hover-bg)] hover:[border-color:var(--feature-hover-border)] sm:min-h-0 sm:rounded-2xl sm:p-5 sm:shadow-none sm:[background:var(--feature-desktop-bg)] sm:[border-color:var(--feature-desktop-border)]"
+                  style={{
+                    "--feature-mobile-bg": `linear-gradient(145deg, ${surfaceColor}F2, ${bgFrom}E8)`,
+                    "--feature-mobile-border": `${primary}38`,
+                    "--feature-desktop-bg": `${bgFrom}D9`,
+                    "--feature-desktop-border": borderColor,
+                    "--feature-hover-bg": surfaceColor,
+                    "--feature-hover-border": `${primary}40`,
+                    backdropFilter: "blur(12px)",
+                  } as CSSProperties}
                 >
-                  <div className="mb-3 flex items-center justify-center w-9 h-9 rounded-xl"
+                  <div className="mb-2.5 flex h-8 w-8 items-center justify-center rounded-lg sm:mb-3 sm:h-9 sm:w-9 sm:rounded-xl"
                     style={{ backgroundColor: `${primary}10`, border: `1px solid ${primary}20` }}>
-                    <SvgIcon name={f.icon} size={18} color={primary} strokeWidth={1.5} />
+                    <SvgIcon name={f.icon} size={17} color={primary} strokeWidth={1.5} />
                   </div>
-                  <h4 className="text-sm font-semibold mb-1.5" style={{ color: textColor }}>{f.title}</h4>
-                  <p className="text-xs leading-relaxed" style={{ color: `${textColor}50` }}>{f.desc}</p>
+                  <h4 className="mb-1 text-[13px] font-semibold leading-5 sm:mb-1.5 sm:text-sm" style={{ color: textColor }}>{f.title}</h4>
+                  <p className="text-[11px] leading-4 sm:text-xs sm:leading-relaxed" style={{ color: `${textColor}68` }}>{f.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
