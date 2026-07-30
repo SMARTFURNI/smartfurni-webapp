@@ -19,10 +19,14 @@ export const PRODUCT_DETAIL_PALETTE: ThemeColors = {
 };
 
 export const PRODUCT_DETAIL_PAGE_BACKGROUND = `
-  radial-gradient(circle at 12% 6%, rgba(201, 168, 76, 0.11), transparent 26rem),
-  radial-gradient(circle at 88% 22%, rgba(88, 69, 30, 0.18), transparent 34rem),
-  linear-gradient(135deg, #111922 0%, #172231 47%, #241F16 100%)
+  radial-gradient(circle at 10% 5%, rgba(201, 168, 76, 0.12), transparent 25rem),
+  radial-gradient(circle at 90% 24%, rgba(126, 90, 0, 0.13), transparent 36rem),
+  linear-gradient(135deg, #161718 0%, #211D17 52%, #2A2115 100%)
 `;
+
+export const PRODUCT_DETAIL_PAGE_BASE = "#171613";
 
 export const PRODUCT_DETAIL_PANEL_BACKGROUND =
   "linear-gradient(125deg, #172231 0%, #1B2228 48%, #302718 100%)";
+
+export const PRODUCT_DETAIL_OUTER_BORDER = "rgba(201, 168, 76, 0.34)";

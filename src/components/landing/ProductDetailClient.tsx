@@ -23,6 +23,7 @@ import {
 } from "@/lib/product-description-template";
 import { redirectToLpThankYou } from "@/lib/lp-thank-you";
 import {
+  PRODUCT_DETAIL_OUTER_BORDER,
   PRODUCT_DETAIL_PALETTE,
   PRODUCT_DETAIL_PANEL_BACKGROUND,
 } from "@/lib/product-detail-palette";
@@ -1142,8 +1143,8 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
       <div
         style={{
           background: PRODUCT_DETAIL_PANEL_BACKGROUND,
-          borderColor: `${colors.primary}38`,
-          boxShadow: "0 28px 80px rgba(0, 0, 0, 0.24)",
+          borderColor: PRODUCT_DETAIL_OUTER_BORDER,
+          boxShadow: "0 28px 80px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(88, 69, 30, 0.12)",
         }}
         className="grid grid-cols-1 gap-8 rounded-[28px] border p-4 sm:gap-12 sm:p-6 lg:grid-cols-2 lg:p-8 mb-12 sm:mb-16"
       >
@@ -1661,8 +1662,8 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
       <div
         style={{
           background: PRODUCT_DETAIL_PANEL_BACKGROUND,
-          borderColor: `${colors.primary}30`,
-          boxShadow: "0 24px 70px rgba(0, 0, 0, 0.2)",
+          borderColor: PRODUCT_DETAIL_OUTER_BORDER,
+          boxShadow: "0 24px 70px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(88, 69, 30, 0.1)",
         }}
         className="mb-16 rounded-[28px] border p-4 sm:p-6 lg:p-8"
       >

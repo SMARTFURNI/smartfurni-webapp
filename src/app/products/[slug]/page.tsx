@@ -16,6 +16,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbSchema, productSchema } from "@/lib/seo-schema";
 import { PRODUCT_FAMILIES, inferProductFamily } from "@/lib/product-families";
 import {
+  PRODUCT_DETAIL_PAGE_BASE,
   PRODUCT_DETAIL_PAGE_BACKGROUND,
   PRODUCT_DETAIL_PALETTE,
 } from "@/lib/product-detail-palette";
@@ -79,7 +80,7 @@ export default async function ProductDetailPage({ params }: Props) {
       style={{
         minHeight: "100vh",
         color: PRODUCT_DETAIL_PALETTE.text,
-        backgroundColor: PRODUCT_DETAIL_PALETTE.background,
+        backgroundColor: PRODUCT_DETAIL_PAGE_BASE,
         backgroundImage: PRODUCT_DETAIL_PAGE_BACKGROUND,
       }}
     >
