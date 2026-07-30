@@ -58,6 +58,7 @@ export default async function HomePage() {
       ? configuredBedProducts
       : allProducts.filter(isBedProduct);
   const { banner } = theme;
+  const { sectionVisibility } = homepageConfig;
 
   return (
     <main className="sf-site-gradient-bg" style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
@@ -80,46 +81,50 @@ export default async function HomePage() {
       <Navbar theme={theme} />
 
       {/* 2. Hero — ảnh sản phẩm + tiêu đề ngắn + 2 CTA */}
-      <HeroSection theme={theme} />
+      {sectionVisibility.hero && <HeroSection theme={theme} />}
 
       {/* 3. Dòng nệm thông minh điều chỉnh điện */}
-      <StaticProductsSection
-        theme={theme}
-        products={mattressProducts}
-        sectionTitle={"Nệm Thông Minh\nĐiều Chỉnh Điện SmartFurni"}
-        sectionSubtitle="Động cơ nâng hạ được tích hợp sẵn trong nệm, điều chỉnh tư thế trực tiếp mà không cần lắp thêm khung nâng bên ngoài."
-        sectionHref="/products/nem-thong-minh-dieu-chinh-dien"
-      />
+      {sectionVisibility.mattressProducts && (
+        <StaticProductsSection
+          theme={theme}
+          products={mattressProducts}
+          sectionTitle={"Nệm Thông Minh\nĐiều Chỉnh Điện SmartFurni"}
+          sectionSubtitle="Động cơ nâng hạ được tích hợp sẵn trong nệm, điều chỉnh tư thế trực tiếp mà không cần lắp thêm khung nâng bên ngoài."
+          sectionHref="/products/nem-thong-minh-dieu-chinh-dien"
+        />
+      )}
 
       {/* 4. Dòng giường công thái học */}
-      <StaticProductsSection
-        theme={theme}
-        products={bedProducts}
-        sectionTitle={homepageConfig.sectionTitle}
-        sectionSubtitle={homepageConfig.sectionSubtitle}
-        sectionHref="/products/giuong-cong-thai-hoc-dieu-chinh-dien"
-      />
+      {sectionVisibility.bedProducts && (
+        <StaticProductsSection
+          theme={theme}
+          products={bedProducts}
+          sectionTitle={homepageConfig.sectionTitle}
+          sectionSubtitle={homepageConfig.sectionSubtitle}
+          sectionHref="/products/giuong-cong-thai-hoc-dieu-chinh-dien"
+        />
+      )}
 
       {/* 5. Video thực tế — tăng tin cậy sau khi khách đã thấy dòng sản phẩm */}
-      <VideoSection theme={theme} />
+      {sectionVisibility.video && <VideoSection theme={theme} />}
 
       {/* 5. Chuyển động & cận cảnh — giảm chữ, tăng hình ảnh mô tả */}
-      <HomeVisualProofSections theme={theme} />
+      {sectionVisibility.visualProof && <HomeVisualProofSections theme={theme} />}
 
       {/* 6. Lợi ích — 3 lợi ích cốt lõi + 8 tính năng */}
-      <FeaturesSection theme={theme} />
+      {sectionVisibility.features && <FeaturesSection theme={theme} />}
 
       {/* 7. So sánh — giường thường vs SmartFurni */}
-      <ComparisonSection theme={theme} />
+      {sectionVisibility.comparison && <ComparisonSection theme={theme} />}
 
       {/* 8. Các thông tin giúp khách quyết định mua */}
-      <HomeDecisionSections theme={theme} />
+      {sectionVisibility.decisionSupport && <HomeDecisionSections theme={theme} />}
 
       {/* 9. Đánh giá khách hàng — social proof */}
-      <TestimonialsSection theme={theme} />
+      {sectionVisibility.testimonials && <TestimonialsSection theme={theme} />}
 
       {/* 10. CTA cuối — form tư vấn miễn phí */}
-      <DownloadSection theme={theme} />
+      {sectionVisibility.finalCta && <DownloadSection theme={theme} />}
 
       <Footer theme={theme} variant="full" />
     </main>

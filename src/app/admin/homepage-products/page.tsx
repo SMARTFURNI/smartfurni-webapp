@@ -9,7 +9,7 @@ import { getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 import { getAllProducts } from "@/lib/product-store";
 import { initDbOnce } from "@/lib/db-init";
 
-export const metadata = { title: "Sản phẩm trang chủ | SmartFurni Admin" };
+export const metadata = { title: "Cài đặt trang chủ | SmartFurni Admin" };
 
 export default async function HomepageProductsPage() {
   await initDbOnce();
@@ -26,8 +26,8 @@ export default async function HomepageProductsPage() {
       <AdminSidebar stats={sidebarStats} />
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader
-          title="Sản phẩm trang chủ"
-          subtitle={`${config.displayedProductIds.length === 0 ? "Hiển thị tất cả" : `${config.displayedProductIds.length} sản phẩm đã chọn`} · ${allProducts.length} sản phẩm khả dụng`}
+          title="Cài đặt trang chủ"
+          subtitle={`${Object.values(config.sectionVisibility).filter(Boolean).length}/10 khối đang hiển thị · ${config.displayedProductIds.length === 0 ? "Hiển thị tất cả sản phẩm" : `${config.displayedProductIds.length} sản phẩm đã chọn`}`}
         />
         <main className="flex-1 p-6 overflow-auto">
           <HomepageProductsClient

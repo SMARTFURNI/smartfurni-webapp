@@ -2,8 +2,11 @@
 
 import { useState, useCallback } from "react";
 import type { Product } from "@/lib/product-store";
-import type { HomepageProductConfig } from "@/lib/homepage-products-store";
-import { BedDouble } from "lucide-react";
+import type {
+  HomepageProductConfig,
+  HomepageSectionVisibility,
+} from "@/lib/homepage-products-store";
+import { BedDouble, Eye, EyeOff, LayoutPanelTop } from "lucide-react";
 
 interface HomepageProductsClientProps {
   initialConfig: HomepageProductConfig;
@@ -23,6 +26,65 @@ const STATUS_COLORS: Record<string, string> = {
   coming_soon: "#f59e0b",
 };
 
+type HomepageSectionKey = keyof HomepageSectionVisibility;
+
+const HOMEPAGE_SECTION_OPTIONS: Array<{
+  key: HomepageSectionKey;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: "hero",
+    label: "Hero đầu trang",
+    description: "Ảnh lớn, thông điệp chính và các nút hành động đầu trang.",
+  },
+  {
+    key: "mattressProducts",
+    label: "Dòng nệm thông minh",
+    description: "Danh sách nệm thông minh điều chỉnh điện SmartFurni.",
+  },
+  {
+    key: "bedProducts",
+    label: "Dòng giường công thái học",
+    description: "Danh sách giường điều chỉnh điện được cấu hình bên dưới.",
+  },
+  {
+    key: "video",
+    label: "Video thực tế",
+    description: "Khối video giới thiệu và trải nghiệm sản phẩm.",
+  },
+  {
+    key: "visualProof",
+    label: "Chuyển động & cận cảnh",
+    description: "Hình ảnh tư thế, motor, khung và bộ điều khiển.",
+  },
+  {
+    key: "features",
+    label: "Lợi ích & tính năng",
+    description: "Các lợi ích cốt lõi và tính năng nổi bật.",
+  },
+  {
+    key: "comparison",
+    label: "So sánh sản phẩm",
+    description: "So sánh giường thông thường với SmartFurni.",
+  },
+  {
+    key: "decisionSupport",
+    label: "Thông tin hỗ trợ quyết định",
+    description: "Đối tượng, thông số, showroom, hậu mãi, thanh toán và FAQ.",
+  },
+  {
+    key: "testimonials",
+    label: "Đánh giá khách hàng",
+    description: "Khối nhận xét và bằng chứng xã hội.",
+  },
+  {
+    key: "finalCta",
+    label: "CTA tư vấn cuối trang",
+    description: "Khối kêu gọi đăng ký hoặc nhận tư vấn trước footer.",
+  },
+];
+
 function formatPrice(price: number) {
   if (price >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(1)} tỷ`;
   if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu`;
@@ -39,9 +101,21 @@ export default function HomepageProductsClient({
   const [error, setError] = useState("");
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"select" | "order" | "settings">("select");
+  const [activeTab, setActiveTab] =
+    useState<"visibility" | "select" | "order" | "settings">("visibility");
   const [searchQ, setSearchQ] = useState("");
   const [filterCat, setFilterCat] = useState<string>("all");
+  const enabledSectionCount = Object.values(config.sectionVisibility).filter(Boolean).length;
+
+  const toggleHomepageSection = (key: HomepageSectionKey) => {
+    setConfig((prev) => ({
+      ...prev,
+      sectionVisibility: {
+        ...prev.sectionVisibility,
+        [key]: !prev.sectionVisibility[key],
+      },
+    }));
+  };
 
   // Danh sách đã chọn (theo thứ tự)
   const selectedIds = config.displayedProductIds;
@@ -134,6 +208,8 @@ export default function HomepageProductsClient({
         body: JSON.stringify(config),
       });
       if (!res.ok) throw new Error("Lưu thất bại");
+      const payload = (await res.json()) as { config?: HomepageProductConfig };
+      if (payload.config) setConfig(payload.config);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
@@ -178,9 +254,10 @@ export default function HomepageProductsClient({
         >
           {(
             [
-              { key: "select", label: "1. Chọn sản phẩm" },
-              { key: "order", label: "2. Sắp xếp thứ tự" },
-              { key: "settings", label: "3. Cài đặt section" },
+              { key: "visibility", label: "1. Hiển thị khối" },
+              { key: "select", label: "2. Chọn sản phẩm" },
+              { key: "order", label: "3. Sắp xếp thứ tự" },
+              { key: "settings", label: "4. Cài đặt dòng giường" },
             ] as const
           ).map((t) => (
             <button
@@ -198,7 +275,109 @@ export default function HomepageProductsClient({
           ))}
         </div>
 
-        {/* ── TAB 1: CHỌN SẢN PHẨM ── */}
+        {/* ── TAB 1: ẨN / HIỆN CÁC KHỐI ── */}
+        {activeTab === "visibility" && (
+          <div
+            style={{ backgroundColor: "#1e2022", borderColor: "#334155" }}
+            className="rounded-xl border flex flex-col gap-5 p-5"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <LayoutPanelTop className="h-5 w-5 text-[#C9A84C]" />
+                  <h3 style={{ color: "#ECEDEE" }} className="font-semibold text-sm">
+                    Các khối nội dung trên trang chủ
+                  </h3>
+                </div>
+                <p style={{ color: "#9BA1A6" }} className="text-xs mt-1">
+                  Tắt một khối chỉ ẩn khỏi website, không xoá nội dung hoặc dữ liệu đã cấu hình.
+                </p>
+              </div>
+              <div
+                style={{
+                  color: "#C9A84C",
+                  backgroundColor: "#C9A84C14",
+                  borderColor: "#C9A84C35",
+                }}
+                className="rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap"
+              >
+                {enabledSectionCount}/{HOMEPAGE_SECTION_OPTIONS.length} khối đang hiện
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              {HOMEPAGE_SECTION_OPTIONS.map((section) => {
+                const isVisible = config.sectionVisibility[section.key];
+                return (
+                  <div
+                    key={section.key}
+                    style={{
+                      backgroundColor: isVisible ? "#C9A84C0D" : "#151718",
+                      borderColor: isVisible ? "#C9A84C45" : "#334155",
+                    }}
+                    className="flex min-h-[104px] items-start gap-3 rounded-xl border p-4 transition-colors"
+                  >
+                    <div
+                      style={{
+                        color: isVisible ? "#C9A84C" : "#64748B",
+                        backgroundColor: isVisible ? "#C9A84C16" : "#202326",
+                      }}
+                      className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg"
+                    >
+                      {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p style={{ color: "#ECEDEE" }} className="text-sm font-semibold">
+                        {section.label}
+                      </p>
+                      <p style={{ color: "#9BA1A6" }} className="mt-1 text-xs leading-relaxed">
+                        {section.description}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`${isVisible ? "Ẩn" : "Hiện"} khối ${section.label}`}
+                      aria-pressed={isVisible}
+                      onClick={() => toggleHomepageSection(section.key)}
+                      style={{
+                        backgroundColor: isVisible ? "#C9A84C" : "#334155",
+                        width: 44,
+                        height: 24,
+                      }}
+                      className="relative flex-shrink-0 rounded-full transition-colors"
+                    >
+                      <span
+                        style={{
+                          width: 18,
+                          height: 18,
+                          backgroundColor: "#fff",
+                          transform: isVisible ? "translateX(22px)" : "translateX(3px)",
+                          transition: "transform 0.2s",
+                        }}
+                        className="absolute left-0 top-[3px] rounded-full"
+                      />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {enabledSectionCount === 0 && (
+              <div
+                style={{
+                  color: "#F59E0B",
+                  backgroundColor: "#F59E0B10",
+                  borderColor: "#F59E0B35",
+                }}
+                className="rounded-xl border px-4 py-3 text-xs leading-relaxed"
+              >
+                Tất cả khối nội dung đang tắt. Trang chủ vẫn giữ thanh điều hướng, banner đang bật và footer.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB 2: CHỌN SẢN PHẨM ── */}
         {activeTab === "select" && (
           <div
             style={{ backgroundColor: "#1e2022", borderColor: "#334155" }}
@@ -383,7 +562,7 @@ export default function HomepageProductsClient({
           </div>
         )}
 
-        {/* ── TAB 2: SẮP XẾP THỨ TỰ ── */}
+        {/* ── TAB 3: SẮP XẾP THỨ TỰ ── */}
         {activeTab === "order" && (
           <div
             style={{ backgroundColor: "#1e2022", borderColor: "#334155" }}
@@ -525,7 +704,7 @@ export default function HomepageProductsClient({
           </div>
         )}
 
-        {/* ── TAB 3: CÀI ĐẶT SECTION ── */}
+        {/* ── TAB 4: CÀI ĐẶT DÒNG GIƯỜNG ── */}
         {activeTab === "settings" && (
           <div
             style={{ backgroundColor: "#1e2022", borderColor: "#334155" }}
@@ -713,6 +892,15 @@ export default function HomepageProductsClient({
           </h3>
 
           <div className="flex flex-col gap-2">
+            <div className="flex justify-between">
+              <span style={{ color: "#9BA1A6" }} className="text-xs">Khối nội dung</span>
+              <span
+                style={{ color: enabledSectionCount > 0 ? "#22c55e" : "#ef4444" }}
+                className="text-xs font-medium"
+              >
+                {enabledSectionCount}/{HOMEPAGE_SECTION_OPTIONS.length} đang hiện
+              </span>
+            </div>
             <div className="flex justify-between">
               <span style={{ color: "#9BA1A6" }} className="text-xs">Chế độ</span>
               <span style={{ color: "#C9A84C" }} className="text-xs font-medium">

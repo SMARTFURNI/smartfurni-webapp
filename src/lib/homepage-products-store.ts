@@ -2,7 +2,22 @@ import { dbGetSetting, dbSaveSetting } from "./db-store";
 import { getAllProducts, type Product } from "./product-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+export interface HomepageSectionVisibility {
+  hero: boolean;
+  mattressProducts: boolean;
+  bedProducts: boolean;
+  video: boolean;
+  visualProof: boolean;
+  features: boolean;
+  comparison: boolean;
+  decisionSupport: boolean;
+  testimonials: boolean;
+  finalCta: boolean;
+}
+
 export interface HomepageProductConfig {
+  /** Trạng thái hiển thị các khối nội dung chính trên trang chủ */
+  sectionVisibility: HomepageSectionVisibility;
   /** Danh sách ID sản phẩm được hiển thị, theo thứ tự */
   displayedProductIds: string[];
   /** Tiêu đề section */
@@ -24,7 +39,21 @@ export interface HomepageProductConfig {
 }
 
 // ─── Default config ────────────────────────────────────────────────────────────
+export const DEFAULT_HOMEPAGE_SECTION_VISIBILITY: HomepageSectionVisibility = {
+  hero: true,
+  mattressProducts: true,
+  bedProducts: true,
+  video: true,
+  visualProof: true,
+  features: true,
+  comparison: true,
+  decisionSupport: true,
+  testimonials: true,
+  finalCta: true,
+};
+
 const DEFAULT_CONFIG: HomepageProductConfig = {
+  sectionVisibility: { ...DEFAULT_HOMEPAGE_SECTION_VISIBILITY },
   displayedProductIds: [], // rỗng = hiển thị tất cả sản phẩm active
   sectionTitle: "Dòng Giường Thông Minh\nĐiều Chỉnh Điện SmartFurni",
   sectionSubtitle:
@@ -48,7 +77,14 @@ export async function getHomepageProductConfigAsync(): Promise<HomepageProductCo
   try {
     const saved = await dbGetSetting<HomepageProductConfig>(SETTING_KEY);
     if (saved) {
-      _cache = { ...DEFAULT_CONFIG, ...saved };
+      _cache = {
+        ...DEFAULT_CONFIG,
+        ...saved,
+        sectionVisibility: {
+          ...DEFAULT_HOMEPAGE_SECTION_VISIBILITY,
+          ...saved.sectionVisibility,
+        },
+      };
       return _cache;
     }
   } catch {
@@ -69,6 +105,10 @@ export async function saveHomepageProductConfig(
   const next: HomepageProductConfig = {
     ...current,
     ...updates,
+    sectionVisibility: {
+      ...current.sectionVisibility,
+      ...updates.sectionVisibility,
+    },
     updatedAt: new Date().toISOString(),
   };
   _cache = next;

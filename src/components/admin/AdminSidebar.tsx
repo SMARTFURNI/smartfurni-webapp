@@ -134,7 +134,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Hệ thống",
     items: [
-      { href: "/admin/homepage-products", label: "Sắp xếp SP trang chủ", icon: GalleryHorizontalEnd, exact: false },
+      { href: "/admin/homepage-products", label: "Cài đặt trang chủ", icon: GalleryHorizontalEnd, exact: false },
       { href: "/admin/appearance", label: "Giao diện", icon: Palette, exact: false },
       { href: "/admin/settings", label: "Cài đặt", icon: Settings2, exact: false },
     ],
