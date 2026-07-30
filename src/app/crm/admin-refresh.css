@@ -243,10 +243,18 @@
   outline-offset: 2px;
 }
 
-.crm-admin-refresh button[style*="#C9A84C"],
-.crm-admin-refresh button[style*="#c9a84c"],
-.crm-admin-refresh a[style*="#C9A84C"],
-.crm-admin-refresh a[style*="#c9a84c"] {
+.crm-admin-refresh button[style*="background: #C9A84C"],
+.crm-admin-refresh button[style*="background:#C9A84C"],
+.crm-admin-refresh button[style*="background: #c9a84c"],
+.crm-admin-refresh button[style*="background:#c9a84c"],
+.crm-admin-refresh button[style*="background: linear-gradient"][style*="#C9A84C"],
+.crm-admin-refresh button[style*="background:linear-gradient"][style*="#C9A84C"],
+.crm-admin-refresh a[style*="background: #C9A84C"],
+.crm-admin-refresh a[style*="background:#C9A84C"],
+.crm-admin-refresh a[style*="background: #c9a84c"],
+.crm-admin-refresh a[style*="background:#c9a84c"],
+.crm-admin-refresh a[style*="background: linear-gradient"][style*="#C9A84C"],
+.crm-admin-refresh a[style*="background:linear-gradient"][style*="#C9A84C"] {
   border-color: rgba(255, 236, 166, 0.18) !important;
   color: #171208 !important;
   background: linear-gradient(135deg, #e0c25f, #bd9024) !important;
