@@ -17,10 +17,6 @@ import { getAllProducts } from "@/lib/product-store";
 import { inferProductFamily } from "@/lib/product-families";
 import type { Metadata } from "next";
 import { absoluteUrl } from "@/lib/site-url";
-import {
-  PRODUCT_DETAIL_PAGE_BASE,
-  PRODUCT_DETAIL_PAGE_BACKGROUND,
-} from "@/lib/product-detail-palette";
 
 export const metadata: Metadata = {
   title: "SmartFurni — Giường Công Thái Học Điều Chỉnh Điện",
@@ -64,14 +60,7 @@ export default async function HomePage() {
   const { banner } = theme;
 
   return (
-    <main
-      className="sf-site-gradient-bg"
-      style={{
-        minHeight: "100vh",
-        backgroundColor: PRODUCT_DETAIL_PAGE_BASE,
-        backgroundImage: PRODUCT_DETAIL_PAGE_BACKGROUND,
-      }}
-    >
+    <main className="sf-site-gradient-bg" style={{ minHeight: "100vh", backgroundColor: theme.colors.background }}>
       {/* Banner thông báo */}
       {banner.enabled && (
         <div

@@ -22,11 +22,6 @@ import {
   hasProductDescriptionTemplate,
 } from "@/lib/product-description-template";
 import { redirectToLpThankYou } from "@/lib/lp-thank-you";
-import {
-  PRODUCT_DETAIL_OUTER_BORDER,
-  PRODUCT_DETAIL_PALETTE,
-  PRODUCT_DETAIL_PANEL_BACKGROUND,
-} from "@/lib/product-detail-palette";
 
 interface Props {
   product: Product;
@@ -844,24 +839,19 @@ function ProductDescriptionPopup({
   return (
     <div className="sf-product-popup-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6" onClick={onClose}>
       <div
-        style={{
-          color: colors.text,
-          background: PRODUCT_DETAIL_PANEL_BACKGROUND,
-          borderColor: `${colors.primary}66`,
-        }}
+        style={{ backgroundColor: "#F4EBDD", borderColor: colors.primary }}
         className="sf-product-popup-modal relative w-full max-w-5xl overflow-hidden rounded-3xl border shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          style={{ color: colors.text, borderColor: `${colors.primary}35` }}
-          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border bg-black/25 text-2xl hover:bg-black/40"
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/10 text-2xl text-[#2D2417] hover:bg-black/15"
         >
           ×
         </button>
         <div className="sf-product-popup-grid grid max-h-[90vh] overflow-y-auto lg:grid-cols-[1.02fr_0.98fr]">
-          <div className="sf-product-popup-media bg-[#101820]">
+          <div className="sf-product-popup-media bg-[#FFF8EE]">
             <img
               src={selectedImage}
               alt={plan.title}
@@ -874,7 +864,7 @@ function ProductDescriptionPopup({
                     key={`${img}-${idx}`}
                     type="button"
                     onClick={() => setSelectedImageIndex(idx)}
-                    className="h-14 w-14 overflow-hidden rounded-xl border bg-black/25 transition hover:opacity-80"
+                    className="h-14 w-14 overflow-hidden rounded-xl border bg-white transition hover:opacity-80"
                     style={{ borderColor: idx === selectedImageIndex ? colors.primary : "rgba(201,168,76,0.35)" }}
                   >
                     <img src={img} alt="" className="h-full w-full object-cover" />
@@ -883,18 +873,14 @@ function ProductDescriptionPopup({
               </div>
             )}
           </div>
-          <div className="sf-product-popup-content bg-black/10 p-6 sm:p-8">
-            <p style={{ color: colors.primary }} className="mb-3 text-xs font-bold uppercase tracking-[0.24em]">{plan.badge}</p>
-            <h3 style={{ color: colors.text }} className="text-2xl font-bold leading-tight sm:text-3xl">{plan.title}</h3>
-            <p style={{ color: colors.textMuted }} className="mt-3 text-sm">{plan.subtitle}</p>
+          <div className="sf-product-popup-content bg-[#F3ECDE] p-6 text-[#2A2116] sm:p-8">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#9A7A2E]">{plan.badge}</p>
+            <h3 className="text-2xl font-bold leading-tight sm:text-3xl">{plan.title}</h3>
+            <p className="mt-3 text-sm text-[#6E604C]">{plan.subtitle}</p>
             <div className="mt-5 grid gap-2">
               {plan.bullets.map((bullet) => (
-                <div
-                  key={bullet}
-                  style={{ color: colors.textMuted, borderColor: `${colors.primary}2e` }}
-                  className="flex items-start gap-2 rounded-xl border bg-black/20 px-3 py-2 text-sm"
-                >
-                  <span style={{ color: colors.primary }} className="font-bold">✓</span>
+                <div key={bullet} className="flex items-start gap-2 rounded-xl border border-[#C9A84C]/20 bg-white/45 px-3 py-2 text-sm text-[#4D422F]">
+                  <span className="font-bold text-[#9A7A2E]">✓</span>
                   <span>{bullet}</span>
                 </div>
               ))}
@@ -912,8 +898,8 @@ function ProductDescriptionPopup({
                       className="flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-semibold transition"
                       style={{
                         borderColor: active ? colors.primary : "rgba(154,122,46,0.18)",
-                        backgroundColor: active ? "rgba(201,168,76,0.13)" : "rgba(0,0,0,0.2)",
-                        color: active ? colors.accent : colors.textMuted,
+                        backgroundColor: active ? "rgba(201,168,76,0.13)" : "rgba(255,255,255,0.62)",
+                        color: active ? "#8A6500" : "#2A2116",
                       }}
                     >
                       <span>{size.name}</span>
@@ -923,15 +909,15 @@ function ProductDescriptionPopup({
                 })}
               </div>
             </div>
-            <div style={{ borderColor: `${colors.primary}40` }} className="mt-6 rounded-2xl border bg-black/25 p-4">
-              <p style={{ color: colors.textMuted }} className="text-xs">Lựa chọn đã chọn</p>
-              <p style={{ color: colors.text }} className="mt-1 font-bold">{selectedSize.name}</p>
-              <p style={{ color: colors.primary }} className="mt-2 text-3xl font-bold">{selectedSize.price}</p>
+            <div className="mt-6 rounded-2xl border border-[#C9A84C]/25 bg-[#E8DDC8] p-4">
+              <p className="text-xs text-[#8A7B62]">Lựa chọn đã chọn</p>
+              <p className="mt-1 font-bold">{selectedSize.name}</p>
+              <p className="mt-2 text-3xl font-bold text-[#9A7A2E]">{selectedSize.price}</p>
             </div>
-            <div style={{ color: colors.textMuted }} className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold">
-              <div className="rounded-xl bg-black/20 px-2 py-2">Giao lắp tận nơi</div>
-              <div className="rounded-xl bg-black/20 px-2 py-2">Bảo hành 5 năm</div>
-              <div className="rounded-xl bg-black/20 px-2 py-2">Tư vấn size</div>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold text-[#7C6A4F]">
+              <div className="rounded-xl bg-white/45 px-2 py-2">Giao lắp tận nơi</div>
+              <div className="rounded-xl bg-white/45 px-2 py-2">Bảo hành 5 năm</div>
+              <div className="rounded-xl bg-white/45 px-2 py-2">Tư vấn size</div>
             </div>
             <form onSubmit={handlePopupSubmit} className="mt-6 space-y-3">
               <div className="sf-product-popup-form grid gap-3 sm:grid-cols-2">
@@ -939,14 +925,14 @@ function ProductDescriptionPopup({
                   value={customerName}
                   onChange={(event) => setCustomerName(event.target.value)}
                   placeholder="Họ và tên (*)"
-                  className="rounded-xl border border-[#C9A84C]/25 bg-black/25 px-4 py-3 text-sm text-[#F5EDD6] outline-none placeholder:text-[#B9B09F]/50 focus:border-[#C9A84C]"
+                  className="rounded-xl border border-[#C9A84C]/25 bg-white/65 px-4 py-3 text-sm text-[#2A2116] outline-none placeholder:text-[#8A7B62] focus:border-[#C9A84C]"
                 />
                 <input
                   value={customerPhone}
                   onChange={(event) => setCustomerPhone(event.target.value)}
                   placeholder="Số điện thoại (*)"
                   inputMode="tel"
-                  className="rounded-xl border border-[#C9A84C]/25 bg-black/25 px-4 py-3 text-sm text-[#F5EDD6] outline-none placeholder:text-[#B9B09F]/50 focus:border-[#C9A84C]"
+                  className="rounded-xl border border-[#C9A84C]/25 bg-white/65 px-4 py-3 text-sm text-[#2A2116] outline-none placeholder:text-[#8A7B62] focus:border-[#C9A84C]"
                 />
               </div>
               <textarea
@@ -954,18 +940,18 @@ function ProductDescriptionPopup({
                 onChange={(event) => setCustomerNote(event.target.value)}
                 placeholder="Ghi chú thêm: kích thước lòng giường, khu vực giao lắp..."
                 rows={3}
-                className="w-full rounded-xl border border-[#C9A84C]/25 bg-black/25 px-4 py-3 text-sm text-[#F5EDD6] outline-none placeholder:text-[#B9B09F]/50 focus:border-[#C9A84C]"
+                className="w-full rounded-xl border border-[#C9A84C]/25 bg-white/65 px-4 py-3 text-sm text-[#2A2116] outline-none placeholder:text-[#8A7B62] focus:border-[#C9A84C]"
               />
-              {formError && <p style={{ color: colors.error }} className="text-sm font-semibold">{formError}</p>}
+              {formError && <p className="text-sm font-semibold text-[#B42318]">{formError}</p>}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#E8C56B] to-[#C9A84C] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-[#111922] transition disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#C9A84C] to-[#7E5A00] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Đang gửi..." : "Đặt mua ngay →"}
               </button>
             </form>
-            <p style={{ color: colors.textMuted }} className="mt-5 text-center text-xs">Giao lắp tận nơi · Bảo hành motor 5 năm</p>
+            <p className="mt-5 text-center text-xs text-[#8A7B62]">Giao lắp tận nơi · Bảo hành motor 5 năm</p>
           </div>
         </div>
       </div>
@@ -974,8 +960,7 @@ function ProductDescriptionPopup({
 }
 
 export default function ProductDetailClient({ product, related, theme }: Props) {
-  const { layout } = theme;
-  const colors = PRODUCT_DETAIL_PALETTE;
+  const { colors, layout } = theme;
   const brandColors = colors;
   const accentText = colors.background;
   const router = useRouter();
@@ -1140,14 +1125,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
 
       {/* Main product section */}
       <ScrollReveal variant="fadeUp" delay={0}>
-      <div
-        style={{
-          background: PRODUCT_DETAIL_PANEL_BACKGROUND,
-          borderColor: PRODUCT_DETAIL_OUTER_BORDER,
-          boxShadow: "0 28px 80px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(88, 69, 30, 0.12)",
-        }}
-        className="grid grid-cols-1 gap-8 rounded-[28px] border p-4 sm:gap-12 sm:p-6 lg:grid-cols-2 lg:p-8 mb-12 sm:mb-16"
-      >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 mb-12 sm:mb-16">
         {/* Left: Image Gallery */}
         <div>
           {/* Main image */}
@@ -1659,14 +1637,7 @@ export default function ProductDetailClient({ product, related, theme }: Props) 
       </div>
       </ScrollReveal>
       {/* Tabs: Mô tả / Tính năng / Thông số / Đánh giá */}
-      <div
-        style={{
-          background: PRODUCT_DETAIL_PANEL_BACKGROUND,
-          borderColor: PRODUCT_DETAIL_OUTER_BORDER,
-          boxShadow: "0 24px 70px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(88, 69, 30, 0.1)",
-        }}
-        className="mb-16 rounded-[28px] border p-4 sm:p-6 lg:p-8"
-      >
+      <div className="mb-16">
         {/* Tab headers */}
         <div
           style={{ borderColor: colors.border }}

@@ -15,11 +15,6 @@ import { absoluteUrl } from "@/lib/site-url";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbSchema, productSchema } from "@/lib/seo-schema";
 import { PRODUCT_FAMILIES, inferProductFamily } from "@/lib/product-families";
-import {
-  PRODUCT_DETAIL_PAGE_BASE,
-  PRODUCT_DETAIL_PAGE_BACKGROUND,
-  PRODUCT_DETAIL_PALETTE,
-} from "@/lib/product-detail-palette";
 
 export const dynamic = "force-dynamic";
 
@@ -79,9 +74,11 @@ export default async function ProductDetailPage({ params }: Props) {
     <main
       style={{
         minHeight: "100vh",
-        color: PRODUCT_DETAIL_PALETTE.text,
-        backgroundColor: PRODUCT_DETAIL_PAGE_BASE,
-        backgroundImage: PRODUCT_DETAIL_PAGE_BACKGROUND,
+        backgroundColor: theme.colors.background,
+        backgroundImage: `
+          radial-gradient(circle at top left, color-mix(in srgb, ${theme.colors.primary} 12%, transparent), transparent 34rem),
+          linear-gradient(135deg, color-mix(in srgb, ${theme.colors.surface} 92%, transparent), color-mix(in srgb, ${theme.colors.background} 96%, transparent))
+        `,
       }}
     >
       <JsonLd data={productSchema(product)} />
