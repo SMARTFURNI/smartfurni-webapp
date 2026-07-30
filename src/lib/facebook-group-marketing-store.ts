@@ -12,10 +12,15 @@ import {
 } from "./facebook-group-marketing-business";
 import {
   DEFAULT_FACEBOOK_GROUP_SETTINGS, FACEBOOK_GROUP_TOPIC_TAXONOMY,
+  normalizeFacebookGroupAiSettings,
   type DashboardData, type FacebookGroupLeadSource,
   type FacebookGroupSettings, type FacebookGroupTopicDefinition,
 } from "./facebook-group-marketing-types";
 import { analyzeFacebookGroupRulesWithAi } from "./facebook-group-marketing-ai";
+import {
+  generateFacebookGroupAiJson,
+  getFacebookGroupAiModelCatalog,
+} from "./facebook-group-ai-provider";
 
 type Actor = { id: string; name: string; isAdmin?: boolean };
 type Filters = Record<string, string | undefined>;
@@ -78,6 +83,7 @@ export async function getFacebookGroupSettings(): Promise<FacebookGroupSettings>
     ...DEFAULT_FACEBOOK_GROUP_SETTINGS,
     ...value,
     groupTopics: normalizeGroupTopics(value.groupTopics),
+    ai: normalizeFacebookGroupAiSettings(value.ai),
     contact: { ...DEFAULT_FACEBOOK_GROUP_SETTINGS.contact, ...value.contact },
     scoreWeights: { ...DEFAULT_FACEBOOK_GROUP_SETTINGS.scoreWeights, ...value.scoreWeights },
     gradeRules: { ...DEFAULT_FACEBOOK_GROUP_SETTINGS.gradeRules, ...value.gradeRules },
@@ -91,6 +97,7 @@ export async function saveFacebookGroupSettings(input: Partial<FacebookGroupSett
   const settings: FacebookGroupSettings = {
     ...current,
     ...input,
+    ai: normalizeFacebookGroupAiSettings(input.ai || current.ai),
     contact: { ...current.contact, ...input.contact },
     scoreWeights: { ...current.scoreWeights, ...input.scoreWeights },
     gradeRules: { ...current.gradeRules, ...input.gradeRules },
@@ -108,7 +115,7 @@ export async function saveFacebookGroupSettings(input: Partial<FacebookGroupSett
 }
 
 export async function getFacebookGroupMarketingOptions() {
-  const [pages, groups, campaigns, content, posts, staff, products, leads, blueprints, pillars, settings] = await Promise.all([
+  const [pages, groups, campaigns, content, posts, staff, products, leads, blueprints, pillars, settings, aiModels] = await Promise.all([
     query(
       `SELECT id, name, facebook_page_id AS "facebookPageId", status
        FROM facebook_pages
@@ -179,10 +186,11 @@ export async function getFacebookGroupMarketingOptions() {
        ORDER BY sort_order, name`,
     ),
     getFacebookGroupSettings(),
+    getFacebookGroupAiModelCatalog(),
   ]);
   return {
     pages, groups, campaigns, content, posts, staff, products, leads,
-    blueprints, pillars, topics: settings.groupTopics,
+    blueprints, pillars, topics: settings.groupTopics, aiModels,
   };
 }
 
@@ -878,34 +886,10 @@ export async function suggestFacebookGroupContent(input: Record<string, unknown>
     [groupId, productId, input.campaignId || null],
   );
   if (!context) throw new Error("Không tìm thấy Group hoặc sản phẩm.");
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY chưa được cấu hình.");
   const product = typeof context.product === "string" ? JSON.parse(context.product) : context.product;
   const analysis = typeof context.rule_analysis === "string"
     ? JSON.parse(context.rule_analysis) : context.rule_analysis;
   const settings = await getFacebookGroupSettings();
-  const { GoogleGenerativeAI, SchemaType } = await import("@google/generative-ai");
-  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
-    model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
-    generationConfig: {
-      temperature: 0.65,
-      maxOutputTokens: 1800,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          opening: { type: SchemaType.STRING },
-          body: { type: SchemaType.STRING },
-          cta: { type: SchemaType.STRING },
-          contentType: {
-            type: SchemaType.STRING,
-            enum: ["community_share", "education", "story", "sales"],
-          },
-        },
-        required: ["opening", "body", "cta", "contentType"],
-      },
-    },
-  });
   const prompt = `Bạn là chuyên viên nội dung Facebook Group của SmartFurni.
 Hãy viết một bài chia sẻ có ích, tự nhiên, phù hợp đúng cộng đồng; không giả làm khách hàng,
 không bịa trải nghiệm, không dùng ngôn ngữ spam và không tự động đăng.
@@ -929,8 +913,14 @@ Trả về DUY NHẤT JSON hợp lệ:
 {"opening":"câu mở đầu","body":"nội dung chính 120-250 từ","cta":"lời mời hành động ngắn, không tự đặt mã nguồn và không tự bịa liên hệ","contentType":"community_share|education|story|sales"}
 Nếu nội quy không cho bán hàng, phải ưu tiên education hoặc community_share.
 Không tự chèn giá, số điện thoại hoặc link; hệ thống sẽ bổ sung liên hệ chính thức theo nội quy đã xác minh.`;
-  const response = await model.generateContent(prompt);
-  const suggestion = parseFacebookGroupAiSuggestion(response.response.text());
+  const generated = await generateFacebookGroupAiJson<Record<string, unknown>>({
+    prompt,
+    settings: settings.ai,
+    selection: text(input.aiModel, 100) || null,
+    temperature: 0.65,
+    maxOutputTokens: 1800,
+  });
+  const suggestion = parseFacebookGroupAiSuggestion(JSON.stringify(generated.result));
   const result = {
     opening: text(suggestion.opening, 5000),
     body: text(suggestion.body, 30_000),
@@ -940,10 +930,19 @@ Không tự chèn giá, số điện thoại hoặc link; hệ thống sẽ bổ
       contact: settings.contact,
     }),
     contentType: text(suggestion.contentType, 50) || "community_share",
+    ai: {
+      provider: generated.provider,
+      model: generated.model,
+      fallbackUsed: generated.fallbackUsed,
+    },
   };
   if (!result.body) throw new Error("AI chưa tạo được nội dung chính.");
   await logActivity(actor, "content.ai_suggested", "content", undefined, undefined, {
-    groupId, productId, model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+    groupId,
+    productId,
+    provider: generated.provider,
+    model: generated.model,
+    fallbackUsed: generated.fallbackUsed,
   });
   return result;
 }

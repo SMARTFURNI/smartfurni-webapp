@@ -77,6 +77,7 @@ export default function AiGroupGrowthBuilder({
   const [products, setProducts] = useState<Row[]>([]);
   const [topics, setTopics] = useState<Row[]>([]);
   const [staff, setStaff] = useState<Row[]>([]);
+  const [aiModels, setAiModels] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -95,6 +96,7 @@ export default function AiGroupGrowthBuilder({
       setProducts(options.products || []);
       setTopics(options.topics || []);
       setStaff(options.staff || []);
+      setAiModels(options.aiModels || null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không thể tải Group Builder.");
     } finally {
@@ -113,6 +115,7 @@ export default function AiGroupGrowthBuilder({
       objective: String(form.get("objective") || ""),
       region: String(form.get("region") || ""),
       groupKind: String(form.get("groupKind") || "owned"),
+      aiModel: String(form.get("aiModel") || ""),
     };
     setBusy(true); setError(""); setNotice("");
     try {
@@ -123,7 +126,9 @@ export default function AiGroupGrowthBuilder({
       setPlan(result.plan);
       setPlanMeta({
         runId: result.runId,
+        provider: result.provider,
         model: result.model,
+        fallbackUsed: result.fallbackUsed,
         promptVersion: result.promptVersion,
       });
       setDraftContext(context);
@@ -276,6 +281,18 @@ export default function AiGroupGrowthBuilder({
               <input name="region" required defaultValue="Việt Nam" className={inputClass} />
             </label>
             <label className="md:col-span-2 grid gap-1.5 text-sm text-slate-300">
+              <span>Model AI</span>
+              <select name="aiModel" className={inputClass}>
+                <option value="">Tự động theo cấu hình hệ thống</option>
+                {(Array.isArray(aiModels?.models) ? aiModels.models : []).map((item: unknown) => {
+                  const model = item && typeof item === "object" ? item as Row : {};
+                  return <option key={String(model.id)} value={String(model.id)} disabled={!model.configured}>
+                    {String(model.label)}{model.configured ? "" : " — chưa có API key"}
+                  </option>;
+                })}
+              </select>
+            </label>
+            <label className="md:col-span-2 grid gap-1.5 text-sm text-slate-300">
               <span>Dòng sản phẩm <b className="text-red-300">*</b></span>
               <div className="grid max-h-48 gap-2 overflow-y-auto rounded-xl border border-amber-200/10 bg-[#0b1019] p-3 md:grid-cols-2">
                 {products.map(product => <label key={String(product.id)} className="flex items-start gap-2 rounded-lg p-2 text-sm hover:bg-white/[.03]">
@@ -314,7 +331,8 @@ export default function AiGroupGrowthBuilder({
               onChange={event => setPlan(current => current ? { ...current, selectedName: event.target.value } : current)}
               className="mt-2 w-full border-0 bg-transparent p-0 text-2xl font-black text-white outline-none" />
             <p className="mt-2 text-xs text-slate-500">
-              Model: {String(planMeta?.model || "—")} · Prompt: {String(planMeta?.promptVersion || "—")}
+              Model: {String(planMeta?.provider || "AI")} / {String(planMeta?.model || "—")}
+              {planMeta?.fallbackUsed ? " · đã dùng dự phòng" : ""} · Prompt: {String(planMeta?.promptVersion || "—")}
             </p>
           </div>
           <button onClick={() => void saveBlueprint()} disabled={busy}

@@ -10,6 +10,7 @@ import {
   DEFAULT_FACEBOOK_GROUP_SETTINGS,
   type RuleAnalysis,
 } from "./facebook-group-marketing-types";
+import { generateFacebookGroupAiJson } from "./facebook-group-ai-provider";
 
 export type FacebookGroupAiActor = {
   id: string;
@@ -592,37 +593,12 @@ export function buildFacebookGroupOperationalCandidates(
 }
 
 async function generateJson<T>(prompt: string): Promise<{ result: T; model: string }> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY chưa được cấu hình.");
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.15,
-          maxOutputTokens: 4096,
-          responseMimeType: "application/json",
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      }),
-      signal: AbortSignal.timeout(60_000),
-    },
-  );
-  const payload = await response.json().catch(() => ({})) as {
-    error?: { message?: string };
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
-  if (!response.ok) throw new Error(payload.error?.message || "AI chưa trả về kết quả.");
-  const raw = payload.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("") || "";
-  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-  return { result: JSON.parse(cleaned) as T, model };
+  return generateFacebookGroupAiJson<T>({
+    prompt,
+    temperature: 0.15,
+    maxOutputTokens: 4096,
+    timeoutMs: 60_000,
+  });
 }
 
 async function loadAiSnapshot(): Promise<AiSnapshot> {

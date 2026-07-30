@@ -6,7 +6,10 @@ import {
   parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
   validateFacebookGroupSchedule,
 } from "@/lib/facebook-group-marketing-business";
-import { DEFAULT_FACEBOOK_GROUP_SETTINGS as settings } from "@/lib/facebook-group-marketing-types";
+import {
+  DEFAULT_FACEBOOK_GROUP_SETTINGS as settings,
+  normalizeFacebookGroupAiSettings,
+} from "@/lib/facebook-group-marketing-types";
 import { canDeleteFacebookGroupMarketing } from "@/lib/facebook-group-marketing-permissions";
 import {
   blueprintInputSchema,
@@ -27,6 +30,29 @@ const validSchedule = {
 };
 
 describe("Facebook Group Marketing business rules", () => {
+  it("chuẩn hóa cấu hình model AI và luôn dùng nhà cung cấp dự phòng khác model chính", () => {
+    expect(normalizeFacebookGroupAiSettings({
+      primaryProvider: "openai",
+      fallbackProvider: "openai",
+      openaiModel: "gpt-5.6",
+      geminiModel: "gemini-2.0-flash",
+      autoFallback: true,
+    })).toEqual({
+      primaryProvider: "openai",
+      fallbackProvider: "gemini",
+      openaiModel: "gpt-5.6",
+      geminiModel: "gemini-2.0-flash",
+      autoFallback: true,
+    });
+    expect(normalizeFacebookGroupAiSettings({
+      primaryProvider: "khong-hop-le",
+      openaiModel: "model-tu-nhap",
+    })).toMatchObject({
+      primaryProvider: "openai",
+      openaiModel: "gpt-4.1-mini",
+    });
+  });
+
   it("chỉ cho phép phiên đăng nhập admin xóa bản ghi", () => {
     expect(canDeleteFacebookGroupMarketing({ isAdmin: true })).toBe(true);
     expect(canDeleteFacebookGroupMarketing({ isAdmin: false })).toBe(false);

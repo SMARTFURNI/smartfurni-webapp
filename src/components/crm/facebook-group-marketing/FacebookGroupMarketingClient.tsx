@@ -13,10 +13,24 @@ import AiGroupGrowthBuilder from "./AiGroupGrowthBuilder";
 import GroupGrowthLeads from "./GroupGrowthLeads";
 
 type Row = Record<string, unknown>;
+type AiModelOption = {
+  id: string;
+  provider: "openai" | "gemini";
+  model: string;
+  label: string;
+  configured: boolean;
+};
+type AiModelCatalog = {
+  configured: { openai: boolean; gemini: boolean };
+  defaultSelection: string;
+  settings: Row;
+  models: AiModelOption[];
+};
 type FormOptions = {
   pages: Row[]; groups: Row[]; campaigns: Row[]; content: Row[]; posts: Row[];
   staff: Row[]; products: Row[]; leads: Row[]; topics: Row[];
   blueprints: Row[]; pillars: Row[];
+  aiModels: AiModelCatalog;
 };
 type GroupDiscoveryResult = {
   suggestions: Row[];
@@ -52,6 +66,12 @@ const labels: Record<string, string> = {
 const emptyOptions: FormOptions = {
   pages: [], groups: [], campaigns: [], content: [], posts: [], staff: [], products: [],
   leads: [], topics: [], blueprints: [], pillars: [],
+  aiModels: {
+    configured: { openai: false, gemini: false },
+    defaultSelection: "openai:gpt-4.1-mini",
+    settings: {},
+    models: [],
+  },
 };
 
 const statusLabel: Record<string, string> = {
@@ -192,9 +212,12 @@ export default function FacebookGroupMarketingClient({
       } else if (section === "builder" || section === "leads") {
         setRows([]);
       } else if (section === "settings") {
-        const [settingsResult, pages] = await Promise.all([api("settings"), api("pages")]);
+        const [settingsResult, pages, options] = await Promise.all([
+          api("settings"), api("pages"), api("options"),
+        ]);
         setSettingsData(settingsResult);
         setRows(pages);
+        setFormOptions(options);
       } else if (section === "comments") {
         const [comments, checks, options] = await Promise.all([
           api(`comments?limit=50&offset=${page * 50}`),
@@ -640,6 +663,7 @@ export default function FacebookGroupMarketingClient({
         <GroupGrowthLeads />
       ) : section === "settings" ? (
         <SettingsView data={settingsData || {}} pages={rows} canEdit={permissions.settings}
+          aiModels={formOptions.aiModels}
           canDelete={permissions.admin}
           onSave={async payload => { await action("settings", payload); }}
           onSyncPages={async () => {
@@ -1584,13 +1608,14 @@ function CreateForm({ resource, options, onSubmit }: {
 }) {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState("");
+  const [aiMeta, setAiMeta] = useState("");
   const topicOptions = options.topics.length ? options.topics : FACEBOOK_GROUP_TOPIC_TAXONOMY;
   const selectClass = "fbg-form-control rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5 text-white";
   const suggestContent = async (button: HTMLButtonElement) => {
     const form = button.form;
     if (!form) return;
     const data = new FormData(form);
-    setAiBusy(true); setAiError("");
+    setAiBusy(true); setAiError(""); setAiMeta("");
     try {
       const result = await api("content/suggest", {
         method: "POST",
@@ -1600,6 +1625,7 @@ function CreateForm({ resource, options, onSubmit }: {
           productId: data.get("productId"),
           contentType: data.get("contentType"),
           brief: data.get("brief"),
+          aiModel: data.get("aiModel"),
         }),
       });
       const setValue = (name: string, value: unknown) => {
@@ -1610,6 +1636,11 @@ function CreateForm({ resource, options, onSubmit }: {
       setValue("body", result.body);
       setValue("cta", result.cta);
       setValue("contentType", result.contentType);
+      if (result.ai) {
+        setAiMeta(`${result.ai.provider === "openai" ? "OpenAI" : "Gemini"} · ${result.ai.model}${
+          result.ai.fallbackUsed ? " · đã tự chuyển sang model dự phòng" : ""
+        }`);
+      }
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "Không thể tạo gợi ý AI.");
     } finally {
@@ -1673,6 +1704,14 @@ function CreateForm({ resource, options, onSubmit }: {
       <Field label="Trụ cột nội dung" name="pillarId"><select name="pillarId" className={selectClass}><option value="">Chưa gắn trụ cột</option>{options.pillars.map(pillar => <option key={String(pillar.id)} value={String(pillar.id)}>{String(pillar.name)} ({Number(pillar.contentRatio || 0)}%)</option>)}</select></Field>
       <Field label="Mã sản phẩm dùng trong mã nguồn" name="productCode" />
       <Field label="Loại nội dung" name="contentType"><select name="contentType" className={selectClass}><option value="community_share">Chia sẻ cộng đồng</option><option value="sales">Bài bán hàng</option><option value="education">Kiến thức</option></select></Field>
+      <Field label="Model AI" name="aiModel">
+        <select name="aiModel" defaultValue="" className={selectClass}>
+          <option value="">Tự động theo cấu hình hệ thống</option>
+          {options.aiModels.models.map(model => <option key={model.id} value={model.id} disabled={!model.configured}>
+            {model.label}{model.configured ? "" : " — chưa có API key"}
+          </option>)}
+        </select>
+      </Field>
       <Field label="Yêu cầu thêm cho AI" name="brief"><input name="brief" placeholder="Ví dụ: tập trung người cao tuổi, không nêu giá" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" /></Field>
       <div className="md:col-span-2">
         <button type="button" disabled={aiBusy} onClick={event => void suggestContent(event.currentTarget)}
@@ -1681,6 +1720,7 @@ function CreateForm({ resource, options, onSubmit }: {
           {aiBusy ? "AI đang đọc nội quy và sản phẩm…" : "AI gợi ý theo nội quy thật"}
         </button>
         {aiError && <p className="mt-2 text-xs text-red-300">{aiError}</p>}
+        {aiMeta && <p className="mt-2 text-xs text-emerald-300">Đã tạo bằng {aiMeta}.</p>}
       </div>
       <div className="md:col-span-2"><Field label="Câu mở đầu" name="opening"><textarea name="opening" rows={2} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
       <div className="md:col-span-2"><Field label="Nội dung chính" name="body" required><textarea name="body" required rows={7} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5" /></Field></div>
@@ -2102,10 +2142,11 @@ function EditForm({ resource, row, options, onSubmit }: {
 }
 
 function SettingsView({
-  data, pages, canEdit, canDelete, onSave, onSyncPages, onAddPage, onEditPage, onDeletePage,
+  data, pages, aiModels, canEdit, canDelete, onSave, onSyncPages, onAddPage, onEditPage, onDeletePage,
 }: {
   data: Row;
   pages: Row[];
+  aiModels: AiModelCatalog;
   canEdit: boolean;
   canDelete: boolean;
   onSave: (payload: Row) => Promise<void>;
@@ -2118,11 +2159,20 @@ function SettingsView({
   useEffect(() => setForm(data), [data]);
   const contact = form.contact && typeof form.contact === "object" && !Array.isArray(form.contact)
     ? form.contact as Row : {};
+  const ai = form.ai && typeof form.ai === "object" && !Array.isArray(form.ai)
+    ? form.ai as Row : aiModels.settings;
   const updateContact = (key: string, nextValue: string) => {
     setForm(current => {
       const currentContact = current.contact && typeof current.contact === "object" && !Array.isArray(current.contact)
         ? current.contact as Row : {};
       return { ...current, contact: { ...currentContact, [key]: nextValue } };
+    });
+  };
+  const updateAi = (key: string, nextValue: unknown) => {
+    setForm(current => {
+      const currentAi = current.ai && typeof current.ai === "object" && !Array.isArray(current.ai)
+        ? current.ai as Row : aiModels.settings;
+      return { ...current, ai: { ...currentAi, [key]: nextValue } };
     });
   };
   const fields = [
@@ -2137,6 +2187,68 @@ function SettingsView({
     <div className="fbg-safe-banner flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/[.06] p-4 text-sm text-emerald-200">
       <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
       <div><b className="block text-emerald-200">Chế độ vận hành an toàn đang bật</b><span className="mt-0.5 block text-xs text-emerald-200/65">Không tự động đăng và không lưu mật khẩu, cookie hoặc token Facebook.</span></div>
+    </div>
+    <div className="fbg-settings-card rounded-2xl border border-white/8 bg-white/[.03] p-5">
+      <div className="mb-4">
+        <h3 className="font-bold">Model AI cho Facebook Group Marketing</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          API key chỉ được đọc ở máy chủ. Khi model chính hết quota, CRM có thể tự chuyển sang nhà cung cấp dự phòng.
+        </p>
+      </div>
+      <div className="mb-4 flex flex-wrap gap-2 text-xs">
+        <span className={`rounded-full border px-3 py-1.5 ${aiModels.configured.openai
+          ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
+          : "border-red-400/25 bg-red-400/10 text-red-200"}`}>
+          OpenAI: {aiModels.configured.openai ? "đã kết nối" : "chưa có API key"}
+        </span>
+        <span className={`rounded-full border px-3 py-1.5 ${aiModels.configured.gemini
+          ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
+          : "border-red-400/25 bg-red-400/10 text-red-200"}`}>
+          Gemini: {aiModels.configured.gemini ? "đã kết nối" : "chưa có API key"}
+        </span>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="grid gap-1 text-sm text-slate-300">
+          Nhà cung cấp chính
+          <select disabled={!canEdit} value={String(ai.primaryProvider || "openai")}
+            onChange={event => {
+              const provider = event.target.value;
+              updateAi("primaryProvider", provider);
+              updateAi("fallbackProvider", provider === "openai" ? "gemini" : "openai");
+            }}
+            className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5">
+            <option value="openai">OpenAI / ChatGPT</option>
+            <option value="gemini">Google Gemini</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm text-slate-300">
+          Model OpenAI
+          <select disabled={!canEdit} value={String(ai.openaiModel || "gpt-4.1-mini")}
+            onChange={event => updateAi("openaiModel", event.target.value)}
+            className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5">
+            {aiModels.models.filter(model => model.provider === "openai").map(model =>
+              <option key={model.id} value={model.model}>{model.label}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm text-slate-300">
+          Model Gemini
+          <select disabled={!canEdit} value={String(ai.geminiModel || "gemini-2.5-flash")}
+            onChange={event => updateAi("geminiModel", event.target.value)}
+            className="rounded-xl border border-white/10 bg-[#161a23] px-3 py-2.5">
+            {aiModels.models.filter(model => model.provider === "gemini").map(model =>
+              <option key={model.id} value={model.model}>{model.label}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-3 rounded-xl border border-white/8 bg-black/15 px-3 py-2.5 text-sm text-slate-300">
+          <input type="checkbox" disabled={!canEdit} checked={ai.autoFallback !== false}
+            onChange={event => updateAi("autoFallback", event.target.checked)} />
+          Tự động dùng model dự phòng khi lỗi/quá quota
+        </label>
+      </div>
+      {canEdit && <button onClick={() => void onSave(form)}
+        className="fbg-primary-button mt-5 rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">
+        Lưu cấu hình AI
+      </button>}
     </div>
     <div className="fbg-settings-card rounded-2xl border border-white/8 bg-white/[.03] p-5">
       <div className="mb-4">

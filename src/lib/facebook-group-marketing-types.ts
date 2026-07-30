@@ -14,6 +14,63 @@ export interface FacebookGroupTopicDefinition {
   searchTerms: string[];
 }
 
+export type FacebookGroupAiProvider = "openai" | "gemini";
+
+export interface FacebookGroupAiSettings {
+  primaryProvider: FacebookGroupAiProvider;
+  fallbackProvider: FacebookGroupAiProvider;
+  openaiModel: string;
+  geminiModel: string;
+  autoFallback: boolean;
+}
+
+export const FACEBOOK_GROUP_AI_MODELS = [
+  { id: "openai:gpt-5.6", provider: "openai", model: "gpt-5.6", label: "OpenAI GPT-5.6" },
+  { id: "openai:gpt-4.1-mini", provider: "openai", model: "gpt-4.1-mini", label: "OpenAI GPT-4.1 mini" },
+  { id: "gemini:gemini-2.5-flash", provider: "gemini", model: "gemini-2.5-flash", label: "Google Gemini 2.5 Flash" },
+  { id: "gemini:gemini-2.0-flash", provider: "gemini", model: "gemini-2.0-flash", label: "Google Gemini 2.0 Flash" },
+] as const;
+
+export const DEFAULT_FACEBOOK_GROUP_AI_SETTINGS: FacebookGroupAiSettings = {
+  primaryProvider: "openai",
+  fallbackProvider: "gemini",
+  openaiModel: "gpt-4.1-mini",
+  geminiModel: "gemini-2.5-flash",
+  autoFallback: true,
+};
+
+export function normalizeFacebookGroupAiSettings(value: unknown): FacebookGroupAiSettings {
+  const source = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Partial<FacebookGroupAiSettings> : {};
+  const providers: FacebookGroupAiProvider[] = ["openai", "gemini"];
+  const primaryProvider = providers.includes(source.primaryProvider as FacebookGroupAiProvider)
+    ? source.primaryProvider as FacebookGroupAiProvider
+    : DEFAULT_FACEBOOK_GROUP_AI_SETTINGS.primaryProvider;
+  let fallbackProvider = providers.includes(source.fallbackProvider as FacebookGroupAiProvider)
+    ? source.fallbackProvider as FacebookGroupAiProvider
+    : primaryProvider === "openai" ? "gemini" : "openai";
+  if (fallbackProvider === primaryProvider) {
+    fallbackProvider = primaryProvider === "openai" ? "gemini" : "openai";
+  }
+  const allowedOpenAi = FACEBOOK_GROUP_AI_MODELS
+    .filter(item => item.provider === "openai")
+    .map(item => item.model as string);
+  const allowedGemini = FACEBOOK_GROUP_AI_MODELS
+    .filter(item => item.provider === "gemini")
+    .map(item => item.model as string);
+  return {
+    primaryProvider,
+    fallbackProvider,
+    openaiModel: allowedOpenAi.includes(String(source.openaiModel || ""))
+      ? String(source.openaiModel)
+      : DEFAULT_FACEBOOK_GROUP_AI_SETTINGS.openaiModel,
+    geminiModel: allowedGemini.includes(String(source.geminiModel || ""))
+      ? String(source.geminiModel)
+      : DEFAULT_FACEBOOK_GROUP_AI_SETTINGS.geminiModel,
+    autoFallback: source.autoFallback !== false,
+  };
+}
+
 export const FACEBOOK_GROUP_TOPIC_TAXONOMY = [
   {
     key: "Phòng trọ",
@@ -73,6 +130,7 @@ export const FACEBOOK_GROUP_TOPIC_TAXONOMY = [
 
 export interface FacebookGroupSettings {
   groupTopics: FacebookGroupTopicDefinition[];
+  ai: FacebookGroupAiSettings;
   contact: {
     hotline: string;
     zalo: string;
@@ -110,6 +168,7 @@ export const DEFAULT_FACEBOOK_GROUP_SETTINGS: FacebookGroupSettings = {
     ...topic,
     searchTerms: [...topic.searchTerms],
   })),
+  ai: { ...DEFAULT_FACEBOOK_GROUP_AI_SETTINGS },
   contact: {
     hotline: "0918.326.552",
     zalo: "0918.326.552",
