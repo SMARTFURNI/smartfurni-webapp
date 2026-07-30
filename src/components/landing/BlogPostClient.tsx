@@ -8,6 +8,7 @@ import Footer from "@/components/landing/Footer";
 import type { SiteTheme } from "@/lib/theme-types";
 import type { Product } from "@/lib/product-store";
 import { trackBlogCtaClick, trackDirectBlogProductClick } from "@/lib/blog-attribution";
+import { normalizeBlogMarkdown } from "@/lib/blog-markdown";
 
 interface Props {
   post: BlogPost;
@@ -69,7 +70,7 @@ interface ArticleImageBlock {
 }
 
 function normalizeArticleMarkdown(content: string): string {
-  return content
+  return normalizeBlogMarkdown(content
     .replace(
       /<!--\s*SMARTFURNI_AI_IMAGE:([^\s>]+):START\s*-->\s*([\s\S]*?)\s*<!--\s*SMARTFURNI_AI_IMAGE:\1:END\s*-->/g,
       (_match, _id: string, imageBlock: string) => {
@@ -81,8 +82,7 @@ function normalizeArticleMarkdown(content: string): string {
       },
     )
     .replace(/<!--\s*SMARTFURNI_AI_IMAGE:[^>]*-->/g, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  );
 }
 
 function parseArticleImageBlock(block: string): ArticleImageBlock | null {

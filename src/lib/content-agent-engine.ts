@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z } from "zod";
 import { CATEGORIES, type BlogCategory } from "./blog-data";
+import { normalizeBlogMarkdown } from "./blog-markdown";
 import { PRODUCT_FAMILIES } from "./product-families";
 import {
   createContentItemId,
@@ -211,6 +212,9 @@ ${SAFETY_RULES}
 Yêu cầu bài:
 - 900-1600 từ, Markdown thuần; không có H1 trong content vì title là H1.
 - Mở bài trả lời trực tiếp search intent, sau đó H2/H3 rõ ràng, đoạn ngắn, danh sách khi hữu ích.
+- Chỉ dùng heading "##" và "###"; không dùng "####" hoặc heading sâu hơn. Mỗi heading phải nằm trên một dòng riêng, có một dòng trống trước và sau.
+- Danh sách chỉ dùng "- ". Mỗi mục danh sách phải nằm trên một dòng riêng; tuyệt đối không ghép nhiều mục "* **Nhãn:** ..." trong cùng một dòng hoặc cùng một đoạn.
+- Mỗi đoạn văn, danh sách và marker phải cách nhau bằng một dòng trống. Không dùng HTML để định dạng.
 - Có ít nhất 2 liên kết nội bộ dạng Markdown [anchor](/duong-dan); dùng đúng URL trang dòng sản phẩm đã cung cấp và /blog.
 - Chèn chính xác marker [[SMARTFURNI_PRODUCTS]] sau phần giải thích/giải pháp phù hợp đầu tiên, không đặt ngay ở mở bài.
 - Chèn chính xác marker [[SMARTFURNI_CTA]] sau phần hướng dẫn/so sánh chính và trước phần kết luận.
@@ -230,7 +234,11 @@ Chỉ trả JSON:
   "productBlock": {"title":"Sản phẩm phù hợp...","description":"...","ctaLabel":"Xem toàn bộ dòng sản phẩm"},
   "articleCta": {"eyebrow":"...","title":"...","description":"...","primaryLabel":"...","secondaryLabel":"..."}
 }`;
-  return articleResponseSchema.parse(await generateJson(prompt));
+  const article = articleResponseSchema.parse(await generateJson(prompt));
+  return {
+    ...article,
+    content: normalizeBlogMarkdown(article.content),
+  };
 }
 
 export function evaluateArticle(article: GeneratedArticle, item: ContentPlanItem): ContentQaResult {

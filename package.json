@@ -19,6 +19,8 @@
     "media:railway:verify": "node scripts/migrate-media-to-railway-bucket.mjs --verify",
     "media:railway:apply": "node scripts/migrate-media-to-railway-bucket.mjs --apply-db",
     "media:railway:apply:url-change": "node scripts/migrate-media-to-railway-bucket.mjs --apply-db --confirm-url-change",
+    "blog:markdown:audit": "node --env-file=.env.production scripts/normalize-blog-markdown.mjs",
+    "blog:markdown:fix": "node --env-file=.env.production scripts/normalize-blog-markdown.mjs --apply --confirm-production",
     "app:sync": "cap sync",
     "app:assets": "node scripts/generate-smart-bed-mobile-assets.mjs",
     "app:qr": "node scripts/generate-smart-bed-qr.mjs",
