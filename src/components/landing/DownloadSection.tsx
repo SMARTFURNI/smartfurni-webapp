@@ -1,20 +1,55 @@
 "use client";
-import { useState } from "react";
+
+import Image from "next/image";
+import Link from "next/link";
+import {
+  ArrowUpRight,
+  Bluetooth,
+  Check,
+  QrCode,
+  ShieldCheck,
+  Smartphone,
+  Wifi,
+} from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 import type { SiteTheme } from "@/lib/theme-store";
-import Link from "next/link";
 
-interface Props { theme: SiteTheme; }
+interface Props {
+  theme: SiteTheme;
+}
 
 const FW_MAP: Record<string, string> = {
-  light: "300", normal: "400", medium: "500", semibold: "600", bold: "700",
+  light: "300",
+  normal: "400",
+  medium: "500",
+  semibold: "600",
+  bold: "700",
 };
 
-const GUARANTEES = [
-  { icon: "🔒", text: "Bảo hành 5 năm toàn diện" },
-  { icon: "🚚", text: "Giao & lắp đặt miễn phí" },
-  { icon: "↩️", text: "30 ngày đổi trả không lý do" },
-  { icon: "📞", text: "Hỗ trợ kỹ thuật 24/7" },
+const SMART_BED_APP_URL = "/go/bed-app";
+
+const APP_BENEFITS = [
+  {
+    icon: Bluetooth,
+    title: "Điều khiển tư thế",
+    description: "Nâng đầu, nâng chân và trở về mặt phẳng ngay trên điện thoại.",
+  },
+  {
+    icon: Wifi,
+    title: "Đồng bộ thiết bị",
+    description: "Lưu tư thế yêu thích, lịch ngủ và thiết bị SmartFurni của bạn.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Bảo mật tài khoản",
+    description: "Dữ liệu thiết bị được bảo vệ và chỉ hiển thị trong tài khoản của bạn.",
+  },
+];
+
+const INSTALL_STEPS = [
+  "Mở camera trên điện thoại",
+  "Quét mã QR và đăng nhập",
+  "Chọn “Thêm vào màn hình chính”",
 ];
 
 export default function DownloadSection({ theme }: Props) {
@@ -22,176 +57,197 @@ export default function DownloadSection({ theme }: Props) {
   const primary = theme?.colors.primary ?? "#C9A84C";
   const secondary = theme?.colors.secondary ?? "#9A7A2E";
   const textColor = theme?.colors.text ?? "#F5EDD6";
-  const borderColor = theme?.colors.border ?? "#2D2500";
-  const surfaceColor = theme?.colors.surface ?? "#1A1500";
-  const bgFrom = theme?.hero?.bgGradientFrom ?? "#080600";
-
-  const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [name, setName] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone.trim()) return;
-    setLoading(true);
-    try {
-      await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, source: "homepage-cta" }),
-      });
-    } catch {
-      // silent
-    }
-    setLoading(false);
-    setSent(true);
-  };
 
   return (
-    <section id="download" className="py-14 sm:py-20 lg:py-24 px-4 sm:px-6">
-      <div className="max-w-5xl mx-auto">
+    <section id="download" className="overflow-hidden px-4 py-14 sm:px-6 sm:py-20 lg:py-24">
+      <div className="mx-auto max-w-6xl">
         <ScrollReveal variant="fadeUp" delay={0}>
           <div
-            className="relative rounded-3xl overflow-hidden"
-            style={{ border: `1px solid ${primary}25`, backgroundColor: surfaceColor }}
+            className="relative overflow-hidden rounded-[28px] border shadow-[0_28px_90px_rgba(0,0,0,.32)]"
+            style={{
+              borderColor: `${primary}45`,
+              background:
+                "linear-gradient(135deg, rgba(24,27,34,.98) 0%, rgba(35,27,16,.98) 58%, rgba(20,20,19,.99) 100%)",
+            }}
           >
-            {/* Background glow */}
             <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: `radial-gradient(ellipse at 50% 0%, ${primary}10, transparent 60%)` }}
+              className="pointer-events-none absolute -left-28 -top-40 h-96 w-96 rounded-full blur-3xl"
+              style={{ backgroundColor: `${primary}12` }}
+            />
+            <div
+              className="pointer-events-none absolute -bottom-52 right-0 h-[430px] w-[430px] rounded-full blur-3xl"
+              style={{ backgroundColor: `${secondary}18` }}
             />
 
-            <div className="relative grid lg:grid-cols-2 gap-0">
-              {/* ── LEFT: Copy ── */}
-              <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-center gap-6">
-                <div>
-                  <div
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4"
-                    style={{ borderColor: `${primary}30`, backgroundColor: `${primary}08` }}
+            <div className="relative grid lg:grid-cols-[1.14fr_.86fr]">
+              <div className="flex flex-col justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-14 lg:py-16">
+                <div
+                  className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border px-3.5 py-2"
+                  style={{
+                    borderColor: `${primary}42`,
+                    backgroundColor: `${primary}10`,
+                    color: dl?.badge?.color ?? primary,
+                  }}
+                >
+                  <Smartphone size={15} />
+                  <span
+                    className="text-[10px] uppercase tracking-[.2em]"
+                    style={{
+                      fontSize: dl?.badge ? `${Math.min(dl.badge.fontSize, 12)}px` : "10px",
+                      fontWeight: dl?.badge ? FW_MAP[dl.badge.fontWeight] : "600",
+                    }}
                   >
-                    <div style={{ backgroundColor: primary }} className="w-1.5 h-1.5 rounded-full" />
-                    <span style={{ fontSize: dl?.badge ? `${dl.badge.fontSize}px` : "11px", color: dl?.badge?.color ?? primary, fontWeight: dl?.badge ? FW_MAP[dl.badge.fontWeight] : "500" }} className="tracking-widest uppercase">
-                      {dl?.badge?.text ?? "Nhận Tư Vấn Miễn Phí"}
-                    </span>
-                  </div>
-
-                  <h2 className="mb-3 leading-tight">
-                    <span style={{ fontSize: dl?.title ? `clamp(22px, 3vw, ${dl.title.fontSize}px)` : "clamp(22px, 3vw, 36px)", color: dl?.title?.color ?? textColor, fontWeight: dl?.title ? FW_MAP[dl.title.fontWeight] : "300", display: "block" }}>
-                      {dl?.title?.text ?? "Không biết chọn mẫu nào?"}
-                    </span>
-                    <span style={{ fontSize: "clamp(22px, 3vw, 36px)", color: primary, fontWeight: "300", display: "block" }}>
-                      Để chuyên gia tư vấn cho bạn
-                    </span>
-                  </h2>
-
-                  <p style={{ fontSize: dl?.subtitle ? `${dl.subtitle.fontSize}px` : "14px", color: dl?.subtitle?.color ?? textColor, fontWeight: dl?.subtitle ? FW_MAP[dl.subtitle.fontWeight] : "400", opacity: 0.55 }} className="leading-relaxed">
-                    {dl?.subtitle?.text ?? "Chia sẻ kích thước phòng, ngân sách và nhu cầu — chuyên gia SmartFurni sẽ gợi ý mẫu phù hợp nhất và báo giá trong 30 phút."}
-                  </p>
+                    {dl?.badge?.text ?? "Ứng dụng SmartFurni Bed"}
+                  </span>
                 </div>
 
-                {/* Guarantees */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  {GUARANTEES.map((g) => (
-                    <div key={g.text} className="flex items-center gap-2">
-                      <span className="text-base">{g.icon}</span>
-                      <span className="text-xs" style={{ color: `${textColor}60` }}>{g.text}</span>
-                    </div>
-                  ))}
+                <h2
+                  className="max-w-2xl text-balance leading-[1.08]"
+                  style={{
+                    color: dl?.title?.color ?? textColor,
+                    fontSize: dl?.title
+                      ? `clamp(32px, 4.5vw, ${Math.max(dl.title.fontSize, 48)}px)`
+                      : "clamp(32px, 4.5vw, 52px)",
+                    fontWeight: dl?.title ? FW_MAP[dl.title.fontWeight] : "300",
+                  }}
+                >
+                  {dl?.title?.text ?? "Điều khiển giường ngay trên điện thoại"}
+                </h2>
+
+                <p
+                  className="mt-5 max-w-xl text-sm leading-7 sm:text-base"
+                  style={{
+                    color: `${dl?.subtitle?.color ?? textColor}B8`,
+                    fontWeight: dl?.subtitle ? FW_MAP[dl.subtitle.fontWeight] : "400",
+                  }}
+                >
+                  {dl?.subtitle?.text ??
+                    "Quét mã để mở SmartFurni Bed, điều khiển thiết bị, lưu tư thế yêu thích và cài lịch nghỉ ngơi."}
+                </p>
+
+                <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                  {APP_BENEFITS.map((benefit) => {
+                    const Icon = benefit.icon;
+                    return (
+                      <div
+                        key={benefit.title}
+                        className="rounded-2xl border p-4"
+                        style={{
+                          borderColor: `${primary}24`,
+                          backgroundColor: "rgba(5, 7, 10, .24)",
+                        }}
+                      >
+                        <span
+                          className="mb-3 grid h-9 w-9 place-items-center rounded-xl"
+                          style={{ color: primary, backgroundColor: `${primary}13` }}
+                        >
+                          <Icon size={17} />
+                        </span>
+                        <h3 className="text-sm font-semibold" style={{ color: textColor }}>
+                          {benefit.title}
+                        </h3>
+                        <p className="mt-1.5 text-[11px] leading-5" style={{ color: `${textColor}80` }}>
+                          {benefit.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Link
+                    href={SMART_BED_APP_URL}
+                    prefetch={false}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-6 text-sm font-bold transition-transform hover:-translate-y-0.5"
+                    style={{
+                      color: "#171205",
+                      background: `linear-gradient(135deg, ${primary}, ${secondary})`,
+                      boxShadow: `0 14px 36px ${primary}20`,
+                    }}
+                  >
+                    Mở ứng dụng trên điện thoại
+                    <ArrowUpRight size={17} />
+                  </Link>
+                  <span className="inline-flex items-center justify-center gap-2 text-xs sm:justify-start" style={{ color: `${textColor}72` }}>
+                    <Check size={14} style={{ color: primary }} />
+                    Không cần tải tệp APK
+                  </span>
                 </div>
               </div>
 
-              {/* ── RIGHT: Form ── */}
               <div
-                className="p-8 sm:p-10 lg:p-12 flex flex-col justify-center"
-                style={{ borderLeft: `1px solid ${borderColor}40` }}
+                className="relative flex items-center justify-center border-t px-5 py-9 sm:px-10 sm:py-12 lg:border-l lg:border-t-0 lg:px-12"
+                style={{ borderColor: `${primary}22` }}
               >
-                {sent ? (
-                  <div className="text-center py-8 space-y-4">
-                    <div className="text-5xl">✅</div>
-                    <h3 className="text-xl font-semibold" style={{ color: textColor }}>Đã nhận thông tin!</h3>
-                    <p className="text-sm" style={{ color: `${textColor}55` }}>
-                      Chuyên gia SmartFurni sẽ liên hệ với bạn trong vòng 30 phút (giờ hành chính).
-                    </p>
-                    <Link
-                      href="/products"
-                      className="inline-block mt-2 text-sm underline"
-                      style={{ color: primary }}
-                    >
-                      Xem sản phẩm trong khi chờ →
-                    </Link>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-medium mb-1.5" style={{ color: `${textColor}60` }}>
-                        Họ và tên
-                      </label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Nguyễn Văn A"
-                        className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                <div className="w-full max-w-[390px]">
+                  <div
+                    className="rounded-[26px] border p-4 shadow-[0_24px_65px_rgba(0,0,0,.28)] sm:p-5"
+                    style={{
+                      borderColor: `${primary}38`,
+                      background: "linear-gradient(160deg, rgba(255,255,255,.075), rgba(255,255,255,.025))",
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3 px-1 pb-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <QrCode size={16} style={{ color: primary }} />
+                          <span className="text-[10px] font-bold uppercase tracking-[.17em]" style={{ color: primary }}>
+                            Quét để cài app
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs" style={{ color: `${textColor}80` }}>
+                          Dùng camera điện thoại
+                        </p>
+                      </div>
+                      <span
+                        className="rounded-full border px-2.5 py-1 text-[9px] font-semibold"
                         style={{
-                          backgroundColor: `${bgFrom}`,
-                          border: `1px solid ${borderColor}`,
-                          color: textColor,
+                          borderColor: `${primary}2F`,
+                          color: `${textColor}A8`,
+                          backgroundColor: `${primary}0C`,
                         }}
-                        onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = `${primary}60`; }}
-                        onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = borderColor; }}
-                      />
+                      >
+                        iPhone & Android
+                      </span>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium mb-1.5" style={{ color: `${textColor}60` }}>
-                        Số điện thoại <span style={{ color: primary }}>*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="0901 234 567"
-                        required
-                        className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
-                        style={{
-                          backgroundColor: `${bgFrom}`,
-                          border: `1px solid ${borderColor}`,
-                          color: textColor,
-                        }}
-                        onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = `${primary}60`; }}
-                        onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = borderColor; }}
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-60"
-                      style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})`, color: bgFrom }}
-                    >
-                      {loading ? "Đang gửi..." : "Nhận tư vấn miễn phí →"}
-                    </button>
-                    <p className="text-center text-xs" style={{ color: `${textColor}30` }}>
-                      Thông tin của bạn được bảo mật tuyệt đối
-                    </p>
 
-                    <div style={{ borderTopColor: `${borderColor}40` }} className="pt-3 border-t flex gap-3">
-                      <Link
-                        href="/products"
-                        className="flex-1 py-2.5 rounded-xl text-sm font-medium text-center transition-opacity hover:opacity-70"
-                        style={{ border: `1px solid ${borderColor}`, color: `${textColor}60` }}
-                      >
-                        Xem sản phẩm
-                      </Link>
-                      <Link
-                        href="/catalogue"
-                        className="flex-1 py-2.5 rounded-xl text-sm font-medium text-center transition-opacity hover:opacity-70"
-                        style={{ border: `1px solid ${borderColor}`, color: `${textColor}60` }}
-                      >
-                        Tải catalogue
-                      </Link>
+                    <Link
+                      href={SMART_BED_APP_URL}
+                      prefetch={false}
+                      aria-label="Quét hoặc mở ứng dụng SmartFurni Bed"
+                      className="group relative block overflow-hidden rounded-[22px] bg-[#fffdf7] p-4 sm:p-5"
+                    >
+                      <Image
+                        src="/qr/smartfurni-bed-app.png"
+                        width={1600}
+                        height={1600}
+                        sizes="(max-width: 640px) 78vw, 330px"
+                        alt="Mã QR tải và cài ứng dụng SmartFurni Bed"
+                        className="h-auto w-full transition-transform duration-300 group-hover:scale-[1.015]"
+                      />
+                    </Link>
+
+                    <div className="mt-5 space-y-3 px-1 pb-1">
+                      {INSTALL_STEPS.map((step, index) => (
+                        <div key={step} className="flex items-center gap-3">
+                          <span
+                            className="grid h-6 w-6 flex-none place-items-center rounded-full text-[10px] font-bold"
+                            style={{ color: "#171205", backgroundColor: primary }}
+                          >
+                            {index + 1}
+                          </span>
+                          <span className="text-xs" style={{ color: `${textColor}B5` }}>
+                            {step}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  </form>
-                )}
+                  </div>
+
+                  <p className="mt-4 text-center text-[10px] leading-5" style={{ color: `${textColor}66` }}>
+                    Ứng dụng web SmartFurni được cài trực tiếp từ trình duyệt và luôn tự động cập nhật phiên bản mới.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
