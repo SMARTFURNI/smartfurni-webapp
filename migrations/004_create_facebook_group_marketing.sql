@@ -320,7 +320,7 @@ VALUES (
     "minGroupPostIntervalDays": 7,
     "maxDuplicateRatio": 50,
     "consecutiveRejectionsBeforePause": 2,
-    "commentCheckMinutes": [15, 60, 180, 720, 1440, 4320],
+    "commentCheckMinutes": [15, 60, 180, 720, 1440, 4320, 10080],
     "responseTargetMinutes": 30,
     "completedTaskRetentionDays": 365,
     "scoreWeights": {

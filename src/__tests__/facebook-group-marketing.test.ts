@@ -8,6 +8,11 @@ import {
 } from "@/lib/facebook-group-marketing-business";
 import { DEFAULT_FACEBOOK_GROUP_SETTINGS as settings } from "@/lib/facebook-group-marketing-types";
 import { canDeleteFacebookGroupMarketing } from "@/lib/facebook-group-marketing-permissions";
+import {
+  blueprintInputSchema,
+  blueprintPlanSchema,
+  totalPillarRatio,
+} from "@/lib/facebook-group-growth-business";
 
 const validSchedule = {
   scheduledAt: "2026-07-29T09:00:00.000Z",
@@ -243,5 +248,79 @@ Loại nội dung: Chia sẻ cộng đồng
       groundedSource: true,
       matchScore: 94,
     });
+  });
+});
+
+describe("AI Group Growth blueprint", () => {
+  const plan = {
+    nameOptions: ["Nhà nhỏ sống chất", "Tối ưu không gian Việt", "Cộng đồng nội thất đa năng"],
+    selectedName: "Nhà nhỏ sống chất",
+    positioning: "Cộng đồng chia sẻ giải pháp sử dụng không gian nhỏ.",
+    description: "Nơi thành viên trao đổi kinh nghiệm bố trí nhà nhỏ.",
+    rules: [
+      "Tôn trọng thành viên",
+      "Không đăng nội dung sai sự thật",
+      "Không spam",
+      "Ghi rõ nguồn nội dung",
+      "Không công kích cá nhân",
+    ],
+    membershipQuestions: ["Bạn đang sống ở khu vực nào?", "Bạn quan tâm giải pháp gì?"],
+    pillars: [
+      {
+        name: "Kiến thức",
+        description: "Giải pháp thực tế",
+        objective: "Giúp thành viên",
+        audienceNeed: "Tối ưu diện tích",
+        contentRatio: 40,
+        formats: ["hướng dẫn"],
+        exampleTopics: ["Bố trí phòng 20m2"],
+      },
+      {
+        name: "Cộng đồng",
+        description: "Hỏi đáp",
+        objective: "Tăng tương tác",
+        audienceNeed: "Nhận tư vấn",
+        contentRatio: 35,
+        formats: ["hỏi đáp"],
+        exampleTopics: ["Góc nhà cần góp ý"],
+      },
+      {
+        name: "Sản phẩm",
+        description: "Ứng dụng sản phẩm đúng ngữ cảnh",
+        objective: "Tạo tín hiệu mua",
+        audienceNeed: "So sánh giải pháp",
+        contentRatio: 25,
+        formats: ["case study"],
+        exampleTopics: ["Sofa giường cho căn hộ nhỏ"],
+      },
+    ],
+    launchPlan: { setup: [], first7Days: [], first30Days: [] },
+    kpis: {
+      memberTarget30Days: 100,
+      postsPerWeek: 4,
+      engagementTargetPercent: 10,
+      qualifiedLeadTarget30Days: 5,
+    },
+  };
+
+  it("chỉ nhận blueprint có đủ nội quy, câu hỏi và ít nhất ba trụ cột", () => {
+    expect(blueprintPlanSchema.parse(plan).selectedName).toBe("Nhà nhỏ sống chất");
+    expect(() => blueprintPlanSchema.parse({ ...plan, pillars: plan.pillars.slice(0, 2) })).toThrow();
+    expect(() => blueprintPlanSchema.parse({ ...plan, rules: plan.rules.slice(0, 4) })).toThrow();
+  });
+
+  it("xác thực ngữ cảnh sản phẩm và loại Group trước khi lưu", () => {
+    const parsed = blueprintInputSchema.parse({
+      name: plan.selectedName,
+      groupKind: "owned",
+      productIds: ["crm_product_sofa_bed"],
+      targetAudience: "Người sống trong căn hộ nhỏ",
+      region: "Hồ Chí Minh",
+      objective: "Xây cộng đồng chia sẻ kinh nghiệm",
+      plan,
+    });
+    expect(parsed.groupKind).toBe("owned");
+    expect(totalPillarRatio(parsed.plan)).toBe(100);
+    expect(() => blueprintInputSchema.parse({ ...parsed, productIds: [] })).toThrow();
   });
 });

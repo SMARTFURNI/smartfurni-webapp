@@ -1060,6 +1060,7 @@ export async function suggestFacebookGroupCommentReply(commentId: string, actor:
       reply?: string;
       rationale?: string;
       warnings?: string[];
+      buyingSignals?: string[];
     }>(`Bạn là trợ lý chăm sóc khách hàng SmartFurni trong Facebook Group.
 Chỉ soạn bản nháp để nhân viên đọc và tự trả lời. Không tự gửi.
 Không bịa giá, kích thước, tồn kho, giao hàng hoặc chính sách.
@@ -1071,7 +1072,7 @@ ${JSON.stringify(context).slice(0, 14_000)}
 Trả về JSON:
 {"intent":"price|size|delivery|showroom|video|dealer|other",
 "temperature":"hot|warm|cold","reply":"câu trả lời ngắn, tự nhiên",
-"rationale":"lý do phân loại","warnings":[]}`);
+"rationale":"lý do phân loại","warnings":[],"buyingSignals":["tín hiệu mua hàng có trong bình luận"]}`);
     const intents = new Set(["price", "size", "delivery", "showroom", "video", "dealer", "other"]);
     const temperatures = new Set(["hot", "warm", "cold"]);
     const output = {
@@ -1084,8 +1085,23 @@ Trả về JSON:
       warnings: Array.isArray(result.warnings)
         ? result.warnings.map(stringValue).filter(Boolean).slice(0, 10)
         : [],
+      buyingSignals: Array.isArray(result.buyingSignals)
+        ? result.buyingSignals.map(stringValue).filter(Boolean).slice(0, 10)
+        : [],
       model,
     };
+    await query(
+      `UPDATE facebook_group_comments
+       SET ai_intent = $1,
+           ai_confidence = $2,
+           buying_signals = $3::jsonb,
+           suggested_reply = $4,
+           analyzed_at = NOW(),
+           updated_by = $5,
+           updated_at = NOW()
+       WHERE id = $6 AND deleted_at IS NULL`,
+      [output.intent, 0.8, JSON.stringify(output.buyingSignals), output.reply, actor.id, commentId],
+    );
     await logAiActivity(actor, "ai.comment_reply_suggested", commentId, {
       model,
       intent: output.intent,
@@ -1094,6 +1110,18 @@ Trả về JSON:
     return output;
   } catch (error) {
     console.error("[Facebook Group AI] Soạn trả lời dùng fallback:", error);
+    await query(
+      `UPDATE facebook_group_comments
+       SET ai_intent = $1,
+           ai_confidence = $2,
+           buying_signals = '[]'::jsonb,
+           suggested_reply = $3,
+           analyzed_at = NOW(),
+           updated_by = $4,
+           updated_at = NOW()
+       WHERE id = $5 AND deleted_at IS NULL`,
+      [fallback.intent, 0.35, fallback.reply, actor.id, commentId],
+    );
     await logAiActivity(actor, "ai.comment_reply_fallback", commentId);
     return { ...fallback, model: "rules-engine-fallback" };
   }

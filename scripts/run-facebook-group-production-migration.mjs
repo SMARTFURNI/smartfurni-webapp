@@ -10,6 +10,7 @@ const connectionString = process.env.DATABASE_PUBLIC_URL
 const migrationNames = [
   "007_add_facebook_group_ai_operations.sql",
   "008_add_fanpage_ai_care_center.sql",
+  "009_add_ai_group_growth_foundation.sql",
 ];
 const result = await applyFacebookGroupMigrations({
   connectionString,

@@ -9,11 +9,14 @@ import {
 } from "lucide-react";
 import { parseFacebookGroupUrl } from "@/lib/facebook-group-marketing-business";
 import { FACEBOOK_GROUP_TOPIC_TAXONOMY } from "@/lib/facebook-group-marketing-types";
+import AiGroupGrowthBuilder from "./AiGroupGrowthBuilder";
+import GroupGrowthLeads from "./GroupGrowthLeads";
 
 type Row = Record<string, unknown>;
 type FormOptions = {
   pages: Row[]; groups: Row[]; campaigns: Row[]; content: Row[]; posts: Row[];
   staff: Row[]; products: Row[]; leads: Row[]; topics: Row[];
+  blueprints: Row[]; pillars: Row[];
 };
 type GroupDiscoveryResult = {
   suggestions: Row[];
@@ -28,19 +31,27 @@ type Permissions = {
 };
 
 const sections = [
-  ["overview", "Tổng quan"], ["groups", "Danh sách Group"], ["campaigns", "Chiến dịch"],
-  ["content", "Kho nội dung"], ["calendar", "Lịch đăng"], ["tasks", "Nhiệm vụ đăng bài"],
-  ["posts", "Bài đã đăng"], ["comments", "Bình luận & khách hàng"],
-  ["reports", "Báo cáo"], ["settings", "Cài đặt"],
+  ["overview", "Tổng quan"], ["groups", "Hệ thống Group"], ["builder", "Group Builder"],
+  ["content", "Lịch nội dung"], ["tasks", "Publishing Desk"],
+  ["comments", "Community Center"], ["leads", "Group Leads"],
+  ["reports", "Analytics"], ["settings", "AI & quy tắc"],
 ] as const;
+
+const legacySectionTitles: Record<string, string> = {
+  campaigns: "Chiến dịch phân phối",
+  calendar: "Lịch đăng",
+  posts: "Bài đã đăng",
+};
 
 const labels: Record<string, string> = {
   groups: "Group", pages: "Fanpage", campaigns: "chiến dịch", content: "nội dung",
   tasks: "nhiệm vụ", posts: "bài đăng", comments: "bình luận", topics: "chủ đề",
+  blueprints: "blueprint",
 };
 
 const emptyOptions: FormOptions = {
-  pages: [], groups: [], campaigns: [], content: [], posts: [], staff: [], products: [], leads: [], topics: [],
+  pages: [], groups: [], campaigns: [], content: [], posts: [], staff: [], products: [],
+  leads: [], topics: [], blueprints: [], pillars: [],
 };
 
 const statusLabel: Record<string, string> = {
@@ -49,7 +60,9 @@ const statusLabel: Record<string, string> = {
   requested: "Đã gửi yêu cầu", draft: "Bản nháp", pending_approval: "Chờ duyệt",
   approved: "Đã duyệt", scheduled: "Đã xếp lịch", due: "Đến hạn", posted: "Đã đăng",
   pending_moderation: "Chờ group duyệt", rejected: "Bị từ chối", tracking: "Đang theo dõi",
-  completed: "Đã hoàn tất",
+  completed: "Đã hoàn tất", owned: "Group sở hữu",
+  external_distribution: "Group phân phối", setup: "Đang thiết lập",
+  launching: "Đang ra mắt", growing: "Đang tăng trưởng",
 };
 
 function value(row: Row, ...keys: string[]) {
@@ -176,6 +189,8 @@ export default function FacebookGroupMarketingClient({
       const aiRequest = api(aiQuery).catch(() => []);
       if (section === "overview" || section === "reports") {
         setDashboard(await api("dashboard"));
+      } else if (section === "builder" || section === "leads") {
+        setRows([]);
       } else if (section === "settings") {
         const [settingsResult, pages] = await Promise.all([api("settings"), api("pages")]);
         setSettingsData(settingsResult);
@@ -520,7 +535,9 @@ export default function FacebookGroupMarketingClient({
         : ["calendar", "tasks"].includes(section) ? permissions.schedule
           : section === "comments" ? permissions.publish : false;
 
-  const title = sections.find(item => item[0] === section)?.[1] || "Facebook Group Marketing";
+  const title = sections.find(item => item[0] === section)?.[1]
+    || legacySectionTitles[section]
+    || "AI Group Growth";
 
   return (
     <div className="fbg-admin-shell min-h-full px-4 py-5 text-slate-100 md:px-7 md:py-7">
@@ -528,11 +545,11 @@ export default function FacebookGroupMarketingClient({
         <div>
           <div className="fbg-admin-eyebrow mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.2em] text-amber-300">
             <span className="fbg-admin-eyebrow-icon"><Facebook size={15} /></span>
-            Facebook Group Marketing
+            AI Group Growth
           </div>
           <h1 className="fbg-admin-title text-3xl font-black text-white">{title}</h1>
           <p className="fbg-admin-subtitle mt-1.5 max-w-3xl text-sm text-slate-400">
-            Quy trình đăng thủ công an toàn: CRM chuẩn bị và theo dõi, nhân viên trực tiếp đăng bằng Fanpage.
+            AI xây kế hoạch và nội dung; nhân viên kiểm duyệt, tạo Group và đăng trực tiếp trên Facebook.
           </p>
         </div>
         <div className="fbg-admin-actions flex flex-wrap gap-2">
@@ -568,10 +585,41 @@ export default function FacebookGroupMarketingClient({
         ))}
       </nav>
 
+      {section === "groups" && <div className="mb-5 flex flex-wrap gap-2">
+        <Link href="/crm/facebook-group-marketing/groups"
+          className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-200">
+          Danh mục Group
+        </Link>
+        <Link href="/crm/facebook-group-marketing/campaigns"
+          className="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-400">
+          Kế hoạch phân phối cũ
+        </Link>
+      </div>}
+      {section === "content" && <div className="mb-5 flex flex-wrap gap-2">
+        <Link href="/crm/facebook-group-marketing/content"
+          className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-200">
+          Kho nội dung
+        </Link>
+        <Link href="/crm/facebook-group-marketing/calendar"
+          className="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-400">
+          Lịch tuần/tháng
+        </Link>
+      </div>}
+      {section === "tasks" && <div className="mb-5 flex flex-wrap gap-2">
+        <Link href="/crm/facebook-group-marketing/tasks"
+          className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-200">
+          Nhiệm vụ cần đăng
+        </Link>
+        <Link href="/crm/facebook-group-marketing/posts"
+          className="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-400">
+          Bài đã đăng
+        </Link>
+      </div>}
+
       {notice && <div className="fbg-alert mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-200"><CheckCircle2 size={16} />{notice}</div>}
       {error && <div className="fbg-alert mb-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200"><AlertTriangle size={16} />{error}</div>}
 
-      {!loading && <AiOperationsCenter
+      {!loading && !["builder", "leads"].includes(section) && <AiOperationsCenter
         section={section}
         recommendations={aiRecommendations}
         busy={aiBusy}
@@ -586,6 +634,10 @@ export default function FacebookGroupMarketingClient({
         <div className="grid min-h-64 place-items-center"><Loader2 className="animate-spin text-amber-300" /></div>
       ) : section === "overview" || section === "reports" ? (
         <Dashboard data={dashboard || {}} reports={section === "reports"} />
+      ) : section === "builder" ? (
+        <AiGroupGrowthBuilder canManage={permissions.manage} isAdmin={permissions.admin} />
+      ) : section === "leads" ? (
+        <GroupGrowthLeads />
       ) : section === "settings" ? (
         <SettingsView data={settingsData || {}} pages={rows} canEdit={permissions.settings}
           canDelete={permissions.admin}
@@ -1284,9 +1336,9 @@ function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
     <div className="text-center"><span className="fbg-empty-icon"><FileText size={21} /></span><p className="mt-3 font-medium text-slate-400">Chưa có dữ liệu.</p><p className="mt-1 text-xs text-slate-600">Dữ liệu vận hành sẽ xuất hiện tại đây.</p></div>
   </div>;
   const columns: Record<string, Array<[string, string]>> = {
-    groups: [["name", "Group"], ["region", "Khu vực"], ["topic", "Chủ đề"], ["membership_status", "Tham gia"], ["grade", "Hạng"], ["quality_score", "Điểm"], ["status", "Trạng thái"]],
+    groups: [["name", "Group"], ["group_kind", "Loại"], ["lifecycle_stage", "Giai đoạn"], ["region", "Khu vực"], ["topic", "Chủ đề"], ["grade", "Hạng"], ["status", "Trạng thái"]],
     campaigns: [["name", "Chiến dịch"], ["code", "Mã"], ["pageName", "Fanpage"], ["groupCount", "Group"], ["start_date", "Bắt đầu"], ["end_date", "Kết thúc"], ["status", "Trạng thái"]],
-    content: [["opening", "Mở đầu"], ["groupName", "Group"], ["source_code", "Mã nguồn"], ["duplicate_ratio", "Trùng lặp"], ["status", "Trạng thái"]],
+    content: [["opening", "Mở đầu"], ["groupName", "Group"], ["pillarName", "Trụ cột"], ["source_code", "Mã nguồn"], ["duplicate_ratio", "Trùng lặp"], ["status", "Trạng thái"]],
     calendar: [["scheduled_at", "Thời gian"], ["groupName", "Group"], ["pageName", "Fanpage"], ["campaignName", "Chiến dịch"], ["staffName", "Nhân viên"], ["status", "Trạng thái"]],
     tasks: [["scheduled_at", "Giờ đăng"], ["groupName", "Group"], ["sourceCode", "Mã nguồn"], ["staffName", "Nhân viên"], ["status", "Trạng thái"]],
     posts: [["actual_posted_at", "Đã đăng"], ["groupName", "Group"], ["source_code", "Mã nguồn"], ["moderation_status", "Kiểm duyệt"], ["status", "Theo dõi"]],
@@ -1310,7 +1362,7 @@ function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
           <tr key={String(row.id)} className="border-b border-white/[.055] hover:bg-white/[.025]">
             {selected.map(([key]) => {
               const item = value(row, key);
-              const isStatus = key.includes("status");
+              const isStatus = key.includes("status") || key === "group_kind" || key === "lifecycle_stage";
               const isDate = key.includes("_at") || key.includes("date");
               return <td key={key} className="max-w-[280px] truncate px-4 py-3">
                 {isStatus ? <Status status={item} /> : isDate ? formatDate(item) : key.includes("ratio") ? `${Number(item || 0)}%` : String(item || "—")}
@@ -1463,15 +1515,23 @@ function CompleteCheck({ check, onAction }: { check: Row; onAction: (endpoint: s
     await onAction(`checks/${check.id}/complete`, {
       commentCount: Number(form.get("commentCount") || 0),
       reactionCount: Number(form.get("reactionCount") || 0),
+      shareCount: Number(form.get("shareCount") || 0),
+      messengerLeadCount: Number(form.get("messengerLeadCount") || 0),
+      qualifiedLeadCount: Number(form.get("qualifiedLeadCount") || 0),
+      memberCount: form.get("memberCount") ? Number(form.get("memberCount")) : null,
     });
     setOpen(false);
   };
   return <>
     <button onClick={() => setOpen(true)} title="Hoàn thành kiểm tra"><CheckCircle2 size={17} className="text-emerald-300" /></button>
-    {open && <Modal title="Hoàn thành kiểm tra bình luận" onClose={() => setOpen(false)}>
+    {open && <Modal title={`Ghi nhận snapshot ${String(check.check_type || "")}`} onClose={() => setOpen(false)}>
       <form className="fbg-form grid gap-4 md:grid-cols-2" onSubmit={handle}>
         <Field label="Tổng số bình luận hiện tại" name="commentCount" type="number" required />
         <Field label="Tổng số lượt phản ứng hiện tại" name="reactionCount" type="number" required />
+        <Field label="Tổng số lượt chia sẻ" name="shareCount" type="number" />
+        <Field label="Lead vào Messenger" name="messengerLeadCount" type="number" />
+        <Field label="Lead đủ điều kiện" name="qualifiedLeadCount" type="number" />
+        <Field label="Số thành viên Group hiện tại" name="memberCount" type="number" />
         <div className="md:col-span-2 flex justify-end">
           <button className="fbg-primary-button rounded-xl bg-amber-400 px-5 py-2.5 font-black text-black">Xác nhận hoàn thành</button>
         </div>
@@ -1559,6 +1619,8 @@ function CreateForm({ resource, options, onSubmit }: {
   return <form className="fbg-form grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
     {resource === "groups" && <>
       <Field label="Tên group" name="name" required /><Field label="Mã group" name="code" />
+      <Field label="Loại Group" name="groupKind"><select name="groupKind" defaultValue="external_distribution" className={selectClass}><option value="external_distribution">Group bên ngoài để phân phối</option><option value="owned">Group SmartFurni sở hữu</option></select></Field>
+      <Field label="Giai đoạn" name="lifecycleStage"><select name="lifecycleStage" defaultValue="active" className={selectClass}><option value="setup">Đang thiết lập</option><option value="launching">Đang ra mắt</option><option value="growing">Đang tăng trưởng</option><option value="active">Hoạt động ổn định</option></select></Field>
       <div className="md:col-span-2"><Field label="Link group" name="groupUrl" type="url" required /></div>
       <Field label="Khu vực" name="region" />
       <Field label="Chủ đề" name="topic" required>
@@ -1608,6 +1670,7 @@ function CreateForm({ resource, options, onSubmit }: {
       <Field label="Group" name="groupId" required><select name="groupId" required className={selectClass}><option value="">Chọn Group</option>{options.groups.map(group => <option key={String(group.id)} value={String(group.id)}>{String(group.name)}</option>)}</select></Field>
       <Field label="Chiến dịch" name="campaignId"><select name="campaignId" className={selectClass}><option value="">Không thuộc chiến dịch</option>{options.campaigns.map(campaign => <option key={String(campaign.id)} value={String(campaign.id)}>{String(campaign.name)}</option>)}</select></Field>
       <Field label="Sản phẩm" name="productId" required><select name="productId" required className={selectClass}><option value="">Chọn sản phẩm</option>{options.products.map(product => <option key={String(product.id)} value={String(product.id)}>{String(product.name)} ({String(product.sku || "")})</option>)}</select></Field>
+      <Field label="Trụ cột nội dung" name="pillarId"><select name="pillarId" className={selectClass}><option value="">Chưa gắn trụ cột</option>{options.pillars.map(pillar => <option key={String(pillar.id)} value={String(pillar.id)}>{String(pillar.name)} ({Number(pillar.contentRatio || 0)}%)</option>)}</select></Field>
       <Field label="Mã sản phẩm dùng trong mã nguồn" name="productCode" />
       <Field label="Loại nội dung" name="contentType"><select name="contentType" className={selectClass}><option value="community_share">Chia sẻ cộng đồng</option><option value="sales">Bài bán hàng</option><option value="education">Kiến thức</option></select></Field>
       <Field label="Yêu cầu thêm cho AI" name="brief"><input name="brief" placeholder="Ví dụ: tập trung người cao tuổi, không nêu giá" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white" /></Field>
@@ -1720,6 +1783,18 @@ function EditForm({ resource, row, options, onSubmit }: {
       </Field>
       <Field label="Mã Group" name="code" required>
         <input name="code" required defaultValue={String(value(row, "code"))} className={selectClass} />
+      </Field>
+      <Field label="Loại Group" name="groupKind">
+        <select name="groupKind" defaultValue={String(value(row, "group_kind", "groupKind") || "external_distribution")} className={selectClass}>
+          <option value="external_distribution">Group bên ngoài để phân phối</option>
+          <option value="owned">Group SmartFurni sở hữu</option>
+        </select>
+      </Field>
+      <Field label="Giai đoạn" name="lifecycleStage">
+        <select name="lifecycleStage" defaultValue={String(value(row, "lifecycle_stage", "lifecycleStage") || "active")} className={selectClass}>
+          <option value="setup">Đang thiết lập</option><option value="launching">Đang ra mắt</option>
+          <option value="growing">Đang tăng trưởng</option><option value="active">Hoạt động ổn định</option>
+        </select>
       </Field>
       <div className="md:col-span-2"><Field label="Link Group" name="groupUrl" required>
         <input name="groupUrl" type="url" required defaultValue={String(value(row, "group_url", "groupUrl"))} className={selectClass} />
@@ -1870,6 +1945,12 @@ function EditForm({ resource, row, options, onSubmit }: {
       <Field label="Loại nội dung" name="contentType">
         <select name="contentType" defaultValue={String(value(row, "content_type", "contentType") || "community_share")} className={selectClass}>
           <option value="community_share">Chia sẻ cộng đồng</option><option value="sales">Bài bán hàng</option><option value="education">Kiến thức</option>
+        </select>
+      </Field>
+      <Field label="Trụ cột nội dung" name="pillarId">
+        <select name="pillarId" defaultValue={String(value(row, "pillar_id", "pillarId") || "")} className={selectClass}>
+          <option value="">Chưa gắn trụ cột</option>
+          {options.pillars.map(pillar => <option key={String(pillar.id)} value={String(pillar.id)}>{String(pillar.name)}</option>)}
         </select>
       </Field>
       <Field label="Mã nguồn" name="sourceCode">

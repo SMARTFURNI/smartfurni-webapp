@@ -4,7 +4,10 @@ import { getRoleById } from "@/lib/crm-roles-store";
 import { getStaffById } from "@/lib/crm-staff-store";
 import FacebookGroupMarketingClient from "@/components/crm/facebook-group-marketing/FacebookGroupMarketingClient";
 
-const allowed = new Set(["groups", "campaigns", "content", "calendar", "tasks", "posts", "comments", "reports", "settings"]);
+const allowed = new Set([
+  "groups", "builder", "campaigns", "content", "calendar", "tasks", "posts",
+  "comments", "leads", "reports", "settings",
+]);
 
 export default async function FacebookGroupMarketingSectionPage({
   params,
@@ -19,6 +22,8 @@ export default async function FacebookGroupMarketingSectionPage({
     if (!permissions?.facebook_group_marketing_view) redirect("/crm");
     if (section === "reports" && !permissions.facebook_group_reports) redirect("/crm/facebook-group-marketing");
     if (section === "settings" && !permissions.facebook_group_settings) redirect("/crm/facebook-group-marketing");
+    if (section === "leads" && !permissions.facebook_group_sales) redirect("/crm/facebook-group-marketing");
+    if (section === "builder" && !permissions.facebook_group_manage) redirect("/crm/facebook-group-marketing");
   }
   return <FacebookGroupMarketingClient section={section} permissions={{
     admin: session.isAdmin,

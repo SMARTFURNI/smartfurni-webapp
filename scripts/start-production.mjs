@@ -12,6 +12,7 @@ const migrationResult = await applyFacebookGroupMigrations({
   migrationNames: [
     "007_add_facebook_group_ai_operations.sql",
     "008_add_fanpage_ai_care_center.sql",
+    "009_add_ai_group_growth_foundation.sql",
   ],
 });
 if (migrationResult.applied.length) {

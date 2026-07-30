@@ -22,6 +22,16 @@ import {
   rewriteFacebookGroupContentWithAi,
   suggestFacebookGroupCommentReply,
 } from "@/lib/facebook-group-marketing-ai";
+import {
+  createFacebookGroupBlueprint,
+  generateFacebookGroupBlueprint,
+  getFacebookGroupBlueprint,
+  listFacebookGroupBlueprints,
+  listFacebookGroupGrowthLeads,
+  registerOwnedFacebookGroup,
+  softDeleteFacebookGroupBlueprint,
+  updateFacebookGroupBlueprint,
+} from "@/lib/facebook-group-growth-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +49,7 @@ const resourcePermission: Record<string, {
   comments: { view: "facebook_group_marketing_view", mutate: "facebook_group_publish_task" },
   checks: { view: "facebook_group_marketing_view", mutate: "facebook_group_publish_task" },
   topics: { view: "facebook_group_marketing_view", mutate: "facebook_group_manage" },
+  blueprints: { view: "facebook_group_marketing_view", mutate: "facebook_group_manage" },
 };
 
 const safeBody = z.record(z.string(), z.unknown());
@@ -63,6 +74,16 @@ export async function GET(req: NextRequest, context: { params: Promise<{ path: s
     if (resource === "dashboard") return NextResponse.json(await getFacebookGroupDashboard(filters));
     if (resource === "options") return NextResponse.json(await getFacebookGroupMarketingOptions());
     if (resource === "settings") return NextResponse.json(await getFacebookGroupSettings());
+    if (resource === "blueprints") {
+      return NextResponse.json(entityId
+        ? await getFacebookGroupBlueprint(entityId)
+        : await listFacebookGroupBlueprints());
+    }
+    if (resource === "growth-leads") {
+      const salesAuth = await authorizeFacebookGroupMarketing("facebook_group_sales");
+      if (!salesAuth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json(await listFacebookGroupGrowthLeads(filters));
+    }
     if (resource === "ai" && entityId === "recommendations") {
       return NextResponse.json(await listFacebookGroupAiRecommendations({
         section: filters.section,
@@ -105,11 +126,22 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     if (resource === "revenue") permission = "facebook_group_sales";
     if (resource === "settings") permission = "facebook_group_settings";
     if (resource === "ai" && action === "review") permission = "facebook_group_manage";
+    if (resource === "blueprints") permission = "facebook_group_manage";
+    if (resource === "growth-leads") permission = "facebook_group_sales";
     const auth = await authorizeFacebookGroupMarketing(permission);
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     if (resource === "groups" && entityId && action === "analyze-rules") {
       return NextResponse.json(await analyzeGroupRules(entityId, auth.actor));
+    }
+    if (resource === "blueprints" && entityId === "generate") {
+      return NextResponse.json(await generateFacebookGroupBlueprint(body, auth.actor));
+    }
+    if (resource === "blueprints" && entityId && action === "register-group") {
+      return NextResponse.json(await registerOwnedFacebookGroup(entityId, body, auth.actor));
+    }
+    if (resource === "blueprints" && !entityId) {
+      return NextResponse.json(await createFacebookGroupBlueprint(body, auth.actor), { status: 201 });
     }
     if (resource === "content" && entityId === "suggest") {
       return NextResponse.json(await suggestFacebookGroupContent(body, auth.actor));
@@ -230,6 +262,9 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ path:
     }
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const body = safeBody.parse(await req.json());
+    if (resource === "blueprints") {
+      return NextResponse.json(await updateFacebookGroupBlueprint(entityId, body, auth.actor));
+    }
     if (resource === "topics") {
       return NextResponse.json(await updateFacebookGroupTopic(entityId, body, auth.actor));
     }
@@ -249,6 +284,10 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ pat
     if (!entityId || !resourcePermission[resource]) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const auth = await authorizeFacebookGroupMarketingAdmin();
     if (!auth) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (resource === "blueprints") {
+      await softDeleteFacebookGroupBlueprint(entityId, auth.actor);
+      return NextResponse.json({ ok: true });
+    }
     if (resource === "topics") {
       await deleteFacebookGroupTopic(entityId, auth.actor);
       return NextResponse.json({ ok: true });
