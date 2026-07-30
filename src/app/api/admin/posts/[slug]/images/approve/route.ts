@@ -4,7 +4,7 @@ import { getPostById, updatePost } from "@/lib/admin-store";
 import { initDbOnce } from "@/lib/db-init";
 import { dbSaveOneAndWait } from "@/lib/db-store";
 import { applyApprovedImagesToMarkdown } from "@/lib/blog-image-agent";
-import { storeImagesOnGitHubBatch } from "@/lib/github-media";
+import { storeImageAssetsBatch } from "@/lib/media-assets";
 import { decodeImageDataUrl } from "@/lib/openai-blog-images";
 
 interface Params { params: Promise<{ slug: string }> }
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (totalBytes > 50 * 1024 * 1024) {
       return NextResponse.json({ error: "Tổng dung lượng bộ ảnh vượt quá 50MB" }, { status: 400 });
     }
-    const stored = await storeImagesOnGitHubBatch(selectedImages.map(({ image, buffer }) => ({
+    const stored = await storeImageAssetsBatch(selectedImages.map(({ image, buffer }) => ({
       buffer,
       originalName: `${slug}-${image.role}-${image.order}.webp`,
       folder: "blog" as const,

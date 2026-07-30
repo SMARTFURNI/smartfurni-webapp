@@ -124,6 +124,8 @@ function ProductImageGallery({
       // For new products, use the blog upload endpoint temporarily
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("folder", "products");
+      fd.append("subfolder", productId || "new-product");
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
       if (res.ok) {
         const { url } = await res.json();

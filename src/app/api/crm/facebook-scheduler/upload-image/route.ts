@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { v2 as cloudinary } from "cloudinary";
+import { storeImageAsset } from "@/lib/media-assets";
+import { isRailwayBucketConfigured } from "@/lib/media-storage";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -40,6 +42,27 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    if (isRailwayBucketConfigured()) {
+      const stored = await storeImageAsset({
+        buffer,
+        originalName: file.name,
+        folder: "social-scheduler",
+        subfolder: "facebook",
+        maxWidth: 2048,
+        quality: 86,
+        // Facebook Graph API cần tải được URL ảnh mà không có cookie CRM.
+        // URL vẫn đi qua media proxy ổn định của ứng dụng.
+        visibility: "public",
+        entityType: "facebook-scheduler",
+      });
+      return NextResponse.json({
+        url: stored.url,
+        storage: stored.provider,
+        storageId: stored.storageId,
+      });
+    }
+
+    // Giữ Cloudinary làm dự phòng trong giai đoạn chuyển đổi.
     const uploadResult = await new Promise<{ secure_url: string; public_id: string }>(
       (resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -53,7 +76,11 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    return NextResponse.json({ url: uploadResult.secure_url });
+    return NextResponse.json({
+      url: uploadResult.secure_url,
+      storage: "cloudinary",
+      storageId: uploadResult.public_id,
+    });
   } catch (error) {
     console.error("Facebook image upload error:", error);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });

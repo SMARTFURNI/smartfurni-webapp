@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getContract, updateContract, deleteContract } from "@/lib/crm-contracts-store";
+import { externalizeContractSignatures } from "@/lib/contract-media";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getCrmSession();
@@ -16,7 +17,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const body = await req.json();
-  const contract = await updateContract(id, body);
+  const signatures = "signatures" in body
+    ? await externalizeContractSignatures(body.signatures, id)
+    : undefined;
+  const contract = await updateContract(id, {
+    ...body,
+    ...("signatures" in body ? { signatures } : {}),
+  });
   if (!contract) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(contract);
 }

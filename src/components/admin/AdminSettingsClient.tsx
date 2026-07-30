@@ -17,7 +17,7 @@ const SECTIONS: SettingSection[] = [
   { id: "security", title: "Bảo mật", icon: LockKeyhole },
 ];
 
-type SystemStatus = Record<"database" | "githubMedia" | "resend" | "smtp" | "zalo" | "sessionSecret", boolean>;
+type SystemStatus = Record<"database" | "railwayMedia" | "githubMedia" | "resend" | "smtp" | "zalo" | "sessionSecret", boolean>;
 type PushTestResult = {
   ok: boolean;
   message: string;
@@ -540,7 +540,8 @@ export default function AdminSettingsClient() {
               <div className="grid sm:grid-cols-2 gap-3">
                 {[
                   ["database", "PostgreSQL", "Dữ liệu sản phẩm, đơn hàng và cấu hình"],
-                  ["githubMedia", "GitHub Media", "Lưu ảnh đã tối ưu của website"],
+                  ["railwayMedia", "Railway Media Bucket", "Kho ảnh và tệp chính của CRM"],
+                  ["githubMedia", "GitHub Media (dự phòng)", "Chỉ dùng khi Railway Bucket chưa cấu hình"],
                   ["resend", "Resend", "Email thông báo khách hàng tiềm năng"],
                   ["smtp", "SMTP", "Kênh email dự phòng"],
                   ["zalo", "Zalo OA", "Thông báo và đồng bộ Zalo"],

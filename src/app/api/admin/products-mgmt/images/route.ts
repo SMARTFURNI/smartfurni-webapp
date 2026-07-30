@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getProductById, updateProduct } from "@/lib/product-store";
 import { initDbOnce } from "@/lib/db-init";
-import { deleteImageFromGitHub, storeImageOnGitHub } from "@/lib/github-media";
+import { deleteImageAsset, storeImageAsset } from "@/lib/media-assets";
 
-// POST /api/admin/products-mgmt/images — optimize to WebP and commit to GitHub media storage
+// POST /api/admin/products-mgmt/images — optimize to WebP and store in Railway Bucket.
+// GitHub remains a temporary compatibility fallback until the bucket is configured.
 export async function POST(request: NextRequest) {
   await initDbOnce();
   const ok = await getAdminSession();
@@ -33,13 +34,15 @@ export async function POST(request: NextRequest) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const uploadResult = await storeImageOnGitHub({
+    const uploadResult = await storeImageAsset({
       buffer,
       originalName: file.name,
       folder: "products",
       subfolder: product.slug || product.id,
       maxWidth: 1600,
       quality: 84,
+      entityType: "product",
+      entityId: product.id,
     });
     const url = uploadResult.url;
 
@@ -60,7 +63,9 @@ export async function POST(request: NextRequest) {
       coverImage: newCoverImage,
       size: uploadResult.size,
       format: "webp",
-      deploymentPending: true,
+      storage: uploadResult.provider,
+      storageId: uploadResult.storageId,
+      deploymentPending: uploadResult.provider === "github",
     });
   } catch (error) {
     console.error("Product image upload error:", error);
@@ -101,11 +106,11 @@ export async function DELETE(request: NextRequest) {
       coverImage: newCoverImage,
     });
 
-    if (imageUrl.startsWith("/uploads/")) {
+    if (imageUrl.startsWith("/uploads/") || imageUrl.startsWith("/api/media/")) {
       try {
-        await deleteImageFromGitHub(imageUrl);
-      } catch (githubError) {
-        console.error("GitHub media delete error:", githubError);
+        await deleteImageAsset(imageUrl);
+      } catch (storageError) {
+        console.error("Media delete error:", storageError);
       }
     }
 

@@ -12,7 +12,7 @@ import {
   generateBlogImageVariants,
   getImageGenerationErrorMessage,
 } from "./openai-blog-images";
-import { storeImageOnGitHub } from "./github-media";
+import { storeImageAsset } from "./media-assets";
 
 type ImageActor = { id: string; name: string; isAdmin?: boolean };
 
@@ -127,18 +127,20 @@ export async function persistFacebookGroupGeneratedImage(
   format: string;
 }> {
   const buffer = decodeImageDataUrl(dataUrl);
-  const stored = await storeImageOnGitHub({
+  const stored = await storeImageAsset({
     buffer,
     originalName: `${contentId}-facebook-group.webp`,
     folder: "content",
     subfolder: "facebook-group-marketing",
     maxWidth: 1600,
     quality: 84,
+    entityType: "facebook-group-content",
+    entityId: contentId,
   });
   return {
     url: stored.url,
-    storage: "github",
-    storageId: stored.repositoryPath,
+    storage: stored.provider,
+    storageId: stored.storageId,
     size: stored.size,
     format: "webp",
   };

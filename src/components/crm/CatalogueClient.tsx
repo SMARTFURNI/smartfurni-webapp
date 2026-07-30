@@ -275,6 +275,7 @@ interface InlineImageProps {
 function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placeholderStyle, placeholderLabel }: InlineImageProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -286,6 +287,30 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
     };
     reader.readAsDataURL(file);
     e.target.value = "";
+  };
+
+  const persistCroppedImage = async (dataUrl: string) => {
+    setUploading(true);
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const formData = new FormData();
+      formData.append("file", blob, `catalogue-${Date.now()}.jpg`);
+      formData.append("catalogueId", "editor");
+      const response = await fetch("/api/crm/catalogue-media", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (!response.ok || !result.url) {
+        throw new Error(result.error || "Không thể tải ảnh");
+      }
+      onUpload(result.url);
+      setCropSrc(null);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Không thể tải ảnh catalogue");
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (src) {
@@ -320,7 +345,7 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
         {cropSrc && (
           <ImageCropModal
             src={cropSrc}
-            onSave={dataUrl => { onUpload(dataUrl); setCropSrc(null); }}
+            onSave={dataUrl => { if (!uploading) void persistCroppedImage(dataUrl); }}
             onClose={() => setCropSrc(null)}
           />
         )}
@@ -341,7 +366,7 @@ function InlineImage({ src, alt, isEditing, onUpload, onRemove, style, placehold
       {cropSrc && (
         <ImageCropModal
           src={cropSrc}
-          onSave={dataUrl => { onUpload(dataUrl); setCropSrc(null); }}
+          onSave={dataUrl => { if (!uploading) void persistCroppedImage(dataUrl); }}
           onClose={() => setCropSrc(null)}
         />
       )}

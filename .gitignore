@@ -25,3 +25,4 @@ yarn-error.log*
 # Vercel
 .vercel
 tsconfig.tsbuildinfo
+.media-migration-manifest.json

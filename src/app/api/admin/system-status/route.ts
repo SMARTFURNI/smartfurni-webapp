@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
+import { isRailwayBucketConfigured } from "@/lib/media-storage";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export async function GET() {
 
   return NextResponse.json({
     database,
+    railwayMedia: isRailwayBucketConfigured(),
     githubMedia: Boolean(process.env.GITHUB_MEDIA_TOKEN && process.env.GITHUB_MEDIA_OWNER && process.env.GITHUB_MEDIA_REPO),
     resend: Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL),
     smtp: Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD)),

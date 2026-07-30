@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
-import { storeImageOnGitHub } from "@/lib/github-media";
+import { storeImageAsset } from "@/lib/media-assets";
 
 async function checkAuth(): Promise<boolean> {
   const isAdmin = await getAdminSession();
@@ -32,15 +32,18 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const requestedFolder = String(formData.get("folder") || "content");
-    const folder = requestedFolder === "blog" || requestedFolder === "landing-pages"
-      ? requestedFolder
-      : "content";
-    const uploadResult = await storeImageOnGitHub({
+    const allowedFolders = ["content", "products", "blog", "landing-pages", "site-theme"] as const;
+    const folder = allowedFolders.find((item) => item === requestedFolder) || "content";
+    const subfolder = String(formData.get("subfolder") || "").trim() || undefined;
+    const uploadResult = await storeImageAsset({
       buffer,
       originalName: file.name,
       folder,
+      subfolder,
       maxWidth: folder === "blog" ? 1600 : 1920,
       quality: 82,
+      entityType: folder,
+      entityId: subfolder,
     });
 
     return NextResponse.json({
@@ -48,7 +51,9 @@ export async function POST(request: NextRequest) {
       filename: uploadResult.filename,
       size: uploadResult.size,
       format: "webp",
-      deploymentPending: true,
+      storage: uploadResult.provider,
+      storageId: uploadResult.storageId,
+      deploymentPending: uploadResult.provider === "github",
     });
   } catch (error) {
     console.error("Upload error:", error);
