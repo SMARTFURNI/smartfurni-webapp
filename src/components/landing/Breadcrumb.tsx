@@ -11,11 +11,11 @@ interface BreadcrumbProps {
 }
 
 export default function Breadcrumb({ items, tone = "dark" }: BreadcrumbProps) {
-  const separatorClass = tone === "light" ? "text-[#28251F]/25" : "text-[#F5EDD6]/20";
-  const currentClass = tone === "light" ? "text-[#28251F]/60" : "text-[#F5EDD6]/50";
+  const separatorClass = tone === "light" ? "text-[#28251F]/25" : "text-[#F5EDD6]/30";
+  const currentClass = tone === "light" ? "text-[#28251F]/60" : "text-[#F5EDD6]/70";
   const linkClass = tone === "light"
     ? "text-[#28251F]/55 hover:text-[#8A6A1F]"
-    : "text-[#F5EDD6]/40 hover:text-[#C9A84C]";
+    : "text-[#F5EDD6]/55 hover:text-[#C9A84C]";
 
   return (
     <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm flex-wrap">
