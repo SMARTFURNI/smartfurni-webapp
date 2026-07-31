@@ -433,13 +433,6 @@ export default function SleepAdvisorClient({ theme }: Props) {
                         >
                           Xem sản phẩm →
                         </Link>
-                        <Link
-                          href={`/products/configure/${rec.productSlug}`}
-                          style={{ border: `1px solid ${primary}`, color: primary }}
-                          className="px-5 py-2.5 rounded-full font-semibold text-sm hover:opacity-80 transition-opacity"
-                        >
-                          ⚙️ Cấu hình 3D
-                        </Link>
                       </div>
                     </div>
                   </div>

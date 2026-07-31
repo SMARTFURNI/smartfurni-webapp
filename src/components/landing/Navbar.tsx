@@ -40,7 +40,6 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Sofa giường", href: "/products/sofa-giuong-thong-minh", icon: "sofa", desc: "Tối ưu không gian đa năng" },
       { label: "Phụ kiện", href: "/products/phu-kien-giuong-thong-minh", icon: "settings", desc: "Remote, nệm và phụ kiện chính hãng" },
       { label: "So sánh sản phẩm", href: "/products/compare", icon: "scale", desc: "So sánh chi tiết các model" },
-      { label: "Cấu hình 3D", href: "/products/configure/smartfurni-pro", icon: "palette", desc: "Tùy chỉnh màu sắc & vật liệu" },
     ],
   },
   {
@@ -86,13 +85,11 @@ type B2BStep = "partner" | "form" | "success";
 function DropdownMenu({
   group,
   primary,
-  bgColor,
   textColor,
   isActive,
 }: {
   group: NavGroup;
   primary: string;
-  bgColor: string;
   textColor: string;
   isActive: (href: string) => boolean;
 }) {
@@ -120,10 +117,10 @@ function DropdownMenu({
       onMouseLeave={handleMouseLeave}
     >
       <button
-        className="relative flex items-center gap-1 text-sm pb-1 group transition-colors duration-200"
-        style={{ color: groupActive ? primary : `${textColor}90` }}
+        className="relative flex items-center gap-1 pb-1 text-sm font-medium tracking-[0.01em] transition-colors duration-200 group"
+        style={{ color: groupActive ? primary : textColor }}
         onMouseEnter={(e) => (e.currentTarget.style.color = primary)}
-        onMouseLeave={(e) => (e.currentTarget.style.color = groupActive ? primary : `${textColor}90`)}
+        onMouseLeave={(e) => (e.currentTarget.style.color = groupActive ? primary : textColor)}
         aria-expanded={open}
       >
         {group.label}
@@ -144,41 +141,45 @@ function DropdownMenu({
       {/* Dropdown panel */}
       {open && group.children && (
         <div
-          className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-56 rounded-2xl shadow-2xl border overflow-hidden z-50"
+          className="absolute top-full left-1/2 z-50 mt-3 w-64 -translate-x-1/2 overflow-hidden rounded-2xl border shadow-2xl"
           style={{
-            backgroundColor: bgColor === "transparent" ? "#0a0800" : bgColor,
-            borderColor: `${primary}25`,
+            background: "linear-gradient(145deg, rgba(12, 10, 8, 0.99), rgba(34, 24, 15, 0.99))",
+            borderColor: `${primary}55`,
+            boxShadow: "0 24px 64px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
           }}
         >
           {/* Arrow */}
           <div
             className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-l border-t"
-            style={{ backgroundColor: bgColor === "transparent" ? "#0a0800" : bgColor, borderColor: `${primary}25` }}
+            style={{ backgroundColor: "#17100b", borderColor: `${primary}55` }}
           />
-          <div className="py-2">
+          <div className="py-2.5">
             {group.children.map((item) => {
               const active = isActive(item.href);
               const content = (
                 <div
-                  className="flex items-start gap-3 px-4 py-2.5 transition-colors duration-150 cursor-pointer"
+                  className="mx-1.5 flex cursor-pointer items-start gap-3 rounded-xl px-3.5 py-3 transition-colors duration-150"
                   style={{
-                    backgroundColor: active ? `${primary}12` : "transparent",
+                    backgroundColor: active ? `${primary}1f` : "transparent",
                   }}
-                  onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}08`; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = active ? `${primary}12` : "transparent"; }}
+                  onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = `${primary}16`; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = active ? `${primary}1f` : "transparent"; }}
                 >
-                  <span className="flex-shrink-0 mt-0.5 flex items-center justify-center w-7 h-7 rounded-lg" style={{ backgroundColor: `${primary}12` }}>
+                  <span
+                    className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: `${primary}1a`, border: `1px solid ${primary}2f` }}
+                  >
                     <SvgIcon name={item.icon ?? "star"} size={14} color={primary} strokeWidth={1.5} />
                   </span>
                   <div className="min-w-0">
                     <p
-                      className="text-sm font-medium leading-tight"
+                      className="text-sm font-semibold leading-tight"
                       style={{ color: active ? primary : `${textColor}` }}
                     >
                       {item.label}
                     </p>
                     {item.desc && (
-                      <p className="text-xs mt-0.5 leading-snug" style={{ color: `${textColor}45` }}>
+                      <p className="mt-1 text-xs leading-snug" style={{ color: `${textColor}a3` }}>
                         {item.desc}
                       </p>
                     )}
@@ -206,7 +207,6 @@ function DropdownMenu({
 // ─── Main Navbar ──────────────────────────────────────────────────
 export default function Navbar({ theme }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [b2bOpen, setB2bOpen] = useState(false);
@@ -237,14 +237,13 @@ export default function Navbar({ theme }: NavbarProps) {
   const bgColor = theme?.navbar.bgColor ?? "#080600";
   const textColor = theme?.navbar.textColor ?? "#F5EDD6";
   const surfaceColor = theme?.colors.surface ?? "#1A1500";
+  const navTextColor = "#F4EAD6";
   const height = theme?.navbar.height ?? 64;
   const companyName = theme?.footer.companyName ?? "SmartFurni";
   const logoTextColor = theme?.logo.textColor ?? primary;
   const maxWidth = theme?.layout.maxWidth ?? 1280;
 
   useEffect(() => {
-    setMounted(true);
-    // Set initial scroll state immediately to avoid CLS on first render
     setScrolled(window.scrollY > 40);
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -347,10 +346,14 @@ export default function Navbar({ theme }: NavbarProps) {
     return pathname.startsWith(href.replace("/#", "/").split("#")[0]);
   };
 
-  // Before mount: always show solid bg to avoid CLS flash (transparent → solid)
-  const navBg = (!mounted || scrolled || mobileOpen)
-    ? { backgroundColor: `${bgColor}f8`, backdropFilter: "blur(16px)", borderBottomColor: `${primary}30` }
-    : { backgroundColor: "transparent" };
+  const navBg = {
+    background: "linear-gradient(90deg, rgba(7, 8, 10, 0.97), rgba(34, 23, 14, 0.95), rgba(7, 8, 10, 0.97))",
+    backdropFilter: "blur(18px)",
+    borderBottomColor: `${primary}45`,
+    boxShadow: scrolled || mobileOpen
+      ? "0 12px 30px rgba(0, 0, 0, 0.3)"
+      : "0 8px 24px rgba(0, 0, 0, 0.2)",
+  };
 
   return (
     <>
@@ -359,7 +362,7 @@ export default function Navbar({ theme }: NavbarProps) {
         {/* ── Topbar ── */}
         <div
           style={{ height, ...navBg }}
-          className={cn("w-full transition-all duration-300", (scrolled || mobileOpen) ? "border-b" : "")}
+          className="w-full border-b transition-all duration-300"
         >
           <div
             style={{ maxWidth }}
@@ -386,18 +389,17 @@ export default function Navbar({ theme }: NavbarProps) {
                     key={group.label}
                     group={group}
                     primary={primary}
-                    bgColor={bgColor}
-                    textColor={textColor}
+                    textColor={navTextColor}
                     isActive={isActive}
                   />
                 ) : group.isAnchor ? (
                   <a
                     key={group.href}
                     href={group.href}
-                    style={{ color: isActive(group.href!) ? primary : `${textColor}90` }}
-                    className="relative text-sm transition-colors duration-200 whitespace-nowrap pb-1 group flex-shrink-0"
+                    style={{ color: isActive(group.href!) ? primary : navTextColor }}
+                    className="relative flex-shrink-0 whitespace-nowrap pb-1 text-sm font-medium transition-colors duration-200 group"
                     onMouseEnter={(e) => (e.currentTarget.style.color = primary)}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = isActive(group.href!) ? primary : `${textColor}90`)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = isActive(group.href!) ? primary : navTextColor)}
                   >
                     {group.label}
                     <span
@@ -409,10 +411,10 @@ export default function Navbar({ theme }: NavbarProps) {
                   <Link
                     key={group.href}
                     href={group.href!}
-                    style={{ color: isActive(group.href!) ? primary : `${textColor}90` }}
-                    className="relative text-sm transition-colors duration-200 whitespace-nowrap pb-1 group flex-shrink-0"
+                    style={{ color: isActive(group.href!) ? primary : navTextColor }}
+                    className="relative flex-shrink-0 whitespace-nowrap pb-1 text-sm font-medium transition-colors duration-200 group"
                     onMouseEnter={(e) => (e.currentTarget.style.color = primary)}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = isActive(group.href!) ? primary : `${textColor}90`)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = isActive(group.href!) ? primary : navTextColor)}
                   >
                     {group.label}
                     <span
@@ -430,9 +432,9 @@ export default function Navbar({ theme }: NavbarProps) {
               <Link
                 href="/cart"
                 className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-200"
-                style={{ color: textColor }}
+                style={{ color: navTextColor }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = primary)}
-                onMouseLeave={(e) => (e.currentTarget.style.color = textColor)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = navTextColor)}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
@@ -493,12 +495,12 @@ export default function Navbar({ theme }: NavbarProps) {
               <button
                 onClick={() => setMobileOpen((v) => !v)}
                 className="md:hidden flex flex-col justify-center items-center w-9 h-9 gap-1.5 rounded-lg transition-all duration-200"
-                style={{ color: textColor }}
+                style={{ color: navTextColor }}
                 aria-label={mobileOpen ? "Đóng menu" : "Mở menu"}
               >
-                <span style={{ backgroundColor: mobileOpen ? primary : textColor }} className={cn("block w-5 h-0.5 rounded-full transition-all duration-300 origin-center", mobileOpen ? "rotate-45 translate-y-2" : "")} />
-                <span style={{ backgroundColor: mobileOpen ? primary : textColor }} className={cn("block w-5 h-0.5 rounded-full transition-all duration-300", mobileOpen ? "opacity-0 scale-x-0" : "")} />
-                <span style={{ backgroundColor: mobileOpen ? primary : textColor }} className={cn("block w-5 h-0.5 rounded-full transition-all duration-300 origin-center", mobileOpen ? "-rotate-45 -translate-y-2" : "")} />
+                <span style={{ backgroundColor: mobileOpen ? primary : navTextColor }} className={cn("block w-5 h-0.5 rounded-full transition-all duration-300 origin-center", mobileOpen ? "rotate-45 translate-y-2" : "")} />
+                <span style={{ backgroundColor: mobileOpen ? primary : navTextColor }} className={cn("block w-5 h-0.5 rounded-full transition-all duration-300", mobileOpen ? "opacity-0 scale-x-0" : "")} />
+                <span style={{ backgroundColor: mobileOpen ? primary : navTextColor }} className={cn("block w-5 h-0.5 rounded-full transition-all duration-300 origin-center", mobileOpen ? "-rotate-45 -translate-y-2" : "")} />
               </button>
             </div>
           </div>
@@ -507,7 +509,7 @@ export default function Navbar({ theme }: NavbarProps) {
         {/* ── Mobile menu ── */}
         <div
           style={{
-            backgroundColor: `${bgColor}fc`,
+            background: "linear-gradient(180deg, rgba(12, 10, 8, 0.995), rgba(34, 24, 15, 0.995))",
             borderTopColor: `${primary}20`,
             maxHeight: mobileOpen ? "100vh" : "0",
             overflow: "hidden",
@@ -527,7 +529,7 @@ export default function Navbar({ theme }: NavbarProps) {
                       onClick={() => setMobileExpanded(isGroupExpanded ? null : group.label)}
                       className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150"
                       style={{
-                        color: groupActive ? primary : `${textColor}90`,
+                        color: groupActive ? primary : navTextColor,
                         backgroundColor: groupActive ? `${primary}10` : "transparent",
                       }}
                     >
@@ -550,7 +552,7 @@ export default function Navbar({ theme }: NavbarProps) {
                             <div
                               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150"
                               style={{
-                                color: active ? primary : `${textColor}80`,
+                                color: active ? primary : `${navTextColor}d9`,
                                 backgroundColor: active ? `${primary}10` : "transparent",
                               }}
                             >
@@ -578,7 +580,7 @@ export default function Navbar({ theme }: NavbarProps) {
                   key={group.href}
                   href={group.href}
                   onClick={() => setMobileOpen(false)}
-                  style={{ color: groupActive ? primary : `${textColor}90`, backgroundColor: groupActive ? `${primary}10` : "transparent" }}
+                  style={{ color: groupActive ? primary : navTextColor, backgroundColor: groupActive ? `${primary}10` : "transparent" }}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150"
                 >
                   {group.label}
@@ -588,7 +590,7 @@ export default function Navbar({ theme }: NavbarProps) {
                   key={group.href}
                   href={group.href!}
                   onClick={() => setMobileOpen(false)}
-                  style={{ color: groupActive ? primary : `${textColor}90`, backgroundColor: groupActive ? `${primary}10` : "transparent" }}
+                  style={{ color: groupActive ? primary : navTextColor, backgroundColor: groupActive ? `${primary}10` : "transparent" }}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150"
                 >
                   {group.label}
@@ -616,7 +618,7 @@ export default function Navbar({ theme }: NavbarProps) {
             <Link
               href="/cart"
               onClick={() => setMobileOpen(false)}
-              style={{ color: `${textColor}70`, borderColor: `${primary}20` }}
+              style={{ color: `${navTextColor}d0`, borderColor: `${primary}30` }}
               className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm border mt-1"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
