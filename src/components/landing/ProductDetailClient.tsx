@@ -248,6 +248,7 @@ function ProductLandingDescription({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editMessage, setEditMessage] = useState("");
   const [selectedImageElement, setSelectedImageElement] = useState<HTMLImageElement | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [selectedImageSrc, setSelectedImageSrc] = useState("");
   const [imageLink, setImageLink] = useState("");
   const [videoLinks, setVideoLinks] = useState<ProductDescriptionVideoLinks>(emptyProductDescriptionVideoLinks);
@@ -272,6 +273,7 @@ function ProductLandingDescription({
     setIsUploadingImage(false);
     setEditMessage("");
     setSelectedImageElement(null);
+    setSelectedImageIndex(null);
     setSelectedImageSrc("");
     setImageLink("");
     setVideoLinks(emptyProductDescriptionVideoLinks());
@@ -400,8 +402,24 @@ function ProductLandingDescription({
       ?.querySelectorAll(".sf-description-selected-image")
       .forEach((image) => image.classList.remove("sf-description-selected-image"));
     setSelectedImageElement(null);
+    setSelectedImageIndex(null);
     setSelectedImageSrc("");
     setImageLink("");
+  }
+
+  function getSelectedImage() {
+    const editor = editorRef.current;
+    if (!editor) return null;
+
+    if (selectedImageElement?.isConnected && editor.contains(selectedImageElement)) {
+      return selectedImageElement;
+    }
+
+    const markedImage = editor.querySelector<HTMLImageElement>("img.sf-description-selected-image");
+    if (markedImage) return markedImage;
+
+    if (selectedImageIndex === null) return null;
+    return editor.querySelectorAll<HTMLImageElement>("img").item(selectedImageIndex);
   }
 
   function cleanDescriptionHtml(html: string) {
@@ -428,7 +446,11 @@ function ProductLandingDescription({
 
     target.classList.add("sf-description-selected-image");
     const src = target.getAttribute("src") || target.currentSrc || target.src || "";
+    const imageIndex = Array.from(
+      editorRef.current?.querySelectorAll<HTMLImageElement>("img") || [],
+    ).indexOf(target);
     setSelectedImageElement(target);
+    setSelectedImageIndex(imageIndex >= 0 ? imageIndex : null);
     setSelectedImageSrc(src);
     setImageLink(src);
     setEditMessage("Đã chọn ảnh. Bạn có thể tải ảnh mới từ máy tính hoặc dán link để thay.");
@@ -441,16 +463,17 @@ function ProductLandingDescription({
       return;
     }
 
-    const image =
-      selectedImageElement?.isConnected
-        ? selectedImageElement
-        : editorRef.current?.querySelector<HTMLImageElement>("img.sf-description-selected-image");
+    const image = getSelectedImage();
 
     if (!image) {
       setEditMessage("Bạn hãy bấm chọn ảnh trong mô tả trước.");
       return;
     }
 
+    editorRef.current
+      ?.querySelectorAll(".sf-description-selected-image")
+      .forEach((item) => item.classList.remove("sf-description-selected-image"));
+    image.classList.add("sf-description-selected-image");
     image.src = cleanUrl;
     image.setAttribute("src", cleanUrl);
     image.removeAttribute("srcset");
@@ -463,7 +486,6 @@ function ProductLandingDescription({
     setSelectedImageElement(image);
     setSelectedImageSrc(cleanUrl);
     setImageLink(cleanUrl);
-    setDescriptionHtml(editorRef.current?.innerHTML || descriptionHtml);
     setEditMessage("Đã thay ảnh. Bấm Lưu thay đổi để cập nhật lên website.");
   }
 
@@ -473,7 +495,7 @@ function ProductLandingDescription({
       setEditMessage("Bạn hãy chọn đúng file ảnh.");
       return;
     }
-    if (!selectedImageElement && !editorRef.current?.querySelector("img.sf-description-selected-image")) {
+    if (!getSelectedImage()) {
       setEditMessage("Bạn hãy bấm chọn ảnh cần thay trong mô tả trước.");
       return;
     }
@@ -484,6 +506,8 @@ function ProductLandingDescription({
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("folder", "products");
+      formData.append("subfolder", product.slug || product.id);
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",
