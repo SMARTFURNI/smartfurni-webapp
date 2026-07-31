@@ -30,7 +30,7 @@ export default function FloatingContactButtons() {
   if (isHidden) return null;
 
   return (
-    <div className="no-print fixed bottom-5 right-4 z-50 flex flex-col items-center gap-3.5 sm:right-6">
+    <div className="no-print fixed bottom-[calc(168px+env(safe-area-inset-bottom,0px))] right-[18px] z-50 flex flex-col items-center gap-3.5">
       <div className="relative grid h-[46px] w-[46px] place-items-center">
         <span className="absolute inset-0 rounded-full bg-green-500/25 motion-safe:animate-ping" />
         <span className="absolute inset-0 rounded-full bg-green-500/15 motion-safe:animate-ping [animation-delay:700ms]" />

@@ -32,7 +32,7 @@ export default function ScrollToTop() {
         boxShadow: "0 4px 16px rgba(201,168,76,0.3)",
       }}
       className={`fixed right-4 z-50 flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 active:scale-95 sm:right-6 no-print ${
-        hasFloatingContactButtons ? "bottom-[138px]" : "bottom-24"
+        hasFloatingContactButtons ? "bottom-[120px]" : "bottom-24"
       }`}
     >
       <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
