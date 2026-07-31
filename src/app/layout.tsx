@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { getTheme, generateCSSVariables } from "@/lib/theme-store";
 import { CartProvider } from "@/lib/cart-context";
-import FloatingSupport from "@/components/landing/FloatingSupport";
+import FloatingContactButtons from "@/components/landing/FloatingContactButtons";
 import ScrollToTop from "@/components/landing/ScrollToTop";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { initDbOnce } from "@/lib/db-init";
@@ -98,7 +98,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <ServiceWorkerRegistration />
           <Suspense fallback={null}><NavigationProgress /></Suspense>
           {children}
-          <FloatingSupport />
+          <FloatingContactButtons />
           <ScrollToTop />
           <AnalyticsTracker />
           {configuredAnalyticsId?.startsWith("G-") && <WebVitalsReporter analyticsId={configuredAnalyticsId} />}

@@ -1,8 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function ScrollToTop() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
+  const hasFloatingContactButtons = !["/lp/", "/admin", "/crm", "/dashboard", "/smart-bed"].some((prefix) =>
+    pathname?.startsWith(prefix)
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,7 +31,9 @@ export default function ScrollToTop() {
         background: "linear-gradient(135deg, #C9A84C, #8B6914)",
         boxShadow: "0 4px 16px rgba(201,168,76,0.3)",
       }}
-      className="fixed bottom-24 right-4 sm:right-6 z-50 w-8 h-8 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200 no-print"
+      className={`fixed right-4 z-50 flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 active:scale-95 sm:right-6 no-print ${
+        hasFloatingContactButtons ? "bottom-[138px]" : "bottom-24"
+      }`}
     >
       <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="4 11 9 6 14 11"/>
