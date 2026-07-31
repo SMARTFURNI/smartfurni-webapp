@@ -6,7 +6,6 @@ import {
   saveHomepageProductConfig,
 } from "@/lib/homepage-products-store";
 import { getAllProducts } from "@/lib/product-store";
-import { revalidatePath } from "next/cache";
 
 async function checkAuth() {
   const cookieStore = await cookies();
@@ -37,7 +36,6 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const updated = await saveHomepageProductConfig(body);
-    revalidatePath("/");
     return NextResponse.json({ success: true, config: updated });
   } catch (err) {
     return NextResponse.json(

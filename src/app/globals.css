@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&display=swap');
+
 :root {
   --gold: #C9A84C;
   --gold-light: #E2C97E;
@@ -28,7 +30,7 @@ html {
 body {
   background-color: #0D0B00;
   color: #F5EDD6;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100%;
   width: 100%;
@@ -68,7 +70,7 @@ main {
 
 /* Cormorant Garamond brand font */
 .font-brand {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: 'Cormorant Garamond', serif;
   letter-spacing: 0.12em;
 }
 
@@ -1370,21 +1372,18 @@ section {
 .sf-cycle-hero__image {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
   opacity: 0;
-  object-fit: cover;
   object-position: center 58%;
   filter: saturate(0.94) contrast(1.01) brightness(1.12);
-  transform: none;
-  transition: opacity 420ms ease;
+  transform: scale(1.035);
+  transition: opacity 900ms ease, transform 6.5s ease;
 }
 
 .sf-cycle-hero__backdrop { display: none; }
 
 .sf-cycle-hero__image.is-active {
   opacity: 1;
-  transform: none;
+  transform: scale(1.065);
 }
 
 .sf-cycle-hero__shade {
@@ -1712,12 +1711,29 @@ section {
   .sf-cycle-hero__inner { min-height: max(760px, 100svh); }
   .sf-cycle-hero__inner { padding-left: 1rem !important; padding-right: 1rem !important; }
   .sf-cycle-hero__image {
-    inset: 0;
-    height: 100%;
+    inset: 31% 0 auto;
+    height: 56%;
     object-position: 50% 52%;
     filter: saturate(0.96) contrast(1.01) brightness(1.12);
+    transform: scale(1);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 9%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 9%, #000 88%, transparent 100%);
   }
-  .sf-cycle-hero__image.is-active { transform: none; }
+  .sf-cycle-hero__image.is-active { transform: scale(1.015); }
+  .sf-cycle-hero__backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 52%;
+    opacity: 0;
+    filter: saturate(0.82) brightness(0.78) blur(2px);
+    transform: scale(1.04);
+    transition: opacity 900ms ease;
+  }
+  .sf-cycle-hero__backdrop.is-active { opacity: 0.58; }
   .sf-cycle-hero__shade {
     background:
       linear-gradient(180deg, rgba(5,10,18,0.68) 0%, rgba(5,10,18,0.46) 22%, rgba(5,10,18,0.1) 48%, rgba(4,6,9,0.66) 84%, rgba(4,5,6,0.82) 100%),
@@ -1764,7 +1780,6 @@ section {
 @media (prefers-reduced-motion: reduce) {
   .sf-cycle-sensor,
   .sf-cycle-copy { animation: none; }
-  .sf-cycle-hero__image { transition: none; }
   .sf-cycle-ring__hand { transition: none; }
 }
 

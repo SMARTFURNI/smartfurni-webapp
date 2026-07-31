@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { SiteTheme, ThemeVideoItem } from "@/lib/theme-types";
 import { ScrollReveal } from "./ScrollReveal";
 
@@ -7,49 +7,38 @@ import { ScrollReveal } from "./ScrollReveal";
 const GOLD_DIM = "#2E2800";
 const BLACK = "#060500";
 
-// ─── YouTube facade: không tải iframe nặng trước khi khách bấm xem ────────────
+// ─── YouTube embed with lazy autoplay ─────────────────────────────────────────
 function YoutubeEmbed({ videoId, title }: { videoId: string; title: string }) {
   const [loaded, setLoaded] = useState(false);
-  const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1`;
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setLoaded(true); },
+      { threshold: 0.2 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const src = loaded
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=1&rel=0&modestbranding=1`
+    : `https://www.youtube.com/embed/${videoId}?controls=1&rel=0&modestbranding=1`;
 
   return (
     <div
+      ref={ref}
       style={{ position: "relative", paddingBottom: "56.25%", height: 0, overflow: "hidden", background: "#0D0B00" }}
     >
-      {loaded ? (
-        <iframe
-          src={src}
-          title={title}
-          loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setLoaded(true)}
-          aria-label={`Phát video: ${title}`}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", padding: 0, border: 0, cursor: "pointer", background: "#0D0B00" }}
-        >
-          <img
-            src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
-            alt=""
-            aria-hidden="true"
-            width={480}
-            height={360}
-            loading="lazy"
-            decoding="async"
-            style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.78 }}
-          />
-          <span
-            aria-hidden="true"
-            style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: 68, height: 68, borderRadius: "50%", display: "grid", placeItems: "center", background: "rgba(201,168,76,0.94)", color: "#080600", fontSize: 28, boxShadow: "0 12px 36px rgba(0,0,0,0.42)" }}
-          >
-            ▶
-          </span>
-        </button>
-      )}
+      <iframe
+        src={src}
+        title={title}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+      />
     </div>
   );
 }

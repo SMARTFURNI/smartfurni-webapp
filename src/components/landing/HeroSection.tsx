@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
+import { ScrollReveal } from "./ScrollReveal";
 import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
 import { openB2BPopup } from "@/lib/b2b-popup";
@@ -16,8 +17,7 @@ const TRUST_STATS = [
 const SLEEP_PHASES = [
   {
     number: "01",
-    image: "/hero/sleep-cycle/01-relax-1600.webp",
-    mobileImage: "/hero/sleep-cycle/01-relax-960.webp",
+    image: "/hero/sleep-cycle/01-relax.jpg",
     shortLabel: "Thư giãn",
     eyebrow: "TRƯỚC GIẤC NGỦ",
     title: "Chạm để cơ thể thả lỏng",
@@ -25,8 +25,7 @@ const SLEEP_PHASES = [
   },
   {
     number: "02",
-    image: "/hero/sleep-cycle/02-sleep-1600.webp",
-    mobileImage: "/hero/sleep-cycle/02-sleep-960.webp",
+    image: "/hero/sleep-cycle/02-sleep.jpg",
     shortLabel: "Giấc ngủ",
     eyebrow: "TRONG GIẤC NGỦ",
     title: "Êm ái theo từng nhịp nghỉ ngơi",
@@ -34,8 +33,7 @@ const SLEEP_PHASES = [
   },
   {
     number: "03",
-    image: "/hero/sleep-cycle/03-wake-1600.webp",
-    mobileImage: "/hero/sleep-cycle/03-wake-960.webp",
+    image: "/hero/sleep-cycle/03-wake.jpg",
     shortLabel: "Thức dậy",
     eyebrow: "BẮT ĐẦU NGÀY MỚI",
     title: "Thức dậy nhẹ nhàng hơn",
@@ -54,7 +52,6 @@ interface HeroSectionProps {
 export default function HeroSection({ theme }: HeroSectionProps) {
   const [activePhase, setActivePhase] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [renderedPhases, setRenderedPhases] = useState<number[]>([0]);
   const heroRef = useRef<HTMLElement>(null);
 
   const primary = theme?.colors.primary ?? "#C9A84C";
@@ -94,8 +91,6 @@ export default function HeroSection({ theme }: HeroSectionProps) {
       })();
 
   useEffect(() => {
-    let animationFrame = 0;
-
     const updatePhaseFromScroll = () => {
       const hero = heroRef.current;
       if (!hero) return;
@@ -105,35 +100,18 @@ export default function HeroSection({ theme }: HeroSectionProps) {
       const nextPhase = progress >= WAKE_MILESTONE ? 2 : progress >= MIDNIGHT_MILESTONE ? 1 : 0;
       setScrollProgress(progress);
       setActivePhase((current) => current === nextPhase ? current : nextPhase);
-      // Chỉ đưa ảnh phase tiếp theo vào DOM khi người dùng đã bắt đầu đi qua
-      // hero. Lighthouse và lượt truy cập không cuộn sẽ chỉ tải ảnh LCP đầu tiên.
-      if (progress >= 0.62) {
-        setRenderedPhases((current) => current.includes(2) ? current : [...current, 2]);
-      } else if (progress >= 0.12) {
-        setRenderedPhases((current) => current.includes(1) ? current : [...current, 1]);
-      }
-    };
-
-    const scheduleUpdate = () => {
-      if (animationFrame) return;
-      animationFrame = window.requestAnimationFrame(() => {
-        animationFrame = 0;
-        updatePhaseFromScroll();
-      });
     };
 
     updatePhaseFromScroll();
-    window.addEventListener("scroll", scheduleUpdate, { passive: true });
-    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("scroll", updatePhaseFromScroll, { passive: true });
+    window.addEventListener("resize", updatePhaseFromScroll);
     return () => {
-      window.removeEventListener("scroll", scheduleUpdate);
-      window.removeEventListener("resize", scheduleUpdate);
-      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener("scroll", updatePhaseFromScroll);
+      window.removeEventListener("resize", updatePhaseFromScroll);
     };
   }, []);
 
   const selectPhase = (index: number) => {
-    setRenderedPhases((current) => current.includes(index) ? current : [...current, index]);
     setActivePhase(index);
     const hero = heroRef.current;
     if (!hero) return;
@@ -163,22 +141,29 @@ export default function HeroSection({ theme }: HeroSectionProps) {
       >
         <div className="sf-cycle-hero__sticky" style={{ background: `linear-gradient(160deg, ${bgFrom} 0%, ${bgTo} 100%)` }}>
         <div className="sf-cycle-hero__media absolute inset-0 z-0">
-          {SLEEP_PHASES.map((item, index) => renderedPhases.includes(index) ? (
-            <picture key={item.number}>
-              <source media="(max-width: 640px)" srcSet={item.mobileImage} type="image/webp" />
-              <img
-                src={item.image}
-                alt=""
-                aria-hidden="true"
-                width={1600}
-                height={900}
-                loading={index === 0 ? "eager" : "lazy"}
-                decoding={index === 0 ? "sync" : "async"}
-                fetchPriority={index === 0 ? "high" : "low"}
-                className={`sf-cycle-hero__image ${activePhase === index ? "is-active" : ""}`}
-              />
-            </picture>
-          ) : null)}
+          {SLEEP_PHASES.map((item, index) => (
+            <img
+              key={`backdrop-${item.number}`}
+              src={item.image}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="async"
+              className={`sf-cycle-hero__backdrop ${activePhase === index ? "is-active" : ""}`}
+            />
+          ))}
+          {SLEEP_PHASES.map((item, index) => (
+            <img
+              key={item.number}
+              src={item.image}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="async"
+              fetchPriority={index === 0 ? "high" : "auto"}
+              className={`sf-cycle-hero__image h-full w-full object-cover ${activePhase === index ? "is-active" : ""}`}
+            />
+          ))}
           <div
             className="sf-cycle-hero__shade absolute inset-0"
             style={{
@@ -193,7 +178,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
         </div>
 
         <div style={{ maxWidth }} className="sf-cycle-hero__inner relative z-10 mx-auto w-full px-5 sm:px-8">
-          <div className="sf-cycle-hero__intro">
+          <ScrollReveal variant="fadeUp" delay={0} className="sf-cycle-hero__intro">
             <div className="sf-cycle-hero__eyebrow">
               <span /> Giường điều chỉnh điện SmartFurni
             </div>
@@ -204,7 +189,7 @@ export default function HeroSection({ theme }: HeroSectionProps) {
               </strong>
             </h1>
             <p className="sf-cycle-hero__subtitle">{heroSubtitle}</p>
-          </div>
+          </ScrollReveal>
 
           <div className="sf-cycle-stage" aria-live="polite">
             <div className="sf-cycle-ring" aria-hidden="true">
