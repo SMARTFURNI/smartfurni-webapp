@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { formatVnd } from "@/lib/format-vnd";
 
 interface Props {
   price: number; // VND
@@ -23,9 +24,7 @@ function formatPrice(price: number) {
 }
 
 function formatPriceFull(price: number) {
-  if (price >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(1)} tỷ đ`;
-  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu đ`;
-  return price.toLocaleString("vi-VN") + " đ";
+  return formatVnd(price);
 }
 
 function calcMonthly(price: number, months: number, feePercent: number) {

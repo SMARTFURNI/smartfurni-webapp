@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Product } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
 import { trackAttributedProductClick } from "@/lib/blog-attribution";
+import { formatVnd } from "@/lib/format-vnd";
 
 // ─── Design tokens (giống landing page) ──────────────────────────────────────
 const GOLD = "#C9A84C";
@@ -22,9 +23,7 @@ const FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatPrice(price: number) {
-  if (price >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(1)} tỷ`;
-  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu`;
-  return price.toLocaleString("vi-VN") + " đ";
+  return formatVnd(price);
 }
 
 // ─── Product Card — giống hệt landing page ───────────────────────────────────

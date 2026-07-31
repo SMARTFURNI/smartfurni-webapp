@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { SiteTheme } from "@/lib/theme-types";
 import { ScrollReveal, StaggerReveal } from "./ScrollReveal";
 import { SvgIcon } from "@/components/ui/SvgIcon";
+import { formatVnd } from "@/lib/format-vnd";
 
 interface Props {
   theme: SiteTheme;
@@ -160,8 +161,7 @@ function getRecommendations(answers: Answer[]): Recommendation[] {
 }
 
 function formatPrice(price: number) {
-  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu đ`;
-  return price.toLocaleString("vi-VN") + " đ";
+  return formatVnd(price);
 }
 
 export default function SleepAdvisorClient({ theme }: Props) {

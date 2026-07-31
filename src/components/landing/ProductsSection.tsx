@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Product, ProductCategory } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
 import type { HomepageProductConfig } from "@/lib/homepage-products-store";
+import { formatVnd } from "@/lib/format-vnd";
 
 interface ProductsSectionProps {
   products: Product[];
@@ -26,9 +27,7 @@ const STATUS_CONFIG = {
 };
 
 function formatPrice(price: number) {
-  if (price >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(1)} tỷ`;
-  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu`;
-  return price.toLocaleString("vi-VN") + " đ";
+  return formatVnd(price);
 }
 
 function StarRating({ rating, color }: { rating: number; color: string }) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Product } from "@/lib/product-store";
 import type { SiteTheme } from "@/lib/theme-types";
 import { ScrollReveal } from "./ScrollReveal";
+import { formatVnd } from "@/lib/format-vnd";
 
 interface Props {
   products: Product[];
@@ -11,9 +12,7 @@ interface Props {
 }
 
 function formatPrice(price: number) {
-  if (price >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(1)} tỷ đ`;
-  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu đ`;
-  return price.toLocaleString("vi-VN") + " đ";
+  return formatVnd(price);
 }
 
 // Score dimensions for radar chart

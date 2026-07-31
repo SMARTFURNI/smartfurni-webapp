@@ -6,6 +6,7 @@ import { useCart } from "@/lib/cart-context";
 import Footer from "@/components/landing/Footer";
 import type { Product } from "@/lib/product-store";
 import { SvgIcon } from "@/components/ui/SvgIcon";
+import { formatVnd } from "@/lib/format-vnd";
 
 interface Props {
   theme: SiteTheme;
@@ -13,9 +14,7 @@ interface Props {
 }
 
 function formatPrice(price: number) {
-  if (price >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(1)} tỷ đ`;
-  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu đ`;
-  return price.toLocaleString("vi-VN") + " đ";
+  return formatVnd(price);
 }
 
 const SHIPPING_FEE = 0; // Free shipping
@@ -318,7 +317,7 @@ export default function CartClient({ theme, upsellProducts = [] }: Props) {
                         <p style={{ color: colors.text }} className="text-xs font-semibold line-clamp-1 group-hover:text-[#C9A84C] transition-colors">{p.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span style={{ color: colors.primary }} className="text-xs font-bold">
-                            {p.price >= 1_000_000 ? `${(p.price / 1_000_000).toFixed(0)} triệu đ` : p.price.toLocaleString("vi-VN") + " đ"}
+                            {formatPrice(p.price)}
                           </span>
                           {disc > 0 && (
                             <span style={{ backgroundColor: `${colors.error}15`, color: colors.error }} className="text-xs px-1 py-0.5 rounded-full">-{disc}%</span>

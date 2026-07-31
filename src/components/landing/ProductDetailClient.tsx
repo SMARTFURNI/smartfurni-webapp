@@ -22,6 +22,7 @@ import {
   hasProductDescriptionTemplate,
 } from "@/lib/product-description-template";
 import { redirectToLpThankYou } from "@/lib/lp-thank-you";
+import { formatVnd } from "@/lib/format-vnd";
 
 interface Props {
   product: Product;
@@ -31,9 +32,7 @@ interface Props {
 
 function formatPrice(price: number) {
   if (price <= 0) return "Liên hệ";
-  if (price >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(1)} tỷ đ`;
-  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu đ`;
-  return price.toLocaleString("vi-VN") + " đ";
+  return formatVnd(price);
 }
 
 function StarRating({ rating, count, color }: { rating: number; count: number; color: string }) {

@@ -6,15 +6,14 @@ import { useRouter } from "next/navigation";
 import type { SiteTheme } from "@/lib/theme-types";
 import { useCart } from "@/lib/cart-context";
 import Footer from "@/components/landing/Footer";
+import { formatVnd } from "@/lib/format-vnd";
 
 interface Props {
   theme: SiteTheme;
 }
 
 function formatPrice(price: number) {
-  if (price >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(1)} tỷ đ`;
-  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(0)} triệu đ`;
-  return price.toLocaleString("vi-VN") + " đ";
+  return formatVnd(price);
 }
 
 const PAYMENT_METHODS = [
