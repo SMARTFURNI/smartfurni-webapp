@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
           { key: "Service-Worker-Allowed", value: "/" },
         ],
       },
+      {
+        source: "/hero/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" },
+        ],
+      },
       ...["/admin-manifest.webmanifest", "/crm-manifest.webmanifest", "/smart-bed-manifest.webmanifest"].map((source) => ({
         source,
         headers: [{ key: "Cache-Control", value: "public, max-age=0, must-revalidate" }],

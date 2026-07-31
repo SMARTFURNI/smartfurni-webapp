@@ -11,7 +11,7 @@ import HomeVisualProofSections from "@/components/landing/HomeVisualProofSection
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import ComparisonSection from "@/components/landing/ComparisonSection";
 import HomeDecisionSections from "@/components/landing/HomeDecisionSections";
-import { initHomepageProductConfig, getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
+import { getHomepageProducts, getHomepageProductConfigAsync } from "@/lib/homepage-products-store";
 import { HOMEPAGE_MATTRESS_PRODUCTS } from "@/lib/homepage-mattress-products";
 import { getAllProducts } from "@/lib/product-store";
 import { inferProductFamily } from "@/lib/product-families";
@@ -25,12 +25,16 @@ export const metadata: Metadata = {
   openGraph: { url: absoluteUrl("/"), type: "website" },
 };
 
-export const dynamic = "force-dynamic";
+// Trang chủ là nội dung công khai, dùng ISR để Railway không phải truy vấn DB
+// và render lại toàn bộ trang cho từng lượt truy cập. Các route admin sẽ chủ
+// động revalidate ngay sau khi lưu nên dữ liệu vẫn cập nhật tức thời.
+export const revalidate = 300;
 
 export default async function HomePage() {
-  await initHomepageProductConfig();
-  const theme = await getThemeAsync();
-  const homepageConfig = await getHomepageProductConfigAsync();
+  const [theme, homepageConfig] = await Promise.all([
+    getThemeAsync(),
+    getHomepageProductConfigAsync(),
+  ]);
   const products = getHomepageProducts();
   const allProducts = getAllProducts();
   const mattressProducts = HOMEPAGE_MATTRESS_PRODUCTS.map((seed) => {

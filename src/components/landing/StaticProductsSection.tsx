@@ -88,7 +88,6 @@ export function StaticProductCard({ product, index }: { product: Product; index:
                 fill
                 style={{ objectFit: "cover" }}
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                priority={index < 2}
                 onError={() => setImgErr(true)}
               />
             ) : (

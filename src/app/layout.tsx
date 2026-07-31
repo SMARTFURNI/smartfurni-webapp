@@ -14,8 +14,11 @@ import { organizationSchema, productCategoryNavigationSchema, websiteSchema } fr
 import WebVitalsReporter from "@/components/WebVitalsReporter";
 import { PRODUCT_FAMILIES } from "@/lib/product-families";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import Script from "next/script";
 
-export const dynamic = "force-dynamic";
+// Layout công khai được cache theo ISR. Những trang cần cookies/session vẫn tự
+// động trở thành dynamic ở segment con, không làm cache dữ liệu CRM cá nhân.
+export const revalidate = 300;
 const SMARTFURNI_GOOGLE_ADS_ID = "AW-16742362454";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -64,6 +67,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const configuredAnalyticsId = theme.seo.googleAnalyticsId?.trim();
   const shouldRenderConfiguredAnalytics =
     configuredAnalyticsId && configuredAnalyticsId !== SMARTFURNI_GOOGLE_ADS_ID;
+  const analyticsConfig = [
+    `gtag('config','${SMARTFURNI_GOOGLE_ADS_ID}');`,
+    shouldRenderConfiguredAnalytics ? `gtag('config','${configuredAnalyticsId}');` : "",
+  ].filter(Boolean).join("");
 
   return (
     <html lang="vi" className="scroll-smooth">
@@ -72,19 +79,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <JsonLd data={websiteSchema()} />
         <JsonLd data={productCategoryNavigationSchema(PRODUCT_FAMILIES)} />
         <style dangerouslySetInnerHTML={{ __html: `:root { ${cssVars} }` }} />
-        {/* Google Ads tag SmartFurni 02: gắn toàn site để phủ trang chủ và các landing page. */}
-        <script async src={`https://www.googletagmanager.com/gtag/js?id=${SMARTFURNI_GOOGLE_ADS_ID}`} />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${SMARTFURNI_GOOGLE_ADS_ID}');`,
-          }}
+        {/* Chỉ tải một gtag sau khi giao diện đã tương tác được; cùng loader có
+            thể cấu hình cả Google Ads và Google Analytics. */}
+        <Script
+          id="smartfurni-google-tag"
+          src={`https://www.googletagmanager.com/gtag/js?id=${SMARTFURNI_GOOGLE_ADS_ID}`}
+          strategy="afterInteractive"
         />
-        {shouldRenderConfiguredAnalytics && (
-          <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${configuredAnalyticsId}`} />
-            <script dangerouslySetInnerHTML={{ __html: `gtag('config','${configuredAnalyticsId}');` }} />
-          </>
-        )}
+        <Script id="smartfurni-google-tag-config" strategy="afterInteractive">
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());${analyticsConfig}`}
+        </Script>
       </head>
       <body
         style={{

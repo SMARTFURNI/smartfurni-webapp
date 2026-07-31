@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getAllProducts, getProductDashboardStats, createProduct } from "@/lib/product-store";
 import { initDbOnce } from "@/lib/db-init";
+import { revalidatePath } from "next/cache";
 
 export async function POST(request: NextRequest) {
   await initDbOnce();
@@ -10,6 +11,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const product = createProduct(body);
+    revalidatePath("/");
+    revalidatePath("/products");
     return NextResponse.json(product, { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: "Invalid data" }, { status: 400 });

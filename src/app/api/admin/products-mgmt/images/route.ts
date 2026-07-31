@@ -3,6 +3,13 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { getProductById, updateProduct } from "@/lib/product-store";
 import { initDbOnce } from "@/lib/db-init";
 import { deleteImageAsset, storeImageAsset } from "@/lib/media-assets";
+import { revalidatePath } from "next/cache";
+
+function revalidateProductPages(slug: string) {
+  revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath(`/products/${slug}`);
+}
 
 // POST /api/admin/products-mgmt/images — optimize to WebP and store in Railway Bucket.
 // GitHub remains a temporary compatibility fallback until the bucket is configured.
@@ -55,6 +62,7 @@ export async function POST(request: NextRequest) {
       images: newImages,
       coverImage: newCoverImage,
     });
+    revalidateProductPages(product.slug);
 
     return NextResponse.json({
       url,
@@ -105,6 +113,7 @@ export async function DELETE(request: NextRequest) {
       images: newImages,
       coverImage: newCoverImage,
     });
+    revalidateProductPages(product.slug);
 
     if (imageUrl.startsWith("/uploads/") || imageUrl.startsWith("/api/media/")) {
       try {
@@ -138,6 +147,7 @@ export async function PATCH(request: NextRequest) {
     if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
     await updateProduct(productId, { coverImage: imageUrl });
+    revalidateProductPages(product.slug);
 
     return NextResponse.json({ success: true, coverImage: imageUrl });
   } catch (error) {

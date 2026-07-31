@@ -377,7 +377,6 @@ export default function Navbar({ theme }: NavbarProps) {
                 width={92}
                 height={52}
                 style={{ height: 52, width: 92, objectFit: "contain", display: "block" }}
-                fetchPriority="high"
               />
             </Link>
 
