@@ -483,6 +483,10 @@ function ProductLandingDescription({
     image.loading = "lazy";
     image.decoding = "async";
 
+    const nextDraftHtml = editorRef.current?.innerHTML;
+    if (nextDraftHtml) {
+      setDescriptionHtml(cleanDescriptionHtml(nextDraftHtml));
+    }
     setSelectedImageElement(image);
     setSelectedImageSrc(cleanUrl);
     setImageLink(cleanUrl);
