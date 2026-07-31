@@ -414,7 +414,6 @@ export const defaultTheme: SiteTheme = {
       titleAccent: { text: "tin tưởng SmartFurni", fontSize: 36, color: "#C9A84C", fontWeight: "light" },
       subtitle: { text: "Những đánh giá thực tế từ khách hàng đã trải nghiệm sản phẩm SmartFurni.", fontSize: 14, color: "#F5EDD6", fontWeight: "normal" },
       ratingLabel: "Dựa trên 10.247 đánh giá",
-      trustedByLabel: "Được tin dùng bởi",
     },
     download: {
       badge: { text: "TẢI ỨNG DỤNG", fontSize: 12, color: "#C9A84C", fontWeight: "medium" },

@@ -219,19 +219,6 @@ export default function TestimonialsSection({ theme }: Props) {
           ))}
         </div>
 
-        {/* Trust logos */}
-        <ScrollReveal variant="fadeIn" delay={200}>
-          <div className="mt-10 pt-8 border-t" style={{ borderColor: `${colors.border}30` }}>
-            <p className="text-center text-xs text-[#F5EDD6]/30 mb-5 uppercase tracking-wider">{test?.trustedByLabel ?? "Được tin dùng bởi"}</p>
-            <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10">
-              {["Vingroup", "FPT", "Masan", "VinHomes", "Techcombank"].map((brand) => (
-                <span key={brand} className="text-sm font-semibold text-[#F5EDD6]/20 tracking-wider uppercase">
-                  {brand}
-                </span>
-              ))}
-            </div>
-          </div>
-        </ScrollReveal>
       </div>
     </section>
   );

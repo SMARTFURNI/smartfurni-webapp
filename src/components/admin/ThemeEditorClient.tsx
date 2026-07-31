@@ -1843,12 +1843,6 @@ export default function ThemeEditorClient({
                 onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, testimonials: { ...test, ratingLabel: v } })}
                 placeholder="Dựa trên 10.247 đánh giá"
               />
-              <TextInput
-                label="Nhãn được tin dùng"
-                value={test.trustedByLabel}
-                onChange={(v) => updateSection("homepageSections", { ...theme.homepageSections, testimonials: { ...test, trustedByLabel: v } })}
-                placeholder="Được tin dùng bởi"
-              />
             </SectionCard>
           </div>
         );

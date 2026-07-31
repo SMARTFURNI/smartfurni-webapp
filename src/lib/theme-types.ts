@@ -293,7 +293,6 @@ export interface HomepageFeaturesSection extends HomepageSectionHeader {
 
 export interface HomepageTestimonialsSection extends HomepageSectionHeader {
   ratingLabel: string;
-  trustedByLabel: string;
 }
 
 export interface HomepageDownloadSection {
