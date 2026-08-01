@@ -3,6 +3,10 @@ import {
   assessFanpageConversation,
   buildFallbackCarePlan,
 } from "@/lib/fanpage-care-center-rules";
+import {
+  DEFAULT_FANPAGE_CARE_SETTINGS,
+  normalizeFanpageCareSettings,
+} from "@/lib/fanpage-care-settings";
 
 describe("fanpage care center", () => {
   it("ưu tiên hội thoại hỏi giá chưa được phản hồi", () => {
@@ -70,5 +74,42 @@ describe("fanpage care center", () => {
     expect(plan.planSteps.length).toBeGreaterThanOrEqual(3);
     expect(plan.planSteps.every(step => step.requiresHumanApproval)).toBe(true);
     expect(plan.planSteps[0].channel).toBe("Messenger");
+  });
+
+  it("áp dụng trọng số và từ khóa do admin cấu hình", () => {
+    const settings = normalizeFanpageCareSettings({
+      ...DEFAULT_FANPAGE_CARE_SETTINGS,
+      scoring: {
+        ...DEFAULT_FANPAGE_CARE_SETTINGS.scoring,
+        buyingSignalWeight: 30,
+        hotThreshold: 70,
+      },
+      keywords: {
+        ...DEFAULT_FANPAGE_CARE_SETTINGS.keywords,
+        purchaseIntent: ["giữ hàng giúp tôi"],
+      },
+    });
+    const assessment = assessFanpageConversation({
+      unreadCount: 0,
+      canReply: true,
+      latestMessageAt: new Date().toISOString(),
+      messages: [{
+        id: "m-custom",
+        direction: "inbound",
+        content: "Giữ hàng giúp tôi, tôi sẽ qua showroom.",
+      }],
+    }, settings);
+
+    expect(assessment.buyingSignals).toContain("Có ý định mua/chốt");
+    expect(assessment.leadTemperature).toBe("hot");
+  });
+
+  it("chuẩn hóa ngưỡng để lead ấm luôn thấp hơn lead nóng", () => {
+    const settings = normalizeFanpageCareSettings({
+      scoring: { warmThreshold: 99, hotThreshold: 60 },
+    });
+
+    expect(settings.scoring.hotThreshold).toBe(60);
+    expect(settings.scoring.warmThreshold).toBe(59);
   });
 });

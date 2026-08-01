@@ -17,6 +17,9 @@ import {
   Loader2,
   MessageSquareText,
   RefreshCw,
+  RotateCcw,
+  Save,
+  Settings2,
   ShieldCheck,
   Sparkles,
   UserRoundCheck,
@@ -41,8 +44,9 @@ import type {
   FanpageCareRun,
   FanpageCareStaffOption,
 } from "@/types/fanpage-care-center";
+import type { FanpageCareSettings } from "@/lib/fanpage-care-settings";
 
-type TabKey = "overview" | "care-plans" | "conversations" | "analysis" | "scripts" | "workflows";
+type TabKey = "overview" | "care-plans" | "conversations" | "analysis" | "scripts" | "workflows" | "settings";
 
 const tabs: Array<{ key: TabKey; label: string; icon: LucideIcon }> = [
   { key: "overview", label: "Tổng quan", icon: BrainCircuit },
@@ -51,6 +55,7 @@ const tabs: Array<{ key: TabKey; label: string; icon: LucideIcon }> = [
   { key: "analysis", label: "Phân tích AI", icon: Bot },
   { key: "scripts", label: "Kịch bản tư vấn", icon: FileText },
   { key: "workflows", label: "Quy trình", icon: GitBranch },
+  { key: "settings", label: "Cài đặt AI", icon: Settings2 },
 ];
 
 interface CareCenterResponse {
@@ -62,7 +67,16 @@ interface CareCenterResponse {
     canRun: boolean;
     canAssign: boolean;
     canReview: boolean;
+    canManageSettings: boolean;
   };
+}
+
+interface SettingsResponse {
+  settings: FanpageCareSettings;
+  defaults: FanpageCareSettings;
+  version: number;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -157,6 +171,10 @@ export function ConversationLearningClient() {
   const [scripts, setScripts] = useState<SalesScript[]>([]);
   const [workflows, setWorkflows] = useState<SalesWorkflow[]>([]);
   const [careCenter, setCareCenter] = useState<CareCenterResponse | null>(null);
+  const [aiSettings, setAiSettings] = useState<FanpageCareSettings | null>(null);
+  const [settingsVersion, setSettingsVersion] = useState(0);
+  const [settingsUpdatedAt, setSettingsUpdatedAt] = useState<string | undefined>();
+  const [settingsNotice, setSettingsNotice] = useState<string | null>(null);
   const [careStatusFilter, setCareStatusFilter] = useState<FanpageCarePlanStatus | "all">("all");
   const [carePageFilter, setCarePageFilter] = useState("all");
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
@@ -182,6 +200,12 @@ export function ConversationLearningClient() {
       setScripts(scriptData.scripts);
       setWorkflows(workflowData.workflows);
       setCareCenter(careData);
+      if (careData.permissions.canManageSettings) {
+        const settingsData = await fetchJson<SettingsResponse>("/api/crm/conversation-learning/care-center/settings");
+        setAiSettings(settingsData.settings);
+        setSettingsVersion(settingsData.version);
+        setSettingsUpdatedAt(settingsData.updatedAt);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không tải được dữ liệu.");
     } finally {
@@ -337,6 +361,63 @@ export function ConversationLearningClient() {
     }
   }
 
+  async function saveAiSettings() {
+    if (!aiSettings) return;
+    setActionLoading("save-settings");
+    setError(null);
+    setSettingsNotice(null);
+    try {
+      const data = await fetchJson<SettingsResponse>("/api/crm/conversation-learning/care-center/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: aiSettings }),
+      });
+      setAiSettings(data.settings);
+      setSettingsVersion(data.version);
+      setSettingsUpdatedAt(data.updatedAt);
+      setSettingsNotice("Đã lưu. Cấu hình mới sẽ áp dụng từ lần chạy AI tiếp theo.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không lưu được cấu hình AI.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function resetAiSettings() {
+    if (!window.confirm("Khôi phục toàn bộ prompt, trọng số và từ khóa về mặc định?")) return;
+    setActionLoading("reset-settings");
+    setError(null);
+    setSettingsNotice(null);
+    try {
+      const data = await fetchJson<SettingsResponse>("/api/crm/conversation-learning/care-center/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset" }),
+      });
+      setAiSettings(data.settings);
+      setSettingsVersion(data.version);
+      setSettingsUpdatedAt(data.updatedAt);
+      setSettingsNotice("Đã khôi phục cấu hình mặc định.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không khôi phục được cấu hình AI.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  function updateScoring(key: keyof FanpageCareSettings["scoring"], value: number) {
+    setAiSettings(current => current ? { ...current, scoring: { ...current.scoring, [key]: value } } : current);
+  }
+
+  function updateTiming(key: keyof FanpageCareSettings["timing"], value: number) {
+    setAiSettings(current => current ? { ...current, timing: { ...current.timing, [key]: value } } : current);
+  }
+
+  function updateKeywords(key: keyof FanpageCareSettings["keywords"], value: string) {
+    const keywords = value.split(/[,\n]/).map(item => item.trim()).filter(Boolean);
+    setAiSettings(current => current ? { ...current, keywords: { ...current.keywords, [key]: keywords } } : current);
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[520px] items-center justify-center text-[#E2C97E]">
@@ -379,7 +460,7 @@ export function ConversationLearningClient() {
           </div>
         </div>
         <div className="flex gap-1 overflow-x-auto border-t border-[rgba(255,200,100,0.10)] bg-black/10 px-3 py-2">
-          {tabs.map(tab => {
+          {tabs.filter(tab => tab.key !== "settings" || careCenter?.permissions.canManageSettings).map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.key;
             return (
@@ -925,6 +1006,126 @@ export function ConversationLearningClient() {
           </div>
         </Card>
       ) : null}
+
+      {activeTab === "settings" && careCenter?.permissions.canManageSettings ? (
+        aiSettings ? (
+          <div className="space-y-4">
+            <Card className="p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <SectionTitle
+                  title="Cài đặt AI quét và đánh giá hội thoại"
+                  subtitle="Admin kiểm soát prompt, tín hiệu nhận diện, trọng số chấm lead, thời hạn xử lý và điều kiện gửi PWA."
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Pill className="border-[#C9A84C]/25 bg-[#C9A84C]/10 text-[#E2C97E]">
+                    Phiên bản {settingsVersion}
+                  </Pill>
+                  <ActionButton onClick={resetAiSettings} loading={actionLoading === "reset-settings"} variant="secondary">
+                    <RotateCcw className="h-4 w-4" /> Khôi phục mặc định
+                  </ActionButton>
+                  <ActionButton onClick={saveAiSettings} loading={actionLoading === "save-settings"}>
+                    <Save className="h-4 w-4" /> Lưu cấu hình
+                  </ActionButton>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col gap-2 rounded-xl border border-emerald-300/15 bg-emerald-500/[0.055] p-3 text-xs leading-5 text-emerald-100/70 sm:flex-row sm:items-center sm:justify-between">
+                <span><ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-300" />AI chỉ tạo bản phân tích và kế hoạch. Quy tắc không tự nhắn khách, không bịa dữ liệu và luôn cần người duyệt được khóa ở máy chủ.</span>
+                <span className="shrink-0">Cập nhật: {formatDate(settingsUpdatedAt)}</span>
+              </div>
+              {settingsNotice ? <p className="mt-3 text-sm font-medium text-emerald-300">{settingsNotice}</p> : null}
+            </Card>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <Card className="p-5">
+                <SectionTitle title="Câu lệnh phân tích" subtitle="Định hướng vai trò và cách AI lập kế hoạch cho từng hội thoại." />
+                <div className="mt-4 space-y-4">
+                  <SettingsTextarea
+                    label="Prompt hệ thống"
+                    value={aiSettings.prompts.system}
+                    rows={5}
+                    onChange={value => setAiSettings(current => current ? { ...current, prompts: { ...current.prompts, system: value } } : current)}
+                  />
+                  <SettingsTextarea
+                    label="Yêu cầu lập kế hoạch chăm sóc"
+                    value={aiSettings.prompts.planning}
+                    rows={6}
+                    onChange={value => setAiSettings(current => current ? { ...current, prompts: { ...current.prompts, planning: value } } : current)}
+                  />
+                </div>
+              </Card>
+
+              <Card className="p-5">
+                <SectionTitle title="Ngưỡng phân loại và thời hạn" subtitle="Quyết định lead nào được tạo kế hoạch, mức nóng/ấm và hạn nhân viên cần xử lý." />
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <SettingsNumber label="Điểm đủ điều kiện" value={aiSettings.scoring.qualifyThreshold} onChange={value => updateScoring("qualifyThreshold", value)} />
+                  <SettingsNumber label="Ngưỡng lead ấm" value={aiSettings.scoring.warmThreshold} onChange={value => updateScoring("warmThreshold", value)} />
+                  <SettingsNumber label="Ngưỡng lead nóng" value={aiSettings.scoring.hotThreshold} onChange={value => updateScoring("hotThreshold", value)} />
+                  <SettingsNumber label="Cửa sổ hội thoại mới (giờ)" value={aiSettings.scoring.recentWindowHours} onChange={value => updateScoring("recentWindowHours", value)} />
+                  <SettingsNumber label="Hạn lead nóng (giờ)" value={aiSettings.timing.hotDueHours} step={0.25} onChange={value => updateTiming("hotDueHours", value)} />
+                  <SettingsNumber label="Hạn lead ấm (giờ)" value={aiSettings.timing.warmDueHours} step={0.25} onChange={value => updateTiming("warmDueHours", value)} />
+                  <SettingsNumber label="Hạn lead lạnh (giờ)" value={aiSettings.timing.coldDueHours} step={0.25} onChange={value => updateTiming("coldDueHours", value)} />
+                  <SettingsNumber label="Số ngày tối đa của kế hoạch" value={aiSettings.timing.maxPlanDays} onChange={value => updateTiming("maxPlanDays", value)} />
+                </div>
+              </Card>
+            </div>
+
+            <Card className="p-5">
+              <SectionTitle title="Các yếu tố chấm điểm lead" subtitle="Điểm cuối cùng được giới hạn trong 0–100. Số âm được thể hiện bằng nhóm trừ điểm bên dưới." />
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <SettingsNumber label="Có tin nhắn khách" value={aiSettings.scoring.inboundBase} onChange={value => updateScoring("inboundBase", value)} />
+                <SettingsNumber label="Mỗi sản phẩm quan tâm" value={aiSettings.scoring.productWeight} onChange={value => updateScoring("productWeight", value)} />
+                <SettingsNumber label="Trần điểm sản phẩm" value={aiSettings.scoring.productCap} onChange={value => updateScoring("productCap", value)} />
+                <SettingsNumber label="Mỗi tín hiệu mua" value={aiSettings.scoring.buyingSignalWeight} onChange={value => updateScoring("buyingSignalWeight", value)} />
+                <SettingsNumber label="Trần điểm tín hiệu mua" value={aiSettings.scoring.buyingSignalCap} onChange={value => updateScoring("buyingSignalCap", value)} />
+                <SettingsNumber label="Tin khách chưa phản hồi" value={aiSettings.scoring.unansweredBonus} onChange={value => updateScoring("unansweredBonus", value)} />
+                <SettingsNumber label="Hội thoại chưa đọc" value={aiSettings.scoring.unreadBonus} onChange={value => updateScoring("unreadBonus", value)} />
+                <SettingsNumber label="Hội thoại còn mới" value={aiSettings.scoring.recentBonus} onChange={value => updateScoring("recentBonus", value)} />
+                <SettingsNumber label="Trừ khi không thể trả lời" value={aiSettings.scoring.cannotReplyPenalty} onChange={value => updateScoring("cannotReplyPenalty", value)} />
+                <SettingsNumber label="Trừ mỗi trở ngại" value={aiSettings.scoring.objectionPenalty} onChange={value => updateScoring("objectionPenalty", value)} />
+                <SettingsNumber label="Trần điểm bị trừ" value={aiSettings.scoring.objectionCap} onChange={value => updateScoring("objectionCap", value)} />
+              </div>
+            </Card>
+
+            <Card className="p-5">
+              <SectionTitle title="Từ khóa AI cần quét" subtitle="Nhập cách nhau bằng dấu phẩy hoặc xuống dòng. Hệ thống tự bỏ dấu tiếng Việt khi so khớp." />
+              <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                <SettingsTextarea label="Sản phẩm/nhóm sản phẩm" value={aiSettings.keywords.products.join(", ")} onChange={value => updateKeywords("products", value)} />
+                <SettingsTextarea label="Hỏi giá/báo giá" value={aiSettings.keywords.pricing.join(", ")} onChange={value => updateKeywords("pricing", value)} />
+                <SettingsTextarea label="Kích thước" value={aiSettings.keywords.dimensions.join(", ")} onChange={value => updateKeywords("dimensions", value)} />
+                <SettingsTextarea label="Giao lắp/showroom" value={aiSettings.keywords.delivery.join(", ")} onChange={value => updateKeywords("delivery", value)} />
+                <SettingsTextarea label="Ý định mua/chốt" value={aiSettings.keywords.purchaseIntent.join(", ")} onChange={value => updateKeywords("purchaseIntent", value)} />
+                <SettingsTextarea label="Sẵn sàng nhận liên hệ" value={aiSettings.keywords.contact.join(", ")} onChange={value => updateKeywords("contact", value)} />
+                <SettingsTextarea label="Từ khóa trở ngại/phản đối" value={aiSettings.keywords.objections.join(", ")} onChange={value => updateKeywords("objections", value)} />
+                <SettingsTextarea label="Nhu cầu tối ưu không gian" value={aiSettings.keywords.smallSpaceNeeds.join(", ")} onChange={value => updateKeywords("smallSpaceNeeds", value)} />
+                <SettingsTextarea label="Nhu cầu nâng đỡ/chăm sóc" value={aiSettings.keywords.homeCareNeeds.join(", ")} onChange={value => updateKeywords("homeCareNeeds", value)} />
+                <SettingsTextarea label="Nhu cầu xem thực tế" value={aiSettings.keywords.visualProofNeeds.join(", ")} onChange={value => updateKeywords("visualProofNeeds", value)} />
+              </div>
+            </Card>
+
+            <Card className="p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <SectionTitle title="Thông báo PWA" subtitle="Chỉ gửi kế hoạch đạt mức điểm tối thiểu tới người phụ trách; không gửi tin cho khách." />
+                <label className="inline-flex items-center gap-3 text-sm font-semibold text-[#F5EDD6]">
+                  <input
+                    type="checkbox"
+                    checked={aiSettings.notifications.enabled}
+                    onChange={event => setAiSettings(current => current ? { ...current, notifications: { ...current.notifications, enabled: event.target.checked } } : current)}
+                    className="h-4 w-4 accent-[#C9A84C]"
+                  />
+                  Bật thông báo kế hoạch mới
+                </label>
+              </div>
+              <div className="mt-4 max-w-sm">
+                <SettingsNumber
+                  label="Điểm lead tối thiểu để gửi PWA"
+                  value={aiSettings.notifications.minimumScore}
+                  onChange={value => setAiSettings(current => current ? { ...current, notifications: { ...current.notifications, minimumScore: value } } : current)}
+                />
+              </div>
+            </Card>
+          </div>
+        ) : <EmptyState text="Đang tải cấu hình AI..." />
+      ) : null}
     </div>
   );
 }
@@ -1013,6 +1214,55 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) 
       <h2 className="text-lg font-semibold text-[#F5EDD6]">{title}</h2>
       <p className="mt-1 text-sm leading-5 text-[rgba(245,237,214,0.46)]">{subtitle}</p>
     </div>
+  );
+}
+
+function SettingsNumber({
+  label,
+  value,
+  onChange,
+  step = 1,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  step?: number;
+}) {
+  return (
+    <label className="block rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-3">
+      <span className="block text-xs font-semibold text-[rgba(245,237,214,0.58)]">{label}</span>
+      <input
+        type="number"
+        step={step}
+        value={value}
+        onChange={event => onChange(Number(event.target.value))}
+        className="mt-2 w-full rounded-lg border border-[rgba(118,138,166,0.18)] bg-[#080d15] px-3 py-2 text-sm font-semibold text-[#F5EDD6] outline-none transition focus:border-[#C9A84C]/55"
+      />
+    </label>
+  );
+}
+
+function SettingsTextarea({
+  label,
+  value,
+  onChange,
+  rows = 4,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows?: number;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-semibold text-[rgba(245,237,214,0.58)]">{label}</span>
+      <textarea
+        rows={rows}
+        value={value}
+        onChange={event => onChange(event.target.value)}
+        className="mt-2 w-full resize-y rounded-xl border border-[rgba(118,138,166,0.18)] bg-[#080d15] px-3 py-2.5 text-sm leading-6 text-[#F5EDD6] outline-none transition placeholder:text-white/20 focus:border-[#C9A84C]/55"
+      />
+    </label>
   );
 }
 

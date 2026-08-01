@@ -64,6 +64,7 @@ export async function GET(req: NextRequest) {
       canRun: canManage(session),
       canAssign: canManage(session),
       canReview: true,
+      canManageSettings: Boolean(session.isAdmin || session.staffRole === "super_admin"),
     },
   });
 }

@@ -8,6 +8,7 @@ import {
 import { getAllStaff, getStaffById } from "@/lib/crm-staff-store";
 import { initConversationLearningSchema } from "@/lib/conversation-learning-store";
 import { countPushSubscriptions, sendPushNotification } from "@/lib/pwa-server";
+import { getFanpageCareSettings, type FanpageCareSettings } from "@/lib/fanpage-care-settings";
 import {
   assessFanpageConversation,
   buildFallbackCarePlan,
@@ -467,6 +468,7 @@ function parseGeminiJson(text: string) {
 
 async function generateGeminiPlans(
   inputs: Array<{ conversation: ConversationForAnalysis; assessment: DeterministicConversationAssessment }>,
+  settings: FanpageCareSettings,
 ) {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey || !inputs.length) {
@@ -508,15 +510,15 @@ async function generateGeminiPlans(
           })),
         }));
         const prompt = [
-          "Bạn là AI Customer Care Planner của CRM nội bộ SmartFurni.",
-          "Hãy lập kế hoạch chăm sóc riêng cho từng hội thoại dựa hoàn toàn trên dữ liệu được cung cấp.",
+          settings.prompts.system,
+          settings.prompts.planning,
           "Không bịa giá, chính sách, số điện thoại, khuyến mãi hoặc thông tin sản phẩm.",
           "Không tự gửi tin. Mọi bước liên hệ phải requiresHumanApproval=true.",
           "Tránh spam: tối đa một liên hệ/ngày, dừng nếu khách từ chối, ưu tiên trả lời tin chưa phản hồi.",
           "Trả về JSON thuần dạng {\"plans\":[...]} với mỗi phần tử gồm:",
           "conversationId, summary, customerNeed, productInterest[], objections[], buyingSignals[],",
           "nextBestAction, confidence (0..1), planSteps[] gồm dayOffset, when, channel (Messenger|Điện thoại|Zalo|CRM), goal, action, draftMessage, requiresHumanApproval.",
-          "Mỗi hội thoại cần 3-4 bước trong tối đa 7 ngày. Viết tiếng Việt tự nhiên, ngắn gọn.",
+          `Mỗi hội thoại cần 3-4 bước trong tối đa ${settings.timing.maxPlanDays} ngày. Viết tiếng Việt tự nhiên, ngắn gọn.`,
           JSON.stringify(safePayload),
         ].join("\n");
         let response: Response | undefined;
@@ -674,12 +676,14 @@ async function upsertCarePlan(input: {
   return mapPlan(rows[0]);
 }
 
-async function notifyNewPlans(runId: string) {
+async function notifyNewPlans(runId: string, settings: FanpageCareSettings) {
+  if (!settings.notifications.enabled) return 0;
   const rows = await query<DbRow>(
     `SELECT * FROM fanpage_ai_care_plans
      WHERE run_id = $1 AND notification_sent_at IS NULL AND status = 'pending'
+       AND lead_score >= $2
      ORDER BY lead_score DESC`,
-    [runId],
+    [runId, settings.notifications.minimumScore],
   );
   const grouped = new Map<string, DbRow[]>();
   for (const row of rows) {
@@ -718,6 +722,10 @@ export async function syncCarePlanNotificationsForActor(input: {
   ownerId: string;
 }) {
   await ensureFanpageCareCenterSchema();
+  const { settings } = await getFanpageCareSettings();
+  if (!settings.notifications.enabled) {
+    return { matchedPlans: 0, matched: 0, sent: 0, removed: 0, failed: 0, errors: [] };
+  }
   const rows = await query<DbRow>(
     `SELECT *
      FROM fanpage_ai_care_plans
@@ -730,9 +738,10 @@ export async function syncCarePlanNotificationsForActor(input: {
          notification_sent_at IS NULL
          OR COALESCE(NULLIF(notification_result->>'matched', '')::int, 0) = 0
        )
+       AND lead_score >= $3
      ORDER BY lead_score DESC, due_at ASC
      LIMIT 30`,
-    [input.ownerScope, input.ownerId],
+    [input.ownerScope, input.ownerId, settings.notifications.minimumScore],
   );
   if (!rows.length) return { matchedPlans: 0, matched: 0, sent: 0, removed: 0, failed: 0, errors: [] };
   const hotCount = rows.filter(row => String(row.lead_temperature) === "hot").length;
@@ -764,6 +773,7 @@ export async function runDailyFanpageCareCenter(input: {
 } = {}) {
   await ensureFanpageCareCenterSchema();
   await initConversationLearningSchema();
+  const { settings, version: settingsVersion } = await getFanpageCareSettings();
   const runType = input.runType || (input.force ? "manual" : "scheduled");
   const configuredHour = Math.max(0, Math.min(23, Number(process.env.FANPAGE_AI_DAILY_HOUR || DEFAULT_DAILY_HOUR)));
   if (!input.force && vietnamHour() < configuredHour) {
@@ -830,7 +840,7 @@ export async function runDailyFanpageCareCenter(input: {
       Number(process.env.FANPAGE_AI_LOOKBACK_DAYS || DEFAULT_LOOKBACK_DAYS),
     );
     const assessed = conversations
-      .map(conversation => ({ conversation, assessment: assessFanpageConversation(conversation) }))
+      .map(conversation => ({ conversation, assessment: assessFanpageConversation(conversation, settings) }))
       .filter(item => item.assessment.qualifies);
     const qualified: Array<{
       conversation: ConversationForAnalysis;
@@ -847,7 +857,7 @@ export async function runDailyFanpageCareCenter(input: {
     let model: string | undefined;
     let geminiError: string | undefined;
     try {
-      const result = await generateGeminiPlans(qualified);
+      const result = await generateGeminiPlans(qualified, settings);
       generatedByGemini = result.plans;
       model = result.model;
       if (result.errors.length) geminiError = result.errors.join("; ").slice(0, 2000);
@@ -868,7 +878,7 @@ export async function runDailyFanpageCareCenter(input: {
         model: aiPlan ? model : undefined,
       }));
     }
-    const pushSent = await notifyNewPlans(runId);
+    const pushSent = await notifyNewPlans(runId, settings);
     const status: FanpageCareRun["status"] = pageErrors.length && pagesSynced === 0 ? "failed" : pageErrors.length ? "partial" : "success";
     const details = {
       actorId: input.actorId || "system",
@@ -877,6 +887,7 @@ export async function runDailyFanpageCareCenter(input: {
       geminiPlans: generatedByGemini.size,
       rulesPlans: plans.length - generatedByGemini.size,
       retryFailedGemini,
+      settingsVersion,
       safety: "AI only proposes; customer contact requires human approval",
     };
     const updated = await query<DbRow>(

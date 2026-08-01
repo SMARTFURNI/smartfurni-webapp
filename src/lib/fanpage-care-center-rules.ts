@@ -2,6 +2,10 @@ import type {
   FanpageCarePlanStep,
   FanpageLeadTemperature,
 } from "@/types/fanpage-care-center";
+import {
+  DEFAULT_FANPAGE_CARE_SETTINGS,
+  type FanpageCareSettings,
+} from "@/lib/fanpage-care-settings";
 
 export interface ConversationForAnalysis {
   pageInternalId: string;
@@ -64,29 +68,35 @@ function unique(values: string[]) {
   return [...new Set(values.map(value => value.trim()).filter(Boolean))];
 }
 
-function detectProducts(text: string) {
+function matchesKeyword(text: string, keywords: string[]) {
+  return keywords.some(keyword => text.includes(normalizeText(keyword)));
+}
+
+function detectProducts(text: string, settings: FanpageCareSettings) {
   const normalized = normalizeText(text);
-  const codes = text.toUpperCase().match(/\b(?:SMF|GSF|GYT)\d{2,4}\b/g) || [];
+  const codes: string[] = text.toUpperCase().match(/\b(?:SMF|GSF|GYT)\d{2,4}\b/g) || [];
   const products = [...codes];
   if (/sofa|giuong gap|sofa bed/.test(normalized)) products.push("Sofa giường");
   if (/giuong (thong minh|cong thai hoc)|nang ha|zero gravity/.test(normalized)) products.push("Giường công thái học");
   if (/giuong y te|benh nhan|nguoi gia/.test(normalized)) products.push("Giường y tế");
   if (/nem|nệm/.test(text.toLowerCase())) products.push("Nệm");
+  const configuredMatch = settings.keywords.products.find(keyword => normalized.includes(normalizeText(keyword)));
+  if (configuredMatch && !products.some(product => !codes.includes(product))) products.push(configuredMatch);
   return unique(products);
 }
 
-function detectSignals(text: string) {
+function detectSignals(text: string, settings: FanpageCareSettings) {
   const normalized = normalizeText(text);
   const signals: string[] = [];
-  if (/gia|bao gia|bao nhieu|chi phi/.test(normalized)) signals.push("Hỏi giá/báo giá");
-  if (/size|kich thuoc|1m|0 9m|90cm|120cm|140cm|160cm|180cm/.test(normalized)) signals.push("Hỏi kích thước");
-  if (/giao|lap dat|ship|dia chi|showroom|o dau/.test(normalized)) signals.push("Hỏi giao lắp/showroom");
-  if (/mua|dat hang|chot|coc|chuyen khoan|lay mau/.test(normalized)) signals.push("Có ý định mua/chốt");
-  if (/so dien thoai|sdt|goi cho|lien he/.test(normalized)) signals.push("Sẵn sàng nhận liên hệ");
+  if (matchesKeyword(normalized, settings.keywords.pricing)) signals.push("Hỏi giá/báo giá");
+  if (matchesKeyword(normalized, settings.keywords.dimensions)) signals.push("Hỏi kích thước");
+  if (matchesKeyword(normalized, settings.keywords.delivery)) signals.push("Hỏi giao lắp/showroom");
+  if (matchesKeyword(normalized, settings.keywords.purchaseIntent)) signals.push("Có ý định mua/chốt");
+  if (matchesKeyword(normalized, settings.keywords.contact)) signals.push("Sẵn sàng nhận liên hệ");
   return unique(signals);
 }
 
-function detectObjections(text: string) {
+function detectObjections(text: string, settings: FanpageCareSettings) {
   const normalized = normalizeText(text);
   const objections: string[] = [];
   if (/mac|cao|re hon|giam gia|bot gia/.test(normalized)) objections.push("Ngại giá");
@@ -94,15 +104,18 @@ function detectObjections(text: string) {
   if (/bao hanh|co ben|lo hong|chat luong/.test(normalized)) objections.push("Lo chất lượng/bảo hành");
   if (/xa|phi ship|giao hang|lap dat/.test(normalized)) objections.push("Lo giao lắp/vận chuyển");
   if (/khong vua|size nao|kich thuoc nao/.test(normalized)) objections.push("Chưa chắc kích thước");
+  if (matchesKeyword(normalized, settings.keywords.objections) && !objections.length) {
+    objections.push("Có trở ngại cần nhân viên làm rõ");
+  }
   return unique(objections);
 }
 
-function detectNeed(text: string, products: string[]) {
+function detectNeed(text: string, products: string[], settings: FanpageCareSettings) {
   const normalized = normalizeText(text);
   const needs: string[] = [];
-  if (/phong nho|can ho|chung cu|studio|tiet kiem dien tich/.test(normalized)) needs.push("Tối ưu không gian nhỏ");
-  if (/nguoi gia|benh nhan|dau lung|nang ha|doc sach|xem phim/.test(normalized)) needs.push("Nâng đỡ và chăm sóc tại nhà");
-  if (/anh thuc te|video|clip|showroom/.test(normalized)) needs.push("Cần xem sản phẩm thực tế");
+  if (matchesKeyword(normalized, settings.keywords.smallSpaceNeeds)) needs.push("Tối ưu không gian nhỏ");
+  if (matchesKeyword(normalized, settings.keywords.homeCareNeeds)) needs.push("Nâng đỡ và chăm sóc tại nhà");
+  if (matchesKeyword(normalized, settings.keywords.visualProofNeeds)) needs.push("Cần xem sản phẩm thực tế");
   if (products.length) needs.push(`Quan tâm ${products.join(", ")}`);
   return needs.join("; ") || "Cần hỏi thêm nhu cầu sử dụng, kích thước, khu vực và ngân sách.";
 }
@@ -113,31 +126,33 @@ function addHours(hours: number) {
 
 export function assessFanpageConversation(
   input: Pick<ConversationForAnalysis, "messages" | "unreadCount" | "canReply" | "latestMessageAt">,
+  settings: FanpageCareSettings = DEFAULT_FANPAGE_CARE_SETTINGS,
 ): DeterministicConversationAssessment {
   const inbound = input.messages.filter(message => message.direction === "inbound");
   const customerText = inbound.map(message => message.content).join("\n");
   const allText = input.messages.map(message => message.content).join("\n");
-  const productInterest = detectProducts(allText);
-  const buyingSignals = detectSignals(customerText);
-  const objections = detectObjections(customerText);
-  const customerNeed = detectNeed(customerText, productInterest);
+  const productInterest = detectProducts(allText, settings);
+  const buyingSignals = detectSignals(customerText, settings);
+  const objections = detectObjections(customerText, settings);
+  const customerNeed = detectNeed(customerText, productInterest, settings);
   const latest = input.messages[input.messages.length - 1];
   const latestInboundUnanswered = latest?.direction === "inbound";
   const recentHours = input.latestMessageAt
     ? Math.max(0, (Date.now() - new Date(input.latestMessageAt).getTime()) / 3_600_000)
     : 999;
 
-  let score = inbound.length ? 18 : 0;
-  score += Math.min(productInterest.length * 10, 20);
-  score += Math.min(buyingSignals.length * 15, 45);
-  if (latestInboundUnanswered) score += 16;
-  if (input.unreadCount > 0) score += 8;
-  if (recentHours <= 24) score += 8;
-  if (!input.canReply) score -= 15;
-  score -= Math.min(objections.length * 3, 9);
+  const weights = settings.scoring;
+  let score = inbound.length ? weights.inboundBase : 0;
+  score += Math.min(productInterest.length * weights.productWeight, weights.productCap);
+  score += Math.min(buyingSignals.length * weights.buyingSignalWeight, weights.buyingSignalCap);
+  if (latestInboundUnanswered) score += weights.unansweredBonus;
+  if (input.unreadCount > 0) score += weights.unreadBonus;
+  if (recentHours <= weights.recentWindowHours) score += weights.recentBonus;
+  if (!input.canReply) score -= weights.cannotReplyPenalty;
+  score -= Math.min(objections.length * weights.objectionPenalty, weights.objectionCap);
   score = Math.max(0, Math.min(100, score));
 
-  const leadTemperature: FanpageLeadTemperature = score >= 75 ? "hot" : score >= 45 ? "warm" : "cold";
+  const leadTemperature: FanpageLeadTemperature = score >= weights.hotThreshold ? "hot" : score >= weights.warmThreshold ? "warm" : "cold";
   const funnelStage = buyingSignals.includes("Có ý định mua/chốt")
     ? "closing"
     : buyingSignals.includes("Hỏi giá/báo giá")
@@ -162,8 +177,8 @@ export function assessFanpageConversation(
     objections,
     buyingSignals,
     nextBestAction,
-    dueAt: addHours(leadTemperature === "hot" ? 0.5 : leadTemperature === "warm" ? 4 : 24),
-    qualifies: inbound.length > 0 && (score >= 40 || latestInboundUnanswered || input.unreadCount > 0),
+    dueAt: addHours(leadTemperature === "hot" ? settings.timing.hotDueHours : leadTemperature === "warm" ? settings.timing.warmDueHours : settings.timing.coldDueHours),
+    qualifies: inbound.length > 0 && (score >= weights.qualifyThreshold || latestInboundUnanswered || input.unreadCount > 0),
     latestInboundUnanswered,
   };
 }
