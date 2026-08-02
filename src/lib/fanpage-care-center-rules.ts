@@ -16,7 +16,13 @@ export interface ConversationForAnalysis {
   participantName: string;
   unreadCount: number;
   canReply: boolean;
+  sourceMessageCount?: number;
+  latestMessageId?: string;
   latestMessageAt?: string;
+  analyzedMessageCount?: number;
+  analyzedLatestMessageId?: string;
+  analyzedLatestMessageAt?: string;
+  lastAnalyzedAt?: string;
   customerId?: string;
   assignedStaffId?: string;
   assignedStaffName?: string;
@@ -26,6 +32,32 @@ export interface ConversationForAnalysis {
     content: string;
     createdAt?: string;
   }>;
+}
+
+export function hasNewMessagesSinceAnalysis(conversation: ConversationForAnalysis) {
+  if (!conversation.lastAnalyzedAt) return true;
+
+  const currentCount = Math.max(
+    0,
+    Number(conversation.sourceMessageCount ?? conversation.messages.length) || 0,
+  );
+  const analyzedCount = Math.max(0, Number(conversation.analyzedMessageCount || 0));
+  const hasReliableCounts = conversation.sourceMessageCount != null
+    && conversation.analyzedMessageCount != null;
+  if (hasReliableCounts) return currentCount > analyzedCount;
+
+  // Chỉ dùng mã/thời gian làm phương án dự phòng khi nguồn cũ chưa lưu được số tin nhắn.
+  if (conversation.latestMessageId) {
+    return conversation.latestMessageId !== conversation.analyzedLatestMessageId;
+  }
+  if (conversation.latestMessageAt) {
+    const currentTime = new Date(conversation.latestMessageAt).getTime();
+    const analyzedTime = conversation.analyzedLatestMessageAt
+      ? new Date(conversation.analyzedLatestMessageAt).getTime()
+      : 0;
+    return Number.isFinite(currentTime) && currentTime > analyzedTime;
+  }
+  return currentCount > analyzedCount;
 }
 
 export interface DeterministicConversationAssessment {
@@ -40,6 +72,13 @@ export interface DeterministicConversationAssessment {
   dueAt: string;
   qualifies: boolean;
   latestInboundUnanswered: boolean;
+  priceGateStatus: "not_presented" | "awaiting_response" | "passive_response" | "engaged" | "passed";
+  pricePresented: boolean;
+  pricePassed: boolean;
+  postPriceQuestionCount: number;
+  postPriceQuestionTopics: string[];
+  excludedFromCare: boolean;
+  exclusionReason?: string;
 }
 
 export interface GeneratedCarePlan {
@@ -267,6 +306,129 @@ function detectSignals(text: string, settings: FanpageCareSettings) {
   return unique(signals);
 }
 
+function containsPriceAmount(text: string) {
+  const normalized = normalizeText(text);
+  return /\b\d{1,3}(?:[.,]\d{3})+(?:\s*(?:d|vnd))?\b/.test(normalized)
+    || /\b\d+(?:[.,]\d+)?\s*(?:trieu|tr|nghin|ngan|k|d|vnd)\b/.test(normalized);
+}
+
+function isPricePresentation(text: string, settings: FanpageCareSettings) {
+  const normalized = normalizeText(text);
+  const configuredPhrase = settings.keywords.pricePresented.some(keyword =>
+    normalized.includes(normalizeText(keyword)),
+  );
+  const explicitQuoteAction = /\b(?:gui|da gui|xin gui|bao|da bao|chot)\b.{0,36}\b(?:bao gia|gia)\b/.test(normalized)
+    || /\b(?:bao gia|gia)\b.{0,24}\b(?:chi tiet|tham khao|trọn bo|tron bo|la|tu)\b/.test(normalized);
+  return configuredPhrase || explicitQuoteAction || (
+    containsPriceAmount(text) && matchesKeyword(normalized, settings.keywords.pricing)
+  );
+}
+
+function isPassiveAfterPriceReply(text: string, settings: FanpageCareSettings) {
+  const normalized = normalizeText(text)
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!normalized) return true;
+  const allowedPhrases = settings.keywords.passiveAfterPrice.map(normalizeText);
+  if (allowedPhrases.includes(normalized)) return true;
+  const passiveWords = new Set([
+    "ok", "okay", "oki", "da", "vang", "u", "uh", "duoc", "roi", "cam", "on",
+    "thanks", "thank", "you", "em", "anh", "chi", "co", "chu", "nhe", "a", "nha",
+  ]);
+  return normalized.split(" ").every(word => passiveWords.has(word));
+}
+
+function detectPostPriceQuestionTopics(text: string, settings: FanpageCareSettings, fallbackIndex: number) {
+  const normalized = normalizeText(text);
+  const topics: string[] = [];
+  if (matchesKeyword(normalized, settings.keywords.pricing) || /giam|uu dai|khuyen mai|bot/.test(normalized)) topics.push("Giá/ưu đãi");
+  if (matchesKeyword(normalized, settings.keywords.dimensions)) topics.push("Kích thước");
+  if (matchesKeyword(normalized, settings.keywords.delivery)) topics.push("Giao lắp/showroom");
+  if (matchesKeyword(normalized, settings.keywords.contact)) topics.push("Liên hệ");
+  if (matchesKeyword(normalized, settings.keywords.visualProofNeeds)) topics.push("Ảnh/video thực tế");
+  if (/\b(?:chat lieu|vai|da that|mau sac|mau nao|khung|nem|phu kien|dong co|remote)\b/.test(normalized)) topics.push("Cấu hình/chất liệu");
+  if (/bao hanh|doi tra|co ben|chat luong|lo hong|tuoi tho/.test(normalized)) topics.push("Bảo hành/chất lượng");
+  if (/thanh toan|tra gop|coc|chuyen khoan|hoa don|vat/.test(normalized)) topics.push("Thanh toán");
+  if (matchesKeyword(normalized, settings.keywords.purchaseIntent)) topics.push("Ý định mua/chốt");
+  const looksLikeQuestion = /\?/.test(text)
+    || /\b(?:bao nhieu|the nao|ra sao|khi nao|o dau|loai nao|mau nao|size nao|co .{0,32} khong|duoc khong|con khong)\b/.test(normalized);
+  if (!topics.length && looksLikeQuestion) topics.push(`Câu hỏi khác ${fallbackIndex + 1}`);
+  return topics;
+}
+
+function assessPriceGate(messages: ConversationForAnalysis["messages"], settings: FanpageCareSettings) {
+  let priceMessageIndex = -1;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.direction === "outbound" && isPricePresentation(message.content, settings)) {
+      priceMessageIndex = index;
+      break;
+    }
+  }
+  if (priceMessageIndex < 0) {
+    return {
+      status: "not_presented" as const,
+      pricePresented: false,
+      pricePassed: false,
+      questionTopics: [] as string[],
+      meaningfulReplies: 0,
+      explicitPurchase: false,
+      excludedFromCare: false,
+      exclusionReason: undefined as string | undefined,
+    };
+  }
+
+  const inboundAfterPrice = messages.slice(priceMessageIndex + 1)
+    .filter(message => message.direction === "inbound");
+  if (!inboundAfterPrice.length) {
+    return {
+      status: "awaiting_response" as const,
+      pricePresented: true,
+      pricePassed: false,
+      questionTopics: [] as string[],
+      meaningfulReplies: 0,
+      explicitPurchase: false,
+      excludedFromCare: true,
+      exclusionReason: "Đã báo giá nhưng khách chưa phản hồi.",
+    };
+  }
+
+  const meaningfulReplies = inboundAfterPrice.filter(message =>
+    !isPassiveAfterPriceReply(message.content, settings),
+  );
+  if (!meaningfulReplies.length) {
+    return {
+      status: "passive_response" as const,
+      pricePresented: true,
+      pricePassed: false,
+      questionTopics: [] as string[],
+      meaningfulReplies: 0,
+      explicitPurchase: false,
+      excludedFromCare: true,
+      exclusionReason: "Khách chỉ phản hồi xã giao sau báo giá, chưa có câu hỏi hoặc nhu cầu tiếp theo.",
+    };
+  }
+
+  const questionTopics = unique(meaningfulReplies.flatMap((message, index) =>
+    detectPostPriceQuestionTopics(message.content, settings, index),
+  ));
+  const meaningfulText = meaningfulReplies.map(message => message.content).join("\n");
+  const explicitPurchase = matchesKeyword(normalizeText(meaningfulText), settings.keywords.purchaseIntent);
+  const pricePassed = explicitPurchase
+    || questionTopics.length >= settings.scoring.minimumPostPriceQuestions;
+  return {
+    status: pricePassed ? "passed" as const : "engaged" as const,
+    pricePresented: true,
+    pricePassed,
+    questionTopics,
+    meaningfulReplies: meaningfulReplies.length,
+    explicitPurchase,
+    excludedFromCare: false,
+    exclusionReason: undefined as string | undefined,
+  };
+}
+
 function detectObjections(text: string, settings: FanpageCareSettings) {
   const normalized = normalizeText(text);
   const objections: string[] = [];
@@ -306,6 +468,7 @@ export function assessFanpageConversation(
   const buyingSignals = detectSignals(customerText, settings);
   const objections = detectObjections(customerText, settings);
   const customerNeed = detectNeed(customerText, productInterest, settings);
+  const priceGate = assessPriceGate(input.messages, settings);
   const latest = input.messages[input.messages.length - 1];
   const latestInboundUnanswered = latest?.direction === "inbound";
   const recentHours = input.latestMessageAt
@@ -321,17 +484,39 @@ export function assessFanpageConversation(
   if (recentHours <= weights.recentWindowHours) score += weights.recentBonus;
   if (!input.canReply) score -= weights.cannotReplyPenalty;
   score -= Math.min(objections.length * weights.objectionPenalty, weights.objectionCap);
+  score += Math.min(
+    priceGate.questionTopics.length * weights.postPriceQuestionWeight,
+    weights.postPriceQuestionCap,
+  );
+  if (priceGate.pricePassed) score += weights.pricePassedBonus;
+  if (priceGate.excludedFromCare) {
+    score = weights.disengagedAfterPriceScore;
+  } else if (!priceGate.pricePassed) {
+    score = Math.min(score, weights.prePriceScoreCap, weights.hotThreshold - 1);
+  } else {
+    score = Math.max(score, weights.hotThreshold);
+  }
   score = Math.max(0, Math.min(100, score));
 
   const leadTemperature: FanpageLeadTemperature = score >= weights.hotThreshold ? "hot" : score >= weights.warmThreshold ? "warm" : "cold";
-  const funnelStage = buyingSignals.includes("Có ý định mua/chốt")
+  const funnelStage = priceGate.excludedFromCare
+    ? "price_disengaged"
+    : priceGate.pricePassed
+      ? "qualified_after_price"
+      : priceGate.pricePresented
+        ? "price_consideration"
+        : buyingSignals.includes("Có ý định mua/chốt")
     ? "closing"
     : buyingSignals.includes("Hỏi giá/báo giá")
       ? "quotation"
       : productInterest.length
         ? "consulting"
         : "new";
-  const nextBestAction = latestInboundUnanswered
+  const nextBestAction = priceGate.excludedFromCare
+    ? "Dừng chăm sóc tự động. Chỉ mở lại khi khách chủ động đặt câu hỏi hoặc thể hiện nhu cầu mới."
+    : priceGate.pricePassed
+      ? "Ưu tiên tư vấn sâu và xác nhận bước mua tiếp theo vì khách đã tiếp tục tương tác sau khi biết giá."
+      : latestInboundUnanswered
     ? leadTemperature === "hot"
       ? "Phản hồi Messenger và gọi xác nhận nhu cầu trong 30 phút."
       : "Phản hồi Messenger trong ngày, hỏi rõ sản phẩm, kích thước, khu vực và ngân sách."
@@ -349,8 +534,16 @@ export function assessFanpageConversation(
     buyingSignals,
     nextBestAction,
     dueAt: addHours(leadTemperature === "hot" ? settings.timing.hotDueHours : leadTemperature === "warm" ? settings.timing.warmDueHours : settings.timing.coldDueHours),
-    qualifies: inbound.length > 0 && (score >= weights.qualifyThreshold || latestInboundUnanswered || input.unreadCount > 0),
+    qualifies: inbound.length > 0 && !priceGate.excludedFromCare
+      && (priceGate.pricePassed || score >= weights.qualifyThreshold || latestInboundUnanswered || input.unreadCount > 0),
     latestInboundUnanswered,
+    priceGateStatus: priceGate.status,
+    pricePresented: priceGate.pricePresented,
+    pricePassed: priceGate.pricePassed,
+    postPriceQuestionCount: priceGate.questionTopics.length,
+    postPriceQuestionTopics: priceGate.questionTopics,
+    excludedFromCare: priceGate.excludedFromCare,
+    exclusionReason: priceGate.exclusionReason,
   };
 }
 

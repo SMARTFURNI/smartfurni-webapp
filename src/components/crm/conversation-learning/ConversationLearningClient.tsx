@@ -113,6 +113,26 @@ function toneByStatus(value: string) {
   return "border-slate-300/20 bg-white/5 text-slate-200";
 }
 
+function priceGatePresentation(plan: FanpageCarePlan) {
+  const status = typeof plan.metadata.priceGateStatus === "string"
+    ? plan.metadata.priceGateStatus
+    : "not_presented";
+
+  if (status === "passed") {
+    return { label: "Đã vượt giá", tone: "border-emerald-300/25 bg-emerald-500/10 text-emerald-100" };
+  }
+  if (status === "engaged") {
+    return { label: "Đang hỏi sau giá", tone: "border-sky-300/25 bg-sky-500/10 text-sky-100" };
+  }
+  if (status === "awaiting_response") {
+    return { label: "Chờ phản hồi sau giá", tone: "border-amber-300/25 bg-amber-500/10 text-amber-100" };
+  }
+  if (status === "passive_response") {
+    return { label: "Không vượt giá", tone: "border-red-300/25 bg-red-500/10 text-red-100" };
+  }
+  return { label: "Chưa báo giá", tone: "border-slate-300/20 bg-white/5 text-slate-200" };
+}
+
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div
@@ -755,6 +775,9 @@ export function ConversationLearningClient() {
                           <Pill className={toneByCareStatus(selectedCarePlan.status)}>
                             {careStatusLabel(selectedCarePlan.status)}
                           </Pill>
+                          <Pill className={priceGatePresentation(selectedCarePlan).tone}>
+                            {priceGatePresentation(selectedCarePlan).label}
+                          </Pill>
                           <Pill className="border-sky-300/20 bg-sky-500/10 text-sky-100">{selectedCarePlan.pageName}</Pill>
                         </div>
                         <h2 className="mt-3 text-xl font-bold text-[#F5EDD6]">{selectedCarePlan.customerName}</h2>
@@ -1070,7 +1093,15 @@ export function ConversationLearningClient() {
             </div>
 
             <Card className="p-5">
-              <SectionTitle title="Các yếu tố chấm điểm lead" subtitle="Điểm cuối cùng được giới hạn trong 0–100. Số âm được thể hiện bằng nhóm trừ điểm bên dưới." />
+              <SectionTitle title="Các yếu tố chấm điểm lead" subtitle="Lead chỉ được lên mức nóng sau khi đã biết giá và tiếp tục hỏi sâu hoặc thể hiện ý định mua rõ ràng." />
+              <div className="mt-4 rounded-xl border border-[#C9A84C]/20 bg-[#C9A84C]/[0.07] p-4 text-sm leading-6 text-[#E7D8AD]">
+                <p className="font-semibold text-[#F5EDD6]">Cổng vượt giá</p>
+                <p className="mt-1 text-[#CFC5AE]">
+                  Trước khi vượt giá, điểm bị giới hạn dưới ngưỡng lead nóng. Sau khi Fanpage báo giá,
+                  khách im lặng hoặc chỉ trả lời “ok/dạ/cảm ơn” sẽ bị loại khỏi kế hoạch chăm sóc.
+                  Khách được xem là vượt giá khi hỏi đủ số chủ đề bên dưới hoặc chủ động đặt mua/chốt/cọc.
+                </p>
+              </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <SettingsNumber label="Có tin nhắn khách" value={aiSettings.scoring.inboundBase} onChange={value => updateScoring("inboundBase", value)} />
                 <SettingsNumber label="Mỗi sản phẩm quan tâm" value={aiSettings.scoring.productWeight} onChange={value => updateScoring("productWeight", value)} />
@@ -1083,6 +1114,12 @@ export function ConversationLearningClient() {
                 <SettingsNumber label="Trừ khi không thể trả lời" value={aiSettings.scoring.cannotReplyPenalty} onChange={value => updateScoring("cannotReplyPenalty", value)} />
                 <SettingsNumber label="Trừ mỗi trở ngại" value={aiSettings.scoring.objectionPenalty} onChange={value => updateScoring("objectionPenalty", value)} />
                 <SettingsNumber label="Trần điểm bị trừ" value={aiSettings.scoring.objectionCap} onChange={value => updateScoring("objectionCap", value)} />
+                <SettingsNumber label="Điểm mỗi chủ đề hỏi sau báo giá" value={aiSettings.scoring.postPriceQuestionWeight} onChange={value => updateScoring("postPriceQuestionWeight", value)} />
+                <SettingsNumber label="Trần điểm hỏi sau báo giá" value={aiSettings.scoring.postPriceQuestionCap} onChange={value => updateScoring("postPriceQuestionCap", value)} />
+                <SettingsNumber label="Điểm thưởng khi vượt giá" value={aiSettings.scoring.pricePassedBonus} onChange={value => updateScoring("pricePassedBonus", value)} />
+                <SettingsNumber label="Số chủ đề tối thiểu để vượt giá" value={aiSettings.scoring.minimumPostPriceQuestions} onChange={value => updateScoring("minimumPostPriceQuestions", value)} />
+                <SettingsNumber label="Điểm tối đa trước khi vượt giá" value={aiSettings.scoring.prePriceScoreCap} onChange={value => updateScoring("prePriceScoreCap", value)} />
+                <SettingsNumber label="Điểm khi im lặng/ok sau báo giá" value={aiSettings.scoring.disengagedAfterPriceScore} onChange={value => updateScoring("disengagedAfterPriceScore", value)} />
               </div>
             </Card>
 
@@ -1099,6 +1136,8 @@ export function ConversationLearningClient() {
                 <SettingsTextarea label="Nhu cầu tối ưu không gian" value={aiSettings.keywords.smallSpaceNeeds.join(", ")} onChange={value => updateKeywords("smallSpaceNeeds", value)} />
                 <SettingsTextarea label="Nhu cầu nâng đỡ/chăm sóc" value={aiSettings.keywords.homeCareNeeds.join(", ")} onChange={value => updateKeywords("homeCareNeeds", value)} />
                 <SettingsTextarea label="Nhu cầu xem thực tế" value={aiSettings.keywords.visualProofNeeds.join(", ")} onChange={value => updateKeywords("visualProofNeeds", value)} />
+                <SettingsTextarea label="Cụm từ xác nhận Fanpage đã báo giá" value={aiSettings.keywords.pricePresented.join(", ")} onChange={value => updateKeywords("pricePresented", value)} />
+                <SettingsTextarea label="Phản hồi xã giao sau báo giá" value={aiSettings.keywords.passiveAfterPrice.join(", ")} onChange={value => updateKeywords("passiveAfterPrice", value)} />
               </div>
             </Card>
 

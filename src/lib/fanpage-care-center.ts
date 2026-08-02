@@ -14,6 +14,7 @@ import {
   alignDraftMessageAddressing,
   buildFallbackCarePlan,
   detectConversationAddressing,
+  hasNewMessagesSinceAnalysis,
   type ConversationForAnalysis,
   type DeterministicConversationAssessment,
   type GeneratedCarePlan,
@@ -204,6 +205,8 @@ export async function ensureFanpageCareCenterSchema() {
         participant_name TEXT, snippet TEXT NOT NULL DEFAULT '', updated_time TIMESTAMPTZ,
         message_count INTEGER NOT NULL DEFAULT 0, unread_count INTEGER NOT NULL DEFAULT 0,
         can_reply BOOLEAN NOT NULL DEFAULT TRUE, assigned_staff_id TEXT, assigned_staff_name TEXT,
+        analyzed_message_count INTEGER NOT NULL DEFAULT 0, analyzed_latest_message_id TEXT,
+        analyzed_latest_message_at TIMESTAMPTZ, last_analyzed_at TIMESTAMPTZ,
         metadata JSONB NOT NULL DEFAULT '{}'::jsonb, last_synced_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE(page_internal_id, conversation_id)
@@ -235,8 +238,63 @@ export async function ensureFanpageCareCenterSchema() {
         notification_result JSONB NOT NULL DEFAULT '{}'::jsonb, reviewed_by TEXT, reviewed_at TIMESTAMPTZ,
         completed_at TIMESTAMPTZ, metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        UNIQUE(analysis_date, page_internal_id, conversation_id)
+        UNIQUE(page_internal_id, conversation_id)
       )
+    `);
+    await query(`ALTER TABLE fanpage_conversation_snapshots ADD COLUMN IF NOT EXISTS analyzed_message_count INTEGER NOT NULL DEFAULT 0`);
+    await query(`ALTER TABLE fanpage_conversation_snapshots ADD COLUMN IF NOT EXISTS analyzed_latest_message_id TEXT`);
+    await query(`ALTER TABLE fanpage_conversation_snapshots ADD COLUMN IF NOT EXISTS analyzed_latest_message_at TIMESTAMPTZ`);
+    await query(`ALTER TABLE fanpage_conversation_snapshots ADD COLUMN IF NOT EXISTS last_analyzed_at TIMESTAMPTZ`);
+    await query(`
+      WITH ranked AS (
+        SELECT id,
+               ROW_NUMBER() OVER (
+                 PARTITION BY page_internal_id, conversation_id
+                 ORDER BY
+                   CASE status
+                     WHEN 'in_progress' THEN 5
+                     WHEN 'approved' THEN 4
+                     WHEN 'pending' THEN 3
+                     WHEN 'completed' THEN 2
+                     ELSE 1
+                   END DESC,
+                   updated_at DESC,
+                   analysis_date DESC,
+                   created_at DESC
+               ) AS duplicate_rank
+        FROM fanpage_ai_care_plans
+      )
+      DELETE FROM fanpage_ai_care_plans AS plan
+      USING ranked
+      WHERE plan.id = ranked.id AND ranked.duplicate_rank > 1
+    `);
+    await query(`
+      DO $$
+      DECLARE old_constraint TEXT;
+      BEGIN
+        SELECT constraint_row.conname
+        INTO old_constraint
+        FROM pg_constraint AS constraint_row
+        WHERE constraint_row.conrelid = 'fanpage_ai_care_plans'::regclass
+          AND constraint_row.contype = 'u'
+          AND pg_get_constraintdef(constraint_row.oid)
+            = 'UNIQUE (analysis_date, page_internal_id, conversation_id)'
+        LIMIT 1;
+        IF old_constraint IS NOT NULL THEN
+          EXECUTE format('ALTER TABLE fanpage_ai_care_plans DROP CONSTRAINT %I', old_constraint);
+        END IF;
+      END $$
+    `);
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_fanpage_ai_care_plans_conversation ON fanpage_ai_care_plans(page_internal_id, conversation_id)`);
+    await query(`
+      UPDATE fanpage_conversation_snapshots AS snapshot
+      SET analyzed_message_count = plan.source_message_count,
+          analyzed_latest_message_at = plan.source_latest_message_at,
+          last_analyzed_at = COALESCE(plan.updated_at, NOW())
+      FROM fanpage_ai_care_plans AS plan
+      WHERE snapshot.page_internal_id = plan.page_internal_id
+        AND snapshot.conversation_id = plan.conversation_id
+        AND snapshot.last_analyzed_at IS NULL
     `);
     await query(`CREATE INDEX IF NOT EXISTS idx_fanpage_ai_care_plans_queue ON fanpage_ai_care_plans(status, lead_score DESC, due_at)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_fanpage_messages_conversation ON fanpage_conversation_messages(page_internal_id, conversation_id, message_created_at)`);
@@ -412,13 +470,21 @@ async function loadConversationsForAnalysis(lookbackDays = DEFAULT_LOOKBACK_DAYS
   const output: ConversationForAnalysis[] = [];
   for (const snapshot of snapshots) {
     const messages = await query<DbRow>(
-      `SELECT id, direction, content, message_created_at
-       FROM fanpage_conversation_messages
-       WHERE page_internal_id = $1 AND conversation_id = $2
-       ORDER BY message_created_at ASC NULLS LAST
-       LIMIT 120`,
+      `WITH recent_messages AS (
+         SELECT id, direction, content, message_created_at,
+                COUNT(*) OVER ()::int AS total_message_count
+         FROM fanpage_conversation_messages
+         WHERE page_internal_id = $1 AND conversation_id = $2
+         ORDER BY message_created_at DESC NULLS LAST, id DESC
+         LIMIT 120
+       )
+       SELECT * FROM recent_messages
+       ORDER BY message_created_at ASC NULLS LAST, id ASC`,
       [snapshot.page_internal_id, snapshot.conversation_id],
     );
+    const latestMessage = messages[messages.length - 1];
+    const storedMessageCount = Number(messages[0]?.total_message_count || 0);
+    const sourceMessageCount = Math.max(Number(snapshot.message_count || 0), storedMessageCount);
     const identity = await resolveCustomerAndOwner(snapshot.participant_id ? String(snapshot.participant_id) : undefined);
     output.push({
       pageInternalId: String(snapshot.page_internal_id),
@@ -429,7 +495,15 @@ async function loadConversationsForAnalysis(lookbackDays = DEFAULT_LOOKBACK_DAYS
       participantName: identity.customerName || String(snapshot.participant_name || "Khách Facebook"),
       unreadCount: Number(snapshot.unread_count || 0),
       canReply: snapshot.can_reply !== false,
-      latestMessageAt: safeDate(snapshot.updated_time),
+      sourceMessageCount,
+      latestMessageId: latestMessage ? String(latestMessage.id) : undefined,
+      latestMessageAt: safeDate(latestMessage?.message_created_at) || safeDate(snapshot.updated_time),
+      analyzedMessageCount: Number(snapshot.analyzed_message_count || 0),
+      analyzedLatestMessageId: snapshot.analyzed_latest_message_id
+        ? String(snapshot.analyzed_latest_message_id)
+        : undefined,
+      analyzedLatestMessageAt: safeDate(snapshot.analyzed_latest_message_at),
+      lastAnalyzedAt: safeDate(snapshot.last_analyzed_at),
       customerId: identity.customerId,
       assignedStaffId: identity.assignedStaffId || (snapshot.assigned_staff_id ? String(snapshot.assigned_staff_id) : undefined),
       assignedStaffName: identity.assignedStaffName || (snapshot.assigned_staff_name ? String(snapshot.assigned_staff_name) : undefined),
@@ -444,23 +518,35 @@ async function loadConversationsForAnalysis(lookbackDays = DEFAULT_LOOKBACK_DAYS
   return output;
 }
 
-async function hasNewActivitySinceLatestPlan(conversation: ConversationForAnalysis) {
-  const previous = await queryOne<{
-    source_latest_message_at: string | null;
-  }>(
-    `SELECT source_latest_message_at::text
-     FROM fanpage_ai_care_plans
-     WHERE page_internal_id = $1 AND conversation_id = $2
-     ORDER BY analysis_date DESC, updated_at DESC
-     LIMIT 1`,
-    [conversation.pageInternalId, conversation.conversationId],
+async function markConversationsAnalyzed(conversations: ConversationForAnalysis[]) {
+  if (!conversations.length) return 0;
+  const checkpoints = conversations.map(conversation => ({
+    page_internal_id: conversation.pageInternalId,
+    conversation_id: conversation.conversationId,
+    message_count: conversation.sourceMessageCount ?? conversation.messages.length,
+    latest_message_id: conversation.latestMessageId || null,
+    latest_message_at: conversation.latestMessageAt || null,
+  }));
+  const rows = await query<{ id: string }>(
+    `UPDATE fanpage_conversation_snapshots AS snapshot
+     SET analyzed_message_count = checkpoint.message_count,
+         analyzed_latest_message_id = checkpoint.latest_message_id,
+         analyzed_latest_message_at = checkpoint.latest_message_at,
+         last_analyzed_at = NOW(),
+         updated_at = NOW()
+     FROM jsonb_to_recordset($1::jsonb) AS checkpoint(
+       page_internal_id text,
+       conversation_id text,
+       message_count integer,
+       latest_message_id text,
+       latest_message_at timestamptz
+     )
+     WHERE snapshot.page_internal_id = checkpoint.page_internal_id
+       AND snapshot.conversation_id = checkpoint.conversation_id
+     RETURNING snapshot.id`,
+    [JSON.stringify(checkpoints)],
   );
-  if (!previous) return true;
-  const currentTime = conversation.latestMessageAt ? new Date(conversation.latestMessageAt).getTime() : 0;
-  const previousTime = previous.source_latest_message_at
-    ? new Date(previous.source_latest_message_at).getTime()
-    : 0;
-  return currentTime > previousTime;
+  return rows.length;
 }
 
 function parseGeminiJson(text: string) {
@@ -504,6 +590,13 @@ async function generateGeminiPlans(
             products: assessment.productInterest,
             objections: assessment.objections,
             signals: assessment.buyingSignals,
+            priceGate: {
+              status: assessment.priceGateStatus,
+              pricePresented: assessment.pricePresented,
+              pricePassed: assessment.pricePassed,
+              postPriceQuestionCount: assessment.postPriceQuestionCount,
+              postPriceQuestionTopics: assessment.postPriceQuestionTopics,
+            },
           },
           addressing: detectConversationAddressing(conversation),
           messages: conversation.messages.slice(-14).map(message => ({
@@ -517,6 +610,7 @@ async function generateGeminiPlans(
           settings.prompts.planning,
           "Không bịa giá, chính sách, số điện thoại, khuyến mãi hoặc thông tin sản phẩm.",
           "Không tự gửi tin. Mọi bước liên hệ phải requiresHumanApproval=true.",
+          "CỔNG GIÁ BẮT BUỘC: không gọi lead nóng nếu priceGate.pricePassed=false. Nếu khách đã được báo giá nhưng im lặng hoặc chỉ nói ok/dạ/cảm ơn thì không tạo kế hoạch bám đuổi. Chỉ ưu tiên cao khi khách tiếp tục hỏi nhiều chủ đề sau báo giá hoặc thể hiện ý định mua rõ ràng.",
           "XƯNG HÔ BẮT BUỘC: mỗi hội thoại có trường addressing. Tin nhắn nháp phải dùng đúng staffPronoun để Fanpage tự xưng và customerAddress để gọi khách. Giữ cách xưng hô xuyên suốt, không tự đổi sang 'bạn', 'quý khách', 'anh/chị' hoặc gọi thẳng tên khi addressing đã xác định cách khác.",
           "Ưu tiên đúng ngữ cảnh hội thoại hơn văn mẫu; câu mở đầu phải tự nhiên như lời nhân viên đang tiếp tục cuộc trò chuyện, không giới thiệu lại thương hiệu nếu không cần.",
           "Tránh spam: tối đa một liên hệ/ngày, dừng nếu khách từ chối, ưu tiên trả lời tin chưa phản hồi.",
@@ -623,7 +717,8 @@ async function upsertCarePlan(input: {
        product_interest, objections, buying_signals, next_best_action, due_at, plan_steps,
        engine, model, source_message_count, source_latest_message_at, metadata)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29)
-     ON CONFLICT (analysis_date, page_internal_id, conversation_id) DO UPDATE SET
+     ON CONFLICT (page_internal_id, conversation_id) DO UPDATE SET
+       analysis_date = EXCLUDED.analysis_date,
        run_id = EXCLUDED.run_id,
        participant_id = EXCLUDED.participant_id,
        customer_id = COALESCE(EXCLUDED.customer_id, fanpage_ai_care_plans.customer_id),
@@ -647,6 +742,17 @@ async function upsertCarePlan(input: {
        source_message_count = EXCLUDED.source_message_count,
        source_latest_message_at = EXCLUDED.source_latest_message_at,
        metadata = fanpage_ai_care_plans.metadata || EXCLUDED.metadata,
+       status = CASE
+         WHEN fanpage_ai_care_plans.status = 'dismissed'
+           AND fanpage_ai_care_plans.metadata->>'priceGateDismissal' = 'true'
+         THEN 'pending'
+         WHEN fanpage_ai_care_plans.status = 'completed' THEN 'pending'
+         ELSE fanpage_ai_care_plans.status
+       END,
+       notification_owner_scope = NULL,
+       notification_owner_id = NULL,
+       notification_sent_at = NULL,
+       notification_result = '{}'::jsonb,
        updated_at = NOW()
      RETURNING *`,
     [
@@ -676,18 +782,66 @@ async function upsertCarePlan(input: {
       JSON.stringify(generated.planSteps),
       input.engine,
       input.model || null,
-      conversation.messages.length,
+      conversation.sourceMessageCount ?? conversation.messages.length,
       conversation.latestMessageAt || null,
       JSON.stringify({
         canReply: conversation.canReply,
         unreadCount: conversation.unreadCount,
         latestInboundUnanswered: assessment.latestInboundUnanswered,
+        priceGateStatus: assessment.priceGateStatus,
+        pricePresented: assessment.pricePresented,
+        pricePassed: assessment.pricePassed,
+        postPriceQuestionCount: assessment.postPriceQuestionCount,
+        postPriceQuestionTopics: assessment.postPriceQuestionTopics,
+        priceGateDismissal: false,
         addressing: detectConversationAddressing(conversation),
         safety: "human-approval-required",
       }),
     ],
   );
   return mapPlan(rows[0]);
+}
+
+async function dismissPlansExcludedByPriceGate(
+  items: Array<{ conversation: ConversationForAnalysis; assessment: DeterministicConversationAssessment }>,
+) {
+  const excluded = items
+    .filter(item => item.assessment.excludedFromCare)
+    .map(item => ({
+      pageInternalId: item.conversation.pageInternalId,
+      conversationId: item.conversation.conversationId,
+      status: item.assessment.priceGateStatus,
+      reason: item.assessment.exclusionReason || "Không vượt qua cổng giá.",
+    }));
+  if (!excluded.length) return 0;
+  const rows = await query<{ id: string }>(
+    `UPDATE fanpage_ai_care_plans AS plan
+     SET status = 'dismissed',
+         metadata = plan.metadata || jsonb_build_object(
+           'priceGateDismissal', true,
+           'priceGateStatus', excluded.status,
+           'priceGateReason', excluded.reason,
+           'priceGateDismissedAt', NOW()::text
+         ),
+         updated_at = NOW()
+     FROM jsonb_to_recordset($1::jsonb) AS excluded(
+       page_internal_id text,
+       conversation_id text,
+       status text,
+       reason text
+     )
+     WHERE plan.page_internal_id = excluded.page_internal_id
+       AND plan.conversation_id = excluded.conversation_id
+       AND plan.status IN ('pending', 'approved', 'in_progress')
+     RETURNING plan.id`,
+    [JSON.stringify(excluded.map(item => ({
+      page_internal_id: item.pageInternalId,
+      conversation_id: item.conversationId,
+      status: item.status,
+      reason: item.reason,
+    })))],
+  );
+  return rows.length;
 }
 
 async function notifyNewPlans(runId: string, settings: FanpageCareSettings) {
@@ -853,19 +1007,15 @@ export async function runDailyFanpageCareCenter(input: {
     const conversations = await loadConversationsForAnalysis(
       Number(process.env.FANPAGE_AI_LOOKBACK_DAYS || DEFAULT_LOOKBACK_DAYS),
     );
-    const assessed = conversations
-      .map(conversation => ({ conversation, assessment: assessFanpageConversation(conversation, settings) }))
-      .filter(item => item.assessment.qualifies);
-    const qualified: Array<{
-      conversation: ConversationForAnalysis;
-      assessment: DeterministicConversationAssessment;
-    }> = [];
-    for (const item of assessed) {
-      if (input.force || retryFailedGemini || await hasNewActivitySinceLatestPlan(item.conversation)) {
-        qualified.push(item);
-      }
-      if (qualified.length >= Math.max(10, Math.min(100, Number(process.env.FANPAGE_AI_MAX_PLANS_PER_RUN || 50)))) break;
-    }
+    const conversationsWithNewMessages = conversations.filter(hasNewMessagesSinceAnalysis);
+    const skippedUnchangedConversations = conversations.length - conversationsWithNewMessages.length;
+    const allAssessed = conversationsWithNewMessages
+      .map(conversation => ({ conversation, assessment: assessFanpageConversation(conversation, settings) }));
+    const priceGateDismissedPlans = await dismissPlansExcludedByPriceGate(allAssessed);
+    const assessed = allAssessed.filter(item => item.assessment.qualifies);
+    const maxPlansPerRun = Math.max(10, Math.min(100, Number(process.env.FANPAGE_AI_MAX_PLANS_PER_RUN || 50)));
+    const qualified = assessed.slice(0, maxPlansPerRun);
+    const deferredQualified = assessed.slice(maxPlansPerRun);
 
     let generatedByGemini = new Map<string, GeneratedCarePlan>();
     let model: string | undefined;
@@ -892,6 +1042,16 @@ export async function runDailyFanpageCareCenter(input: {
         model: aiPlan ? model : undefined,
       }));
     }
+    const processedConversationKeys = new Set(qualified.map(item =>
+      `${item.conversation.pageInternalId}:${item.conversation.conversationId}`,
+    ));
+    const conversationsCheckpointed = await markConversationsAnalyzed(
+      allAssessed
+        .filter(item => !item.assessment.qualifies || processedConversationKeys.has(
+          `${item.conversation.pageInternalId}:${item.conversation.conversationId}`,
+        ))
+        .map(item => item.conversation),
+    );
     const pushSent = await notifyNewPlans(runId, settings);
     const status: FanpageCareRun["status"] = pageErrors.length && pagesSynced === 0 ? "failed" : pageErrors.length ? "partial" : "success";
     const details = {
@@ -900,6 +1060,12 @@ export async function runDailyFanpageCareCenter(input: {
       geminiError,
       geminiPlans: generatedByGemini.size,
       rulesPlans: plans.length - generatedByGemini.size,
+      priceGateExcluded: allAssessed.filter(item => item.assessment.excludedFromCare).length,
+      priceGateDismissedPlans,
+      conversationsWithNewMessages: conversationsWithNewMessages.length,
+      skippedUnchangedConversations,
+      deferredQualifiedConversations: deferredQualified.length,
+      conversationsCheckpointed,
       retryFailedGemini,
       settingsVersion,
       safety: "AI only proposes; customer contact requires human approval",

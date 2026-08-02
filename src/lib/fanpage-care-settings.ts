@@ -18,6 +18,12 @@ export interface FanpageCareSettings {
     cannotReplyPenalty: number;
     objectionPenalty: number;
     objectionCap: number;
+    postPriceQuestionWeight: number;
+    postPriceQuestionCap: number;
+    pricePassedBonus: number;
+    minimumPostPriceQuestions: number;
+    prePriceScoreCap: number;
+    disengagedAfterPriceScore: number;
     qualifyThreshold: number;
     warmThreshold: number;
     hotThreshold: number;
@@ -43,6 +49,8 @@ export interface FanpageCareSettings {
     smallSpaceNeeds: string[];
     homeCareNeeds: string[];
     visualProofNeeds: string[];
+    pricePresented: string[];
+    passiveAfterPrice: string[];
   };
 }
 
@@ -71,6 +79,12 @@ export const DEFAULT_FANPAGE_CARE_SETTINGS: FanpageCareSettings = {
     cannotReplyPenalty: 15,
     objectionPenalty: 3,
     objectionCap: 9,
+    postPriceQuestionWeight: 12,
+    postPriceQuestionCap: 30,
+    pricePassedBonus: 30,
+    minimumPostPriceQuestions: 2,
+    prePriceScoreCap: 69,
+    disengagedAfterPriceScore: 0,
     qualifyThreshold: 40,
     warmThreshold: 45,
     hotThreshold: 75,
@@ -96,6 +110,8 @@ export const DEFAULT_FANPAGE_CARE_SETTINGS: FanpageCareSettings = {
     smallSpaceNeeds: ["phòng nhỏ", "căn hộ", "chung cư", "studio", "tiết kiệm diện tích"],
     homeCareNeeds: ["người già", "bệnh nhân", "đau lưng", "nâng hạ", "đọc sách", "xem phim"],
     visualProofNeeds: ["ảnh thực tế", "video", "clip", "showroom"],
+    pricePresented: ["gửi báo giá", "báo giá chi tiết", "giá là", "giá bán", "giá từ", "giá trọn bộ", "em gửi giá", "mình gửi giá", "smartfurni gửi giá"],
+    passiveAfterPrice: ["ok", "okay", "oki", "dạ", "vâng", "ừ", "uh", "được", "đã nhận", "cảm ơn", "thanks", "thank you"],
   },
 };
 
@@ -147,6 +163,12 @@ export function normalizeFanpageCareSettings(value: unknown): FanpageCareSetting
       cannotReplyPenalty: clampNumber(scoring.cannotReplyPenalty, defaults.scoring.cannotReplyPenalty, 0, 100),
       objectionPenalty: clampNumber(scoring.objectionPenalty, defaults.scoring.objectionPenalty, 0, 50),
       objectionCap: clampNumber(scoring.objectionCap, defaults.scoring.objectionCap, 0, 100),
+      postPriceQuestionWeight: clampNumber(scoring.postPriceQuestionWeight, defaults.scoring.postPriceQuestionWeight, 0, 50),
+      postPriceQuestionCap: clampNumber(scoring.postPriceQuestionCap, defaults.scoring.postPriceQuestionCap, 0, 100),
+      pricePassedBonus: clampNumber(scoring.pricePassedBonus, defaults.scoring.pricePassedBonus, 0, 100),
+      minimumPostPriceQuestions: clampNumber(scoring.minimumPostPriceQuestions, defaults.scoring.minimumPostPriceQuestions, 1, 10),
+      prePriceScoreCap: clampNumber(scoring.prePriceScoreCap, defaults.scoring.prePriceScoreCap, 0, hotThreshold - 1),
+      disengagedAfterPriceScore: clampNumber(scoring.disengagedAfterPriceScore, defaults.scoring.disengagedAfterPriceScore, 0, warmThreshold - 1),
       qualifyThreshold: clampNumber(scoring.qualifyThreshold, defaults.scoring.qualifyThreshold, 0, 100),
       warmThreshold,
       hotThreshold,
@@ -172,6 +194,8 @@ export function normalizeFanpageCareSettings(value: unknown): FanpageCareSetting
       smallSpaceNeeds: cleanKeywords(keywords.smallSpaceNeeds, defaults.keywords.smallSpaceNeeds),
       homeCareNeeds: cleanKeywords(keywords.homeCareNeeds, defaults.keywords.homeCareNeeds),
       visualProofNeeds: cleanKeywords(keywords.visualProofNeeds, defaults.keywords.visualProofNeeds),
+      pricePresented: cleanKeywords(keywords.pricePresented, defaults.keywords.pricePresented),
+      passiveAfterPrice: cleanKeywords(keywords.passiveAfterPrice, defaults.keywords.passiveAfterPrice),
     },
   };
 }
